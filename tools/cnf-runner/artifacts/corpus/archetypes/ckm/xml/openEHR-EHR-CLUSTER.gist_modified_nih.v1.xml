@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2024-03-19</original_author>
+    <original_author id="name">Kanika Kuwelker</original_author>
+    <original_author id="organisation">Helse Vest IKT</original_author>
+    <original_author id="email">kanika.kuwelker@helse-vest-ikt.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Koray Atalag, GALATA-Digital, New Zealand</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Anthony Burton Mariathasan, OUS, Radiumhospitalet, Norway</other_contributors>
+    <other_contributors>Grant Forrest, Lunaria Ltd, United Kingdom</other_contributors>
+    <other_contributors>Marianne Gårderhagen, OUS, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>June Marie Nepstad Knappskog, Helse Nord IKT AS, Norway (openEHR Editor), Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Nina Louise Jebsen, Haukeland Universitetssykehus, Norway</other_contributors>
+    <other_contributors>June Marie Knappskog, Helse Nord IKT AS, Norway (Nasjonal IKT redaktør), Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Olha Nikolaieva, University Hospital Basel, Switzerland</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Sonja Steigen, Universitetssykehuset Nord-Norge, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Kanthan Theivendran, NHS, United Kingdom</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Olga Zaikova, OUS, Radiumhospitalet, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Joensuu H, Hohenberger P, Corless CL. Gastrointestinal stromal tumour. Lancet. 2013 Sep 14;382(9896):973-83. doi: 10.1016/S0140-6736(13)60106-3. Epub 2013 Apr 24. Review. PubMed PMID: 23623056&#xD;
+&#xD;
+Joensuu H. Risk stratification of patients diagnosed with gastrointestinal stromal tumor. Hum Pathol. 2008 Oct;39(10):1411-9. doi: 10.1016/j.humpath.2008.06.025. PubMed PMID: 18774375.&#xD;
+&#xD;
+Jones RL. Practical aspects of risk assessment in gastrointestinal stromal tumors. J Gastrointest Cancer. 2014 Sep;45(3):262-7. doi: 10.1007/s12029-014-9615-x. Review. PubMed PMID: 24802226; PubMed Central PMCID: PMC4126997.&#xD;
+&#xD;
+Serrano C, Álvarez R, Carrasco JA, Marquina G, Martínez-García J, Martínez-Marín V, Sala MÁ, Sebio A, Sevilla I, Martín-Broto J. SEOM-GEIS clinical guideline for gastrointestinal stromal tumors (2022). Clin Transl Oncol. 2023 Sep;25(9):2707-2717. doi: 10.1007/s12094-023-03177-7. Epub 2023 May 2. PMID: 37129716; PMCID: PMC10425520.&#xD;
+&#xD;
+Norwegian translation: Helsedirektoratet. Nasjonalt handlingsprogram med retningslinjer for diagnostikk, behandling og oppfølging av sarkom. [revised 2022 February]. [Internet]. 2022 February. Available from: https://www.helsedirektoratet.no/retningslinjer/sarkomer-handlingsprogram</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">4788EF30C5C378DD162DA7797CECFC64</other_details>
+    <other_details id="build_uid">d5eff724-b5d3-4740-a071-d3067e9559a5</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere resultatene for hvert parameter og risikokategorien for GIST basert på de modifiserte NIH-kriteriene.</purpose>
+      <keywords>gastrointestinal stromal tumor, GIST, sarkom, kreft, neoplasme, onkologi, malignitet, risiko, risikovurdering, risikostratifisering, klassifikasjon, kategorisering</keywords>
+      <use>Brukes for å registrere resultatene for hvert parameter og risikokategorien for GIST basert på de modifiserte NIH-kriteriene.&#xD;
+&#xD;
+Arketypen er utviklet for å brukes i en ENTRY-arketype som vil gi den kliniske eller patologiske konteksten for registreringen. For eksempel: I SLOTet "Spesifikke detaljer" i arketypen Problem/diagnose (EVALUATION.problem_diagnosis), i en relevant patologirelatert CLUSTER-arketype som igjen nøstes i arketypen Laboratorieresultat (OBSERVATION.laboratory_test_result). Dette gir også mulighet for å registrere kroppssted.&#xD;
+&#xD;
+Når denne arketypen må inkluderes i en ikke-OBSERVATION-arketype, som for eksempel Problem/diagnose-arketypen (EVALUATION.problem_diagnosis), bør den først nøstes i Klinisk grunnlag-arketypen (CLUSTER.clinical_evidence) for å gi viktig kontekst, slik som vurderingsdato.</use>
+      <misuse>Skal ikke brukes for primærregistrering av diameter og mitosetall av tumor - bruk en relevant patologirelatert ENTRY-arketype for dette.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the results for each of the component parameters and the risk category for GIST based on the Modified NIH Criteria.</purpose>
+      <keywords>gastrointestinal stromal tumour, tumor, GIST, sarcoma, cancer, neoplasm, oncology, malignancy, risk, risk assessment, risk stratification, classification, categorisation</keywords>
+      <use>Use to record the results for each of the component parameters and the risk category for GIST based on the Modified NIH Criteria. &#xD;
+&#xD;
+The archetype is designed to be used in an ENTRY archetype that will provide the clinical or pathological context. For example: In the "Specific Details" SLOT in the EVALUATION.problem_diagnosis archetype, or nested in a relevant pathology-related CLUSTER archetype that is again nested in the OBSERVATION.laboratory_test_result archetype. This will also allow for documentation of body site.&#xD;
+&#xD;
+When this archetype needs to be included within an non-OBSERVATION archetype such as EVALUATION.problem_diagnosis, it should first be nested within the CLUSTER.clinical_evidence to provide important context such as the date of the assessment.</use>
+      <misuse>Not to be used for the primary recording of diameter and mitotic count of the tumour - use a relevant pathology-related archetype for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Kanika Kuwelker</author>
+    <author id="organisation">Helse Vest IKT</author>
+    <author id="email">kanika.kuwelker@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>a217bc9f-1a24-4277-bc6b-34231fc93bb6</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.gist_modified_nih.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>122</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </precision>
+              <units>cm</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0033</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>763</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>{mitoses}/5.mm2</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <units>{mitoses}/50.[HPF]</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0027</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0029</code_list>
+                <code_list>at0030</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0028</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0031</code_list>
+                <code_list>at0032</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0021</code_list>
+                <code_list>at0022</code_list>
+                <code_list>at0023</code_list>
+                <code_list>at0024</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Modified NIH Criteria for GIST risk assessment</items>
+        <items id="description">An assessment tool used to stratify patients according to their risk of recurrence of Gastrointestinal stromal tumour (GIST) following surgery based on the Modified National Institutes of Health (NIH) Criteria.</items>
+        <items id="comment">Also known as Joensuu criteria.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Risk category</items>
+        <items id="description">Risk of recurrence based on the component parameters, according to the modified NIH criteria.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Very low risk</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0022">
+        <items id="text">Low risk</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0023">
+        <items id="text">Intermediate risk</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">High risk</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Diameter</items>
+        <items id="description">Largest diameter of tumour.</items>
+        <items id="comment">In clinical practice the primary registration of the tumour diameter would be recorded using a relevant pathology-related archetype. In this case, the ‘Diameter’ result in this archetype should be copied from the primary recording.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Location</items>
+        <items id="description">Location of tumour.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Tumour rupture</items>
+        <items id="description">Presence of tumour rupture.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Gastric</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0030">
+        <items id="text">Not gastric</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0031">
+        <items id="text">Present</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0032">
+        <items id="text">Not present</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0033">
+        <items id="text">Mitotic count</items>
+        <items id="description">Mitotic count of tumour.</items>
+        <items id="comment">In clinical practice the primary registration of the mitotic count would be recorded using a relevant pathology-related archetype. In this case, the ‘Mitotic count’ result in this archetype should be copied from the primary recording.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Modifiserte NIH-kriterier for risikovurdering av GIST</items>
+        <items id="description">Et vurderingsverktøy som brukes for å stratifiere pasienter etter risiko for tilbakefall av gastrointestinal stromal tumor (GIST) etter operasjon, basert på de modifiserte kriteriene fra National Institutes of Health (NIH).</items>
+        <items id="comment">Også kjent som Joensuu kriterier. </items>
+      </items>
+      <items code="at0004">
+        <items id="text">Risikokategori</items>
+        <items id="description">Risiko for tilbakefall basert på parameterne i henhold til de modifiserte NIH-kriteriene.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Meget lav risiko</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0022">
+        <items id="text">Lav risiko</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0023">
+        <items id="text">Intermediær risiko</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">Høy risiko</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Diameter</items>
+        <items id="description">Største diameter av tumor.</items>
+        <items id="comment">I klinisk praksis vil den primære registreringen av tumordiameteren bli registrert ved bruk av en relevant patologirelatert arketype. I dette tilfellet bør resultatet for 'Diameter'-elementet i denne arketypen kopieres fra den primære registreringen.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Lokasjon</items>
+        <items id="description">Lokalisasjon av tumor.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Tumorruptur</items>
+        <items id="description">Tilstedeværelse av tumorruptur.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Ventrikkel</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0030">
+        <items id="text">Ikke ventrikkel</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0031">
+        <items id="text">Tilstede</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0032">
+        <items id="text">Ikke tilstede</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0033">
+        <items id="text">Mitosetall</items>
+        <items id="description">Mitosetall av tumor.</items>
+        <items id="comment">I klinisk praksis vil den primære registreringen av mitosetall bli registrert ved bruk av en relevant patologirelatert arketype. I dette tilfellet bør resultatet for 'Mitosetall'-elementet i denne arketypen kopieres fra den primære registreringen.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

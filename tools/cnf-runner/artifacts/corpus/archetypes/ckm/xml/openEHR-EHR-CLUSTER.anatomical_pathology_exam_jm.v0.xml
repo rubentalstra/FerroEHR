@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2016-11-23</original_author>
+    <original_author id="name">Silje Ljosland Bakke</original_author>
+    <original_author id="organisation">Nasjonal IKT HF</original_author>
+    <original_author id="email">silje.ljosland.bakke@nasjonalikt.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Kristin Eik, Kreftregisteret, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Sabine Leh, Helse-Bergen, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Jan-Arne Ludvigsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ole Martin Sand, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, Ocean Informatics, United Kingdom (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Sveinung Sørbye, UNN HF, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Torleif Trydal, Fürst AS, Norway</other_contributors>
+    <other_contributors>Johan Bjerner, Fürst AS, Norway</other_contributors>
+    <other_contributors>Nils Petter Tveranger, Helse Vest IKT AS, Norway</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="references">Derived from Histopathology test, Draft Archetype [Internet]. openEHR Foundation, openEHR Clinical Knowledge Manager [cited: 2016-11-29]. Available from: http://openehr.org/ckm/#showArchetype_1013.1.2195</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">EB84BAB75FD8249710880013F12690A1</other_details>
+    <other_details id="build_uid">5e8dd72e-d2c0-4ac9-aa70-e1283fd88cd8</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>*To record the findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids. (en)</purpose>
+      <keywords>Histopathologie, Zytologie, Pathologie, anatomische Pathologie, intraoperative Untersuchung, mikroskopische Untersuchung, makroskopische Untersuchung, Immunhistochemie</keywords>
+      <use>*Use to record the findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids.&#xD;
+&#xD;
+This archetype is designed specifically to be used in the "Test result" SLOT within the OBSERVATION.laboratory_test_result archetype, but may also be used within other ENTRY class archetypes where appropriate. (en)</use>
+      <misuse>*Not to be used for reporting other types of laboratory test results, for example biochemistry or haematology.&#xD;
+&#xD;
+Not to be used to record a complete autopsy report, although individual tests performed on specimens collected during an autopsy may be represented using this archetype. (en)</misuse>
+      <copyright>*© openEHR Foundation (en)</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>*To record the findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids. (en)</purpose>
+      <keywords>histopatologi, anatomisk patologi, cytologi</keywords>
+      <use>*Use to record the findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids.&#xD;
+&#xD;
+This archetype is designed specifically to be used in the "Test result" SLOT within the OBSERVATION.laboratory_test_result archetype, but may also be used within other ENTRY class archetypes where appropriate. (en)</use>
+      <misuse>*Not to be used for reporting other types of laboratory test results, for example biochemistry or haematology.&#xD;
+&#xD;
+Not to be used to record a complete autopsy report, although individual tests performed on specimens collected during an autopsy may be represented using this archetype. (en)</misuse>
+      <copyright>*© openEHR Foundation (en)</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids.</purpose>
+      <keywords>histopathology, cytology, pathology</keywords>
+      <use>Use to record the findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids.&#xD;
+&#xD;
+This archetype is designed specifically to be used in the "Test result" SLOT within the OBSERVATION.laboratory_test_result archetype, but may also be used within other ENTRY class archetypes where appropriate.</use>
+      <misuse>Not to be used for reporting other types of laboratory test results, for example biochemistry or haematology.&#xD;
+&#xD;
+Not to be used to record a complete autopsy report, although individual tests performed on specimens collected during an autopsy may be represented using this archetype.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Aurelie Tomczak</author>
+    <author id="organisation">Institute of Pathology, University Hospital Heidelberg</author>
+    <author id="email">au.tomczak@yahoo.com </author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Nasjonal IKT HF</author>
+  </translations>
+  <uid>
+    <value>4ce52f85-f342-47bc-8969-14cc64e506d7</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.anatomical_pathology_exam_jm.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>true</upper_unbounded>
+      <lower>0</lower>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0027</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.specimen(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.specimen(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.laboratory_test_serology\.v0|openEHR-EHR-CLUSTER\.lab_microscopy_parasitology\.v0|openEHR-EHR-CLUSTER\.lab_antibody\.v0|openEHR-EHR-CLUSTER\.lab_antigen\.v0|openEHR-EHR-CLUSTER\.lab_microscopy_culture\.v0|openEHR-EHR-CLUSTER\.lab_microscopy_stain\.v0|openEHR-EHR-CLUSTER\.lab_molecular_microbial\.v0/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.laboratory_test_serology\.v0|openEHR-EHR-CLUSTER\.lab_microscopy_parasitology\.v0|openEHR-EHR-CLUSTER\.lab_antibody\.v0|openEHR-EHR-CLUSTER\.lab_antigen\.v0|openEHR-EHR-CLUSTER\.lab_microscopy_culture\.v0|openEHR-EHR-CLUSTER\.lab_microscopy_stain\.v0|openEHR-EHR-CLUSTER\.lab_molecular_microbial\.v0</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0026</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0011</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0028</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.exclusion_test(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.exclusion_test(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Anatomical pathology examination</items>
+        <items id="description">A generic framework for findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids using gross, microscopic, and ancillary testing methods.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Examination findings</items>
+        <items id="description">Structured details about the anatomical pathology examination findings.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the anatomical pathology examination findings, not captured in other fields.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Multimedia representation</items>
+        <items id="description">Digital image, video or diagram representing the anatomical pathology examination.</items>
+        <items id="comment">Multiple formats are allowed but they should represent equivalent clinical content.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Microscopic description</items>
+        <items id="description">Narrative summary of findings observed under the microscope.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Clinical interpretation</items>
+        <items id="description">Single word, phrase or brief description that represents the clinical meaning and significance of the anatomical pathology examination for the identified specimen.</items>
+        <items id="comment">For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Specimen</items>
+        <items id="description">Details about the specimen examined.</items>
+        <items id="comment">For example, the ID of the specimen or a macroscopic description of the specimen being examined.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Examination not done</items>
+        <items id="description">Details to explicitly record that this examination was not performed.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">*Anatomical pathology examination (en)</items>
+        <items id="description">*A generic framework for findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids using gross, microscopic, and ancillary testing methods. (en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Examination findings (en)</items>
+        <items id="description">*Structured details about the anatomical pathology examination findings. (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Comment (en)</items>
+        <items id="description">*Additional narrative about the anatomical pathology examination findings, not captured in other fields. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Multimediarepresentasjon</items>
+        <items id="description">*Digital image, video or diagram representing the anatomical pathology examination. (en)</items>
+        <items id="comment">Flere formater tillates, men innholdet i de forskjellige formatene må representere det samme innholdet.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Microscopic description (en)</items>
+        <items id="description">*Narrative summary of findings observed under the microscope. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Clinical interpretation (en)</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the anatomical pathology examination for the identified specimen. (en)</items>
+        <items id="comment">*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Specimen (en)</items>
+        <items id="description">*Details about the specimen examined. (en)</items>
+        <items id="comment">*For example, the ID of the specimen or a macroscopic description of the specimen being examined. (en)</items>
+      </items>
+      <items code="at0028">
+        <items id="text">*Examination not done (en)</items>
+        <items id="description">*Details to explicitly record that this examination was not performed. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">*Anatomical pathology examination (en)</items>
+        <items id="description">*A generic framework for findings observed during the histopathological or cytopathological examination of organs, tissues, cells, or body fluids using gross, microscopic, and ancillary testing methods. (en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Examination findings (en)</items>
+        <items id="description">*Structured details about the anatomical pathology examination findings. (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Comment (en)</items>
+        <items id="description">*Additional narrative about the anatomical pathology examination findings, not captured in other fields. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Testrepräsentation</items>
+        <items id="description">*Digital image, video or diagram representing the anatomical pathology examination. (en)</items>
+        <items id="comment">Es sind mehrere Formatangaben erlaubt, diese müssen aber semantisch äquivalent sein.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Microscopic description (en)</items>
+        <items id="description">*Narrative summary of findings observed under the microscope. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Clinical interpretation (en)</items>
+        <items id="description">*Single word, phrase or brief description that represents the clinical meaning and significance of the anatomical pathology examination for the identified specimen. (en)</items>
+        <items id="comment">*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Specimen (en)</items>
+        <items id="description">*Details about the specimen examined. (en)</items>
+        <items id="comment">*For example, the ID of the specimen or a macroscopic description of the specimen being examined. (en)</items>
+      </items>
+      <items code="at0028">
+        <items id="text">*Examination not done (en)</items>
+        <items id="description">*Details to explicitly record that this examination was not performed. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

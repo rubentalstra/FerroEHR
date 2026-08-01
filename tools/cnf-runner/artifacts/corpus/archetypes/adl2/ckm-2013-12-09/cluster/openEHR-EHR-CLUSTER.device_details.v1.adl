@@ -1,0 +1,266 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.device_details.v1
+
+concept
+	[at0000]	-- Device details
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"16/08/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record additional details related to specifications, maintenance, servicing, cleaning and calibration for any device.">
+			use = <"Use to record additional details required to supplement the generic CLUSTER.device or specicalisation archetypes. The focus of this archetype is on capturing the details related maintenance, servicing, cleaning, calibration and specific details about components of the device.">
+			keywords = <"calibration", "maintenance", "sterilization", "cleaned", "service", "device">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", ...>
+	other_details = <
+		["references"] = <"HL7 International, Implementation Guide for CDA Release 2.0 Personal Healthcare Monitoring Report (PHMR) (International Realm) Draft Standard for Trial Use Release 1. 2008;[cited 2010 Feb 2 ]
+
+IEEE. Guidelines for 64-bit Global Identifier (EUI-64) Registration Authority [Internet]. [date unknown];[cited 2010 Feb 2 ] 
+Available from: http://standards.ieee.org/regauth/oui/tutorials/EUI64.html">
+		["MD5-CAM-1.0.1"] = <"ABFCDBD4FEB5A92D17BBB76F3E1099F9">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Device details
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Organisation identifier
+				value matches {
+					DV_TEXT matches {*}
+					DV_IDENTIFIER matches {
+						issuer matches {/EUI-64/}
+					}
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {	-- Model
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- Serial number
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {	-- Part number
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Manufacturer model name
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0008] occurrences matches {0..1} matches {	-- Hardware revision
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- Software name
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0009] occurrences matches {0..1} matches {	-- Software revision
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0010] occurrences matches {0..1} matches {	-- Protocol revision
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0011] occurrences matches {0..1} matches {	-- Sampling frequency
+				value matches {
+					DV_TEXT matches {*}
+					DV_QUANTITY matches {*}
+				}
+			}
+			ELEMENT[at0012] occurrences matches {0..1} matches {	-- Range
+				value matches {
+					DV_TEXT matches {*}
+					DV_INTERVAL<DV_QUANTITY> matches {
+						upper matches {
+					                DV_QUANTITY matches {*}
+						}
+						lower matches {
+					                DV_QUANTITY matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0013] occurrences matches {0..1} matches {	-- Accuracy
+				value matches {
+					DV_TEXT matches {*}
+					DV_QUANTITY matches {*}
+				}
+			}
+			ELEMENT[at0014] occurrences matches {0..1} matches {	-- Resolution
+				value matches {
+					DV_TEXT matches {*}
+					DV_QUANTITY matches {*}
+				}
+			}
+			ELEMENT[at0015] occurrences matches {0..1} matches {	-- Regulatory status
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0022] occurrences matches {0..1} matches {	-- Date last cleaned/sterilized
+				value matches {
+					DV_DATE_TIME matches {*}
+				}
+			}
+			ELEMENT[at0017] occurrences matches {0..1} matches {	-- Date last calibrated
+				value matches {
+					DV_DATE_TIME matches {*}
+				}
+			}
+			ELEMENT[at0016] occurrences matches {0..1} matches {	-- Date last serviced
+				value matches {
+					DV_DATE_TIME matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0018] occurrences matches {0..*} matches {	-- Serviced by
+				include
+					archetype_id/value matches {/.*/}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- Additional information
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0019] occurrences matches {0..*} matches {	-- Formulae
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0020] matches {	-- Formula name
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0021] occurrences matches {0..1} matches {	-- Formula
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Device details">
+					description = <"Additional details that relate to safety and quality issues for ongoing and repeated use of any device.">
+				>
+				["at0001"] = <
+					text = <"Organisation identifier">
+					description = <"Organisation identifier for device. May be a text string or an IEEE EUI-64 identifier.">
+				>
+				["at0002"] = <
+					text = <"Manufacturer model name">
+					description = <"HL7 CDA compatible representation of device manufacture details. 
+
+May be a simple string or contain simple markup e.g. for Continua PHMR reports:
+\"Pulse Master 2000||584216|69854|2.1|1.1|1.0|\"
+repesenting Model, Unspecified, SerialNumber, PartNumber, HardwareRevision, SoftwareRevision, ProtocolRevision, and ProdSpecGMDN.">
+				>
+				["at0003"] = <
+					text = <"Software name">
+					description = <"Software name - for compatibility with CDA POCD_MT000040.">
+				>
+				["at0004"] = <
+					text = <"Model">
+					description = <"The model of the device.">
+				>
+				["at0005"] = <
+					text = <"Additional information">
+					description = <"Addtional device specification information.">
+				>
+				["at0006"] = <
+					text = <"Serial number">
+					description = <"The serial number of the device.">
+				>
+				["at0007"] = <
+					text = <"Part number">
+					description = <"The part number of the device.">
+				>
+				["at0008"] = <
+					text = <"Hardware revision">
+					description = <"The hardware revision number.">
+				>
+				["at0009"] = <
+					text = <"Software revision">
+					description = <"The software revision number.">
+				>
+				["at0010"] = <
+					text = <"Protocol revision">
+					description = <"The protocol revision number.">
+				>
+				["at0011"] = <
+					text = <"Sampling frequency">
+					description = <"The sampling frequency limits of the device.">
+				>
+				["at0012"] = <
+					text = <"Range">
+					description = <"The range limits of the device.">
+				>
+				["at0013"] = <
+					text = <"Accuracy">
+					description = <"The accuracy limits of the device.">
+				>
+				["at0014"] = <
+					text = <"Resolution">
+					description = <"The resolution limits of the device.">
+				>
+				["at0015"] = <
+					text = <"Regulatory status">
+					description = <"Whether device is regulated or otherwise.">
+				>
+				["at0016"] = <
+					text = <"Date last serviced">
+					description = <"The date the device was last serviced.">
+				>
+				["at0017"] = <
+					text = <"Date last calibrated">
+					description = <"Date the device was last calibrated.">
+				>
+				["at0018"] = <
+					text = <"Serviced by">
+					description = <"Details of agent who performed the servicing.">
+				>
+				["at0019"] = <
+					text = <"Formulae">
+					description = <"Details about formulae or algorithms used by the device in order to generate results/output.">
+				>
+				["at0020"] = <
+					text = <"Formula name">
+					description = <"Data element which is calculated or derived.">
+				>
+				["at0021"] = <
+					text = <"Formula">
+					description = <"Formula used to calculate or derive the Calculated field.">
+				>
+				["at0022"] = <
+					text = <"Date last cleaned/sterilized">
+					description = <"Date the device was last cleaned or sterilized.">
+				>
+			>
+		>
+	>

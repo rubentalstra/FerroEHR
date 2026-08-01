@@ -1,0 +1,706 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-ACTION.imaging.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			author = <
+				["name"] = <"Leonardo Der Jachadurian">
+				["organisation"] = <"Particular">
+			>
+			accreditation = <"Medical doctor, Internal Medicine specialist">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2006-04-17">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record actions regarding imaging investigations.">
+			use = <"">
+			keywords = <"Xray", "ultrasound", "MRI", "magnetic resonance", "CT", "scan", "tomography">
+			misuse = <"Not used for recording the findings of the investigation; use openEHR-EHR-OBSERVATION.imaging for the findings.">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل الأفعال الخاصة بالاستقصاءات التصويرية.">
+			use = <"">
+			keywords = <"الأشعة السينية", "الموجات فوق الصوتية", "التصوير بالرنين المغناطيسي", "الرنين المغناطيسي", "التصوير الطبقي المُحوسَب", "التفريسة", "التصوير المقطعي">
+			misuse = <"لا يستخدم لتسجيل الموجودات عند إجراء الاستقصاء, استخدم بدلا من ذلك نموذج الملاحظة.التصوير.">
+		>
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			purpose = <"Para registrar acciones en relación con evaluaciones de imágenes">
+			use = <"">
+			keywords = <"Radiografía", "Ecografía", "RNM", "Resonancia magnética nuclear", "TC", "Escaneo", "Tomografía">
+			misuse = <"No usado para registrar los hallazgos de la investigación; use openEHR-EHR-OBSERVATION.imaging para registrar los hallazgos.">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"9D90363C64106C2ECBFA61F52066CB98">
+	>
+
+definition
+	ACTION[id1] matches {	-- Imaging investigation
+		ism_transition matches {
+			ISM_TRANSITION[id2] matches {	-- Planned
+				current_state matches {
+					DV_CODED_TEXT[id16] matches {
+						defining_code matches {[at16]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id17] matches {
+						defining_code matches {[at2]}
+					}
+				}
+			}
+			ISM_TRANSITION[id5] matches {	-- Requested
+				current_state matches {
+					DV_CODED_TEXT[id18] matches {
+						defining_code matches {[at16]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id19] matches {
+						defining_code matches {[at5]}
+					}
+				}
+			}
+			ISM_TRANSITION[id3] matches {	-- Postponed
+				current_state matches {
+					DV_CODED_TEXT[id20] matches {
+						defining_code matches {[at17]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id21] matches {
+						defining_code matches {[at3]}
+					}
+				}
+			}
+			ISM_TRANSITION[id4] matches {	-- Cancelled
+				current_state matches {
+					DV_CODED_TEXT[id22] matches {
+						defining_code matches {[at18]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id23] matches {
+						defining_code matches {[at4]}
+					}
+				}
+			}
+			ISM_TRANSITION[id6] matches {	-- Appointment made
+				current_state matches {
+					DV_CODED_TEXT[id24] matches {
+						defining_code matches {[at19]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id25] matches {
+						defining_code matches {[at6]}
+					}
+				}
+			}
+			ISM_TRANSITION[id7] matches {	-- Resheduled
+				current_state matches {
+					DV_CODED_TEXT[id26] matches {
+						defining_code matches {[at19]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id27] matches {
+						defining_code matches {[at7]}
+					}
+				}
+			}
+			ISM_TRANSITION[id8] matches {	-- Commenced
+				current_state matches {
+					DV_CODED_TEXT[id28] matches {
+						defining_code matches {[at20]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id29] matches {
+						defining_code matches {[at8]}
+					}
+				}
+			}
+			ISM_TRANSITION[id9] matches {	-- Investigation complete
+				current_state matches {
+					DV_CODED_TEXT[id30] matches {
+						defining_code matches {[at20]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id31] matches {
+						defining_code matches {[at9]}
+					}
+				}
+			}
+			ISM_TRANSITION[id10] matches {	-- Reported
+				current_state matches {
+					DV_CODED_TEXT[id32] matches {
+						defining_code matches {[at20]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id33] matches {
+						defining_code matches {[at10]}
+					}
+				}
+			}
+			ISM_TRANSITION[id12] matches {	-- Report communicated
+				current_state matches {
+					DV_CODED_TEXT[id34] matches {
+						defining_code matches {[at20]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id35] matches {
+						defining_code matches {[at12]}
+					}
+				}
+			}
+			ISM_TRANSITION[id13] matches {	-- Further imaging required
+				current_state matches {
+					DV_CODED_TEXT[id36] matches {
+						defining_code matches {[at20]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id37] matches {
+						defining_code matches {[at13]}
+					}
+				}
+			}
+			ISM_TRANSITION[id14] matches {	-- Imaging suspended
+				current_state matches {
+					DV_CODED_TEXT[id38] matches {
+						defining_code matches {[at21]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id39] matches {
+						defining_code matches {[at14]}
+					}
+				}
+			}
+			ISM_TRANSITION[id15] matches {	-- Imaging aborted
+				current_state matches {
+					DV_CODED_TEXT[id40] matches {
+						defining_code matches {[at22]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id41] matches {
+						defining_code matches {[at15]}
+					}
+				}
+			}
+			ISM_TRANSITION[id11] matches {	-- Completed
+				current_state matches {
+					DV_CODED_TEXT[id42] matches {
+						defining_code matches {[at23]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id43] matches {
+						defining_code matches {[at11]}
+					}
+				}
+			}
+		}
+		description matches {
+			allow_archetype ITEM_TREE[id44] matches {
+				include
+					archetype_id/value matches {/openEHR-EHR-ITEM_TREE\.imaging\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Imaging investigation">
+				description = <"An action related to an investigation by an imaging technique.">
+			>
+			["id2"] = <
+				text = <"Planned">
+				description = <"Imaging investigation is planned.">
+			>
+			["id3"] = <
+				text = <"Postponed">
+				description = <"Imaging investigation is postponed.">
+			>
+			["id4"] = <
+				text = <"Cancelled">
+				description = <"Imaging investigation is cancelled.">
+			>
+			["id5"] = <
+				text = <"Requested">
+				description = <"Imaging investigation has been requested.">
+			>
+			["id6"] = <
+				text = <"Appointment made">
+				description = <"Imaging investigation scheduled for specific date and time.">
+			>
+			["id7"] = <
+				text = <"Resheduled">
+				description = <"Appointment for imaging investigation has been altered.">
+			>
+			["id8"] = <
+				text = <"Commenced">
+				description = <"Imaging investigation has commenced.">
+			>
+			["id9"] = <
+				text = <"Investigation complete">
+				description = <"The imaging investigation has been completed; awaiting report.">
+			>
+			["id10"] = <
+				text = <"Reported">
+				description = <"The imaging investigation has been reported.">
+			>
+			["id11"] = <
+				text = <"Completed">
+				description = <"The imaging investigation is completed and report processed.">
+			>
+			["id12"] = <
+				text = <"Report communicated">
+				description = <"The imaging investigation has been reported and communicated to the referer.">
+			>
+			["id13"] = <
+				text = <"Further imaging required">
+				description = <"The investigator has established that further imaging is required.">
+			>
+			["id14"] = <
+				text = <"Imaging suspended">
+				description = <"The imaging was not able to be completed.">
+			>
+			["id15"] = <
+				text = <"Imaging aborted">
+				description = <"The imaging investigation was not and will not be completed.">
+			>
+			["at2"] = <
+				text = <"Planned">
+				description = <"Imaging investigation is planned.">
+			>
+			["at5"] = <
+				text = <"Requested">
+				description = <"Imaging investigation has been requested.">
+			>
+			["at3"] = <
+				text = <"Postponed">
+				description = <"Imaging investigation is postponed.">
+			>
+			["at4"] = <
+				text = <"Cancelled">
+				description = <"Imaging investigation is cancelled.">
+			>
+			["at6"] = <
+				text = <"Appointment made">
+				description = <"Imaging investigation scheduled for specific date and time.">
+			>
+			["at7"] = <
+				text = <"Resheduled">
+				description = <"Appointment for imaging investigation has been altered.">
+			>
+			["at8"] = <
+				text = <"Commenced">
+				description = <"Imaging investigation has commenced.">
+			>
+			["at9"] = <
+				text = <"Investigation complete">
+				description = <"The imaging investigation has been completed; awaiting report.">
+			>
+			["at10"] = <
+				text = <"Reported">
+				description = <"The imaging investigation has been reported.">
+			>
+			["at12"] = <
+				text = <"Report communicated">
+				description = <"The imaging investigation has been reported and communicated to the referer.">
+			>
+			["at13"] = <
+				text = <"Further imaging required">
+				description = <"The investigator has established that further imaging is required.">
+			>
+			["at14"] = <
+				text = <"Imaging suspended">
+				description = <"The imaging was not able to be completed.">
+			>
+			["at15"] = <
+				text = <"Imaging aborted">
+				description = <"The imaging investigation was not and will not be completed.">
+			>
+			["at11"] = <
+				text = <"Completed">
+				description = <"The imaging investigation is completed and report processed.">
+			>
+			["at16"] = <
+				text = <"initial">
+				description = <"initial">
+			>
+			["at17"] = <
+				text = <"postponed">
+				description = <"postponed">
+			>
+			["at18"] = <
+				text = <"cancelled">
+				description = <"cancelled">
+			>
+			["at19"] = <
+				text = <"scheduled">
+				description = <"scheduled">
+			>
+			["at20"] = <
+				text = <"active">
+				description = <"active">
+			>
+			["at21"] = <
+				text = <"suspended">
+				description = <"suspended">
+			>
+			["at22"] = <
+				text = <"aborted">
+				description = <"aborted">
+			>
+			["at23"] = <
+				text = <"complete">
+				description = <"complete">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"الاستقصاء التصويري">
+				description = <"فعل متعلق باستقصاء باستخدام تقنية تصويرية.">
+			>
+			["id2"] = <
+				text = <"مخطَّط">
+				description = <"تم التخطيط للاستقصاء التصويري">
+			>
+			["id3"] = <
+				text = <"تم التأجيل">
+				description = <"تم تأجيل الاستقصاء التصويري">
+			>
+			["id4"] = <
+				text = <"تم الإلغاء">
+				description = <"تم إلغاء الاستقصاء التصويري">
+			>
+			["id5"] = <
+				text = <"تم الطلب">
+				description = <"تم طلب الاستقصاء التصويري">
+			>
+			["id6"] = <
+				text = <"تم تحديد الموعد">
+				description = <"تم تحديد موعد الاستقصاء التصويري بالتاريخ و التوقيت">
+			>
+			["id7"] = <
+				text = <"تم إعادة تحديد الموعد">
+				description = <"تم تعديل موعد إجراء الاستقصاء التصويري">
+			>
+			["id8"] = <
+				text = <"تم البدء">
+				description = <"تم البدء في الاستقصاء التصويري">
+			>
+			["id9"] = <
+				text = <"تم اكتمال الاستقصاء">
+				description = <"تم استكمال الاستقصاء التصويري, في انتظار التقرير">
+			>
+			["id10"] = <
+				text = <"تم كتابة التقرير">
+				description = <"تم كتابة تقرير الاستقصاء التصويري">
+			>
+			["id11"] = <
+				text = <"اكتمل">
+				description = <"تم إكمال الاستقصاء التصويري و تم معالجة التقرير">
+			>
+			["id12"] = <
+				text = <"تم توصيل التقرير">
+				description = <"تم كتابة التقرير الخاص بالاستقصاء التصويري و تم توصيل التقرير إلى من قام بالإحالة.">
+			>
+			["id13"] = <
+				text = <"يوجد احتياج لمزيد من التصوير">
+				description = <"بعد القيام بالاستقصاء, تم تحديد أن هناك حاجة لمزيد من التصوير">
+			>
+			["id14"] = <
+				text = <"تم تعليق التصوير">
+				description = <"لم يُتَمَكَّن من إكمال التصوير">
+			>
+			["id15"] = <
+				text = <"تم إيقاف التصوير بشكل مفاجئ">
+				description = <"لم يتم استكمال الاستقصاء التصويري و لن يتم استكماله">
+			>
+			["at2"] = <
+				text = <"مخطَّط">
+				description = <"تم التخطيط للاستقصاء التصويري">
+			>
+			["at5"] = <
+				text = <"تم الطلب">
+				description = <"تم طلب الاستقصاء التصويري">
+			>
+			["at3"] = <
+				text = <"تم التأجيل">
+				description = <"تم تأجيل الاستقصاء التصويري">
+			>
+			["at4"] = <
+				text = <"تم الإلغاء">
+				description = <"تم إلغاء الاستقصاء التصويري">
+			>
+			["at6"] = <
+				text = <"تم تحديد الموعد">
+				description = <"تم تحديد موعد الاستقصاء التصويري بالتاريخ و التوقيت">
+			>
+			["at7"] = <
+				text = <"تم إعادة تحديد الموعد">
+				description = <"تم تعديل موعد إجراء الاستقصاء التصويري">
+			>
+			["at8"] = <
+				text = <"تم البدء">
+				description = <"تم البدء في الاستقصاء التصويري">
+			>
+			["at9"] = <
+				text = <"تم اكتمال الاستقصاء">
+				description = <"تم استكمال الاستقصاء التصويري, في انتظار التقرير">
+			>
+			["at10"] = <
+				text = <"تم كتابة التقرير">
+				description = <"تم كتابة تقرير الاستقصاء التصويري">
+			>
+			["at12"] = <
+				text = <"تم توصيل التقرير">
+				description = <"تم كتابة التقرير الخاص بالاستقصاء التصويري و تم توصيل التقرير إلى من قام بالإحالة.">
+			>
+			["at13"] = <
+				text = <"يوجد احتياج لمزيد من التصوير">
+				description = <"بعد القيام بالاستقصاء, تم تحديد أن هناك حاجة لمزيد من التصوير">
+			>
+			["at14"] = <
+				text = <"تم تعليق التصوير">
+				description = <"لم يُتَمَكَّن من إكمال التصوير">
+			>
+			["at15"] = <
+				text = <"تم إيقاف التصوير بشكل مفاجئ">
+				description = <"لم يتم استكمال الاستقصاء التصويري و لن يتم استكماله">
+			>
+			["at11"] = <
+				text = <"اكتمل">
+				description = <"تم إكمال الاستقصاء التصويري و تم معالجة التقرير">
+			>
+			["at16"] = <
+				text = <"*initial (en)">
+				description = <"*initial (en)">
+			>
+			["at17"] = <
+				text = <"*postponed (en)">
+				description = <"*postponed (en)">
+			>
+			["at18"] = <
+				text = <"*cancelled (en)">
+				description = <"*cancelled (en)">
+			>
+			["at19"] = <
+				text = <"*scheduled (en)">
+				description = <"*scheduled (en)">
+			>
+			["at20"] = <
+				text = <"*active (en)">
+				description = <"*active (en)">
+			>
+			["at21"] = <
+				text = <"*suspended (en)">
+				description = <"*suspended (en)">
+			>
+			["at22"] = <
+				text = <"*aborted (en)">
+				description = <"*aborted (en)">
+			>
+			["at23"] = <
+				text = <"*complete (en)">
+				description = <"*complete (en)">
+			>
+		>
+		["es-ar"] = <
+			["id1"] = <
+				text = <"Evaluación de imágenes">
+				description = <"Una acción relacionada con una evaluación por medio de una técnica de imágenes.">
+			>
+			["id2"] = <
+				text = <"Planeada">
+				description = <"La evaluación de imágenes está planeada.">
+			>
+			["id3"] = <
+				text = <"Pospuesta">
+				description = <"La evaluación de imágenes se pospone">
+			>
+			["id4"] = <
+				text = <"Cancelada">
+				description = <"La evaluación de imágenes se cancela.">
+			>
+			["id5"] = <
+				text = <"Solicitada">
+				description = <"La evaluación de imágenes ha sido solicitada">
+			>
+			["id6"] = <
+				text = <"Reserva de turno realizada">
+				description = <"La evaluación de imágenes fue agendada para una fecha y hora específica.">
+			>
+			["id7"] = <
+				text = <"Reprogramada">
+				description = <"El turno para la evaluación de imágenes fue reprogramada.">
+			>
+			["id8"] = <
+				text = <"Comenzada">
+				description = <"La evaluación de imágenes ha comenzado.">
+			>
+			["id9"] = <
+				text = <"Evaluación completa">
+				description = <"La evaluación de imágenes ha sido completada; en espera del reporte.">
+			>
+			["id10"] = <
+				text = <"Reportada">
+				description = <"La evaluación de imágenes ha sido reportada.">
+			>
+			["id11"] = <
+				text = <"Completada">
+				description = <"La evaluación de imágenes fue completada y ha sido reportada.">
+			>
+			["id12"] = <
+				text = <"Reporte comunicado">
+				description = <"La evaluación de imágenes ha sido reportada y comunicada al solicitante.">
+			>
+			["id13"] = <
+				text = <"Se requieren mas evaluaciones de imágenes">
+				description = <"El realizador de la evaluación de imágenes ha determinado que se requieren mas evaluaciones de imágenes.">
+			>
+			["id14"] = <
+				text = <"Evaluación de imágenes suspendida">
+				description = <"No se pudo completar la evaluación de imágenes.">
+			>
+			["id15"] = <
+				text = <"Evaluación de imágenes abortada">
+				description = <"La evaluación de imágenes no será completada.">
+			>
+			["at2"] = <
+				text = <"Planeada">
+				description = <"La evaluación de imágenes está planeada.">
+			>
+			["at5"] = <
+				text = <"Solicitada">
+				description = <"La evaluación de imágenes ha sido solicitada">
+			>
+			["at3"] = <
+				text = <"Pospuesta">
+				description = <"La evaluación de imágenes se pospone">
+			>
+			["at4"] = <
+				text = <"Cancelada">
+				description = <"La evaluación de imágenes se cancela.">
+			>
+			["at6"] = <
+				text = <"Reserva de turno realizada">
+				description = <"La evaluación de imágenes fue agendada para una fecha y hora específica.">
+			>
+			["at7"] = <
+				text = <"Reprogramada">
+				description = <"El turno para la evaluación de imágenes fue reprogramada.">
+			>
+			["at8"] = <
+				text = <"Comenzada">
+				description = <"La evaluación de imágenes ha comenzado.">
+			>
+			["at9"] = <
+				text = <"Evaluación completa">
+				description = <"La evaluación de imágenes ha sido completada; en espera del reporte.">
+			>
+			["at10"] = <
+				text = <"Reportada">
+				description = <"La evaluación de imágenes ha sido reportada.">
+			>
+			["at12"] = <
+				text = <"Reporte comunicado">
+				description = <"La evaluación de imágenes ha sido reportada y comunicada al solicitante.">
+			>
+			["at13"] = <
+				text = <"Se requieren mas evaluaciones de imágenes">
+				description = <"El realizador de la evaluación de imágenes ha determinado que se requieren mas evaluaciones de imágenes.">
+			>
+			["at14"] = <
+				text = <"Evaluación de imágenes suspendida">
+				description = <"No se pudo completar la evaluación de imágenes.">
+			>
+			["at15"] = <
+				text = <"Evaluación de imágenes abortada">
+				description = <"La evaluación de imágenes no será completada.">
+			>
+			["at11"] = <
+				text = <"Completada">
+				description = <"La evaluación de imágenes fue completada y ha sido reportada.">
+			>
+			["at16"] = <
+				text = <"*initial (en)">
+				description = <"*initial (en)">
+			>
+			["at17"] = <
+				text = <"*postponed (en)">
+				description = <"*postponed (en)">
+			>
+			["at18"] = <
+				text = <"*cancelled (en)">
+				description = <"*cancelled (en)">
+			>
+			["at19"] = <
+				text = <"*scheduled (en)">
+				description = <"*scheduled (en)">
+			>
+			["at20"] = <
+				text = <"*active (en)">
+				description = <"*active (en)">
+			>
+			["at21"] = <
+				text = <"*suspended (en)">
+				description = <"*suspended (en)">
+			>
+			["at22"] = <
+				text = <"*aborted (en)">
+				description = <"*aborted (en)">
+			>
+			["at23"] = <
+				text = <"*complete (en)">
+				description = <"*complete (en)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at16"] = <http://openehr.org/id/524>
+			["at17"] = <http://openehr.org/id/527>
+			["at18"] = <http://openehr.org/id/528>
+			["at19"] = <http://openehr.org/id/529>
+			["at20"] = <http://openehr.org/id/245>
+			["at21"] = <http://openehr.org/id/530>
+			["at22"] = <http://openehr.org/id/531>
+			["at23"] = <http://openehr.org/id/532>
+		>
+	>

@@ -1,0 +1,2041 @@
+﻿archetype (adl_version=1.4; uid=05832949-775d-46ec-99f6-9f5b041d1fac)
+	openEHR-EHR-CLUSTER.exam-tympanic_membrane.v0
+specialise
+	openEHR-EHR-CLUSTER.exam.v2
+
+concept
+	[at0000.1]	-- Examination of a tympanic membrane
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Nina Schewe">
+				["organisation"] = <"Medizinische Hochschule Hannover">
+				["email"] = <"schewe.nina@mh-hannover.de">
+			>
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Erik Sundvall">
+				["organisation"] = <"Region Östergötland + Linköping University">
+				["email"] = <"erik.sundvall@regionostergotland.se">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Silje Ljosland Bakke">
+				["organisation"] = <"Nasjonal IKT HF">
+			>
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Adriana Kitajima">
+				["organisation"] = <"Hospital Alemão Oswaldo Cruz - HAOC">
+				["email"] = <"adrianakitajima@gmail.com">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2012-09-03">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"*To record the findings observed during the physical examination of a body system or anatomical structure. (en)">
+			use = <"*Use to record the observed findings during the physical examination of a body system or anatomical structure.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam or the \"Procedure detail\" SLOT within the ACTION.procedure archetype, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Specialisations of this archetype can be used to record examination findings for identified body systems or anatomical structures. If there is no appropriate specialisation available, use this archetype and identify the system or structure being examined using the 'System or structure examined' data element and the location on the body using the 'Body site' data element or the 'Structured body site' SLOT.
+
+Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			misuse = <"*Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"*To record the findings observed during the physical examination of a body system or anatomical structure. (en)">
+			use = <"*Use to record the observed findings during the physical examination of a body system or anatomical structure.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam or the \"Procedure detail\" SLOT within the ACTION.procedure archetype, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Specialisations of this archetype can be used to record examination findings for identified body systems or anatomical structures. If there is no appropriate specialisation available, use this archetype and identify the system or structure being examined using the 'System or structure examined' data element and the location on the body using the 'Body site' data element or the 'Structured body site' SLOT.
+
+Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"fynd, undersökningsfynd, fysisk undersökning, u.a., utan anmärkning", ...>
+			misuse = <"*Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere en fritekstbeskrivelse og klinisk tolkning av observerte funn ved fysisk undersøkelse av et organsystem eller anatomisk struktur.">
+			use = <"Brukes til å registrere en fritekstbeskrivelse og klinisk tolkning av observerte funn ved fysisk undersøkelse av et spesifisert organsystem eller anatomisk struktur. Denne arketypen består kun av kjerneelementene av mønsteret for undersøkelser, og kan utvides ved hjelp av andre CLUSTER-arketyper eller brukes som grunnlag for undersøkelsesarketyper for spesifikke kroppssystemer eller anatomiske strukturer. 
+
+Eksempler på detaljer som kan beskrives ved hjelp av dette CLUSTER er inspeksjon, palpasjon, auskultasjon, perkusjon og bevegelser i kroppssystemer eller anatomiske strukturer. Undersøkelsen kan støttes av enkle hjelpemidler som stetoskop, otoskop eller reflekshammer. Også funn ved mer avanserte undersøkelser kan registreres her, som ved endoskopi. I de tilfellene vil informasjon om hvilket hjelpemiddel eller utstyr brukt bli registrert i OBSERVATION.exam, elementet \"Detaljer om medisinsk utstyr\", i ACTION.procedure \"Prosedyredetaljer\" eller tilsvarende i egnet ENTRY- eller ACTION-arketype.
+
+Arketypen er laget spesifikt for å brukes i \"Undersøkelsesdetaljer\"-SLOTet i arketypen OBSERVATION.exam, men kan også brukes innen andre ENTRY- og CLUSTER-arketyper der det er klinisk passende.
+
+Denne arketypen kan benyttes for alle typer undersøkelser, alt fra enkle undersøkelser som undersøkelse av et hudområde, inspeksjon av ører og til artroskopi av et kne.
+
+Kan for eksempel nøstes i SLOTet \"Undersøkelsesdetaljer\" i arketypen OBSERVATION.exam (Norsk Funn ved fysisk undersøkelse) for å registrere ytterligere strukturerte funn ved fysiske undersøkelser.
+
+Arketypen CLUSTER.exclusion_exam kan nøstes i SLOTet \"Undersøkelse ikke utført\" der en har behov for å registrere informasjon om at en undersøkelse ikke ble utført.
+
+Brukes for å videreføre fritekstbeskrivelser av kliniske funn fra tidligere systemer inn i et arketypeformat, ved å bruke elementet \"Klinisk beskrivelse\".">
+			misuse = <"Skal ikke brukes til å ta opp frittstående klinisk observasjoner eller testresultater - bruk spesifikke OBSERVATION arketyper, for eksempel OBSERVATION.head_circumference eller OBSERVATION.glasgow_coma_scale.
+
+Skal ikke brukes til å ta opp anamnese - bruk da spesifikke OBSERVATION og CLUSTER arketyper. For eksempel OBSERVATION.story og CLUSTER.symptom_sign.">
+			copyright = <"© openEHR Foundation">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"*To record the findings observed during the physical examination of a body system or anatomical structure. (en)">
+			use = <"*Use to record the observed findings during the physical examination of a body system or anatomical structure.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam or the \"Procedure detail\" SLOT within the ACTION.procedure archetype, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Specialisations of this archetype can be used to record examination findings for identified body systems or anatomical structures. If there is no appropriate specialisation available, use this archetype and identify the system or structure being examined using the 'System or structure examined' data element and the location on the body using the 'Body site' data element or the 'Structured body site' SLOT.
+
+Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			misuse = <"*Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a narrative description and clinical interpretation of the findings observed during the physical examination of a tympanic membrane.">
+			use = <"Use to record a narrative description and clinical interpretation of the findings observed during the physical examination of a tympanic membrane.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the CLUSTER.exam-external_auditory_canal or OBSERVATION.exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Examination findings' SLOT to record additional structured physical examination findings - for example, the middle ear or the Tos or Sade classifications for retraction.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element.">
+			misuse = <"Not to be used for recording data not related to other parts of the ear such as the external ear or middle ear - use the specific archetypes, CLUSTER.exam-ear and CLUSTER.exam-middle_ear.
+
+Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.">
+			copyright = <"© Northern Territory Department of Health (Australia), openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)", "SB Bhattacharyya, Sudisa Consultancy Services, India", "Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway", "Shahla Foozonkhah, Iran ministry of health and education, Iran", "Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom (openEHR Editor)", "Mikkel Gaup Grønmo, FSE, Helse Nord, Norway (Nasjonal IKT redaktør)", "Ingrid Heitmann, Oslo universitetssykehus HF, Norway", "Hilde Hollås, DIPS ASA, Norway", "Evelyn Hovenga, EJSH Consulting, Australia", "Lars Ivar Mehlum, Helse Bergen HF, Norway", "Sabine Leh, Haukeland University Hospital, Department of Pathology, Norway", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom", "Lars Morgan Karlsen, DIPS ASA, Norway", "Bjørn Næss, DIPS ASA, Norway", "Andrej Orel, Marand d.o.o., Slovenia", "Vladimir Pizzo, Hospital Sírio Libanês, Brazil", "Jussara Rotzsch, UNB, Brazil", "Anoop Shah, University College London, United Kingdom", "Line Silsand, Universitetssykehuset i Nord-Norge, Norway", "Norwegian Review Summary, Nasjonal IKT HF, Norway", "Nyree Taylor, Ocean Informatics, Australia (openEHR Editor)", "Rowan Thomas, St. Vincent's Hospital Melbourne, Australia", "Jon Tysdahl, Furst medlab AS, Norway", "John Tore Valand, Helse Bergen, Norway (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Derived from: Examination of tympanic membrane, Draft archetype [Internet]. Australian Digital Health Agency (NEHTA), ADHA Clinical Knowledge Manager. Authored: 2012 Sep 03. Available at: hhttp://dcm.nehta.org.au/ckm#showArchetype_1013.1.1086_17 (discontinued).">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"8019AE6C78227D79356A0B23F7270B18">
+		["build_uid"] = <"aa210d0b-45e5-4ab5-a88e-30faf6849d07">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {    -- Examination of a tympanic membrane
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001.1] matches {    -- System or structure examined
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.1,    -- Left tympanic membrane
+							at0.2]    -- Right tympanic membrane
+						}
+					}
+				}
+			}
+			ELEMENT[at0012] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0011] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2/}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {    -- Clinical description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0004.1] occurrences matches {0..*} matches {    -- Examination findings
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.sade\.v0|openEHR-EHR-CLUSTER\.exam-middle_ear\.v0|openEHR-EHR-CLUSTER\.tos\.v0/}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Multimedia representation
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Clinical interpretation
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0008] occurrences matches {0..*} matches {    -- Examination not done
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0.3] occurrences matches {0..1} matches {    -- View
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.4,    -- Adequate
+							at0.5,    -- Compromised
+							at0.6]    -- Total occlusion
+						}
+					}
+				}
+			}
+			ELEMENT[at0.7] occurrences matches {0..1} matches {    -- Reason for occlusion
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.19] occurrences matches {0..1} matches {    -- Appearance
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.20,    -- Translucent
+							at0.21]    -- Opaque
+						}
+					}
+				}
+			}
+			ELEMENT[at0.22] occurrences matches {0..1} matches {    -- Colour
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.15] occurrences matches {0..1} matches {    -- Membrane intact?
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.16,    -- Intact
+							at0.17,    -- Indeterminate
+							at0.18]    -- Perforated
+						}
+					}
+				}
+			}
+			ELEMENT[at0.23] occurrences matches {0..*} matches {    -- Surface features
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.8] occurrences matches {0..1} matches {    -- Ventilation tube present?
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.9,    -- Present
+							at0.10]    -- Absent
+						}
+					}
+				}
+			}
+			ELEMENT[at0.11] occurrences matches {0..1} matches {    -- Ventilation tube placement
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.12,    -- In situ
+							at0.13,    -- Partially extruded
+							at0.14]    -- Extruded - remains in canal
+						}
+					}
+				}
+			}
+			ELEMENT[at0.24] occurrences matches {0..*} matches {    -- Location of tympanosclerosis
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.31] occurrences matches {0..1} matches {    -- Fluid level presence
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.32,    -- Present
+							at0.33]    -- Absent
+						}
+					}
+				}
+			}
+			ELEMENT[at0.34] occurrences matches {0..1} matches {    -- Fluid level description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.35] occurrences matches {0..*} matches {    -- Mobility
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.36,    -- Immobile
+							at0.37,    -- Hypomobile
+							at0.38,    -- Mobile
+							at0.39,    -- Hypermobile
+							at0.40]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.25] occurrences matches {0..1} matches {    -- Position of tympanic membrane
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.26,    -- Neutral
+							at0.27,    -- Retracted
+							at0.28,    -- Bulging
+							at0.29]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.30] occurrences matches {0..1} matches {    -- Retraction description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.41] occurrences matches {0..1} matches {    -- Perforation description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.42] occurrences matches {0..1} matches {    -- Perforation size
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.43,    -- Pinhole
+							at0.44,    -- Intermediate
+							at0.45,    -- Subtotal
+							at0.46]    -- Total
+						}
+					}
+				}
+			}
+			ELEMENT[at0.47] occurrences matches {0..1} matches {    -- Intermediate estimation
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.48,    -- <40%
+							at0.49]    -- >40%
+						}
+					}
+				}
+			}
+			ELEMENT[at0.50] occurrences matches {0..1} matches {    -- Length of perforation
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::122]>
+						list = <
+							["1"] = <
+								units = <"mm">
+								magnitude = <|>=0.0|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0.51] occurrences matches {0..1} matches {    -- Width of perforation
+				value matches {
+					DV_QUANTITY matches {*}
+				}
+			}
+			ELEMENT[at0.52] occurrences matches {0..1} matches {    -- Pars flaccida vs pars tensa?
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.53,    -- Pars flaccida
+							at0.54]    -- Pars tensa
+						}
+					}
+				}
+			}
+			ELEMENT[at0.55] occurrences matches {0..1} matches {    -- Marginal vs central?
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.56,    -- Marginal
+							at0.57]    -- Central
+						}
+					}
+				}
+			}
+			ELEMENT[at0.58] occurrences matches {0..1} matches {    -- Anterior?
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.59,    -- Present
+							at0.60]    -- Absent
+						}
+					}
+				}
+			}
+			ELEMENT[at0.61] occurrences matches {0..1} matches {    -- Edge
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Examination of a tympanic membrane">
+					description = <"Findings observed during the physical examination of a tympanic membrane.">
+				>
+				["at0001.1"] = <
+					text = <"System or structure examined">
+					description = <"Identification of the examined body system or anatomical structure.">
+					comment = <"Coding of the system or structure examined with a terminology is preferred, where possible.">
+				>
+				["at0.1"] = <
+					text = <"Left tympanic membrane">
+					description = <"The left ear drum was examined.">
+				>
+				["at0.2"] = <
+					text = <"Right tympanic membrane">
+					description = <"The right ear drum was examined.">
+				>
+				["at0.3"] = <
+					text = <"View">
+					description = <"Description about the examiner's view of the tympanic membrane.">
+				>
+				["at0.4"] = <
+					text = <"Adequate">
+					description = <"The tympanic membrane was clearly visualised and the duration of view was sufficient; the clinical opinion of the state of the tympanic membrane is based on adequate information.">
+				>
+				["at0.5"] = <
+					text = <"Compromised">
+					description = <"The tympanic membrane was not clearly visualised and/or the duration of view was limited; the clinical opinion of the state of the tympanic membrane is based on limited information.">
+				>
+				["at0.6"] = <
+					text = <"Total occlusion">
+					description = <"The tympanic membrane was not visualised; a clinical opinion of the state of the tympanic membrane could not be formed.">
+				>
+				["at0.7"] = <
+					text = <"Reason for occlusion">
+					description = <"Narrative description of the reason for occlusion of view of the tympanic membrane.">
+					comment = <"For example: soft wax or a foreign body was present.">
+				>
+				["at0.8"] = <
+					text = <"Ventilation tube present?">
+					description = <"Is a ventilation tube observed in the tympanic membrane?">
+					comment = <"There is value in identifying the presence or absence of ventilation tubes in all examinations if ventilation tubes have previously been inserted. Please note: there is little value in recording the absence of ventilation tubes if they have never been inserted, unless it is not known if there has been previous insertion of ventilation tubes.">
+				>
+				["at0.9"] = <
+					text = <"Present">
+					description = <"A ventilation tube is observed in the tympanic membrane or ear canal.">
+				>
+				["at0.10"] = <
+					text = <"Absent">
+					description = <"A ventilation tube is not observed in the tympanic membrane or ear canal.">
+				>
+				["at0.11"] = <
+					text = <"Ventilation tube placement">
+					description = <"Observed placement of the ventilation tube (or grommet) in the tympanic membrane or the auditory canal.">
+					comment = <"This data element is redundant if ventilation tubes have been recorded as absent.">
+				>
+				["at0.12"] = <
+					text = <"In situ">
+					description = <"The ventilation tube is located in situ in the tympanic membrane.">
+				>
+				["at0.13"] = <
+					text = <"Partially extruded">
+					description = <"The ventilation tube is partially extruded from it's original position in the tympanic membrane.">
+				>
+				["at0.14"] = <
+					text = <"Extruded - remains in canal">
+					description = <"The ventilation tube has been extruded from the tympanic membrane but is visualised within the external auditory canal.">
+				>
+				["at0.15"] = <
+					text = <"Membrane intact?">
+					description = <"Is the tympanic membrane intact?">
+				>
+				["at0.16"] = <
+					text = <"Intact">
+					description = <"The tympanic membrane appears intact.">
+				>
+				["at0.17"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine if the tympanic membrane is intact or perforated.">
+				>
+				["at0.18"] = <
+					text = <"Perforated">
+					description = <"A perforation is observed in the tympanic membrane.">
+				>
+				["at0.19"] = <
+					text = <"Appearance">
+					description = <"Category describing the appearance of the tympanic membrane.">
+					comment = <"In most situations, this data element would only be recorded if the tympanic membrane is intact.">
+				>
+				["at0.20"] = <
+					text = <"Translucent">
+					description = <"The tympanic membrane appears translucent and healthy.">
+				>
+				["at0.21"] = <
+					text = <"Opaque">
+					description = <"The tympanic membrane appears dull and opaque.">
+				>
+				["at0.22"] = <
+					text = <"Colour">
+					description = <"Description of the overall colour of the tympanic membrane.">
+					comment = <"For example: red, bluish, or yellow.">
+				>
+				["at0.23"] = <
+					text = <"Surface features">
+					description = <"Features observed on the surface of the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences.">
+				>
+				["at0.24"] = <
+					text = <"Location of tympanosclerosis">
+					description = <"Description of the location of any tympanosclerosis observed on the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences for multiple sites.">
+				>
+				["at0.25"] = <
+					text = <"Position of tympanic membrane">
+					description = <"Description of the position of the tympanic membrane.">
+				>
+				["at0.26"] = <
+					text = <"Neutral">
+					description = <"The tympanic membrane is in a normal, neutral position - neither bulging or retracted.">
+				>
+				["at0.27"] = <
+					text = <"Retracted">
+					description = <"The tympanic membrane appears to be retracted.">
+				>
+				["at0.28"] = <
+					text = <"Bulging">
+					description = <"The tympanic membrane appears to be bulging.">
+				>
+				["at0.29"] = <
+					text = <"Indeterminate">
+					description = <"The position of the tympanic membrane is is not able to be determined.">
+				>
+				["at0.30"] = <
+					text = <"Retraction description">
+					description = <"Narrative description of the retraction of the tympanic membrane.">
+				>
+				["at0000"] = <
+					text = <"Examination findings">
+					description = <"Findings observed during the physical examination of a body system or anatomical structure.">
+				>
+				["at0006"] = <
+					text = <"Clinical interpretation">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of the physical examination findings.">
+					comment = <"For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible.">
+				>
+				["at0004.1"] = <
+					text = <"Examination findings">
+					description = <"Structured details about the physical examination findings.">
+				>
+				["at0.31"] = <
+					text = <"Fluid level presence">
+					description = <"Finding of a fluid level behind the tympanic membrane.">
+				>
+				["at0.32"] = <
+					text = <"Present">
+					description = <"A fluid level is observed behind the tympanic membrane.">
+				>
+				["at0.33"] = <
+					text = <"Absent">
+					description = <"A fluid level is not observed behind the tympanic membrane.">
+				>
+				["at0.34"] = <
+					text = <"Fluid level description">
+					description = <"Narrative description of the fluid level and other related features observed behind the tympanic membrane.">
+					comment = <"For example: presence of bubbles.">
+				>
+				["at0.35"] = <
+					text = <"Mobility">
+					description = <"Description of mobility of the tympanic membrane.">
+					comment = <"Occurrences has been set to 0..* to enable multiple methods of observing mobility to be recorded. For example: 'Mobility (Pneumatic Otoscopy'; or 'Mobility (Valsalva) with Mobile or Indeterminate as only appropriate value set.">
+				>
+				["at0.36"] = <
+					text = <"Immobile">
+					description = <"Minimal or no movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.37"] = <
+					text = <"Hypomobile">
+					description = <"Less than 1mm inward (medial) movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.38"] = <
+					text = <"Mobile">
+					description = <"Crisp, inward (medial) movement (approx 1mm) when positive pressure is applied.">
+				>
+				["at0.39"] = <
+					text = <"Hypermobile">
+					description = <"Exaggerated movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.40"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine the amount of movement of the tympanic membrane.">
+				>
+				["at0.41"] = <
+					text = <"Perforation description">
+					description = <"Narrative description of the perforation of the tympanic membrane.">
+				>
+				["at0.42"] = <
+					text = <"Perforation size">
+					description = <"Estimation of the size of the tympanic membrane perforation, based on anatomical landmarks.">
+					comment = <"Many clinicians record perforations between the well defined 'pinhole' and 'subtotal' perforations using a variety of terms with inconsistent usage and definitions, such as small, medium and large. 'Intermediate' has been proposed as a means to minimise inter-clinician variability for documenting the size of all perforations falling between the 'pinhole' and 'subtotal' definitions. If more detail is required, then measurement of the perforation should be recorded.">
+				>
+				["at0.43"] = <
+					text = <"Pinhole">
+					description = <"The perforation is the size of a pinhole.">
+				>
+				["at0.44"] = <
+					text = <"Intermediate">
+					description = <"The perforation is larger than a pinhole but smaller than a subtotal perforation.">
+				>
+				["at0.45"] = <
+					text = <"Subtotal">
+					description = <"The perforation is subtotal: the pars tensa is absent but the perforation does not include the annulus.">
+				>
+				["at0.46"] = <
+					text = <"Total">
+					description = <"The tympanic membrane is essentially absent.">
+				>
+				["at0.47"] = <
+					text = <"Intermediate estimation">
+					description = <"Qualification about the size of an intermediate perforation.">
+				>
+				["at0.48"] = <
+					text = <"<40%">
+					description = <"The intermediate perforation is less than 40% of the area of the tympanic membrane.">
+				>
+				["at0.49"] = <
+					text = <">40%">
+					description = <"The intermediate perforation is greater than 40% of the area of the tympanic membrane.">
+				>
+				["at0.50"] = <
+					text = <"Length of perforation">
+					description = <"Direct measurement of the longest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.51"] = <
+					text = <"Width of perforation">
+					description = <"Direct measurement of the shortest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.52"] = <
+					text = <"Pars flaccida vs pars tensa?">
+					description = <"Description of the region of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located in the Pars flaccida and may be potentially unsafe. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.53"] = <
+					text = <"Pars flaccida">
+					description = <"The perforation is located in the pars flaccida.">
+				>
+				["at0.54"] = <
+					text = <"Pars tensa">
+					description = <"The perforation is located in the pars tensa.">
+				>
+				["at0.55"] = <
+					text = <"Marginal vs central?">
+					description = <"Location of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located marginally, and therefore might be clinically unsafe. If 'Total' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.56"] = <
+					text = <"Marginal">
+					description = <"The perforation involves the annulus of the tympanic membrane.">
+				>
+				["at0.57"] = <
+					text = <"Central">
+					description = <"The perforation is not involving the annulus and is bounded on all sides by the remnant of the tympanic membrane.">
+				>
+				["at0.58"] = <
+					text = <"Anterior?">
+					description = <"Is an anterior perforation present?">
+					comment = <"To document the presence of perforation in the anterior portions of the pars tensa, which can be more difficult to manage than perforations elsewhere. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.59"] = <
+					text = <"Present">
+					description = <"An anterior perforation is present in the pars tensa.">
+				>
+				["at0.60"] = <
+					text = <"Absent">
+					description = <"An anterior perforation is not present in the pars tensa.">
+				>
+				["at0.61"] = <
+					text = <"Edge">
+					description = <"Narrative description of the edge of the perforation.">
+				>
+				["at0001"] = <
+					text = <"System or structure examined">
+					description = <"Identification of the examined body system or anatomical structure.">
+					comment = <"Coding of the system or structure examined with a terminology is preferred, where possible.">
+				>
+				["at0003"] = <
+					text = <"Clinical description">
+					description = <"Narrative description of the overall findings observed during the physical examination.">
+				>
+				["at0004"] = <
+					text = <"Examination findings">
+					description = <"Structured details about the physical examination findings.">
+				>
+				["at0005"] = <
+					text = <"Multimedia representation">
+					description = <"Digital image, video or diagram representing the physical examination findings.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the physical examination findings, not captured in other fields.">
+				>
+				["at0008"] = <
+					text = <"Examination not done">
+					description = <"Details to explicitly record that this examination was not performed.">
+				>
+				["at0011"] = <
+					text = <"Structured body site">
+					description = <"A structured description of the area of the body under examination.">
+					comment = <"If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.">
+				>
+				["at0012"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body under examination.">
+					comment = <"If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Examination of a tympanic membrane (en)">
+					description = <"Funn ved fysisk undersøkelse av et organsystem eller anatomisk struktur.">
+				>
+				["at0001.1"] = <
+					text = <"Undersøkt organsystem eller struktur">
+					description = <"Identifisering av det undersøkte organsystemet eller anatomiske strukturen.">
+					comment = <"*Coding of the system or structure examined with a terminology is preferred, where possible. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Left tympanic membrane (en)">
+					description = <"*The left ear drum was examined. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Right tympanic membrane (en)">
+					description = <"*The right ear drum was examined. (en)">
+				>
+				["at0.3"] = <
+					text = <"*View (en)">
+					description = <"*Description about the examiner's view of the tympanic membrane. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Adequate (en)">
+					description = <"*The tympanic membrane was clearly visualised and the duration of view was sufficient; the clinical opinion of the state of the tympanic membrane is based on adequate information. (en)">
+				>
+				["at0.5"] = <
+					text = <"*Compromised (en)">
+					description = <"*The tympanic membrane was not clearly visualised and/or the duration of view was limited; the clinical opinion of the state of the tympanic membrane is based on limited information. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Total occlusion (en)">
+					description = <"*The tympanic membrane was not visualised; a clinical opinion of the state of the tympanic membrane could not be formed. (en)">
+				>
+				["at0.7"] = <
+					text = <"*Reason for occlusion (en)">
+					description = <"*Narrative description of the reason for occlusion of view of the tympanic membrane. (en)">
+					comment = <"*For example: soft wax or a foreign body was present. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Ventilation tube present? (en)">
+					description = <"*Is a ventilation tube observed in the tympanic membrane? (en)">
+					comment = <"*There is value in identifying the presence or absence of ventilation tubes in all examinations if ventilation tubes have previously been inserted. Please note: there is little value in recording the absence of ventilation tubes if they have never been inserted, unless it is not known if there has been previous insertion of ventilation tubes. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Present (en)">
+					description = <"*A ventilation tube is observed in the tympanic membrane or ear canal. (en)">
+				>
+				["at0.10"] = <
+					text = <"*Absent (en)">
+					description = <"*A ventilation tube is not observed in the tympanic membrane or ear canal. (en)">
+				>
+				["at0.11"] = <
+					text = <"*Ventilation tube placement (en)">
+					description = <"*Observed placement of the ventilation tube (or grommet) in the tympanic membrane or the auditory canal. (en)">
+					comment = <"*This data element is redundant if ventilation tubes have been recorded as absent. (en)">
+				>
+				["at0.12"] = <
+					text = <"*In situ (en)">
+					description = <"*The ventilation tube is located in situ in the tympanic membrane. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Partially extruded (en)">
+					description = <"*The ventilation tube is partially extruded from it's original position in the tympanic membrane. (en)">
+				>
+				["at0.14"] = <
+					text = <"*Extruded - remains in canal (en)">
+					description = <"*The ventilation tube has been extruded from the tympanic membrane but is visualised within the external auditory canal. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Membrane intact? (en)">
+					description = <"*Is the tympanic membrane intact? (en)">
+				>
+				["at0.16"] = <
+					text = <"*Intact (en)">
+					description = <"*The tympanic membrane appears intact. (en)">
+				>
+				["at0.17"] = <
+					text = <"*Indeterminate (en)">
+					description = <"*It is not possible to determine if the tympanic membrane is intact or perforated. (en)">
+				>
+				["at0.18"] = <
+					text = <"*Perforated (en)">
+					description = <"*A perforation is observed in the tympanic membrane. (en)">
+				>
+				["at0.19"] = <
+					text = <"*Appearance (en)">
+					description = <"*Category describing the appearance of the tympanic membrane. (en)">
+					comment = <"*In most situations, this data element would only be recorded if the tympanic membrane is intact. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Translucent (en)">
+					description = <"*The tympanic membrane appears translucent and healthy. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Opaque (en)">
+					description = <"*The tympanic membrane appears dull and opaque. (en)">
+				>
+				["at0.22"] = <
+					text = <"*Colour (en)">
+					description = <"*Description of the overall colour of the tympanic membrane. (en)">
+					comment = <"*For example: red, bluish, or yellow. (en)">
+				>
+				["at0.23"] = <
+					text = <"*Surface features (en)">
+					description = <"*Features observed on the surface of the tympanic membrane. (en)">
+					comment = <"*May be coded with an external terminology, if desired, and be expressed as multiple occurrences. (en)">
+				>
+				["at0.24"] = <
+					text = <"*Location of tympanosclerosis (en)">
+					description = <"*Description of the location of any tympanosclerosis observed on the tympanic membrane. (en)">
+					comment = <"*May be coded with an external terminology, if desired, and be expressed as multiple occurrences for multiple sites. (en)">
+				>
+				["at0.25"] = <
+					text = <"*Position of tympanic membrane (en)">
+					description = <"*Description of the position of the tympanic membrane. (en)">
+				>
+				["at0.26"] = <
+					text = <"*Neutral (en)">
+					description = <"*The tympanic membrane is in a normal, neutral position - neither bulging or retracted. (en)">
+				>
+				["at0.27"] = <
+					text = <"*Retracted (en)">
+					description = <"*The tympanic membrane appears to be retracted. (en)">
+				>
+				["at0.28"] = <
+					text = <"*Bulging (en)">
+					description = <"*The tympanic membrane appears to be bulging. (en)">
+				>
+				["at0.29"] = <
+					text = <"*Indeterminate (en)">
+					description = <"*The position of the tympanic membrane is is not able to be determined. (en)">
+				>
+				["at0.30"] = <
+					text = <"*Retraction description (en)">
+					description = <"*Narrative description of the retraction of the tympanic membrane. (en)">
+				>
+				["at0001"] = <
+					text = <"Undersøkt organsystem eller struktur">
+					description = <"Identifisering av det undersøkte organsystemet eller den anatomiske strukturen.">
+					comment = <"Det anbefales å kode organsystem eller den anatomiske strukturen med en terminologi dersom mulig.">
+				>
+				["at0006"] = <
+					text = <"Fortolkning">
+					description = <"Enkelt ord, setning, frase eller kort beskrivelse som representerer den kliniske betydning og viktigheten av funnene ved den fysiske undersøkelsen.">
+					comment = <"For eksempel \"Uten anmerkning\" eller \"Moderat inflammasjon\". Det anbefales å kode \"Fortolkning\" med en terminologi dersom mulig.">
+				>
+				["at0011"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"Angivelse av en strukturert anatomisk lokalisering av det undersøkte organsystemet eller den anatomiske strukturen.">
+					comment = <"Hvis anatomisk lokalisasjon er entydig identifisert i elementet \"Undersøkt organsystem eller struktur\" er dette SLOT'et ikke nødvendig å benytte.">
+				>
+				["at0012"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"Identifisering av et enkelt fysisk sted enten på eller i menneskekroppen.">
+					comment = <"Dersom den anatomiske lokaliseringen allerede er identifisert i elementet \"Undersøkt organsystem eller struktur\" er dette dataelementet overflødig.">
+				>
+				["at0004.1"] = <
+					text = <"Spesifikke funn">
+					description = <"Ytterligere strukturerte detaljer om undersøkelsesfunnene.">
+				>
+				["at0.31"] = <
+					text = <"*Fluid level presence (en)">
+					description = <"*Finding of a fluid level behind the tympanic membrane. (en)">
+				>
+				["at0.32"] = <
+					text = <"*Present (en)">
+					description = <"*A fluid level is observed behind the tympanic membrane. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Absent (en)">
+					description = <"*A fluid level is not observed behind the tympanic membrane. (en)">
+				>
+				["at0.34"] = <
+					text = <"*Fluid level description (en)">
+					description = <"*Narrative description of the fluid level and other related features observed behind the tympanic membrane. (en)">
+					comment = <"*For example: presence of bubbles. (en)">
+				>
+				["at0.35"] = <
+					text = <"*Mobility (en)">
+					description = <"*Description of mobility of the tympanic membrane. (en)">
+					comment = <"*Occurrences has been set to 0..* to enable multiple methods of observing mobility to be recorded. For example: 'Mobility (Pneumatic Otoscopy'; or 'Mobility (Valsalva) with Mobile or Indeterminate as only appropriate value set. (en)">
+				>
+				["at0.36"] = <
+					text = <"*Immobile (en)">
+					description = <"*Minimal or no movement of the tympanic membrane is observed when positive pressure is applied. (en)">
+				>
+				["at0.37"] = <
+					text = <"*Hypomobile (en)">
+					description = <"*Less than 1mm inward (medial) movement of the tympanic membrane is observed when positive pressure is applied. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Mobile (en)">
+					description = <"*Crisp, inward (medial) movement (approx 1mm) when positive pressure is applied. (en)">
+				>
+				["at0.39"] = <
+					text = <"*Hypermobile (en)">
+					description = <"*Exaggerated movement of the tympanic membrane is observed when positive pressure is applied. (en)">
+				>
+				["at0.40"] = <
+					text = <"*Indeterminate (en)">
+					description = <"*It is not possible to determine the amount of movement of the tympanic membrane. (en)">
+				>
+				["at0.41"] = <
+					text = <"*Perforation description (en)">
+					description = <"*Narrative description of the perforation of the tympanic membrane. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Perforation size (en)">
+					description = <"*Estimation of the size of the tympanic membrane perforation, based on anatomical landmarks. (en)">
+					comment = <"*Many clinicians record perforations between the well defined 'pinhole' and 'subtotal' perforations using a variety of terms with inconsistent usage and definitions, such as small, medium and large. 'Intermediate' has been proposed as a means to minimise inter-clinician variability for documenting the size of all perforations falling between the 'pinhole' and 'subtotal' definitions. If more detail is required, then measurement of the perforation should be recorded. (en)">
+				>
+				["at0.43"] = <
+					text = <"*Pinhole (en)">
+					description = <"*The perforation is the size of a pinhole. (en)">
+				>
+				["at0.44"] = <
+					text = <"*Intermediate (en)">
+					description = <"*The perforation is larger than a pinhole but smaller than a subtotal perforation. (en)">
+				>
+				["at0.45"] = <
+					text = <"*Subtotal (en)">
+					description = <"*The perforation is subtotal: the pars tensa is absent but the perforation does not include the annulus. (en)">
+				>
+				["at0.46"] = <
+					text = <"*Total (en)">
+					description = <"*The tympanic membrane is essentially absent. (en)">
+				>
+				["at0.47"] = <
+					text = <"*Intermediate estimation (en)">
+					description = <"*Qualification about the size of an intermediate perforation. (en)">
+				>
+				["at0.48"] = <
+					text = <"*<40% (en)">
+					description = <"*The intermediate perforation is less than 40% of the area of the tympanic membrane. (en)">
+				>
+				["at0.49"] = <
+					text = <"*>40% (en)">
+					description = <"*The intermediate perforation is greater than 40% of the area of the tympanic membrane. (en)">
+				>
+				["at0.50"] = <
+					text = <"*Length of perforation (en)">
+					description = <"*Direct measurement of the longest axis of the perforation. (en)">
+					comment = <"*Usually measured from a photograph. (en)">
+				>
+				["at0.51"] = <
+					text = <"*Width of perforation (en)">
+					description = <"*Direct measurement of the shortest axis of the perforation. (en)">
+					comment = <"*Usually measured from a photograph. (en)">
+				>
+				["at0.52"] = <
+					text = <"*Pars flaccida vs pars tensa? (en)">
+					description = <"*Description of the region of the tympanic membrane perforation. (en)">
+					comment = <"*To document explicitly whether the perforation is located in the Pars flaccida and may be potentially unsafe. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant. (en)">
+				>
+				["at0.53"] = <
+					text = <"*Pars flaccida (en)">
+					description = <"*The perforation is located in the pars flaccida. (en)">
+				>
+				["at0.54"] = <
+					text = <"*Pars tensa (en)">
+					description = <"*The perforation is located in the pars tensa. (en)">
+				>
+				["at0.55"] = <
+					text = <"*Marginal vs central? (en)">
+					description = <"*Location of the tympanic membrane perforation. (en)">
+					comment = <"*To document explicitly whether the perforation is located marginally, and therefore might be clinically unsafe. If 'Total' is selected in 'Estimation of Size' data element then this data element becomes redundant. (en)">
+				>
+				["at0.56"] = <
+					text = <"*Marginal (en)">
+					description = <"*The perforation involves the annulus of the tympanic membrane. (en)">
+				>
+				["at0.57"] = <
+					text = <"*Central (en)">
+					description = <"*The perforation is not involving the annulus and is bounded on all sides by the remnant of the tympanic membrane. (en)">
+				>
+				["at0.58"] = <
+					text = <"*Anterior? (en)">
+					description = <"*Is an anterior perforation present? (en)">
+					comment = <"*To document the presence of perforation in the anterior portions of the pars tensa, which can be more difficult to manage than perforations elsewhere. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant. (en)">
+				>
+				["at0.59"] = <
+					text = <"*Present (en)">
+					description = <"*An anterior perforation is present in the pars tensa. (en)">
+				>
+				["at0.60"] = <
+					text = <"*Absent (en)">
+					description = <"*An anterior perforation is not present in the pars tensa. (en)">
+				>
+				["at0.61"] = <
+					text = <"*Edge (en)">
+					description = <"*Narrative description of the edge of the perforation. (en)">
+				>
+				["at0000"] = <
+					text = <"Undersøkelsesfunn">
+					description = <"Funn ved fysisk undersøkelse av et organsystem eller anatomisk struktur.">
+				>
+				["at0003"] = <
+					text = <"Klinisk beskrivelse">
+					description = <"Fritekstbeskrivelse av de overordnede funnene ved den fysiske undersøkelsen.">
+				>
+				["at0004"] = <
+					text = <"Spesifikke funn">
+					description = <"Ytterligere strukturerte detaljer om undersøkelsesfunnene.">
+				>
+				["at0005"] = <
+					text = <"Multimediarepresentasjon">
+					description = <"Digitale bilder, video eller diagram som representerer undersøkelsesfunnene.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn ved undersøkelsen, som ikke dekkes av andre elementer.">
+				>
+				["at0008"] = <
+					text = <"Undersøkelse ikke utført">
+					description = <"Detaljer for å eksplisitt registrere at denne undersøkelsen ikke ble utført.">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Resultados do exame">
+					description = <"Constatações observadas durante o exame físico de um sistema corporal ou estrutura anatômica.">
+				>
+				["at0001.1"] = <
+					text = <"Sistema ou estrutura examinada">
+					description = <"Identificação do sistema do corpo examinado ou da estrutura anatômica.">
+					comment = <"A codificação do sistema ou estrutura examinada com uma terminologia é preferível, sempre que possível.">
+				>
+				["at0.1"] = <
+					text = <"Left tympanic membrane">
+					description = <"The left ear drum was examined.">
+				>
+				["at0.2"] = <
+					text = <"Right tympanic membrane">
+					description = <"The right ear drum was examined.">
+				>
+				["at0.3"] = <
+					text = <"View">
+					description = <"Description about the examiner's view of the tympanic membrane.">
+				>
+				["at0.4"] = <
+					text = <"Adequate">
+					description = <"The tympanic membrane was clearly visualised and the duration of view was sufficient; the clinical opinion of the state of the tympanic membrane is based on adequate information.">
+				>
+				["at0.5"] = <
+					text = <"Compromised">
+					description = <"The tympanic membrane was not clearly visualised and/or the duration of view was limited; the clinical opinion of the state of the tympanic membrane is based on limited information.">
+				>
+				["at0.6"] = <
+					text = <"Total occlusion">
+					description = <"The tympanic membrane was not visualised; a clinical opinion of the state of the tympanic membrane could not be formed.">
+				>
+				["at0.7"] = <
+					text = <"Reason for occlusion">
+					description = <"Narrative description of the reason for occlusion of view of the tympanic membrane.">
+					comment = <"For example: soft wax or a foreign body was present.">
+				>
+				["at0.8"] = <
+					text = <"Ventilation tube present?">
+					description = <"Is a ventilation tube observed in the tympanic membrane?">
+					comment = <"There is value in identifying the presence or absence of ventilation tubes in all examinations if ventilation tubes have previously been inserted. Please note: there is little value in recording the absence of ventilation tubes if they have never been inserted, unless it is not known if there has been previous insertion of ventilation tubes.">
+				>
+				["at0.9"] = <
+					text = <"Present">
+					description = <"A ventilation tube is observed in the tympanic membrane or ear canal.">
+				>
+				["at0.10"] = <
+					text = <"Absent">
+					description = <"A ventilation tube is not observed in the tympanic membrane or ear canal.">
+				>
+				["at0.11"] = <
+					text = <"Ventilation tube placement">
+					description = <"Observed placement of the ventilation tube (or grommet) in the tympanic membrane or the auditory canal.">
+					comment = <"This data element is redundant if ventilation tubes have been recorded as absent.">
+				>
+				["at0.12"] = <
+					text = <"In situ">
+					description = <"The ventilation tube is located in situ in the tympanic membrane.">
+				>
+				["at0.13"] = <
+					text = <"Partially extruded">
+					description = <"The ventilation tube is partially extruded from it's original position in the tympanic membrane.">
+				>
+				["at0.14"] = <
+					text = <"Extruded - remains in canal">
+					description = <"The ventilation tube has been extruded from the tympanic membrane but is visualised within the external auditory canal.">
+				>
+				["at0.15"] = <
+					text = <"Membrane intact?">
+					description = <"Is the tympanic membrane intact?">
+				>
+				["at0.16"] = <
+					text = <"Intact">
+					description = <"The tympanic membrane appears intact.">
+				>
+				["at0.17"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine if the tympanic membrane is intact or perforated.">
+				>
+				["at0.18"] = <
+					text = <"Perforated">
+					description = <"A perforation is observed in the tympanic membrane.">
+				>
+				["at0.19"] = <
+					text = <"Appearance">
+					description = <"Category describing the appearance of the tympanic membrane.">
+					comment = <"In most situations, this data element would only be recorded if the tympanic membrane is intact.">
+				>
+				["at0.20"] = <
+					text = <"Translucent">
+					description = <"The tympanic membrane appears translucent and healthy.">
+				>
+				["at0.21"] = <
+					text = <"Opaque">
+					description = <"The tympanic membrane appears dull and opaque.">
+				>
+				["at0.22"] = <
+					text = <"Colour">
+					description = <"Description of the overall colour of the tympanic membrane.">
+					comment = <"For example: red, bluish, or yellow.">
+				>
+				["at0.23"] = <
+					text = <"Surface features">
+					description = <"Features observed on the surface of the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences.">
+				>
+				["at0.24"] = <
+					text = <"Location of tympanosclerosis">
+					description = <"Description of the location of any tympanosclerosis observed on the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences for multiple sites.">
+				>
+				["at0.25"] = <
+					text = <"Position of tympanic membrane">
+					description = <"Description of the position of the tympanic membrane.">
+				>
+				["at0.26"] = <
+					text = <"Neutral">
+					description = <"The tympanic membrane is in a normal, neutral position - neither bulging or retracted.">
+				>
+				["at0.27"] = <
+					text = <"Retracted">
+					description = <"The tympanic membrane appears to be retracted.">
+				>
+				["at0.28"] = <
+					text = <"Bulging">
+					description = <"The tympanic membrane appears to be bulging.">
+				>
+				["at0.29"] = <
+					text = <"Indeterminate">
+					description = <"The position of the tympanic membrane is is not able to be determined.">
+				>
+				["at0.30"] = <
+					text = <"Retraction description">
+					description = <"Narrative description of the retraction of the tympanic membrane.">
+				>
+				["at0000"] = <
+					text = <"Resultados do exame">
+					description = <"Constatações observadas durante o exame físico de um sistema corporal ou estrutura anatômica.">
+				>
+				["at0006"] = <
+					text = <"Interpretação clínica">
+					description = <"Palavra, frase ou breve descrição que represente o significado clínico e o significado dos resultados do exame físico.">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)">
+				>
+				["at0004.1"] = <
+					text = <"Resultados do exame">
+					description = <"Detalhes estruturados sobre os resultados do exame físico.">
+				>
+				["at0.31"] = <
+					text = <"Fluid level presence">
+					description = <"Finding of a fluid level behind the tympanic membrane.">
+				>
+				["at0.32"] = <
+					text = <"Present">
+					description = <"A fluid level is observed behind the tympanic membrane.">
+				>
+				["at0.33"] = <
+					text = <"Absent">
+					description = <"A fluid level is not observed behind the tympanic membrane.">
+				>
+				["at0.34"] = <
+					text = <"Fluid level description">
+					description = <"Narrative description of the fluid level and other related features observed behind the tympanic membrane.">
+					comment = <"For example: presence of bubbles.">
+				>
+				["at0.35"] = <
+					text = <"Mobility">
+					description = <"Description of mobility of the tympanic membrane.">
+					comment = <"Occurrences has been set to 0..* to enable multiple methods of observing mobility to be recorded. For example: 'Mobility (Pneumatic Otoscopy'; or 'Mobility (Valsalva) with Mobile or Indeterminate as only appropriate value set.">
+				>
+				["at0.36"] = <
+					text = <"Immobile">
+					description = <"Minimal or no movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.37"] = <
+					text = <"Hypomobile">
+					description = <"Less than 1mm inward (medial) movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.38"] = <
+					text = <"Mobile">
+					description = <"Crisp, inward (medial) movement (approx 1mm) when positive pressure is applied.">
+				>
+				["at0.39"] = <
+					text = <"Hypermobile">
+					description = <"Exaggerated movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.40"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine the amount of movement of the tympanic membrane.">
+				>
+				["at0.41"] = <
+					text = <"Perforation description">
+					description = <"Narrative description of the perforation of the tympanic membrane.">
+				>
+				["at0.42"] = <
+					text = <"Perforation size">
+					description = <"Estimation of the size of the tympanic membrane perforation, based on anatomical landmarks.">
+					comment = <"Many clinicians record perforations between the well defined 'pinhole' and 'subtotal' perforations using a variety of terms with inconsistent usage and definitions, such as small, medium and large. 'Intermediate' has been proposed as a means to minimise inter-clinician variability for documenting the size of all perforations falling between the 'pinhole' and 'subtotal' definitions. If more detail is required, then measurement of the perforation should be recorded.">
+				>
+				["at0.43"] = <
+					text = <"Pinhole">
+					description = <"The perforation is the size of a pinhole.">
+				>
+				["at0.44"] = <
+					text = <"Intermediate">
+					description = <"The perforation is larger than a pinhole but smaller than a subtotal perforation.">
+				>
+				["at0.45"] = <
+					text = <"Subtotal">
+					description = <"The perforation is subtotal: the pars tensa is absent but the perforation does not include the annulus.">
+				>
+				["at0.46"] = <
+					text = <"Total">
+					description = <"The tympanic membrane is essentially absent.">
+				>
+				["at0.47"] = <
+					text = <"Intermediate estimation">
+					description = <"Qualification about the size of an intermediate perforation.">
+				>
+				["at0.48"] = <
+					text = <"<40%">
+					description = <"The intermediate perforation is less than 40% of the area of the tympanic membrane.">
+				>
+				["at0.49"] = <
+					text = <">40%">
+					description = <"The intermediate perforation is greater than 40% of the area of the tympanic membrane.">
+				>
+				["at0.50"] = <
+					text = <"Length of perforation">
+					description = <"Direct measurement of the longest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.51"] = <
+					text = <"Width of perforation">
+					description = <"Direct measurement of the shortest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.52"] = <
+					text = <"Pars flaccida vs pars tensa?">
+					description = <"Description of the region of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located in the Pars flaccida and may be potentially unsafe. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.53"] = <
+					text = <"Pars flaccida">
+					description = <"The perforation is located in the pars flaccida.">
+				>
+				["at0.54"] = <
+					text = <"Pars tensa">
+					description = <"The perforation is located in the pars tensa.">
+				>
+				["at0.55"] = <
+					text = <"Marginal vs central?">
+					description = <"Location of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located marginally, and therefore might be clinically unsafe. If 'Total' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.56"] = <
+					text = <"Marginal">
+					description = <"The perforation involves the annulus of the tympanic membrane.">
+				>
+				["at0.57"] = <
+					text = <"Central">
+					description = <"The perforation is not involving the annulus and is bounded on all sides by the remnant of the tympanic membrane.">
+				>
+				["at0.58"] = <
+					text = <"Anterior?">
+					description = <"Is an anterior perforation present?">
+					comment = <"To document the presence of perforation in the anterior portions of the pars tensa, which can be more difficult to manage than perforations elsewhere. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.59"] = <
+					text = <"Present">
+					description = <"An anterior perforation is present in the pars tensa.">
+				>
+				["at0.60"] = <
+					text = <"Absent">
+					description = <"An anterior perforation is not present in the pars tensa.">
+				>
+				["at0.61"] = <
+					text = <"Edge">
+					description = <"Narrative description of the edge of the perforation.">
+				>
+				["at0001"] = <
+					text = <"Sistema ou estrutura examinada">
+					description = <"Identificação do sistema do corpo examinado ou da estrutura anatômica.">
+					comment = <"A codificação do sistema ou estrutura examinada com uma terminologia é preferível, sempre que possível.">
+				>
+				["at0003"] = <
+					text = <"Descrição clínica">
+					description = <"Descrição narrativa dos achados gerais observados durante o exame físico.">
+				>
+				["at0004"] = <
+					text = <"Resultados do exame">
+					description = <"Detalhes estruturados sobre os resultados do exame físico.">
+				>
+				["at0005"] = <
+					text = <"Representação multimídia">
+					description = <"Imagem digital, vídeo ou diagrama representando os achados do exame físico.">
+				>
+				["at0007"] = <
+					text = <"Comentário">
+					description = <"Narrativa adicional sobre os achados do exame físico, não capturados em outros campos.">
+				>
+				["at0008"] = <
+					text = <"Exame não realizado">
+					description = <"Detalhes para registrar explicitamente que esse exame não foi realizado.">
+				>
+				["at0011"] = <
+					text = <"Local do corpo estruturado">
+					description = <"Uma descrição estruturada da área do corpo em exame.">
+					comment = <"Se o local do corpo tiver sido totalmente identificado no elemento de dados 'Sistema ou estrutura examinada' ou 'Local do corpo', esse SLOT se tornará redundante.">
+				>
+				["at0012"] = <
+					text = <"Local do corpo">
+					description = <"Identificação da área do corpo em exame.">
+					comment = <"Se o local do corpo foi totalmente identificado no elemento de dados 'Sistema ou estrutura examinada', esse elemento de dados se torna redundante.">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Untersuchungsergebnisse">
+					description = <"Während der körperlichen Untersuchung eines Körpersystems oder einer anatomischen Struktur beobachtete Befunde.">
+				>
+				["at0001.1"] = <
+					text = <"Untersuchtes System oder untersuchte Struktur">
+					description = <"Identifizierung des untersuchten Körpersystems oder der anatomischen Struktur.">
+					comment = <"Wenn möglich wird die Kodierung des untersuchten Systems oder der untersuchten Struktur mit einer Terminologie bevorzugt.">
+				>
+				["at0.1"] = <
+					text = <"Left tympanic membrane">
+					description = <"The left ear drum was examined.">
+				>
+				["at0.2"] = <
+					text = <"Right tympanic membrane">
+					description = <"The right ear drum was examined.">
+				>
+				["at0.3"] = <
+					text = <"View">
+					description = <"Description about the examiner's view of the tympanic membrane.">
+				>
+				["at0.4"] = <
+					text = <"Adequate">
+					description = <"The tympanic membrane was clearly visualised and the duration of view was sufficient; the clinical opinion of the state of the tympanic membrane is based on adequate information.">
+				>
+				["at0.5"] = <
+					text = <"Compromised">
+					description = <"The tympanic membrane was not clearly visualised and/or the duration of view was limited; the clinical opinion of the state of the tympanic membrane is based on limited information.">
+				>
+				["at0.6"] = <
+					text = <"Total occlusion">
+					description = <"The tympanic membrane was not visualised; a clinical opinion of the state of the tympanic membrane could not be formed.">
+				>
+				["at0.7"] = <
+					text = <"Reason for occlusion">
+					description = <"Narrative description of the reason for occlusion of view of the tympanic membrane.">
+					comment = <"For example: soft wax or a foreign body was present.">
+				>
+				["at0.8"] = <
+					text = <"Ventilation tube present?">
+					description = <"Is a ventilation tube observed in the tympanic membrane?">
+					comment = <"There is value in identifying the presence or absence of ventilation tubes in all examinations if ventilation tubes have previously been inserted. Please note: there is little value in recording the absence of ventilation tubes if they have never been inserted, unless it is not known if there has been previous insertion of ventilation tubes.">
+				>
+				["at0.9"] = <
+					text = <"Present">
+					description = <"A ventilation tube is observed in the tympanic membrane or ear canal.">
+				>
+				["at0.10"] = <
+					text = <"Absent">
+					description = <"A ventilation tube is not observed in the tympanic membrane or ear canal.">
+				>
+				["at0.11"] = <
+					text = <"Ventilation tube placement">
+					description = <"Observed placement of the ventilation tube (or grommet) in the tympanic membrane or the auditory canal.">
+					comment = <"This data element is redundant if ventilation tubes have been recorded as absent.">
+				>
+				["at0.12"] = <
+					text = <"In situ">
+					description = <"The ventilation tube is located in situ in the tympanic membrane.">
+				>
+				["at0.13"] = <
+					text = <"Partially extruded">
+					description = <"The ventilation tube is partially extruded from it's original position in the tympanic membrane.">
+				>
+				["at0.14"] = <
+					text = <"Extruded - remains in canal">
+					description = <"The ventilation tube has been extruded from the tympanic membrane but is visualised within the external auditory canal.">
+				>
+				["at0.15"] = <
+					text = <"Membrane intact?">
+					description = <"Is the tympanic membrane intact?">
+				>
+				["at0.16"] = <
+					text = <"Intact">
+					description = <"The tympanic membrane appears intact.">
+				>
+				["at0.17"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine if the tympanic membrane is intact or perforated.">
+				>
+				["at0.18"] = <
+					text = <"Perforated">
+					description = <"A perforation is observed in the tympanic membrane.">
+				>
+				["at0.19"] = <
+					text = <"Appearance">
+					description = <"Category describing the appearance of the tympanic membrane.">
+					comment = <"In most situations, this data element would only be recorded if the tympanic membrane is intact.">
+				>
+				["at0.20"] = <
+					text = <"Translucent">
+					description = <"The tympanic membrane appears translucent and healthy.">
+				>
+				["at0.21"] = <
+					text = <"Opaque">
+					description = <"The tympanic membrane appears dull and opaque.">
+				>
+				["at0.22"] = <
+					text = <"Colour">
+					description = <"Description of the overall colour of the tympanic membrane.">
+					comment = <"For example: red, bluish, or yellow.">
+				>
+				["at0.23"] = <
+					text = <"Surface features">
+					description = <"Features observed on the surface of the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences.">
+				>
+				["at0.24"] = <
+					text = <"Location of tympanosclerosis">
+					description = <"Description of the location of any tympanosclerosis observed on the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences for multiple sites.">
+				>
+				["at0.25"] = <
+					text = <"Position of tympanic membrane">
+					description = <"Description of the position of the tympanic membrane.">
+				>
+				["at0.26"] = <
+					text = <"Neutral">
+					description = <"The tympanic membrane is in a normal, neutral position - neither bulging or retracted.">
+				>
+				["at0.27"] = <
+					text = <"Retracted">
+					description = <"The tympanic membrane appears to be retracted.">
+				>
+				["at0.28"] = <
+					text = <"Bulging">
+					description = <"The tympanic membrane appears to be bulging.">
+				>
+				["at0.29"] = <
+					text = <"Indeterminate">
+					description = <"The position of the tympanic membrane is is not able to be determined.">
+				>
+				["at0.30"] = <
+					text = <"Retraction description">
+					description = <"Narrative description of the retraction of the tympanic membrane.">
+				>
+				["at0000"] = <
+					text = <"Untersuchungsergebnisse">
+					description = <"Während der körperlichen Untersuchung eines Körpersystems oder einer anatomischen Struktur beobachtete Befunde.">
+				>
+				["at0006"] = <
+					text = <"Klinische Interpretation">
+					description = <"Ein einzelnes Wort, eine Phrase oder eine kurze Beschreibung, die die klinische Bedeutung und Wichtigkeit der Untersuchungsergebnisse darstellt.">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)">
+				>
+				["at0004.1"] = <
+					text = <"Untersuchungsergebnisse">
+					description = <"Strukturierte Angaben zu den Ergebnissen der körperlichen Untersuchung.">
+				>
+				["at0.31"] = <
+					text = <"Fluid level presence">
+					description = <"Finding of a fluid level behind the tympanic membrane.">
+				>
+				["at0.32"] = <
+					text = <"Present">
+					description = <"A fluid level is observed behind the tympanic membrane.">
+				>
+				["at0.33"] = <
+					text = <"Absent">
+					description = <"A fluid level is not observed behind the tympanic membrane.">
+				>
+				["at0.34"] = <
+					text = <"Fluid level description">
+					description = <"Narrative description of the fluid level and other related features observed behind the tympanic membrane.">
+					comment = <"For example: presence of bubbles.">
+				>
+				["at0.35"] = <
+					text = <"Mobility">
+					description = <"Description of mobility of the tympanic membrane.">
+					comment = <"Occurrences has been set to 0..* to enable multiple methods of observing mobility to be recorded. For example: 'Mobility (Pneumatic Otoscopy'; or 'Mobility (Valsalva) with Mobile or Indeterminate as only appropriate value set.">
+				>
+				["at0.36"] = <
+					text = <"Immobile">
+					description = <"Minimal or no movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.37"] = <
+					text = <"Hypomobile">
+					description = <"Less than 1mm inward (medial) movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.38"] = <
+					text = <"Mobile">
+					description = <"Crisp, inward (medial) movement (approx 1mm) when positive pressure is applied.">
+				>
+				["at0.39"] = <
+					text = <"Hypermobile">
+					description = <"Exaggerated movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.40"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine the amount of movement of the tympanic membrane.">
+				>
+				["at0.41"] = <
+					text = <"Perforation description">
+					description = <"Narrative description of the perforation of the tympanic membrane.">
+				>
+				["at0.42"] = <
+					text = <"Perforation size">
+					description = <"Estimation of the size of the tympanic membrane perforation, based on anatomical landmarks.">
+					comment = <"Many clinicians record perforations between the well defined 'pinhole' and 'subtotal' perforations using a variety of terms with inconsistent usage and definitions, such as small, medium and large. 'Intermediate' has been proposed as a means to minimise inter-clinician variability for documenting the size of all perforations falling between the 'pinhole' and 'subtotal' definitions. If more detail is required, then measurement of the perforation should be recorded.">
+				>
+				["at0.43"] = <
+					text = <"Pinhole">
+					description = <"The perforation is the size of a pinhole.">
+				>
+				["at0.44"] = <
+					text = <"Intermediate">
+					description = <"The perforation is larger than a pinhole but smaller than a subtotal perforation.">
+				>
+				["at0.45"] = <
+					text = <"Subtotal">
+					description = <"The perforation is subtotal: the pars tensa is absent but the perforation does not include the annulus.">
+				>
+				["at0.46"] = <
+					text = <"Total">
+					description = <"The tympanic membrane is essentially absent.">
+				>
+				["at0.47"] = <
+					text = <"Intermediate estimation">
+					description = <"Qualification about the size of an intermediate perforation.">
+				>
+				["at0.48"] = <
+					text = <"<40%">
+					description = <"The intermediate perforation is less than 40% of the area of the tympanic membrane.">
+				>
+				["at0.49"] = <
+					text = <">40%">
+					description = <"The intermediate perforation is greater than 40% of the area of the tympanic membrane.">
+				>
+				["at0.50"] = <
+					text = <"Length of perforation">
+					description = <"Direct measurement of the longest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.51"] = <
+					text = <"Width of perforation">
+					description = <"Direct measurement of the shortest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.52"] = <
+					text = <"Pars flaccida vs pars tensa?">
+					description = <"Description of the region of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located in the Pars flaccida and may be potentially unsafe. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.53"] = <
+					text = <"Pars flaccida">
+					description = <"The perforation is located in the pars flaccida.">
+				>
+				["at0.54"] = <
+					text = <"Pars tensa">
+					description = <"The perforation is located in the pars tensa.">
+				>
+				["at0.55"] = <
+					text = <"Marginal vs central?">
+					description = <"Location of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located marginally, and therefore might be clinically unsafe. If 'Total' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.56"] = <
+					text = <"Marginal">
+					description = <"The perforation involves the annulus of the tympanic membrane.">
+				>
+				["at0.57"] = <
+					text = <"Central">
+					description = <"The perforation is not involving the annulus and is bounded on all sides by the remnant of the tympanic membrane.">
+				>
+				["at0.58"] = <
+					text = <"Anterior?">
+					description = <"Is an anterior perforation present?">
+					comment = <"To document the presence of perforation in the anterior portions of the pars tensa, which can be more difficult to manage than perforations elsewhere. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.59"] = <
+					text = <"Present">
+					description = <"An anterior perforation is present in the pars tensa.">
+				>
+				["at0.60"] = <
+					text = <"Absent">
+					description = <"An anterior perforation is not present in the pars tensa.">
+				>
+				["at0.61"] = <
+					text = <"Edge">
+					description = <"Narrative description of the edge of the perforation.">
+				>
+				["at0001"] = <
+					text = <"Untersuchtes System oder untersuchte Struktur">
+					description = <"Identifizierung des untersuchten Körpersystems oder der anatomischen Struktur.">
+					comment = <"Wenn möglich wird die Kodierung des untersuchten Systems oder der untersuchten Struktur mit einer Terminologie bevorzugt.">
+				>
+				["at0003"] = <
+					text = <"Klinische Beschreibung">
+					description = <"Beschreibung der bei der körperlichen Untersuchung beobachteten Gesamtbefunde.">
+				>
+				["at0004"] = <
+					text = <"Untersuchungsergebnisse">
+					description = <"Strukturierte Angaben zu den Ergebnissen der körperlichen Untersuchung.">
+				>
+				["at0005"] = <
+					text = <"Multimediale Darstellung">
+					description = <"Digitales Bild, Video oder Diagramm, das die Ergebnisse der körperlichen Untersuchung darstellt.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Zusätzliche Beschreibung der Ergebnisse der körperlichen Untersuchung, die in anderen Bereichen nicht erfasst werden konnten.">
+				>
+				["at0008"] = <
+					text = <"Nicht durchgeführte Untersuchung">
+					description = <"Eine Aussage die ausdrücklich erfasst, dass die Untersuchung nicht durchgeführt wurde.">
+				>
+				["at0011"] = <
+					text = <"Strukturierte Körperstelle">
+					description = <"Eine strukturierte Beschreibung des zu untersuchenden Körperbereichs.">
+					comment = <"Wenn die Körperstelle im Datenelement \"Untersuchtes System oder untersuchte Struktur\" oder im Datenelement \"Körperstelle\" vollständig identifiziert wurde, wird die Verwendung dieses SLOT überflüssig.">
+				>
+				["at0012"] = <
+					text = <"Körperstelle">
+					description = <"Identifizierung des Untersuchungsbereichs.">
+					comment = <"Wenn die Körperstelle im Datenelement \"Untersuchtes System oder untersuchte Struktur\" vollständig identifiziert wurde, wird dieses Datenelement überflüssig.">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Fynd vid undersökning">
+					description = <"Observerade fynd vid fysisk undersökning av system i kroppen, eller av anatomisk struktur">
+				>
+				["at0001.1"] = <
+					text = <"System eller struktur som undersökts">
+					description = <"Identifiering av systemet eller strukturen som undersökts.">
+					comment = <"Om möjligt, koda systemet eller strukturen med hjälp av ett terminologisystem.">
+				>
+				["at0.1"] = <
+					text = <"Left tympanic membrane">
+					description = <"The left ear drum was examined.">
+				>
+				["at0.2"] = <
+					text = <"Right tympanic membrane">
+					description = <"The right ear drum was examined.">
+				>
+				["at0.3"] = <
+					text = <"View">
+					description = <"Description about the examiner's view of the tympanic membrane.">
+				>
+				["at0.4"] = <
+					text = <"Adequate">
+					description = <"The tympanic membrane was clearly visualised and the duration of view was sufficient; the clinical opinion of the state of the tympanic membrane is based on adequate information.">
+				>
+				["at0.5"] = <
+					text = <"Compromised">
+					description = <"The tympanic membrane was not clearly visualised and/or the duration of view was limited; the clinical opinion of the state of the tympanic membrane is based on limited information.">
+				>
+				["at0.6"] = <
+					text = <"Total occlusion">
+					description = <"The tympanic membrane was not visualised; a clinical opinion of the state of the tympanic membrane could not be formed.">
+				>
+				["at0.7"] = <
+					text = <"Reason for occlusion">
+					description = <"Narrative description of the reason for occlusion of view of the tympanic membrane.">
+					comment = <"For example: soft wax or a foreign body was present.">
+				>
+				["at0.8"] = <
+					text = <"Ventilation tube present?">
+					description = <"Is a ventilation tube observed in the tympanic membrane?">
+					comment = <"There is value in identifying the presence or absence of ventilation tubes in all examinations if ventilation tubes have previously been inserted. Please note: there is little value in recording the absence of ventilation tubes if they have never been inserted, unless it is not known if there has been previous insertion of ventilation tubes.">
+				>
+				["at0.9"] = <
+					text = <"Present">
+					description = <"A ventilation tube is observed in the tympanic membrane or ear canal.">
+				>
+				["at0.10"] = <
+					text = <"Absent">
+					description = <"A ventilation tube is not observed in the tympanic membrane or ear canal.">
+				>
+				["at0.11"] = <
+					text = <"Ventilation tube placement">
+					description = <"Observed placement of the ventilation tube (or grommet) in the tympanic membrane or the auditory canal.">
+					comment = <"This data element is redundant if ventilation tubes have been recorded as absent.">
+				>
+				["at0.12"] = <
+					text = <"In situ">
+					description = <"The ventilation tube is located in situ in the tympanic membrane.">
+				>
+				["at0.13"] = <
+					text = <"Partially extruded">
+					description = <"The ventilation tube is partially extruded from it's original position in the tympanic membrane.">
+				>
+				["at0.14"] = <
+					text = <"Extruded - remains in canal">
+					description = <"The ventilation tube has been extruded from the tympanic membrane but is visualised within the external auditory canal.">
+				>
+				["at0.15"] = <
+					text = <"Membrane intact?">
+					description = <"Is the tympanic membrane intact?">
+				>
+				["at0.16"] = <
+					text = <"Intact">
+					description = <"The tympanic membrane appears intact.">
+				>
+				["at0.17"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine if the tympanic membrane is intact or perforated.">
+				>
+				["at0.18"] = <
+					text = <"Perforated">
+					description = <"A perforation is observed in the tympanic membrane.">
+				>
+				["at0.19"] = <
+					text = <"Appearance">
+					description = <"Category describing the appearance of the tympanic membrane.">
+					comment = <"In most situations, this data element would only be recorded if the tympanic membrane is intact.">
+				>
+				["at0.20"] = <
+					text = <"Translucent">
+					description = <"The tympanic membrane appears translucent and healthy.">
+				>
+				["at0.21"] = <
+					text = <"Opaque">
+					description = <"The tympanic membrane appears dull and opaque.">
+				>
+				["at0.22"] = <
+					text = <"Colour">
+					description = <"Description of the overall colour of the tympanic membrane.">
+					comment = <"For example: red, bluish, or yellow.">
+				>
+				["at0.23"] = <
+					text = <"Surface features">
+					description = <"Features observed on the surface of the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences.">
+				>
+				["at0.24"] = <
+					text = <"Location of tympanosclerosis">
+					description = <"Description of the location of any tympanosclerosis observed on the tympanic membrane.">
+					comment = <"May be coded with an external terminology, if desired, and be expressed as multiple occurrences for multiple sites.">
+				>
+				["at0.25"] = <
+					text = <"Position of tympanic membrane">
+					description = <"Description of the position of the tympanic membrane.">
+				>
+				["at0.26"] = <
+					text = <"Neutral">
+					description = <"The tympanic membrane is in a normal, neutral position - neither bulging or retracted.">
+				>
+				["at0.27"] = <
+					text = <"Retracted">
+					description = <"The tympanic membrane appears to be retracted.">
+				>
+				["at0.28"] = <
+					text = <"Bulging">
+					description = <"The tympanic membrane appears to be bulging.">
+				>
+				["at0.29"] = <
+					text = <"Indeterminate">
+					description = <"The position of the tympanic membrane is is not able to be determined.">
+				>
+				["at0.30"] = <
+					text = <"Retraction description">
+					description = <"Narrative description of the retraction of the tympanic membrane.">
+				>
+				["at0000"] = <
+					text = <"Fynd vid undersökning">
+					description = <"Observerade fynd vid fysisk undersökning av system i kroppen, eller av anatomisk struktur">
+				>
+				["at0006"] = <
+					text = <"Klinisk tolkning">
+					description = <"Ord, fras eller kort beskrivning av fyndens kliniska betydelse.">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)">
+				>
+				["at0004.1"] = <
+					text = <"Fynd vid undersökning">
+					description = <"Strukturerade detaljer om fynd vid den fysiska undersökningen.">
+				>
+				["at0.31"] = <
+					text = <"Fluid level presence">
+					description = <"Finding of a fluid level behind the tympanic membrane.">
+				>
+				["at0.32"] = <
+					text = <"Present">
+					description = <"A fluid level is observed behind the tympanic membrane.">
+				>
+				["at0.33"] = <
+					text = <"Absent">
+					description = <"A fluid level is not observed behind the tympanic membrane.">
+				>
+				["at0.34"] = <
+					text = <"Fluid level description">
+					description = <"Narrative description of the fluid level and other related features observed behind the tympanic membrane.">
+					comment = <"For example: presence of bubbles.">
+				>
+				["at0.35"] = <
+					text = <"Mobility">
+					description = <"Description of mobility of the tympanic membrane.">
+					comment = <"Occurrences has been set to 0..* to enable multiple methods of observing mobility to be recorded. For example: 'Mobility (Pneumatic Otoscopy'; or 'Mobility (Valsalva) with Mobile or Indeterminate as only appropriate value set.">
+				>
+				["at0.36"] = <
+					text = <"Immobile">
+					description = <"Minimal or no movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.37"] = <
+					text = <"Hypomobile">
+					description = <"Less than 1mm inward (medial) movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.38"] = <
+					text = <"Mobile">
+					description = <"Crisp, inward (medial) movement (approx 1mm) when positive pressure is applied.">
+				>
+				["at0.39"] = <
+					text = <"Hypermobile">
+					description = <"Exaggerated movement of the tympanic membrane is observed when positive pressure is applied.">
+				>
+				["at0.40"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine the amount of movement of the tympanic membrane.">
+				>
+				["at0.41"] = <
+					text = <"Perforation description">
+					description = <"Narrative description of the perforation of the tympanic membrane.">
+				>
+				["at0.42"] = <
+					text = <"Perforation size">
+					description = <"Estimation of the size of the tympanic membrane perforation, based on anatomical landmarks.">
+					comment = <"Many clinicians record perforations between the well defined 'pinhole' and 'subtotal' perforations using a variety of terms with inconsistent usage and definitions, such as small, medium and large. 'Intermediate' has been proposed as a means to minimise inter-clinician variability for documenting the size of all perforations falling between the 'pinhole' and 'subtotal' definitions. If more detail is required, then measurement of the perforation should be recorded.">
+				>
+				["at0.43"] = <
+					text = <"Pinhole">
+					description = <"The perforation is the size of a pinhole.">
+				>
+				["at0.44"] = <
+					text = <"Intermediate">
+					description = <"The perforation is larger than a pinhole but smaller than a subtotal perforation.">
+				>
+				["at0.45"] = <
+					text = <"Subtotal">
+					description = <"The perforation is subtotal: the pars tensa is absent but the perforation does not include the annulus.">
+				>
+				["at0.46"] = <
+					text = <"Total">
+					description = <"The tympanic membrane is essentially absent.">
+				>
+				["at0.47"] = <
+					text = <"Intermediate estimation">
+					description = <"Qualification about the size of an intermediate perforation.">
+				>
+				["at0.48"] = <
+					text = <"<40%">
+					description = <"The intermediate perforation is less than 40% of the area of the tympanic membrane.">
+				>
+				["at0.49"] = <
+					text = <">40%">
+					description = <"The intermediate perforation is greater than 40% of the area of the tympanic membrane.">
+				>
+				["at0.50"] = <
+					text = <"Length of perforation">
+					description = <"Direct measurement of the longest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.51"] = <
+					text = <"Width of perforation">
+					description = <"Direct measurement of the shortest axis of the perforation.">
+					comment = <"Usually measured from a photograph.">
+				>
+				["at0.52"] = <
+					text = <"Pars flaccida vs pars tensa?">
+					description = <"Description of the region of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located in the Pars flaccida and may be potentially unsafe. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.53"] = <
+					text = <"Pars flaccida">
+					description = <"The perforation is located in the pars flaccida.">
+				>
+				["at0.54"] = <
+					text = <"Pars tensa">
+					description = <"The perforation is located in the pars tensa.">
+				>
+				["at0.55"] = <
+					text = <"Marginal vs central?">
+					description = <"Location of the tympanic membrane perforation.">
+					comment = <"To document explicitly whether the perforation is located marginally, and therefore might be clinically unsafe. If 'Total' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.56"] = <
+					text = <"Marginal">
+					description = <"The perforation involves the annulus of the tympanic membrane.">
+				>
+				["at0.57"] = <
+					text = <"Central">
+					description = <"The perforation is not involving the annulus and is bounded on all sides by the remnant of the tympanic membrane.">
+				>
+				["at0.58"] = <
+					text = <"Anterior?">
+					description = <"Is an anterior perforation present?">
+					comment = <"To document the presence of perforation in the anterior portions of the pars tensa, which can be more difficult to manage than perforations elsewhere. If 'Total' or 'Subtotal' is selected in 'Estimation of Size' data element then this data element becomes redundant.">
+				>
+				["at0.59"] = <
+					text = <"Present">
+					description = <"An anterior perforation is present in the pars tensa.">
+				>
+				["at0.60"] = <
+					text = <"Absent">
+					description = <"An anterior perforation is not present in the pars tensa.">
+				>
+				["at0.61"] = <
+					text = <"Edge">
+					description = <"Narrative description of the edge of the perforation.">
+				>
+				["at0001"] = <
+					text = <"System eller struktur som undersökts">
+					description = <"Identifiering av systemet eller strukturen som undersökts.">
+					comment = <"Om möjligt, koda systemet eller strukturen med hjälp av ett terminologisystem.">
+				>
+				["at0003"] = <
+					text = <"Klinisk beskrivning">
+					description = <"En övergripande beskrivning av fynden från den fysiska undersökningen. ">
+				>
+				["at0004"] = <
+					text = <"Fynd vid undersökning">
+					description = <"Strukturerade detaljer om fynd vid den fysiska undersökningen.">
+				>
+				["at0005"] = <
+					text = <"Multimedia-representation">
+					description = <"Digital bild, video eller diagram som återger fynd från undersökningen.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Kommentarer avseende undersökningsfynd som inte beskrivs i övriga fält.">
+				>
+				["at0008"] = <
+					text = <"Undersökning ej genomförd">
+					description = <"Detaljerad beskrivning om att undersökningen inte genomfördes.">
+				>
+				["at0011"] = <
+					text = <"Strukturerad anatomisk plats">
+					description = <"Strukturerad beskrivning av den anatomiska platsen som undersökts.">
+					comment = <"Om den anatomiska platsen kan identifieras helt via dataelementet \"System eller struktur som undersökts\" så blir denna del redundant.">
+				>
+				["at0012"] = <
+					text = <"Anatomisk plats">
+					description = <"Identifiering av den anatomiska plats som undersökts.
+">
+					comment = <"Om den anatomiska platsen har identifierats fullt ut i \"System eller struktur som undersökts\" så blir detta element redundant.
+
+">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0.1"] = <[SNOMED-CT::726562006]>
+				["at0.2"] = <[SNOMED-CT::26563001]>
+				["at0000"] = <[SNOMED-CT::5880005]>
+			>
+		>
+	>

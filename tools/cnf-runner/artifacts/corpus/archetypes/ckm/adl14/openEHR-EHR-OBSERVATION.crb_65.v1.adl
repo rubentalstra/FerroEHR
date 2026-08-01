@@ -1,0 +1,326 @@
+﻿archetype (adl_version=1.4; uid=602a05a6-dc0f-4a60-a6c5-834e2cbe4e6b)
+	openEHR-EHR-OBSERVATION.crb_65.v1
+
+concept
+	[at0000]	-- CRB-65 score
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Marit Alice Venheim, Silje Ljosland Bakke, John Tore Valand">
+				["organisation"] = <"Helse Vest IKT, Helse Vest IKT AS, Helse Bergen">
+				["email"] = <"marit.alice.venheim@helse-vest-ikt.no, silje.ljosland.bakke@helse-vest-ikt.no, john.tore.valand@helse-bergen.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Silje Ljosland Bakke">
+		["organisation"] = <"Helse Vest IKT AS">
+		["email"] = <"silje.ljosland.bakke@helse-vest-ikt.no">
+		["date"] = <"2020-04-29">
+	>
+	details = <
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere resultatene for hvert parameter og deres totalsum for CRB-65 skår.">
+			use = <"Brukes for å registrere resultatene for hvert parameter og deres totalsum for CRB-65 skår.">
+			keywords = <"pneumonia, CAP, sammfunnservervet, LRTI,", ...>
+			misuse = <"Brukes ikke til å registrere CURB-65 skår, som er ment brukt i sykehus. Bruk arketypen OBSERVATION.curb_65 til dette formålet.">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results for each component parameter and their total sum for the CRB-65 score.">
+			use = <"Use to record the results for each component parameter and their total sum for the CRB-65 score.">
+			keywords = <"pneumonia, CAP, community, acquired, LRTI, community-acquired", ...>
+			misuse = <"Not to be used to record the CURB-65 score, which is intended for use in a hospital setting. Use the OBSERVATION.curb_65 archetype for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"published">
+	other_contributors = <"Dag Aarhus, Vestre Viken HF, Norway", "Erling Are Hole, Helse Bergen, Norway", "Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)", "SB Bhattacharyya, Sudisa Consultancy Services, India", "Greg Burch, Tiny Medical Apps, United Kingdom", "Grant Forrest, NHS Scotland, United Kingdom", "Mikkel Gaup Grønmo, Helse-Nord, FSE, Norway (openEHR Editor)", "Morten Hørthe, DIPS, Norway", "Henrik Kockum, Cambio, Sweden", "Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway", "Liv Laugen, Oslo universitetssykehus, Norway (Nasjonal IKT redaktør)", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Pramil Liyanage, Ministry of Health, Sri Lanka", "Mark Luciani, Bath and North East Somerset, Swindon and Wiltshire Clinical Commisioning Group, United Kingdom", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)", "Bjørn Næss, DIPS ASA, Norway", "Ana Pereira, CINTESIS, CUF-Porto, Portugal", "Anoop Shah, University College London, United Kingdom", "Norwegian Review Summary, Nasjonal IKT HF, Norway", "Rowan Thomas, St. Vincent's Hospital Melbourne, Australia", "Anders Thurin, VGR, Sweden", "Jeremy Tong, NHS, United Kingdom", "John Tore Valand, Helse Bergen, Norway (openEHR Editor)", "Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Lim WS, van der Eerden MM, Laing R, Boersma WG, Karalus N, Town GI, Lewis SA, Macfarlane JT. Defining community acquired pneumonia severity on presentation to hospital: an international derivation and validation study. Thorax. 2003 May;58(5):377-82. doi: 10.1136/thorax.58.5.377. PubMed PMID: 12728155; PubMed Central PMCID: PMC1746657.
+
+Lim WS, Baudouin SV, George RC, Hill AT, Jamieson C, Le Jeune I, Macfarlane JT, Read RC, Roberts HJ, Levy ML, Wani M, Woodhead MA. BTS guidelines for the management of community acquired pneumonia in adults: update 2009. Thorax. 2009 Oct;64 Suppl 3:iii1-55. doi: 10.1136/thx.2009.121434. PubMed PMID: 19783532. Available from: https://www.brit-thoracic.org.uk/quality-improvement/guidelines/pneumonia-adults/.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"DE8E2FCC11320D8D7E0B4F3C9BF51824">
+		["build_uid"] = <"5eddad90-919f-435b-a6d9-352859a7f57f">
+		["revision"] = <"1.0.0">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- CRB-65 score
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {0..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..*} matches {    -- Any point in time event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Confusion
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006]
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {    -- Respiratory rate
+										value matches {
+											0|[local::at0008],
+											1|[local::at0009]
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {    -- Blood pressure
+										value matches {
+											0|[local::at0011],
+											1|[local::at0012]
+										}
+									}
+									ELEMENT[at0014] occurrences matches {0..1} matches {    -- Age
+										value matches {
+											0|[local::at0015],
+											1|[local::at0016]
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {    -- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..4|}
+											}
+										}
+									}
+									ELEMENT[at0018] occurrences matches {0..1} matches {    -- Grade
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0019,    -- Low severity
+													at0020,    -- Moderate severity
+													at0021]    -- High severity
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0013] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0022] occurrences matches {0..*} matches {    -- Extension SLOT
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"CRB-65 score">
+					description = <"An assessment score used within a community or primary care setting to estimate the severity of community-acquired pneumonia.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any point in time event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Confusion">
+					description = <"Does the patient have recent onset confusion?">
+				>
+				["at0005"] = <
+					text = <"No">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"Yes">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Respiratory rate">
+					description = <"Does the patient have a respiratory rate equal to or greater than 30 /min?">
+				>
+				["at0008"] = <
+					text = <"No">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Yes">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Blood pressure">
+					description = <"Does the patient have a systolic blood pressure <90 OR a diastolic blood pressure ≤60 mmHg?">
+				>
+				["at0011"] = <
+					text = <"No">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Yes">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"Age">
+					description = <"Is the patient 65 years or older?">
+				>
+				["at0015"] = <
+					text = <"No">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Yes">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Total score">
+					description = <"The total sum of each component variable for the CRB-65 score.">
+				>
+				["at0018"] = <
+					text = <"Grade">
+					description = <"Assessment of severity based on the CRB-65 score.">
+				>
+				["at0019"] = <
+					text = <"Low severity">
+					description = <"CRB-65 score 0: Low risk of death.">
+				>
+				["at0020"] = <
+					text = <"Moderate severity">
+					description = <"CRB-65 score 1-2: Moderate risk of death.">
+				>
+				["at0021"] = <
+					text = <"High severity">
+					description = <"CRB-65 score 3-4: High risk of death.">
+				>
+				["at0022"] = <
+					text = <"Extension SLOT">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR. ">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000"] = <
+					text = <"CRB-65 skår">
+					description = <"En vurderingsskår som brukes utenfor sykehus til å grovt estimere alvorlighetsgraden av samfunnservervet lungebetennelse.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Uspesifisert tidspunkthendelse">
+					description = <"Uspesifisert tidspunkt som kan defineres mer eksplisitt i en templat eller i en applikasjon.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Forvirring">
+					description = <"Har pasienten nyoppstått forvirring?">
+				>
+				["at0005"] = <
+					text = <"Nei">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"Ja">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Respirasjonsfrekvens">
+					description = <"Har pasienten en repirasjonsfrekvens høyere eller lik enn 30 /min?">
+				>
+				["at0008"] = <
+					text = <"Nei">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Ja">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Blodtrykk">
+					description = <"Har pasienten systolisk blodtrykk <90 eller diastolisk blodtrykk ≤60 mmHg?">
+				>
+				["at0011"] = <
+					text = <"Nei">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Ja">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"Alder">
+					description = <"Er pasienten 65 år eller eldre?">
+				>
+				["at0015"] = <
+					text = <"Nei">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Ja">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Totalskår">
+					description = <"Summen av poeng på hvert enkelt parameter i CRB-65 skåren.">
+				>
+				["at0018"] = <
+					text = <"Alvorlighetsgrad">
+					description = <"Summen av poeng på hvert enkelt parameter i CRB-65 skåren.">
+				>
+				["at0019"] = <
+					text = <"Lav alvorlighetsgrad">
+					description = <"CRB-65 skår 0: Lav mortalitetsrisiko.">
+				>
+				["at0020"] = <
+					text = <"Moderat alvorlighetsgrad">
+					description = <"CRB-65 skår 1-2: Moderat mortalitetsrisiko.">
+				>
+				["at0021"] = <
+					text = <"Høy alvorlighetsgrad">
+					description = <"CRB-65 skår 3-4: Høy mortalitetsrisiko.">
+				>
+				["at0022"] = <
+					text = <"Tilleggsinformasjon">
+					description = <"Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.">
+					comment = <"For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR eller CIMI.">
+				>
+			>
+		>
+	>

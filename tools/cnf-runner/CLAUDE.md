@@ -37,6 +37,19 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   `<sm_operation>[-<variant>].yaml` — machine-enforced by the
   `binding-filename` gate: selection is by the declared fields, so a
   disagreeing name misleads only the reader and the grep, silently.
+- **Corpus layout: catalogue fixtures vs breadth packs.** Per-case fixtures
+  (`corpus/fixtures/**`, the curated `corpus/templates/ckm/*.opt`) carry a
+  `MANIFEST.yaml` entry each — verdict + defect live there, never only in a
+  filename. The **breadth packs** vendored from upstream libraries
+  (`corpus/templates/ckm/full/` — every OPT the official CKM publishes;
+  `corpus/archetypes/ckm/adl14/` — every CKM archetype, ADL 1.4;
+  `corpus/archetypes/adl2/` — upstream's ADL 2 archetypes with their 1.4
+  twins) instead record inventory + adjudications in the pack's
+  `PROVENANCE.md` and are driven by directory-walking gates. Every pack is
+  produced by a committed `scripts/vendor-*.sh` script, vendored verbatim, and
+  must be 100% exercised with adjudicated skips only —
+  `.claude/rules/vendored-corpora.md` (which also holds the CKM REST
+  page/size pagination trap and the ADL 1.4-vs-2 sourcing law).
 - **A CLAIM without cases is unrepresentable** (issue #622). `validate`
   sweeps the committed party statements beside the artifact root
   (`<root>/../party/*/statement.json`) and relates them to the catalogue, so
@@ -232,10 +245,14 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   fact costs coverage, never correctness). The two DENY probes measure the
   refusal itself — 401/403 IS the arrival's success — so they load the
   authn/authz path without mutating the measured population.
-  Journey payloads = the CKM template pack (`artifacts/corpus/templates/ckm/`,
-  COMPOSITION-rooted only, provenance in its PROVENANCE.md; example
-  skeletons regenerate via `scripts/generate-ckm-examples.sh` against a
-  running SUT) plus the AUXILIARY payloads the non-COMPOSITION stages carry
+  Journey payloads = the CURATED CKM template pack
+  (`artifacts/corpus/templates/ckm/*.opt`, COMPOSITION-rooted only, slugs
+  hand-pinned per cid because a CKM template's `resourceMainId` is a UUID —
+  the slugs are a contract read by MANIFEST.yaml, the journey definitions and
+  `scripts/generate-ckm-examples.sh`, so never rename or drop one; provenance
+  in its PROVENANCE.md; example skeletons regenerate via
+  `scripts/generate-ckm-examples.sh` against a running SUT) plus the
+  AUXILIARY payloads the non-COMPOSITION stages carry
   (the Simplified-FLAT pair, the demographic fixtures) — committed corpus
   entries the functional catalogue already adjudicates, selected by
   `PerfOp::aux_payload`, manifest-checked by `journey-envelope` and

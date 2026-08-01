@@ -1,0 +1,351 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-INSTRUCTION.medication_order.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"OpenEHR Foundation">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2013-05-16">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Recording intent to use or to continue to use a medicine, vaccine or other therapeutic good including instructions on use, dispensing and administration, where neccessary.">
+			use = <"For recording instructions to dispense, administer or use a medicine, vaccine or other therapeutic good. This medication instruction can be used in many circumstances including: a record in a progress note; an item in a medication list, prescription  or drug chart (to be dispensed and/or administered); or in a summary document such as discharge summary or a referral for care. The instruction may be complex and involve more than one activity, such as in the case of a reducing dose of Predisolone, or multiple medications as components of the same order.  This would include a written order by a physician, dentist, nurse practitioner, or other designated health professional for a medication to be dispensed and administered to a patient.
+
+This instruction will generally apply to things that can be prescribed or are available 'over the counter'.
+
+Use for orders for vaccinations or other therapeutic goods. These may be presented differently in different applications but require the same structure.
+
+Use for the consistent representation of an item in a medication list comprising the medicines that a clinicians collectively expect the individual to be taking.
+
+The information recorded may separate dose, route and timing to achieve a computable and sharable specification but also allows for narrative instructions for orders like 'Frusemide 40mg two tablets in the morning and one at lunch' to ensure compatibility with existing systems. To achieve a structure statement for such compound orders, two items are required: 'Frusemide 40mg two tablets in the morning' and 'Frusemide 40mg one tablet at lunch'. The instruction will usually include information about the timing and dose  (which may be structured) and in some settings will include the route of administration. The amount of the medicines will usually be given in terms of a number and a dose unit but may be a textural statement to ensure compatibility with existing systems and also coverage of all scenarios.
+
+Use to represent a prescription item for a medicine, vaccine or other therapeutic good within a document such as an electronic prescription (see COMPOSITION.prescription) or a medication chart.
+
+The content is potentially complex. Where the content is re-usable in other contexts, especially the paired ACTION.medication archetype (for recording dispensing, administration etc) the content has been specified in re-useable CLUSTER archetypes. For example: CLUSTER.amount and CLUSTER.amount-range contain the detail about Medication dose; CLUSTER.timing contains detail about structured dose timing; CLUSTER.medication_administration contains structure around administration for both the order and the action; and CLUSTER.chemical_description described the specific ingredients within a medicine. All of these archetypes together are required to make up the total maximal dataset for a re-useable medication instruction.">
+			keywords = <"medication", "order", "prescribe", "therapy", "substance", "drug", "therapeutic", "otc", "therapeutic good">
+			misuse = <"Not to be used to record administration, use or dispensing. (For those use ACTION.medication)
+
+Not to be used to record ordering of blood products, implants or major devices such as pacemakers and defibrillators, etc.">
+		>
+	>
+	other_contributors = <"John Bennett, NEHTA, Australia", "Sharmila Biswas, Australia", "Stephen Chu, NEHTA, Australia (Editor)", "Matthew Cordell, NEHTA, Australia", "Gail Easterbrook, Flinders Medical Centre, Australia", "David Evans, Queensland Health, Australia", "Sarah Gaunt, NEHTA, Australia", "Trina Gregory, cpc, Australia", "Sam Heard, Ocean Informatics, Australia (Editor)", "Mary Kelaher, NEHTA, Australia", "Robert L'egan, NEHTA, Australia", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Susan McIndoe, Royal District Nursing Service, Australia", "David McKillop, NEHTA, Australia", "Chris Mitchell, RACGP, Australia", "Stewart Morrison, NEHTA, Australia", "Chris Pearce, Melbourne East GP Network, Australia", "Camilla Preeston, Royal Australian College of General Practitioners, Australia", "Margaret Prichard, NEHTA, Australia", "Cathy Richardson, NEHTA, Australia", "Robyn Richards, NEHTA - Clinical Terminology, Australia", "John Taylor, NEHTA, Australia", "Richard Townley-O'Neill, NEHTA, Australia (Editor)", "Kylie Young, The Royal Australian College of General Practitioners, Australia", "Ian McNicoll, Ocean Informatics. UK">
+	references = <
+		["1"] = <"Medication instruction, draft archetype, NEHTA Clinical Knowledge Manager [Internet]. NEHTA. Authored: 12 Nov 2010. Available at: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.838_15 (accessed 15 May 2013).">
+		["2"] = <"Therapeutic Good Use Data Group, NEHTA  http://www.nehta.gov.au">
+		["3"] = <"Intermountain Healthcare Medication order model, Personal Communication to Sam Heard by Dr Stan Huff.">
+		["4"] = <"Royal Australian College of General Practitioners. Fact Sheet: Medicines List. 2010.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"CBE33FEAE95392609314DC2F209BE166">
+	>
+
+definition
+	INSTRUCTION[id1] matches {	-- Medication order
+		activities matches {
+			ACTIVITY[id2] occurrences matches {0..1} matches {	-- Order
+				description matches {
+					ITEM_TREE[id3] matches {
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[id4] matches {	-- Medicine
+								value matches {
+									DV_TEXT[id48] 
+									DV_CODED_TEXT[id49] matches {
+										defining_code matches {[ac2]}		-- Medication name
+									}
+								}
+							}
+							ELEMENT[id10] occurrences matches {0..1} matches {	-- Overall directions
+								value matches {
+									DV_TEXT[id50] 
+								}
+							}
+							allow_archetype CLUSTER[id5] matches {	-- Ingredients and form
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.medication_ingredients(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							ELEMENT[id6] occurrences matches {0..1} matches {	-- Dose description
+								value matches {
+									DV_TEXT[id51] 
+								}
+							}
+							allow_archetype CLUSTER[id7] occurrences matches {0..1} matches {	-- Structured dose
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.medication_amount(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							ELEMENT[id9] occurrences matches {0..1} matches {	-- Timing description
+								value matches {
+									DV_TEXT[id52] 
+								}
+							}
+							CLUSTER[id11] occurrences matches {0..1} matches {	-- Structured timing
+								items matches {
+									ELEMENT[id30] occurrences matches {0..1} matches {	-- PRN
+										value matches {
+											DV_BOOLEAN[id53] matches {
+												value matches {True}
+											}
+										}
+									}
+									ELEMENT[id12] matches {	-- Start criterion
+										value matches {
+											DV_TEXT[id54] 
+										}
+									}
+									ELEMENT[id13] occurrences matches {0..1} matches {	-- Start date
+										value matches {
+											DV_DATE_TIME[id55] 
+										}
+									}
+									ELEMENT[id17] matches {	-- Stop criterion
+										value matches {
+											DV_TEXT[id56] 
+										}
+									}
+									ELEMENT[id14] occurrences matches {0..1} matches {	-- Stop date
+										value matches {
+											DV_DATE_TIME[id57] 
+										}
+									}
+									ELEMENT[id15] occurrences matches {0..1} matches {	-- Duration of treatment
+										value matches {
+											DV_DURATION[id58] 
+										}
+									}
+									ELEMENT[id16] occurrences matches {0..1} matches {	-- Number of administrations
+										value matches {
+											DV_COUNT[id59] 
+										}
+									}
+									ELEMENT[id18] occurrences matches {0..1} matches {	-- Long-term
+										value matches {
+											DV_BOOLEAN[id60] matches {
+												value matches {True, False}
+											}
+										}
+									}
+									allow_archetype CLUSTER[id38] occurrences matches {0..1} matches {	-- Detailed timing
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.timing(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+								}
+							}
+							ELEMENT[id45] matches {	-- Additional instruction
+								value matches {
+									DV_TEXT[id61] 
+								}
+							}
+							ELEMENT[id19] matches {	-- Clinical indication
+								value matches {
+									DV_TEXT[id62] 
+								}
+							}
+							allow_archetype CLUSTER[id44] matches {	-- Administration details
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.medication_admin(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							ELEMENT[id36] matches {	-- Comment
+								value matches {
+									DV_TEXT[id63] 
+								}
+							}
+							CLUSTER[id24] occurrences matches {0..1} matches {	-- Dispensing
+								items matches {
+									allow_archetype CLUSTER[id46] matches {	-- Quantity
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.medication_amount(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+									ELEMENT[id26] occurrences matches {0..1} matches {	-- Number of repeats
+										value matches {
+											DV_COUNT[id64] matches {
+												magnitude matches {|>=0|}
+											}
+										}
+									}
+									ELEMENT[id47] occurrences matches {0..1} matches {	-- Minimum interval between repeats
+										value matches {
+											DV_DURATION[id65] 
+										}
+									}
+									ELEMENT[id27] occurrences matches {0..1} matches {	-- Brand substitution permitted
+										value matches {
+											DV_BOOLEAN[id66] matches {
+												value matches {True, False}
+											}
+										}
+									}
+									ELEMENT[id29] occurrences matches {0..1} matches {	-- Dispensing instructions
+										value matches {
+											DV_TEXT[id67] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id32] matches {
+				items matches {
+					ELEMENT[id39] matches {	-- Indication for authorised use
+						value matches {
+							DV_TEXT[id68] 
+						}
+					}
+					ELEMENT[id33] matches {	-- Medication Instruction Id
+						value matches {
+							DV_IDENTIFIER[id69] 
+						}
+					}
+					ELEMENT[id43] occurrences matches {0..1} matches {	-- Concession benefit
+						value matches {
+							DV_TEXT[id70] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Medication order">
+				description = <"Details of a medicine, vaccine or other therapeutic good with instructions for use.">
+			>
+			["id2"] = <
+				text = <"Order">
+				description = <"The instructions for a particular medicine, vaccine or other therapeutic good including dose and timing.">
+			>
+			["id4"] = <
+				text = <"Medicine">
+				description = <"The medicine, vaccine or other therapeutic good being ordered, administered to or used by the subject of care. This item should be coded if possible.">
+			>
+			["id5"] = <
+				text = <"Ingredients and form">
+				description = <"Detailed information about the ingredient(s) including form and strength.">
+			>
+			["id6"] = <
+				text = <"Dose description">
+				description = <"The amount and units of the medicine, vaccine or other therapeutic good to be used or administered at one time.">
+			>
+			["id7"] = <
+				text = <"Structured dose">
+				description = <"Structured information on dose with dose unit. If 'Structured dose' is used with 'Dose description' then these must be semantically equivalent.">
+			>
+			["id9"] = <
+				text = <"Timing description">
+				description = <"The timing of the doses, which may include frequency and details such as relationship to food.">
+			>
+			["id10"] = <
+				text = <"Overall directions">
+				description = <"A complete narrative description of how much, when and how to use the medicine, vaccine or other therapeutic good.">
+			>
+			["id11"] = <
+				text = <"Structured timing">
+				description = <"Details of the timing of the use or administration of the medicine, vaccine or other therapeutic good.">
+			>
+			["id12"] = <
+				text = <"Start criterion">
+				description = <"A condition which, when met, requires the start of administration or use.">
+			>
+			["id13"] = <
+				text = <"Start date">
+				description = <"The date and optional time to begin using the medicine, vaccine or other therapeutic good.">
+			>
+			["id14"] = <
+				text = <"Stop date">
+				description = <"The date and optional time to stop using the medicine, vaccine or other therapeutic good.">
+			>
+			["id15"] = <
+				text = <"Duration of treatment">
+				description = <"The length of time for which the medicine, vaccine or other therapeutic good should be used or administered (from the initial dose to the final dose).">
+			>
+			["id16"] = <
+				text = <"Number of administrations">
+				description = <"The total number of doses of the medicine, vaccine or other therapeutic good that are to be used or administered (from the initial dose to the final dose).">
+			>
+			["id17"] = <
+				text = <"Stop criterion">
+				description = <"A condition which, when met, requires the cessation of administration or use.">
+			>
+			["id18"] = <
+				text = <"Long-term">
+				description = <"It is anticipated that the medicine, vaccine or therapeutic good will be re-prescribed or re-dispensed over a period of time.">
+			>
+			["id19"] = <
+				text = <"Clinical indication">
+				description = <"A reason for ordering the medicine, vaccine or other therapeutic good.">
+			>
+			["id24"] = <
+				text = <"Dispensing">
+				description = <"Information for the dispenser.">
+			>
+			["id26"] = <
+				text = <"Number of repeats">
+				description = <"The number of times the expressed quantity of medicine, vaccine or other therapeutic good may be refilled or redispensed without a new prescription.">
+			>
+			["id27"] = <
+				text = <"Brand substitution permitted">
+				description = <"Indicates whether or not the substitution of a prescribed medicine with a different brand name of the same medicine, vaccine or other therapeutic good, which has been determined as bioequivalent, is allowed when the medication is dispensed/supplied.">
+			>
+			["id29"] = <
+				text = <"Dispensing instructions">
+				description = <"Additional instructions to the person dispensing the medicine, vaccine or other therapeutic good.">
+			>
+			["id30"] = <
+				text = <"PRN">
+				description = <"The timing is dependent within limits on the subject of care's condition or symptoms  (e.g. 4hrly p.r.n. means the medicine can be taken as frequently as every four hours if necessary). \"Pro re nata\" in latin means as circumstances arise.">
+			>
+			["id33"] = <
+				text = <"Medication Instruction Id">
+				description = <"An identifier used in an external system and associated with this medication instruction.">
+			>
+			["id36"] = <
+				text = <"Comment">
+				description = <"Any additional information that may be needed to ensure the continuity of supply, rationale for current dose and timing, or safe and appropriate use.">
+			>
+			["id38"] = <
+				text = <"Detailed timing">
+				description = <"Structured details of the timing of the use or administration.">
+			>
+			["id39"] = <
+				text = <"Indication for authorised use">
+				description = <"The specific indication for use that is required by an authorising agency to achieve subsidy for or access to the medicine, vaccine or other therapeutic good. This could be a national medication scheme, insurance company or other funding agency.">
+			>
+			["id43"] = <
+				text = <"Concession benefit">
+				description = <"Indicates the category of subsidy appropriate to the item being prescribed.">
+			>
+			["id44"] = <
+				text = <"Administration details">
+				description = <"Details of the administration of the medicine, vaccine or other therapeutic good.">
+			>
+			["id45"] = <
+				text = <"Additional instruction">
+				description = <"An additional statement on how to use the medicine, vaccine or other therapeutic good.">
+			>
+			["id46"] = <
+				text = <"Quantity">
+				description = <"The amount of medicine, vaccine or other therapeutic good to be dispensed.">
+			>
+			["id47"] = <
+				text = <"Minimum interval between repeats">
+				description = <"The minimum time between repeat dispensing of the medicine, vaccine or therapeutic good. Note: This is specified by the ordering clinician for a specific reason such as safety or best practice.">
+			>
+			["ac2"] = <
+				text = <"Medication name">
+				description = <"Any valid term for a medicine or other therapeutic agent.">
+			>
+		>
+	>

@@ -1,0 +1,1951 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2011-03-09</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics, Australia</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Malin Berg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>SB BHATTACHARYYA, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Anita Bjørnnes, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Randi Brendberg, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>anne clarke, HSE, Ireland</other_contributors>
+    <other_contributors>Peter Fedorcsak, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Forvaltningssenter EPJ, Helse-Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, Norway</other_contributors>
+    <other_contributors>Roar Holm, Helse Vest IKT A/S, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Pétur Júlíusson, Barneklinikken, HUS og K2, UIB, Norway</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Harmony Kosola, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Bjorn Naess, DIPS</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Danielle Santos Alves, Federal University of Pernambuco, Brazil</other_contributors>
+    <other_contributors>Gro-Hilde Severinsen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Iztok Stotl, UKCLJ, Slovenia</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Eli Taranger Ljønes, Bodø kommune, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Menstrual cycle summary, draft archetype [Internet]. Australian Digital Health Agency (NEHTA), ADHA Clinical Knowledge Manager. No longer available.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">2AE947B7687E87A39785E3C198EC4AE8</other_details>
+    <other_details id="build_uid">7eb71750-4e76-4705-8f6c-b4021bba5862</other_details>
+    <other_details id="revision">1.1.1</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zum Aufzeichnen zusammenfassender oder dauerhafter Informationen über Ereignisse in der Menstruationsgeschichte einer Person oder Menstruationsmuster im Laufe der Zeit.</purpose>
+      <keywords>Menstruation, Menarche, Menopause, Wechseljahre, perimenopausal, postmenopausal</keywords>
+      <use>Zur Aufzeichnung zusammenfassender oder dauerhafter Informationen über Menstruationsereignisse oder Menstruationsmuster einer Person im Laufe der Zeit.&#xD;
+&#xD;
+Mehrere Instanzen des CLUSTERS "Pro Episode" ermöglichen die Zusammenfassung eines sich entwickelnden Verlaufs sowohl vergangener als auch gegenwärtiger Menstruationsepisoden oder -muster.&#xD;
+&#xD;
+Das Datenelement "Letzte Aktualisierung" erfasst das letzte Mal, dass die Menstruationszusammenfassung als Ganzes, einschließlich jeder Episode, aktualisiert wurde.&#xD;
+&#xD;
+Verwenden Sie das Datenelement "Gesamtbeschreibung", um die narrativen Beschreibungen der Menstruation oder der Menstruationsgeschichte in bestehenden oder älteren klinischen Systemen in ein archetypisches Format zu integrieren.</use>
+      <misuse>Nicht für die Aufzeichnung von Informationen über einen bestimmten Menstruationszyklus zu verwenden. Verwenden Sie zu diesem Zweck OBSERVATION.menstruation.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>*To record an overview of the significant events related to menstrual cycle events.(en)</purpose>
+      <keywords>*menstruation(en)</keywords>
+      <keywords>*menstrual(en)</keywords>
+      <keywords>*cycle(en)</keywords>
+      <keywords>*period(en)</keywords>
+      <keywords>*menarche(en)</keywords>
+      <keywords>*menopause(en)</keywords>
+      <keywords>*LNMP(en)</keywords>
+      <use>*Use to record significant events related to the menstrual history.(en)</use>
+      <misuse>*Not to be used to record information about a specific menstrual cycle. Use OBSERVATION.menstruation for this purpose. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att spela in sammanfattning eller ihållande information om en persons menstruationshistoriska händelser eller menstruationsmönster över tiden.</purpose>
+      <keywords>menstruation</keywords>
+      <keywords>mensdebut</keywords>
+      <keywords>menopaus</keywords>
+      <keywords>klimakteriet</keywords>
+      <keywords>perimenopausal</keywords>
+      <keywords>postmenopausal</keywords>
+      <use>Används för att registrera sammanfattning eller ihållande information om en persons menstruationshistoriska händelser eller menstruationsmönster över tiden.&#xD;
+&#xD;
+Flera instanser av CLUSTER 'Per episod' tillåter sammanställning av en utvecklande historia av både tidigare och nuvarande episoder, eller mönster, av menstruation.&#xD;
+&#xD;
+Dataelementet 'Senast uppdaterad' registrerar senaste gången som menstruationssammanfattningen som helhet, inklusive varje avsnitt, uppdaterades.&#xD;
+&#xD;
+Används för att införliva de berättande beskrivningarna av menstruation eller menstruationshistoria i befintliga eller äldre kliniska system i ett arketypiskt format med hjälp av dataelementet "Övergripande beskrivning".</use>
+      <misuse>Inte avsedd för att registrera information om en viss menstruationscykel. Använd OBSERVATION.menstruation för detta ändamål.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere sammendrag og varig (persistent) informasjon om individets historikk knyttet til menstruasjon eller menstruasjonsmønstre over tid.</purpose>
+      <keywords>menstruasjon</keywords>
+      <keywords>menstruerende</keywords>
+      <keywords>syklus</keywords>
+      <keywords>menarke</keywords>
+      <keywords>menopause</keywords>
+      <keywords>overgangsalder</keywords>
+      <keywords>mensen</keywords>
+      <keywords>mens</keywords>
+      <keywords>menarché</keywords>
+      <keywords>blødningmønster</keywords>
+      <use>Brukes for å registrere sammendrag eller varig (persistent) informasjon om et individs menstruasjonshistorikk eller menstruasjonsmønster over tid.&#xD;
+&#xD;
+Flere forekomster av det interne Clusteret 'Per episode' tillater sammenstilling av en utvikling av menstruasjonen i reproduktiv periode, for både tidligere og nåværende episoder.&#xD;
+&#xD;
+Dataelementet "Sist oppdatert" vil bli brukt til å registrere siste gang menstruasjons-sammendraget som helhet ble oppdatert, inkludert hver episode.&#xD;
+&#xD;
+Dataelementet "Overordnet beskrivelse" brukes til å overføre fritekstbeskrivelser av menstruasjon eller menstruasjonshistorikken fra eksisterende eller tidligere kliniske systemer til arketypeformat.</use>
+      <misuse>Brukes ikke for å registrere detaljer om en spesifikk menstruasjonssyklus. Bruk arketypen "Menstruasjon" (OBSERVATION.menstruation) for dette formålet.&#xD;
+</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record summary or persistent information about an individual's menstruation history events or patterns of menstruation over time.</purpose>
+      <keywords>menstruation</keywords>
+      <keywords>menarche</keywords>
+      <keywords>menopause</keywords>
+      <keywords>menopausal</keywords>
+      <keywords>perimenopausal</keywords>
+      <keywords>postmenopausal</keywords>
+      <use>Use to record summary or persistent information about an individual's menstruation history events or patterns of menstruation over time.&#xD;
+&#xD;
+Multiple instances of the 'Per episode' CLUSTER will allow aggregation of an evolving history of both past and present episodes, or patterns, of menstruation.&#xD;
+&#xD;
+The 'Last updated' data element will record the last time that the Menstruation summary as a whole, including each episode, was updated.&#xD;
+&#xD;
+Use to incorporate the narrative descriptions of Menstruation or menstrual history within existing or legacy clinical systems into an archetyped format, using the 'Overall description' data element.</use>
+      <misuse>Not to be used to record information about a specific menstrual cycle. Use OBSERVATION.menstruation for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Darin Leonhardt</author>
+    <author id="organisation">PLRI</author>
+    <author id="email">leonhardt.darin@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+    <author id="name">Vesa Peltola</author>
+    <author id="organisation">Tieto Finland</author>
+    <author id="email">vesa.peltola@tieto.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Therese Lindberg, Marit Alice Venheim</author>
+    <author id="organisation">Cambio CDS, Helse Vest IKT</author>
+    <author id="email">therese.lindberg@cambio.se, marit.alice.venheim@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand, Vebjørn Arntzen og Silje Ljosland Bakke, Marit Alice Venheim</author>
+    <author id="organisation">Helse Bergen Hospital Trust, Norway, Oslo University Hospital, Helse Vest IKT, Helse Vest IKT</author>
+    <author id="email">john.tore.valand@helse-bergen.no, marit.alice.venheim@helse-vest-ikt.no, varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>e8f2d2fb-1d9f-4352-8e84-6d1b421fb830</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-EVALUATION.menstruation_summary.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>EVALUATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0025</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0026</code_list>
+                    <code_list>at0005</code_list>
+                    <code_list>at0006</code_list>
+                    <code_list>at0007</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>2</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>DV_DURATION</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_DURATION">
+                      <pattern>PYM</pattern>
+                      <range>
+                        <lower_included>true</lower_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>true</upper_unbounded>
+                        <lower>P0M</lower>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+              <rm_attribute_name>items</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0011</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0012</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0013</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0014</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>defining_code</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_CODE_PHRASE">
+                        <rm_type_name>CODE_PHRASE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <terminology_id>
+                          <value>local</value>
+                        </terminology_id>
+                        <code_list>at0015</code_list>
+                        <code_list>at0016</code_list>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0017</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DURATION</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_PRIMITIVE_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <item xsi:type="C_DURATION">
+                          <pattern>PD</pattern>
+                          <range>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>P1D</lower>
+                            <upper>P999D</upper>
+                          </range>
+                        </item>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_INTERVAL&lt;DV_DURATION&gt;</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>lower</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <pattern>PD</pattern>
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>P1D</lower>
+                                <upper>P999D</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>upper</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <pattern>PD</pattern>
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>P1D</lower>
+                                <upper>P999D</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0018</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DURATION</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_PRIMITIVE_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <item xsi:type="C_DURATION">
+                          <pattern>PD</pattern>
+                          <range>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>P1D</lower>
+                            <upper>P999D</upper>
+                          </range>
+                        </item>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_INTERVAL&lt;DV_DURATION&gt;</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>lower</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <pattern>PD</pattern>
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>P1D</lower>
+                                <upper>P999D</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>upper</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <pattern>PD</pattern>
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>P1D</lower>
+                                <upper>P999D</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0020</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>.*</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0021</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0022</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <cardinality>
+                <is_ordered>false</is_ordered>
+                <is_unique>false</is_unique>
+                <interval>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>1</lower>
+                </interval>
+              </cardinality>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>2</upper>
+            </occurrences>
+            <node_id>at0004</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_PRIMITIVE_OBJECT">
+                    <rm_type_name>DV_DURATION</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <item xsi:type="C_DURATION">
+                      <pattern>PYM</pattern>
+                      <range>
+                        <lower_included>true</lower_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>true</upper_unbounded>
+                        <lower>P0M</lower>
+                      </range>
+                    </item>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0023</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0024</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Menstruation summary</items>
+        <items id="description">Summary or persistent information about an individual's menstruation history.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Menarche</items>
+        <items id="description">Onset of first menstrual cycle.</items>
+        <items id="comment">This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent the date, or a partial date, of menarche and the DV_DURATION data type to represent the age at menarche. </items>
+      </items>
+      <items code="at0003">
+        <items id="text">Menstrual status</items>
+        <items id="description">Statement about the current menstrual activity.</items>
+        <items id="comment">If this data element is updated, the 'Date last updated' in Protocol should also be amended.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Menopause</items>
+        <items id="description">Cessation of all menstrual cycles.</items>
+        <items id="comment">This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent a partial date, such as year only, of menopause and the DV_DURATION data type to represent the age at menopause. </items>
+      </items>
+      <items code="at0005">
+        <items id="text">Premenopausal</items>
+        <items id="description">After menarche, preceding menopause and without symptoms related to the hormonal changes preceding menopause.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Perimenopausal</items>
+        <items id="description">Preceding menopause with symptoms related to the hormonal changes leading up to menopause.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Postmenopausal</items>
+        <items id="description">After menopause.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Per episode</items>
+        <items id="description">Details about a typical pattern of menstruation during a specified interval of time.</items>
+        <items id="comment">If the pattern of menstruation changes significantly, or other factors significantly interrupt (for example, a full term pregnancy) or influence (for example, changing contraception methods) the menstrual cycle, then it may be useful to record as a new episode .</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Episode label</items>
+        <items id="description">A name or label associated with this episode of menstruation.</items>
+        <items id="comment">The label will allow a specific episode to be distinguished from other episodes with similar or different menstruation patterns. For example: 'Post Pregnancy #2'; 'Commenced POP'.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Episode start date</items>
+        <items id="description">Date when this episode commenced.</items>
+        <items id="comment">Can be a partial date, for example, only a year.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about this episode.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Typical pattern</items>
+        <items id="description">The usual predictability of menstruation during this episode.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Regular</items>
+        <items id="description">The start of menses is roughly predictable from month to month.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Irregular</items>
+        <items id="description">The start of menses is not predictable month to month.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Typical cycle length</items>
+        <items id="description">The usual length of cycle during this episode.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Typical menses duration</items>
+        <items id="description">The usual duration of menses during this episode.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Additional details</items>
+        <items id="description">Additional structured details about this episode of menstruation.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Episode end date</items>
+        <items id="description">Date when this episode ceased.</items>
+        <items id="comment">Can be a partial date, for example, only a year. This data field will be empty if the episode is current and ongoing.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Episode comment</items>
+        <items id="description">Additional narrative about this episode of menstruation not captured in other fields.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the overall patterns and episodes of menstruation not captured in other fields.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Date last updated</items>
+        <items id="description">Date when the Menstruation summary, including episodes, was updated.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Overall description</items>
+        <items id="description">Narrative description about the overall pattern of menstruation.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Premenarchal</items>
+        <items id="description">Before the first onset of menstruation.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Sammendrag om menstruasjon</items>
+        <items id="description">Sammendrag eller varig (persistent) informasjon om et individs menstruasjonshistorikk.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Menarche (en)</items>
+        <items id="description">*Onset of first menstrual cycle. (en)</items>
+        <items id="comment">*This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent the date, or a partial date, of menarche and the DV_DURATION data type to represent the age at menarche.  (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Menstruasjonsstatus</items>
+        <items id="description">Status relatert til stadium under reproduktiv periode.</items>
+        <items id="comment">Hvis dette dataelementet er oppdatert, bør "Dato sist oppdatert" i Protocol også endres.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Menopause (en)</items>
+        <items id="description">*Cessation of all menstrual cycles. (en)</items>
+        <items id="comment">*This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent a partial date, such as year only, of menopause and the DV_DURATION data type to represent the age at menopause.  (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Premenopausal</items>
+        <items id="description">Etter menarké, forut for menopausen og uten symptomer relatert til hormonelle endringer i klimakteriet.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Perimenopausal</items>
+        <items id="description">Forut for menopausen, med symptomer relatert til hormonelle endringer i klimakteriet.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Postmenopausal</items>
+        <items id="description">Etter menopausen.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Per tidsepisode</items>
+        <items id="description">Detaljer om et typisk menstruasjonsmønster i et angitt tidsintervall.</items>
+        <items id="comment">Hvis menstruasjonsmønsteret endres betydelig, eller andre faktorer avbryter (for eksempel et fullgått svangerskap) eller påvirker menstruasjonssyklusen (for eksempel endring av prevensjonsmetoder), kan det være nyttig å registrere det inn som en ny episode.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Episodenavn</items>
+        <items id="description">Et navn eller en betegnelse for denne episoden i menstruasjonshistorikken.</items>
+        <items id="comment">Navnet gjør det mulig å skille en bestemt episode fra andre episoder med lignende eller forskjellige menstruasjonsmønstre. For eksempel: "Etter andre svangerskap", "Påbegynt p-pille".</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Episodens startdato</items>
+        <items id="description">Dato da episoden startet.</items>
+        <items id="comment">Kan være en deldato, for eksempel kun årstall.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse om denne episoden.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Typisk mønster</items>
+        <items id="description">Regulariteten av menstruasjonen i løpet av denne episoden.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Regelmessig</items>
+        <items id="description">Starten av menstruasjonen er grovt sett forutsigbar fra måned til måned.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Uregelmessig</items>
+        <items id="description">Starten av menstruasjonen er uforutsigbar fra måned til måned.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Typisk sykluslengde</items>
+        <items id="description">Vanlig sykluslengde i løpet av denne episoden.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Typisk varighet</items>
+        <items id="description">Den vanlige varigheten av menstruasjon i løpet av denne episoden.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om denne episoden.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Episodens sluttdato</items>
+        <items id="description">Datoen episoden opphørte.</items>
+        <items id="comment">Kan være en deldato, for eksempel årstall. Dette dataelementet vil være tomt om episoden er pågående.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Kommentar til episoden</items>
+        <items id="description">Ytterligere fritekst om menstruasjonen innenfor den spesifiserte episoden, som ikke er omfattet av andre felt.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om menstruasjonsmønster og epsioder som ikke er omfattet av andre felt.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Sist oppdatert</items>
+        <items id="description">Datoen da menstruasjons-sammendraget, inkludert episoder, ble sist oppdatert.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Overordnet beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse om det generelle menstruasjonsmønsteret.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Premenarke</items>
+        <items id="description">Før første menstruasjon.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">Kuukautiskierron yhteenveto</items>
+        <items id="description">Yhteenveto merkittävistä kuukautiskiertoon liittyvistä tapahtumista.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Menarche (en)</items>
+        <items id="description">*Onset of first menstrual cycle. (en)</items>
+        <items id="comment">*This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent the date, or a partial date, of menarche and the DV_DURATION data type to represent the age at menarche.  (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Menstrual status (en)</items>
+        <items id="description">*Statement about the current menstrual activity. (en)</items>
+        <items id="comment">*If this data element is updated, the 'Date last updated' in Protocol should also be amended. (en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Menopause (en)</items>
+        <items id="description">*Cessation of all menstrual cycles. (en)</items>
+        <items id="comment">*This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent a partial date, such as year only, of menopause and the DV_DURATION data type to represent the age at menopause.  (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Premenopausal (en)</items>
+        <items id="description">*After menarche, preceding menopause and without symptoms related to the hormonal changes preceding menopause. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Perimenopausal (en)</items>
+        <items id="description">*Preceding menopause with symptoms related to the hormonal changes leading up to menopause. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Postmenopausal (en)</items>
+        <items id="description">*After menopause. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Extension (en)</items>
+        <items id="description">*</items>
+        <items id="comment">*For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Per episode (en)</items>
+        <items id="description">*</items>
+        <items id="comment">*If the pattern of menstruation changes significantly, or other factors significantly interrupt (for example, a full term pregnancy) or influence (for example, changing contraception methods) the menstrual cycle, then it may be useful to record as a new episode . (en)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">*Episode label (en)</items>
+        <items id="description">*</items>
+        <items id="comment">*The label will allow a specific episode to be distinguished from other episodes with similar or different menstruation patterns. For example: 'Post Pregnancy #2'; 'Commenced POP'. (en)</items>
+      </items>
+      <items code="at0012">
+        <items id="text">*Episode start date (en)</items>
+        <items id="description">*</items>
+        <items id="comment">*Can be a partial date, for example, only a year. (en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Description (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0014">
+        <items id="text">*Typical pattern (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0015">
+        <items id="text">*Regular (en)</items>
+        <items id="description">*The start of menses is roughly predictable from month to month. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Irregular (en)</items>
+        <items id="description">*The start of menses is not predictable month to month. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Typical cycle length (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Typical menses duration (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Additional structured details about this episode of menstruation. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Episode end date (en)</items>
+        <items id="description">*Date when this episode ceased. (en)</items>
+        <items id="comment">*Can be a partial date, for example, only a year. This data field will be empty if the episode is current and ongoing. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Episode comment (en)</items>
+        <items id="description">*Additional narrative about this episode of menstruation not captured in other fields. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Comment (en)</items>
+        <items id="description">*Additional narrative about the overall patterns and episodes of menstruation not captured in other fields. (en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Date last updated (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Overall description (en)</items>
+        <items id="description">*Narrative description about the overall pattern of menstruation. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Premenarchal (en)</items>
+        <items id="description">*Before the first onset of menstruation. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Menstruationsöversikt</items>
+        <items id="description">Sammanfattning eller ihållande information om en persons menstruationshistoria.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Menarche (en)</items>
+        <items id="description">*Onset of first menstrual cycle. (en)</items>
+        <items id="comment">*This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent the date, or a partial date, of menarche and the DV_DURATION data type to represent the age at menarche.  (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Menstruationsstatus</items>
+        <items id="description">Uttalande om den aktuella menstruationsaktiviteten.</items>
+        <items id="comment">Om detta dataelement uppdateras bör "Datum senast uppdaterad" i protokollet också ändras.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Menopause (en)</items>
+        <items id="description">*Cessation of all menstrual cycles. (en)</items>
+        <items id="comment">*This data element allows 2 occurrences in a template, if required. Use the DV_DATE data type to represent a partial date, such as year only, of menopause and the DV_DURATION data type to represent the age at menopause.  (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Premenopausal</items>
+        <items id="description">Efter mensdebut, före klimakteriet och utan symtom relaterade till hormonella förändringar före klimakteriet.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Perimenopausal</items>
+        <items id="description">Före klimakteriet med symtom relaterade till hormonella förändringar som leder till klimakteriet.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Postmenopausal</items>
+        <items id="description">Efter klimakteriet.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extension</items>
+        <items id="description">Ytterligare information krävs för att fånga lokalt innehåll eller anpassa sig till andra referensmodeller/formalismer.</items>
+        <items id="comment">Till exempel: lokala informationskrav eller ytterligare metadata för att anpassas till FHIR- eller CIMI-ekvivalenter.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Per episod</items>
+        <items id="description">Detaljer om ett typiskt menstruationsmönster under ett angivet tidsintervall.</items>
+        <items id="comment">Om menstruationsmönstret förändras avsevärt eller om andra faktorer avbryter signifikant (till exempel en graviditet) eller påverkar (till exempel förändrade preventivmedel) menstruationscykeln, kan det vara användbart att spela in som en ny episod.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Episodetikett</items>
+        <items id="description">Ett namn eller etikett associerat med denna episod av menstruation.</items>
+        <items id="comment">Etiketten gör det möjligt att särskilja en viss episod från andra med liknande eller olika menstruationsmönster. Till exempel: 'Post Graviditet nr 2'; 'Påbörjad POP'.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Startdatum för episod</items>
+        <items id="description">Datum när denna episod började.</items>
+        <items id="comment">Kan vara ett partiellt datum, till exempel bara ett år.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Beskrivning</items>
+        <items id="description">Berättande beskrivning om episoden.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Typiskt mönster</items>
+        <items id="description">Den vanliga förutsägbarheten för menstruation under episoden.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Regelbunden</items>
+        <items id="description">Början på menstruation är ungefär förutsägbar från månad till månad.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Oregelbunden</items>
+        <items id="description">Början av menstruation är inte förutsägbar månad till månad.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Typisk cykellängd</items>
+        <items id="description">Den vanliga cykellängden under episoden.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Typisk menstruationsvaraktighet</items>
+        <items id="description">Den vanliga varaktigheten för menstruation under episoden.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Ytterligare detaljer</items>
+        <items id="description">Ytterligare strukturerade detaljer om episoden av menstruation.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Episodens slutdatum</items>
+        <items id="description">Datum när episoden upphörde.</items>
+        <items id="comment">Kan vara ett partiellt datum, till exempel bara ett år. Detta datafält kommer att vara tomt om episoden är aktuellt och pågående.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Episod kommentar</items>
+        <items id="description">Ytterligare beskrivning om menstruationsepisoden som inte redan inkluderats.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare beskrivning om de övergripande mönster och menstruationsepisoder som inte redan inkluderats.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Datum senast uppdaterad</items>
+        <items id="description">Datum då menstruationsöversikten, inklusive episoden, uppdaterades.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Övergripande beskrivning</items>
+        <items id="description">Berättande beskrivning av det övergripande menstruationsmönstret.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Premenarkal</items>
+        <items id="description">Innan menstruationen börjar.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Zusammenfassung der Menstruation</items>
+        <items id="description">Zusammenfassende oder dauerhafte Informationen über die Menstruationsgeschichte einer Person.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Menarche</items>
+        <items id="description">Beginn des ersten Menstruationszyklus.</items>
+        <items id="comment">Dieses Datenelement kann, falls erforderlich, zweimal in einer Vorlage vorkommen. Verwenden Sie den Datentyp DV_DATE, um das Datum oder ein Teildatum der Menarche darzustellen, und den Datentyp DV_DURATION, um das Alter bei der Menarche darzustellen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Menstruationsstatus</items>
+        <items id="description">Angaben zur aktuellen Menstruationsaktivität.</items>
+        <items id="comment">Wenn dieses Datenelement aktualisiert wird, sollte auch das "Datum der letzten Aktualisierung" im Protokoll geändert werden.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Menopause</items>
+        <items id="description">Ausbleiben aller Menstruationszyklen.</items>
+        <items id="comment">Dieses Datenelement kann, falls erforderlich, zweimal in einer Vorlage vorkommen. Verwenden Sie den Datentyp DV_DATE, um ein Teildatum, z. B. nur das Jahr, der Menopause darzustellen, und den Datentyp DV_DURATION, um das Alter bei der Menopause darzustellen.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Prämenopausal</items>
+        <items id="description">Nach der Menarche, vor der Menopause und ohne Symptome im Zusammenhang mit den hormonellen Veränderungen vor der Menopause.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Perimenopausal</items>
+        <items id="description">or der Menopause auftretende Symptome, die mit den hormonellen Veränderungen im Vorfeld der Menopause zusammenhängen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Postmenopausal</items>
+        <items id="description">Nach der Menopause.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen sind erforderlich, um lokale Inhalte zu erfassen oder mit anderen Referenzmodellen/Formalismen in Einklang zu bringen.</items>
+        <items id="comment">Zum Beispiel: lokale Informationsanforderungen oder zusätzliche Metadaten zur Angleichung an FHIR oder CIMI-Äquivalente.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Pro Episode</items>
+        <items id="description">Angaben über ein typisches Menstruationsmuster während eines bestimmten Zeitintervalls.</items>
+        <items id="comment">Wenn sich das Menstruationsmuster signifikant ändert oder andere Faktoren den Menstruationszyklus signifikant unterbrechen (z. B. eine Schwangerschaft) oder beeinflussen (z. B. ein Wechsel der Verhütungsmethode), kann es sinnvoll sein, dies als neue Episode zu erfassen.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Episodenbezeichnung</items>
+        <items id="description">Ein Name oder ein Kennzeichen, das mit dieser Episode der Menstruation verbunden ist.</items>
+        <items id="comment">Die Bezeichnung ermöglicht es, eine bestimmte Episode von anderen Episoden mit ähnlichen oder anderen Menstruationsmustern zu unterscheiden. Zum Beispiel: "Post Pregnancy #2"; "Commenced POP".</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Startdatum der Episode</items>
+        <items id="description">Datum des Beginns dieser Episode.</items>
+        <items id="comment">Kann ein Teildatum sein, zum Beispiel nur ein Jahr.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Beschreibung</items>
+        <items id="description">Narrative Beschreibung dieser Episode.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Typischer Zyklus</items>
+        <items id="description">Die übliche Vorhersehbarkeit der Menstruation während dieser Episode.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Regelmäßig</items>
+        <items id="description">Der Beginn der Menstruation ist von Monat zu Monat ungefähr vorhersehbar.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Unregelmäßig</items>
+        <items id="description">Der Beginn der Menstruation ist nicht von Monat zu Monat vorhersehbar.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Typische Zykluslänge</items>
+        <items id="description">Die übliche Länge des Zyklus während dieser Episode.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Typische Menstruationsdauer</items>
+        <items id="description">Die übliche Dauer der Menstruation während dieser Episode.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Zusätzliche strukturierte Details über diese Episode der Menstruation.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Enddatum der Episode</items>
+        <items id="description">Datum, an dem diese Episode endete.</items>
+        <items id="comment">Kann ein Teildatum sein, beispielsweise nur ein Jahr. Dieses Datenfeld ist leer, wenn die Episode aktuell ist und noch andauert.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Kommentar zur Episode</items>
+        <items id="description">Zusätzliche Beschreibung über diese Episode der Menstruation, die in anderen Bereichen nicht erfasst wird.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Angaben zu den allgemeinen Mustern und Episoden der Menstruation, die in anderen Bereichen nicht erfasst werden.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Datum der letzten Aktualisierung</items>
+        <items id="description">Datum, an dem die Zusammenfassung der Menstruation, einschließlich der Episoden, aktualisiert wurde.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Allgemeine Beschreibung</items>
+        <items id="description">Narrative Beschreibung des allgemeinen Menstruationszyklus.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Prämenarchal</items>
+        <items id="description">Vor dem ersten Einsetzen der Menstruation.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

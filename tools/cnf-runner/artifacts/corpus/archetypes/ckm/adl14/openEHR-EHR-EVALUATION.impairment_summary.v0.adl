@@ -1,0 +1,255 @@
+﻿archetype (adl_version=1.4; uid=17c5a32a-e751-4540-853f-db62dbfdc1cd)
+	openEHR-EHR-EVALUATION.impairment_summary.v0
+
+concept
+	[at0000]	-- Impairment summary
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2026-03-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record summary information about a single impairment affecting a body function or body structure.">
+			use = <"Use to record summary information about a single impairment affecting a body function or body structure.
+
+A body function impairment is a problem affecting how a body system or function works. Examples include impairment of vision, hearing, sensation, speech, language, memory, cognition, movement, coordination, balance, emotional function, or psychological function.
+
+A body structure impairment is a problem affecting the anatomy of the body, including structural loss, absence, damage, deformity, or other structural abnormality affecting an anatomical part of the body. Examples include limb loss, absence of a body part, tissue loss, structural damage, or deformity of an anatomical structure.
+
+The relationship between impairments and diagnoses is not necessarily one-to-one. A single impairment may have multiple underlying causes, and a single diagnosis may give rise to multiple impairments.
+
+This archetype is one of a set of three related archetypes designed to represent different aspects of how an individual functions in everyday life. Together, these archetypes support structured representation of functional ability, impairments contributing to functional limitations, and the supports required to enable or assist an individual to perform an activity. The other archetypes are: 
+- OBSERVATION.functional_ability and 
+- EVALUATION.functional_support_requirements.">
+			misuse = <"Not to be used to record the underlying diagnosis, disease, injury, congenital condition, or other health condition associated with the impairment. Use the EVALUATION.problem_diagnosis archetype for this purpose.
+
+Not to be used to record an individual's ability to perform an activity or participate in a life situation. Use the OBSERVATION.functional_ability archetype for this purpose.
+
+Not to be used to record an assessment of the range of supports required to optimise an individual's ability to perform an activity or participate in a life situation as a result of an impairment. Use the EVALUATION.functional_support_requirements archetype for this purpose.
+  
+Not to be used to record information about a symptom or physical sign. Use the CLUSTER.symptom_sign archetype for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Impairment summary, Proposed data group. Sparked AU FHIR accelerator, Australian Clinical Data for Interoperability.
+
+World Health Organization. International classification of functioning, disability and health (ICF) [Internet]. Geneva: World Health Organization; 2001 [cited 2026 Jan 19]. Available from: https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"19A751AD4945DAC870A892E936307414">
+		["build_uid"] = <"fb079acd-8cce-4714-9d15-9df2b8b2e504">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	EVALUATION[at0000] matches {    -- Impairment summary
+		data matches {
+			ITEM_TREE[at0001] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] matches {    -- Impairment name
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0018] occurrences matches {0..1} matches {    -- Clinical description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {    -- Severity
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0004,    -- No impairment
+									at0005,    -- Mild impairment
+									at0006,    -- Moderate impairment
+									at0007,    -- Severe impairment
+									at0008]    -- Complete impairment
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0009] occurrences matches {0..1} matches {    -- Impact
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..1} matches {    -- Trajectory
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0011,    -- Stable
+									at0012,    -- Improving
+									at0013,    -- Worsening
+									at0014,    -- Fluctuating
+									at0015]    -- Unknown
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0016] occurrences matches {0..1} matches {    -- Date of onset
+						value matches {
+							DV_DATE matches {*}
+						}
+					}
+					ELEMENT[at0017] occurrences matches {0..1} matches {    -- Date of resolution
+						value matches {
+							DV_DATE matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0019] occurrences matches {0..*} matches {    -- Additional details
+						include
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[at0020] occurrences matches {0..1} matches {    -- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0021] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0023] occurrences matches {0..1} matches {    -- Last updated
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0022] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Impairment summary">
+					description = <"Summary information about loss, limitation, deficit, or alteration of a body function or body structure.">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Impairment name">
+					description = <"The name of the impairment.">
+					comment = <"For example: memory impairment; or deformity of the right foot.">
+				>
+				["at0003"] = <
+					text = <"Severity">
+					description = <"The extent or magnitude of the impairment.">
+					comment = <"The value set is aligned with the ICF 'Extent or magnitude of impairment' qualifier scale. The value 'No impairment' may be recorded when a previously identified impairment has resolved.">
+				>
+				["at0004"] = <
+					text = <"No impairment">
+					description = <"None, absent, or negligible (0–4%).">
+				>
+				["at0005"] = <
+					text = <"Mild impairment">
+					description = <"Slight or low (5–24%).">
+				>
+				["at0006"] = <
+					text = <"Moderate impairment">
+					description = <"Medium or fair (25–49%).">
+				>
+				["at0007"] = <
+					text = <"Severe impairment">
+					description = <"High or extreme (50–95%).">
+				>
+				["at0008"] = <
+					text = <"Complete impairment">
+					description = <"Total (96–100%).">
+				>
+				["at0009"] = <
+					text = <"Impact">
+					description = <"Narrative description of the impact of the impairment on the individual, including effects on body functions, activities, participation, or wellbeing.">
+					comment = <"For example: Difficulty remembering recent conversations, instructions, or appointments without reminders; or altered gait, unsteadiness and difficulty walking long distances.">
+				>
+				["at0010"] = <
+					text = <"Trajectory">
+					description = <"The overall trend in the severity and impact of the impairment over time.">
+				>
+				["at0011"] = <
+					text = <"Stable">
+					description = <"The overall trend in the severity or impact of the impairment over time is unchanged; no improvement or worsening noted over time.">
+				>
+				["at0012"] = <
+					text = <"Improving">
+					description = <"The severity or impact of the impairment is decreasing over time.">
+				>
+				["at0013"] = <
+					text = <"Worsening">
+					description = <"The severity or impact of the impairment is increasing over time.">
+				>
+				["at0014"] = <
+					text = <"Fluctuating">
+					description = <"The severity or impact of the impairment varies over time, with periods of improvement and worsening.">
+				>
+				["at0015"] = <
+					text = <"Unknown">
+					description = <"The overall trend in the severity or impact of the impairment over time cannot be determined.">
+				>
+				["at0016"] = <
+					text = <"Date of onset">
+					description = <"The date on which the impairment was first identified.">
+					comment = <"Partial dates are permitted.">
+				>
+				["at0017"] = <
+					text = <"Date of resolution">
+					description = <"The date on which the impairment resolved.">
+					comment = <"Partial dates are permitted.">
+				>
+				["at0018"] = <
+					text = <"Clinical description">
+					description = <"Narrative description of the impairment, including relevant clinical characteristics.">
+					comment = <"For example: Impairment of short-term memory affecting the ability to retain and recall recently acquired information; or structural deformity of the foot affecting normal alignment and weight distribution.">
+				>
+				["at0019"] = <
+					text = <"Additional details">
+					description = <"Additional structured details about the specified impairment.">
+				>
+				["at0020"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the impairment not captured in other fields.">
+				>
+				["at0021"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0022"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0023"] = <
+					text = <"Last updated">
+					description = <"The date when this impairment summary was last updated.">
+				>
+			>
+		>
+	>

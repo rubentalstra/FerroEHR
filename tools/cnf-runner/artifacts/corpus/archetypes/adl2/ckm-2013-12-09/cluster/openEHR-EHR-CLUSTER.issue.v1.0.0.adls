@@ -1,0 +1,62 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.issue.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"23/04/2006">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record an issue as presented by the patient.  ">
+			use = <"For recording issues as presented to the clinician by a patient or their advocate. This archetype has been designed to complement capturing information about the reason for attending a clinician other than recording a symptom or information about an event">
+			keywords = <"issue", ...>
+			misuse = <"Not for recording symptoms or events - use the specific archetypes for this purpose">
+		>
+	>
+	other_contributors = <"NEHTA data groups (Australia)", "Heather Leslie">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"7BB46BA6BD3DEBEF2C76BDAC72FB8A5A">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Issue presented by a person
+		items matches {
+			ELEMENT[id2] matches {	-- Issue
+				value matches {
+					DV_TEXT[id4] 
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- Detail
+				value matches {
+					DV_TEXT[id5] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Issue presented by a person">
+				description = <"An issue, symptom, or complaint presented to the health provider seeking explanation, education, understanding, investigation or treatment">
+			>
+			["id2"] = <
+				text = <"Issue">
+				description = <"The issue as presented by the person">
+			>
+			["id3"] = <
+				text = <"Detail">
+				description = <"Detailed information about the issue or health problem">
+			>
+		>
+	>

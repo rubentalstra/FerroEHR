@@ -1,0 +1,252 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.exam-ears.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.exam.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"02/11/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording findings on physical examination of the ears.">
+			use = <"">
+			keywords = <"examination", "physical", "ears", "ENT", "tympanic", "mastoid", "Rinne", "Weber">
+			misuse = <"Do not use for recording audiology findings Should normally be contained within an OBSERVATION">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"4C3FA1F70C90356DC3CA61F87EDAD866">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Examination of the ears
+		/items matches {
+			after [id3]
+			CLUSTER[id0.66] occurrences matches {0..2} matches {	-- Lateral Findings
+				items matches {
+					ELEMENT[id0.16] occurrences matches {0..1} matches {	-- Side
+						value matches {
+							DV_CODED_TEXT[id0.79] matches {
+								defining_code matches {[ac0.2]}		-- Side (synthesised)
+							}
+						}
+					}
+					CLUSTER[id0.57] occurrences matches {0..1} matches {	-- Physical
+						items matches {
+							allow_archetype CLUSTER[id0.76] occurrences matches {0..1} matches {	-- External ear detail
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation-external_ear(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection-external_ear(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							allow_archetype CLUSTER[id0.77] matches {	-- Auditory canal detail
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.inspection-ear_canal(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+							allow_archetype CLUSTER[id0.75] occurrences matches {0..1} matches {	-- Tympanic membrane detail
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.inspection-tympanic_perforation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection-tympanic_membrane(-[a-zA-Z0-9_]+)*\.v1/}
+							}
+						}
+					}
+					CLUSTER[id0.56] occurrences matches {0..1} matches {	-- Functional
+						items matches {
+							ELEMENT[id0.24] occurrences matches {0..1} matches {	-- Whisper test
+								value matches {
+									DV_TEXT[id0.80] 
+								}
+							}
+							ELEMENT[id0.68] occurrences matches {0..1} matches {	-- Rinne Test
+								value matches {
+									DV_ORDINAL[id0.81] matches {
+										[value, symbol] matches {
+											[{0}, {[at0.69]}],
+											[{1}, {[at0.70]}]
+										}
+									}
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[id10] matches {
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.auscultation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[id7] matches {
+						value matches {
+							DV_MULTIMEDIA[id0.82] matches {
+								media_type matches {[ac0.3]}		-- Image (synthesised)
+							}
+						}
+					}
+				}
+			}
+		}
+		/items[id5]/items matches {
+			ELEMENT[id6] occurrences matches {0..1} matches {
+				value matches {
+					DV_CODED_TEXT[id11.1] matches {
+						defining_code matches {[ac0.1]}		-- Normal statement (synthesised)
+					}
+				}
+			}
+		}
+		/items[id9.1]/items matches {
+			CLUSTER[id0.67] occurrences matches {0..1} matches {	-- Functional
+				items matches {
+					ELEMENT[id0.71] occurrences matches {0..1} matches {	-- Weber Test
+						value matches {
+							DV_ORDINAL[id0.83] matches {
+								[value, symbol] matches {
+									[{0}, {[at0.72]}],
+									[{1}, {[at0.73]}],
+									[{2}, {[at0.74]}]
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[id0.78] matches {	-- Detail
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.16"] = <
+				text = <"Side">
+				description = <"Left or Right ear examined?">
+			>
+			["at0.17"] = <
+				text = <"Left">
+				description = <"Left ear.">
+			>
+			["at0.18"] = <
+				text = <"Right">
+				description = <"Right ear.">
+			>
+			["id0.24"] = <
+				text = <"Whisper test">
+				description = <"A simple hearing test.">
+			>
+			["at0.48"] = <
+				text = <"Both ears normal">
+				description = <"Both ears are normal.">
+			>
+			["at0.49"] = <
+				text = <"Left ear normal">
+				description = <"The left ear is normal.">
+			>
+			["at0.50"] = <
+				text = <"Right ear normal">
+				description = <"The right ear is normal.">
+			>
+			["id0.56"] = <
+				text = <"Functional">
+				description = <"Lateral tests of ear function.">
+			>
+			["id0.57"] = <
+				text = <"Physical">
+				description = <"Physical examination of the ear.">
+			>
+			["id0.66"] = <
+				text = <"Lateral Findings">
+				description = <"Clinical findings related to a single ear.">
+			>
+			["id0.67"] = <
+				text = <"Functional">
+				description = <"Central functional auditory tests.">
+			>
+			["id0.68"] = <
+				text = <"Rinne Test">
+				description = <"A test to compare bone and air conduction of sound.">
+			>
+			["at0.69"] = <
+				text = <"Negative">
+				description = <"The Rinne test is positive.">
+			>
+			["at0.70"] = <
+				text = <"Positive">
+				description = <"The Rinne test is negative.">
+			>
+			["id0.71"] = <
+				text = <"Weber Test">
+				description = <"A test to distinguish conductive and sensoineural hearing loss.">
+			>
+			["at0.72"] = <
+				text = <"Normal">
+				description = <"The Weber test is not lateralised - normal.">
+			>
+			["at0.73"] = <
+				text = <"Lateralising Left">
+				description = <"The result of the Weber test is lateralising to the left.">
+			>
+			["at0.74"] = <
+				text = <"Lateralising Right">
+				description = <"The result of the Weber test is lateralising to the right.">
+			>
+			["id0.75"] = <
+				text = <"Tympanic membrane detail">
+				description = <"Detailed findings related to the tmpanic membrane or perforation.">
+			>
+			["id0.76"] = <
+				text = <"External ear detail">
+				description = <"Detailed findings related to the external ear.">
+			>
+			["id0.77"] = <
+				text = <"Auditory canal detail">
+				description = <"Detailed findings related to the audiory canal.">
+			>
+			["id0.78"] = <
+				text = <"Detail">
+				description = <"Further detailed functional findings.">
+			>
+			["id1.1"] = <
+				text = <"Examination of the ears">
+				description = <"Examination cluster for describing findings on physical examination of the eyes.">
+			>
+			["id9.1"] = <
+				text = <"Central findings">
+				description = <"Clinical findings related to both ears.">
+			>
+			["ac0.1"] = <
+				text = <"Normal statement (synthesised)">
+				description = <"A specific statement of normality. (synthesised)">
+			>
+			["ac0.2"] = <
+				text = <"Side (synthesised)">
+				description = <"Left or Right ear examined? (synthesised)">
+			>
+			["ac0.3"] = <
+				text = <"Image (synthesised)">
+				description = <"Drawing or image of the area examined. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.48", "at0.49", "at0.50">
+		>
+		["ac0.2"] = <
+			id = <"ac0.2">
+			members = <"at0.17", "at0.18">
+		>
+		["ac0.3"] = <
+			id = <"ac0.3">
+			members = <"at1", "at2", "at3">
+		>
+	>

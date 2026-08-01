@@ -1,0 +1,131 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.macroscopy_lung_carcinoma.v1
+
+concept
+	[at0000]	-- Macroscopic findings - Lung cancer
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"11/10/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record detailed findings about lung cancer found on macroscopic histopathological examination.">
+			use = <"To record detailed findings about macroscopic examination of tissue related to lung cancer.
+Use as a component archetype in the context of a suite of archetypes that make up a histopathology report ie OBSERVATION.lab_test.histopathology and CLUSTER.microscopy_lung_carcinoma.">
+			keywords = <"histopathology", "cancer", "laboratory", "lab", "malignancy", "pathology", "lung", "bronchial">
+			misuse = <"Not designed to be used within any other archetype other than OBSERVATION.lab_test.histopathology.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"The Royal College of Pathologists. Dataset for lung cancer histopathology reports [Internet]. 2007 Sep ;[cited 2009 Jul 27 ] 
+Available from: http://www.rcpath.org/index.asp?PageID=1159
+
+College of American Pathologists. Histopathology Lung protocol [Internet]. [cited 2009 Jul 27 ]
+Available from: http://www.cap.org/apps/docs/committees/cancer/cancer_protocols/2005/lung05_pw.pdf">
+		["MD5-CAM-1.0.1"] = <"F480BB8ACB657D26D643D21541AE52D5">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Macroscopic findings - Lung cancer
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Number of tumours
+				value matches {
+					DV_COUNT matches {
+						magnitude matches {|>=0|}
+					}
+				}
+			}
+			allow_archetype CLUSTER[at0003] occurrences matches {0..*} matches {	-- Tumour site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0001] occurrences matches {0..*} matches {	-- Tumour dimensions
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0004] occurrences matches {0..*} matches {	-- Direct spread of tumour
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_invasion(-[a-zA-Z0-9_]+)*\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {	-- Tumour resection margin 
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_resection_margins(-[a-zA-Z0-9_]+)*\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0006] occurrences matches {0..*} matches {	-- Lymph node involvement
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.lymph_node_metastases(-[a-zA-Z0-9_]+)*\.v1/}
+				exclude
+					archetype_id/value matches {/.*/}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {	-- Non-neoplastic lung findings
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Macroscopic findings - Lung cancer">
+					description = <"Macroscopic anatomical pathology findings related to lung cancer.">
+				>
+				["at0001"] = <
+					text = <"Tumour dimensions">
+					description = <"Details of maximum dimensions of the tumour.">
+				>
+				["at0002"] = <
+					text = <"Number of tumours">
+					description = <"The overall number of tumours.">
+				>
+				["at0003"] = <
+					text = <"Tumour site">
+					description = <"The site of the tumour.">
+				>
+				["at0004"] = <
+					text = <"Direct spread of tumour">
+					description = <"Details of direct spread of the tumour.">
+				>
+				["at0005"] = <
+					text = <"Tumour resection margin ">
+					description = <"Details of medial or bronchial resection margins.">
+				>
+				["at0006"] = <
+					text = <"Lymph node involvement">
+					description = <"Details of lymph node involvement by tumour.">
+				>
+				["at0007"] = <
+					text = <"Non-neoplastic lung findings">
+					description = <"Findings of non-neoplastic lung pathology.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+			>
+		>
+	>

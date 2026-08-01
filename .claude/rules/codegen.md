@@ -18,6 +18,8 @@ hand-written. `openehr-codegen` reads the vendored specs and emits Rust:
   `openehr-rm/src/model/` — the AQL planner's oracle. `emit` already
   emits it as part of `openehr-rm`; this target refreshes just that subtree.
 - `emit-opt` → the OPT 1.4 model + XML codec (`opt14`) into `openehr-its`.
+- `emit-aom2` → both AOM2 archetype XML codecs into `openehr-its`: `aom2` (the
+  persistent `P_AOM` form) + `aom2_model` (the AOM model form).
 
 ## The three hard rules
 

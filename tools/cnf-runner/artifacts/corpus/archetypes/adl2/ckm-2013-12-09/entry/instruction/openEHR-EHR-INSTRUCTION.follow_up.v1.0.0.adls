@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-INSTRUCTION.follow_up.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To recrod details about an instruction to follow up.">
+			use = <"">
+			misuse = <"">
+		>
+	>
+
+definition
+	INSTRUCTION[id1] matches {	-- Follow up instruction
+		activities matches {
+			ACTIVITY[id2] occurrences matches {1..*} matches {	-- Follow up activity
+				action_archetype_id matches {/openEHR-EHR-ACTION\.follow_up\.v1/}
+				description matches {
+					allow_archetype ITEM_TREE[id3] occurrences matches {0..1} matches {
+						include
+							archetype_id/value matches {/openEHR-EHR-ITEM_TREE\.follow_up\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Follow up instruction">
+				description = <"The instruction about follow up">
+			>
+			["id2"] = <
+				text = <"Follow up activity">
+				description = <"The activity of the follow up">
+			>
+		>
+	>

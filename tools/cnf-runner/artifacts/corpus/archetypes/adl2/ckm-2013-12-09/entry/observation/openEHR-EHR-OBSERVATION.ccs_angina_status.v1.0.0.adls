@@ -1,0 +1,122 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.ccs_angina_status.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2013-03-08">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a classification of patient angina on the basis of reported chest pain.  Based on Canadian Cardiovascular Society (CCS) Angina Status score, adjusted to add Class 0, to record situations where patients have no symptoms.">
+			use = <"Use to record a classification of patient angina on the basis of reported chest pain based on the CCS Angina Status Score.">
+			keywords = <"discomfort", "pain", "cardiac", "angina">
+			misuse = <"Note that Class 0 is not defined in the formal Canadian Cardiovascular Society (CCS) Angina Status score.">
+		>
+	>
+	references = <
+		["1"] = <"Canadian Cardiovascular Society grading of angina pectoris">
+		["2"] = <"Available from: http://www.ccs.ca/download/position_statements/Grading%20of%20Angina.pdf">
+		["3"] = <"CANADIAN CARDIOVASCULAR SOCIETY ANGINA GRADE 0 – A CLINICALLY USEFUL ADDITION">
+		["4"] = <"Available from: http://www.pulsus.com/ccc2003/abs/a853.htm">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"14E7DD51D9D86C6E70246884717DB767">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Angina symptom Classification (CCS)
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Angina classification
+										value matches {
+											DV_ORDINAL[id6] matches {
+												[value, symbol] matches {
+													[{0}, {[at6]}],
+													[{1}, {[at7]}],
+													[{2}, {[at8]}],
+													[{3}, {[at9]}],
+													[{4}, {[at10]}]
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Angina symptom Classification (CCS)">
+				description = <"Angina symptom score based on Canadian Cardiovascular Society (CCS) Angina Status score.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Any event.">
+			>
+			["id5"] = <
+				text = <"Angina classification">
+				description = <"Angina symptom score based on Canadian Cardiovascular Society (CCS) Angina Status classification.">
+			>
+			["at6"] = <
+				text = <"Class 0">
+				description = <"Patient has no angina symptoms.">
+			>
+			["at7"] = <
+				text = <"Class I">
+				description = <"Angina which does not limit ordinary physical activity.">
+			>
+			["at8"] = <
+				text = <"Class II">
+				description = <"Slight limitation of ordinary activity.">
+			>
+			["at9"] = <
+				text = <"Class III">
+				description = <"Marked limitation of ordinary physical activity.">
+			>
+			["at10"] = <
+				text = <"Class IV">
+				description = <"Inability to perform any physical activity without discomfort.">
+			>
+			["ac1"] = <
+				text = <"Angina classification (synthesised)">
+				description = <"Angina symptom score based on Canadian Cardiovascular Society (CCS) Angina Status classification. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["Snomed"] = <
+			["id1"] = <http://snomed.info/id/134438001>
+			["id5"] = <http://snomed.info/id/134438001>
+			["at7"] = <http://snomed.info/id/61490001>
+			["at8"] = <http://snomed.info/id/41334000>
+			["at9"] = <http://snomed.info/id/85284003>
+			["at10"] = <http://snomed.info/id/89323001>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at6", "at7", "at8", "at9", "at10">
+		>
+	>

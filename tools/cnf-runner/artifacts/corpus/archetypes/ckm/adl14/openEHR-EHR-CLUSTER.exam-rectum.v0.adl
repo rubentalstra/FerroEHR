@@ -1,0 +1,1675 @@
+﻿archetype (adl_version=1.4; uid=c21ccb97-e3aa-4ff3-9101-7b97d14e09ba)
+	openEHR-EHR-CLUSTER.exam-rectum.v0
+specialise
+	openEHR-EHR-CLUSTER.exam.v2
+
+concept
+	[at0000.1]	-- Examination of the rectum
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Nina Schewe, Natalia Strauch, Darin Leonhardt">
+				["organisation"] = <"Medizinische Hochschule Hannover, PLRI für medizinische Informatik/ Medizinische Hochschule">
+				["email"] = <"schewe.nina@mh-hannover.de, Strauch.Natalia@mh-hannover.de, leonhardt.darin@mh-hannover.de">
+			>
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Erik Sundvall">
+				["organisation"] = <"Region Östergötland + Linköping University">
+				["email"] = <"erik.sundvall@regionostergotland.se">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Silje Ljosland Bakke, Vebjørn Arntzen">
+				["organisation"] = <"Nasjonal IKT HF, Oslo University Hospital">
+				["email"] = <"varntzen@ous-hf.no">
+			>
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Adriana Kitajima">
+				["organisation"] = <"Hospital Alemão Oswaldo Cruz - HAOC">
+				["email"] = <"adrianakitajima@gmail.com">
+			>
+		>
+		["el"] = <
+			language = <[ISO_639-1::el]>
+			author = <
+				["name"] = <"Erasmia Partafylla">
+				["organisation"] = <"Sigmasoft">
+				["email"] = <"c.partafylla@sigmasoft.gr">
+			>
+		>
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			author = <
+				["name"] = <"Julio de Sosa">
+				["organisation"] = <"Servei Català de la Salut">
+				["email"] = <"juliodesosa@catsalut.cat">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Keisha Barwise">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"keisha.barwise@openehr.org">
+		["date"] = <"2025-07-08">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"*To record the findings observed during the physical examination of the rectum. (en)">
+			use = <"*Use to record the observed findings during the physical examination of the rectum.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam,  but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"*Rectal exam, DRE, rectum, palpation, inspection, lesion, bleeding, mucosa, feces, foreign body. (en)", ...>
+			misuse = <"Nicht zur Darstellung der klinischen Anamnese zu verwenden – verwenden Sie spezifische OBSERVATION- und CLUSTER-Archetypen. Zum Beispiel OBSERVATION.story und CLUSTER.symptom_sign.
+
+Nicht zur Darstellung der Ergebnisse einer bildgebenden Untersuchung verwenden – verwenden Sie für diesen Zweck die Archetypenfamilie CLUSTER.imaging_exam.">
+		>
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"*To record the findings observed during the physical examination of the rectum. (en)">
+			use = <"*Use to record the observed findings during the physical examination of the rectum.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam,  but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"*Rectal exam, DRE, rectum, palpation, inspection, lesion, bleeding, mucosa, feces, foreign body. (en)", ...>
+			misuse = <"*Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"*To record the findings observed during the physical examination of the rectum. (en)">
+			use = <"*Use to record the observed findings during the physical examination of the rectum.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam,  but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"*Rectal exam, DRE, rectum, palpation, inspection, lesion, bleeding, mucosa, feces, foreign body. (en)", ...>
+			misuse = <"Skal ikke brukes til å ta opp anamnese - bruk da spesifikke OBSERVATION og CLUSTER arketyper. For eksempel OBSERVATION.story og CLUSTER.symptom_sign.
+
+Skal ikke brukes for å registrere funn ved bildeundersøkelse - bruk arketype innen gruppen av CLUSTER.imaging_exam (Bildeundersøkelse) for dette.">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"*To record the findings observed during the physical examination of the rectum. (en)">
+			use = <"*Use to record the observed findings during the physical examination of the rectum.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam,  but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"*Rectal exam, DRE, rectum, palpation, inspection, lesion, bleeding, mucosa, feces, foreign body. (en)", ...>
+			misuse = <"*Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose. (en)">
+		>
+		["el"] = <
+			language = <[ISO_639-1::el]>
+			purpose = <"*To record the findings observed during the physical examination of the rectum. (en)">
+			use = <"*Use to record the observed findings during the physical examination of the rectum.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam,  but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"*Rectal exam, DRE, rectum, palpation, inspection, lesion, bleeding, mucosa, feces, foreign body. (en)", ...>
+			misuse = <"*Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose.(en)">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the findings observed during the physical examination of the rectum.">
+			use = <"Use to record the observed findings during the physical examination of the rectum.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam,  but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element.">
+			keywords = <"Rectal exam, DRE, rectum, palpation, inspection, lesion, bleeding, mucosa, feces, foreign body.", ...>
+			misuse = <"Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			purpose = <"*To record the findings observed during the physical examination of the rectum. (en)">
+			use = <"*Use to record the observed findings during the physical examination of the rectum.
+
+This archetype has been specifically designed to be used in the 'Examination detail' SLOT within the OBSERVATION.exam,  but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. Interpretation of the findings, for example 'No abnormality detected' or 'Moderate inflammation present', can be recorded using the 'Clinical interpretation' data element.
+
+The CLUSTER.exclusion_exam archetype can be nested within the 'Examination not done' SLOT to optionally record explicit details about the examination not being performed.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element. (en)">
+			keywords = <"*Rectal exam, DRE, rectum, palpation, inspection, lesion, bleeding, mucosa, feces, foreign body. (en)", ...>
+			misuse = <"*Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom_sign.
+
+Not to be used for recording the results of an imaging examination - use the CLUSTER.imaging_exam family of archetypes for this purpose.(en)">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Nicola Ewen Hall, openEHR Fellow 2025 Jamaica", "Khin Aung, Jamaica", "Heather Leslie, openEHR Foundation, CCIO">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"24C7EA9AED19AE532FC5BC038FB4F833">
+		["build_uid"] = <"d5c2c83a-e328-4c1f-befe-38a7f4169d15">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {    -- Examination of the rectum
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] matches {    -- System or structure examined
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0012] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0011] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2/}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {    -- Clinical description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0004] occurrences matches {0..*} matches {    -- Examination findings
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Multimedia representation
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Clinical interpretation
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0.1] occurrences matches {0..*} matches {    -- Lesions
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0.2] matches {    -- Lesion type
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0.4] occurrences matches {0..1} matches {    -- Presence
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0.49,    -- Present
+									at0.50,    -- Absent
+									at0.51]    -- Indeterminate
+								}
+							}
+						}
+					}
+					ELEMENT[at0.52] occurrences matches {0..1} matches {    -- Number of lesions
+						value matches {
+							DV_COUNT matches {*}
+						}
+					}
+					ELEMENT[at0.6] occurrences matches {0..1} matches {    -- Clinical description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0.8] occurrences matches {0..*} matches {    -- Per lesion details
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam_lesion\.v0/}
+					}
+					allow_archetype CLUSTER[at0.9] occurrences matches {0..*} matches {    -- Additional details
+						include
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[at0.12] occurrences matches {0..1} matches {    -- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			allow_archetype CLUSTER[at0.13] occurrences matches {0..*} matches {    -- Mucosa
+				include
+					archetype_id/value matches {/.*/}
+			}
+			CLUSTER[at0.32] occurrences matches {0..1} matches {    -- Bleeding
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0.33] occurrences matches {0..1} matches {    -- Presence
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0.34,    -- Present
+									at0.35,    -- Absent
+									at0.54]    -- Indeterminate
+								}
+							}
+						}
+					}
+					ELEMENT[at0.36] occurrences matches {0..1} matches {    -- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0.37] occurrences matches {0..1} matches {    -- Source
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0.38] occurrences matches {0..1} matches {    -- Colour
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0.39] occurrences matches {0..1} matches {    -- Physical state
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0.40] occurrences matches {0..1} matches {    -- Amount
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0.43,    -- None
+									at0.44,    -- Trace amount
+									at0.45,    -- Small amount
+									at0.46,    -- Moderate amount
+									at0.47,    -- Large amount
+									at0.48]    -- Rectum filled with blood
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0.42] occurrences matches {0..1} matches {    -- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0.15] occurrences matches {0..1} matches {    -- Faecal loading
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0.20] occurrences matches {0..*} matches {    -- Faeces
+				include
+					archetype_id/value matches {/.*|openEHR-EHR-CLUSTER\.exam_faeces\.v0/}
+			}
+			allow_archetype CLUSTER[at0.21] occurrences matches {0..*} matches {    -- Foreign object
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype CLUSTER[at0008] occurrences matches {0..*} matches {    -- Examination not done
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Examination of the rectum">
+					description = <"Findings observed during the physical examination of the rectum.">
+				>
+				["at0.1"] = <
+					text = <"Lesions">
+					description = <"Findings related to any palpable or visible lesion or mass  found within the rectum on examination.">
+				>
+				["at0.2"] = <
+					text = <"Lesion type">
+					description = <"A short descriptive name or identifier for the lesion or mass.">
+					comment = <"For example: ulcer, polyp, nodule, erosion, tumour.">
+				>
+				["at0.4"] = <
+					text = <"Presence">
+					description = <"Assertion about the observed presence or absence of a lesion or mass during the examination.">
+				>
+				["at0.6"] = <
+					text = <"Clinical description">
+					description = <"Narrative description of the overall findings observed during the examination per lesion type.">
+				>
+				["at0.8"] = <
+					text = <"Per lesion details">
+					description = <"Specific features or attributes that apply to this individual lesion or mass.">
+				>
+				["at0.9"] = <
+					text = <"Additional details">
+					description = <"Other relevant clinical observations about the lesion type or masses that are not otherwise described.">
+				>
+				["at0.12"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the findings on examination of the lesion, not captured in other fields.">
+				>
+				["at0.13"] = <
+					text = <"Mucosa">
+					description = <"Findings related to the appearance and integrity of the rectal mucosa found on examination.">
+				>
+				["at0.15"] = <
+					text = <"Faecal loading">
+					description = <"Assessment of amount of faecal material within the rectum.">
+					comment = <"For example: none, mild, moderate, severe.">
+				>
+				["at0.20"] = <
+					text = <"Faeces">
+					description = <"Documentation of the observed characteristics of stool present during the examination.">
+				>
+				["at0.21"] = <
+					text = <"Foreign object">
+					description = <"Findings of any non-biological or unexpected item found within the rectum during examination.">
+				>
+				["at0.32"] = <
+					text = <"Bleeding">
+					description = <"Findings related to blood identified in the rectum.">
+				>
+				["at0.33"] = <
+					text = <"Presence">
+					description = <"Assertion about the observed presence or absence of bleeding in the rectum.">
+				>
+				["at0.34"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.36"] = <
+					text = <"Description">
+					description = <"Narrative description of observed bleeding.">
+				>
+				["at0.37"] = <
+					text = <"Source">
+					description = <"The apparent origin of the bleeding if identifiable.">
+					comment = <"For example: from lesion, from rectal mucosa, diffuse.">
+				>
+				["at0.38"] = <
+					text = <"Colour">
+					description = <"The observed colour of the blood present.">
+					comment = <"For example: bright red (fresh), dark red, black.">
+				>
+				["at0.39"] = <
+					text = <"Physical state">
+					description = <"Describes the physical attributes of the blood in the rectum.">
+					comment = <"For example: liquid, clotted.
+
+">
+				>
+				["at0.40"] = <
+					text = <"Amount">
+					description = <"The estimated volume of blood present.">
+				>
+				["at0.42"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the physical examination findings, not captured in other fields.">
+				>
+				["at0.43"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"Trace amount">
+					description = <"">
+				>
+				["at0.45"] = <
+					text = <"Small amount">
+					description = <"">
+				>
+				["at0.46"] = <
+					text = <"Moderate amount">
+					description = <"">
+				>
+				["at0.47"] = <
+					text = <"Large amount">
+					description = <"">
+				>
+				["at0.48"] = <
+					text = <"Rectum filled with blood">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"Physical examination findings">
+					description = <"Findings observed during the physical examination of a body system or anatomical structure.">
+				>
+				["at0001"] = <
+					text = <"System or structure examined">
+					description = <"Identification of the examined body system or anatomical structure.">
+					comment = <"Coding of the system or structure examined with a terminology is preferred, where possible.">
+				>
+				["at0003"] = <
+					text = <"Clinical description">
+					description = <"Narrative description of the overall findings observed during the physical examination.">
+				>
+				["at0004"] = <
+					text = <"Examination findings">
+					description = <"Structured details about the physical examination findings.">
+				>
+				["at0005"] = <
+					text = <"Multimedia representation">
+					description = <"Digital image, video or diagram representing the physical examination findings.">
+				>
+				["at0006"] = <
+					text = <"Clinical interpretation">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of the physical examination findings.">
+					comment = <"For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the physical examination findings, not captured in other fields.">
+				>
+				["at0008"] = <
+					text = <"Examination not done">
+					description = <"Details to explicitly record that this examination was not performed.">
+				>
+				["at0011"] = <
+					text = <"Structured body site">
+					description = <"A structured description of the area of the body under examination.">
+					comment = <"If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.">
+				>
+				["at0012"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body under examination.">
+					comment = <"For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant.">
+				>
+				["at0.49"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0.50"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0.51"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+				["at0.52"] = <
+					text = <"Number of lesions">
+					description = <"The total count of distinct lesions or masses identified.">
+				>
+				["at0.54"] = <
+					text = <"Indeterminate">
+					description = <"">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Examination of the rectum (en)">
+					description = <"*Findings observed during the physical examination of the rectum. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Lesions (en)">
+					description = <"*Findings related to any palpable or visible lesion or mass  found within the rectum on examination. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Lesion type (en)">
+					description = <"*A short descriptive name or identifier for the lesion or mass. (en)">
+					comment = <"*For example: ulcer, polyp, nodule, erosion, tumour. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of a lesion or mass during the examination. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Clinical description (en)">
+					description = <"*Narrative description of the overall findings observed during the examination per lesion type. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Per lesion details (en)">
+					description = <"*Specific features or attributes that apply to this individual lesion or mass. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Additional details (en)">
+					description = <"*Other relevant clinical observations about the lesion type or masses that are not otherwise described. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the findings on examination of the lesion, not captured in other fields. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mucosa (en)">
+					description = <"*Findings related to the appearance and integrity of the rectal mucosa found on examination. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Faecal loading (en)">
+					description = <"*Assessment of amount of faecal material within the rectum. (en)">
+					comment = <"*For example: none, mild, moderate, severe. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Faeces (en)">
+					description = <"*Documentation of the observed characteristics of stool present during the examination. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Foreign object (en)">
+					description = <"*Findings of any non-biological or unexpected item found within the rectum during examination. (en)">
+				>
+				["at0.32"] = <
+					text = <"*Bleeding (en)">
+					description = <"*Findings related to blood identified in the rectum. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of bleeding in the rectum. (en)">
+				>
+				["at0.34"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.36"] = <
+					text = <"*Description (en)">
+					description = <"*Narrative description of observed bleeding. (en)">
+				>
+				["at0.37"] = <
+					text = <"*Source (en)">
+					description = <"*The apparent origin of the bleeding if identifiable. (en)">
+					comment = <"*For example: from lesion, from rectal mucosa, diffuse. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Colour (en)">
+					description = <"*The observed colour of the blood present. (en)">
+					comment = <"*For example: bright red (fresh), dark red, black. (en)">
+				>
+				["at0.39"] = <
+					text = <"*Physical state (en)">
+					description = <"*Describes the physical attributes of the blood in the rectum. (en)">
+					comment = <"*For example: liquid, clotted.
+
+ (en)">
+				>
+				["at0.40"] = <
+					text = <"*Amount (en)">
+					description = <"*The estimated volume of blood present. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields. (en)">
+				>
+				["at0.43"] = <
+					text = <"*None (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Trace amount (en)">
+					description = <"">
+				>
+				["at0.45"] = <
+					text = <"*Small amount (en)">
+					description = <"">
+				>
+				["at0.46"] = <
+					text = <"*Moderate amount (en)">
+					description = <"">
+				>
+				["at0.47"] = <
+					text = <"*Large amount (en)">
+					description = <"">
+				>
+				["at0.48"] = <
+					text = <"*Rectum filled with blood (en)">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"Funn ved fysisk undersøkelse">
+					description = <"Undersøkelsesfunn gjort ved fysisk undersøkelse av et organsystem eller anatomisk struktur.">
+				>
+				["at0001"] = <
+					text = <"Undersøkt organsystem eller struktur">
+					description = <"Identifisering av det undersøkte organsystemet eller den anatomiske strukturen.">
+					comment = <"Det anbefales å kode organsystem eller den anatomiske strukturen med en terminologi dersom mulig.">
+				>
+				["at0003"] = <
+					text = <"Klinisk beskrivelse">
+					description = <"Fritekstbeskrivelse av de overordnede funnene ved den fysiske undersøkelsen.">
+				>
+				["at0004"] = <
+					text = <"Spesifikke funn">
+					description = <"Ytterligere strukturerte detaljer om undersøkelsesfunnene.">
+				>
+				["at0005"] = <
+					text = <"Multimediarepresentasjon">
+					description = <"Digitale bilder, video eller diagram som representerer undersøkelsesfunnene.">
+				>
+				["at0006"] = <
+					text = <"Fortolkning">
+					description = <"Enkelt ord, setning, frase eller kort beskrivelse som representerer den kliniske betydning og viktigheten av funnene ved den fysiske undersøkelsen.">
+					comment = <"For eksempel \"Uten anmerkning\" eller \"Moderat inflammasjon\". Det anbefales å kode \"Fortolkning\" med en terminologi dersom mulig.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn ved undersøkelsen, som ikke dekkes av andre elementer.">
+				>
+				["at0008"] = <
+					text = <"Undersøkelse ikke utført">
+					description = <"Detaljer for å eksplisitt registrere at denne undersøkelsen ikke ble utført.">
+				>
+				["at0011"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"Angivelse av en strukturert anatomisk lokalisering av det undersøkte organsystemet eller den anatomiske strukturen.">
+					comment = <"Hvis anatomisk lokalisasjon er entydig identifisert i elementet \"Undersøkt organsystem eller struktur\" er dette SLOT'et ikke nødvendig å benytte.">
+				>
+				["at0012"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"Identifisering av et enkelt fysisk sted enten på eller i menneskekroppen.">
+					comment = <"For eksempel undersøkelse av et spesifikt område på huden. Dersom den anatomiske lokaliseringen allerede er identifisert i elementet \"Undersøkt organsystem eller struktur\" er dette dataelementet overflødig.">
+				>
+				["at0.49"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.50"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.51"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.52"] = <
+					text = <"*Number of lesions (en)">
+					description = <"*The total count of distinct lesions or masses identified. (en)">
+				>
+				["at0.54"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Examination of the rectum (en)">
+					description = <"*Findings observed during the physical examination of the rectum. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Lesions (en)">
+					description = <"*Findings related to any palpable or visible lesion or mass  found within the rectum on examination. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Lesion type (en)">
+					description = <"*A short descriptive name or identifier for the lesion or mass. (en)">
+					comment = <"*For example: ulcer, polyp, nodule, erosion, tumour. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of a lesion or mass during the examination. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Clinical description (en)">
+					description = <"*Narrative description of the overall findings observed during the examination per lesion type. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Per lesion details (en)">
+					description = <"*Specific features or attributes that apply to this individual lesion or mass. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Additional details (en)">
+					description = <"*Other relevant clinical observations about the lesion type or masses that are not otherwise described. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the findings on examination of the lesion, not captured in other fields. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mucosa (en)">
+					description = <"*Findings related to the appearance and integrity of the rectal mucosa found on examination. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Faecal loading (en)">
+					description = <"*Assessment of amount of faecal material within the rectum. (en)">
+					comment = <"*For example: none, mild, moderate, severe. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Faeces (en)">
+					description = <"*Documentation of the observed characteristics of stool present during the examination. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Foreign object (en)">
+					description = <"*Findings of any non-biological or unexpected item found within the rectum during examination. (en)">
+				>
+				["at0.32"] = <
+					text = <"*Bleeding (en)">
+					description = <"*Findings related to blood identified in the rectum. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of bleeding in the rectum. (en)">
+				>
+				["at0.34"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.36"] = <
+					text = <"*Description (en)">
+					description = <"*Narrative description of observed bleeding. (en)">
+				>
+				["at0.37"] = <
+					text = <"*Source (en)">
+					description = <"*The apparent origin of the bleeding if identifiable. (en)">
+					comment = <"*For example: from lesion, from rectal mucosa, diffuse. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Colour (en)">
+					description = <"*The observed colour of the blood present. (en)">
+					comment = <"*For example: bright red (fresh), dark red, black. (en)">
+				>
+				["at0.39"] = <
+					text = <"*Physical state (en)">
+					description = <"*Describes the physical attributes of the blood in the rectum. (en)">
+					comment = <"*For example: liquid, clotted.
+
+ (en)">
+				>
+				["at0.40"] = <
+					text = <"*Amount (en)">
+					description = <"*The estimated volume of blood present. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields. (en)">
+				>
+				["at0.43"] = <
+					text = <"*None (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Trace amount (en)">
+					description = <"">
+				>
+				["at0.45"] = <
+					text = <"*Small amount (en)">
+					description = <"">
+				>
+				["at0.46"] = <
+					text = <"*Moderate amount (en)">
+					description = <"">
+				>
+				["at0.47"] = <
+					text = <"*Large amount (en)">
+					description = <"">
+				>
+				["at0.48"] = <
+					text = <"*Rectum filled with blood (en)">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"*Physical examination findings (en)">
+					description = <"Constatações observadas durante o exame físico de um sistema corporal ou estrutura anatômica.">
+				>
+				["at0001"] = <
+					text = <"Sistema ou estrutura examinada">
+					description = <"Identificação do sistema do corpo examinado ou da estrutura anatômica.">
+					comment = <"A codificação do sistema ou estrutura examinada com uma terminologia é preferível, sempre que possível.">
+				>
+				["at0003"] = <
+					text = <"Descrição clínica">
+					description = <"Descrição narrativa dos achados gerais observados durante o exame físico.">
+				>
+				["at0004"] = <
+					text = <"Resultados do exame">
+					description = <"Detalhes estruturados sobre os resultados do exame físico.">
+				>
+				["at0005"] = <
+					text = <"Representação multimídia">
+					description = <"Imagem digital, vídeo ou diagrama representando os achados do exame físico.">
+				>
+				["at0006"] = <
+					text = <"Interpretação clínica">
+					description = <"Palavra, frase ou breve descrição que represente o significado clínico e o significado dos resultados do exame físico.">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)">
+				>
+				["at0007"] = <
+					text = <"Comentário">
+					description = <"Narrativa adicional sobre os achados do exame físico, não capturados em outros campos.">
+				>
+				["at0008"] = <
+					text = <"Exame não realizado">
+					description = <"Detalhes para registrar explicitamente que esse exame não foi realizado.">
+				>
+				["at0011"] = <
+					text = <"Local do corpo estruturado">
+					description = <"Uma descrição estruturada da área do corpo em exame.">
+					comment = <"Se o local do corpo tiver sido totalmente identificado no elemento de dados 'Sistema ou estrutura examinada' ou 'Local do corpo', esse SLOT se tornará redundante.">
+				>
+				["at0012"] = <
+					text = <"Local do corpo">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0.49"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.50"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.51"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.52"] = <
+					text = <"*Number of lesions (en)">
+					description = <"*The total count of distinct lesions or masses identified. (en)">
+				>
+				["at0.54"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Examination of the rectum (en)">
+					description = <"*Findings observed during the physical examination of the rectum. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Lesions (en)">
+					description = <"*Findings related to any palpable or visible lesion or mass  found within the rectum on examination. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Lesion type (en)">
+					description = <"*A short descriptive name or identifier for the lesion or mass. (en)">
+					comment = <"*For example: ulcer, polyp, nodule, erosion, tumour. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of a lesion or mass during the examination. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Clinical description (en)">
+					description = <"*Narrative description of the overall findings observed during the examination per lesion type. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Per lesion details (en)">
+					description = <"*Specific features or attributes that apply to this individual lesion or mass. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Additional details (en)">
+					description = <"*Other relevant clinical observations about the lesion type or masses that are not otherwise described. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the findings on examination of the lesion, not captured in other fields. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mucosa (en)">
+					description = <"*Findings related to the appearance and integrity of the rectal mucosa found on examination. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Faecal loading (en)">
+					description = <"*Assessment of amount of faecal material within the rectum. (en)">
+					comment = <"*For example: none, mild, moderate, severe. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Faeces (en)">
+					description = <"*Documentation of the observed characteristics of stool present during the examination. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Foreign object (en)">
+					description = <"*Findings of any non-biological or unexpected item found within the rectum during examination. (en)">
+				>
+				["at0.32"] = <
+					text = <"*Bleeding (en)">
+					description = <"*Findings related to blood identified in the rectum. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of bleeding in the rectum. (en)">
+				>
+				["at0.34"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.36"] = <
+					text = <"*Description (en)">
+					description = <"*Narrative description of observed bleeding. (en)">
+				>
+				["at0.37"] = <
+					text = <"*Source (en)">
+					description = <"*The apparent origin of the bleeding if identifiable. (en)">
+					comment = <"*For example: from lesion, from rectal mucosa, diffuse. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Colour (en)">
+					description = <"*The observed colour of the blood present. (en)">
+					comment = <"*For example: bright red (fresh), dark red, black. (en)">
+				>
+				["at0.39"] = <
+					text = <"*Physical state (en)">
+					description = <"*Describes the physical attributes of the blood in the rectum. (en)">
+					comment = <"*For example: liquid, clotted.
+
+ (en)">
+				>
+				["at0.40"] = <
+					text = <"*Amount (en)">
+					description = <"*The estimated volume of blood present. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields. (en)">
+				>
+				["at0.43"] = <
+					text = <"*None (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Trace amount (en)">
+					description = <"">
+				>
+				["at0.45"] = <
+					text = <"*Small amount (en)">
+					description = <"">
+				>
+				["at0.46"] = <
+					text = <"*Moderate amount (en)">
+					description = <"">
+				>
+				["at0.47"] = <
+					text = <"*Large amount (en)">
+					description = <"">
+				>
+				["at0.48"] = <
+					text = <"*Rectum filled with blood (en)">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"Ergebnisse der körperlichen Untersuchung">
+					description = <"Während der körperlichen Untersuchung eines Körpersystems oder einer anatomischen Struktur beobachtete Befunde.">
+				>
+				["at0001"] = <
+					text = <"Untersuchtes System oder untersuchte Struktur">
+					description = <"Identifizierung des untersuchten Körpersystems oder der anatomischen Struktur.">
+					comment = <"Wenn möglich wird die Kodierung des untersuchten Systems oder der untersuchten Struktur mit einer Terminologie bevorzugt.">
+				>
+				["at0003"] = <
+					text = <"Klinische Beschreibung">
+					description = <"Beschreibung der bei der körperlichen Untersuchung beobachteten Gesamtbefunde.">
+				>
+				["at0004"] = <
+					text = <"Untersuchungsergebnisse">
+					description = <"Strukturierte Angaben zu den Ergebnissen der körperlichen Untersuchung.">
+				>
+				["at0005"] = <
+					text = <"Multimediale Darstellung">
+					description = <"Digitales Bild, Video oder Diagramm, das die Ergebnisse der körperlichen Untersuchung darstellt.">
+				>
+				["at0006"] = <
+					text = <"Klinische Interpretation">
+					description = <"Ein einzelnes Wort, eine Phrase oder eine kurze Beschreibung, die die klinische Bedeutung und Wichtigkeit der Untersuchungsergebnisse darstellt.">
+					comment = <"Zum Beispiel: „Ohne Befund“ oder „Mäßige Entzündung vorhanden“. Wenn möglich, wird die Codierung der „Klinischen Interpretation“ mit einer Terminologie bevorzugt.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Zusätzliche Beschreibung der Ergebnisse der körperlichen Untersuchung, die in anderen Bereichen nicht erfasst werden konnten.">
+				>
+				["at0008"] = <
+					text = <"Nicht durchgeführte Untersuchung">
+					description = <"Eine Aussage die ausdrücklich erfasst, dass die Untersuchung nicht durchgeführt wurde.">
+				>
+				["at0011"] = <
+					text = <"Strukturierte Körperstelle">
+					description = <"Eine strukturierte Beschreibung des zu untersuchenden Körperbereichs.">
+					comment = <"Wenn die Körperstelle im Datenelement \"Untersuchtes System oder untersuchte Struktur\" oder im Datenelement \"Körperstelle\" vollständig identifiziert wurde, wird die Verwendung dieses SLOT überflüssig.">
+				>
+				["at0012"] = <
+					text = <"Körperstelle">
+					description = <"Identifizierung des untersuchten Körperbereichs.">
+					comment = <"Zum Beispiel die Untersuchung einer bestimmten Hautpartie. Wenn die Körperstelle im Datenelement „Untersuchtes System oder Struktur“ vollständig identifiziert wurde, wird dieses Datenelement überflüssig.">
+				>
+				["at0.49"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.50"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.51"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.52"] = <
+					text = <"*Number of lesions (en)">
+					description = <"*The total count of distinct lesions or masses identified. (en)">
+				>
+				["at0.54"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Examination of the rectum (en)">
+					description = <"*Findings observed during the physical examination of the rectum. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Lesions (en)">
+					description = <"*Findings related to any palpable or visible lesion or mass  found within the rectum on examination. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Lesion type (en)">
+					description = <"*A short descriptive name or identifier for the lesion or mass. (en)">
+					comment = <"*For example: ulcer, polyp, nodule, erosion, tumour. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of a lesion or mass during the examination. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Clinical description (en)">
+					description = <"*Narrative description of the overall findings observed during the examination per lesion type. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Per lesion details (en)">
+					description = <"*Specific features or attributes that apply to this individual lesion or mass. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Additional details (en)">
+					description = <"*Other relevant clinical observations about the lesion type or masses that are not otherwise described. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the findings on examination of the lesion, not captured in other fields. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mucosa (en)">
+					description = <"*Findings related to the appearance and integrity of the rectal mucosa found on examination. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Faecal loading (en)">
+					description = <"*Assessment of amount of faecal material within the rectum. (en)">
+					comment = <"*For example: none, mild, moderate, severe. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Faeces (en)">
+					description = <"*Documentation of the observed characteristics of stool present during the examination. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Foreign object (en)">
+					description = <"*Findings of any non-biological or unexpected item found within the rectum during examination. (en)">
+				>
+				["at0.32"] = <
+					text = <"*Bleeding (en)">
+					description = <"*Findings related to blood identified in the rectum. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of bleeding in the rectum. (en)">
+				>
+				["at0.34"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.36"] = <
+					text = <"*Description (en)">
+					description = <"*Narrative description of observed bleeding. (en)">
+				>
+				["at0.37"] = <
+					text = <"*Source (en)">
+					description = <"*The apparent origin of the bleeding if identifiable. (en)">
+					comment = <"*For example: from lesion, from rectal mucosa, diffuse. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Colour (en)">
+					description = <"*The observed colour of the blood present. (en)">
+					comment = <"*For example: bright red (fresh), dark red, black. (en)">
+				>
+				["at0.39"] = <
+					text = <"*Physical state (en)">
+					description = <"*Describes the physical attributes of the blood in the rectum. (en)">
+					comment = <"*For example: liquid, clotted.
+
+ (en)">
+				>
+				["at0.40"] = <
+					text = <"*Amount (en)">
+					description = <"*The estimated volume of blood present. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields. (en)">
+				>
+				["at0.43"] = <
+					text = <"*None (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Trace amount (en)">
+					description = <"">
+				>
+				["at0.45"] = <
+					text = <"*Small amount (en)">
+					description = <"">
+				>
+				["at0.46"] = <
+					text = <"*Moderate amount (en)">
+					description = <"">
+				>
+				["at0.47"] = <
+					text = <"*Large amount (en)">
+					description = <"">
+				>
+				["at0.48"] = <
+					text = <"*Rectum filled with blood (en)">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"*Physical examination findings (en)">
+					description = <"Observerade fynd vid fysisk undersökning av system i kroppen, eller av anatomisk struktur">
+				>
+				["at0001"] = <
+					text = <"System eller struktur som undersökts">
+					description = <"Identifiering av systemet eller strukturen som undersökts.">
+					comment = <"Om möjligt, koda systemet eller strukturen med hjälp av ett terminologisystem.">
+				>
+				["at0003"] = <
+					text = <"Klinisk beskrivning">
+					description = <"En övergripande beskrivning av fynden från den fysiska undersökningen. ">
+				>
+				["at0004"] = <
+					text = <"Fynd vid undersökning">
+					description = <"Strukturerade detaljer om fynd vid den fysiska undersökningen.">
+				>
+				["at0005"] = <
+					text = <"Multimedia-representation">
+					description = <"Digital bild, video eller diagram som återger fynd från undersökningen.">
+				>
+				["at0006"] = <
+					text = <"Klinisk tolkning">
+					description = <"Ord, fras eller kort beskrivning av fyndens kliniska betydelse.">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible. (en)">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Kommentarer avseende undersökningsfynd som inte beskrivs i övriga fält.">
+				>
+				["at0008"] = <
+					text = <"Undersökning ej genomförd">
+					description = <"Detaljerad beskrivning om att undersökningen inte genomfördes.">
+				>
+				["at0011"] = <
+					text = <"Strukturerad anatomisk plats">
+					description = <"Strukturerad beskrivning av den anatomiska platsen som undersökts.">
+					comment = <"Om den anatomiska platsen kan identifieras helt via dataelementet \"System eller struktur som undersökts\" så blir denna del redundant.">
+				>
+				["at0012"] = <
+					text = <"Anatomisk plats">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0.49"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.50"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.51"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.52"] = <
+					text = <"*Number of lesions (en)">
+					description = <"*The total count of distinct lesions or masses identified. (en)">
+				>
+				["at0.54"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+			>
+		>
+		["el"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Examination of the rectum (en)">
+					description = <"*Findings observed during the physical examination of the rectum. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Lesions (en)">
+					description = <"*Findings related to any palpable or visible lesion or mass  found within the rectum on examination. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Lesion type (en)">
+					description = <"*A short descriptive name or identifier for the lesion or mass. (en)">
+					comment = <"*For example: ulcer, polyp, nodule, erosion, tumour. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of a lesion or mass during the examination. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Clinical description (en)">
+					description = <"*Narrative description of the overall findings observed during the examination per lesion type. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Per lesion details (en)">
+					description = <"*Specific features or attributes that apply to this individual lesion or mass. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Additional details (en)">
+					description = <"*Other relevant clinical observations about the lesion type or masses that are not otherwise described. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the findings on examination of the lesion, not captured in other fields. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mucosa (en)">
+					description = <"*Findings related to the appearance and integrity of the rectal mucosa found on examination. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Faecal loading (en)">
+					description = <"*Assessment of amount of faecal material within the rectum. (en)">
+					comment = <"*For example: none, mild, moderate, severe. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Faeces (en)">
+					description = <"*Documentation of the observed characteristics of stool present during the examination. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Foreign object (en)">
+					description = <"*Findings of any non-biological or unexpected item found within the rectum during examination. (en)">
+				>
+				["at0.32"] = <
+					text = <"*Bleeding (en)">
+					description = <"*Findings related to blood identified in the rectum. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of bleeding in the rectum. (en)">
+				>
+				["at0.34"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.36"] = <
+					text = <"*Description (en)">
+					description = <"*Narrative description of observed bleeding. (en)">
+				>
+				["at0.37"] = <
+					text = <"*Source (en)">
+					description = <"*The apparent origin of the bleeding if identifiable. (en)">
+					comment = <"*For example: from lesion, from rectal mucosa, diffuse. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Colour (en)">
+					description = <"*The observed colour of the blood present. (en)">
+					comment = <"*For example: bright red (fresh), dark red, black. (en)">
+				>
+				["at0.39"] = <
+					text = <"*Physical state (en)">
+					description = <"*Describes the physical attributes of the blood in the rectum. (en)">
+					comment = <"*For example: liquid, clotted.
+
+ (en)">
+				>
+				["at0.40"] = <
+					text = <"*Amount (en)">
+					description = <"*The estimated volume of blood present. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields. (en)">
+				>
+				["at0.43"] = <
+					text = <"*None (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Trace amount (en)">
+					description = <"">
+				>
+				["at0.45"] = <
+					text = <"*Small amount (en)">
+					description = <"">
+				>
+				["at0.46"] = <
+					text = <"*Moderate amount (en)">
+					description = <"">
+				>
+				["at0.47"] = <
+					text = <"*Large amount (en)">
+					description = <"">
+				>
+				["at0.48"] = <
+					text = <"*Rectum filled with blood (en)">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"*Physical examination findings (en)">
+					description = <"Ευρήματα που παρατηρούνται κατά τη φυσική εξέταση ενός συστήματος σώματος ή ανατομικής δομής.">
+				>
+				["at0001"] = <
+					text = <"Εξεταζόμενο σύστημα ή δομή">
+					description = <"Ταυτοποίηση του εξεταζόμενου συστήματος σώματος ή ανατομικής δομής.">
+					comment = <"Προτιμάται η κωδικοποίηση του συστήματος ή της δομής που εξετάζεται με ορολογία, όπου είναι δυνατόν.">
+				>
+				["at0003"] = <
+					text = <"Κλινική Περιγραφή">
+					description = <"Αφηγηματική περιγραφή των συνολικών ευρημάτων που παρατηρήθηκαν κατά τη διάρκεια της φυσικής εξέτασης.">
+				>
+				["at0004"] = <
+					text = <"Ευρήματα εξέτασης">
+					description = <"Δομημένες λεπτομέρειες σχετικά με τα ευρήματα της φυσικής εξέτασης.">
+				>
+				["at0005"] = <
+					text = <"Αναπαράσταση πολυμέσων">
+					description = <"Ψηφιακή εικόνα, βίντεο ή διάγραμμα που αναπαριστά τα ευρήματα της φυσικής εξέτασης.">
+				>
+				["at0006"] = <
+					text = <"Κλινική αξιολόγηση">
+					description = <"Μία λέξη, φράση ή σύντομη περιγραφή που αντιπροσωπεύει την κλινική σημασία και σημασία των ευρημάτων της φυσικής εξέτασης.">
+					comment = <"Για παράδειγμα: «Δεν ανιχνεύθηκε ανωμαλία» ή «Υπάρχει μέτρια φλεγμονή». Προτιμάται η κωδικοποίηση της «κλινικής ερμηνείας» με ορολογία, όπου είναι δυνατόν.">
+				>
+				["at0007"] = <
+					text = <"Σχόλιο">
+					description = <"Πρόσθετη αφήγηση σχετικά με τα ευρήματα της φυσικής εξέτασης, που δεν αποτυπώνεται σε άλλους τομείς.">
+				>
+				["at0008"] = <
+					text = <"Λόγος διακοπής εξέτασης">
+					description = <"Λεπτομέρειες για να καταγραφεί ρητά ότι αυτή η εξέταση δεν διενεργήθηκε.">
+				>
+				["at0011"] = <
+					text = <"ω">
+					description = <"περιγραφή της περιοχής του υπό εξέταση σώματος.">
+					comment = <"*If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.(en)">
+				>
+				["at0012"] = <
+					text = <"Περιοχή σώματος">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0.49"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.50"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.51"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.52"] = <
+					text = <"*Number of lesions (en)">
+					description = <"*The total count of distinct lesions or masses identified. (en)">
+				>
+				["at0.54"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+			>
+		>
+		["es"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"*Examination of the rectum (en)">
+					description = <"*Findings observed during the physical examination of the rectum. (en)">
+				>
+				["at0.1"] = <
+					text = <"*Lesions (en)">
+					description = <"*Findings related to any palpable or visible lesion or mass  found within the rectum on examination. (en)">
+				>
+				["at0.2"] = <
+					text = <"*Lesion type (en)">
+					description = <"*A short descriptive name or identifier for the lesion or mass. (en)">
+					comment = <"*For example: ulcer, polyp, nodule, erosion, tumour. (en)">
+				>
+				["at0.4"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of a lesion or mass during the examination. (en)">
+				>
+				["at0.6"] = <
+					text = <"*Clinical description (en)">
+					description = <"*Narrative description of the overall findings observed during the examination per lesion type. (en)">
+				>
+				["at0.8"] = <
+					text = <"*Per lesion details (en)">
+					description = <"*Specific features or attributes that apply to this individual lesion or mass. (en)">
+				>
+				["at0.9"] = <
+					text = <"*Additional details (en)">
+					description = <"*Other relevant clinical observations about the lesion type or masses that are not otherwise described. (en)">
+				>
+				["at0.12"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the findings on examination of the lesion, not captured in other fields. (en)">
+				>
+				["at0.13"] = <
+					text = <"*Mucosa (en)">
+					description = <"*Findings related to the appearance and integrity of the rectal mucosa found on examination. (en)">
+				>
+				["at0.15"] = <
+					text = <"*Faecal loading (en)">
+					description = <"*Assessment of amount of faecal material within the rectum. (en)">
+					comment = <"*For example: none, mild, moderate, severe. (en)">
+				>
+				["at0.20"] = <
+					text = <"*Faeces (en)">
+					description = <"*Documentation of the observed characteristics of stool present during the examination. (en)">
+				>
+				["at0.21"] = <
+					text = <"*Foreign object (en)">
+					description = <"*Findings of any non-biological or unexpected item found within the rectum during examination. (en)">
+				>
+				["at0.32"] = <
+					text = <"*Bleeding (en)">
+					description = <"*Findings related to blood identified in the rectum. (en)">
+				>
+				["at0.33"] = <
+					text = <"*Presence (en)">
+					description = <"*Assertion about the observed presence or absence of bleeding in the rectum. (en)">
+				>
+				["at0.34"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.35"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.36"] = <
+					text = <"*Description (en)">
+					description = <"*Narrative description of observed bleeding. (en)">
+				>
+				["at0.37"] = <
+					text = <"*Source (en)">
+					description = <"*The apparent origin of the bleeding if identifiable. (en)">
+					comment = <"*For example: from lesion, from rectal mucosa, diffuse. (en)">
+				>
+				["at0.38"] = <
+					text = <"*Colour (en)">
+					description = <"*The observed colour of the blood present. (en)">
+					comment = <"*For example: bright red (fresh), dark red, black. (en)">
+				>
+				["at0.39"] = <
+					text = <"*Physical state (en)">
+					description = <"*Describes the physical attributes of the blood in the rectum. (en)">
+					comment = <"*For example: liquid, clotted.
+
+ (en)">
+				>
+				["at0.40"] = <
+					text = <"*Amount (en)">
+					description = <"*The estimated volume of blood present. (en)">
+				>
+				["at0.42"] = <
+					text = <"*Comment (en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields. (en)">
+				>
+				["at0.43"] = <
+					text = <"*None (en)">
+					description = <"">
+				>
+				["at0.44"] = <
+					text = <"*Trace amount (en)">
+					description = <"">
+				>
+				["at0.45"] = <
+					text = <"*Small amount (en)">
+					description = <"">
+				>
+				["at0.46"] = <
+					text = <"*Moderate amount (en)">
+					description = <"">
+				>
+				["at0.47"] = <
+					text = <"*Large amount (en)">
+					description = <"">
+				>
+				["at0.48"] = <
+					text = <"*Rectum filled with blood (en)">
+					description = <"">
+				>
+				["at0000"] = <
+					text = <"*Physical examination findings (en)">
+					description = <"*Findings observed during the physical examination of a body system or anatomical structure.(en)">
+				>
+				["at0001"] = <
+					text = <"*System or structure examined(en)">
+					description = <"*Identification of the examined body system or anatomical structure.(en)">
+					comment = <"*Coding of the system or structure examined with a terminology is preferred, where possible.(en)">
+				>
+				["at0003"] = <
+					text = <"*Clinical description(en)">
+					description = <"*Narrative description of the overall findings observed during the physical examination.(en)">
+				>
+				["at0004"] = <
+					text = <"*Examination findings(en)">
+					description = <"*Structured details about the physical examination findings.(en)">
+				>
+				["at0005"] = <
+					text = <"*Multimedia representation(en)">
+					description = <"*Digital image, video or diagram representing the physical examination findings.(en)">
+				>
+				["at0006"] = <
+					text = <"*Clinical interpretation(en)">
+					description = <"*Single word, phrase or brief description that represents the clinical meaning and significance of the physical examination findings.(en)">
+					comment = <"*For example: 'No abnormality detected' or 'Moderate inflammation present'. Coding of the 'Clinical interpretation' with a terminology is preferred, where possible.(en)">
+				>
+				["at0007"] = <
+					text = <"*Comment(en)">
+					description = <"*Additional narrative about the physical examination findings, not captured in other fields.(en)">
+				>
+				["at0008"] = <
+					text = <"*Examination not done(en)">
+					description = <"*Details to explicitly record that this examination was not performed.(en)">
+				>
+				["at0011"] = <
+					text = <"*Structured body site(en)">
+					description = <"*A structured description of the area of the body under examination.(en)">
+					comment = <"*If the body site has been fully identified in the 'System or structure examined' or the 'Body site' data element, this SLOT becomes redundant.(en)">
+				>
+				["at0012"] = <
+					text = <"*Body site(en)">
+					description = <"*Identification of the area of the body under examination. (en)">
+					comment = <"*For example examination of a specific area of skin. If the body site has been fully identified in the 'System or structure examined' data element, this data element becomes redundant. (en)">
+				>
+				["at0.49"] = <
+					text = <"*Present (en)">
+					description = <"">
+				>
+				["at0.50"] = <
+					text = <"*Absent (en)">
+					description = <"">
+				>
+				["at0.51"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+				["at0.52"] = <
+					text = <"*Number of lesions (en)">
+					description = <"*The total count of distinct lesions or masses identified. (en)">
+				>
+				["at0.54"] = <
+					text = <"*Indeterminate (en)">
+					description = <"">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0001"] = <[SNOMED-CT(2025-07-01)::34402009]>
+			>
+		>
+	>

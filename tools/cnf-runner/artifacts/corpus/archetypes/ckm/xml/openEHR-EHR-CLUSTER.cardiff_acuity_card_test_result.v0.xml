@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2026-06-11</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">0A54F7DCE269C61A47F736E223D9B1C1</other_details>
+    <other_details id="build_uid">20cae291-b17a-4dd4-aef1-6ba848dc59db</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose> For recording the raw card-level result of a single Cardiff acuity card test, expressed as the identifier of the finest card on which a reliable preferential-looking response was observed.&#xD;
+&#xD;
+The Cardiff acuity test is a preferential-looking test that uses vanishing-optotype pictures (e.g. fish, house, duck,&#xD;
+  car, boat, train) printed at decreasing stroke widths on a sequence of cards. The result is conventionally reported as&#xD;
+   the card identifier (LVA, LVB, A–M) rather than as a Snellen, decimal or logMAR value, because the conversion to a VA&#xD;
+   notation depends on the testing distance and on the published card-to-acuity lookup for the edition of the test used.</purpose>
+      <use>  - Slot this cluster into the Test-specific results SLOT of the visual acuity archetype when the Cardiff acuity test&#xD;
+  has been used. The card identifier captured here is the primary, raw result of the test.&#xD;
+  - Any conversion of this card identifier to a notation-based VA value (decimal, logMAR, Snellen ratio, cycles per&#xD;
+  degree) should be recorded in the Derived Result cluster of the parent VA archetype, together with the testing&#xD;
+  distance and chart edition needed to interpret it.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>95a8b22e-7a27-488e-9619-f90878106af6</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.cardiff_acuity_card_test_result.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0003</code_list>
+                <code_list>at0004</code_list>
+                <code_list>at0005</code_list>
+                <code_list>at0006</code_list>
+                <code_list>at0007</code_list>
+                <code_list>at0008</code_list>
+                <code_list>at0009</code_list>
+                <code_list>at0010</code_list>
+                <code_list>at0011</code_list>
+                <code_list>at0012</code_list>
+                <code_list>at0013</code_list>
+                <code_list>at0014</code_list>
+                <code_list>at0015</code_list>
+                <code_list>at0016</code_list>
+                <code_list>at0017</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Cardiff acuity test result</items>
+        <items id="description">Cardiff acuity test result</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Result</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0003">
+        <items id="text">LVA</items>
+        <items id="description">Apple (low vision)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">LVB</items>
+        <items id="description">Sock (low vision)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">A</items>
+        <items id="description">Fish</items>
+      </items>
+      <items code="at0006">
+        <items id="text">B</items>
+        <items id="description">House</items>
+      </items>
+      <items code="at0007">
+        <items id="text">C</items>
+        <items id="description">Boat</items>
+      </items>
+      <items code="at0008">
+        <items id="text">D</items>
+        <items id="description">Train</items>
+      </items>
+      <items code="at0009">
+        <items id="text">E</items>
+        <items id="description">Duck</items>
+      </items>
+      <items code="at0010">
+        <items id="text">F</items>
+        <items id="description">Car</items>
+      </items>
+      <items code="at0011">
+        <items id="text">G</items>
+        <items id="description">Fish</items>
+      </items>
+      <items code="at0012">
+        <items id="text">H</items>
+        <items id="description">Train</items>
+      </items>
+      <items code="at0013">
+        <items id="text">I</items>
+        <items id="description">Boat</items>
+      </items>
+      <items code="at0014">
+        <items id="text">J</items>
+        <items id="description">Car</items>
+      </items>
+      <items code="at0015">
+        <items id="text">K</items>
+        <items id="description">Duck</items>
+      </items>
+      <items code="at0016">
+        <items id="text">L</items>
+        <items id="description">House</items>
+      </items>
+      <items code="at0017">
+        <items id="text">M</items>
+        <items id="description">Train</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

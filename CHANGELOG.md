@@ -15,8 +15,45 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **ADL 2 (AOM2) archetypes can arrive as XML, in both serializations openEHR
+  publishes.** Only the AM 1.4 archetype XML was readable before; the generated
+  canonical-XML codec now also covers the AOM2 **persistent** form
+  (`P_Archetype.xsd`, root `<archetype>` = `P_AUTHORED_ARCHETYPE` — the shape the
+  8 example documents in the openEHR ITS-XML bundle carry) and the AOM2 **model**
+  form (`Archetype.xsd`, root `<archetype>` = `AUTHORED_ARCHETYPE`). The two are
+  separate codecs because the two schemas declare the same top-level element with
+  different root types.
+
 ### Fixed
 
+- **Empty inline dADL domain blocks parse (`C_DV_QUANTITY <>`).** The ADL 1.4
+  reader refused an empty domain block outright; the dADL chapter's own
+  grammar admits the empty block and §Empty Sections allows it anywhere, so
+  it now lowers to the open constraint (`DV_QUANTITY matches {*}`) in both
+  the deprecated paren-less and the parenthesised spelling. 9 live CKM
+  archetypes use the form. (The upstream regression fixture claiming the
+  opposite is reported as a spec contradiction.)
+- **The ADL 1.4 → 2 converter no longer emits unparseable tuples for
+  heterogeneous `C_DV_QUANTITY` list rows.** Rows constraining different
+  member sets (a `units`+`magnitude` row beside `units`-only rows, as in the
+  published `range_of_motion` archetype) used to convert into one tuple with
+  EMPTY members (`[{"mm"}, {}]`) that no conformant ADL 2 reader accepts —
+  28 of the 1,142 published real-world archetypes were affected. Such rows
+  now partition into one `DV_QUANTITY` alternative per member set, each tuple
+  row constraining every member; co-constrained pairings and assumed values
+  are preserved, and the whole real-world corpus now converts and re-parses.
+- **ADL 1.4 archetypes that openEHR CKM actually publishes are no longer
+  rejected over two spec-silent shapes.** Uploading a real-world ADL 1.4
+  archetype failed to parse when it used either (a) a qualified term
+  constraint with an empty code list — `defining_code matches {[local::]}`,
+  `media_type matches {[openEHR::]}`, which names the terminology and
+  constrains the code no further — or (b) the openEHR-profiled ordinal
+  shorthand alongside another alternative in the same block, in either order
+  (`DV_TEXT matches {*}` beside `0|[local::at0008], 1|[…]`). Both forms are
+  read by the reference grammar and are used throughout CKM's own library, so
+  the reader now accepts them; every other refusal is unchanged.
 - **Mandatory `1..*` container attributes are enforced.** The canonical-JSON
   reader deliberately treats an absent list and an empty list as the same
   value (wire tolerance), so a committed `CLUSTER` with no `items`, a

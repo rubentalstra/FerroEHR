@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2013-03-11</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, heather.leslie@atomicainformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">441F10504D2BA13BC8729A9819B88D86</other_details>
+    <other_details id="build_uid">8146c3a6-17a8-45f6-a4a9-9c4d0b1312dd</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Aufzeichnung von Details über Informationen, die von Dritten stammen und als Teil einer Fernbewertung oder eines Berichts verwendet werden.</purpose>
+      <keywords>Quelle</keywords>
+      <keywords>Bild</keywords>
+      <keywords>Original</keywords>
+      <use>Zur Aufzeichnung von Details über Informationen, die von Dritten stammen und als Teil einer Fernbeurteilung oder eines Berichts verwendet werden.&#xD;
+&#xD;
+Dieser Archetyp wurde entwickelt, um die Identifizierung und Qualität von Gesundheitsinformationen zu unterstützen, die von einer klinischen Drittquelle stammen. &#xD;
+&#xD;
+Jede klinische Information, die von einer Drittquelle stammt, muss vor ihrer Verwendung zur Unterstützung der klinischen Entscheidungsfindung auf ihre Verwendbarkeit geprüft werden. Ein Beispiel: Ein digitales Bild, das während einer klinischen Konsultation aufgenommen wurde, oder ein digitales Röntgenbild, das an einen entfernten Spezialisten zur Beurteilung und Behandlungsberatung geschickt wird, muss die gesamte anatomische Region abbilden und von angemessener Qualität sein.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para gravar detalhes sobre informação originada de terceiros que é utilizada como parte de uma avaliação remota ou relatório.</purpose>
+      <keywords>origem</keywords>
+      <keywords>imagem</keywords>
+      <keywords>original</keywords>
+      <use>Para gravar detalhes sobre informação originada deterceiros que é utilizada como parte de uma avaliação remota ou relatório.&#xD;
+&#xD;
+Este arquétipo foi designado para apoiar a identificação e qualidade da informação de saúde proveniente de uma fonte clínica de terceiros.&#xD;
+&#xD;
+&#xD;
+Cada parte da evidencia clínica recebida de terceiros precisa ser avaliada como 'apta para uso' antes de ser utilizada para apoiar a tomada de decisão clínica. Por exemplo: a imagem digital capturada durante a consulta clínica, ou a radiografia digital , enviada para um especialista remoto para avaliação das necessidades de aconselhamento do tramamento, precisa ser considerado como sendo região anatômica completa e de qualidade apropriada.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about information sourced from a third party that is utilised as part of a remote assessment or report.</purpose>
+      <keywords>source</keywords>
+      <keywords>image</keywords>
+      <keywords>original</keywords>
+      <use>Use to record details about information sourced from a third party that is utilised as part of a remote assessment or report.&#xD;
+&#xD;
+This archetype has been designed to support the identification and quality of health information sourced from a third party clinical source. &#xD;
+&#xD;
+Each piece of clinical evidence that has been received from a third party source needs to be assessed as 'fit for use' prior to being utilisied to support clinical decision-making. For example: a digital image captured during a clinical consultation, or a digital radiograph, sent to a remote specialist for assessment and treatment advice needs to be deemed to be of the complete anatomical region and of appropriate quality.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Enregistrer des détails sur les informations provenant d'un tiers et utilisées dans le cadre d'une évaluation ou d'un rapport à distance.</purpose>
+      <keywords>source</keywords>
+      <keywords>image</keywords>
+      <keywords>original</keywords>
+      <use>À utiliser pour enregistrer des détails sur des informations provenant d'un tiers et utilisées dans le cadre d'une évaluation ou d'un rapport à distance.&#xD;
+&#xD;
+Cet archétype a été conçu pour soutenir l'identification et la qualité des informations de santé provenant d'une source clinique tierce. &#xD;
+&#xD;
+Chaque élément de preuve clinique reçu d'une source tierce doit être évalué comme étant "apte à l'emploi" avant d'être utilisé pour soutenir la prise de décision clinique. Par exemple : une image numérique capturée lors d'une consultation clinique ou une radiographie numérique envoyée à un spécialiste à distance pour évaluation et conseils de traitement doit être considérée comme représentant la région anatomique complète et d'une qualité appropriée.</use>
+      <misuse />
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Vanessa Pereira</author>
+    <author id="organisation">Luxembourg Institute of Health (LIH)</author>
+    <author id="email">vanessapereira@protonmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Clóvis Puttini, Débora Farage, Fernanda Maia, Ana Paula Andrade, Adriana Kitajima</author>
+    <author id="organisation">Core Consulting</author>
+    <author id="email">contato@coreconsulting.com.br</author>
+    <accreditation>Hospital Alemão Oswaldo Cruz (HAOC)</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Vanessa Pereira</author>
+    <author id="organisation">Luxembourg Institute of Health (LIH)</author>
+    <author id="email">vanessapereira@protonmail.com</author>
+  </translations>
+  <uid>
+    <value>7ae05da1-d0a5-36ed-8b79-c2f943384ee0</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-EVALUATION.source.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>EVALUATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_URI</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0004</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0005</code_list>
+                    <code_list>at0006</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Source information</items>
+        <items id="description">Information sourced from a third party that is utilised as part of a remote assessment or report.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Source information</items>
+        <items id="description">Identification of the original, or source of, information being assessed.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Path</items>
+        <items id="description">Identification of the path to the archetype or data node for  the original information.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Quality</items>
+        <items id="description">Assessment regarding 'fitness for use' of the original information.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adequate for Use</items>
+        <items id="description">The original information is deemed to be 'fit for use'.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Not Adequate for Use</items>
+        <items id="description">The original information is not deemed to be 'fit for use'.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Comment</items>
+        <items id="description">Narrative about the source information not captured in other data fields.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local context or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Origem da informação</items>
+        <items id="description">Origem da informação de terceiros que é utilizada como parte de uma avaliação remota ou relatório.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Origem da Informação</items>
+        <items id="description">Identificação da informação original, ou fonte da informação, em análise.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Caminho</items>
+        <items id="description">Identificação do caminho para o arquétipo ou modo para a informação original.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Qualidade</items>
+        <items id="description">Avaliação sobre adequação ao uso da informação original.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adequado para uso</items>
+        <items id="description">A informação é considerada apropriada para uso.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Não adequado para uso</items>
+        <items id="description">A informação é considerada não apropriada para uso.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Comentário</items>
+        <items id="description">Descrição sobre a origem da informação não capturada em outros campos de dados.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Item tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local context or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Source d'information</items>
+        <items id="description">Informations provenant d'un tiers et utilisées dans le cadre d'une évaluation ou d'un rapport à distance.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Source d'information</items>
+        <items id="description">Identification de l'original ou de la source de l'information évaluée.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Chemin d'accès</items>
+        <items id="description">Identification du chemin d'accès à l'archétype ou au nœud de données pour l'information originale.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Qualité</items>
+        <items id="description">Évaluation de l'aptitude à l'emploi de l'information originale.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adéquat pour l'utilisation</items>
+        <items id="description">L'information originale est considérée comme "apte à l'emploi".</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Inadéquat pour l'utilisation</items>
+        <items id="description">L'information originale n'est pas considérée comme "apte à l'emploi".</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Commentaire</items>
+        <items id="description">Informations sur la source d'information qui n'ont pas été saisies dans d'autres champs de données.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extension</items>
+        <items id="description">Informations supplémentaires requises pour tenir compte du contexte local ou pour s'aligner sur d'autres modèles/formalismes de référence.</items>
+        <items id="comment">Par exemple : Informations départementales de l'hôpital local ou métadonnées supplémentaires pour s'aligner sur les équivalents FHIR ou CIMI.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Informationen zur Quelle</items>
+        <items id="description">Informationen, die von einer dritten Partei stammen und als Teil einer Fernbewertung oder eines Berichts verwendet werden.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Informationen zur Quelle</items>
+        <items id="description">Identifizierung des Originals oder der Quelle der zu bewertenden Informationen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Pfad</items>
+        <items id="description">Identifizierung des Pfads zum Archetyp oder Datenknoten für die ursprünglichen Informationen.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Qualität</items>
+        <items id="description">Bewertung der "Gebrauchstauglichkeit" der ursprünglichen Informationen.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Ausreichend für den Gebrauch</items>
+        <items id="description">Die ursprüngliche Information gilt als "gebrauchstauglich".</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Für den Gebrauch nicht geeignet</items>
+        <items id="description">Die ursprüngliche Information gilt nicht als "gebrauchstauglich".</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kommentar</items>
+        <items id="description">Kommentar zu den Quelleninformationen, die nicht in anderen Datenfeldern erfasst werden.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen sind erforderlich, um den lokalen Kontext zu erfassen oder mit anderen Referenzmodellen/Formalismen in Einklang zu bringen.</items>
+        <items id="comment">Zum Beispiel: Lokale Krankenhausabteilungsinformationen oder zusätzliche Metadaten zur Angleichung an FHIR oder CIMI-Äquivalente.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

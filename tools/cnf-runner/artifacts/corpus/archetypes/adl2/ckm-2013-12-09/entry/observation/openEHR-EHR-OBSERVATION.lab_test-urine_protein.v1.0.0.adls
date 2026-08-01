@@ -1,0 +1,112 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-urine_protein.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"07/11/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results of urine protein investigation.
+
+
+
+">
+			use = <"Will normally be reported back to the requesting clinician within the context of an overall Composition-based laboratory report.
+">
+			keywords = <"lab", "pathology", "biochemistry", "laboratory">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", ...>
+	references = <
+		["1"] = <"NEHTA, Australia. Pathology Episode v1.0 - Data Group library [Internet]. 2009;[cited 2009 Dec 8 ] Available from: http://www.nehta.gov.au/data-group-library/data-specifications/dgl-pathology">
+		["2"] = <"IHE. IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"07915453F16450855A50403DFB6034FC">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Urine protein
+		/data[id2]/events matches {
+			EVENT[id3] occurrences matches {0..1} matches {
+				data matches {
+					ITEM_TREE[id4] matches {
+						items matches {
+							ELEMENT[id79.1] occurrences matches {0..1} matches {	-- Urine protein
+								value matches {
+									DV_QUANTITY[id0.91] matches {
+										property matches {[at0.1]}
+										magnitude matches {|>=0.0|}
+										precision matches {2}
+										units matches {"gm/l"}
+									}
+								}
+							}
+							ELEMENT[id79] 
+						}
+					}
+				}
+			}
+			INTERVAL_EVENT[id0.90] occurrences matches {0..1} matches {	-- 24 hr collection
+				math_function matches {
+					DV_CODED_TEXT[id0.92] matches {
+						defining_code matches {[at0.2]}
+					}
+				}
+				width matches {
+					DV_DURATION[id0.93] matches {
+						value matches {P1D}
+					}
+				}
+				data matches {
+					use_node ITEM_TREE[id0.94] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[id3]/data[id4]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.90"] = <
+				text = <"24 hr collection">
+				description = <"Total protein measured over 24 hr hours.">
+			>
+			["id1.1"] = <
+				text = <"Urine protein">
+				description = <"To record the results of urine protein investigation.">
+			>
+			["id79.1"] = <
+				text = <"Urine protein">
+				description = <"Protein level in this specimen">
+			>
+			["at0.1"] = <
+				text = <"Concentration">
+				description = <"Concentration">
+			>
+			["at0.2"] = <
+				text = <"total">
+				description = <"total">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.1"] = <http://openehr.org/id/119>
+			["at0.2"] = <http://openehr.org/id/148>
+		>
+	>

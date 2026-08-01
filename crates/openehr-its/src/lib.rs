@@ -50,6 +50,10 @@
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
 #![doc(test(attr(deny(warnings))))]
 #[cfg(feature = "full")]
+pub mod aom2;
+#[cfg(feature = "full")]
+pub mod aom2_model;
+#[cfg(feature = "full")]
 pub mod bmm;
 #[cfg(feature = "full")]
 pub mod flat;
@@ -57,7 +61,6 @@ pub mod flat;
 pub mod json;
 #[cfg(feature = "full")]
 pub mod json_codec;
-#[cfg(feature = "full")]
 pub mod opt14;
 pub mod rest;
 #[cfg(feature = "full")]

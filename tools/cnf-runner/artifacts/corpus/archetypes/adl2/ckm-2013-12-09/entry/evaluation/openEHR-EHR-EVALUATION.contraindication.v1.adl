@@ -1,0 +1,103 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-EVALUATION.contraindication.v1
+
+concept
+	[at0000]	-- Contraindication
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"14-11-2012">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the identification of a treatment, medication or procedure which should not be administered or performed on this subject.">
+			use = <"Use to record the identification of a treatment, medication or procedure which should not be administered or performed on this subject. 
+
+This contraindication may be identified in a number of ways, for example: 
+- previous experience of a procedure being performed and subsequent clinical assessment that this should not be repeated; 
+- genomic testing results that indicate an adverse event may take place if a treatment or medication is administered; or
+- experience of a family member to a similar treatment, medication or procedure.
+
+Clinical decision support for prescribing should include checking of both known adverse reactions to the proposed medicine (EVALUATION.adverse_reaction) plus known contraindications using this archetype.">
+			keywords = <"contraindication", "prevent", "avoid", "adverse event">
+			misuse = <"Not to be used to record the occurrence of an adverse reaction to a substance or agent - use EVALUATION.adverse_reaction for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"14A229FEE6973A30307A27331D8B80E7">
+	>
+
+definition
+	EVALUATION[at0000] matches {	-- Contraindication
+		data matches {
+			ITEM_TREE[at0001] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {	-- Contraindication
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Evidence/Rationale
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0006] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Date Last Updated
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Contraindication">
+					description = <"Identification of a treatment, medicine, vaccine or procedure which should not be administered or performed on this subject.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Contraindication">
+					description = <"Identified contraindication to a treatment, medicine, vaccine or procedure.">
+					comment = <"Coding of the identified Contraindication with a terminology is desirable, where possible.">
+				>
+				["at0003"] = <
+					text = <"Evidence/Rationale">
+					description = <"Evidence or rationale for the contraindication.">
+					comment = <"This should be explicitly stated, so that this rationale can be explicit if this data is shared in a message or with another clinical system, although an optional link to evidence within the same record is also permitted.">
+				>
+				["at0004"] = <
+					text = <"Date Last Updated">
+					description = <"The date at which the contraindication was most recently deemed to apply, normally as a result of  clinical assertion or affirmation.">
+				>
+				["at0006"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+			>
+		>
+	>

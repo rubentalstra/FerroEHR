@@ -1,0 +1,184 @@
+﻿archetype (adl_version=1.4; uid=90d4a5d2-facb-4729-87e5-d32175fbfa05)
+	openEHR-EHR-OBSERVATION.physical_activity_screening_questionnaire.v0
+
+concept
+	[at0000]	-- Physical activity screening questionnaire
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Cheng Yexuan">
+		["organisation"] = <"ZJU">
+		["email"] = <"3160100913@zju.edu.cn">
+		["date"] = <"2021-07-27">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the responses to a screening questionnaire for physical activity.">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"00D4EF29FDD2714531AF2ABDBE55782E">
+		["build_uid"] = <"771584a0-ab56-4a4f-bca4-f3426f141acf">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Physical activity screening questionnaire
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									CLUSTER[at0006] occurrences matches {0..*} matches {    -- Specific physical activity
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0007] matches {    -- Physical activity name
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0008] occurrences matches {0..1} matches {    -- Participating?
+												value matches {
+													DV_CODED_TEXT matches {
+														defining_code matches {
+															[local::
+															at0011,    -- Yes
+															at0012,    -- No
+															at0013]    -- Unknown
+														}
+													}
+												}
+											}
+											allow_archetype CLUSTER[at0016] occurrences matches {0..*} matches {    -- Additional detailed questions
+												include
+													archetype_id/value matches {/.*/}
+											}
+										}
+									}
+									CLUSTER[at0009] occurrences matches {0..1} matches {    -- Specific episode
+										items cardinality matches {1..*; unordered} matches {
+											ELEMENT[at0010] occurrences matches {0..1} matches {    -- Episode pattern?
+												value matches {
+													DV_TEXT matches {*}
+												}
+											}
+											ELEMENT[at0018] occurrences matches {0..1} matches {    -- Typical exercise
+												value matches {
+													DV_QUANTITY matches {*}
+												}
+											}
+											allow_archetype CLUSTER[at0017] occurrences matches {0..*} matches {    -- Additional detailed questions
+												include
+													archetype_id/value matches {/.*/}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0014] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0015] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Physical activity screening questionnaire">
+					description = <"A screeing questionnaire for physical activity.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0006"] = <
+					text = <"Specific physical activity">
+					description = <"Grouping of data elements related to screening for a specific type of physical activity.">
+				>
+				["at0007"] = <
+					text = <"Physical activity name">
+					description = <"Name of the physical activity being screened.">
+				>
+				["at0008"] = <
+					text = <"Participating?">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Specific episode">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Episode pattern?">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"Yes">
+					description = <"The object is participating the specific physical activity.">
+				>
+				["at0012"] = <
+					text = <"No">
+					description = <"The object is not participating the specific physical activity.">
+				>
+				["at0013"] = <
+					text = <"Unknown">
+					description = <"It is not known whether the object is participating the specific physical activity.">
+				>
+				["at0014"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0015"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+				["at0016"] = <
+					text = <"Additional detailed questions">
+					description = <"Additional questionnaire questions directly related to the specific physical.">
+				>
+				["at0017"] = <
+					text = <"Additional detailed questions">
+					description = <"Additional questionnaire questions directly related to the specific episode.">
+				>
+				["at0018"] = <
+					text = <"Typical exercise">
+					description = <"Typical hour of exercise.">
+				>
+			>
+		>
+	>

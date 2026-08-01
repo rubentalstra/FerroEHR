@@ -1,0 +1,611 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-03-09</original_author>
+    <original_author id="name">Mikkel Johan Gaup Grønmo</original_author>
+    <original_author id="organisation">Helse Nord RHF</original_author>
+    <original_author id="email">mikkel.johan.gaup.gronmo@helse-nord.no</original_author>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Stein Arne Rimehaug, Sunnaas sykehus, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Astrid Askeland, Dips ASA, Norway</other_contributors>
+    <other_contributors>Heidi Aursand, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Rui Coutinho, University Hospital Southampton, United Kingdom</other_contributors>
+    <other_contributors>Veronica Dahl Hvitstein, Finnmarkssykehuset HF, Norway</other_contributors>
+    <other_contributors>Tom Dahlberg, Helgelandssykehuset HF, Fag, forskning og utdanning, Norway</other_contributors>
+    <other_contributors>Celeste Dias, Faculty of Medicine, Portugal</other_contributors>
+    <other_contributors>Stig Erik Hegrestad, Helse Førde, Norway</other_contributors>
+    <other_contributors>Kåre Flø, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, Helse-Nord, FSE, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Roar Holm, Helse Vest IKT A/S, Norway</other_contributors>
+    <other_contributors>Morten Hørthe, DIPS, Norway</other_contributors>
+    <other_contributors>Hanne Joensen, Helse Bergen HUS, Norway</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Forvaltningssenter EPJ, Helse Nord, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Tone Løkse, UNN, Norway</other_contributors>
+    <other_contributors>Anne M Gromsrud, DIPS AS, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Nils Ottar Henryson Talle, Seksjon for Ergoterapi og Velferdsteknologi, Helse Førde, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">van Swieten JC, Koudstaal PJ, Visser MC, Schouten HJ, van Gijn J. Interobserver agreement for the assessment of handicap in stroke patients. Stroke. 1988 May;19(5):604-7. doi: 10.1161/01.str.19.5.604. PubMed PMID: 3363593.&#xD;
+&#xD;
+Banks JL, Marotta CA. Outcomes validity and reliability of the modified Rankin scale: implications for stroke clinical trials: a literature review and synthesis. Stroke. 2007 Mar;38(3):1091-6. doi: 10.1161/01.STR.0000258355.23810.c6. Epub 2007 Feb 1. Review. PubMed PMID: 17272767. https://www.ahajournals.org/doi/10.1161/01.STR.0000258355.23810.c6&#xD;
+&#xD;
+Rankin J. Cerebral vascular accidents in patients over the age of 60. II. Prognosis. Scott Med J. 1957 May;2(5):200-15. doi: 10.1177/003693305700200504. PMID: 13432835.&#xD;
+&#xD;
+H.. Pakkeforløp hjerneslag, modified rankin scale. [Internet]. Helsedirektoratet; 2018 January. 1 PDF. Available from: https://www.helsedirektoratet.no/pakkeforlop/hjerneslag/hjerneslag-pakkeforlop-dokumenter/Pakkeforl%C3%B8p%20hjerneslag%20-%20mRS.pdf.</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">org.openEHR Foundation</other_details>
+    <other_details id="MD5-CAM-1.0.1">B89C90091DD22EDA44C2C915FA83CC72</other_details>
+    <other_details id="build_uid">26350b67-cfca-4119-96e6-5cd52876cee7</other_details>
+    <other_details id="revision">1.0.1</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Erfassung des Grads der Behinderung und des Umfangs der erforderlichen Unterstützung nach einem Schlaganfall oder einem anderen neurologischen Ereignis.</purpose>
+      <keywords>Schlaganfall, Funktion, neurologisch, Behinderung, Pflege, Aktivitäten des täglichen Lebens, mRS</keywords>
+      <use>Wird verwendet, um den Grad der Behinderung und den Umfang der erforderlichen Unterstützung nach einem Schlaganfall oder einem anderen neurologischen Ereignis zu erfassen.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>Brukes for å registrere graden av funksjonsnedsettelse eller behov for bistand i aktiviteter i dagliglivet hos et individ som har hatt hjerneslag eller en annen form for nevrologisk hendelse.</purpose>
+      <keywords>mrs, funksjonssvikt, funksjonsnedsettelse, hjelpebehov, hjerneblødning, ADL, kroppsfunksjon, nevrologisk skade, nevrologisk uførhet</keywords>
+      <use>For å registrere graden av funksjonsnedsettelse eller behov for bistand i aktiviteter i dagliglivet hos et individ som har hatt hjerneslag eller en annen form for nevrologisk hendelse.</use>
+      <misuse />
+      <copyright>© Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the degree of disability and level of assistance required after a stroke or another neurological event.</purpose>
+      <keywords>Stroke, function, neurological, disability, nursing, ADL, mrs</keywords>
+      <use>Use to record the degree of disability and level of assistance required after a stroke or another neurological event.</use>
+      <misuse />
+      <copyright>© Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Kim Werle</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Mikkel Johan Gaup Grønmo</author>
+    <author id="organisation">Forvaltningssenter EPJ, Helse Nord</author>
+    <author id="email">mikkel.johan.gaup.gronmo@helse-nord.no</author>
+    <accreditation>Nasjonal IKT HF</accreditation>
+  </translations>
+  <uid>
+    <value>141386aa-c170-4c14-a9d8-aa5cc9fe8618</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.modified_rankin_scale.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0007</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0008</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0009</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0010</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0012</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>5</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0013</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>6</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0014</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0005</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Modified Rankin Scale (mRS)</items>
+        <items id="description">An assessment tool used to measure the degree of disability and level of assistance required after a stroke or another neurological event.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any point in time event</items>
+        <items id="description">Default, unspecified point in time event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Modified Rankin Scale</items>
+        <items id="description">Degree of disability and level of assistance required after a stroke or another neurological event.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">No symptoms</items>
+        <items id="description">No symptoms at all.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">No significant disability</items>
+        <items id="description">Despite symptoms, able to carry out all usual duties and activities.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Slight disability</items>
+        <items id="description">Unable to perform all previous activities but able to look after own affairs without assistance.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Moderate disability</items>
+        <items id="description">Requiring some help but able to walk without assistance.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Moderately severe disability</items>
+        <items id="description">Unable to walk without assistance and unable to attend to own bodily needs without assistance.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Severe disability</items>
+        <items id="description">Bedridden, incontinent and requiring constant nursing care and attention.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Death</items>
+        <items id="description">Death.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Modifisert Rankin Skala (mRS)</items>
+        <items id="description">Skala for å registrere omfang av funksjonsnedsettelse eller behov for bistand i aktiviteter i dagliglivet hos et individ som har hatt hjerneslag eller en annen form for nevrologisk hendelse.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel: lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Modified Rankin Skala</items>
+        <items id="description">Grad av funksjonsnedsettelse eller behov for bistand i aktiviteter i dagliglivet hos et individ som har hatt hjerneslag eller en annen form for nevrologisk hendelse.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Ingen symptomer</items>
+        <items id="description">Ingen symptomer i det hele tatt.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Ingen betydningsfull funksjonssvikt til tross for symptomer</items>
+        <items id="description">Klarer å utføre alle oppgaver og aktiviteter som før.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Lett funksjonssvikt</items>
+        <items id="description">Klarer ikke å utføre alle aktiviteter som før, men klarer sine daglige gjøremål.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Moderat funksjonssvikt</items>
+        <items id="description">Trenger noe hjelp, men går uten hjelp.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Alvorlig funksjonssvikt</items>
+        <items id="description">Klarer ikke å gå uten hjelp og klarer ikke å ivareta sine grunnleggende behov uten hjelp.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Svært alvorlig funksjonssvikt</items>
+        <items id="description">Sengeliggende og behov for konstant tilsyn og hjelp.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Død</items>
+        <items id="description">Død.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Modifizierte Rankin-Skala (mRS)</items>
+        <items id="description">Ein Beurteilungsinstrument zur Messung des Grads der Behinderung und des Umfangs der erforderlichen Unterstützung nach einem Schlaganfall oder einem anderen neurologischen Ereignis.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ereignis zu einem beliebigen Zeitpunkt</items>
+        <items id="description">Standardmäßiges, nicht spezifiziertes Ereignis zu einem bestimmten Zeitpunkt, das explizit in einem Template oder zur Laufzeit definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen, die erforderlich sind, um das Modell um lokale Inhalte zu erweitern oder es an andere Referenzmodelle oder Formalismen anzupassen.</items>
+        <items id="comment">Zum Beispiel: lokale Informationsanforderungen; oder zusätzliche Metadaten zur Angleichung an FHIR.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Modifizierte Rankin-Skala</items>
+        <items id="description">Grad der Behinderung und Umfang der erforderlichen Hilfe nach einem Schlaganfall oder einem anderen neurologischen Ereignis.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Keine Symptome</items>
+        <items id="description">Überhaupt keine Symptome.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Keine nennenswerte Behinderung</items>
+        <items id="description">Trotz Symptomen in der Lage, alle üblichen Aufgaben und Tätigkeiten auszuführen.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Leichte Behinderung</items>
+        <items id="description">Unfähig, alle bisherigen Tätigkeiten auszuführen, aber in der Lage, sich ohne Hilfe um die eigenen Angelegenheiten zu kümmern.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Mäßige Behinderung</items>
+        <items id="description">Benötigt etwas Hilfe, kann aber ohne Hilfe gehen.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Mittelschwere Behinderung</items>
+        <items id="description">Unfähig, ohne Hilfe zu gehen und nicht in der Lage, sich ohne Hilfe um die eigenen körperlichen Bedürfnisse zu kümmern.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Schwere Behinderung</items>
+        <items id="description">Bettlägerig, inkontinent und ständige Pflege und Aufmerksamkeit erfordernd.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Tod</items>
+        <items id="description">Tod.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

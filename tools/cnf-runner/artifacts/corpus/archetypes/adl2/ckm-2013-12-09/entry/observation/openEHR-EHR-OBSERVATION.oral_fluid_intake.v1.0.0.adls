@@ -1,0 +1,145 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.oral_fluid_intake.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.biz">
+		["date"] = <"18/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the measured or estimated oral fluid intake.">
+			use = <"">
+			keywords = <"oral", "fluid", "intake", "thirst">
+			misuse = <"">
+		>
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Oral fluid intake
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					POINT_EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									CLUSTER[id8] matches {	-- Oral intake
+										items matches {
+											ELEMENT[id6] occurrences matches {0..1} matches {	-- Fluid
+												value matches {
+													DV_CODED_TEXT[id17] matches {
+														defining_code 
+													}
+												}
+											}
+											ELEMENT[id7] occurrences matches {0..1} matches {	-- Nature of fluid
+												value matches {
+													DV_CODED_TEXT[id18] matches {
+														defining_code 
+													}
+												}
+											}
+											ELEMENT[id9] occurrences matches {0..1} matches {	-- Volume
+												value matches {
+													DV_QUANTITY[id19] matches {
+														property matches {[at1]}
+														units matches {"ml", "l", "fl oz", "cl", "cc", "pt(US)"}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					INTERVAL_EVENT[id15] occurrences matches {0..1} matches {	-- Total
+						math_function matches {
+							DV_CODED_TEXT[id20] matches {
+								defining_code matches {[at2]}
+							}
+						}
+						data matches {
+							use_node ITEM_TREE[id21] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[Any event]/data[id4]
+						}
+					}
+					INTERVAL_EVENT[id16] occurrences matches {0..1} matches {	-- Actual
+						math_function matches {
+							DV_CODED_TEXT[id22] matches {
+								defining_code matches {[at3]}
+							}
+						}
+						data matches {
+							use_node ITEM_TREE[id23] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[Any event]/data[id4]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Oral fluid intake">
+				description = <"Recording of measurement (or estimation) of oral fluid intake.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"The estimation of oral fluid intake without specifying the period of time">
+			>
+			["id6"] = <
+				text = <"Fluid">
+				description = <"Name of fluid ingested">
+			>
+			["id7"] = <
+				text = <"Nature of fluid">
+				description = <"Description of type of fluid ingested">
+			>
+			["id8"] = <
+				text = <"Oral intake">
+				description = <"Details about fluid ingested">
+			>
+			["id9"] = <
+				text = <"Volume">
+				description = <"Measured or estimated oral intake">
+			>
+			["id15"] = <
+				text = <"Total">
+				description = <"For recording total oral fluid intake over a period (may transcend a number of interval or point in time records)">
+			>
+			["id16"] = <
+				text = <"Actual">
+				description = <"For recording the oral fluid intake over a period of time, when this will later be totalled.">
+			>
+			["at1"] = <
+				text = <"Volume">
+				description = <"Volume">
+			>
+			["at2"] = <
+				text = <"total">
+				description = <"total">
+			>
+			["at3"] = <
+				text = <"actual">
+				description = <"actual">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/129>
+			["at2"] = <http://openehr.org/id/148>
+			["at3"] = <http://openehr.org/id/640>
+		>
+	>

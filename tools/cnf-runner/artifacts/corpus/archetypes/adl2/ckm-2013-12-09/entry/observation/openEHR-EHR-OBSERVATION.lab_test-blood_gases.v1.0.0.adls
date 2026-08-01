@@ -1,0 +1,319 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-blood_gases.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			author = <
+				["name"] = <"Dr. Leonardo Der Jachadurian">
+				["organisation"] = <"Bitios.com">
+				["email"] = <"leoderja@hotmail.com">
+			>
+			accreditation = <"Medical Doctor (Internal Medicine Specialist)">
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"23/04/2006">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the arterial or venous blood gases and respiration products.">
+			use = <"">
+			keywords = <"lab", "laboratory", "oxygen", "pH", "carbon dioxide">
+			misuse = <"">
+		>
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			purpose = <"Para registrar los gases y estado ácido-base en sangre arterial o venosa.">
+			use = <"">
+			keywords = <"determinación", "laboratorio", "oxígeno", "pH", "HCO3", "pCO2", "pO2", "anhídrido carbónico", "bicarbonato", "estado ácido-base", "gases en sangre (arteriales / venosos)">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", "Heath Frankel, Ocean Informatics, Australia", "Ian McNicoll,Ocean Informatics, UK">
+	references = <
+		["1"] = <"NEHTA, Australia. Pathology Episode v1.0 - Data Group library [Internet]. 2009;[cited 2009 Dec 8 ]">
+		["2"] = <"Available from: http://www.nehta.gov.au/data-group-library/data-specifications/dgl-pathology">
+		["3"] = <"IHE. IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;">
+		["4"] = <"Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"CB6A467FAB3CB1DBA849C19B8102135F">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Blood gas assessment
+		/data[id2]/events[id3]/data[id4]/items matches {
+			ELEMENT[id79.11] occurrences matches {0..1} matches {	-- PaO2
+				value matches {
+					DV_QUANTITY[id0.94] matches {
+						property matches {[at0.1]}
+						magnitude matches {|0.0..1000.0|}
+						units matches {"kPa"}
+					}
+				}
+			}
+			ELEMENT[id79.12] occurrences matches {0..1} matches {	-- PaCO2
+				value matches {
+					DV_QUANTITY[id0.95] matches {
+						property matches {[at0.1]}
+						magnitude matches {|0.0..1000.0|}
+						units matches {"kPa"}
+					}
+				}
+			}
+			ELEMENT[id79.10] occurrences matches {0..1} matches {	-- Arterial pH
+				value matches {
+					DV_QUANTITY[id0.96] matches {
+						property matches {[at0.2]}
+						magnitude matches {|0.0..14.0|}
+						units matches {"[pH]"}
+					}
+				}
+			}
+			ELEMENT[id79.9] occurrences matches {0..1} matches {	-- Base excess
+				value matches {
+					DV_QUANTITY[id0.97] matches {
+						property matches {[at0.2]}
+						magnitude matches {|-30.0..30.0|}
+						units matches {"mmol/l"}
+					}
+				}
+			}
+			ELEMENT[id79.8] occurrences matches {0..1} matches {	-- Alveolar-arterial pO2 difference
+				value matches {
+					DV_QUANTITY[id0.98] matches {
+						property matches {[at0.1]}
+						magnitude matches {|0.0..1000.0|}
+						units matches {"kPa"}
+					}
+				}
+			}
+			ELEMENT[id79.7] occurrences matches {0..1} matches {	-- SaO2
+				value matches {
+					DV_PROPORTION[id0.99] matches {
+						numerator matches {|0.0..100.0|}
+						denominator matches {100.0}
+						is_integral matches {False}
+						type matches {2}
+					}
+				}
+			}
+			ELEMENT[id79.6] occurrences matches {0..1} matches {	-- CaO2
+				value matches {
+					DV_QUANTITY[id0.100] matches {
+						property matches {[at0.2]}
+						magnitude matches {|>=0.0|}
+						units matches {"{Volume/Volume}"}
+					}
+				}
+			}
+			ELEMENT[id79.5] occurrences matches {0..1} matches {	-- PvO2
+				value matches {
+					DV_QUANTITY[id0.101] matches {
+						property matches {[at0.1]}
+						magnitude matches {|0.0..1000.0|}
+						units matches {"kPa"}
+					}
+				}
+			}
+			ELEMENT[id79.4] occurrences matches {0..1} matches {	-- PvCO2
+				value matches {
+					DV_QUANTITY[id0.102] matches {
+						property matches {[at0.1]}
+						magnitude matches {|0.0..1000.0|}
+						units matches {"kPa"}
+					}
+				}
+			}
+			ELEMENT[id79.3] occurrences matches {0..1} matches {	-- Venous pH
+				value matches {
+					DV_QUANTITY[id0.103] matches {
+						property matches {[at0.2]}
+						magnitude matches {|0.0..14.0|}
+						units matches {"[pH]"}
+					}
+				}
+			}
+			ELEMENT[id79.2] occurrences matches {0..1} matches {	-- Capillary PH
+				value matches {
+					DV_QUANTITY[id0.104] matches {
+						property matches {[at0.2]}
+						magnitude matches {|0.0..14.0|}
+						units matches {"[pH]"}
+					}
+				}
+			}
+			ELEMENT[id79] 
+		}
+		/data[id2]/events[id3]/state matches {
+			ITEM_TREE[id0.91] matches {
+				items matches {
+					allow_archetype CLUSTER[id0.92] occurrences matches {0..1} matches {	-- Ambient oxygen
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.ambient_oxygen(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[id0.93] occurrences matches {0..1} matches {	-- Confounding factors
+						value matches {
+							DV_TEXT[id0.105] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.92"] = <
+				text = <"Ambient oxygen">
+				description = <"The ambient oxygen level or delivery when the sample was taken.">
+			>
+			["id0.93"] = <
+				text = <"Confounding factors">
+				description = <"Other patient factors which may affect interpretation of the blood gas results.">
+			>
+			["id1.1"] = <
+				text = <"Blood gas assessment">
+				description = <"The assessment of blood gas concentrations and acid-base balance in blood.">
+			>
+			["id79.10"] = <
+				text = <"Arterial pH">
+				description = <"The negative logarithm of the hydrogen ion concentration in blood.">
+			>
+			["id79.11"] = <
+				text = <"PaO2">
+				description = <"The oxygen pressure in the arterial blood.">
+			>
+			["id79.12"] = <
+				text = <"PaCO2">
+				description = <"The carbon dioxide pressure in the arterial blood.">
+			>
+			["id79.2"] = <
+				text = <"Capillary PH">
+				description = <"The negative logarithm of the Hydrogen ion concentration in capillary blood.">
+			>
+			["id79.3"] = <
+				text = <"Venous pH">
+				description = <"The negative logarithm of the Hydrogen ion concentration in venous blood.">
+			>
+			["id79.4"] = <
+				text = <"PvCO2">
+				description = <"The carbon dioxide pressure in the venous blood.">
+			>
+			["id79.5"] = <
+				text = <"PvO2">
+				description = <"The oxygen pressure in the venous blood.">
+			>
+			["id79.6"] = <
+				text = <"CaO2">
+				description = <"The oxygen content of arterial blood.">
+			>
+			["id79.7"] = <
+				text = <"SaO2">
+				description = <"The saturation of haem binding with oxygen.">
+			>
+			["id79.8"] = <
+				text = <"Alveolar-arterial pO2 difference">
+				description = <"The difference between the pressure of oxygen in the alveolar and the artery.">
+			>
+			["id79.9"] = <
+				text = <"Base excess">
+				description = <"The relative excess of alkaline.">
+			>
+			["at0.1"] = <
+				text = <"Pressure">
+				description = <"Pressure">
+			>
+			["at0.2"] = <
+				text = <"Concentration">
+				description = <"Concentration">
+			>
+		>
+		["es-ar"] = <
+			["id0.92"] = <
+				text = <"Oxígeno ambiental">
+				description = <"El nivel de oxígeno ambiental o administrado al paciente, cuando fue extraída la muestra.">
+			>
+			["id0.93"] = <
+				text = <"Factores confundidores">
+				description = <"Otros factores del paciente que pueden afectar la interpretación de los resultados de análisis de gases en sangre.">
+			>
+			["id1.1"] = <
+				text = <"Análisis de gases en sangre">
+				description = <"Análisis de concentración de gases y balance de ácido-base en sangre.">
+			>
+			["id79.10"] = <
+				text = <"pH arterial">
+				description = <"El logaritmo negativo de la concentración de hidrogeniones en sangre arterial.">
+			>
+			["id79.11"] = <
+				text = <"PaO2">
+				description = <"La presión de oxígeno en la sangre arterial.">
+			>
+			["id79.12"] = <
+				text = <"PaCO2">
+				description = <"La presión de anhídrido carbónico en la sangre arterial. ">
+			>
+			["id79.2"] = <
+				text = <"pH capilar">
+				description = <"El logaritmo negativo de la concentración de hidrogeniones en sangre capilar.">
+			>
+			["id79.3"] = <
+				text = <"pH venoso">
+				description = <"El logaritmo negativo de la concentración de hidrogeniones en sangre venosa.">
+			>
+			["id79.4"] = <
+				text = <"PvCO2">
+				description = <"La presión de anhídrido carbónico en la sangre venosa.">
+			>
+			["id79.5"] = <
+				text = <"PvO2">
+				description = <"La presión de oxígeno en la sangre venosa.">
+			>
+			["id79.6"] = <
+				text = <"CaO2">
+				description = <"El contenido de oxígeno de la sangre arterial.">
+			>
+			["id79.7"] = <
+				text = <"SaO2">
+				description = <"La saturación de oxígeno de la sangre.">
+			>
+			["id79.8"] = <
+				text = <"Diferencia alveolo-arterial de pO2">
+				description = <"La diferencia de presión de oxígeno entre el alvéolo y en la arteria.">
+			>
+			["id79.9"] = <
+				text = <"Exceso de base">
+				description = <"El exceso de base relativo.">
+			>
+			["at0.1"] = <
+				text = <"*Pressure (en)">
+				description = <"*Pressure (en)">
+			>
+			["at0.2"] = <
+				text = <"*Concentration (en)">
+				description = <"*Concentration (en)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.1"] = <http://openehr.org/id/125>
+			["at0.2"] = <http://openehr.org/id/119>
+		>
+	>

@@ -1,0 +1,1131 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.microscopy_breast_carcinoma.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2009-06-17">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record detailed findings about breast cancer found on microscopic examination.">
+			use = <"To record detailed findings about microscopic examination of tissue related to breast cancer. 
+Use as a component archetype in the context of a suite of archetypes that make up a histopathology report ie OBSERVATION.lab_test.histopathology.">
+			keywords = <"breast", "histopathology", "cancer", "laboratory", "lab", "pathology", "histology", "malignancy">
+			misuse = <"Not designed to be used within any other archetype other than OBSERVATION.lab_test.histopathology.">
+		>
+	>
+	other_contributors = <"Koray Atalag, University of Auckland, New Zealand", "Matt Cordell, NEHTA, Australia", "Sam Heard, Ocean Informatics, Australia (Editor)", "Heather Leslie, Ocean Informatics, Australia", "David McKillop, NEHTA, Australia", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "Cathy Richardson, NEHTA, Australia", "David Rowed, VAMC Clinic, Australia (Editor)", "Diego Bosca, IBIME Group, Spain">
+	references = <
+		["1"] = <"The Royal College of Pathologists, NHS Cancer Screening Programmes. Pathology Reporting of Breast Disease [Internet]. 2005 Jan ;[cited 2009 Jul 26] Available from: http://www.rcpath.org/resources/pdf/PathologyReportingOfBreastDisease-CORRECTED-lowres.pdf">
+		["2"] = <"British Columbia Cancer Agency. Synoptic Report Form for Breast Cancer [Internet]. 2005 Dec 13;[cited 2009 Jul 26 ] Available from: http://www.bccancer.bc.ca/HPI/CancerManagementGuidelines/Breast/Management/SynopticReportForm1of6/default.htm">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"41E10C136EAB6E4ED748035BF6D9F697">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Microscopic findings - Breast cancer
+		items matches {
+			CLUSTER[id34] matches {	-- Tumour size and extent
+				items matches {
+					allow_archetype CLUSTER[id37] matches {	-- Invasive tumour extent
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.physical_properties\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[id38] matches {	-- Total lesion extent
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.physical_properties\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+			CLUSTER[id16] occurrences matches {0..1} matches {	-- Histologic grading
+				items matches {
+					CLUSTER[id21] occurrences matches {0..1} matches {	-- Bloom and Richardson Grade
+						items matches {
+							ELEMENT[id15] occurrences matches {0..1} matches {	-- Mitosis count
+								value matches {
+									DV_COUNT[id183] 
+								}
+							}
+							ELEMENT[id176] occurrences matches {0..1} matches {	-- Mitotic frequency score
+								value matches {
+									DV_ORDINAL[id184] matches {
+										[value, symbol] matches {
+											[{1}, {[at177]}],
+											[{2}, {[at178]}],
+											[{3}, {[at179]}]
+										}
+									}
+								}
+							}
+							ELEMENT[id17] occurrences matches {0..1} matches {	-- Nuclear score
+								value matches {
+									DV_ORDINAL[id185] matches {
+										[value, symbol] matches {
+											[{1}, {[at51]}],
+											[{2}, {[at52]}],
+											[{3}, {[at53]}]
+										}
+									}
+								}
+							}
+							ELEMENT[id18] occurrences matches {0..1} matches {	-- Tubular formation score
+								value matches {
+									DV_ORDINAL[id186] matches {
+										[value, symbol] matches {
+											[{1}, {[at45]}],
+											[{2}, {[at46]}],
+											[{3}, {[at47]}]
+										}
+									}
+								}
+							}
+							ELEMENT[id19] occurrences matches {0..1} matches {	-- Histologic grade
+								value matches {
+									DV_ORDINAL[id187] matches {
+										[value, symbol] matches {
+											[{1}, {[at48]}],
+											[{2}, {[at49]}],
+											[{3}, {[at50]}]
+										}
+									}
+								}
+							}
+							ELEMENT[id44] occurrences matches {0..1} matches {	-- Confounding issues
+								value matches {
+									DV_TEXT[id188] 
+								}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id162] occurrences matches {0..1} matches {	-- Local tumour invasion
+				items matches {
+					allow_archetype CLUSTER[id160] occurrences matches {0..1} matches {	-- Lymphovascular invasion
+						include
+							archetype_id/value matches {/.*/}
+						exclude
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_invasion\.v1/}
+					}
+					allow_archetype CLUSTER[id161] occurrences matches {0..1} matches {	-- Skin / muscle invasion
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_invasion\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+			CLUSTER[id22] occurrences matches {0..1} matches {	-- Resection margins
+				items matches {
+					allow_archetype CLUSTER[id85] occurrences matches {0..1} matches {	-- Invasive carcinoma at margin
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_resection_margins\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[id114] occurrences matches {0..1} matches {	-- DCIS at margin
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_resection_margins\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[id116] occurrences matches {0..1} matches {	-- LCIS at margin
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.tumour_resection_margins\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+			CLUSTER[id55] occurrences matches {0..1} matches {	-- Non-neoplastic cellular changes
+				items matches {
+					ELEMENT[id24] matches {	-- Non-neoplastic cellular change
+						value matches {
+							DV_TEXT[id189] 
+						}
+					}
+				}
+			}
+			CLUSTER[id61] occurrences matches {0..1} matches {	-- Lobular neoplasia
+				items matches {
+					ELEMENT[id62] occurrences matches {0..1} matches {	-- Lobular neoplasia
+						value matches {
+							DV_CODED_TEXT[id190] matches {
+								defining_code matches {[ac1]}		-- Lobular neoplasia (synthesised)
+							}
+							DV_TEXT[id191] 
+						}
+					}
+					ELEMENT[id56] occurrences matches {0..1} matches {	-- Atypical lobular hyperplasia
+						value matches {
+							DV_CODED_TEXT[id192] matches {
+								defining_code matches {[ac2]}		-- Atypical lobular hyperplasia (synthesised)
+							}
+							DV_TEXT[id193] 
+						}
+					}
+					ELEMENT[id59] occurrences matches {0..1} matches {	-- Lobular carcinoma-in-situ
+						value matches {
+							DV_CODED_TEXT[id194] matches {
+								defining_code matches {[ac3]}		-- Lobular carcinoma-in-situ (synthesised)
+							}
+							DV_TEXT[id195] 
+						}
+					}
+					ELEMENT[id57] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id196] 
+						}
+					}
+				}
+			}
+			CLUSTER[id63] occurrences matches {0..1} matches {	-- Paget's disease of nipple
+				items matches {
+					ELEMENT[id64] occurrences matches {0..1} matches {	-- Paget's disease of nipple
+						value matches {
+							DV_CODED_TEXT[id197] matches {
+								defining_code matches {[ac4]}		-- Paget's disease of nipple (synthesised)
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id25] occurrences matches {0..1} matches {	-- Microcalcification
+				items matches {
+					ELEMENT[id26] occurrences matches {0..1} matches {	-- Microcalcification
+						value matches {
+							DV_CODED_TEXT[id198] matches {
+								defining_code matches {[ac5]}		-- Microcalcification (synthesised)
+							}
+						}
+					}
+					ELEMENT[id27] occurrences matches {0..1} matches {	-- Associated pathology
+						value matches {
+							DV_TEXT[id199] 
+						}
+					}
+				}
+			}
+			CLUSTER[id65] occurrences matches {0..1} matches {	-- DCIS features
+				items matches {
+					ELEMENT[id155] occurrences matches {0..1} matches {	-- Calcification
+						value matches {
+							DV_CODED_TEXT[id200] matches {
+								defining_code matches {[ac6]}		-- Calcification (synthesised)
+							}
+						}
+					}
+					CLUSTER[id126] occurrences matches {0..1} matches {	-- Histologic grade
+						items matches {
+							ELEMENT[id76] occurrences matches {0..1} matches {	-- Necrosis
+								value matches {
+									DV_CODED_TEXT[id201] matches {
+										defining_code matches {[ac7]}		-- Necrosis (synthesised)
+									}
+								}
+							}
+							ELEMENT[id71] occurrences matches {0..1} matches {	-- Nuclear score
+								value matches {
+									DV_ORDINAL[id202] matches {
+										[value, symbol] matches {
+											[{1}, {[at72]}],
+											[{2}, {[at73]}],
+											[{3}, {[at74]}]
+										}
+									}
+								}
+							}
+							ELEMENT[id81] occurrences matches {0..1} matches {	-- Van Nuys Prognostic Index
+								value matches {
+									DV_ORDINAL[id203] matches {
+										[value, symbol] matches {
+											[{1}, {[at82]}],
+											[{2}, {[at83]}],
+											[{3}, {[at84]}]
+										}
+									}
+								}
+							}
+							ELEMENT[id180] occurrences matches {0..1} matches {	-- Comment
+								value matches {
+									DV_TEXT[id204] 
+								}
+							}
+						}
+					}
+					CLUSTER[id129] occurrences matches {0..1} matches {	-- DCIS Architecture
+						items matches {
+							ELEMENT[id131] occurrences matches {0..1} matches {	-- Dominant pattern
+								value matches {
+									DV_CODED_TEXT[id205] matches {
+										defining_code matches {[ac8]}		-- Dominant pattern (synthesised)
+									}
+									DV_TEXT[id206] 
+								}
+							}
+							ELEMENT[id132] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT[id207] 
+								}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id95] occurrences matches {0..1} matches {	-- Hormone Receptor assays
+				items matches {
+					CLUSTER[id96] occurrences matches {0..2} matches {	-- Oestrogen receptor assay (ER)
+						items matches {
+							ELEMENT[id97] occurrences matches {0..1} matches {	-- ER result
+								value matches {
+									DV_CODED_TEXT[id208] matches {
+										defining_code matches {[ac9]}		-- ER result (synthesised)
+									}
+								}
+							}
+							ELEMENT[id101] occurrences matches {0..1} matches {	-- Proportion of nuclei stained
+								value matches {
+									DV_PROPORTION[id209] 
+								}
+							}
+							ELEMENT[id102] occurrences matches {0..1} matches {	-- Predominant staining intensity
+								value matches {
+									DV_CODED_TEXT[id210] matches {
+										defining_code matches {[ac10]}		-- Predominant staining intensity (synthesised)
+									}
+								}
+							}
+						}
+					}
+					CLUSTER[id103] occurrences matches {0..1} matches {	-- Progesterone receptor assay (PR)
+						items matches {
+							ELEMENT[id139] occurrences matches {0..1} matches {	-- PR result
+								value matches {
+									DV_CODED_TEXT[id211] matches {
+										defining_code matches {[ac11]}		-- PR result (synthesised)
+									}
+								}
+							}
+							ELEMENT[id163] occurrences matches {0..1} matches {	-- Proportion of nuclei stained
+								value matches {
+									DV_PROPORTION[id212] 
+								}
+							}
+							ELEMENT[id164] occurrences matches {0..1} matches {	-- Predominant staining intensity
+								value matches {
+									DV_CODED_TEXT[id213] matches {
+										defining_code matches {[ac12]}		-- Predominant staining intensity (synthesised)
+									}
+								}
+							}
+						}
+					}
+					CLUSTER[id104] occurrences matches {0..1} matches {	-- Human Oestrogen receptor 2 assay (HER2)
+						items matches {
+							CLUSTER[id144] occurrences matches {0..1} matches {	-- Immunohistochemistry
+								items matches {
+									ELEMENT[id108] occurrences matches {0..1} matches {	-- Immunohistochemistry score
+										value matches {
+											DV_COUNT[id214] matches {
+												magnitude matches {|>=0|}
+											}
+										}
+									}
+									ELEMENT[id143] occurrences matches {0..1} matches {	-- Immunohistochemistry result
+										value matches {
+											DV_CODED_TEXT[id215] matches {
+												defining_code matches {[ac13]}		-- Immunohistochemistry result (synthesised)
+											}
+										}
+									}
+								}
+							}
+							CLUSTER[id145] occurrences matches {0..1} matches {	-- In situ hybridisation (ISH)
+								items matches {
+									ELEMENT[id109] occurrences matches {0..1} matches {	-- ISH result
+										value matches {
+											DV_CODED_TEXT[id216] matches {
+												defining_code matches {[ac14]}		-- ISH result (synthesised)
+											}
+										}
+									}
+									ELEMENT[id146] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT[id217] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id31] occurrences matches {0..1} matches {	-- Lymph node involvement
+				items matches {
+					allow_archetype CLUSTER[id88] occurrences matches {0..1} matches {	-- Sentinel nodes
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.lymph_node_metastases\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[id89] occurrences matches {0..1} matches {	-- Axillary nodes
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.lymph_node_metastases\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+			CLUSTER[id181] occurrences matches {0..1} matches {	-- Non-neoplastic changes
+				items matches {
+					ELEMENT[id182] matches {	-- Non-neoplastic change
+						value matches {
+							DV_CODED_TEXT[id218] matches {
+								defining_code matches {[ac15]}		-- Non-neoplastic change (synthesised)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Microscopic findings - Breast cancer">
+				description = <"Microscopic anatomic pathology findings related to breast cancer.">
+			>
+			["id15"] = <
+				text = <"Mitosis count">
+				description = <"Mitotic frequency is calculated from the number of mitoses per 10 high-power fields.">
+			>
+			["id16"] = <
+				text = <"Histologic grading">
+				description = <"Histologic grading of breast cancer.">
+			>
+			["id17"] = <
+				text = <"Nuclear score">
+				description = <"Nuclear score.">
+			>
+			["id18"] = <
+				text = <"Tubular formation score">
+				description = <"Tubular formation score, representing the extent of tubular formation within invasive carcinoma cells.">
+			>
+			["id19"] = <
+				text = <"Histologic grade">
+				description = <"Bloom and Richardson Grade of breast cancer, derived from the total score of its components: Mitotic frequency score, Nuclear score and Tubular formation score.">
+			>
+			["id21"] = <
+				text = <"Bloom and Richardson Grade">
+				description = <"Bloom and Richardson Histology Grade ( with modification by Elston and Ellis) is composed of three  components which are combined to produce a calculated Histology Grade.">
+			>
+			["id22"] = <
+				text = <"Resection margins">
+				description = <"Findings of the relation of tumour to surgical resection margins.">
+			>
+			["id24"] = <
+				text = <"Non-neoplastic cellular change">
+				description = <"Finding of non-neoplastic cellular change.">
+			>
+			["id25"] = <
+				text = <"Microcalcification">
+				description = <"Findings related to microcalcification.">
+			>
+			["id26"] = <
+				text = <"Microcalcification">
+				description = <"Findings of microcalcification.">
+			>
+			["id27"] = <
+				text = <"Associated pathology">
+				description = <"A text description of pathology associated with microcalcification.">
+			>
+			["id31"] = <
+				text = <"Lymph node involvement">
+				description = <"Findings related to the involvement of tumour in lymph nodes.">
+			>
+			["id34"] = <
+				text = <"Tumour size and extent">
+				description = <"Assessments of tumour size.">
+			>
+			["id37"] = <
+				text = <"Invasive tumour extent">
+				description = <"The size of the invasive aspect of the breast cancer.">
+			>
+			["id38"] = <
+				text = <"Total lesion extent">
+				description = <"The extent of total breast cancer lesion.">
+			>
+			["id44"] = <
+				text = <"Confounding issues">
+				description = <"A text description of any assessment issues which may confound the accuracy of the Bloom and Richardson histologic grade.">
+			>
+			["at45"] = <
+				text = <"Tubular formation score 1">
+				description = <"Less than 75% of invasive carcinoma forming tubular or glandular structures.">
+			>
+			["at46"] = <
+				text = <"Tubular formation score 2">
+				description = <"10-75% of invasive carcinoma forming tubular or glandular structures.">
+			>
+			["at47"] = <
+				text = <"Tubular formation score 3">
+				description = <"Less than 10% of invasive carcinoma forming tubular or glandular structures.">
+			>
+			["at48"] = <
+				text = <"Grade 1">
+				description = <"Total score of 3-5.">
+			>
+			["at49"] = <
+				text = <"Grade 2">
+				description = <"Total score of 6 or 7.">
+			>
+			["at50"] = <
+				text = <"Grade 3">
+				description = <"Total score of 8 or 9.">
+			>
+			["at51"] = <
+				text = <"Score 1">
+				description = <"Size equivalent to 1.5–2 red blood cell diameters or normal duct epithelial nuclei; Diffuse chromatin; Inconspicuous nucleoli.">
+			>
+			["at52"] = <
+				text = <"Score 2">
+				description = <"Size equivalent to 2–2.5 red blood cell diameters; Coarse chromatin; Infrequent nucleoli and mitoses.">
+			>
+			["at53"] = <
+				text = <"Score 3">
+				description = <"Size > 2.5 red blood cell diameters; Pleomorphic vesicular nuclei; One or more prominent nucleoli; Frequent mitotic figures commonly present.">
+			>
+			["id55"] = <
+				text = <"Non-neoplastic cellular changes">
+				description = <"Findings of non-neoplastic cellular changes.">
+			>
+			["id56"] = <
+				text = <"Atypical lobular hyperplasia">
+				description = <"Finding of atypical lobular hyperplasia.">
+			>
+			["id57"] = <
+				text = <"Description">
+				description = <"A text description of finding of lobular neoplasia.">
+			>
+			["id59"] = <
+				text = <"Lobular carcinoma-in-situ">
+				description = <"Finding of lobular carcinoma-in-situ.">
+			>
+			["id61"] = <
+				text = <"Lobular neoplasia">
+				description = <"Findings of lobular neoplasia and variants.">
+			>
+			["id62"] = <
+				text = <"Lobular neoplasia">
+				description = <"Finding of lobular neoplasia.">
+			>
+			["id63"] = <
+				text = <"Paget's disease of nipple">
+				description = <"Findings related to Paget's disease of the nipple.">
+			>
+			["id64"] = <
+				text = <"Paget's disease of nipple">
+				description = <"Finding of Paget's disease of the nipple.">
+			>
+			["id65"] = <
+				text = <"DCIS features">
+				description = <"Findings related to Ductal carcinoma-in-situ (DCIS).">
+			>
+			["id71"] = <
+				text = <"Nuclear score">
+				description = <"Nuclear score, using the Elston and Ellis modification of the Bloom and
+ Richardson system for grading invasive carcinoma.">
+			>
+			["at72"] = <
+				text = <"Score 1">
+				description = <"Size equivalent to 1.5–2 red blood cell diameters or normal duct epithelial nuclei; Diffuse chromatin; Inconspicuous nucleoli.">
+			>
+			["at73"] = <
+				text = <"Score 2">
+				description = <"Size equivalent to 2–2.5 red blood cell diameters; Coarse chromatin; Infrequent nucleoli and mitoses.">
+			>
+			["at74"] = <
+				text = <"Score 3">
+				description = <"Size > 2.5 red blood cell diameters; Pleomorphic vesicular nuclei; One or more prominent nucleoli; Frequent mitotic figures commonly present.">
+			>
+			["id76"] = <
+				text = <"Necrosis">
+				description = <"Findings of tumour necrosis.">
+			>
+			["at77"] = <
+				text = <"Present (non-comedo type)">
+				description = <"Non-comedo type of tumour necrosis is present.">
+			>
+			["at78"] = <
+				text = <"Absent or minimal">
+				description = <"Tumour necrosis is absent or minimal.">
+			>
+			["at79"] = <
+				text = <"Present (Comedo type)">
+				description = <"Comedo type of tumour necrosis is present.">
+			>
+			["id81"] = <
+				text = <"Van Nuys Prognostic Index">
+				description = <"The Van Nuys Prognostic Index (VNPI).">
+			>
+			["at82"] = <
+				text = <"Van Nuys Group 1">
+				description = <"Nuclear grade 1 or 2 and no necrosis.">
+			>
+			["at83"] = <
+				text = <"Van Nuys Group 2">
+				description = <"Nuclear grade 1 or 2 and necrosis.">
+			>
+			["at84"] = <
+				text = <"Van Nuys Group 3">
+				description = <"Nuclear grade 3 with or without necrosis.">
+			>
+			["id85"] = <
+				text = <"Invasive carcinoma at margin">
+				description = <"Details of invasive carcinoma at surgical resection margins.">
+			>
+			["id88"] = <
+				text = <"Sentinel nodes">
+				description = <"Details of the involvement of tumour in sentinel lymph nodes.">
+			>
+			["id89"] = <
+				text = <"Axillary nodes">
+				description = <"Details of the involvement of tumour in axillary lymph nodes.">
+			>
+			["id95"] = <
+				text = <"Hormone Receptor assays">
+				description = <"Immunohistochemical assays of oestrogen receptor (ER) and progesterone receptor (PR).">
+			>
+			["id96"] = <
+				text = <"Oestrogen receptor assay (ER)">
+				description = <"Oestrogen Receptor assay (ER).">
+			>
+			["id97"] = <
+				text = <"ER result">
+				description = <"Oestrogen Receptor assay result.">
+			>
+			["at98"] = <
+				text = <"Positive">
+				description = <"Oestrogen Receptor assay result is positive.">
+			>
+			["at99"] = <
+				text = <"Negative">
+				description = <"Oestrogen Receptor assay result is negative.">
+			>
+			["at100"] = <
+				text = <"Equivocal">
+				description = <"Oestrogen Receptor assay result is equivocal.">
+			>
+			["id101"] = <
+				text = <"Proportion of nuclei stained">
+				description = <"An estimate of the percentage of nuclei stained.">
+			>
+			["id102"] = <
+				text = <"Predominant staining intensity">
+				description = <"Predominant intensity of staining.">
+			>
+			["id103"] = <
+				text = <"Progesterone receptor assay (PR)">
+				description = <"Progesterone Receptor (PR) assay.">
+			>
+			["id104"] = <
+				text = <"Human Oestrogen receptor 2 assay (HER2)">
+				description = <"Human Oestrogen receptor 2 (HER2) assay.">
+			>
+			["at105"] = <
+				text = <"Low">
+				description = <"Predominant intensity of staining is low.">
+			>
+			["at106"] = <
+				text = <"Intermediate">
+				description = <"Predominant intensity of staining is intermediate.">
+			>
+			["at107"] = <
+				text = <"High">
+				description = <"Predominant intensity of staining is high.">
+			>
+			["id108"] = <
+				text = <"Immunohistochemistry score">
+				description = <"HER2 immunohistochemistry score.">
+			>
+			["id109"] = <
+				text = <"ISH result">
+				description = <"HER2 In situ hybridisation (ISH) result.">
+			>
+			["at110"] = <
+				text = <"Present - classical">
+				description = <"Classical atypical lobular neoplasia is present.">
+			>
+			["at111"] = <
+				text = <"Present - pleomorphic">
+				description = <"Pleomorphic atypical lobular neoplasia is present.">
+			>
+			["id114"] = <
+				text = <"DCIS at margin">
+				description = <"Details of DCIS (Ductal carcinoma-in-situ) at surgical resection margins.">
+			>
+			["id116"] = <
+				text = <"LCIS at margin">
+				description = <"Details of LCIS (Local carcinoma-in-situ) at surgical resection margins.">
+			>
+			["at120"] = <
+				text = <"Present">
+				description = <"Paget's disease of the nipple is present.">
+			>
+			["at121"] = <
+				text = <"Absent">
+				description = <"Paget's disease of the nipple is absent.">
+			>
+			["at122"] = <
+				text = <"Indeterminate">
+				description = <"Presence of Paget's disease of the nipple has not been determined.">
+			>
+			["at123"] = <
+				text = <"Present">
+				description = <"Microcalcification is present.">
+			>
+			["at124"] = <
+				text = <"Present - no evidence of necrosis">
+				description = <"Microcalcification is present with no evidence of necrosis.">
+			>
+			["at125"] = <
+				text = <"Present - with evidence of necrosis">
+				description = <"Microcalcification is present with evidence of necrosis.">
+			>
+			["id126"] = <
+				text = <"Histologic grade">
+				description = <"Histologic grading of DCIS.">
+			>
+			["at127"] = <
+				text = <"Absent">
+				description = <"Microcalcification is absent.">
+			>
+			["at128"] = <
+				text = <"Indeterminate">
+				description = <"Presence of microcalcification has not been determined.">
+			>
+			["id129"] = <
+				text = <"DCIS Architecture">
+				description = <"Findings related to architecture of the ductal carcinoma-in-situ.">
+			>
+			["id131"] = <
+				text = <"Dominant pattern">
+				description = <"Findingof the dominant DCIS architectural pattern.">
+			>
+			["id132"] = <
+				text = <"Description">
+				description = <"A text description of the architectural pattern.">
+			>
+			["at133"] = <
+				text = <"Solid">
+				description = <"Solid pattern of ductal carcinoma-in-situ.">
+			>
+			["at134"] = <
+				text = <"Cribriform">
+				description = <"Cribriform pattern of ductal carcinoma-in-situ.">
+			>
+			["at135"] = <
+				text = <"Micropapillary">
+				description = <"Micropapillary pattern of ductal carcinoma-in-situ.">
+			>
+			["at136"] = <
+				text = <"Apocrine">
+				description = <"Apocrine pattern of ductal carcinoma-in-situ.">
+			>
+			["at137"] = <
+				text = <"Papillary">
+				description = <"Papillary pattern of ductal carcinoma-in-situ.">
+			>
+			["at138"] = <
+				text = <"Indeterminate">
+				description = <"The dominant pattern of ductal carcinoma-in-situ has not been determined.">
+			>
+			["id139"] = <
+				text = <"PR result">
+				description = <"Progesterone Receptor assay result.">
+			>
+			["at140"] = <
+				text = <"Positive">
+				description = <"Progesterone Receptor assay result is positive.">
+			>
+			["at141"] = <
+				text = <"Negative">
+				description = <"Progesterone Receptor assay result is negative.">
+			>
+			["at142"] = <
+				text = <"Equivocal">
+				description = <"Progesterone Receptor assay result is equivocal.">
+			>
+			["id143"] = <
+				text = <"Immunohistochemistry result">
+				description = <"HER2 Immunohistochemistry result.">
+			>
+			["id144"] = <
+				text = <"Immunohistochemistry">
+				description = <"HER2 Immunohistochemistry result.">
+			>
+			["id145"] = <
+				text = <"In situ hybridisation (ISH)">
+				description = <"HER2 In situ hybridisation (ISH).">
+			>
+			["id146"] = <
+				text = <"Comment">
+				description = <"A text comment on HER2 In situ hybridisation (ISH) result.">
+			>
+			["at147"] = <
+				text = <"Positive">
+				description = <"The HER2 Immunohistochemistry result is positive.">
+			>
+			["at148"] = <
+				text = <"Negative">
+				description = <"The HER2 Immunohistochemistry result is negative.">
+			>
+			["at149"] = <
+				text = <"Equivocal">
+				description = <"The HER2 Immunohistochemistry result is equivocal.">
+			>
+			["at150"] = <
+				text = <"Positive">
+				description = <"The HER2 In situ hybridisation (ISH) result is positive.">
+			>
+			["at151"] = <
+				text = <"Negative">
+				description = <"The HER2 In situ hybridisation (ISH) result is negative.">
+			>
+			["at152"] = <
+				text = <"Equivocal">
+				description = <"The HER2 In situ hybridisation (ISH) result is equivocal.">
+			>
+			["at153"] = <
+				text = <"Absent">
+				description = <"Atypical lobular neoplasia is absent.">
+			>
+			["at154"] = <
+				text = <"Indeterminate">
+				description = <"The presence of atypical lobular neoplasia has not been determined.">
+			>
+			["id155"] = <
+				text = <"Calcification">
+				description = <"Finding of calcification in DCIS tissue.">
+			>
+			["at156"] = <
+				text = <"Present with necrosis">
+				description = <"Calcification with necrosis  is present in DCIS tissue.">
+			>
+			["at157"] = <
+				text = <"Present without necrosis">
+				description = <"Calcification without necrosis is present in DCIS tissue.">
+			>
+			["at158"] = <
+				text = <"Absent">
+				description = <"Calcification is absent from DCIS tissue.">
+			>
+			["at159"] = <
+				text = <"Indeterminate">
+				description = <"Presence of calcification in DCIS tissue has not been determined.">
+			>
+			["id160"] = <
+				text = <"Lymphovascular invasion">
+				description = <"Details of local invasion into lymphovascular tissue.">
+			>
+			["id161"] = <
+				text = <"Skin / muscle invasion">
+				description = <"Details of local invasion into skin or muscle tissue.">
+			>
+			["id162"] = <
+				text = <"Local tumour invasion">
+				description = <"Findings of local tumour invasion.">
+			>
+			["id163"] = <
+				text = <"Proportion of nuclei stained">
+				description = <"An estimate of the percentage of nuclei stained.">
+			>
+			["id164"] = <
+				text = <"Predominant staining intensity">
+				description = <"Predominant intensity of staining.">
+			>
+			["at165"] = <
+				text = <"Low">
+				description = <"Predominant intensity of staining is low.">
+			>
+			["at166"] = <
+				text = <"Intermediate">
+				description = <"Predominant intensity of staining is intermediate.">
+			>
+			["at167"] = <
+				text = <"High">
+				description = <"Predominant intensity of staining is high.">
+			>
+			["at168"] = <
+				text = <"Present - classical">
+				description = <"Classical lobular neoplasia is present.">
+			>
+			["at169"] = <
+				text = <"Present - pleomorphic">
+				description = <"Pleomorphic lobular neoplasia is present.">
+			>
+			["at170"] = <
+				text = <"Absent">
+				description = <"Lobular neoplasia is absent.">
+			>
+			["at171"] = <
+				text = <"Indeterminate">
+				description = <"The presence of lobular hyperplasia has not been determined.">
+			>
+			["at172"] = <
+				text = <"Present - classical">
+				description = <"Classical lobular carcinoma-in-situ is present.">
+			>
+			["at173"] = <
+				text = <"Present - pleomorphic">
+				description = <"Pleomorphic lobular carcinoma-in-situ is present.">
+			>
+			["at174"] = <
+				text = <"Absent">
+				description = <"Lobular carcinoma-in-situ is absent.">
+			>
+			["at175"] = <
+				text = <"Indeterminate">
+				description = <"The presence of lobular carcinoma-in-situ has not been determined.">
+			>
+			["id176"] = <
+				text = <"Mitotic frequency score">
+				description = <"Mitotic frequency score calculated from the mitosis count and the microscopy field diameter via a lookup table.">
+			>
+			["at177"] = <
+				text = <"Score 1">
+				description = <"Low mitotic frequency.">
+			>
+			["at178"] = <
+				text = <"Score 2">
+				description = <"Intermediate mitotic frequency.">
+			>
+			["at179"] = <
+				text = <"Score 3">
+				description = <"High mitotic frequency.">
+			>
+			["id180"] = <
+				text = <"Comment">
+				description = <"Comment on estimation of the histologic grade.">
+			>
+			["id181"] = <
+				text = <"Non-neoplastic changes">
+				description = <"Findings of non-neoplastic change.">
+			>
+			["id182"] = <
+				text = <"Non-neoplastic change">
+				description = <"Finding of non-neoplastic change.">
+			>
+			["at183"] = <
+				text = <"Columnar cell changes">
+				description = <"Columnar cell changes are present.">
+			>
+			["at184"] = <
+				text = <"Intraductal papilloma">
+				description = <"Intraductal papilloma is present.">
+			>
+			["at185"] = <
+				text = <"Radial scars">
+				description = <"Radial scars are present.">
+			>
+			["at186"] = <
+				text = <"Atypical ductal hyperplasia (ADH)">
+				description = <"Atypical ductal hyperplasia (ADH) is present.">
+			>
+			["at187"] = <
+				text = <"Absent">
+				description = <"Non-neoplastic change is absent.">
+			>
+			["at188"] = <
+				text = <"Indeterminate">
+				description = <"Presence of non-neoplastic changes has not been determined.">
+			>
+			["ac1"] = <
+				text = <"Lobular neoplasia (synthesised)">
+				description = <"Finding of lobular neoplasia. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Atypical lobular hyperplasia (synthesised)">
+				description = <"Finding of atypical lobular hyperplasia. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Lobular carcinoma-in-situ (synthesised)">
+				description = <"Finding of lobular carcinoma-in-situ. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Paget's disease of nipple (synthesised)">
+				description = <"Finding of Paget's disease of the nipple. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Microcalcification (synthesised)">
+				description = <"Findings of microcalcification. (synthesised)">
+			>
+			["ac6"] = <
+				text = <"Calcification (synthesised)">
+				description = <"Finding of calcification in DCIS tissue. (synthesised)">
+			>
+			["ac7"] = <
+				text = <"Necrosis (synthesised)">
+				description = <"Findings of tumour necrosis. (synthesised)">
+			>
+			["ac8"] = <
+				text = <"Dominant pattern (synthesised)">
+				description = <"Findingof the dominant DCIS architectural pattern. (synthesised)">
+			>
+			["ac9"] = <
+				text = <"ER result (synthesised)">
+				description = <"Oestrogen Receptor assay result. (synthesised)">
+			>
+			["ac10"] = <
+				text = <"Predominant staining intensity (synthesised)">
+				description = <"Predominant intensity of staining. (synthesised)">
+			>
+			["ac11"] = <
+				text = <"PR result (synthesised)">
+				description = <"Progesterone Receptor assay result. (synthesised)">
+			>
+			["ac12"] = <
+				text = <"Predominant staining intensity (synthesised)">
+				description = <"Predominant intensity of staining. (synthesised)">
+			>
+			["ac13"] = <
+				text = <"Immunohistochemistry result (synthesised)">
+				description = <"HER2 Immunohistochemistry result. (synthesised)">
+			>
+			["ac14"] = <
+				text = <"ISH result (synthesised)">
+				description = <"HER2 In situ hybridisation (ISH) result. (synthesised)">
+			>
+			["ac15"] = <
+				text = <"Non-neoplastic change (synthesised)">
+				description = <"Finding of non-neoplastic change. (synthesised)">
+			>
+			["ac16"] = <
+				text = <"Mitotic frequency score (synthesised)">
+				description = <"Mitotic frequency score calculated from the mitosis count and the microscopy field diameter via a lookup table. (synthesised)">
+			>
+			["ac17"] = <
+				text = <"Nuclear score (synthesised)">
+				description = <"Nuclear score. (synthesised)">
+			>
+			["ac18"] = <
+				text = <"Tubular formation score (synthesised)">
+				description = <"Tubular formation score, representing the extent of tubular formation within invasive carcinoma cells. (synthesised)">
+			>
+			["ac19"] = <
+				text = <"Histologic grade (synthesised)">
+				description = <"Bloom and Richardson Grade of breast cancer, derived from the total score of its components: Mitotic frequency score, Nuclear score and Tubular formation score. (synthesised)">
+			>
+			["ac20"] = <
+				text = <"Nuclear score (synthesised)">
+				description = <"Nuclear score, using the Elston and Ellis modification of the Bloom and
+ Richardson system for grading invasive carcinoma. (synthesised)">
+			>
+			["ac21"] = <
+				text = <"Van Nuys Prognostic Index (synthesised)">
+				description = <"The Van Nuys Prognostic Index (VNPI). (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac8"] = <
+			id = <"ac8">
+			members = <"at133", "at134", "at135", "at136", "at137", "at138">
+		>
+		["ac15"] = <
+			id = <"ac15">
+			members = <"at183", "at184", "at185", "at186", "at187", "at188">
+		>
+		["ac17"] = <
+			id = <"ac17">
+			members = <"at51", "at52", "at53">
+		>
+		["ac20"] = <
+			id = <"ac20">
+			members = <"at72", "at73", "at74">
+		>
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at168", "at169", "at170", "at171">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at110", "at111", "at153", "at154">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at172", "at173", "at174", "at175">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at120", "at121", "at122">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at123", "at127", "at128", "at124", "at125">
+		>
+		["ac6"] = <
+			id = <"ac6">
+			members = <"at156", "at157", "at158", "at159">
+		>
+		["ac7"] = <
+			id = <"ac7">
+			members = <"at77", "at79", "at78">
+		>
+		["ac9"] = <
+			id = <"ac9">
+			members = <"at98", "at99", "at100">
+		>
+		["ac10"] = <
+			id = <"ac10">
+			members = <"at105", "at106", "at107">
+		>
+		["ac11"] = <
+			id = <"ac11">
+			members = <"at140", "at141", "at142">
+		>
+		["ac12"] = <
+			id = <"ac12">
+			members = <"at165", "at166", "at167">
+		>
+		["ac13"] = <
+			id = <"ac13">
+			members = <"at147", "at148", "at149">
+		>
+		["ac14"] = <
+			id = <"ac14">
+			members = <"at150", "at151", "at152">
+		>
+		["ac16"] = <
+			id = <"ac16">
+			members = <"at177", "at178", "at179">
+		>
+		["ac18"] = <
+			id = <"ac18">
+			members = <"at45", "at46", "at47">
+		>
+		["ac19"] = <
+			id = <"ac19">
+			members = <"at48", "at49", "at50">
+		>
+		["ac21"] = <
+			id = <"ac21">
+			members = <"at82", "at83", "at84">
+		>
+	>

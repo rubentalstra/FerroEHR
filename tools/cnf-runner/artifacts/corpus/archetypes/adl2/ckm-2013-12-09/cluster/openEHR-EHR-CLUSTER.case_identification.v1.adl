@@ -1,0 +1,101 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.case_identification.v1
+
+concept
+	[at0000]	-- Case Identification
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"08/12/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about the identification of a case.">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf
+
+">
+		["MD5-CAM-1.0.1"] = <"2FEB0E4952D5ADF9B30101F47D213876">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Case Identification
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Case identifier
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Case started
+				value matches {
+					DV_DATE_TIME matches {*}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- Status
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0004, 	-- Completed
+							at0005]	-- Aborted
+						}
+					}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- Case identified
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Case Identification">
+					description = <"To record Case identification details for public health purposes.">
+				>
+				["at0001"] = <
+					text = <"Case identifier">
+					description = <"The identifier of this case.">
+				>
+				["at0002"] = <
+					text = <"Case started">
+					description = <"The date that the case was commenced.">
+				>
+				["at0003"] = <
+					text = <"Status">
+					description = <"The status of the case. A status of completed means the patient has been associated with the given case number.
+A status of aborted means the patient was associated with the case number in error.">
+				>
+				["at0004"] = <
+					text = <"Completed">
+					description = <"The case has been associated with the given case identifier.">
+				>
+				["at0005"] = <
+					text = <"Aborted">
+					description = <"The subject was associated with the case identifier in error.">
+				>
+				["at0006"] = <
+					text = <"Case identified">
+					description = <"Text or coded description of the case identified.">
+				>
+			>
+		>
+	>

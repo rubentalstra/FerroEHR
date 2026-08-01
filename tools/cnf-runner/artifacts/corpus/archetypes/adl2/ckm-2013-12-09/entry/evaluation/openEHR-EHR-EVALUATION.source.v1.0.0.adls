@@ -1,0 +1,108 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.source.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2013-03-11">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about information sourced from a third party that is utilised as part of a remote assessment or report.">
+			use = <"Use to record details about information sourced from a third party that is utilised as part of a remote assessment or report.
+
+This archetype has been designed to support the identification and quality of health information sourced from a third party clinical source. 
+
+Each piece of clinical evidence that has been received from a third party source needs to be assessed as 'fit for use' prior to being utilisied to support clinical decision-making. For example: a digital image captured during a clinical consultation, or a digital radiograph, sent to a remote specialist for assessment and treatment advice needs to be deemed to be of the complete anatomical region and of appropriate quality.">
+			keywords = <"source", "image", "original">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"526538AF3DA5023250C4BC477A761920">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Source Information
+		data matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Source Information
+						value matches {
+							DV_TEXT[id9] 
+						}
+					}
+					ELEMENT[id4] occurrences matches {0..1} matches {	-- Path
+						value matches {
+							DV_URI[id10] 
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Quality
+						value matches {
+							DV_CODED_TEXT[id11] matches {
+								defining_code matches {[ac1]}		-- Quality (synthesised)
+							}
+						}
+					}
+					ELEMENT[id8] matches {	-- Comment
+						value matches {
+							DV_TEXT[id12] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Source Information">
+				description = <"Information sourced from a third party that is utilised as part of a remote assessment or report.">
+			>
+			["id3"] = <
+				text = <"Source Information">
+				description = <"Identification of the original, or source of, information being assessed.">
+			>
+			["id4"] = <
+				text = <"Path">
+				description = <"Identification of the path to the archetype or data node for  the original information.">
+			>
+			["id5"] = <
+				text = <"Quality">
+				description = <"Assessment regarding 'fitness for use' of the original information.">
+			>
+			["at6"] = <
+				text = <"Adequate for Use">
+				description = <"The original information is deemed to be 'fit for use'.">
+			>
+			["at7"] = <
+				text = <"Not Adequate for Use">
+				description = <"The original information is not deemed to be 'fit for use'.">
+			>
+			["id8"] = <
+				text = <"Comment">
+				description = <"Narrative about the source information not captured in other data fields.">
+			>
+			["ac1"] = <
+				text = <"Quality (synthesised)">
+				description = <"Assessment regarding 'fitness for use' of the original information. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at6", "at7">
+		>
+	>

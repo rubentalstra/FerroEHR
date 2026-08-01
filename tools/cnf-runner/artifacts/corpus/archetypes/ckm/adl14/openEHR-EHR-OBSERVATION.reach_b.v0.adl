@@ -1,0 +1,227 @@
+﻿archetype (adl_version=1.4; uid=f47d79bc-e33c-41f0-9c3d-88d5e641d60a)
+	openEHR-EHR-OBSERVATION.reach_b.v0
+
+concept
+	[at0000]	-- REACH-B score
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Maryam Razavi">
+		["organisation"] = <"Cambio CDS">
+		["email"] = <"maryam.razavi@cambio.se">
+		["date"] = <"2020-12-15">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results for each component parameter and their total sum for the REACH-B score.">
+			use = <"Use to record the results for each component parameter and their total sum for the REACH-B score.">
+			keywords = <"HCC", "hepatitis", "HBeAg", "ALT", "carcinoma", "hepatocellular">
+			misuse = <"">
+			copyright = <"© Cambio CDS, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"1. Yang HI, Yuen MF, Chan HL, Han KH, Chen PJ, Kim DY, Ahn SH, Chen CJ, Wong VW, Seto WK; REACH-B Working Group. Risk estimation for hepatocellular carcinoma in chronic hepatitis B (REACH-B): development and validation of a predictive score. Lancet Oncol. 2011 Jun;12(6):568-74. doi: 10.1016/S1470-2045(11)70077-8. Epub 2011 Apr 14. PMID: 21497551.">
+		["current_contact"] = <"maryam.razavi@cambio.se">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"949E232088D2F83CC417F71212782AF1">
+		["build_uid"] = <"7b1a61e8-a015-4c83-ac8d-0b0f67a52478">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- REACH-B score
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Sex
+										value matches {
+											0|[local::at0005], 	-- Female
+											2|[local::at0006]  	-- Male
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {	-- Age (years)
+										value matches {
+											0|[local::at0008], 	-- 30–34
+											1|[local::at0009], 	-- 35–39
+											2|[local::at0010], 	-- 40–44
+											3|[local::at0011], 	-- 45–49
+											4|[local::at0012], 	-- 50–54
+											5|[local::at0013], 	-- 55–59
+											6|[local::at0014]  	-- 60–65
+										}
+									}
+									ELEMENT[at0015] occurrences matches {0..1} matches {	-- ALT (U/L)
+										value matches {
+											0|[local::at0016], 	-- <15
+											1|[local::at0017], 	-- 15-44
+											2|[local::at0018]  	-- ≥45
+										}
+									}
+									ELEMENT[at0019] occurrences matches {0..1} matches {	-- HBeAg
+										value matches {
+											0|[local::at0020], 	-- Negative
+											2|[local::at0021]  	-- Positive
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {	-- Hepatitis B virus DNA level (copies/mL)
+										value matches {
+											0|[local::at0023], 	-- <300 (undetectable)
+											0|[local::at0024], 	-- 300–9,999
+											3|[local::at0025], 	-- 10,000–99,999
+											4|[local::at0027], 	-- ≥10⁶
+											5|[local::at0026]  	-- 100,000–999,999
+										}
+									}
+									ELEMENT[at0028] occurrences matches {0..1} matches {	-- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..17|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"REACH-B score">
+					description = <"An assessment score used to estimate risk of hepatocellular carcinoma (HCC) in patients with chronic hepatitis B.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Sex">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Female">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Male">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Age (years)">
+					description = <"*">
+				>
+				["at0008"] = <
+					text = <"30–34">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"35–39">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"40–44">
+					description = <"*">
+				>
+				["at0011"] = <
+					text = <"45–49">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"50–54">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"55–59">
+					description = <"*">
+				>
+				["at0014"] = <
+					text = <"60–65">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"ALT (U/L)">
+					description = <"Alanine aminotransferase (ALT) ">
+				>
+				["at0016"] = <
+					text = <"<15">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"15-44">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"≥45">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"HBeAg">
+					description = <"hepatitis B e-antigen">
+				>
+				["at0020"] = <
+					text = <"Negative">
+					description = <"*">
+				>
+				["at0021"] = <
+					text = <"Positive">
+					description = <"*">
+				>
+				["at0022"] = <
+					text = <"Hepatitis B virus DNA level (copies/mL)">
+					description = <"*">
+				>
+				["at0023"] = <
+					text = <"<300 (undetectable)">
+					description = <"*">
+				>
+				["at0024"] = <
+					text = <"300–9,999">
+					description = <"*">
+				>
+				["at0025"] = <
+					text = <"10,000–99,999">
+					description = <"*">
+				>
+				["at0026"] = <
+					text = <"100,000–999,999">
+					description = <"*">
+				>
+				["at0027"] = <
+					text = <"≥10⁶">
+					description = <"*">
+				>
+				["at0028"] = <
+					text = <"Total score">
+					description = <"*">
+				>
+			>
+		>
+	>

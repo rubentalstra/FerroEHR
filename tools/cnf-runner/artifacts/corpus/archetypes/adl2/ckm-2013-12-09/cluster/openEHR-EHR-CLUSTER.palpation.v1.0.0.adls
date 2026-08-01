@@ -1,0 +1,832 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.palpation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record data found on examination through palpation.">
+			use = <"To be embedded in the openEHR-EHR-OBSERVATION.exam cluster to express findings determined by palpation.">
+			keywords = <"palpate", ...>
+			misuse = <"Not for use in any other context at present.">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل البيانات التي اكتُشِفت عند الفحص بالجس">
+			use = <"يتم إدماجه كعنقود في نموذج ملاحظة.فحص, للتعبير عن الموجودات التي يتم تحديدها بالجس.">
+			keywords = <"يجس", ...>
+			misuse = <"لا تستخدم في أي سياق آخر في الوقت الحالي.">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"6997D54D3789258C693D939FAFFB0CEE">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Palpation
+		items matches {
+			CLUSTER[id60] occurrences matches {0..1} matches {	-- Normal statements
+				items matches {
+					ELEMENT[id13] matches {	-- Normal statement
+						value matches {
+							DV_CODED_TEXT[id86] matches {
+								defining_code matches {[ac1]}		-- Normal statement (synthesised)
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Clinical description
+				value matches {
+					DV_TEXT[id87] 
+				}
+			}
+			CLUSTER[id81] occurrences matches {0..1} matches {	-- Findings
+				items matches {
+					CLUSTER[id20] matches {	-- Tenderness
+						items matches {
+							ELEMENT[id3] occurrences matches {0..1} matches {	-- Depth of palpation
+								value matches {
+									DV_CODED_TEXT[id88] matches {
+										defining_code matches {[ac2]}		-- Depth of palpation (synthesised)
+									}
+								}
+							}
+							ELEMENT[id21] occurrences matches {0..1} matches {	-- Degree
+								value matches {
+									DV_CODED_TEXT[id89] matches {
+										defining_code matches {[ac3]}		-- Degree (synthesised)
+									}
+								}
+							}
+							ELEMENT[id6] occurrences matches {0..1} matches {	-- Category
+								value matches {
+									DV_CODED_TEXT[id90] matches {
+										defining_code matches {[ac4]}		-- Category (synthesised)
+									}
+								}
+							}
+							use_node ELEMENT[id91] /items[id81]/items[id11]/items[id12]	-- /items[Findings]/items[Localised palpation]/items[Body site]
+						}
+					}
+					ELEMENT[id42] occurrences matches {0..1} matches {	-- Temperature
+						value matches {
+							DV_CODED_TEXT[id92] matches {
+								defining_code matches {[ac5]}		-- Temperature (synthesised)
+							}
+						}
+					}
+					CLUSTER[id71] occurrences matches {0..1} matches {	-- Guarding
+						items matches {
+							ELEMENT[id72] occurrences matches {0..1} matches {	-- Degree
+								value matches {
+									DV_CODED_TEXT[id93] matches {
+										defining_code matches {[ac6]}		-- Degree (synthesised)
+									}
+								}
+							}
+							ELEMENT[id73] occurrences matches {0..1} matches {	-- Nature
+								value matches {
+									DV_CODED_TEXT[id94] matches {
+										defining_code matches {[ac7]}		-- Nature (synthesised)
+									}
+								}
+							}
+						}
+					}
+					CLUSTER[id11] matches {	-- Localised palpation
+						items matches {
+							ELEMENT[id12] matches {	-- Body site
+								value matches {
+									DV_TEXT[id95] 
+								}
+							}
+							allow_archetype CLUSTER[id84] occurrences matches {0..2} matches {	-- Cluster: Localised palpation
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation\.v1/}
+							}
+							ELEMENT[id82] occurrences matches {0..1} matches {	-- Cough impulse
+								value matches {
+									DV_BOOLEAN[id96] matches {
+										value matches {True}
+									}
+								}
+							}
+						}
+					}
+					CLUSTER[id54] occurrences matches {0..1} matches {	-- Surface/Border
+						name matches {
+							DV_CODED_TEXT[id97] matches {
+								defining_code matches {[ac8]}		-- Surface/Border (synthesised)
+							}
+						}
+						items matches {
+							ELEMENT[id68] occurrences matches {0..1} matches {	-- Site description
+								value matches {
+									DV_TEXT[id98] 
+								}
+							}
+							ELEMENT[id49] occurrences matches {0..1} matches {	-- Consistency
+								value matches {
+									DV_CODED_TEXT[id99] matches {
+										defining_code matches {[ac9]}		-- Consistency (synthesised)
+									}
+								}
+							}
+							ELEMENT[id55] matches {	-- Features
+								value matches {
+									DV_CODED_TEXT[id100] matches {
+										defining_code matches {[ac10]}		-- Features (synthesised)
+									}
+								}
+							}
+						}
+					}
+					CLUSTER[id48] occurrences matches {0..1} matches {	-- Detail
+						items matches {
+							allow_archetype CLUSTER[id85] occurrences matches {0..1} matches {	-- Cluster: Exam details
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam\.v1|openEHR-EHR-CLUSTER\.exam-mass\.v1/}
+								exclude
+									archetype_id/value matches {/.*/}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Palpation">
+				description = <"Findings on palpation.">
+			>
+			["id2"] = <
+				text = <"Clinical description">
+				description = <"Textural statement of the findings on palpation.">
+			>
+			["id3"] = <
+				text = <"Depth of palpation">
+				description = <"The depth of palpation.">
+			>
+			["at4"] = <
+				text = <"Superficial">
+				description = <"Superficial palpation of the skin and superficial muscles.">
+			>
+			["at5"] = <
+				text = <"Deep">
+				description = <"Palpation of the deep structures beneath superficial muscles.">
+			>
+			["id6"] = <
+				text = <"Category">
+				description = <"The type of tenderness found on palpation.">
+			>
+			["at7"] = <
+				text = <"absent">
+				description = <"No tenderness on palpation.">
+			>
+			["at8"] = <
+				text = <"Superficial tenderness">
+				description = <"Tender in the superficial layers.">
+			>
+			["at9"] = <
+				text = <"Deep tenderness">
+				description = <"Tenderness in the deep structures.">
+			>
+			["at10"] = <
+				text = <"Rebound tenderness">
+				description = <"Tenderness on releasing palpation pressure.">
+			>
+			["id11"] = <
+				text = <"Localised palpation">
+				description = <"Palpation of a localised area.">
+			>
+			["id12"] = <
+				text = <"Body site">
+				description = <"The region, site or organ that is the object of localised palpation.">
+			>
+			["id13"] = <
+				text = <"Normal statement">
+				description = <"A specific statement of normality.">
+			>
+			["at14"] = <
+				text = <"Normal">
+				description = <"The palpation is normal.">
+			>
+			["at15"] = <
+				text = <"Probably normal">
+				description = <"The palpation is apparently normal but some uncertainty exists.">
+			>
+			["at16"] = <
+				text = <"No abnormality detected">
+				description = <"No abnormality was detected by palpation.">
+			>
+			["id20"] = <
+				text = <"Tenderness">
+				description = <"A group of statements about a tenderness finding.">
+			>
+			["id21"] = <
+				text = <"Degree">
+				description = <"The amount or degree of tenderness found on palpation.">
+			>
+			["at22"] = <
+				text = <"mild">
+				description = <"There is some feeling of pain or discomfort on palpation.">
+			>
+			["at23"] = <
+				text = <"moderate">
+				description = <"There is definite pain on palpation.">
+			>
+			["at24"] = <
+				text = <"marked">
+				description = <"Gentle palpation leads to moderate pain.">
+			>
+			["at25"] = <
+				text = <"extreme">
+				description = <"Gentle palpation leads to severe pain.">
+			>
+			["at26"] = <
+				text = <"Rigidity">
+				description = <"The abdomen is rigid to palpation.">
+			>
+			["id42"] = <
+				text = <"Temperature">
+				description = <"The temperature on palpation.">
+			>
+			["at43"] = <
+				text = <"Cold">
+				description = <"The feeling of cold.">
+			>
+			["at44"] = <
+				text = <"Cool">
+				description = <"The temperature feels cooler than normal.">
+			>
+			["at45"] = <
+				text = <"Normal">
+				description = <"The temperature feels normal.">
+			>
+			["at46"] = <
+				text = <"Warm">
+				description = <"The temperature feels warmer than normal.">
+			>
+			["at47"] = <
+				text = <"Hot">
+				description = <"The temperature feels hot.">
+			>
+			["id48"] = <
+				text = <"Detail">
+				description = <"Detailed examination of things found on palpation.">
+			>
+			["id49"] = <
+				text = <"Consistency">
+				description = <"The consistency of the surface or border of the object of palpation.">
+			>
+			["at50"] = <
+				text = <"Hard/Rigid">
+				description = <"The surface is hard or rigid.">
+			>
+			["at51"] = <
+				text = <"Firm">
+				description = <"The surface is firm.">
+			>
+			["at53"] = <
+				text = <"Soft">
+				description = <"The surface is soft.">
+			>
+			["id54"] = <
+				text = <"Surface/Border">
+				description = <"Findings related to the surface or border of the object of palpation.">
+			>
+			["id55"] = <
+				text = <"Features">
+				description = <"Features of the surface or border.">
+			>
+			["at56"] = <
+				text = <"Smooth">
+				description = <"The surface or border is smooth.">
+			>
+			["at57"] = <
+				text = <"Craggy">
+				description = <"Large irregularities.">
+			>
+			["at58"] = <
+				text = <"Irregular">
+				description = <"The surface or border is irregular.">
+			>
+			["at59"] = <
+				text = <"Nodular">
+				description = <"The surface contains nodules.">
+			>
+			["id60"] = <
+				text = <"Normal statements">
+				description = <"A group of statements about the normality of the palpation.">
+			>
+			["at61"] = <
+				text = <"Soft">
+				description = <"The palpation revealed no distension, masses or rigidity.">
+			>
+			["at62"] = <
+				text = <"No tenderness">
+				description = <"Palpation revealed no tenderness.">
+			>
+			["at63"] = <
+				text = <"Boggy">
+				description = <"The surface is soft with a boggy quality.">
+			>
+			["at64"] = <
+				text = <"Indents">
+				description = <"The border or surface retains indentation after firm pressure is applied.">
+			>
+			["at65"] = <
+				text = <"Surface">
+				description = <"The surface of the object of palpation.">
+			>
+			["at66"] = <
+				text = <"Edge">
+				description = <"The border of the object of palpation.">
+			>
+			["id68"] = <
+				text = <"Site description">
+				description = <"Details of the location of the surface or border palpated.">
+			>
+			["at69"] = <
+				text = <"No masses">
+				description = <"No masses palpable.">
+			>
+			["at70"] = <
+				text = <"No foreign bodies">
+				description = <"No foreign bodies are palpable.">
+			>
+			["id71"] = <
+				text = <"Guarding">
+				description = <"Tensing of underlying muscles on palpation.">
+			>
+			["id72"] = <
+				text = <"Degree">
+				description = <"The degree  of guarding.">
+			>
+			["id73"] = <
+				text = <"Nature">
+				description = <"The nature of the guarding.">
+			>
+			["at74"] = <
+				text = <"Voluntary">
+				description = <"The guarding is apparently deliberate on the part of the person.">
+			>
+			["at75"] = <
+				text = <"Involuntary">
+				description = <"The guarding is occuring without intent from the person.">
+			>
+			["at76"] = <
+				text = <"Uncertain">
+				description = <"The guarding is not clearly involuntary or voluntary.">
+			>
+			["at77"] = <
+				text = <"Not present">
+				description = <"Guarding is not present.">
+			>
+			["at78"] = <
+				text = <"Mild">
+				description = <"There is some guarding with deep palpation.">
+			>
+			["at79"] = <
+				text = <"Moderate">
+				description = <"There is guarding on  moderate palpation.">
+			>
+			["at80"] = <
+				text = <"Gross">
+				description = <"There is guarding on very gentle palpation.">
+			>
+			["id81"] = <
+				text = <"Findings">
+				description = <"Group of findings.">
+			>
+			["id82"] = <
+				text = <"Cough impulse">
+				description = <"Presence of a cough impulse felt on palpation.">
+			>
+			["at83"] = <
+				text = <"No hernias">
+				description = <"Palpation revealed no hernias.">
+			>
+			["id84"] = <
+				text = <"Cluster: Localised palpation">
+				description = <"Palpation">
+			>
+			["id85"] = <
+				text = <"Cluster: Exam details">
+				description = <"Exam details">
+			>
+			["id91"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Normal statement (synthesised)">
+				description = <"A specific statement of normality. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Depth of palpation (synthesised)">
+				description = <"The depth of palpation. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Degree (synthesised)">
+				description = <"The amount or degree of tenderness found on palpation. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Category (synthesised)">
+				description = <"The type of tenderness found on palpation. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Temperature (synthesised)">
+				description = <"The temperature on palpation. (synthesised)">
+			>
+			["ac6"] = <
+				text = <"Degree (synthesised)">
+				description = <"The degree  of guarding. (synthesised)">
+			>
+			["ac7"] = <
+				text = <"Nature (synthesised)">
+				description = <"The nature of the guarding. (synthesised)">
+			>
+			["ac8"] = <
+				text = <"Surface/Border (synthesised)">
+				description = <"Findings related to the surface or border of the object of palpation. (synthesised)">
+			>
+			["ac9"] = <
+				text = <"Consistency (synthesised)">
+				description = <"The consistency of the surface or border of the object of palpation. (synthesised)">
+			>
+			["ac10"] = <
+				text = <"Features (synthesised)">
+				description = <"Features of the surface or border. (synthesised)">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"الجس">
+				description = <"الموجودات عند الجس">
+			>
+			["id2"] = <
+				text = <"الوصف السريري">
+				description = <"بيان نصي حول الموجودات عند الجس">
+			>
+			["id3"] = <
+				text = <"عمق الجس">
+				description = <"عمق الجس">
+			>
+			["at4"] = <
+				text = <"سطحي">
+				description = <"جس سطحي للبشرة و العضلات السطحية">
+			>
+			["at5"] = <
+				text = <"عميق">
+				description = <"جس التراكيب العميقة فيما تحت العضلات السطحية">
+			>
+			["id6"] = <
+				text = <"الفئة">
+				description = <"نوع الإيلام/المضض الموجود عند الجس">
+			>
+			["at7"] = <
+				text = <"غائب">
+				description = <"لا يوجد إيلام/مضض عند الجس">
+			>
+			["at8"] = <
+				text = <"إيلام/مضض سطحي">
+				description = <"ألم في الطبقات السطحية">
+			>
+			["at9"] = <
+				text = <"إيلام عميق">
+				description = <"يوجد ألم في التراكيب العميقة">
+			>
+			["at10"] = <
+				text = <"إيلام/مضض ارتدادي">
+				description = <"يوجد إيلام عند تخفيف ضغط الجس">
+			>
+			["id11"] = <
+				text = <"جس موضعي">
+				description = <"جس لمنطقة موضعية">
+			>
+			["id12"] = <
+				text = <"الموقع من الجسم">
+				description = <"المنطقة, المكان/الموقع أو العضو الذي هو محل الجس الموضعي">
+			>
+			["id13"] = <
+				text = <"بيان طبيعي">
+				description = <"بيان معين حول مدى الطبيعية">
+			>
+			["at14"] = <
+				text = <"طبيعي">
+				description = <"الجس طبيعي">
+			>
+			["at15"] = <
+				text = <"من المحتمل أن يكون طبيعيا">
+				description = <"الجس طبيعي ظاهراً, و لكن يوجد البعض من عدم اليقين">
+			>
+			["at16"] = <
+				text = <"لم يتم اكتشاف نتيجة غير طبيعية">
+				description = <"لم يتم اكتشاف نتيجة غير طبيعية من خلال الجس">
+			>
+			["id20"] = <
+				text = <"الإيلام/المضض">
+				description = <"مجموعة من البيانات حول وجود الألم">
+			>
+			["id21"] = <
+				text = <"الدرجة">
+				description = <"كمية أو درجة الإيلام/المضض التي حدثت عند الجس">
+			>
+			["at22"] = <
+				text = <"طفيف">
+				description = <"يوجد بعض الألم أو عدم الارتياح عند الجس">
+			>
+			["at23"] = <
+				text = <"متوسط">
+				description = <"يوجد ألم أكيد عند الجس">
+			>
+			["at24"] = <
+				text = <"ملحوظ">
+				description = <"الجس بلطف يؤدي إلى ألم متوسط">
+			>
+			["at25"] = <
+				text = <"شديد">
+				description = <"الجس بلطف يؤدي إلى ألم شديد/حاد">
+			>
+			["at26"] = <
+				text = <"الصلابة">
+				description = <"البطن صلبة عند الجس">
+			>
+			["id42"] = <
+				text = <"درجة الحرارة">
+				description = <"درجة الحرارة عند الجس">
+			>
+			["at43"] = <
+				text = <"بارد">
+				description = <"الإحساس بالبرد">
+			>
+			["at44"] = <
+				text = <"مائل للبرودة">
+				description = <"الحرارة أقل من الطبيعي">
+			>
+			["at45"] = <
+				text = <"طبيعي">
+				description = <"درجة الحرارة طبيعية">
+			>
+			["at46"] = <
+				text = <"دافئ">
+				description = <"الحرارة أعلى من الطبيعي">
+			>
+			["at47"] = <
+				text = <"ساخن">
+				description = <"الحرارة ساخنة">
+			>
+			["id48"] = <
+				text = <"التفاصيل">
+				description = <"فحص تفصيلي للأشياء التي تكتشف عند الجس">
+			>
+			["id49"] = <
+				text = <"التجانس">
+				description = <"تجانس سطح/حافة الشيئ الذي يتم جسه">
+			>
+			["at50"] = <
+				text = <"صلب">
+				description = <"السطح صلب">
+			>
+			["at51"] = <
+				text = <"قاس">
+				description = <"السطح قاسٍ">
+			>
+			["at53"] = <
+				text = <"لين/رخو">
+				description = <"السطح لين/رخو">
+			>
+			["id54"] = <
+				text = <"السطح/الحافة">
+				description = <"الموجودات المتعلقة بالسطح أو حافة الشيئ عند الجس">
+			>
+			["id55"] = <
+				text = <"الخصائص">
+				description = <"خصائص السطح/الحافة">
+			>
+			["at56"] = <
+				text = <"أملس">
+				description = <"السطح/الحافة أملس">
+			>
+			["at57"] = <
+				text = <"الأجراف المتحدرة">
+				description = <"أجزاء غير منتظمة كبيرة">
+			>
+			["at58"] = <
+				text = <"غير منتظم">
+				description = <"السطح/الحافة غير منتظم">
+			>
+			["at59"] = <
+				text = <"عُقَدي">
+				description = <"السطح يحتوي على عقد">
+			>
+			["id60"] = <
+				text = <"البيانات الطبيعية">
+				description = <"مجموعة من البيانات حول مدة طبيعية الجس.">
+			>
+			["at61"] = <
+				text = <"لين/رخو">
+				description = <"كشف الجس عن عدم وجود تمدد, كتل أو صلابة">
+			>
+			["at62"] = <
+				text = <"لا يوجد مضض/إيلام">
+				description = <"لا يوجد مضض/إيلام عند الجس">
+			>
+			["at63"] = <
+				text = <"مستنقِعي">
+				description = <"السطح لين/رخو, و مستنقعي">
+			>
+			["at64"] = <
+				text = <"الهوامش/التفرُّض">
+				description = <"الحافة أو السطح يحتفظون بالهوامش/التفرض بعد إحداث  ضغط عليها.">
+			>
+			["at65"] = <
+				text = <"السطح">
+				description = <"سطح الشيئ الذي يتم جسه">
+			>
+			["at66"] = <
+				text = <"الحافة">
+				description = <"حافة الشيئ الذي يتم جسه">
+			>
+			["id68"] = <
+				text = <"وصف المكان/الموقع">
+				description = <"تفاصيل المكان/الموقع من السطح أو الحافة التي يتم جسها">
+			>
+			["at69"] = <
+				text = <"لا يوجد كتل">
+				description = <"لا يوجد كتل عند الجس">
+			>
+			["at70"] = <
+				text = <"لا يوجد أجسام غريبة">
+				description = <"لا يوجد أجسام غريبة عند الجس">
+			>
+			["id71"] = <
+				text = <"الحِماء">
+				description = <"توتر العضلات التحتية عند الجس">
+			>
+			["id72"] = <
+				text = <"الدرجة">
+				description = <"درجة الحماء">
+			>
+			["id73"] = <
+				text = <"الطبيعة">
+				description = <"طبيعة الحماء">
+			>
+			["at74"] = <
+				text = <"إرادي">
+				description = <"الحماء يتم بتعمد ظاهري من جانب الشخص">
+			>
+			["at75"] = <
+				text = <"لا إرادي">
+				description = <"الحماء يحدث بدون نية من الشخص">
+			>
+			["at76"] = <
+				text = <"غير أكيد">
+				description = <"الحماء ليس واضح إذا ما كان إراديا أو لا إراديا">
+			>
+			["at77"] = <
+				text = <"لا يوجد">
+				description = <"لا يوجد حماء">
+			>
+			["at78"] = <
+				text = <"طفيف">
+				description = <"يوجد بعض الحماء عند الجس العميق">
+			>
+			["at79"] = <
+				text = <"متوسط">
+				description = <"يوجد حماء عند الجس المتوسط">
+			>
+			["at80"] = <
+				text = <"شديد">
+				description = <"يوجد حماء عند الجس بلطف شديد">
+			>
+			["id81"] = <
+				text = <"الموجودات">
+				description = <"مجموعة الموجودات">
+			>
+			["id82"] = <
+				text = <"دفعة السعال">
+				description = <"وجود دفعة بالسعال يشعر بها المريض عند الجس">
+			>
+			["at83"] = <
+				text = <"لا يوجد فتق">
+				description = <"لا يوجد فتق عند الجس">
+			>
+			["id84"] = <
+				text = <"عنقود: الجس الموضعي">
+				description = <"الجس">
+			>
+			["id85"] = <
+				text = <"عنقود: تفاصيل الفحص">
+				description = <"تفاصيل الفحص">
+			>
+			["id91"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["ac1"] = <
+				text = <"بيان طبيعي (synthesised)">
+				description = <"بيان معين حول مدى الطبيعية (synthesised)">
+			>
+			["ac2"] = <
+				text = <"عمق الجس (synthesised)">
+				description = <"عمق الجس (synthesised)">
+			>
+			["ac3"] = <
+				text = <"الدرجة (synthesised)">
+				description = <"كمية أو درجة الإيلام/المضض التي حدثت عند الجس (synthesised)">
+			>
+			["ac4"] = <
+				text = <"الفئة (synthesised)">
+				description = <"نوع الإيلام/المضض الموجود عند الجس (synthesised)">
+			>
+			["ac5"] = <
+				text = <"درجة الحرارة (synthesised)">
+				description = <"درجة الحرارة عند الجس (synthesised)">
+			>
+			["ac6"] = <
+				text = <"الدرجة (synthesised)">
+				description = <"درجة الحماء (synthesised)">
+			>
+			["ac7"] = <
+				text = <"الطبيعة (synthesised)">
+				description = <"طبيعة الحماء (synthesised)">
+			>
+			["ac8"] = <
+				text = <"السطح/الحافة (synthesised)">
+				description = <"الموجودات المتعلقة بالسطح أو حافة الشيئ عند الجس (synthesised)">
+			>
+			["ac9"] = <
+				text = <"التجانس (synthesised)">
+				description = <"تجانس سطح/حافة الشيئ الذي يتم جسه (synthesised)">
+			>
+			["ac10"] = <
+				text = <"الخصائص (synthesised)">
+				description = <"خصائص السطح/الحافة (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at14", "at15", "at16", "at61", "at62", "at69", "at70", "at83">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at4", "at5">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at7", "at22", "at23", "at24", "at25">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at8", "at9", "at10", "id20", "at26">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at43", "at44", "at45", "at46", "at47">
+		>
+		["ac6"] = <
+			id = <"ac6">
+			members = <"at77", "at78", "at79", "at80">
+		>
+		["ac7"] = <
+			id = <"ac7">
+			members = <"at74", "at75", "at76">
+		>
+		["ac8"] = <
+			id = <"ac8">
+			members = <"at65", "at66">
+		>
+		["ac9"] = <
+			id = <"ac9">
+			members = <"at50", "at51", "at53", "at63", "at64">
+		>
+		["ac10"] = <
+			id = <"ac10">
+			members = <"at56", "at57", "at58", "at59">
+		>
+	>

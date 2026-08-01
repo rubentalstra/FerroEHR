@@ -1,0 +1,214 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-INSTRUCTION.transfusion.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Jasmin Buck, Sebastian Garde">
+				["organisation"] = <"University of Heidelberg, Central Queensland University">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation von Anweisungen bezüglich einer Transfusion.">
+			use = <"">
+			keywords = <"Transfusion", "Blut">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording the instructions relating to transfusion">
+			use = <"">
+			keywords = <"transfusion", "blood">
+			misuse = <"">
+		>
+	>
+
+definition
+	INSTRUCTION[id1] matches {	-- Instructions for transfusion
+		activities matches {
+			ACTIVITY[id2] occurrences matches {0..1} matches {	-- new activity
+				action_archetype_id matches {/transfusion\.v1draft/}
+				description matches {
+					ITEM_TREE[id3] matches {
+						items matches {
+							ELEMENT[id4] matches {	-- Type of Blood unit
+								value matches {
+									DV_TEXT[id13] 
+								}
+							}
+							CLUSTER[id11] matches {	-- Amount
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Number of units
+										value matches {
+											DV_COUNT[id14] matches {
+												magnitude matches {|>=0|}
+											}
+										}
+									}
+									ELEMENT[id12] occurrences matches {0..1} matches {	-- Volume
+										value matches {
+											DV_QUANTITY[id15] matches {
+												property matches {[at1]}
+												magnitude matches {|>=0.0|}
+												precision matches {0}
+												units matches {"ml"}
+											}
+										}
+									}
+								}
+							}
+							ELEMENT[id10] occurrences matches {0..1} matches {	-- Reason for transfusion
+								value matches {
+									DV_CODED_TEXT[id16] matches {
+										defining_code 
+									}
+								}
+							}
+							CLUSTER[id8] occurrences matches {0..1} matches {	-- Special requirements
+								items matches {
+									ELEMENT[id6] matches {	-- Special requirement
+										value matches {
+											DV_TEXT[id17] 
+										}
+									}
+								}
+							}
+							CLUSTER[id9] occurrences matches {0..1} matches {	-- Rate of transfusion
+								items matches {
+									ELEMENT[id7] matches {	-- Transfusion duration per unit
+										value matches {
+											DV_DURATION[id18] matches {
+												value matches {PTHM}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["de"] = <
+			["id1"] = <
+				text = <"Anweisungen für eine Transfusion">
+				description = <"Die Anweisungen für die Gabe einer Transfusion">
+			>
+			["id2"] = <
+				text = <"neue Handlung">
+				description = <"*">
+			>
+			["id4"] = <
+				text = <"Art der Bluteinheit">
+				description = <"Das zu verabreichende Blutprodukt">
+			>
+			["id5"] = <
+				text = <"Anzahl der Einheiten">
+				description = <"Die Anzahl der zu verabreichenden Einheiten">
+			>
+			["id6"] = <
+				text = <"besondere Voraussetzung">
+				description = <"besondere Voraussetzung des Blutprodukts">
+			>
+			["id7"] = <
+				text = <"Transfusionsdauer pro Einheit">
+				description = <"Die Dauer der Transfusion pro Einheit">
+			>
+			["id8"] = <
+				text = <"Besondere Voraussetzungen">
+				description = <"Eine Gruppe besonderer Voraussetzungen, deren Erfüllung für die Transfusion erforderlich ist">
+			>
+			["id9"] = <
+				text = <"Transfusionsrate">
+				description = <"*">
+			>
+			["id10"] = <
+				text = <"Grund der Transfusion">
+				description = <"*">
+			>
+			["id11"] = <
+				text = <"Gesamtzahl">
+				description = <"*">
+			>
+			["id12"] = <
+				text = <"Volumen">
+				description = <"Das Volumen des transfundierten Produkts für pädiatrische und andere besondere Zwecke">
+			>
+			["at1"] = <
+				text = <"*Volume (en)">
+				description = <"*Volume (en)">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Instructions for transfusion">
+				description = <"The instructions for giving a transfusion">
+			>
+			["id2"] = <
+				text = <"new activity">
+				description = <"*">
+			>
+			["id4"] = <
+				text = <"Type of Blood unit">
+				description = <"The blood product to be administered">
+			>
+			["id5"] = <
+				text = <"Number of units">
+				description = <"The number of units to be transfused">
+			>
+			["id6"] = <
+				text = <"Special requirement">
+				description = <"Special requirements for blood product">
+			>
+			["id7"] = <
+				text = <"Transfusion duration per unit">
+				description = <"The duration of transfusion for each unit">
+			>
+			["id8"] = <
+				text = <"Special requirements">
+				description = <"A group of special requirements stipulated for the transfusion">
+			>
+			["id9"] = <
+				text = <"Rate of transfusion">
+				description = <"*">
+			>
+			["id10"] = <
+				text = <"Reason for transfusion">
+				description = <"*">
+			>
+			["id11"] = <
+				text = <"Amount">
+				description = <"*">
+			>
+			["id12"] = <
+				text = <"Volume">
+				description = <"The volume of the product to be transfused for paediatric and some specific purposes">
+			>
+			["at1"] = <
+				text = <"Volume">
+				description = <"Volume">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/129>
+		>
+	>

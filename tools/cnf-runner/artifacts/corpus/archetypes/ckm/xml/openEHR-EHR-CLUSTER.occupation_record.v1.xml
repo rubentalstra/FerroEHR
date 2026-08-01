@@ -1,0 +1,2007 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2010-12-17</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Morten Aas, Diakonhjemmet Sykehus, Norway</other_contributors>
+    <other_contributors>Tomas Alme, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Heidi Aursand, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marcus Baw, openGPSoC / BawMedical Ltd, United Kingdom</other_contributors>
+    <other_contributors>Ivar Berge, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Anita Bjørnnes, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Angela Crovetti, CDC/NIOSH, United States</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Jayne Donaldson, University of Stirling, United Kingdom</other_contributors>
+    <other_contributors>Bjørg Eli Hollund, helse-bergen, Norway</other_contributors>
+    <other_contributors>Stig Erik Hegrestad, Helse Førde, Norway</other_contributors>
+    <other_contributors>Samuel Frade, Marand, Portugal</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Sergio Freire, State University of Rio de Janeiro, Brazil</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, FSE, Helse Nord, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Anne Gunn Haugland, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Kristian Heldal, Telemark Hospital Trust, Norway</other_contributors>
+    <other_contributors>Jørn Henrik Vold, Helse Bergen, Avdeling for rusmedisin, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Teresa Highway, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Annette Hole Sjøborg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Kaja Irgens-Hansen, Yrkesmedisinsk avdeling, Haukeland universitetssykehus, Norway</other_contributors>
+    <other_contributors>Susanna Jönsson, Landstinget i Värmland, Sweden</other_contributors>
+    <other_contributors>Tom K. Grimsrud, Kreftregisteret, Norway</other_contributors>
+    <other_contributors>Tone Klund, DIPS AS, Norway</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Harmony Kosola, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Ron Krawec, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Liv Laugen, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Pedro Leuschner, Centro Hospitalar do Porto, Portugal</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Rose Mari Eikås, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>John Meredith, NHS Wales Informatics Service, United Kingdom</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Erik Nissen, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Martin Paulson, Sykehuset i Vestfold, Norway</other_contributors>
+    <other_contributors>Georg Reinhardt, Helse Fonna, Norway</other_contributors>
+    <other_contributors>Tanja Riise, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Gro-Hilde Severinsen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Niclas Skyttberg, Karolinska Institutet, Sweden</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Andreas Sundstrom, Capio S:t Gorans Hospital, Sweden</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Tesfay Teame, Folkehelseinstittutet, Norway</other_contributors>
+    <other_contributors>Susanne Trønnes, Norway</other_contributors>
+    <other_contributors>Jon Tysdahl, Furst medlab AS, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Employment Summary, Draft Archetype [Internet]. NEHTA, Australia, NEHTA Clinical Knowledge Manager [cited: 2016-01-11]. No longer available.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">6EFFAB5F512D4C7C4C9CCFCDC48670C9</other_details>
+    <other_details id="build_uid">d25ea19d-db32-4977-8dd0-affee30cc0e2</other_details>
+    <other_details id="revision">1.2.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Darstellung von detaiilierten Informationen zu einem Job oder einer Rolle, die von einer Person während eines bestimmten Zeitraums ausgeführt wurde.</purpose>
+      <keywords>Beschäftigung</keywords>
+      <keywords>Arbeitgeber</keywords>
+      <keywords>Job</keywords>
+      <keywords>Tätigkeit</keywords>
+      <keywords>Arbeit</keywords>
+      <keywords>Beruf</keywords>
+      <keywords>arbeitslos</keywords>
+      <keywords>Mitarbeiter</keywords>
+      <keywords>Arbeitslosigkeit</keywords>
+      <keywords>studieren</keywords>
+      <keywords>beschäftigt</keywords>
+      <keywords>Schüler</keywords>
+      <keywords>Branche</keywords>
+      <keywords>Berufstätigkeit</keywords>
+      <keywords>Freiwilliger</keywords>
+      <keywords>Berufung</keywords>
+      <keywords>Handel</keywords>
+      <keywords>Arbeiter</keywords>
+      <keywords>Ehrenamtliche</keywords>
+      <keywords>Position</keywords>
+      <keywords>Arbeitsplatz</keywords>
+      <use>Verwenden Sie diesen Archetyp, um detaillierte Angaben zu einem Job oder einer Rolle darzustellen, die von einer Person während eines bestimmten Zeitraums ausgeführt wurde.&#xD;
+&#xD;
+Der Umfang dieses Archetyps umfasst alle Beschäftigungen oder Tätigkeiten einer Person. Zum Beispiel: ein bezahlter Job oder Dienst; unbezahlte Arbeit jeglicher Art wie eine Freiwilligentätigket; oder Rollen wie Ruhestand oder Student.&#xD;
+&#xD;
+Mehrere Instanzen dieses Archetyps, die im Laufe der Zeit erfasst werden, führen zur Übersicht eines Verlaufs vergangener und aktueller Jobs und / oder Rollen.&#xD;
+&#xD;
+Eine aktive, aktuelle Beschäftigung kann aus "Beginn" abgeleitet werden, wenn unter "Ende" nichts vermerkt ist.&#xD;
+&#xD;
+Eine Person kann viele gleichzeitige Beschäftigungen ausüben, von denen jede bezahlt oder unbezahlt sein kann. Jede Beschäftigung sollte in einer separaten Instanz dieses Archetyps dargestellt werden.&#xD;
+&#xD;
+Wenn sich die Details der Beschäftigung wesentlich ändern, z. B. eine Änderung der Rolle / des Titels oder der Anzahl der Stunden, sollte dies als separate Instanz dieses Archetyps dargestellt werden.&#xD;
+&#xD;
+Dieser Archetyp wurde speziell für die Verwendung im SLOT "Beschäftigungsepisode" im Archetyp "EVALUATION.occupation_summary" entwickelt, kann aber auch in anderen ENTRY- oder CLUSTER-Archetypen verwendet werden, sofern dies klinisch angemessen ist.&#xD;
+&#xD;
+Es können offensichtliche oder tatsächliche Überlappungen zwischen den Datenelementen dieses Archetyps und demografische Details zu Berufs- / Beschäftigungsdetails an anderen Stellen der klinischen oder administrativen Systeme geben. Die Datenelemente dieses Archetyps wurden speziell zur Unterstützung klinischer Zwecke entwickelt, einschließlich der Erstellung eines ärztlichen Attests für einen aktuellen Arbeitgeber.</use>
+      <misuse>Darf nicht verwendet werden, um vorübergehende Änderungen oder Episoden innerhalb eines einzelnen Beschäftigungsdatensatzes darzustellen, z. B. Urlaub. Dies ist mit diesen Archetyp nicht möglich und sollte Teil des Human Relations-Systems eines Arbeitgebers sein.&#xD;
+&#xD;
+Nicht zur detaillierten Beschreibung von Gesundheitsrisiken oder der Exposition gegenüber gefährlichen Substanzen am Arbeitsplatz verwenden. Verwenden Sie zu diesem Zweck die Archetypen EVALUATION.health_risk oder EVALUATION.exposure.&#xD;
+&#xD;
+Darf nicht verwendet werden, um Informationen über Einkommensquellen oder Einkommensangaben für die Person darzustellen. Verwenden Sie zu diesem Zweck den Archetyp EVALUATION.income_summary.&#xD;
+&#xD;
+Nicht zur Darstellung von Informationen über die Beschäftigung einer Person zu einem bestimmten Zeitpunkt (z. B. am 16. Juni 2014) oder während eines relativen Zeitintervalls (z. B. „in den letzten 30 Tagen“) verwenden. Verwenden Sie einen geeigneten OBSERVATION-Archetyp für diesen Zweck.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera detaljer om ett enskilt jobb eller en roll som en person utför under en viss tidsperiod.</purpose>
+      <keywords>sysselsättning</keywords>
+      <keywords>arbetsgivare</keywords>
+      <keywords>jobb</keywords>
+      <keywords>ockupation</keywords>
+      <keywords>arbete</keywords>
+      <keywords>yrke</keywords>
+      <keywords>arbetslös</keywords>
+      <keywords>anställd</keywords>
+      <keywords>arbetslöshet</keywords>
+      <keywords>studerar</keywords>
+      <keywords>anställda</keywords>
+      <keywords>studerande</keywords>
+      <keywords>sektor</keywords>
+      <keywords>yrke</keywords>
+      <keywords>volontär</keywords>
+      <keywords>yrke</keywords>
+      <keywords>handel</keywords>
+      <keywords>arbetstagare</keywords>
+      <keywords>volontär</keywords>
+      <keywords>position</keywords>
+      <use>Används för att registrera information om ett enskilt jobb eller en roll som en person utför under en viss tidsperiod.&#xD;
+&#xD;
+Omfattningen av denna arketyp inkluderar alla yrken eller aktiviteter som utförs av en individ. Till exempel: ett betalt jobb eller anställning; obetalt arbete av vilken typ som helst som en volontärposition; eller roller som att gå i pension eller studera.&#xD;
+&#xD;
+Flera instanser av den här arketypen som skapats över tid kommer att resultera i en sammanställning av en historia av tidigare och nuvarande jobb och/eller roller.&#xD;
+&#xD;
+En aktiv eller nuvarande ockupation kan antydas från ett 'Datum inleddes' men inget 'Datum upphört'.&#xD;
+&#xD;
+En individ kan utföra många samtidiga yrken, var och en kan vara betald eller obetald. Varje yrke bör registreras i en separat instans av denna arketyp.&#xD;
+&#xD;
+Om yrkesattribut förändras väsentligt, till exempel roll / titel eller antal timmar, bör detta registreras som en separat instans av denna arketyp.&#xD;
+&#xD;
+Den här arketypen har utformats speciellt för att användas i 'Yrkesepisod' SLOT inom EVALUATION.occupation_summary arketyp, men kan också användas inom alla andra ENTRY- eller CLUSTER-arketyper, där det är kliniskt lämpligt.&#xD;
+&#xD;
+Det kan finnas någon uppenbar eller verklig överlappning mellan dataelementen i denna arketyp och yrkes- / anställningsdetaljer som kan lagras som demografiska detaljer i kliniska eller administrativa system. Dessa dataelement har utformats specifikt för att stödja kliniska ändamål, inklusive generering av ett läkarintyg till en nuvarande arbetsgivare.</use>
+      <misuse>Inte utformad för att registrera tillfälliga ändringar eller avsnitt inom en enda yrkesregistrering, som att vara ledig. Detta är utom räckhåll för denna arketyp och bör ingå i en arbetsgivares HR-system.&#xD;
+&#xD;
+Inte utformad för att användas till detaljerade beskrivningar av hälsorisker eller exponering för farliga ämnen på arbetsplatsen. Använd arketyperna EVALUATION.health_risk eller EVALUATION.exposure för detta ändamål.&#xD;
+&#xD;
+Inte utformad för att registrera information om inkomstkällor eller inkomstuppgifter för individen. Använd arketypen EVALUATION.income_summary för detta ändamål.&#xD;
+&#xD;
+Används inte för att registrera information om en persons ockupation vid en viss tidpunkt (till exempel den 16 juni 2014) eller under ett relativt tidsintervall (till exempel "under de senaste 30 dagarna". Använd en lämplig OBSERVATION arketyp för detta ändamål.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljert informasjon om en jobb eller rolle individet har, eller har hatt i en spesifisert tidsperiode.</purpose>
+      <keywords>arbeid</keywords>
+      <keywords>arbeidstaker</keywords>
+      <keywords>arbeidsgiver</keywords>
+      <keywords>arbeidsforhold</keywords>
+      <keywords>arbeidshistorikk</keywords>
+      <keywords>jobb</keywords>
+      <keywords>ansatt</keywords>
+      <keywords>yrke</keywords>
+      <keywords>arbeidsløs</keywords>
+      <keywords>studerer</keywords>
+      <keywords>student</keywords>
+      <keywords>elev</keywords>
+      <keywords>trygdet</keywords>
+      <keywords>ufør</keywords>
+      <keywords>arbeidssituasjon</keywords>
+      <keywords>erverv</keywords>
+      <keywords>yrkestilknytning</keywords>
+      <keywords>pensjon</keywords>
+      <keywords>pensjonist</keywords>
+      <keywords>attføring</keywords>
+      <keywords>bransje</keywords>
+      <keywords>arbeidsledig</keywords>
+      <keywords>hjemmeværende</keywords>
+      <keywords>stilling</keywords>
+      <keywords>profesjon</keywords>
+      <keywords>frivillig</keywords>
+      <keywords>vernepliktig</keywords>
+      <keywords>sektor</keywords>
+      <keywords>næring</keywords>
+      <keywords>verv</keywords>
+      <use>Brukes for å registrere detaljert informasjon om en jobb eller rolle individet har, eller har hatt i en spesifisert tidsperiode.&#xD;
+&#xD;
+Arketypen omfatter alle typer arbeid eller aktiviteter individet har eller har hatt. For eksempel: En/et betalt eller ubetalt jobb/arbeid/verv, samt ulike roller som for eksempel pensjonist, hjemmeværende eller student.&#xD;
+&#xD;
+Ved å benytte denne arketypen til gjentatte registreringer, vil en få fram en historisk oversikt over nåværende og tidligere arbeidsforhold /roller et individ har eller har hatt.&#xD;
+&#xD;
+Et aktivt, nåværende arbeidsforhold/roller kan bli utledet fra "Dato for oppstart" hvis det ikke er registrert noe i "Dato for opphør".&#xD;
+&#xD;
+Et individ kan ha mange samtidige arbeidsforhold/rolle, og de kan hver for seg være betalt eller ubetalt. Hvert slik arbeidsforhold registreres i egne instanser av denne arketypen.&#xD;
+&#xD;
+Hvis detaljer om et arbeidsforhold/rolle endrer seg vesentlig, som forandring av tittel eller stillingsprosent, registreres dette i egne instanser av denne arketypen.&#xD;
+&#xD;
+Arketypen er laget for å benyttes i SLOTet "Arbeidsepisode" i arketypen EVALUATION.occupation_summary (Arbeidssammendrag), men kan også brukes innen andre ENTRY- eller CLUSTER-arketyper der det er klinisk relevant.&#xD;
+&#xD;
+Det kan fremstå som å være overlapp, reell eller tilsynelatende, mellom dataelementene i denne arketypen og demografiske opplysninger om sysselsetting/arbeidsforhold andre steder i kliniske systemer. Dataelementene i denne arketypen er laget spesifikt for å støtte kliniske bruksområder, inkludert sykemeldinger eller legeerklæringer.</use>
+      <misuse>Brukes ikke for å registrere midlertidige endringer eller episoder innen en enkelt arbeidsepisode, som å være i permisjon. Dette er ikke innenfor anvendelsesområdet for denne arketypen, og skal registreres i et personal- eller HR-system.&#xD;
+&#xD;
+Brukes ikke for å beskrive helserisikoer eller eksponering for farlige substanser i arbeidssituasjonen. Til dette brukes henholdsvis arketypene EVALUATION.health_risk (Helserisiko) eller EVALUATION.exposure.&#xD;
+&#xD;
+Brukes ikke for å registrere informasjon om individets inntektskilder eller detaljer om inntekt. Bruk arketypen EVALUATION.income_summary for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere informasjon om arbeid /rolle for et individ på en bestemt dato (for eksempel 16. juni 2014) eller i løpet av en relativ tidsperiode, som for eksempel "siste 30 dager". Dette kan utledes fra "Dato for oppstart" hvis det ikke er registrert noe i "Dato for opphør", og må registreres i en egen OBSERVATION-arketype for dette formålet.</misuse>
+      <copyright>© Australian Digital Health Agency, openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt</code_string>
+      </language>
+      <purpose>Registrar detalhes sobre um único trabalho ou função executada por um indivíduo durante um período especificado.&#xD;
+</purpose>
+      <keywords>emprego</keywords>
+      <keywords>Empregador</keywords>
+      <keywords>trabalho</keywords>
+      <keywords>ocupação</keywords>
+      <keywords>trabalhos</keywords>
+      <keywords>profissão</keywords>
+      <keywords>desempregado</keywords>
+      <keywords>empregado</keywords>
+      <keywords>desemprego</keywords>
+      <keywords>estudante</keywords>
+      <keywords>aluno</keywords>
+      <keywords>setor</keywords>
+      <keywords>profissão</keywords>
+      <keywords>voluntário</keywords>
+      <keywords>vocação</keywords>
+      <keywords>comércio</keywords>
+      <keywords>trabalhador</keywords>
+      <keywords>posição</keywords>
+      <use>Use para registrar detalhes sobre um único trabalho ou função realizada por uma pessoa durante um período especificado.&#xD;
+&#xD;
+O escopo deste arquétipo inclui todas as ocupações ou atividades realizadas por um indivíduo. Por exemplo: um trabalho remunerado ou emprego; trabalho não remunerado de qualquer tipo, como uma posição de voluntário; ou papéis como aposentado ou aluno.&#xD;
+&#xD;
+Várias instâncias desse arquétipo capturadas ao longo do tempo resultarão na agregação de um histórico de trabalhos e / ou funções anteriores e atuais.&#xD;
+&#xD;
+Uma ocupação ativa ou atual pode estar implícita a partir de uma 'Data de início', mas não pela 'Data de encerramento'.&#xD;
+&#xD;
+Um indivíduo pode realizar ocupações simultâneas, cada uma das quais podendo ser remuneradas ou não. Cada ocupação deve ser registrada em uma instância separada desse arquétipo.&#xD;
+&#xD;
+Se os atributos de ocupação mudarem significativamente, como uma mudança de função / título ou número de horas, isso deverá ser registrado como uma instância separada desse arquétipo.&#xD;
+&#xD;
+Esse arquétipo foi projetado especificamente para ser usado no SLOT 'Episódio de ocupação' dentro do arquétipo EVALUATION.occupation_summary, mas também pode ser usado em qualquer outro arquétipo ENTRY ou CLUSTER, onde for clinicamente apropriado.&#xD;
+&#xD;
+Pode haver alguma sobreposição aparente ou real entre os elementos de dados neste arquétipo e os detalhes de ocupação / emprego que podem ser armazenados como detalhes demográficos em sistemas clínicos ou administrativos. Esses elementos de dados foram projetados especificamente para apoiar fins clínicos, incluindo a geração de um atestado médico para um empregador atual.</use>
+      <misuse>	&#xD;
+Não deve ser usado para gravar alterações ou episódios temporários em um registro único de ocupação, como estar de licença. Isso está fora do escopo desse arquétipo e deve fazer parte do sistema de recursos humanos de um empregador.&#xD;
+&#xD;
+Não deve ser usado para descrições detalhadas de riscos para a saúde ou exposição a substâncias perigosas no local de trabalho. Use os arquétipos EVALUATION.health_risk ou EVALUATION.exposure para essa finalidade.&#xD;
+&#xD;
+Não deve ser usado para registrar informações sobre fontes de renda ou detalhes de renda da pessoa. Use o arquétipo EVALUATION.income_summary para esse fim.&#xD;
+&#xD;
+Não deve ser usado para registrar informações sobre a ocupação de um indivíduo em um momento específico (por exemplo, em 16 de junho de 2014) ou durante um intervalo de tempo relativo (por exemplo, 'nos últimos 30 dias'). Use um arquétipo do tipo OBSERVATION para esse fim.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Registrar detalhes sobre um único trabalho ou função executada por um indivíduo durante um período especificado.</purpose>
+      <keywords>emprego</keywords>
+      <keywords>Empregador</keywords>
+      <keywords>trabalho</keywords>
+      <keywords>ocupação</keywords>
+      <keywords>trabalhos</keywords>
+      <keywords>profissão</keywords>
+      <keywords>desempregado</keywords>
+      <keywords>empregado</keywords>
+      <keywords>desemprego</keywords>
+      <keywords>estudante</keywords>
+      <keywords>aluno</keywords>
+      <keywords>setor</keywords>
+      <keywords>profissão</keywords>
+      <keywords>voluntário</keywords>
+      <keywords>vocação</keywords>
+      <keywords>comércio</keywords>
+      <keywords>trabalhador</keywords>
+      <keywords>posição</keywords>
+      <use>Use para registrar detalhes sobre um único trabalho ou função realizada por uma pessoa durante um período especificado.&#xD;
+&#xD;
+O escopo deste arquétipo inclui todas as ocupações ou atividades realizadas por um indivíduo. Por exemplo: um trabalho remunerado ou emprego; trabalho não remunerado de qualquer tipo, como uma posição de voluntário; ou papéis como aposentado ou aluno.&#xD;
+&#xD;
+Várias instâncias desse arquétipo capturadas ao longo do tempo resultarão na agregação de um histórico de trabalhos e / ou funções anteriores e atuais.&#xD;
+&#xD;
+Uma ocupação ativa ou atual pode estar implícita a partir de uma 'Data de início', mas não pela 'Data de encerramento'.&#xD;
+&#xD;
+Um indivíduo pode realizar ocupações simultâneas, cada uma das quais podendo ser remuneradas ou não. Cada ocupação deve ser registrada em uma instância separada desse arquétipo.&#xD;
+&#xD;
+Se os atributos de ocupação mudarem significativamente, como uma mudança de função / título ou número de horas, isso deverá ser registrado como uma instância separada desse arquétipo.&#xD;
+&#xD;
+Esse arquétipo foi projetado especificamente para ser usado no SLOT 'Episódio de ocupação' dentro do arquétipo EVALUATION.occupation_summary, mas também pode ser usado em qualquer outro arquétipo ENTRY ou CLUSTER, onde for clinicamente apropriado.&#xD;
+&#xD;
+Pode haver alguma sobreposição aparente ou real entre os elementos de dados neste arquétipo e os detalhes de ocupação / emprego que podem ser armazenados como detalhes demográficos em sistemas clínicos ou administrativos. Esses elementos de dados foram projetados especificamente para apoiar fins clínicos, incluindo a geração de um atestado médico para um empregador atual.</use>
+      <misuse>Não deve ser usado para gravar alterações ou episódios temporários em um registro único de ocupação, como estar de licença. Isso está fora do escopo desse arquétipo e deve fazer parte do sistema de recursos humanos de um empregador.&#xD;
+&#xD;
+Não deve ser usado para descrições detalhadas de riscos para a saúde ou exposição a substâncias perigosas no local de trabalho. Use os arquétipos EVALUATION.health_risk ou EVALUATION.exposure para essa finalidade.&#xD;
+&#xD;
+Não deve ser usado para registrar informações sobre fontes de renda ou detalhes de renda da pessoa. Use o arquétipo EVALUATION.income_summary para esse fim.&#xD;
+&#xD;
+Não deve ser usado para registrar informações sobre a ocupação de um indivíduo em um momento específico (por exemplo, em 16 de junho de 2014) ou durante um intervalo de tempo relativo (por exemplo, 'nos últimos 30 dias'). Use um arquétipo do tipo OBSERVATION para esse fim.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about a single job or role carried out by an individual during a specified period of time.</purpose>
+      <keywords>employment</keywords>
+      <keywords>employer</keywords>
+      <keywords>job</keywords>
+      <keywords>occupation</keywords>
+      <keywords>work</keywords>
+      <keywords>profession</keywords>
+      <keywords>unemployed</keywords>
+      <keywords>employee</keywords>
+      <keywords>unemployment</keywords>
+      <keywords>studying</keywords>
+      <keywords>employed</keywords>
+      <keywords>student</keywords>
+      <keywords>sector</keywords>
+      <keywords>profession</keywords>
+      <keywords>volunteer</keywords>
+      <keywords>vocation</keywords>
+      <keywords>trade</keywords>
+      <keywords>worker</keywords>
+      <keywords>volunteer</keywords>
+      <keywords>position</keywords>
+      <use>Use to record details about a single job or role carried out by an individual during a specified period of time. &#xD;
+&#xD;
+The scope of this archetype is inclusive of all occupations or activities undertaken by an individual. For example: a paid job or employment; unpaid work of any type such as a volunteer position; or roles such as being retired or a student. &#xD;
+&#xD;
+Multiple instances of this archetype captured over time will result in the aggregation of a history of past and present jobs and/or roles.&#xD;
+&#xD;
+An active, or current occupation may be implied from a 'Date commenced' but no 'Date ceased'. &#xD;
+&#xD;
+An individual may carry out many simultaneous occupations, each of which may be paid or unpaid. Each occupation should be recorded in a separate instance of this archetype.&#xD;
+&#xD;
+If occupation attributes change significantly, such as a change of role/title or number of hours, then this should be recorded as a separate instance of this archetype.&#xD;
+&#xD;
+This archetype has been specifically designed to be used in the 'Occupation episode' SLOT within the EVALUATION.occupation_summary archetype, but can also be used within any other ENTRY or CLUSTER archetypes, where clinically appropriate.&#xD;
+&#xD;
+There may be some apparent or real overlap between the data elements in this archetype and occupation/employment details that may be stored as demographic details in clinical or administrative systems. These data elements have been designed specifically to support clinical purposes including generation of a medical certificate to a current employer.</use>
+      <misuse>Not to be used to record temporary changes or episodes within a single occupation record, such as being on leave. This is out of scope for this archetype and should be part of an employer's human relations system.&#xD;
+&#xD;
+Not to be used for detailed descriptions of health risks or exposure to hazardous substances in the workplace. Use the archetypes EVALUATION.health_risk or EVALUATION.exposure for this purpose.&#xD;
+&#xD;
+Not to be used to record information about sources of income or income details for the individual. Use the EVALUATION.income_summary archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record information about the occupation of an individual at a specific point in time (for example, on June 16, 2014) or during a relative interval of time (for example 'in the past 30 days'. Use an appropriate OBSERVATION archetype for this purpose.</misuse>
+      <copyright>© Australian Digital Health Agency, openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>Registrare i dettagli della singola professione svolta o ruolo ricoperto da un individuo durante un determinato periodo di tempo.</purpose>
+      <keywords>lavoro, impiego, datore di lavoro, occupazione, disoccupazione, professione, disoccupato, occupato, dipendente, impiegato, studente, settore, volontario, vocazione, mestiere, lavoratore, posizione</keywords>
+      <use>Usato per registrare i dettagli della singola professione svolta o ruolo ricoperto da un individuo durante un determinato periodo di tempo.&#xD;
+&#xD;
+L'ambito di questo archetipo comprende tutte le occupazioni o attività svolte da un individuo. Ad esempio: un lavoro o impiego retribuiti; un qualsiasi lavoro non retribuito, come un'attività di volontariato; o ruoli come essere in pensione o uno studente. &#xD;
+&#xD;
+Più istanze di questo archetipo catturate nel tempo possono essere aggregate per costruire la storia occupazionale di un individuo, che comprende occupazioni e ruoli passati e presenti.&#xD;
+&#xD;
+È possibile dedurre se l'occupazione sia attiva/corrente se è presente una 'Data di inizio' ma non una 'Data di cessazione'.&#xD;
+&#xD;
+Un individuo può avere più occupazioni contemporaneamente, ciascuna delle quali può essere retribuita o meno. Ogni occupazione dovrebbe essere registrata in una istanza separata di questo archetipo. &#xD;
+&#xD;
+Se i dettagli dell'occupazione cambiano significativamente, ad esempio in caso di modifica del ruolo/titolo o numero di ore, questo dovrebbe corrispondere ad un'istanza separata di questo archetipo.&#xD;
+&#xD;
+Questo archetipo è stato sviluppato per essere usato nello SLOT 'Episodio lavorativo' all'interno dell'archetipo EVALUATION.occupation_summary, ma è possibile utilizzarlo all'interno di altri archetipi di tipo ENTRY o CLUSTER quando clinicamente appropriato. &#xD;
+&#xD;
+Ci potrebbe essere una sovrapposizione, apparente o reale, tra i dati all'interno di questo archetipo e i dettegli sull'occupazione/impiego memorizzati come informazioni demografiche all'interno di sistemi clinici o amministrativi.  I contenuti sono stati espressamente progettati per supportare l'attività clinica, compresa la generazione di certificati medici per un datore di lavoro.</use>
+      <misuse>Non utilizzare per memorizzare cambiamenti o episodi temporanei all'interno di un singolo record di occupazione, come ad esempio essere in congedo. Questo non rientra nello scopo dell'archetipo e dovrebbe far parte del sistema di gestione delle risorse umane del datore di lavoro. &#xD;
+&#xD;
+Non utilizzare per descrizioni dettagliate dei rischi per la salute o dell'esposizione a sostanze pericolose nel luogo di lavoro. Utilizzare invece gli archetipi EVALUATION.health_risk o EVALUATION.exposure.&#xD;
+&#xD;
+Non utilizzare per memorizzare informazioni sulle fonti o dettagli del reddito dell'individuo. Per questo scopo, utilizzare l'archetipo EVALUATION.income_summary.&#xD;
+&#xD;
+Non utilizzare per memorizzare informazioni sull'occupazione di un individuo in uno specifico punto nel tempo (ad esempio, il 16 giugno 2014) o durante un intervallo di tempo (ad esempio 'negli ultimi 30 giorni'). Per questo scopo, usare un appropriato archetipo di tipo OBSERVATION. </misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Un travail ou un rôle unique exercé par un individu pendant une période de temps déterminée.</purpose>
+      <keywords>emploi</keywords>
+      <keywords>employeur</keywords>
+      <keywords>emploi</keywords>
+      <keywords>Occupation</keywords>
+      <keywords>travail</keywords>
+      <keywords>profession</keywords>
+      <keywords>sans emploi</keywords>
+      <keywords>employé</keywords>
+      <keywords>chômage</keywords>
+      <keywords>en train d'étudier</keywords>
+      <keywords>employé</keywords>
+      <keywords>étudiant</keywords>
+      <keywords>secteur</keywords>
+      <keywords>profession</keywords>
+      <keywords>bénévole</keywords>
+      <keywords>vocation</keywords>
+      <keywords>Commerce</keywords>
+      <keywords>ouvrier</keywords>
+      <keywords>bénévole</keywords>
+      <keywords>position</keywords>
+      <use>*Use to record details about a single job or role carried out by an individual during a specified period of time. &#xD;
+&#xD;
+The scope of this archetype is inclusive of all occupations or activities undertaken by an individual. For example: a paid job or employment; unpaid work of any type such as a volunteer position; or roles such as being retired or a student. &#xD;
+&#xD;
+Multiple instances of this archetype captured over time will result in the aggregation of a history of past and present jobs and/or roles.&#xD;
+&#xD;
+An active, or current occupation may be implied from a 'Date commenced' but no 'Date ceased'. &#xD;
+&#xD;
+An individual may carry out many simultaneous occupations, each of which may be paid or unpaid. Each occupation should be recorded in a separate instance of this archetype.&#xD;
+&#xD;
+If occupation attributes change significantly, such as a change of role/title or number of hours, then this should be recorded as a separate instance of this archetype.&#xD;
+&#xD;
+This archetype has been specifically designed to be used in the 'Occupation episode' SLOT within the EVALUATION.occupation_summary archetype, but can also be used within any other ENTRY or CLUSTER archetypes, where clinically appropriate.&#xD;
+&#xD;
+There may be some apparent or real overlap between the data elements in this archetype and occupation/employment details that may be stored as demographic details in clinical or administrative systems. These data elements have been designed specifically to support clinical purposes including generation of a medical certificate to a current employer.(en)</use>
+      <misuse>*Not to be used to record temporary changes or episodes within a single occupation record, such as being on leave. This is out of scope for this archetype and should be part of an employer's human relations system.&#xD;
+&#xD;
+Not to be used for detailed descriptions of health risks or exposure to hazardous substances in the workplace. Use the archetypes EVALUATION.health_risk or EVALUATION.exposure for this purpose.&#xD;
+&#xD;
+Not to be used to record information about sources of income or income details for the individual. Use the EVALUATION.income_summary archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record information about the occupation of an individual at a specific point in time (for example, on June 16, 2014) or during a relative interval of time (for example 'in the past 30 days'. Use an appropriate OBSERVATION archetype for this purpose.(en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Para registrar detalles sobre un trabajo o rol llevado a cabo por un individuo durante un periodo de tiempo especificado.</purpose>
+      <keywords>empleo</keywords>
+      <keywords>empleador</keywords>
+      <keywords>trabajo</keywords>
+      <keywords>ocupación</keywords>
+      <keywords>tarea</keywords>
+      <keywords>profesión</keywords>
+      <keywords>desempleado</keywords>
+      <keywords>empleado</keywords>
+      <keywords>desempleo</keywords>
+      <keywords>estudiando</keywords>
+      <keywords>empleado</keywords>
+      <keywords>estudiante</keywords>
+      <keywords>sector</keywords>
+      <keywords>profesión</keywords>
+      <keywords>voluntario</keywords>
+      <keywords>vocación</keywords>
+      <keywords>comercio</keywords>
+      <keywords>trabajador</keywords>
+      <keywords>voluntario</keywords>
+      <keywords>cargo</keywords>
+      <use>Usar para registrar detalles sobre un trabajo o rol particular llevado a cabo por un individuo durante un periodo de tiempo especificado.&#xD;
+&#xD;
+El alcance de este arquetipo incluye todos los empleos o actividades llevadas a cabo por el individuo. Por ejemplo: Un trabajo o empleo pagado; trabajo no remunerado de cualquier tipo como voluntario; o roles tales como estar jubilado o ser estudiante.&#xD;
+&#xD;
+Múltiples instancias de este arquetipo capturadas a lo largo del tiempo resultarán en una agregación de un histórico de trabajos y/o roles presentes o pasados.&#xD;
+&#xD;
+Un trabajo actual puede deducirse de la 'Fecha empezado' pero no de la 'Fecha finalizado'.&#xD;
+&#xD;
+Un individuo puede llevar a cabo muchas ocupaciones al mismo tiempo, las cuales pueden ser remuneradas o no remuneradas. Cada ocupación debería de ser registrada en una instancia separada de este arquetipo.&#xD;
+&#xD;
+Si los atributos de la ocupación cambian significativamente, tales como cambios en el título/rol o el número de horas, éstas se deberían de registrar en una instancia separada de este arquetipo.&#xD;
+&#xD;
+Este arquetipo ha sido específicamente diseñado para ser usado en el SLOT de 'Episodio de ocupación' dentro del arquetipo EVALUATION.occupation_summary, pero también puede ser usado dentro de cualquier otro arquetipo ENTRY o CLUSTER, cuando sea clínicamente apropiado.&#xD;
+&#xD;
+Puede haber una superposición aparente o real entre los elementos de datos en este arquetipo y detalles sobre la ocupación/empleo que puedan haber sido incluidos como detalles demográficos en sistemas clínicos o administrativos. Estos elementos de datos se han diseñado específicamente para dar soporte a propósitos clínicos como puede ser la generación de un certificado médico para el empleador actual.</use>
+      <misuse>No debe ser usado para registrar cambios temporales o episodios dentro de un único registro ocupacional, tales como estar de baja. Esto está fuera del alcance de este arquetipo y debería ser parte de un sistema de recursos humanos del empleador.&#xD;
+&#xD;
+No debe ser usado para una descripción detallada de los riesgos de salud o exposición a sustancias nocivas en el lugar de trabajo. Para este propósito use los arquetipos EVALUATION.health_risk o EVALUATION.exposure.&#xD;
+&#xD;
+No debe ser usado para registrar información sobre fuentes o detalles de ingresos de un individuo. Para este propósito use el arquetipo EVALUATION.income_summary.&#xD;
+&#xD;
+No debe ser usado para registrar información sobre la ocupación de un individuo en un punto concreto de tiempo (por ejemplo, el 16 de Junio de 2014) o durante un periodo de tiempo relativo (por ejemplo 'durante los últimos 30 días'). Para este propósito use un arquetipo OBSERVATION adecuado.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Therese Lindberg</author>
+    <author id="organisation">Cambio CDS</author>
+    <author id="email">therese.lindberg@cambio.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke and Vebjørn Arntzen</author>
+    <author id="organisation">Nasjonal IKT HF, Oslo University Hospital</author>
+    <author id="email">silje.ljosland.bakke@nasjonalikt.no / varntzen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt</code_string>
+    </language>
+    <author id="name">Danielle Santos Alves</author>
+    <author id="organisation">Federal University of Pernambuco</author>
+    <author id="email">angeldannyalves@gmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Danielle Santos Alves</author>
+    <author id="organisation">Federal University of Pernambuco</author>
+    <author id="email">angeldannyalves@gmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+    <author id="name">Cecilia Mascia</author>
+    <author id="organisation">CRS4 - Center for advanced studies, research and development in Sardinia, Pula (Cagliari), Italy</author>
+    <author id="email">ceclila.mascia@crs4.it</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Bassem Khouzam, Vanessa Pereira</author>
+    <author id="organisation">Medtronic, Better - Pathfinder</author>
+    <author id="email">bassem.khouzam@medtronic.com, vanessapereira@protonmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Diego Bosca</author>
+    <author id="organisation">VeraTech for Health</author>
+    <author id="email">diebosto@veratech.es</author>
+  </translations>
+  <uid>
+    <value>251b76fc-936e-45df-8869-3babe10969cb</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.occupation_record.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0016</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0013</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_PROPORTION</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>numerator</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>REAL</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_REAL">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0.0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>type</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <list>1</list>
+                  <list>2</list>
+                </item>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0020</code_list>
+                <code_list>at0021</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>h/d</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>h/wk</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>h/mo</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>h/a</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>d/wk</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>d/mo</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>wk/mo</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>d/a</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>wk/a</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>2</lower>
+                <upper>2</upper>
+              </precision>
+              <units>mo/a</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0014</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Occupation record</items>
+        <items id="description">A single job or role carried out by an individual during a specified period of time.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Paid employment status</items>
+        <items id="description">The status of a worker in terms of being paid or unpaid.</items>
+        <items id="comment">For example: unpaid; paid; self-employed; or volunteer. Coding with a terminology is desirable, where possible.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Industry category</items>
+        <items id="description">The type of industry in which the individual works.</items>
+        <items id="comment">For example: Mining, manufacturing, construction. Coding with a terminology is desirable, where possible.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Organisation details</items>
+        <items id="description">Details about the employer or institution.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Job title/role</items>
+        <items id="description">The main job title or the role of the individual.</items>
+        <items id="comment">For example: Chief Executive Officer; Carer; or Student. Each of these job titles or roles may be comprised of multiple duties.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Job category</items>
+        <items id="description">The type of job undertaken by the individual.</items>
+        <items id="comment">Coding with a terminology is desirable, where possible, such as ISCO-08.&#xD;
+For example: Sales manager or software engineer.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Date commenced</items>
+        <items id="description">The date when an individual commenced the job or role.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Date ceased</items>
+        <items id="description">The date when an individual ceased working in a job or role.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Full time equivalent</items>
+        <items id="description">The time spent in this job or role relative to full-time.</items>
+        <items id="comment">Full time equivalent may also be known as 'FTE'. For example: 0.5; 50 %; or "part time".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the occupation record not captured in other fields.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the job or role carried out by the individual.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Additional details</items>
+        <items id="description">Further detail about an occupation record.</items>
+        <items id="comment">For example: workplace location and conditions; or combat zone experience.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Time allocated</items>
+        <items id="description">The amount of time an individual is allocated to carry out the job or role per specified period of this occupation record.</items>
+        <items id="comment">For example: '3 days per week', '10 days per month' or '2 hours per day'.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Full-time</items>
+        <items id="description">The individual carries out this occupation for equal to or more than the amount of time that is officially regarded as 'full-time' for the occupation.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Part-time</items>
+        <items id="description">The individual carries out this occupation for less than the amount of time that is officially regarded as 'full-time' for the occupation.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Arbeidsforhold/rolle</items>
+        <items id="description">En jobb eller rolle individet har, eller har hatt i en spesifisert tidsperiode.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Status lønnet arbeid</items>
+        <items id="description">Om individet har lønnet eller ulønnet arbeid.</items>
+        <items id="comment">For eksempel: "Ulønnet", "Lønnet", "Selvstendig næringsdrivende" eller "Frivillig arbeid". Koding av denne statusen med en terminologi er anbefalt, der det er mulig.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Bransje</items>
+        <items id="description">Klassifisering av bransje eller sektor der individet har arbeidsforholdet/rollen.</items>
+        <items id="comment">For eksempel: "Jordbruk, skogbruk og fiske", "Varehandel", "Bygg- og anleggsvirksomhet". Koding av "Bransje" med en terminologi er anbefalt, der det er mulig.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Organisasjonsdetaljer</items>
+        <items id="description">Detaljer om arbeidsgiver eller institusjon/organisasjon.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tittel/rolle</items>
+        <items id="description">Stillingstittel eller betegnelse for dette arbeidsforholdet/rollen/vervet.</items>
+        <items id="comment">For eksempel: Administrerende direktør, hjemmeværende eller student. Hver av disse stillingstitlene eller rollene kan omfatte flere arbeidsoppgaver.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Yrkeskategori</items>
+        <items id="description">Klassifisering av yrket individet har.</items>
+        <items id="comment">Koding med en terminologi er ønskelig om mulig. For eksempel kategorisering i henhold til STYRK-08.&#xD;
+For eksempel: "Salgssjef" eller "Programvareutvikler".</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Dato for oppstart</items>
+        <items id="description">Datoen arbeidsforholdet/rollen startet.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Dato for opphør</items>
+        <items id="description">Datoen arbeidsforholdet/rollen opphørte.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Heltidsekvivalent</items>
+        <items id="description">Arbeidsforholdet/rollens andel eller prosent av en heltidsstilling.</items>
+        <items id="comment">Definisjonen av "heltid" kan variere mellom ulike yrker. For eksempel "0,5", 50 %" eller "deltid". I noen situasjoner kan det være passende å registrere faktisk antall arbeidstimer i elementet "Antall arbeidstimer".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekstkommentar om arbeidsforholdet/rollen som ikke passer i andre felt.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse av arbeidsforholdet/rollen.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere detaljer om arbeidsforholdet/rollen.</items>
+        <items id="comment">For eksempel: Forhold på arbeidsplassen eller erfaring fra krigssoner.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Avsatt tid</items>
+        <items id="description">Den avtalte tiden som er satt av til å utføre jobben eller rollen per tidsperiode for dette arbeidsforholdet.</items>
+        <items id="comment">For eksempel: "3 dager per uke", "10 dager per måned" eller "2 timer per dag".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Heltid</items>
+        <items id="description">Individet bruker lik eller lengre tid på jobben/rollen enn definisjonen av full stilling i lov- eller avtaleverk (tariffavtale).</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Deltid</items>
+        <items id="description">Individet bruker kortere tid på jobben/rollen enn definisjonen av full stilling i lov- eller avtaleverk (tariffavtale).</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">Occupazione</items>
+        <items id="description">Singola professione svolta o ruolo ricoperto da un individuo durante un determinato periodo di tempo.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Stato di retribuzione</items>
+        <items id="description">Lo status di un lavoratore in termini di retribuzione o non retribuzione.</items>
+        <items id="comment">Ad esempio:  non retribuito; retribuito; lavoratore autonomo; o volontario. &#xD;
+&#xD;
+Si preferisce, ove possibile, la codifica con una terminologia.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Settore industriale</items>
+        <items id="description">Il settore dell'azienda in cui l'individuo lavora.</items>
+        <items id="comment">Ad esempio: Estrazione, produzione, costruzione.&#xD;
+&#xD;
+Si preferisce, ove possibile, la codifica con una terminologia.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Dettagli sull'azienda</items>
+        <items id="description">Dettagli sul datore di lavoro o sull'azienda.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Qualifica/ruolo</items>
+        <items id="description">La qualifica professionale o il ruolo dell'individuo.</items>
+        <items id="comment">Ad esempio: Amminstratore delegato; Assistente; o Studente. Ciascuna qualifica o ruolo può comprendere più mansioni.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Categoria professionale</items>
+        <items id="description">Il tipo di lavoro svolto dall'individuo.</items>
+        <items id="comment">La codifica con una terminologia è preferibile, quando possibile, ad esempio attraverso la ISCO-08.&#xD;
+&#xD;
+Ad esempio: Responsabile delle vendite o ingegnere del software.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Data di inizio</items>
+        <items id="description">Data in cui l'individuo a iniziato ad esercitare la professione o ricoprire il ruolo.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Data di cessazione</items>
+        <items id="description">Data in cui l'individuo a terminato di esercitare la professione o ricoprire il ruolo.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Equivalente a tempo pieno</items>
+        <items id="description">La porzione di tempo dedicato a questa professione/ruolo rispetto al tempo pieno.  </items>
+        <items id="comment">L' equivalente a tempo pieno è anche conosciuto come 'FTE' - Full time equivalent.&#xD;
+&#xD;
+Ad esempio:  0.5; 50 %; o "part time". </items>
+      </items>
+      <items code="at0014">
+        <items id="text">Commento</items>
+        <items id="description">Note aggiuntive sull'occupazione non rilevate dagli altri campi. </items>
+      </items>
+      <items code="at0016">
+        <items id="text">Descrizione</items>
+        <items id="description">Descrizione narrativa della professione svolta o del ruolo ricoperto dall'individuo. </items>
+      </items>
+      <items code="at0018">
+        <items id="text">Ulteriori dettagli</items>
+        <items id="description">Ulteriori dettagli sull'occupazione.</items>
+        <items id="comment">Ad esempio: l'ubicazione del posto di lavoro e le condizioni; o esperienza in zone di combattimento.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Orario di lavoro</items>
+        <items id="description">Il tempo assegnato all'individuo per svolgere la professione/ruolo nel periodo specificato.</items>
+        <items id="comment">Ad esempio: '3 giorni a settimana', '10 giorni al mese' o '2 ore al giorno'.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Tempo pieno</items>
+        <items id="description">Il lavoro è svolto per un periodo di tempo pari o superiore a quello ufficialmente considerato a "tempo pieno" per l'occupazione.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tempo parziale</items>
+        <items id="description">Il lavoro è svolto per un periodo di tempo inferiore a quello ufficialmente considerato a "tempo pieno" per l'occupazione.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Registro ocupacional</items>
+        <items id="description">Un único trabajo o rol llevado a cabo por un individuo durante un periodo de tiempo especificado.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Estado trabajo remunerado.</items>
+        <items id="description">El estado de un trabajador en términos de ser pagado o no pagado.</items>
+        <items id="comment">Por ejemplo: no remunerado; autoempelado; o voluntario. Se recomienda codificarlo con una terminología donde sea posible.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Sector industrial</items>
+        <items id="description">El tipo de sector industrial en el que trabaja el individuo.</items>
+        <items id="comment">Por ejemplo: Minería, Fabricación, Construcción. Donde sea posible se recomienda codificar con una terminología.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Detalles de la organización</items>
+        <items id="description">Detalles sobre el empleador o institución.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Cargo/rol</items>
+        <items id="description">El cargo, puesto o rol del individuo</items>
+        <items id="comment">Por ejemplo: Director ejecutivo; Cuidador; o Estudiante. Cada uno de estos cargos o roles pueden estar compuestos de muchos deberes.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Categoría profesional</items>
+        <items id="description">El tipo de trabajo llevado a cabo por el individuo.</items>
+        <items id="comment">Donde sea posible se recomienda codificar con una terminología, tal como CIUO-08</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Fecha de inicio</items>
+        <items id="description">La fecha en la que un individuo inicia el trabajo o rol.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Fecha de fin</items>
+        <items id="description">La fecha cuando un individuo deja de trabajar en un trabajo o rol.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Equivalencia a tiempo completo</items>
+        <items id="description">El tiempo usado en este trabajo o rol relativo a tiempo completo.</items>
+        <items id="comment">El tiempo completo puede ser también conocido como 'ETC'. Por ejemplo: 0.5; 50 %; o "tiempo parcial"</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Comentario</items>
+        <items id="description">Narrativa adiciona sobre el registro de ocupación no capturada en otros campos.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Descripción</items>
+        <items id="description">Descripción narrativa sobre el trabajo o rol llevado a cabo por el individuo.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Detalles adicionales</items>
+        <items id="description">Información adicional sobre un registro ocupacional.</items>
+        <items id="comment">Por ejemplo: Localización y condiciones del lugar de trabajo; o experiencia en zona de combate.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Tiempo asignado</items>
+        <items id="description">La cantidad de tiempo que se le asigna a un individuo para llevar a cabo el trabajo o rol por periodo específico de su registro ocupacional.</items>
+        <items id="comment">Por ejemplo: '3 días a la semana', '10 días al mes' o '2 horas al día'</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Tiempo completo</items>
+        <items id="description">El individuo lleva a cabo su ocupación por un tiempo igual o superior al oficialmente establecido como 'tiempo completo' para dicha ocupación.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tiempo parcial</items>
+        <items id="description">El individuo lleva a cabo su ocupación por un tiempo menor al oficialmente establecido como 'tiempo completo' para dicha ocupación.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Beschäftigung</items>
+        <items id="description">Ein einzelner Job oder eine einzelne Rolle, die von einer Person während eines bestimmten Zeitraums ausgeführt wurde.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Status der Erwerbstätigkeit</items>
+        <items id="description">Der Status eines Arbeitnehmers in Bezug auf bezahlt oder unbezahlt.</items>
+        <items id="comment">Zum Beispiel: unbezahlt, bezahlt, Selbstständiger oder Ehrenamtlicher. Eine Codierung mit einer Terminologie ist nach Möglichkeit wünschenswert.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Art der Branche</items>
+        <items id="description">Die Art der Branche, in der die Person arbeitet.</items>
+        <items id="comment">Zum Beispiel: Bergbau, Fertigung, Bau. Eine Codierung mit einer Terminologie ist nach Möglichkeit wünschenswert.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Angaben zur Organisation</items>
+        <items id="description">Angaben zum Arbeitgeber oder zur Einrichtung.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Berufsbezeichnung/Rolle</items>
+        <items id="description">Die Hauptberufsbezeichnung oder die Rolle der Person.</items>
+        <items id="comment">Zum Beispiel: Geschäftsführer, Pflegekraft oder Student. Jede dieser Berufsbezeichnungen oder Rollen kann aus mehreren Aufgaben bestehen.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Art des Jobs</items>
+        <items id="description">Die Art des Jobs der Person.</items>
+        <items id="comment">Eine Codierung mit einer Terminologie ist nach Möglichkeit wünschenswert, z. B. mit ISCO-08.&#xD;
+Zum Beispiel: Vertriebsleiter oder Softwareentwickler.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Beginn</items>
+        <items id="description">Das Datum, an dem eine Person mit dem Job oder der Rolle begonnen hat.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Ende</items>
+        <items id="description">Das Datum, an dem eine Person mit einem Job oder einer Rolle aufgehört hat.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Vollzeitäquivalent</items>
+        <items id="description">Die Zeit, die in diesem Job oder dieser Rolle im Verhältnis zur Vollzeit verbracht wurde.</items>
+        <items id="comment">Vollzeitäquivalent kann auch als "FTE" (Full-Time Equivalent) bezeichnet werden. Zum Beispiel: 0,5; 50%; oder "Teilzeit".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Beschreibung zur Beschäftigung, die nicht in anderen Feldern erfasst wurde.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Beschreibung</items>
+        <items id="description">Beschreibung des Jobs oder der Rolle der Person.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Zusätzliche Angaben</items>
+        <items id="description">Weitere Angaben zu einer Beschäftigung.</items>
+        <items id="comment">Zum Beispiel: Standort und Bedingungen am Arbeitsplatz oder Kampfzonenerfahrung.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Zugewiesene Zeit</items>
+        <items id="description">Die Zeit, die einer Person für die Ausführung des Jobs oder der Rolle pro festgelegten Zeitraum dieser Beschäftigung zugewiesen wird.</items>
+        <items id="comment">Zum Beispiel: "3 Tage pro Woche", "10 Tage pro Monat" oder "2 Stunden pro Tag".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Vollzeit</items>
+        <items id="description">Die Person übt diese Beschäftigung mindestens so lange aus, wie diese offiziell als „Vollzeit“ für die Beschäftigung gilt.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Teilzeit</items>
+        <items id="description">Die Person übt diese Beschäftigung weniger als die Zeit aus, die offiziell als "Vollzeit" für die Beschäftigung gilt.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Fiche d'occupation</items>
+        <items id="description">Un travail ou un rôle unique exercé par un individu pendant une période de temps déterminée.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Statut d'emploi rémunéré</items>
+        <items id="description">Le statut d'un travailleur en termes de rémunération ou d'absence de rémunération.</items>
+        <items id="comment">Par exemple : non rémunéré, rémunéré, indépendant ou bénévole. Il est souhaitable de coder avec une terminologie, lorsque cela est possible.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Catégorie d'industrie</items>
+        <items id="description">Le type d'industrie dans laquelle l'individu travaille.</items>
+        <items id="comment">Par exemple : Mines, industrie manufacturière, construction. Il est souhaitable de coder avec une terminologie, lorsque cela est possible.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Détails de l'organisation</items>
+        <items id="description">Détails sur l'employeur ou l'institution.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Titre/fonction du poste</items>
+        <items id="description">Le titre principal de l'emploi ou le rôle de l'individu.</items>
+        <items id="comment">Par exemple : Directeur général, soignant ou étudiant. Chacun de ces titres ou rôles peut comporter plusieurs fonctions.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Catégorie d'emploi</items>
+        <items id="description">Le type d'emploi occupé par l'individu.</items>
+        <items id="comment">Il est souhaitable d'utiliser, dans la mesure du possible, une terminologie telle que la CITP-08. Par exemple : Directeur des ventes ou ingénieur en logiciel.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Date de début</items>
+        <items id="description">La date à laquelle l'individu a commencé l'emploi ou la fonction.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Date de fin</items>
+        <items id="description">La date à laquelle une personne a cessé de travailler dans un emploi ou une fonction.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Équivalent temps plein</items>
+        <items id="description">Le temps passé dans cet emploi ou cette fonction par rapport à un emploi à temps plein.</items>
+        <items id="comment">L'équivalent temps plein peut également être appelé "ETP". Par exemple : 0,5 ; 50 % ; ou "temps partiel".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Commentaire</items>
+        <items id="description">Une description supplémentaire de l'enregistrement de la profession qui n'a pas été saisie dans d'autres champs.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Description</items>
+        <items id="description">Description de l'emploi ou du la fonction exercé par la personne.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Informations complémentaires</items>
+        <items id="description">Plus de détails sur la fiche d'occupation.</items>
+        <items id="comment">Par exemple : lieu et conditions de travail ; ou expérience dans une zone de combat.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Temps alloué</items>
+        <items id="description">Le temps alloué à une personne pour exercer l'emploi ou la fonction par période spécifiée dans cette fiche de profession.</items>
+        <items id="comment">Par exemple : "3 jours par semaine", "10 jours par mois" ou "2 heures par jour".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Temps plein</items>
+        <items id="description">La personne exerce cette profession pendant une durée égale ou supérieure à la durée officiellement considérée comme "à temps plein" pour cette profession.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Temps partiel</items>
+        <items id="description">L'individu exerce cette profession pendant une durée inférieure à celle qui est officiellement considérée comme "à temps plein" pour cette profession</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Registro da ocupação</items>
+        <items id="description">Um único trabalho ou função desempenhada por um indivíduo durante um período de tempo especificado.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Status de emprego remunerado</items>
+        <items id="description">O status de um trabalhador em termos de ser pago ou não.</items>
+        <items id="comment">Por exemplo: não remunerado; remunerado; trabalhadores por conta própria; ou voluntário. É desejável codificar com uma terminologia, sempre que possível.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Categoria Industrial</items>
+        <items id="description">O tipo de indústria em que o indivíduo trabalha.</items>
+        <items id="comment">Por exemplo: Mineração, fabricação, construção. É desejável codificar com uma terminologia, sempre que possível.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Detalhes organizacionais</items>
+        <items id="description">Detalhes sobre o empregador ou instituição.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Cargo / função</items>
+        <items id="description">O cargo principal ou a função do indivíduo.</items>
+        <items id="comment">Por exemplo: CEO; Cuidador; ou aluno. Cada um desses cargos ou funções pode ser composto de várias ocupações.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Categoria de Emprego</items>
+        <items id="description">O tipo de trabalho realizado pelo indivíduo.</items>
+        <items id="comment">É desejável codificar com uma terminologia, sempre que possível, como o ISCO-08.&#xD;
+Por exemplo: Gerente de vendas ou engenheiro de software.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Data de início</items>
+        <items id="description">A data em que um indivíduo iniciou o trabalho ou função.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Data de término</items>
+        <items id="description">A data em que um indivíduo deixou de trabalhar em um emprego ou função.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Equivalente a tempo integral</items>
+        <items id="description">O tempo gasto nesse trabalho ou função em relação ao período integral.</items>
+        <items id="comment">O equivalente a tempo integral também pode ser conhecido como 'ETI'. Por exemplo: 0,5; 50%; ou "tempo parcial".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Comentários</items>
+        <items id="description">Narrativa adicional sobre o registro de ocupação não registrada em outros campos.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Descrição</items>
+        <items id="description">Descrição narrativa sobre o trabalho ou função desempenhada pelo indivíduo.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Detalhes adicionais</items>
+        <items id="description">Mais detalhes sobre um registro de ocupação.</items>
+        <items id="comment">Por exemplo: local e condições do local de trabalho; ou experiência na zona de combate.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Tempo alocado</items>
+        <items id="description">A quantidade de tempo que um indivíduo é alocado para realizar o trabalho ou função por período especificado desse registro de ocupação.</items>
+        <items id="comment">Por exemplo: '3 dias por semana', '10 dias por mês' ou '2 horas por dia'.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Tempo integral</items>
+        <items id="description">O indivíduo realiza essa ocupação por igual ou superior quantidade de tempo que é oficialmente considerada como 'período integral' para a ocupação.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tempo parcial</items>
+        <items id="description">O indivíduo realiza essa ocupação por menos do que o tempo considerado oficialmente como 'período integral' para a ocupação.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt">
+      <items code="at0000">
+        <items id="text">Registro da ocupação</items>
+        <items id="description">Um único trabalho ou função desempenhada por um indivíduo durante um período de tempo especificado.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Status do emprego remunerado</items>
+        <items id="description">O status de um trabalhador em termos de ser pago ou não.</items>
+        <items id="comment">Por exemplo: não remunerado; remunerado; trabalhadores por conta própria; ou voluntário. É desejável codificar com uma terminologia, sempre que possível.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Categoria Industrial</items>
+        <items id="description">O tipo de indústria em que o indivíduo trabalha.&#xD;
+</items>
+        <items id="comment">Por exemplo: Mineração, fabricação, construção. É desejável codificar com uma terminologia, sempre que possível.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Detalhes organizacionais</items>
+        <items id="description">Detalhes sobre o empregador ou instituição.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Cargo / Função</items>
+        <items id="description">O cargo principal ou a função do indivíduo.</items>
+        <items id="comment">Por exemplo: CEO; Cuidador; ou aluno. Cada um desses cargos ou funções pode ser composto de várias ocupações.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Categoria ocupacional</items>
+        <items id="description">O tipo de ocupação realizada pelo indivíduo.&#xD;
+</items>
+        <items id="comment">É desejável codificar com uma terminologia, sempre que possível, como o ISCO-08. Por exemplo: Gerente de vendas ou engenheiro de software.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Data de início</items>
+        <items id="description">A data em que um indivíduo iniciou o trabalho ou função.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Data de término</items>
+        <items id="description">A data em que um indivíduo deixou de trabalhar em um emprego ou função.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Equivalente a tempo integral</items>
+        <items id="description">O tempo gasto nesse trabalho ou função em relação ao período integral.</items>
+        <items id="comment">O equivalente a tempo integral também pode ser conhecido como 'ETI'. Por exemplo: 0,5; 50%; ou "tempo parcial".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Comentários</items>
+        <items id="description">Narrativa adicional sobre o registro de ocupação não registrada em outros campos.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Descrição</items>
+        <items id="description">Descrição narrativa sobre o trabalho ou função desempenhada pelo indivíduo.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Detalhes adicionais</items>
+        <items id="description">Mais detalhes sobre um registro da ocupação.</items>
+        <items id="comment">Por exemplo: local e condições do local de trabalho; ou experiência na zona de combate.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Tempo alocado</items>
+        <items id="description">A quantidade de tempo que um indivíduo é alocado para realizar o trabalho ou função por período especificado desse registro de ocupação.&#xD;
+</items>
+        <items id="comment">Por exemplo: '3 dias por semana', '10 dias por mês' ou '2 horas por dia'.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Tempo integral</items>
+        <items id="description">O indivíduo realiza essa ocupação por igual ou superior quantidade de tempo que é oficialmente considerada como 'período integral' para a ocupação.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tempo parcial</items>
+        <items id="description">O indivíduo realiza essa ocupação por menos do que o tempo considerado oficialmente como 'período integral' para a ocupação.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Yrkesregistrering</items>
+        <items id="description">Ett enskilt jobb eller en roll som en person utför under en viss tidsperiod.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Betald anställningsstatus</items>
+        <items id="description">Arbetarens status när det gäller att få betalt eller inte.</items>
+        <items id="comment">Till exempel: obetalt; betald; egenföretagare; eller volontär. Kodning med en terminologi är önskvärd, där det är möjligt.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Branschkategori</items>
+        <items id="description">Den typ av bransch där individen arbetar.</items>
+        <items id="comment">Till exempel: Gruvdrift, tillverkning, konstruktion. Kodning med en terminologi är önskvärd, där det är möjligt.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Organisationsinformation</items>
+        <items id="description">Detaljer om arbetsgivaren eller institutionen.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Jobbtitel / roll</items>
+        <items id="description">Individens jobbtitel eller arbetsroll.</items>
+        <items id="comment">Till exempel: verkställande direktör; Vårdgivare; eller student. Var och en av dessa jobbtitlar eller roller kan bestå av flera uppgifter.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Jobbkategori</items>
+        <items id="description">Typ av jobb som individen utför.</items>
+        <items id="comment">Kodning med en terminologi är önskvärt, där det är möjligt, såsom ISCO-08.&#xD;
+Till exempel: försäljningschef eller programvarutekniker.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Startdatum</items>
+        <items id="description">Datumet då en person började jobbet eller rollen.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Upphörandedatum</items>
+        <items id="description">Datumet då en person slutade på ett jobb eller avslutade en roll.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Heltidsekvivalent</items>
+        <items id="description">Tiden i det här jobbet eller rollen i förhållande till heltid.</items>
+        <items id="comment">Heltidsekvivalent kan också kallas 'FTE'. Till exempel: 0,5; 50%; eller "deltid".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare beskrivning om yrkesregistreringen som inte redan inkluderats.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Beskrivning</items>
+        <items id="description">Berättande beskrivning om jobbet eller rollen som utförs av individen.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Ytterligare detaljer</items>
+        <items id="description">Mer information om en yrkesregistrering.</items>
+        <items id="comment">Till exempel: arbetsplats och arbetsförhållanden; eller stridszonupplevelse.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Tilldelad tid</items>
+        <items id="description">Hur lång tid en individ har tilldelats för att utföra jobbet eller rollen per angiven period av detta yrkesregister.</items>
+        <items id="comment">Till exempel: "3 dagar per vecka", "10 dagar per månad" eller "2 timmar per dag".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Heltid</items>
+        <items id="description">Individen utför ockupationen lika med eller mer än den tid som officiellt betraktas som ”heltid” för ockupationen.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Deltid</items>
+        <items id="description">Individen utför ockupationen under mindre tid än vad som officiellt betraktas som ”heltid” för ockupationen.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

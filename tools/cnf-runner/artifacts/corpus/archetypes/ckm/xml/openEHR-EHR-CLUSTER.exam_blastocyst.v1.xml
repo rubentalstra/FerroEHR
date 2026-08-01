@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2021-10-26</original_author>
+    <original_author id="name">Peter Fedorcsak</original_author>
+    <original_author id="organisation">Oslo University Hospital</original_author>
+    <original_author id="email">peter.fedorcsak@medisin.uio.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Peter Fedorcsak, University of Oslo, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Rosane Gotardo, Systema Ltda., Brazil</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Gareth Greggains, Oslo University Hospital</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Manisha Mantri, C-DAC, India</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Trine Skuland, Oslo University Hospital</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Julius Hreinsson, Laboratory Director at Reproductive Medicine, Sahlgrenska University Hospital, Sweden</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Alpha Scientists in Reproductive, M. and E.S.I.G.o. Embryology, The Istanbul consensus workshop on embryo assessment: proceedings of an expert meeting. Human Reproduction, 2011. 26(6): p. 1270-1283.&#xD;
+&#xD;
+Hardarson, T., L. Van Landuyt, and G. Jones, The blastocyst. Human Reproduction, 2012. 27(suppl_1): p. i72-i91.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">25DE1CB79E30B209FCE47B998AFF3008</other_details>
+    <other_details id="build_uid">80f141a3-30aa-4a8d-a8b5-921a03bac275</other_details>
+    <other_details id="revision">1.0.1</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere strukturerte observasjoner av en human blastocyst.</purpose>
+      <keywords>in vitro, befruktning, IVF, reproduksjon, zygote, fertilisert, befruktet, egg, eggcelle, oocytt, embryo, blastocyst, assistert</keywords>
+      <use>Brukes til å registrere morfologiske observasjoner av en human blastocyst , vanligvis som del av assistert befruktning.&#xD;
+&#xD;
+Arketypen er laget spesifikt for å brukes i SLOT'et "Undersøkelsesdetaljer" i arketypen "OBSERVATION.embryo_assessment" eller "ACTION.procedure", men kan også brukes innen andre ENTRY- og CLUSTER-arketyper der det er klinisk passende.</use>
+      <misuse>Skal ikke brukes til å registrere morfologiske observasjoner av oocytter, zygoter og embryoer i deling - bruk spesifikke CLUSTER arketyper.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record structured observations about a human blastocyst.</purpose>
+      <keywords>in vitro, fertilization, IVF, reproductive medicine, zygote, fertilised, fertilized, oocyte, egg, fertilisation, embryo, reproduction, ART, blastocyst</keywords>
+      <use>Use to record morphological observations about a human blastocyst, usually as part of assisted reproduction treatment.&#xD;
+&#xD;
+This archetype has been specifically designed to be used in the 'Observations detail' SLOT within the 'OBSERVATION.embryo_assessment' or 'ACTION.procedure' archetype, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.</use>
+      <misuse>Not to be used for recording observations on oocytes, zygotes and cleavage stage embryos - use specific CLUSTER archetypes for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Peter Fedorcsak, Vebjørn Arntzen</author>
+    <author id="organisation">University of Oslo, Oslo University Hospital</author>
+    <author id="email">peterfe@uio.no, varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>217e48d9-a3b5-48c5-bf7d-efef3c16b7b7</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.exam_blastocyst.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0049</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0050</code_list>
+                <code_list>at0051</code_list>
+                <code_list>at0052</code_list>
+                <code_list>at0053</code_list>
+                <code_list>at0054</code_list>
+                <code_list>at0055</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0056</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0057</code_list>
+                <code_list>at0058</code_list>
+                <code_list>at0059</code_list>
+                <code_list>at0067</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0060</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0061</code_list>
+                <code_list>at0062</code_list>
+                <code_list>at0063</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0064</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0068</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Examination of a blastocyst</items>
+        <items id="description">Morphological findings obtained by microscopy of a human blastocyst.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Degree of expansion</items>
+        <items id="description">Degree of expansion of the blastocyst.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Grade 1</items>
+        <items id="description">The blastocoel cavity is less than the half of the embryo volume.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Grade 2</items>
+        <items id="description">The blastocoel cavity is &gt; 50% of the embryo volume.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Grade 3</items>
+        <items id="description">The blastocoel cavity completely fills the embryo volume.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">Grade 4</items>
+        <items id="description">The blastocoel cavity is larger than the original volume of the embryo, thinned zona pellucida.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Grade 5</items>
+        <items id="description">Hatching blastocyst.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">Grade 6</items>
+        <items id="description">Completely hatched blastocyst.</items>
+      </items>
+      <items code="at0056">
+        <items id="text">Inner cell mass morphology</items>
+        <items id="description">Morphology of the inner cell mass.</items>
+      </items>
+      <items code="at0057">
+        <items id="text">A</items>
+        <items id="description">The inner call mass contains many tightly packed cells.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">B</items>
+        <items id="description">The inner call mass contains several loosely grouped cells.</items>
+      </items>
+      <items code="at0059">
+        <items id="text">C</items>
+        <items id="description">The inner call mass contains few loosely bound cells.</items>
+      </items>
+      <items code="at0060">
+        <items id="text">Trophectoderm morphology</items>
+        <items id="description">Morphology of the trophectoderm of the blastocyst.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">A</items>
+        <items id="description">Trophectoderm contains many cells that form a cohesive epithelium.</items>
+      </items>
+      <items code="at0062">
+        <items id="text">B</items>
+        <items id="description">Trophectoderm contains few cells that form a loose epithelium.</items>
+      </items>
+      <items code="at0063">
+        <items id="text">C</items>
+        <items id="description">Trophectoderm contains very few large cells that struggle to form a cohesive epithelium.</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Other morphological features</items>
+        <items id="description">Additional morphological features of the blastocyst not captured by specific parameters.</items>
+        <items id="comment">For example: signs of degeneration, such as presence of necrosis and exclusion of cells; cellular bridges, vacuolation; or multiple hatching points. The occurrences for this data element is set to 0..* to allow for more than one morphological attribute to be added as a coded value.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Not accessible</items>
+        <items id="description">Inner cell mass morphology is not accessible.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Morphology grade</items>
+        <items id="description">Overall grading or score based on recorded morphological features of the blastocyst.</items>
+        <items id="comment">Use of an established morphology assessment classification is preferred.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Undersøkelse av en blastocyst</items>
+        <items id="description">Morfologiske funn ved mikroskopisk undersøkelse av en human blastocyst.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Ekspanderingsgrad</items>
+        <items id="description">Grad av ekspandering i blastocysten.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Grad 1</items>
+        <items id="description">Blastocystkaviteten opptar mindre enn halvparten av blastocystens volum.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Grad 2</items>
+        <items id="description">Blastocystkaviteten opptar &gt; 50% av blastocystens volum.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Grad 3</items>
+        <items id="description">Blastocystkaviteten fyller blastocystens hele volum.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">Grad 4</items>
+        <items id="description">Blastocystkaviteten er større enn blastocystens opprinnelig volum, og zona pellucida har blitt tynnere.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Grad 5</items>
+        <items id="description">Klekkende blastocyst, celler er på vei at av zona pellucida.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">Grad 6</items>
+        <items id="description">Fullstendig klekket blastocyst, hele blastocysten har kommet ut av sona pellucida.</items>
+      </items>
+      <items code="at0056">
+        <items id="text">Morfologi av den indre cellemassen</items>
+        <items id="description">Morfologi av den indre cellemassen.</items>
+      </items>
+      <items code="at0057">
+        <items id="text">A</items>
+        <items id="description">Den indre cellemasse består av mange, tett pakkede celler.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">B</items>
+        <items id="description">Den indre cellemasse består av flere, løst grupperte celler.</items>
+      </items>
+      <items code="at0059">
+        <items id="text">C</items>
+        <items id="description">Den indre cellemasse består av få, løst tilknyttede celler.</items>
+      </items>
+      <items code="at0060">
+        <items id="text">Morfologi av trofektodermen</items>
+        <items id="description">Morfologi av blastocystens trofektoderm.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">A</items>
+        <items id="description">Trofektodermen består av flere celler som danner et sammenhengende epitel.</items>
+      </items>
+      <items code="at0062">
+        <items id="text">B</items>
+        <items id="description">Trofektodermen består av få celler som danner et løst epitel.</items>
+      </items>
+      <items code="at0063">
+        <items id="text">C</items>
+        <items id="description">Trofektodermen består av få, veldig store celler som knapt danner et sammenhengende epitel.</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Andre morfologiske observasjoner</items>
+        <items id="description">Ytterligere morfologiske observasjoner av blastocysten som ikke dekkes av de andre spesifiserte elementene.</items>
+        <items id="comment">Kan brukes til å beskrive for eksempel tegn til degenerering, slik som nekrose og utstøtelse av celler, cellulære broer, vakuoler og flere klekkingspunkter. Dette dataelementet er satt til å kunne repeteres fordi det kan være flere observasjoner, både fritekst og kodede.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Utilgjengelig</items>
+        <items id="description">Den indre cellemassen kan ikke vurderes.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Morfologisk gradering</items>
+        <items id="description">Overordnet gradering eller skår basert på blastocystens registrerte, morfologiske egenskaper.</items>
+        <items id="comment">Bruk av en etablert skala for vurdering av blastocystens morfologi anbefales.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

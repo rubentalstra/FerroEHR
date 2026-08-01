@@ -1,0 +1,79 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.tnm_staging_7th-lymphoma.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.tnm_staging_7th.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics Scotland">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/07/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the classification and grading of lymphoma using the TNM classification 7th Edition.">
+			use = <"">
+			keywords = <"tumour", "TNM", "malignancy", "cancer", "staging", "classification", "grade", "grading", "stage", "lymph node", "metastasis", "lymphoma">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie Ocean Informatics Australia", "Sam Heard Ocean Informatics Australia", "Koray Atalag, University of Auckland, New Zealand">
+	references = <
+		["1"] = <"Sobin LH. TNM Classification of Malignant Tumours 7th Edition.  John Wiley and Sons; 2009.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"A14ECD067907D583968848BDE7838BDD">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Tumour - TNM staging Lymphoma  7th Edition
+		/items[id15]/value matches {
+			DV_CODED_TEXT[id62.1] matches {
+				defining_code matches {[ac0.1]}		-- Stage grouping (synthesised)
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.52"] = <
+				text = <"Stage I">
+				description = <"Stage I - as per AJCC Cancer staging 7th Edition.">
+			>
+			["at0.53"] = <
+				text = <"Stage II">
+				description = <"Stage II - as per AJCC Cancer staging 7th Edition.">
+			>
+			["at0.54"] = <
+				text = <"Stage III">
+				description = <"Stage III - as per AJCC Cancer staging 7th Edition.">
+			>
+			["at0.55"] = <
+				text = <"Stage IV">
+				description = <"Stage IV - as per AJCC Cancer staging 7th Edition.">
+			>
+			["id1.1"] = <
+				text = <"Tumour - TNM staging Lymphoma  7th Edition">
+				description = <"For the classification and grading of prostate cancer using the TNM classification 7th Edition.">
+			>
+			["ac0.1"] = <
+				text = <"Stage grouping (synthesised)">
+				description = <"The TNM Stage grouping. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.52", "at0.53", "at0.54", "at0.55">
+		>
+	>

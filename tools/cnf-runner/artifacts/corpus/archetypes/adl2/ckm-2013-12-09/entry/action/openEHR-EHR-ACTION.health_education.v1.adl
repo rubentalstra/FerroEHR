@@ -1,0 +1,279 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-ACTION.health_education.v1
+
+concept
+	[at0000]	-- Health Education
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2011-05-24">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about health education material provided to the subject.">
+			use = <"Use to record details about health education intervention, such as advice or physical material, provided to the subject, including links to the information itself. For example, a record of fact sheets provided to the patient about the risks of a vasectomy.">
+			keywords = <"information", "education">
+			misuse = <"Not to be used to record consent - for example consent to a vasectomy after provision of a fact sheet about vasectomy.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Rita Apelt, Department of Health,NT, Australia", "Stephen Chu, NEHTA, Australia (Editor)", "Tim Garden, NTG Department of Health, Australia", "Tanya Gardner, CAAC, Australia", "Sam Heard, Ocean Informatics, Australia", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Chunlan Ma, Ocean Informatics, Australia", "Ian McNicoll, Ocean Informatics UK, United Kingdom", "Jeremy Oats, NT Health, Australia", "Rosalie Schultz, Anyinginyi Health Aboriginal Corporation, Australia", "Jo Wright, NT Dept of Health, Australia">
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["references"] = <"Health Education (ACTION), draft archetype, NEHTA Clinical Knowledge Manager [Internet]. Sydney: National eHealth Transition Authority. Authored: 24May 2011. Available at: http://dcm.nehta.org.au/ckm/OKM.html#showarchetype_1013.1.1005_2 (accessed 26 Feb 2013).">
+		["MD5-CAM-1.0.1"] = <"41FABA666F88DB81EBB0D143689C1D98">
+	>
+
+definition
+	ACTION[at0000] matches {	-- Health Education
+		ism_transition matches {
+			ISM_TRANSITION[at0006] matches {	-- Education planned
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::526]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0006]}		-- Education planned
+					}
+				}
+			}
+			ISM_TRANSITION[at0018] matches {	-- Education Recommended
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::526]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0018]}		-- Education Recommended
+					}
+				}
+			}
+			ISM_TRANSITION[at0014] matches {	-- Education postponed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::527]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0014]}		-- Education postponed
+					}
+				}
+			}
+			ISM_TRANSITION[at0015] matches {	-- Education cancelled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::528]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0015]}		-- Education cancelled
+					}
+				}
+			}
+			ISM_TRANSITION[at0007] matches {	-- Education scheduled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::529]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0007]}		-- Education scheduled
+					}
+				}
+			}
+			ISM_TRANSITION[at0008] matches {	-- Education provided
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::245]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0008]}		-- Education provided
+					}
+				}
+			}
+			ISM_TRANSITION[at0017] matches {	-- Education suspended
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::530]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0017]}		-- Education suspended
+					}
+				}
+			}
+			ISM_TRANSITION[at0016] matches {	-- Education not completed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::531]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0016]}		-- Education not completed
+					}
+				}
+			}
+			ISM_TRANSITION[at0013] matches {	-- Education completed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::532]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0013]}		-- Education completed
+					}
+				}
+			}
+		}
+		description matches {
+			ITEM_TREE[at0001] matches {	-- Tree
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0002] matches {	-- Topic
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Method
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0012] occurrences matches {0..*} matches {	-- Identification
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0005] occurrences matches {0..*} matches {	-- Link
+						value matches {
+							DV_URI matches {*}
+						}
+					}
+					ELEMENT[at0020] occurrences matches {0..1} matches {	-- Session Number
+						value matches {
+							DV_COUNT matches {*}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..1} matches {	-- Reason
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0019] occurrences matches {0..1} matches {	-- Outcome
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Health Education">
+					description = <"Health education information provided or imparted to the subject.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Topic">
+					description = <"Topic of health education information provided.">
+				>
+				["at0003"] = <
+					text = <"Description">
+					description = <"Narrative description of the health education information provided.">
+				>
+				["at0004"] = <
+					text = <"Method">
+					description = <"Method by which the health education information was provided.">
+					comment = <"For example, verbal or written. This is not the same as participation. Material can be exchanged between an educator and a subject in various ways during a face-to-face consultation or via teleconference. In specific situations it may be important to document that writtern fact sheets have been physically handed to the subject, for example regarding the risks of vasectomy.">
+				>
+				["at0005"] = <
+					text = <"Link">
+					description = <"Internet link to the information provided.">
+				>
+				["at0006"] = <
+					text = <"Education planned">
+					description = <"Exchange of information planned.">
+				>
+				["at0007"] = <
+					text = <"Education scheduled">
+					description = <"Appointment for education scheduled.">
+				>
+				["at0008"] = <
+					text = <"Education provided">
+					description = <"Education session or material provided.">
+				>
+				["at0010"] = <
+					text = <"Reason">
+					description = <"Reason for the activity.">
+					comment = <"For example: reason why the information exchange is planned; or why the exchange was not successful.">
+				>
+				["at0012"] = <
+					text = <"Identification">
+					description = <"Title or identifier of health education information provided.">
+				>
+				["at0013"] = <
+					text = <"Education completed">
+					description = <"All planned activities for education have been successfully completed.">
+				>
+				["at0014"] = <
+					text = <"Education postponed">
+					description = <"Planned education postponed prior to commencement.">
+				>
+				["at0015"] = <
+					text = <"Education cancelled">
+					description = <"Planned education was cancelled prior to commencement.">
+				>
+				["at0016"] = <
+					text = <"Education not completed">
+					description = <"Education session was abandoned before complete.">
+				>
+				["at0017"] = <
+					text = <"Education suspended">
+					description = <"Planned education sessions were suspended after commencement.">
+				>
+				["at0018"] = <
+					text = <"Education Recommended">
+					description = <"Education session has been recommended.">
+				>
+				["at0019"] = <
+					text = <"Outcome">
+					description = <"Subjective, narrative assessment of outcome of the health education intervention.">
+					comment = <"For example: a narrative description about patient understanding.">
+				>
+				["at0020"] = <
+					text = <"Session Number">
+					description = <"Number of the education session in an multi-session course.">
+				>
+			>
+		>
+	>

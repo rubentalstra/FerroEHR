@@ -1,0 +1,145 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-CLUSTER.person_other_death_data.v1.0.0
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"20/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Coleta de dados demográficos sobre o óbito de um indivíduo">
+			use = <"Usado em serviços de demografia para coletar dados relativos ao local e número do certificado de óbito de um indivíduo">
+			keywords = <"serviço demográfico", "dados demográficos do óbito">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a person's demographic death data">
+			use = <"Used in demographic services to collect data about the place and death certificate number of a person's death">
+			keywords = <"demographic service", "death demographic data">
+			misuse = <"">
+		>
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Death additional data
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Country
+				value matches {
+					DV_CODED_TEXT[id6] matches {
+						defining_code matches {[ac1]}		-- Country codes
+					}
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- State/territory/province
+				value matches {
+					DV_CODED_TEXT[id7] matches {
+						defining_code matches {[ac2]}		-- State codes
+					}
+				}
+			}
+			ELEMENT[id4] occurrences matches {0..1} matches {	-- City/town/locality
+				value matches {
+					DV_CODED_TEXT[id8] matches {
+						defining_code matches {[ac3]}		-- City codes
+					}
+				}
+			}
+			ELEMENT[id5] occurrences matches {0..1} matches {	-- Death certificate number
+				value matches {
+					DV_TEXT[id9] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["pt-br"] = <
+			["id1"] = <
+				text = <"Dados adicionais do óbito">
+				description = <"Dados demográficos adicionais do óbito">
+			>
+			["id2"] = <
+				text = <"País">
+				description = <"O país onde a pessoa faleceu">
+			>
+			["id3"] = <
+				text = <"Estado/território/província">
+				description = <"O estado/território/província onde a pessoa faleceu">
+			>
+			["id4"] = <
+				text = <"Cidade/localidade">
+				description = <"A cidade/localidade onde a pessoa faleceu">
+			>
+			["id5"] = <
+				text = <"Número do certificado">
+				description = <"Informa o número do certificado de óbito">
+			>
+			["ac1"] = <
+				text = <"Códigos de países">
+				description = <"códigos válidos para paises">
+			>
+			["ac2"] = <
+				text = <"Códigos de estados">
+				description = <"códigos válidos para estados">
+			>
+			["ac3"] = <
+				text = <"Códigos de cidades">
+				description = <"códigos válidos para cidade">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Death additional data">
+				description = <"Death additional demographic data">
+			>
+			["id2"] = <
+				text = <"Country">
+				description = <"The country where a person  died">
+			>
+			["id3"] = <
+				text = <"State/territory/province">
+				description = <"The state/territory/province where a person died">
+			>
+			["id4"] = <
+				text = <"City/town/locality">
+				description = <"The city/town/locality where a person died">
+			>
+			["id5"] = <
+				text = <"Death certificate number">
+				description = <"The number of the death certificate">
+			>
+			["ac1"] = <
+				text = <"Country codes">
+				description = <"valid codes for countries">
+			>
+			["ac2"] = <
+				text = <"State codes">
+				description = <"valid codes for state/territory/province">
+			>
+			["ac3"] = <
+				text = <"City codes">
+				description = <"valid codes for city/town/locality">
+			>
+		>
+	>

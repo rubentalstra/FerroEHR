@@ -1,0 +1,1228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-12-01</original_author>
+    <original_author id="name">Bjørn Næss</original_author>
+    <original_author id="organisation">DIPS AS</original_author>
+    <original_author id="email">bna@dips.no</original_author>
+    <other_contributors>Dag Aarhus, Vestre Viken HF, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Are Edvardsen, SKDE, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Forvaltningssenter EPJ, Helse-Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Johan Gustav Bellika, Norwegian Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Vendel Kristensen, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ørjan Næss, Diakonhjemmet sykehus, Norway</other_contributors>
+    <other_contributors>Andre Smitt-Ingebretsen, Sørlandet sykehus HF, Norway</other_contributors>
+    <other_contributors>Natalia Strauch, Medizinische Hochschule Hannover, Germany</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Clinical Review Report: adalimumab (Humira) [Internet]. Ottawa (ON): Canadian Agency for Drugs and Technologies in Health; 2016 Apr. PMID: 30912894. Available from: https://pubmed.ncbi.nlm.nih.gov/30912894/.&#xD;
+&#xD;
+Lewis JD, Chuai S, Nessel L, Lichtenstein GR, Aberra FN, Ellenberg JH. Use of the noninvasive components of the Mayo score to assess clinical response in ulcerative colitis. Inflamm Bowel Dis. 2008 Dec;14(12):1660-6. doi: 10.1002/ibd.20520. PMID: 18623174; PMCID: PMC2597552.&#xD;
+&#xD;
+Schroeder KW, Tremaine WJ, Ilstrup DM. Coated oral 5-aminosalicylic acid therapy for mildly to moderately active ulcerative colitis. A randomized study. N Engl J Med. 1987 Dec 24;317(26):1625-9. doi: 10.1056/NEJM198712243172603. PMID: 3317057.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">2056F609B2EE6F105EBCA9742263296B</other_details>
+    <other_details id="build_uid">a3ce48e3-f41c-46d9-bfbc-aa61350b8755</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung einer Beurteilung des Schweregrads der Colitis ulcerosa.</purpose>
+      <keywords>IBD</keywords>
+      <keywords>Inflammatory Bowel Disease</keywords>
+      <keywords>Entzündliche Darmerkrankung</keywords>
+      <keywords>Ulcerative Colitis</keywords>
+      <keywords>Colitis Ulcerosa</keywords>
+      <keywords>Disease Activity Index</keywords>
+      <keywords>DAI</keywords>
+      <keywords>Krankheitsaktivitätsindex</keywords>
+      <use>Zur Darstellung einer Beurteilung des Schweregrads der Colitis ulcerosa.&#xD;
+&#xD;
+Dieser Archetyp ermöglicht die Darstellung eines oder mehreren der folgenden Score: den vollständigen Mayo-Score (12 Punkte); den partial Mayo-Score (9 Punkte); den vereinfachten Mayo-Score (Simplified Mayo Score) (6 Punkte) und den endoskopischen Subscore (3 Punkte aus dem Datenelement "Endoskopische Befunde").</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en evaluering av alvorlighetsgrad av ulcerøs colitt.</purpose>
+      <keywords>IBD, Inflammatorisk tarm-sykdom, ulcerøs kolitt, colitis ulcerosa, Disease Activity Index, DAI</keywords>
+      <use>Bruk for å registrere en evaluering av alvorlighetsgrad av ulcerøs colitt.&#xD;
+&#xD;
+Denne arketypen tillater å registrere en eller flere av: Full Mayo skår (12 poeng), Partial Mayo skår (9 poeng), Forenklet Mayo skår (6 poeng) og Mayo endoskopisk subskår (3 poeng, fra elementet "Funn ved endoskopi").</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record an assessment of the severity of ulcerative colitis.</purpose>
+      <keywords>IBD</keywords>
+      <keywords>Inflammatory bowel disease</keywords>
+      <keywords>Ulcerative colitis</keywords>
+      <keywords>Colitis ulcerosa</keywords>
+      <keywords>Disease Activity Index</keywords>
+      <keywords>DAI</keywords>
+      <use>Use to record an assessment of the severity of ulcerative colitis.&#xD;
+&#xD;
+This archetype allows the recording of one or more of: the full Mayo score (12 points); the partial Mayo score (9 points); the Simplified Mayo score (6 points); and the Endoscopic subscore (3 points, from 'Endoscopic findings' data element).</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjørn Arntzen</author>
+    <author id="organisation">Oslo University Hospital</author>
+    <author id="email">varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>fe803dde-b9ff-4701-a0ed-81e0a7002ad6</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.mayo_score.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0009</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0010</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0012</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0013</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0014</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0015</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0016</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0019</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0022</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0023</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0024</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>0</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0025</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0026</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0027</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0028</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0029</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>12</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0033</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>9</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>0</lower>
+                                <upper>6</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0030</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0032</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Mayo score</items>
+        <items id="description">An assessment score used to estimate the severity of ulcerative colitis.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Stool frequency</items>
+        <items id="description">The number stools per day, in excess of normal for the individual.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Normal number of stools</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">1-2 stools more than normal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">3-4 stools more than normal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">5 or more stools more than normal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">Rectal bleeding</items>
+        <items id="description">The most severe rectal bleeding of the day.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">No blood seen</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0016">
+        <items id="text">Streaks of blood with stool less than half the time</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0017">
+        <items id="text">Obvious blood with stool most of the time</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0018">
+        <items id="text">Blood alone passed</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0019">
+        <items id="text">Endoscopy findings</items>
+        <items id="description">Assessment of the mucosal appearance during endoscopy.</items>
+        <items id="comment">Also known as "Endoscopic subscore".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Normal or inactive disease</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0021">
+        <items id="text">Mild disease</items>
+        <items id="description">Characterised by erythema, decreased vascular pattern, mild friability.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Moderate disease</items>
+        <items id="description">Characterised by marked erythema, absent vascular pattern, friability, erosions.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Severe disease</items>
+        <items id="description">Characterised by spontaneous bleeding, ulceration.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Global assessment</items>
+        <items id="description">Overall assessment of ulcerative colitis severity, as made by a physician.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Normal or inactive disease</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0026">
+        <items id="text">Mild disease</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0027">
+        <items id="text">Moderate disease</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0028">
+        <items id="text">Severe disease</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0029">
+        <items id="text">Total Mayo score</items>
+        <items id="description">The total sum of all 4 component parameters.</items>
+        <items id="comment">Scores range from zero to 12, with higher scores correlating with more severe disease.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Partial Mayo score</items>
+        <items id="description">The total sum of the 3 non-invasive component parameters only.</items>
+        <items id="comment">The Partial Mayo score specifically excludes 'Endoscopy findings'.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Simplified Mayo score</items>
+        <items id="description">The total sum of the 2 symptom-related component parameters.</items>
+        <items id="comment">The Simplified Mayo score includes 'Stool frequency' and 'Rectal bleeding' only, and excludes 'Endoscopy findings' and 'Global assessment'.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Mayo skår</items>
+        <items id="description">Skåringssystem for å evaluere alvorlighetsgrad av ulcerøs colitt.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tidspunkt</items>
+        <items id="description">Spesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Avføringsfrekvens</items>
+        <items id="description">Antall avføringer per dag som overstiger det som er normalt for individet.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Normalt antall avføringer</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">1-2 flere avføringer enn normalt</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">3-4 flere avføringer enn normalt</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">5 eller mer flere avføringer enn normalt</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">Rektale blødninger</items>
+        <items id="description">Dagens mest alvorlige blødning.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Ikke synlig blod</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0016">
+        <items id="text">Synlig blod i avføringen mindre enn halvparten av tiden</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0017">
+        <items id="text">Synlig blod i avføringen mer enn halvparten av tiden</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0018">
+        <items id="text">Tømming består utelukkende av blod</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0019">
+        <items id="text">Funn ved endoskopi</items>
+        <items id="description">Slimhinnevurdering ved koloskopi.</items>
+        <items id="comment">Også kjent som "Mayo endoskopisk subscore"</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Normal eller inaktiv sykdom</items>
+        <items id="description">Normal eller inaktiv sykdom</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Mild sykdom</items>
+        <items id="description">Mild sykdom (erytem, redusert karmønster, mild lederbarhet)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Moderat sykdom</items>
+        <items id="description">Moderat sykdom (markert erytem, utviskete karmønster, lederbarhet, erosjoner)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Alvorlig sykdom</items>
+        <items id="description">Kjennetegnet ved spontan blødning, ulcerasjoner.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Overordnet vurdering</items>
+        <items id="description">Den overordnede vurderingen av alvorlighetsgrad av ulcerøs colitt, gjort av lege.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Normal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0026">
+        <items id="text">Mild</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0027">
+        <items id="text">Moderat</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0028">
+        <items id="text">Alvorlig</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0029">
+        <items id="text">Total Mayo skår</items>
+        <items id="description">Summen av skår av hver enkelt kategori.</items>
+        <items id="comment">Skåren går fra 0 til 12, der høyere skår korrelerer med mer alvorlig sykdom.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel: lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Partial Mayo skår</items>
+        <items id="description">Summen av verdiene i alle de ikke-invasive komponentene.</items>
+        <items id="comment">Partial Mayo skår eksluderer eksplisitt "Funn ved endoskopi".</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Forenklet Mayo skår</items>
+        <items id="description">Summen av verdiene i de to symptomrelaterte komponentene.</items>
+        <items id="comment">"Forenklet Mayo skår" inkluderer "Avføringsfrekvens" og "Rektale blødninger". "Funn ved endoskopi" og "Overordnet vurdering" er ekskludert.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Mayo Score</items>
+        <items id="description">Ein Bewertungsscore der zur Abschätzung des Schweregrads der Colitis Ulcerosa verwendet wird.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Standardwert, ein undefinierter/s Zeitpunkt oder Intervallereignis, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Stuhlfrequenz</items>
+        <items id="description">Anzahl der Stühle pro Tag, die für einen Individuum über dem Normalwert liegt.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Normale Anzahl der Stühle</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">1-2 Stühle mehr als normal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">3-4 Stühle mehr als normal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">5 oder mehr Stühle mehr als normal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">Rektaler Blutabgang</items>
+        <items id="description">Die schwerste Rektalblutung des Tages.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Kein Blut sichtbar</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0016">
+        <items id="text">Blutstreifen bei weniger als bei der Hälfte der Stühle</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0017">
+        <items id="text">Deutliche Blutbeimengung im Stuhl die meiste Zeit</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0018">
+        <items id="text">Blut ohne Stuhl</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0019">
+        <items id="text">Endoskopische Befunde</items>
+        <items id="description">Beurteilung der Beschaffenheit der Mukosa während der Endoskopie.</items>
+        <items id="comment">Auch als "Endoscopic Subscore" bekannt.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Normaler Befund oder inaktive Erkrankung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0021">
+        <items id="text">Milde Colitis</items>
+        <items id="description">Charakterisiert durch Erythem, vermindertes Gefäßmuster, leicht spröde Schleimhaut.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Moderate Colitis</items>
+        <items id="description">Charakterisiert durch deutliches Erythem, fehlendes Gefässmuster, spröde Schleimhaut, Erosionen.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Schwere Colitis</items>
+        <items id="description">Charakterisiert durch spontane Blutungen und Ulzerationen.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Globale Beurteilung</items>
+        <items id="description">Gesamtbeurteilung des Schweregrads der Colitis Ulcerosa durch einen Arzt.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Normal oder inaktive Erkrankung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0026">
+        <items id="text">Milde Erkrankung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0027">
+        <items id="text">Moderate Erkrankung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0028">
+        <items id="text">Schwere Erkrankung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0029">
+        <items id="text">Total Mayo Score</items>
+        <items id="description">Die Gesamtsumme aller vier Komponentenparameter.</items>
+        <items id="comment">Die Werte reichen von Null bis 12, wobei höhere Werte mit einer schwereren Erkrankung korrelieren.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Partial Mayo Score</items>
+        <items id="description">Die Gesamtsumme der drei nicht-invasiven Komponentenparameter.</items>
+        <items id="comment">Der Partial Mayo Score schließt ausdrücklich "Endoskopische Befunde" aus.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Simplified Mayo Score</items>
+        <items id="description">Die Gesamtsumme der zwei symptombezogenen Komponentenparameter.</items>
+        <items id="comment">Der Simplified Mayo Score umfasst nur "Stuhlfrequenz" und "Rektalen Blutabgang" und schließt "Endoskopische Befunde" mit "Globaler Beurteilung" aus.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

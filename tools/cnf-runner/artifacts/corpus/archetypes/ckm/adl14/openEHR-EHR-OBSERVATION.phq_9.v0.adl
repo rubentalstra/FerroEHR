@@ -1,0 +1,297 @@
+﻿archetype (adl_version=1.4; uid=4b04a62d-4bc1-4b14-8dfa-f6fb55c155ba)
+	openEHR-EHR-OBSERVATION.phq_9.v0
+
+concept
+	[at0000]	-- Patient health questionnaire-9 (PHQ-9)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2013-06-14">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results of the Patient Health Questionnaire-9 (PHQ-9) and its subset assessment PHQ-2.">
+			use = <"Use to record the results of the Patient Health Questionnaire-9 (PHQ-9) and its subset assessment PHQ-2.
+
+The archetype has been designed such that the actual PHQ questions are recorded as the description for each questionnaire data element. The data element name is a pragmatic description that is indicative of the question intent.
+
+The original PHQ‐9 tool was developed by Drs. Robert L. Spitzer, Janet B.W. Williams, Kurt Kroenke and colleagues, with an educational grant from Pfizer Inc. From the PHQ Screeners website (http://www.phqscreeners.com/overview.aspx): \"All PHQ, GAD-7 screeners and translations are downloadable from this website and no permission is required to reproduce, translate, display or distribute them.\" And from the PHQ webpage (http://www.phqscreeners.com/pdfs/01_PHQ/English.pdf): \"No permission required to reproduce, translate, display or distribute\". 
+
+The Australian indigenous adaptation for the PHQ-9 subset assessing mood was developed by Dr. Alex Brown, Baker IDI Heart and Diabetes Institute, Alice Springs, 2009. The adapted questions are expressed within the Comments area for each questionnaire data element. Used with permission.">
+			keywords = <"screening", "depression", "mood", "assessment", "mental health">
+			misuse = <"">
+			copyright = <"© Northern Territory Department of Health (Australia), openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Derived from: Patient Health Questionnaire (PHQ), Draft archetype [Internet]. Australian Digital Health Agency (NEHTA), ADHA Clinical Knowledge Manager. Authored: 2013 Jun 14. Available at: http://dcm.nehta.org.au/ckm#showArchetype_1013.1.1321_1 (discontinued).
+
+Kroenke K, Spitzer RL, Williams JB. The Patient Health Questionnaire-2: validity of a two-item depression screener. Med Care. 2003 Nov; 41(11):1284-92. PubMed PMID: 14583691.">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"5591953BB82BBEFBD0AB521E8EF5DB71">
+		["build_uid"] = <"d6653acb-2695-4c08-8840-30198bbddeff">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Patient health questionnaire-9 (PHQ-9)
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..1} matches {	-- Point in Time
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Interest/pleasure
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {	-- Feeling down
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0012] occurrences matches {0..1} matches {	-- Sleep issues
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0013] occurrences matches {0..1} matches {	-- Tired/little energy
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0014] occurrences matches {0..1} matches {	-- Appetite
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0015] occurrences matches {0..1} matches {	-- Feeling bad about yourself
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {	-- Trouble concentrating
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {	-- Slow/fidgety
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0018] occurrences matches {0..1} matches {	-- Death/self-harm
+										value matches {
+											0|[local::at0005], 	-- Not at all
+											1|[local::at0006], 	-- Several days
+											2|[local::at0007], 	-- More than half the days
+											3|[local::at0008]  	-- Nearly every day
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {	-- PHQ-2 score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..6|}
+											}
+										}
+									}
+									ELEMENT[at0011] occurrences matches {0..1} matches {	-- PHQ-9 score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..27|}
+											}
+										}
+									}
+									ELEMENT[at0019] occurrences matches {0..1} matches {	-- Difficulty in life activities
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0020, 	-- No difficulty at all
+													at0021, 	-- Somewhat difficult
+													at0022, 	-- Very difficult
+													at0023]	-- Extremely difficult
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0024] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0025] occurrences matches {0..*} matches {	-- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Patient health questionnaire-9 (PHQ-9)">
+					description = <"Screening questionnaire for mental health that can be used by health professionals or self-reported by individuals.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Point in Time">
+					description = <"A specific date and/or time which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Interest/pleasure">
+					description = <"Over the last two weeks, how often have you been bothered by little interest or pleasure in doing things?">
+					comment = <"Adapted for Australian indigenous use: \"Have you been feeling slack, not wanted to do anything?\"">
+				>
+				["at0005"] = <
+					text = <"Not at all">
+					description = <"The topic of the question has not affected the subject at all during the last two weeks.">
+				>
+				["at0006"] = <
+					text = <"Several days">
+					description = <"The topic of the question has affected the subject on several days during the last two weeks.">
+				>
+				["at0007"] = <
+					text = <"More than half the days">
+					description = <"The topic of the question has affected the subject more than half the days during the last two weeks.">
+				>
+				["at0008"] = <
+					text = <"Nearly every day">
+					description = <"The topic of the question has affected the subject nearly every day during the last two weeks.">
+				>
+				["at0009"] = <
+					text = <"Feeling down">
+					description = <"Over the last two weeks, how often have you been bothered by feeling down, depressed, or hopeless?">
+					comment = <"Adapted for Australian indigenous use: \"Have you been feeling unhappy, depressed, really no good, that your spirit was sad?\"">
+				>
+				["at0010"] = <
+					text = <"PHQ-2 score">
+					description = <"Total score for the first two questions on 'Interest/Pleasure' and 'Feeling Down'.">
+				>
+				["at0011"] = <
+					text = <"PHQ-9 score">
+					description = <"Total Score for all nine questions.">
+				>
+				["at0012"] = <
+					text = <"Sleep issues">
+					description = <"Over the last two weeks, how often have you been bothered by trouble falling or staying asleep, or sleeping too much?">
+					comment = <"Adapted for Australian indigenous use: \"Have you found it hard to sleep at night, or had other problems with sleeping?\"">
+				>
+				["at0013"] = <
+					text = <"Tired/little energy">
+					description = <"Over the last two weeks, how often have you been bothered by feeling tired or having little energy?">
+					comment = <"Adapted for Australian indigenous use: \"Have you felt tired or weak, that you have no energy?\"">
+				>
+				["at0014"] = <
+					text = <"Appetite">
+					description = <"Over the last two weeks, how often have you been bothered by poor appetite or overeating?">
+					comment = <"Adapted for Australian indigenous use: \"Have you not felt like eating much even when there was food around, or have you been eating too much food?\"">
+				>
+				["at0015"] = <
+					text = <"Feeling bad about yourself">
+					description = <"Over the last two weeks, how often have you been bothered by feeling bad about yourself — or that you are a failure or have let yourself or your family down?">
+					comment = <"Adapted for Australian indigenous use: \"Have you been feeling bad about yourself, that you are useless, no good, that you have let your family down?">
+				>
+				["at0016"] = <
+					text = <"Trouble concentrating">
+					description = <"Over the last two weeks, how often have you been bothered by trouble concentrating on things, such as reading the newspaper or watching television?">
+					comment = <"Adapted for Australian indigenous use: \"Have you felt like you can't think straight or clearly, its hard to learn new things or concentrate?\"">
+				>
+				["at0017"] = <
+					text = <"Slow/fidgety">
+					description = <"Over the last two weeks, how often have you been bothered by moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual?">
+					comment = <"Adapted for Australian indigenous use: \"Have you been talking slowly or moving around really slow, or have you felt that you can't sit still; you keep moving around too much?\"">
+				>
+				["at0018"] = <
+					text = <"Death/self-harm">
+					description = <"Over the last two weeks, how often have you been bothered 
+by thoughts that you would be better off dead or of hurting yourself in some way?">
+					comment = <"Adapted for Australian indigenous use: \"Have you beenthinking about hurting yourself or killing yourself?">
+				>
+				["at0019"] = <
+					text = <"Difficulty in life activities">
+					description = <"If you checked off any problems on this questionnaire, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?">
+				>
+				["at0020"] = <
+					text = <"No difficulty at all">
+					description = <"The individual found no difficulty working, taking care of things at home or getting along with other people.">
+				>
+				["at0021"] = <
+					text = <"Somewhat difficult">
+					description = <"The individual found it somewhat difficult to work, take care of things at home or get along with other people.">
+				>
+				["at0022"] = <
+					text = <"Very difficult">
+					description = <"The individual found it very difficult to work, take care of things at home or get along with other people.">
+				>
+				["at0023"] = <
+					text = <"Extremely difficult">
+					description = <"The individual found it extremely difficult to work, take care of things at home or get along with other people.">
+				>
+				["at0024"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0025"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+	>

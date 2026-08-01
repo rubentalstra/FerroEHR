@@ -1,0 +1,262 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.exam-abdomen.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.exam.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"11/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A cluster for recording findings on physical examination of the abdomen.">
+			use = <"">
+			keywords = <"examination", "physical">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"75E4E6DE863A430A1F1C7ABF3C8DDB9A">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Examination of the abdomen
+		/items[id9]/items matches {
+			CLUSTER[id0.2] occurrences matches {0..1} matches {	-- Abdominal wall
+				items matches {
+					ELEMENT[id0.3] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id0.31] 
+						}
+					}
+					allow_archetype CLUSTER[id0.24] occurrences matches {0..1} matches {	-- Abdominal wall detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+			CLUSTER[id0.9] occurrences matches {0..1} matches {	-- Abdominal region
+				items matches {
+					ELEMENT[id0.10] occurrences matches {0..1} matches {	-- Region
+						value matches {
+							DV_CODED_TEXT[id0.32] matches {
+								defining_code matches {[ac0.1]}		-- Region (synthesised)
+							}
+						}
+					}
+					use_node ELEMENT[id0.33] /items[id9]/items[id0.2]/items[id0.3]	-- /items[id9]/items[Abdominal wall]/items[Description]
+					allow_archetype CLUSTER[id0.25] occurrences matches {0..1} matches {	-- Abdominal region detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.auscultation(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+			CLUSTER[id0.5] occurrences matches {0..1} matches {	-- Abdominal contents
+				items matches {
+					use_node ELEMENT[id0.34] occurrences matches {0..1} /items[id9]/items[id0.2]/items[id0.3]	-- /items[id9]/items[Abdominal wall]/items[Description]
+					CLUSTER[id0.13] occurrences matches {0..1} matches {	-- Organs
+						items matches {
+							CLUSTER[id0.14] occurrences matches {0..1} matches {	-- Liver
+								items matches {
+									use_node ELEMENT[id0.35] /items[id9]/items[id0.2]/items[id0.3]	-- /items[id9]/items[Abdominal wall]/items[Description]
+									allow_archetype CLUSTER[id0.27] occurrences matches {0..1} matches {	-- Liver detail
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+								}
+							}
+							CLUSTER[id0.7] occurrences matches {0..1} matches {	-- Spleen
+								items matches {
+									use_node ELEMENT[id0.36] /items[id9]/items[id0.2]/items[id0.3]	-- /items[id9]/items[Abdominal wall]/items[Description]
+									allow_archetype CLUSTER[id0.28] occurrences matches {0..1} matches {	-- Spleen detail
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+								}
+							}
+							CLUSTER[id0.8] occurrences matches {0..1} matches {	-- Kidney
+								items matches {
+									use_node ELEMENT[id0.37] /items[id9]/items[id0.2]/items[id0.3]	-- /items[id9]/items[Abdominal wall]/items[Description]
+									allow_archetype CLUSTER[id0.29] occurrences matches {0..1} matches {	-- Kidney detail
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+								}
+							}
+							CLUSTER[id0.15] occurrences matches {0..1} matches {	-- Bowel
+								items matches {
+									use_node ELEMENT[id0.38] /items[id9]/items[id0.2]/items[id0.3]	-- /items[id9]/items[Abdominal wall]/items[Description]
+									allow_archetype CLUSTER[id0.30] occurrences matches {0..1} matches {	-- Bowel detail
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.auscultation(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[id0.26] matches {	-- Abdominal contents detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.auscultation(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+			allow_archetype CLUSTER[id10] occurrences matches {0..1} matches {
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam-generic(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.auscultation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.inspection(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.percussion(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.10"] = <
+				text = <"Region">
+				description = <"The abdominal region being described.">
+			>
+			["at0.11"] = <
+				text = <"Left upper quadrant">
+				description = <"*">
+			>
+			["at0.12"] = <
+				text = <"Epigastrium">
+				description = <"*">
+			>
+			["id0.13"] = <
+				text = <"Organs">
+				description = <"*">
+			>
+			["id0.14"] = <
+				text = <"Liver">
+				description = <"Findings related to liver.">
+			>
+			["id0.15"] = <
+				text = <"Bowel">
+				description = <"Findings related to bowel.">
+			>
+			["at0.16"] = <
+				text = <"Left upper quadrant">
+				description = <"*">
+			>
+			["at0.17"] = <
+				text = <"Right loin">
+				description = <"*">
+			>
+			["at0.18"] = <
+				text = <"Central/peri-umbilical">
+				description = <"*">
+			>
+			["at0.19"] = <
+				text = <"Left loin">
+				description = <"*">
+			>
+			["id0.2"] = <
+				text = <"Abdominal wall">
+				description = <"Findings related to the abdominal wall.">
+			>
+			["at0.20"] = <
+				text = <"Right iliac fossa">
+				description = <"*">
+			>
+			["at0.21"] = <
+				text = <"Left iliac fossa">
+				description = <"*">
+			>
+			["id0.24"] = <
+				text = <"Abdominal wall detail">
+				description = <"Details of abdominal wall findings.">
+			>
+			["id0.25"] = <
+				text = <"Abdominal region detail">
+				description = <"Detailed findings of a specific abdominal region.">
+			>
+			["id0.26"] = <
+				text = <"Abdominal contents detail">
+				description = <"Detailed findings of abdominal contents.">
+			>
+			["id0.27"] = <
+				text = <"Liver detail">
+				description = <"Detailed liver findings.">
+			>
+			["id0.28"] = <
+				text = <"Spleen detail">
+				description = <"Detailed spleen findings.">
+			>
+			["id0.29"] = <
+				text = <"Kidney detail">
+				description = <"Detailed kidney findings.">
+			>
+			["id0.3"] = <
+				text = <"Description">
+				description = <"Clinical description of findings related to the abdominal wall.">
+			>
+			["id0.30"] = <
+				text = <"Bowel detail">
+				description = <"Detailed bowel findings.">
+			>
+			["id0.5"] = <
+				text = <"Abdominal contents">
+				description = <"Findings related to abdominal contents.">
+			>
+			["id0.7"] = <
+				text = <"Spleen">
+				description = <"Findings related to spleen.">
+			>
+			["id0.8"] = <
+				text = <"Kidney">
+				description = <"Findings related to kidney.">
+			>
+			["id0.9"] = <
+				text = <"Abdominal region">
+				description = <"Findings related to a specific abdominal region.">
+			>
+			["id1.1"] = <
+				text = <"Examination of the abdomen">
+				description = <"For recording findings on physical examination of the abdomen.">
+			>
+			["id0.33"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.34"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.35"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.36"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.37"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id0.38"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac0.1"] = <
+				text = <"Region (synthesised)">
+				description = <"The abdominal region being described. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.11", "at0.12", "at0.16", "at0.17", "at0.18", "at0.19", "at0.20", "at0.21">
+		>
+	>

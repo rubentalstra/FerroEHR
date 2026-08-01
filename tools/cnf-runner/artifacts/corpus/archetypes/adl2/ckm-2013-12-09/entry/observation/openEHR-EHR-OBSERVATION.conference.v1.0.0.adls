@@ -1,0 +1,273 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.conference.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2013-01-25">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the text conversation, or video- or audio-conference recording, between two or more clinicians, captured as part of the record of health care.">
+			use = <"Use to document evidence of interactions between healthcare providers that support the record of health care. For example, use to record phone or online chat conversations between remote healthcare providers; or audio- and video-conference recordings that record aspects of telemedicine consultations or case conferences.">
+			keywords = <"chat", "videoconference", "audioconference", "conversation", "discussion">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", ...>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"FCAFE7909562C91A72B5900CF0682B59">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Conference
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					POINT_EVENT[id3] matches {	-- Time
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Text Record
+										value matches {
+											DV_TEXT[id9] 
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Audio or Video Record
+										value matches {
+											DV_MULTIMEDIA[id10] matches {
+												media_type matches {[ac1]}		-- Audio or Video Record (synthesised)
+											}
+										}
+									}
+									ELEMENT[id8] occurrences matches {0..1} matches {	-- Author
+										value matches {
+											DV_TEXT[id11] 
+										}
+									}
+								}
+							}
+						}
+					}
+					INTERVAL_EVENT[id7] matches {	-- Recording
+						math_function matches {
+							DV_CODED_TEXT[id12] matches {
+								defining_code matches {[at1]}
+							}
+						}
+						data matches {
+							use_node ITEM_TREE[id13] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[Time]/data[id4]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Conference">
+				description = <"Text conversation, or video- or audio-conference recording, between two or more clinicians, captured as part of the record of health care.">
+			>
+			["id3"] = <
+				text = <"Time">
+				description = <"Time the chat or recording was added.">
+			>
+			["id5"] = <
+				text = <"Text Record">
+				description = <"The text conversation between two or more healthcare providers.">
+			>
+			["id6"] = <
+				text = <"Audio or Video Record">
+				description = <"The audio or video conversation between two or more healthcare providers.">
+			>
+			["id7"] = <
+				text = <"Recording">
+				description = <"The time interval of the recording.">
+			>
+			["id8"] = <
+				text = <"Author">
+				description = <"The author of the chat or instigator of the recording.">
+			>
+			["at1"] = <
+				text = <"actual">
+				description = <"actual">
+			>
+			["at2"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at3"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at4"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at5"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at6"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at7"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at8"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at9"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at10"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at11"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at12"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at13"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at14"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at15"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at16"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at17"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at18"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at19"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at20"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at21"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at22"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at23"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at24"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at25"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at26"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at27"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at28"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at29"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at30"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at31"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Audio or Video Record (synthesised)">
+				description = <"The audio or video conversation between two or more healthcare providers. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/640>
+			["at2"] = <http://openehr.org/id/417>
+			["at3"] = <http://openehr.org/id/418>
+			["at4"] = <http://openehr.org/id/419>
+			["at5"] = <http://openehr.org/id/423>
+			["at6"] = <http://openehr.org/id/401>
+			["at7"] = <http://openehr.org/id/402>
+			["at8"] = <http://openehr.org/id/404>
+			["at9"] = <http://openehr.org/id/405>
+			["at10"] = <http://openehr.org/id/406>
+			["at11"] = <http://openehr.org/id/407>
+			["at12"] = <http://openehr.org/id/414>
+			["at13"] = <http://openehr.org/id/387>
+			["at14"] = <http://openehr.org/id/388>
+			["at15"] = <http://openehr.org/id/389>
+			["at16"] = <http://openehr.org/id/390>
+			["at17"] = <http://openehr.org/id/391>
+			["at18"] = <http://openehr.org/id/392>
+			["at19"] = <http://openehr.org/id/393>
+			["at20"] = <http://openehr.org/id/394>
+			["at21"] = <http://openehr.org/id/395>
+			["at22"] = <http://openehr.org/id/396>
+			["at23"] = <http://openehr.org/id/397>
+			["at24"] = <http://openehr.org/id/398>
+			["at25"] = <http://openehr.org/id/399>
+			["at26"] = <http://openehr.org/id/400>
+			["at27"] = <http://openehr.org/id/409>
+			["at28"] = <http://openehr.org/id/410>
+			["at29"] = <http://openehr.org/id/411>
+			["at30"] = <http://openehr.org/id/412>
+			["at31"] = <http://openehr.org/id/413>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at2", "at3", "at4", "at5", "at6", "at7", "at8", "at9", "at10", "at11", "at12", "at13", "at14", "at15", "at16", "at17", "at18", "at19", "at20", "at21", "at22", "at23", "at24", "at25", "at26", "at27", "at28", "at29", "at30", "at31">
+		>
+	>

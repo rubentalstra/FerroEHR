@@ -1,0 +1,109 @@
+﻿archetype (adl_version=1.4; uid=f1f2866b-77e8-42ce-a0fb-a2dcdbf1554e)
+	openEHR-DEMOGRAPHIC-CLUSTER.high_level_address_other_data_br.v0
+
+concept
+	[at0000]	-- Outros componentes de alto nível do endereço
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"2009-05-23">
+	>
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação dos componentes de alto nível do endereço específicos do Brasil.">
+			use = <"Usado em serviços demográficos para registrar os componentes de alto nível do endereço específicos do Brasil.">
+			keywords = <"serviço demográfico", "componentes de alto nível do endereço">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of data about high level address components in Brazil.">
+			use = <"Used in demographic services to register data about high level address components in Brasil.">
+			keywords = <"demographic service", "high level address components">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"3709DE0BBF0DD6595A4BFB5D45E1CCCD">
+		["build_uid"] = <"43be57f1-b0a3-41cc-b4aa-14e2225da2b0">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] occurrences matches {1..1} matches {  --  high level address components used in Brazil
+		items cardinality matches {1..*; ordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- district
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- census area
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+
+
+ontology
+	term_definitions = <
+		["pt-br"] = <
+			items = <
+				["at0000"] = <
+					text = <"Outros componentes de alto nível do endereço">
+					description = <"Componentes de alto nível do endereço utilizados no Brasil.">
+				>
+				["at0001"] = <
+					text = <"Bairro">
+					description = <"Bairro do Logradouro.">
+				>
+				["at0002"] = <
+					text = <"Setor censitário">
+					description = <"Código do setor censitário.">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Other high level address components">
+					description = <"High level address components used in Brazil.">
+				>
+				["at0001"] = <
+					text = <"District">
+					description = <"District.">
+				>
+				["at0002"] = <
+					text = <"Census area">
+					description = <"Area defined by the Brazilian Geographic and Statistics Bureau according to the spacial distribution of the population.">
+				>
+			>
+		>
+	>

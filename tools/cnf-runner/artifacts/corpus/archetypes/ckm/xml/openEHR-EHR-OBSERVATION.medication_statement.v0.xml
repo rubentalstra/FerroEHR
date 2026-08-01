@@ -1,0 +1,1170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-08-26</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">MedicationStatement, HL7 FHIR Resource [Internet]. Health Level Seven International; [accessed 2024 Jan 30]. Available from: https://hl7.org/fhir/R5/medicationstatement.html.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">AA0BE8C0835250EE579F834B51A6633C</other_details>
+    <other_details id="build_uid">c4e8c89d-fafe-4384-819a-0934b3d4abcb</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Aufzeichnung einer Aussage über die aktuelle Einnahme eines einzelnen Medikaments durch eine Person zu einem bestimmten Zeitpunkt.</purpose>
+      <keywords>Aussage</keywords>
+      <keywords>Momentaufnahme</keywords>
+      <use>Zur Aufzeichnung einer Aussage über die aktuelle Einnahme eines einzelnen Medikaments durch eine Person zu einem bestimmten Zeitpunkt.&#xD;
+&#xD;
+In diesem Zusammenhang beschreibt der Begriff "Medikamente" eine breite Palette von Gegenständen, die verschrieben oder "rezeptfrei" erworben werden können. Dazu gehören:&#xD;
+- einen einzelnen pharmazeutischen Artikel oder Wirkstoff; &#xD;
+- eine Magistralrezeptur; &#xD;
+- ein Kombinationspräparat; &#xD;
+- ein Nahrungsergänzungsmittel; oder &#xD;
+- ein anderer therapeutischer Artikel, der zur Behandlung oder Vorbeugung von Krankheiten verwendet wird, wie z. B. ein Verband oder eine Wundauflage, die ein antimikrobielles Mittel enthält.&#xD;
+&#xD;
+Es wird davon ausgegangen, dass dieser Archetyp üblicherweise in einem Austauschkontext verwendet wird, z. B. als Teil eines Gesundheitsberichts oder eines Berichts über den Übergang der Versorgung, wobei eine oder mehrere Instanzen dieser Datengruppe verwendet werden können, um eine "Aktuelle Medikamentenliste" darzustellen. Zum Beispiel: &#xD;
+- bei der Aufnahme ins Krankenhaus;&#xD;
+- als Teil einer fachärztlichen Überweisung; oder&#xD;
+- als Grundlage für eine Überprüfung der Medikation.&#xD;
+&#xD;
+Die Informationsquelle kann eine Person, ihr Betreuer oder ein Kliniker sein.&#xD;
+&#xD;
+Dieser Archetyp wurde so konzipiert, dass er möglichst mit INSTRUCTION.medictation oder ACTION.medication_management übereinstimmt. Er wurde jedoch so eingeschränkt, dass er nur wesentliche Informationen enthält, die für den Austausch oder die Zusammenfassung erforderlich sind, sowie zusätzliche ereignisbasierte Datenelemente wie das Datenelement "Zuletzt verabreicht", um einen nahtlosen Übergang der Versorgung zu unterstützen. &#xD;
+&#xD;
+Für jedes Medikament oder jede Kombinationspackung ist eine Instanz dieses Archetyps zu erfassen. Wenn dasselbe Medikament in verschiedenen Dosierungen oder mit unterschiedlicher Häufigkeit verwendet wird, sollte jede einzelne Dosierungs- und Häufigkeitsänderung als separate Instanz erfasst werden.&#xD;
+&#xD;
+Dieser Archetyp sollte nur zum Zeitpunkt der Erstellung als aktuell betrachtet werden. &#xD;
+&#xD;
+Dieser Archetyp wurde so konzipiert, dass er mit der FHIR-Ressource MedicationStatement übereinstimmt, ist aber absichtlich auf die "aktuelle Verwendung" und nicht auf die vergangene oder zukünftige Verwendung beschränkt.&#xD;
+</use>
+      <misuse>Nicht für die Aufzeichnung von zusammenfassenden oder dauerhaften Informationen über die frühere Einnahme eines Medikaments zu verwenden - verwenden Sie zu diesem Zweck EVALUATION.medication_summary.&#xD;
+&#xD;
+Nicht zur Aufzeichnung von Details über eine Medikamentenverfügung verwenden - verwenden Sie zu diesem Zweck INSTRUCTION.medication_order.&#xD;
+&#xD;
+Nicht zur Aufzeichnung von Details über bestimmte medikamentenbezogene Aktivitäten, wie Verabreichung oder Abgabe, zu verwenden - verwenden Sie zu diesem Zweck ACTION.medication.&#xD;
+&#xD;
+Nicht zur Erstellung eines Frameworks zum Aufzeichnen von Antworten auf vordefinierte Screening-Fragen zur Verwendung eines bestimmten Medikaments oder einer Medikamentengruppe geeignet. Verwenden Sie zu diesem Zweck OBSERVATION.medication_screening.&#xD;
+&#xD;
+Nicht für die Darstellung einer verabreichten Impfung zu verwenden - verwenden Sie zu diesem Zweck einen geeigneten Archetyp.&#xD;
+&#xD;
+Nicht zu verwenden, um Informationen über verwendete oder implantierte medizinische Geräte zu erfassen.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en beskrivelse av den nåværende bruken av et enkelt legemiddel for et individ på et spesifisert tidspunkt.</purpose>
+      <keywords>utsagn</keywords>
+      <keywords>snapshot</keywords>
+      <use>Brukes for å registrere en beskrivelse av den nåværende bruken av et enkelt legemiddel for et individ på et spesifisert tidspunkt.&#xD;
+&#xD;
+I denne av denne arketypen brukes en bred definisjon av "legemiddel", og omhandler både legemidler på og uten resept. Dette inkluderer:&#xD;
+- et enkelt farmasøytisk produkt eller middel;&#xD;
+- en tilberedning;&#xD;
+- et kombinasjonsprodukt;&#xD;
+- et ernæringsprodukt; eller&#xD;
+- et annet terapeutisk produkt brukt til å behandle eller forebygge sykdom, for eksempel en bandasje med et antimikrobielt middel.&#xD;
+&#xD;
+Denne arketypen vil vanligvis bli brukt ved utveksling av informasjon, for eksempel som en del av en helseoppsummering eller en oppsummering ved overflytting mellom helseinstitusjoner. I slike tilfeller kan en eller flere instanser av denne arketypen brukes til å representere en "Nåværende medikamentliste". For eksempel:&#xD;
+- ved innleggelse på sykehus,&#xD;
+- som en del av en spesialisthenvisning,&#xD;
+- som grunnlag for en medikamentgjennomgang.&#xD;
+&#xD;
+Kilden til informasjon kan være en person, deres omsorgsperson eller en kliniker.&#xD;
+&#xD;
+Denne arketypen er utformet for å kunne samsvare med INSTRUCTION.medication_order (Legemiddelordinering) eller ACTION.medication (Legemiddelhåndtering) ved behov. Imidlertid er arketypen begrenset til å kun representere essensiell informasjon som er nødvendig for utveksling eller oppsummeringsformål, i tillegg til hendelsesbaserte dataelementer som "Sist administrert". Dette er gjort for å støtte en sømløs omsorgsovergang.&#xD;
+&#xD;
+Registrer én forekomst av denne arketypen per legemiddel eller kombinasjonspakke. Brukes samme legemiddel i ulike doser eller dosefrekvenser, skal hver unike doserings- og frekvensvariasjon registreres som en separat forekomst.&#xD;
+&#xD;
+Denne arketypen bør bare betraktes som oppdatert på registreringstidspunktet.&#xD;
+&#xD;
+Denne arketypen er utformet for å samsvare med FHIR MedicationStatement-ressursen, men er bevisst begrenset til "nåværende bruk", og ikke for tidligere eller fremtidig bruk av et legemiddel.</use>
+      <misuse>Brukes ikke for å registrere et sammendrag om all bruk av et spesifisert legemiddel over et individs livstid, bruk arketypen EVALUATION.medication_summary (Legemiddelsammendrag) til dette formålet.&#xD;
+&#xD;
+Brukes ikke for å dokumentere forordningen av et legemiddel - bruk arketypen INSTRUCTION.medication_order (Legemiddelordinering) til dette formålet.&#xD;
+&#xD;
+Brukes ikke for å dokumentere administreringen av et legemiddel - bruk arketypen ACTION.medication (Legemiddelhåndtering) til dette formålet.&#xD;
+&#xD;
+Brukes ikke for å lage et rammeverk for registrering av svar på forhåndsdefinerte spørsmål om bruken av et hvilket som helst legemiddel eller gruppe av legemidler. Bruk OBSERVATION.medication_screening (Kartleggingsspørsmål om legemidler) til dette formålet.&#xD;
+&#xD;
+Brukes ikke for å dokumentere en vaksine som er administrert - bruk en egnet arketype til dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere infomrasjon om medisinsk utstyr som er brukt eller implantert. Bruk en egnet arketype til dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record an assertion about the current use of a single medication by an individual at a specified point in time.</purpose>
+      <keywords>statement</keywords>
+      <keywords>snapshot</keywords>
+      <use>Use to record an assertion about the current use of a single medication by an individual at a specified point in time.&#xD;
+&#xD;
+In this medication statement context, ‘medication’ describes a wide range of items that may be prescribed or obtained 'over the counter'. This includes:&#xD;
+- a single pharmaceutical item or agent; &#xD;
+- an extemporaneous preparation; &#xD;
+- a combination therapy product; &#xD;
+- a nutritional product; or &#xD;
+- another therapeutic item used to treat or prevent disease, such as a bandage or dressing containing an antimicrobial agent.&#xD;
+&#xD;
+It is anticipated that this archetype will commonly be used within an exchange context, for example as part of a health summary or transition of care summary, where one or more instances of this data group may be used to represent a ‘Current medication list’. For example: &#xD;
+- on admission to hospital;&#xD;
+- as part of a specialist referral; or&#xD;
+- as the basis for a medication review.&#xD;
+&#xD;
+The source of information may be an individual, their carer or a clinician.&#xD;
+&#xD;
+This archetype has been designed to align with INSTRUCTION.medictation or ACTION.medication_management, where possible. However, it has been constrained to represent only essential information necessary for exchange or summary purposes, plus the addition of event-based data elements such as the ‘Last administered’ data element to support a seamless transition of care. &#xD;
+&#xD;
+Record one instance of this archetype per medication or combination pack. If the same medication is being used in different dose amounts or varying dose frequencies, each unique dosage and frequency variation should be recorded as a separate instance.&#xD;
+&#xD;
+This archetype should only be considered up-to-date at the time of authoring. &#xD;
+&#xD;
+This archetype has been designed to align with the FHIR MedicationStatement resource but is intentionally constrained to 'current use', rather than past or future use.</use>
+      <misuse>Not to be used to record summary or persistent information about past use of a medication - use EVALUATION.medication_summary for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a medication order - use INSTRUCTION.medication_order for this purpose.&#xD;
+&#xD;
+Not to be used to record details about specific medication related activities, such as administration or dispensing - use ACTION.medication for this purpose.&#xD;
+&#xD;
+Not to be used to create a framework for recording answers to pre-defined screening questions about the use of any specified medication or grouping of medications - use OBSERVATION.medication_screening for this purpose.&#xD;
+&#xD;
+Not to be used to represent a vaccination that has been administered - use an appropriate archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record information about medical devices that are used or implanted.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nl</code_string>
+      </language>
+      <purpose>*To record an assertion about the current use of a single medication by an individual at a specified point in time. (en)</purpose>
+      <keywords>*statement (en)</keywords>
+      <keywords>*snapshot (en)</keywords>
+      <use>*Use to record an assertion about the current use of a single medication by an individual at a specified point in time.&#xD;
+&#xD;
+In this medication statement context, ‘medication’ describes a wide range of items that may be prescribed or obtained 'over the counter'. This includes:&#xD;
+- a single pharmaceutical item or agent; &#xD;
+- an extemporaneous preparation; &#xD;
+- a combination therapy product; &#xD;
+- a nutritional product; or &#xD;
+- another therapeutic item used to treat or prevent disease, such as a bandage or dressing containing an antimicrobial agent.&#xD;
+&#xD;
+It is anticipated that this archetype will commonly be used within an exchange context, for example as part of a health summary or transition of care summary, where one or more instances of this data group may be used to represent a ‘Current medication list’.  For example: &#xD;
+- on admission to hospital;&#xD;
+- as part of a specialist referral; or&#xD;
+- as the basis for a medication review.&#xD;
+&#xD;
+The source of information may be an individual, their carer or a clinician.&#xD;
+&#xD;
+This archetype has been designed to align with INSTRUCTION.medictation or ACTION.medication_management, where possible. However, it has been constrained to represent only essential information necessary for exchange or summary purposes, plus the addition of event-based data elements such as the ‘Last administered’ data element to support a seamless transition of care. &#xD;
+&#xD;
+Record one instance of this archetype per medication or combination pack. If the same medication is being used in different dose amounts or varying dose frequencies, each unique dosage and frequency variation should be recorded as a separate instance.&#xD;
+&#xD;
+This archetype should only be considered up-to-date at the time of authoring. &#xD;
+&#xD;
+This archetype has been designed to align with the FHIR MedicationStatement resource but is intentionally constrained to 'current use', rather than past or future use. (en)</use>
+      <misuse>*Not to be used to record summary or persistent information about past use of a medication - use EVALUATION.medication_summary for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a medication order - use INSTRUCTION.medication_order for this purpose.&#xD;
+&#xD;
+Not to be used to record details about specific medication related activities, such as administration or dispensing - use ACTION.medication for this purpose.&#xD;
+&#xD;
+Not to be used to create a framework for recording answers to pre-defined screening questions about the use of any specified medication or grouping of medications - use OBSERVATION.medication_screening for this purpose.&#xD;
+&#xD;
+Not to be used to represent a vaccination that has been administered - use an appropriate archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record information about medical devices that are used or implanted. (en)</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch, Darin Leonhardt</author>
+    <author id="organisation">Medizinische Hochschule Hannover, PLRI für medizinische Informatik/ Medizinische Hochschule</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de, leonhardt.darin@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Marit Alice Venheim, John Tore Valand, Hanne Marte Bårholm</author>
+    <author id="organisation">Helse Vest IKT, Helse Bergen</author>
+    <author id="email">marit.alice.venheim@helse-vest-ikt.no, john.tore.valand@helse-vest-ikt.no, hanne.marte.sandal.barholm@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nl</code_string>
+    </language>
+    <author id="name">Joost Holslag</author>
+    <author id="organisation">Nedap</author>
+    <author id="email">joost.holslag@nedap.com</author>
+    <accreditation>MD</accreditation>
+  </translations>
+  <uid>
+    <value>3c3cd4d6-8573-4376-b843-e9c0ab6ab74e</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.medication_statement.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0006</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0046</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.medication(-[a-zA-Z0-9_]+)*\.v2/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>openEHR-EHR-CLUSTER\.medication(-[a-zA-Z0-9_]+)*\.v2</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0047</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0045</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.timing_daily(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.timing_nondaily(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.therapeutic_direction(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.dosage(-[a-zA-Z0-9_]+)*\.v2/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>openEHR-EHR-CLUSTER\.timing_daily(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.timing_nondaily(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.therapeutic_direction(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.dosage(-[a-zA-Z0-9_]+)*\.v2</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0030</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0032</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0023</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0026</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DATE_TIME</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0037</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DATE_TIME</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0038</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0048</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>.*</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0029</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0005</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Medication use statement</items>
+        <items id="description">An assertion about the current use of a single medication by an individual.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Medication name</items>
+        <items id="description">Name of the medication.</items>
+        <items id="comment">It is strongly recommended that the 'Medication name' be coded with a terminology capable of triggering decision support, where possible. Free text entry should only be used if there is no appropriate terminology available or for customised extemporaneous preparations. The extent of coding may vary from the simple generic or product name of the medication item through to structured details about the actual medication pack to be used. Free text entry should only be used if there is no appropriate terminology available. For example: 'Plaquenil'; 'Ibrutinib 420 mg tablet'; 'Rectinol ointment, 50 g, tube'; or 'Hydrofibre dressing with silver'.&#xD;
+</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Clinical indication</items>
+        <items id="description">The clinical symptom, sign or diagnosis that necessitates the use of the medication.</items>
+        <items id="comment">For example: 'Angina' or 'Migraine'. Coding of the clinical indication with a terminology is preferred, where possible. This data element has multiple occurrences to allow recording of more than one clinical indication per medication.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Last administered</items>
+        <items id="description">The date and time when the medication was last taken by, or administered to, the individual.</items>
+        <items id="comment">For example: the time warfarin was last taken at home prior to admission to hospital; or when the last dose was administered before a transfer from hospital to aged care.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the medication statement not captured in other fields.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Route of administration</items>
+        <items id="description">The route by which the medication is administrated into the body.</items>
+        <items id="comment">For example: 'oral', 'intravenous', or 'topical'. Coding of the route with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Description</items>
+        <items id="description">Narrative description of the use of the medication.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Endpoint</items>
+        <items id="description">The intended absolute end date for the use of the medication or a textual indication that the medication will be used indefinitely.</items>
+        <items id="comment">The DV_DATE_TIME datatype can indicate a precise, absolute date and optional time for the intended end of a limited course of medication - for example, the endpoint of a course of antibiotics the sender has just initiated. The DV_CODED_TEXT option can also be used to record that the medication is intended for indefinite use, for example, potentially lifelong use of an antihypertensive medication.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Indefinite</items>
+        <items id="description">There is no proposed end date for this medication.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Structured dose and timing</items>
+        <items id="description">Details of structured dose and timing directions.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Medication details</items>
+        <items id="description">Structured details about the overall medication including strength, form and constituent substances.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Overall directions description</items>
+        <items id="description">Complete narrative description about how the ordered item is to be used.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Addtional details</items>
+        <items id="description">Structured details about the medication use.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Aussage zur Medikamenteneinnahme</items>
+        <items id="description">Eine Aussage über die aktuelle Einnahme eines einzelnen Medikaments durch eine Person.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Standardwert, ein undefinierter/s Zeitpunkt oder Intervallereignis, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Medikamentenname</items>
+        <items id="description">Name des Medikaments, des Impfstoffs oder eines anderen therapeutischen / verschreibungsfähigen Mittels.</items>
+        <items id="comment">Es wird dringend empfohlen, den "Medikamentennamen" mit einer Terminologie zu kodieren, die nach Möglichkeit eine Entscheidungshilfe auslösen kann. Freitexteingaben sollten nur dann verwendet werden, wenn keine geeignete Terminologie zur Verfügung steht oder wenn es sich um maßgeschneiderte, improvisierte Zubereitungen handelt. Der Umfang der Kodierung kann vom einfachen generischen oder Produktnamen des Arzneimittels bis hin zu strukturierten Angaben über die tatsächlich zu verwendende Arzneimittelpackung reichen. Freitexteingaben sollten nur verwendet werden, wenn keine geeignete Terminologie verfügbar ist. Zum Beispiel: "Plaquenil"; "Ibrutinib 420 mg Tablette"; "Rectinol-Salbe, 50 g, Tube"; oder "Hydrofaserverband mit Silber".</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Klinische Indikation</items>
+        <items id="description">Der klinische Grund für die Anwendung des Medikaments.</items>
+        <items id="comment">Zum Beispiel: "Angina" oder "Migräne". Die Kodierung der klinischen Indikation mit einer Terminologie wird, wenn möglich, bevorzugt. Dieses Datenelement ist mehrfach vorhanden, um die Erfassung von mehr als einer klinischen Indikation pro Medikament zu ermöglichen.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Zuletzt verabreicht</items>
+        <items id="description">Datum und Uhrzeit der letzten Einnahme oder Verabreichung des Medikaments durch die betreffende Person.</items>
+        <items id="comment">Zum Beispiel: der Zeitpunkt der letzten Einnahme von Warfarin zu Hause vor der Einlieferung ins Krankenhaus; oder wann die letzte Dosis vor einer Verlegung vom Krankenhaus in die Altenpflege verabreicht wurde.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Kommentare über den Medikationseintrag, die nicht in anderen Feldern erfasst wurden.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Art der Verabreichung</items>
+        <items id="description">Der Weg, über den das Medikament in den Körper gelangt.</items>
+        <items id="comment">Zum Beispiel: "oral", "intravenös" oder "topisch". Die Kodierung des Verabreichungsweges mit einer Terminologie ist vorzuziehen, sofern dies möglich ist.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Beschreibung</items>
+        <items id="description">Beschreibung über die Anwendung des identifizierten Medikaments.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Endzeitpunkt</items>
+        <items id="description">Das vorgesehene absolute Enddatum für die Verwendung des Medikaments oder ein textlicher Hinweis, dass das Medikament auf unbestimmte Zeit verwendet werden soll.</items>
+        <items id="comment">Mit dem Datentyp DV_DATE_TIME kann ein genaues, absolutes Datum und optional eine Uhrzeit für das beabsichtigte Ende einer begrenzten Medikamenteneinnahme angegeben werden, z. B. der Endzeitpunkt einer Antibiotikaeinnahme, die der Absender gerade begonnen hat. Die Option DV_CODED_TEXT kann auch verwendet werden, um zu vermerken, dass das Medikament für eine unbefristete Einnahme vorgesehen ist, z. B. für die potenziell lebenslange Einnahme eines blutdrucksenkenden Medikaments.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Unbestimmt</items>
+        <items id="description">Es gibt kein vorgeschlagenes Enddatum für dieses Medikament.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Strukturierte Dosis und Zeitangabe</items>
+        <items id="description">Einzelheiten der strukturierten Dosierung und der Zeitangaben.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Angaben zur Medikation</items>
+        <items id="description">Strukturierte Angaben über das gesamte Medikament, einschließlich Stärke, Form und Inhaltsstoffe.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Beschreibung der allgemeinen Anwendung</items>
+        <items id="description">Vollständige Beschreibung, wie der bestellte Artikel verwendet werden soll.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Zusätzliche Angaben</items>
+        <items id="description">*Structured details about the medication use. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nl">
+      <items code="at0000">
+        <items id="text">*Medication use statement (en)</items>
+        <items id="description">*An assertion about the current use of a single medication by an individual. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Elke gebeurtenis</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time. (en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Uitbreiding</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms.&#xD;
+(en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR.(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Medication name (en)</items>
+        <items id="description">Naam van het medicament, vaccin of ander een anderszins therapeutisch of voorschrijfbaar product.</items>
+        <items id="comment">*It is strongly recommended that the 'Medication name' be coded with a terminology capable of triggering decision support, where possible. Free text entry should only be used if there is no appropriate terminology available or for customised extemporaneous preparations. The extent of coding may vary from the simple generic or product name of the medication item through to structured details about the actual medication pack to be used. Free text entry should only be used if there is no appropriate terminology available. For example: 'Plaquenil'; 'Ibrutinib 420 mg tablet'; 'Rectinol ointment, 50 g, tube'; or 'Hydrofibre dressing with silver'.&#xD;
+ (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Medische indicatie</items>
+        <items id="description">De medische reden voor gebruik van het medicatie product.</items>
+        <items id="comment">*For example: 'Angina' or 'Migraine'. Coding of the clinical indication with a terminology is preferred, where possible. This data element has multiple occurrences to allow recording of more than one clinical indication per medication. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Recents toegediend</items>
+        <items id="description">*The date and time when the medication was last taken by, or administered to, the individual. (en)</items>
+        <items id="comment">*For example: the time warfarin was last taken at home prior to admission to hospital; or when the last dose was administered before a transfer from hospital to aged care. (en)</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Opmerking</items>
+        <items id="description">Extra beschrijving over het medicatie gebruik dat niet past binnen andere velden.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">*Route of administration (en)</items>
+        <items id="description">*The route by which the medication is administrated into the body. (en)</items>
+        <items id="comment">*For example: 'oral', 'intravenous', or 'topical'. Coding of the route with a terminology is preferred, where possible. (en)</items>
+      </items>
+      <items code="at0032">
+        <items id="text">*Description (en)</items>
+        <items id="description">*Narrative description about the use of the identified medication item. (en)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Endpoint (en)</items>
+        <items id="description">*The intended absolute end date for the use of the medication or a textual indication that the medication will be used indefinitely. (en)</items>
+        <items id="comment">*The DV_DATE_TIME datatype can indicate a precise, absolute date and optional time for the intended end of a limited course of medication - for example, the endpoint of a course of antibiotics the sender has just initiated. The DV_CODED_TEXT option can also be used to record that the medication is intended for indefinite use, for example, potentially lifelong use of an antihypertensive medication.  (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Indefinite (en)</items>
+        <items id="description">*There is no proposed end date for this medication. (en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Structured dose and timing (en)</items>
+        <items id="description">*Details of structured dose and timing directions. (en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Medication details (en)</items>
+        <items id="description">*Structured details about the overall medication including strength, form and constituent substances. (en)</items>
+      </items>
+      <items code="at0047">
+        <items id="text">*Overall directions description (en)</items>
+        <items id="description">*Complete narrative description about how the ordered item is to be used. (en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Addtional details (en)</items>
+        <items id="description">*Structured details about the medication use. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Erklæring om legemiddelbruk</items>
+        <items id="description">En beskrivelse av nåværende bruk av et enkelt legemiddel for et individ.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som er nødvendig for å sammenstille med andre referansemodeller/formalismer.</items>
+        <items id="comment">F.eks. lokale informasjonskrav eller ekstra metadata for å samsvare med FHIR.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Legemiddelnavn</items>
+        <items id="description">Navnet på legemiddelet.</items>
+        <items id="comment">Det anbefales sterkt at "Legemiddel" kodes med en terminologi som understøtter beslutningsstøtte der dette er mulig, f.eks. FEST. Fritekst bør bare brukes om ingen passende terminologi er tilgjengelig, eller for tilpassede tilberedninger på bestilling. Nivå av koding kan variere fra legemiddelnavn til strukturerte detaljer om den aktuelle legemiddelforpakningen som skal brukes.&#xD;
+For eksempel: 'Plaquenil'; 'Ibrutinib 420 mg tablett'; 'Rectinol salve, 50 g, tube'; or 'Hydrofiber bandasje med sølv'.&#xD;
+</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Klinisk indikasjon</items>
+        <items id="description">Den kliniske årsaken for bruken av legemiddelet.</items>
+        <items id="comment">For eksempel: "Angina" eller "Migrene". Der det er mulig foretrekkes at den den kliniske indikasjonen blir kodet med en terminologi. Dette dataelementet tillater flere forekomster per legemiddel.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Sist administrert</items>
+        <items id="description">Dato/tidspunkt for når legemiddelet ble sist tatt av eller administrert til individet.</items>
+        <items id="comment">For eksempel: siste gang warfarin ble tatt i forkant av innleggelse i sykehus, eller når siste dose ble administrert før overføring fra sykehus til sykehjem.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekstbeskrivelse av legemiddelerklæringen som ikke er registrert i andre felt.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Administreringsvei</items>
+        <items id="description">Administreringsveien for det ordinerte legemiddelet</items>
+        <items id="comment">For eksempel "oral bruk", "intravenøst", "på huden" eller "enteralt". Det bør om mulig benyttes terminologi, f.eks. FEST, for å angi administreringsvei.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse om bruken av det navngitte legemiddelet.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Seponering</items>
+        <items id="description">Den tiltenkte absolutte sluttdatoen for bruk av legemiddelet eller en tekstlig indikasjon på at legemiddelet vil bli brukt på ubestemt tid.</items>
+        <items id="comment">Datatypen DV_DATE_TIME kan indikere en presis, absolutt dato og valgfri tid for den tiltenkte slutten på en begrenset legemiddelkur - for eksempel sluttpunktet for en kur med antibiotika som avsenderen nettopp har startet. Alternativet DV_CODED_TEXT kan også brukes for å registrere at legemiddelet er ment for ubestemt bruk, for eksempel potensielt livslang bruk av et antihypertensivt legemiddel.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Ubestemt</items>
+        <items id="description">Det er ingen foreslått sluttdato for for dette legemiddelet.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Strukturerte anvisninger om dose og timing</items>
+        <items id="description">Detaljerte og strukturerte anvisninger om dose og timing.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Legemiddeldetaljer</items>
+        <items id="description">Strukturerte detaljer om legemiddelet, blant annet styrke, form og virkestoffene det består av.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Overordnet anvisningsbeskrivelse</items>
+        <items id="description">En komplett fritekstbeskrivelse av hvordan det ordinerte legemiddelet skal brukes.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Strukturerte detaljer om legemiddelbruken.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+
