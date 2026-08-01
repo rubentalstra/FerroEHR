@@ -93,6 +93,21 @@ pub(crate) fn tenant_cache() -> TenantCache {
 /// this value in force.
 pub const DEFAULT_SYSTEM_ID: &str = "ferroehr.local";
 
+/// The `PARTY_IDENTIFIED.name` this CDR attributes a **system-generated**
+/// commit to — the `AUDIT_DETAILS.committer` (1..1) of a write with no
+/// authenticated principal (auth disabled, or an internal write such as an
+/// import or a synthesized composition).
+///
+/// RM common `master04-generic_package.adoc` §Audit Details makes
+/// `AUDIT_DETAILS.committer` mandatory but says nothing about what a system
+/// calls itself when it is the committer — no openEHR spec governs this value,
+/// it is our own design. It is a single constant so the platform library and
+/// the protocol adapter attribute such commits identically; the deployment's
+/// machine-readable identity is [`DEFAULT_SYSTEM_ID`] / `[server] system_id`,
+/// which is a different attribute (`AUDIT_DETAILS.system_id`) and stays
+/// separately configurable.
+pub const SYSTEM_COMMITTER_NAME: &str = "FerroEHR";
+
 /// The DB-backed application service — the concrete platform behind the SM
 /// chapter methods.
 #[derive(Debug, Clone)]

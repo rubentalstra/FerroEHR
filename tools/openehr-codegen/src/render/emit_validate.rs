@@ -117,6 +117,7 @@ fn realization_register(own_schema: &BmmSchema) -> String {
         InvariantVenue::Core,
         InvariantVenue::Impl,
         InvariantVenue::Wire,
+        InvariantVenue::App,
         InvariantVenue::Excluded,
         InvariantVenue::Unrealized,
     ] {

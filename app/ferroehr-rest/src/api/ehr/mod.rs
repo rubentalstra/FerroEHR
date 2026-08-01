@@ -130,9 +130,12 @@ fn term(code: &str) -> TerminologyCode {
 }
 
 /// The committer `PARTY_PROXY` for a write, from the authenticated principal
-/// published by the auth middleware (system identity when none). The SM service
-/// impl re-derives the committer from the same principal, so this rides in the
-/// [`UpdateVersion`] envelope for completeness.
+/// published by the auth middleware. With no authenticated principal the write
+/// is attributed to this CDR's own system identity
+/// ([`ferroehr::service::SYSTEM_COMMITTER_NAME`]) — the same constant the
+/// platform library uses, so both layers name the system committer identically.
+/// The SM service impl re-derives the committer from the same principal, so
+/// this rides in the [`UpdateVersion`] envelope for completeness.
 pub(crate) fn committer_proxy() -> PartyProxy {
     let value = match crate::extensions::access::authn::current_principal() {
         Some(principal) => {
@@ -151,7 +154,10 @@ pub(crate) fn committer_proxy() -> PartyProxy {
                 }]
             })
         }
-        None => json!({ "_type": "PARTY_IDENTIFIED", "name": "ferroehr.local" }),
+        None => json!({
+            "_type": "PARTY_IDENTIFIED",
+            "name": ferroehr::service::SYSTEM_COMMITTER_NAME
+        }),
     };
     openehr_its::json::from_canonical_value(&value)
         .unwrap_or(PartyProxy::PartySelf(PartySelf { external_ref: None }))

@@ -1,8 +1,17 @@
 //! Hand-written RM class invariants for `PARTY_IDENTIFIED`.
 //!
-//! Mirrors archie `PartyIdentified`:
-//! - `Basic_validity`: at least one of `name`, `identifiers`, `external_ref`.
-//! - `Name_valid`: if present, `name` is non-empty.
+//! Spec: RM `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc`
+//! §Invariants declares three:
+//!
+//! - `Basic_validity`: `name /= Void or identifiers /= Void or external_ref
+//!   /= Void` — realized here, through the generated `party_identified_core`.
+//! - `Name_valid`: `name /= Void implies not name.is_empty` — same core.
+//! - `Identifiers_valid`: `identifiers /= Void implies not
+//!   identifiers.is_empty` — NOT realized here: the BMM `List` emits as a
+//!   `Vec`, so an absent and a present-but-empty `identifiers` are the same
+//!   value in the typed model and the rule has nothing to distinguish. The
+//!   emittable-invariant realization register (`crate::validate::generated`
+//!   module header) carries that verdict.
 
 use crate::common::generic::party_identified::PartyIdentifiedData;
 use crate::validate::{InvariantViolation, Validate};

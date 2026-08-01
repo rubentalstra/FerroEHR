@@ -510,7 +510,7 @@ async fn canonical_xml_carries_the_signature() {
             "system_id": "ferroehr.local",
             "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-07T10:11:12Z" },
             "change_type": change_type("249", "creation"),
-            "committer": { "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "FerroEHR" }
         },
         "uid": {
             "_type": "OBJECT_VERSION_ID",

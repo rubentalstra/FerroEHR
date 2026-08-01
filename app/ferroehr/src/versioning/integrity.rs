@@ -36,7 +36,9 @@ use crate::versioning::wire::build_original_version;
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
-/// `OpenPGP` signer fails (digest signing is infallible).
+/// `OpenPGP` signer fails (digest signing is infallible); the
+/// [`build_original_version`] rejection of a commit audit whose committer is
+/// not a canonical `PARTY_PROXY`.
 #[expect(
     clippy::too_many_arguments,
     reason = "the parts of an ORIGINAL_VERSION plus the signing context; a \
@@ -69,7 +71,7 @@ pub(crate) fn sign_version(
         lifecycle_state,
         data,
         None,
-    );
+    )?;
     let canonical = openehr_rm::common::change_control::version_impl::canonical_form_of_json(&ov)
         .map_err(|e| ServiceError::Signing(e.to_string()))?;
     let signature = ctx

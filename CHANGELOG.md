@@ -17,6 +17,35 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **System-generated commits are now attributed to the product's own
+  identity.** A write with no authenticated principal (auth disabled, or an
+  internal write such as an import or a synthesized composition) records an
+  `AUDIT_DETAILS.committer` of `PARTY_IDENTIFIED` name **`FerroEHR`**. It
+  previously read `EHRbase` on the service paths and `ferroehr.local` on the
+  REST adapter path; all layers now emit the one value. The deployment's
+  configured `system_id` (`[server] system_id`, the value stamped into
+  `AUDIT_DETAILS.system_id`, `EHR.system_id` and every
+  `OBJECT_VERSION_ID.creating_system_id`) is unchanged and stays separately
+  configurable. Audits already committed keep the committer they were written
+  with.
+
+- **Audit, attestation and revision-history wire bodies now follow canonical
+  BMM field order.** `AUDIT_DETAILS`, `ATTESTATION`, `REVISION_HISTORY` and
+  `REVISION_HISTORY_ITEM` are built as their RM types and serialized through
+  the canonical codec instead of being assembled by hand, so every such body
+  — the version `commit_audit`, the CONTRIBUTION audit, and both the EHR and
+  demographic revision histories — now carries `_type` first followed by the
+  Reference Model's own attribute order. Only key order changes; the same
+  attributes with the same values are emitted, and JSON key order is not
+  semantic, so parsing clients are unaffected.
+
+- **Malformed attestation fields are now refused instead of stored.**
+  `ATTESTATION.attested_view`, `proof` and `items` used to be copied into the
+  stored attestation without being read; a submission whose `attested_view` is
+  not a `DV_MULTIMEDIA`, whose `proof` is not a string, or whose `items` carry
+  a member that is not a `DV_EHR_URI` is now rejected with `422` naming the
+  offending attribute (and, for `items`, its index).
+
 - **Outbound openEHR spec-defect reports moved to the issue tracker.** The
   `docs/conformance/upstream-reports.md` ledger is deleted; every report is
   now a GitHub issue labeled `upstream-report` (what the released spec says,

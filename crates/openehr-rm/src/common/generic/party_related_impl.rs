@@ -1,11 +1,19 @@
 //! Hand-written RM class invariants for `PARTY_RELATED`.
 //!
-//! `PARTY_RELATED` extends `PARTY_IDENTIFIED` and so inherits `Basic_validity`
-//! and `Name_valid`.
+//! Spec: RM `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_related.adoc`
+//! §Invariants declares one, and `PARTY_RELATED` inherits those of
+//! `…org.openehr.rm.common.party_identified.adoc` §Invariants:
 //!
-//! NOTE: archie's own `PartyRelated` invariant `Relationship_valid` (the
-//! relationship code belongs to the openEHR "subject relationship" group) is
-//! terminology-bound — deferred to the composition validator + `openehr-term`.
+//! - inherited `Basic_validity` and `Name_valid` — realized here, through the
+//!   generated `party_identified_core` (the inherited `Identifiers_valid` is
+//!   unrealizable on the typed node for the reason given in
+//!   `party_identified_impl`).
+//! - `Relationship_valid`: `terminology (Terminology_id_openehr)
+//!   .has_code_for_group_id (Group_id_subject_relationship,
+//!   relationship.defining_code)` — terminology-bound, so it needs a lookup
+//!   this pure-RM crate cannot perform; realized at the wire-boundary
+//!   dispatcher (`openehr-its` `rm_terminology`) against the `openehr-term`
+//!   bundle.
 
 use crate::common::generic::party_related::PartyRelated;
 use crate::validate::{InvariantViolation, Validate};

@@ -1177,6 +1177,14 @@ pub(crate) enum InvariantVenue {
     /// The wire boundary in `openehr-its` (`site` = the file) — a rule whose
     /// inputs the wire walker holds and a per-node RM core does not.
     Wire,
+    /// A write-boundary check in the application (`site` = the file under
+    /// `app/`) — a rule whose inputs only the inbound request body still
+    /// carries. The commonest case is a `X /= Void implies not X.is_empty`
+    /// list rule: the BMM `List` emits as a `Vec`, so absent and
+    /// present-but-empty collapse to one value in the typed model and neither
+    /// a core nor the wire walker can separate them, while the raw JSON body
+    /// still can.
+    App,
     /// Adjudicated out of the per-node invariant layer: an aggregate /
     /// cross-object constraint owned by another layer, or an assertion that is
     /// vacuous on stored data. `site` is empty.
@@ -1193,6 +1201,7 @@ impl InvariantVenue {
             Self::Core => "Realized by a generated core in this file",
             Self::Impl => "Realized in a hand-written `*_impl.rs`",
             Self::Wire => "Realized at the wire boundary (`openehr-its`)",
+            Self::App => "Realized at the application write boundary (`app/`)",
             Self::Excluded => "Adjudicated out of the per-node invariant layer",
             Self::Unrealized => "Classified emittable, realized nowhere yet",
         }
@@ -1209,8 +1218,8 @@ pub(crate) struct InvariantRealization {
     /// Where it is realized.
     pub venue: InvariantVenue,
     /// The realizing site: a core function name ([`InvariantVenue::Core`]) or a
-    /// repo-relative file ([`InvariantVenue::Impl`] / [`InvariantVenue::Wire`]);
-    /// empty for the two non-realizing venues.
+    /// repo-relative file ([`InvariantVenue::Impl`] / [`InvariantVenue::Wire`] /
+    /// [`InvariantVenue::App`]); empty for the two non-realizing venues.
     pub site: &'static str,
     /// The class's vendored spec file under [`RM_CLASS_DOCS`] (§Invariants).
     pub spec_file: &'static str,
@@ -1660,90 +1669,90 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "ACTOR",
         name: "Roles_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/demographic/validate.rs",
         spec_file: "org.openehr.rm.demographic.actor.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`roles /= Void implies not roles.is_empty`: the BMM `List` emits as a `Vec`, so absent and present-but-empty are one value in the typed model; the demographic write boundary reads the raw body and rejects a present-but-empty list (422).",
     },
     InvariantRealization {
         class: "ADDRESS",
         name: "Type_valid",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.demographic.address.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`type = name`: the invariant DEFINES the derived `type` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it.",
     },
     InvariantRealization {
         class: "CONTACT",
         name: "Purpose_valid",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.demographic.contact.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`purpose = name`: the invariant DEFINES the derived `purpose` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it.",
     },
     InvariantRealization {
         class: "PARTY",
         name: "Contacts_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/demographic/validate.rs",
         spec_file: "org.openehr.rm.demographic.party.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`contacts /= Void implies not contacts.is_empty`: present-but-empty is unrepresentable in the `Vec`-emitted typed model, so the demographic write boundary enforces it on the raw body (422).",
     },
     InvariantRealization {
         class: "PARTY",
         name: "Identities_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/demographic/validate.rs",
         spec_file: "org.openehr.rm.demographic.party.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`not identities.is_empty`: the demographic write boundary rejects a party body whose `identities` is absent or empty (422).",
     },
     InvariantRealization {
         class: "PARTY",
         name: "Is_archetype_root",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/demographic/validate.rs",
         spec_file: "org.openehr.rm.demographic.party.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "unconditional (`is_archetype_root`), so every party body is a root LOCATABLE; the demographic write boundary runs the root-LOCATABLE checks it entails (`Archetyped_valid`, the root `archetype_node_id` rule).",
     },
     InvariantRealization {
         class: "PARTY",
         name: "Type_valid",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.demographic.party.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`type = name`: the invariant DEFINES the derived `type` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it.",
     },
     InvariantRealization {
         class: "PARTY",
         name: "Uid_mandatory",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.demographic.party.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`uid /= Void`: satisfied by construction, not by a check — a demographic party's `uid` is the version container's, which the server injects at the storage/read boundary (`app/ferroehr/src/service/demographic/support.rs`), so an inbound body legitimately carries none (`app/ferroehr/src/service/demographic/validate.rs`).",
     },
     InvariantRealization {
         class: "PARTY_IDENTITY",
         name: "Purpose_valid",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.demographic.party_identity.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`purpose = name`: the invariant DEFINES the derived `purpose` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it.",
     },
     InvariantRealization {
         class: "PARTY_RELATIONSHIP",
         name: "Type_validity",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.demographic.party_relationship.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`type = name`: the invariant DEFINES the derived `type` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it.",
     },
     InvariantRealization {
         class: "ROLE",
         name: "Capabilities_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/demographic/validate.rs",
         spec_file: "org.openehr.rm.demographic.role.adoc",
-        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`capabilities /= Void implies not capabilities.empty`: present-but-empty is unrepresentable in the `Vec`-emitted typed model, so the demographic write boundary enforces it on the raw body (422).",
     },
     InvariantRealization {
         class: "EXTRACT",
@@ -1756,10 +1765,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "EXTRACT_CONTENT_ITEM",
         name: "Item_validity",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/message/import.rs",
         spec_file: "org.openehr.rm.ehr_extract.extract_content_item.adoc",
-        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`is_masked xor item /= Void`: realized on the EHR-Extract import path, which rejects a masked wrapper carrying an item and an unmasked one carrying none.",
     },
     InvariantRealization {
         class: "EXTRACT_UPDATE_SPEC",
@@ -1788,10 +1797,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "EXTRACT_VERSION_SPEC",
         name: "Includes_revision_history_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/message/export.rs",
         spec_file: "org.openehr.rm.ehr_extract.extract_version_spec.adoc",
-        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`not include_data implies include_revision_history`: realized where an extract request's version spec is read, before any export runs.",
     },
     InvariantRealization {
         class: "AUTHORED_RESOURCE",
@@ -1876,10 +1885,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "ORIGINAL_VERSION",
         name: "Is_merged_validity",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.common.original_version.adoc",
-        reason: "versioning layer: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`other_input_version_ids = Void xor is_merged`: `is_merged` is the DERIVED function `True if this Version was created from more than just the preceding (checked out) version` (§Functions), i.e. exactly the emptiness of `other_input_version_uids` — the invariant defines it rather than constraining stored data.",
     },
     InvariantRealization {
         class: "ORIGINAL_VERSION",
@@ -1892,10 +1901,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "ATTESTATION",
         name: "Items_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/versioning/attestation.rs",
         spec_file: "org.openehr.rm.common.attestation.adoc",
-        reason: "the reference implementation marks this invariant `ignored` (never checked), so realizing it would over-reject.",
+        reason: "`items /= Void implies not items.is_empty`: the BMM `List` emits as a `Vec`, so absent and present-but-empty are one value in the typed model; the attestation-completion path reads the raw wire partial and rejects a present-but-empty `items` (422).",
     },
     InvariantRealization {
         class: "DV_PARAGRAPH",
@@ -1916,26 +1925,26 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "EHR_ACCESS",
         name: "Is_archetype_root",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/ehr/validation.rs",
         spec_file: "org.openehr.rm.ehr.ehr_access.adoc",
-        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "unconditional (`is_archetype_root`), so every EHR_ACCESS is a root LOCATABLE; the commit-time validator runs the root-LOCATABLE checks it entails (`Archetyped_valid`, the root `archetype_node_id` rule).",
     },
     InvariantRealization {
         class: "EHR_ACCESS",
         name: "Scheme_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/ehr/validation.rs",
         spec_file: "org.openehr.rm.ehr.ehr_access.adoc",
-        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`not scheme.is_empty`: `scheme` names the concrete ACCESS_CONTROL_SETTINGS subtype, which the typed model carries only as the payload's `_type`; the commit-time validator requires a present `settings` to name it (422).",
     },
     InvariantRealization {
         class: "EHR_STATUS",
         name: "Is_archetype_root",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::App,
+        site: "app/ferroehr/src/service/ehr/validation.rs",
         spec_file: "org.openehr.rm.ehr.ehr_status.adoc",
-        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "unconditional (`is_archetype_root`), so every EHR_STATUS is a root LOCATABLE; the commit-time validator runs the root-LOCATABLE checks it entails (`Archetyped_valid`, the root `archetype_node_id` rule).",
     },
     InvariantRealization {
         class: "PARTY_IDENTIFIED",

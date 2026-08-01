@@ -12,6 +12,8 @@
 //! `versioned_object` builders are EHR-scoped, so this chapter maps the
 //! ehr-less `VersionMeta` rows into the wire shape itself.
 
+use openehr_base::prelude::ObjectVersionId;
+use openehr_rm::prelude::{AuditDetails, RevisionHistory, RevisionHistoryItem};
 use serde_json::{Value, json};
 
 use crate::ids::VoId;
@@ -22,7 +24,7 @@ use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
 use crate::service::version_update::UpdateAudit;
 use crate::storage::version_repo;
-use crate::versioning::audit::{AuditInput, audit_details};
+use crate::versioning::audit::{AuditInput, audit_details_typed};
 use crate::versioning::change::Committed;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::{VersionRead, read_current, read_version, version_at};
@@ -150,22 +152,28 @@ pub(super) fn record_commit() {
 
 /// One `REVISION_HISTORY_ITEM` for a stored version row: its
 /// `OBJECT_VERSION_ID` and the change's `AUDIT_DETAILS` (RM common master04
-/// §Revision History).
-fn revision_history_item(vo_id: VoId, meta: &version_repo::meta::VersionMeta) -> Value {
+/// §Revision History). Built as the generated RM type so the serialized item
+/// carries `_type` first and the BMM's own attribute order.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the stored audit's committer is not a
+/// canonical `PARTY_PROXY`.
+fn revision_history_item(
+    vo_id: VoId,
+    meta: &version_repo::meta::VersionMeta,
+) -> Result<RevisionHistoryItem, ServiceError> {
     let tree = TreeId::from_columns(meta.trunk_version, meta.branch_number, meta.branch_version);
-    json!({
-        "_type": "REVISION_HISTORY_ITEM",
-        "version_id": {
-            "_type": "OBJECT_VERSION_ID",
-            "value": object_version_id(vo_id, &meta.creating_system_id, tree)
+    Ok(RevisionHistoryItem {
+        version_id: ObjectVersionId {
+            value: object_version_id(vo_id, &meta.creating_system_id, tree),
         },
-        "audits": [audit_details(
+        audits: vec![AuditDetails::AuditDetails(audit_details_typed(
             &meta.audit_system_id,
             &meta.audit_change_type,
             meta.audit_description.as_deref(),
             &meta.audit_committer,
             &meta.time_committed,
-        )]
+        )?)],
     })
 }
 
@@ -254,17 +262,21 @@ impl FerroEhrService {
     /// the object belongs to its family (party / relationship).
     ///
     /// # Errors
-    /// [`ServiceError`] on a storage/database fault reading the version spine.
+    /// [`ServiceError`] on a storage/database fault reading the version spine,
+    /// or the [`revision_history_item`] rejection of an uninterpretable stored
+    /// audit.
     pub(super) async fn demographic_revision_history(
         &self,
         vo_id: VoId,
     ) -> Result<Value, ServiceError> {
         let metas = version_repo::meta::all_version_meta(&self.pool, vo_id).await?;
-        let items: Vec<Value> = metas
+        let items = metas
             .iter()
             .map(|meta| revision_history_item(vo_id, meta))
-            .collect();
-        Ok(json!({ "_type": "REVISION_HISTORY", "items": items }))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(openehr_its::json::to_canonical_value(&RevisionHistory {
+            items,
+        }))
     }
 
     /// The `ORIGINAL_VERSION` of an ehr-less demographic object at a specific

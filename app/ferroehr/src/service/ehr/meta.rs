@@ -251,7 +251,10 @@ pub(in crate::service) fn committer() -> Value {
                 "type": identity.id_type
             }]
         }),
-        None => json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }),
+        None => json!({
+            "_type": "PARTY_IDENTIFIED",
+            "name": crate::service::SYSTEM_COMMITTER_NAME
+        }),
     }
 }
 
