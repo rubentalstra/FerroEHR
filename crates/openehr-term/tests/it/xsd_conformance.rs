@@ -253,11 +253,6 @@ fn external_terminologies_conform_to_their_xsd() {
 }
 
 #[test]
-#[expect(
-    clippy::expect_used,
-    clippy::panic,
-    reason = "a failed lookup after its own presence assertion, and an undeclared element, ARE the test failure (Book ch11 assertion idiom)"
-)]
 fn property_unit_data_conforms_to_property_units_xsd() {
     // assets/schema/PropertyUnitData.xsd: root PropertyUnits in the
     // http://tempuri.org/PropertyUnits.xsd namespace; a sequence of
