@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 # Vendors the openEHR specification *documentation* (the normative spec text)
 # into docs/specs/openehr/, pinned per docs/VERSIONS.md. Text formats only
-# (adoc/md/txt/csv/json/yaml) — images, UML .xmi, XSDs, and other binaries are
-# excluded (fetch from the upstream repo at the pinned ref if needed). .robot/
-# .xml/.opt are included for the executable CNF suite + canonical examples.
+# (adoc/md/txt/csv/json/yaml) — bitmap images, UML .xmi, XSDs, and other
+# binaries are excluded (fetch from the upstream repo at the pinned ref if
+# needed). .robot/.xml/.opt are included for the executable CNF suite +
+# canonical examples.
+#
+# ONE exception, and it is pinned like everything else: the UML CLASS-DIAGRAM
+# SVGs the vendored chapters reference by `image::{uml_diagrams_uri}/<name>.svg`.
+# The attribute is defined in openEHR/specifications-AA_GLOBAL
+# docs/boilerplate/global_vars.adoc as `:uml_diagrams_uri: UML/diagrams` — a
+# path relative to each component's docs/ root — and every referenced file
+# exists under docs/UML/diagrams/ in the component repo AT THE PINNED COMMIT,
+# so the vendored mirror keeps that layout and the references resolve. Exactly
+# the referenced files are copied (never the whole diagram directory), from the
+# same pinned checkout the text comes from; a reference with no file at the pin
+# fails the run.
 #
 # This is REFERENCE DOCUMENTATION for spec-adherence checks. It is NOT a build
 # input: codegen consumes tools/openehr-codegen/vendor/** (BMM/XSD/OAS) and
@@ -63,6 +75,33 @@ for entry in "${COMPONENTS[@]}"; do
   mkdir -p "$out"
   rsync -a --prune-empty-dirs "${rsync_args[@]}" "$src/" "$out/"
 
+  # The UML class diagrams the vendored chapters reference (see the header
+  # note): derive the file list from the vendored text itself, then take
+  # exactly those out of the same pinned checkout.
+  refs="$(grep -rhoE '\{uml_diagrams_uri\}/[A-Za-z0-9._-]+' "$out" | sed 's|.*/||' | sort -u || true)"
+  diagrams=0
+  if [ -n "$refs" ]; then
+    mkdir -p "$out/docs/UML/diagrams"
+    while IFS= read -r svg; do
+      [ -n "$svg" ] || continue
+      if [ ! -f "$src/docs/UML/diagrams/$svg" ]; then
+        echo "ERROR: $name references UML/diagrams/$svg, which does not exist at $sha" >&2
+        exit 1
+      fi
+      cp "$src/docs/UML/diagrams/$svg" "$out/docs/UML/diagrams/$svg"
+      diagrams=$((diagrams + 1))
+    done <<<"$refs"
+  fi
+
+  if [ "$diagrams" -gt 0 ]; then
+    diagram_note="- Plus the $diagrams UML class-diagram SVG(s) under \`docs/UML/diagrams/\` that
+  the vendored chapters reference as \`image::{uml_diagrams_uri}/<name>.svg\`,
+  taken from the same pinned commit. Referenced files only — the upstream
+  diagram directory is not mirrored wholesale."
+  else
+    diagram_note="- No UML class-diagram SVGs: the vendored chapters of this component
+  reference none."
+  fi
   cat >"$out/PROVENANCE.md" <<EOF
 # Vendored openEHR spec docs: $name
 
@@ -70,11 +109,13 @@ for entry in "${COMPONENTS[@]}"; do
 - Ref: $ref
 - Commit: \`$sha\`
 - Vendored by: \`scripts/vendor-spec-docs.sh\` (text formats only: ${INCLUDE_EXT[*]})
-- Images/UML/XSD/binaries excluded — fetch from the repo at the pinned commit.
+$diagram_note
+- Other images, UML \`.xmi\`/\`.mdzip\`, XSDs and binaries excluded — fetch from
+  the repo at the pinned commit.
 
 Do not hand-edit files under this directory; re-run the script instead.
 EOF
-  echo "    $(find "$out" -type f | wc -l | tr -d ' ') files"
+  echo "    $(find "$out" -type f | wc -l | tr -d ' ') files ($diagrams UML diagram(s))"
 done
 
 # Requirements-level reference documents published outside the git spec repos
@@ -93,8 +134,8 @@ cat >"$REQ_OUT/PROVENANCE.md" <<'EOF'
   https://specifications.openehr.org/releases/1.0.2/requirements/iso18308_conformance.pdf).
   Maps the ISO 18308 EHR-architecture requirements (Structure, Process,
   Communication, Privacy & Security, Medico-legal, Ethical, Consumer/Cultural,
-  Evolution) to openEHR features. Used by the ferroehr Conformance Catalogue
-  (ECC) as a requirements-level trace dimension (`iso18308:<section>` refs).
+  Evolution) to openEHR features. A requirements-level reference statement;
+  it is not a conformance oracle (the released openEHR components are).
 
 Do not hand-edit files under this directory; re-run scripts/vendor-spec-docs.sh.
 EOF

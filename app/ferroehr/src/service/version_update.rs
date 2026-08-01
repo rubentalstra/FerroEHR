@@ -175,7 +175,7 @@ impl UpdateVersion {
                 committer: PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(
                     PartyIdentifiedData {
                         external_ref: None,
-                        name: Some("EHRbase".to_owned()),
+                        name: Some(crate::service::SYSTEM_COMMITTER_NAME.to_owned()),
                         identifiers: Vec::new(),
                     },
                 )),

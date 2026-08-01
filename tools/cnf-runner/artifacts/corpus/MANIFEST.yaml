@@ -2507,3 +2507,82 @@ cnf.composition.minimal_event_coded_name.v1:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-07-30 from cnf.composition.minimal_event.v1 (the vendored CNF Robot fixture) — the single ELEMENT's name upgraded to DV_CODED_TEXT (snomed_ct(3.1)::271649006 |Systolic blood pressure|; DV_CODED_TEXT IS-A DV_TEXT, so the unconstrained LOCATABLE.name admits it) to give the query battery a fake-proof coded-name target (#969)"
+# ATTESTATION corpus — the `666|attestation|` wire family. RM common
+# master06-change_control_package.adoc §Contributions makes an attestation a
+# change that commits NO new version ("all logical changes … are achieved by
+# physically committing new Versions, or for attestations, new Attestation
+# objects to existing Versions"; "attestation of item: a new ATTESTATION is
+# added to the attestations list of an existing ORIGINAL_VERSION; the
+# ATTESTATION.commit_audit.change_type is set to the code 666|attestation|").
+# Each payload below is the CONTRIBUTION member's commit_audit — the
+# UPDATE_ATTESTATION of ITS-REST specifications/schemas/common/
+# UpdateAttestation.yaml (UPDATE_AUDIT + reason + is_pending, both required);
+# the server owns the inherited AUDIT_DETAILS system_id/time_committed
+# (overview Requests_and_responses.md §openehr-version and
+# openehr-audit-details: "The `time_committed` attribute is always set by the
+# server").
+cnf.attestation.witnessed:
+  source: fixtures/attestation/witnessed.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 as the COMPLETED post-committal attestation of RM common master04-generic_package.adoc §Attestation (\"Post-committal signing: data committed with an Attestation in the is_pending state is reviewed and signed at a later point in time\"): is_pending false, a proof, and a reason coded 648|witnessed| — a member of the openEHR `attestation reason` group the ATTESTATION.Reason_valid invariant binds (TERM SupportTerminology, attestation reason: 240 signed, 648 witnessed)"
+cnf.attestation.pending:
+  source: fixtures/attestation/pending.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 as the FIRST object of the two-object pattern RM common master04-generic_package.adoc §Attestation fixes verbatim: \"the is_pending flag will be set to True to indicate that the committed information needs to be signed by another person\". No proof: the signing has not happened yet (ATTESTATION.proof is 0..1)"
+cnf.attestation.signed:
+  source: fixtures/attestation/signed.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 as the SECOND object of that pattern — \"When signing occurs, it will cause a new ATTESTATION object to be added to the VERSION.attestations list, this time with is_pending set to False, and the appropriate proof supplied\" (RM common master04 §Attestation) — with reason coded 240|signed| and a NON-EMPTY items list, the accepting twin of cnf.attestation.invalid.empty_items (ATTESTATION.Items_valid: `items /= Void implies not items.is_empty`). The item is a DV_EHR_URI in the four-part form of RM data_types master10-uri_package.adoc §DV_EHR_URI Syntax; the class table explicitly admits fine-grained items \"attested in some other system\""
+cnf.attestation.invalid.no_reason:
+  source: fixtures/attestation/invalid.no_reason.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "ATTESTATION.reason absent"
+    spec_ref: "RM common §attestation (ATTESTATION.reason 1..1); ITS-REST specifications/schemas/common/UpdateAttestation.yaml (required: reason)"
+  provenance: "authored 2026-08-02 as the invalid twin of cnf.attestation.witnessed: identical but for the omitted mandatory reason, so the refusal localizes to the 1..1 multiplicity"
+cnf.attestation.invalid.reason_out_of_group:
+  source: fixtures/attestation/invalid.reason_out_of_group.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "ATTESTATION.reason is a DV_CODED_TEXT whose defining_code 249 is in the audit change type group, not the attestation reason group"
+    spec_ref: "RM common §attestation (Reason_valid: reason.generating_type.is_equal (\"DV_CODED_TEXT\") implies terminology (Terminology_id_openehr).has_code_for_group_id (Group_id_attestation_reason, reason.defining_code))"
+  provenance: "authored 2026-08-02 as the invalid twin of cnf.attestation.witnessed: a well-formed openEHR-terminology DV_CODED_TEXT whose only defect is GROUP membership — 249|creation| is a real openEHR code, but of the audit change type group, so a server that checked only that the code exists would accept it"
+cnf.attestation.invalid.empty_items:
+  source: fixtures/attestation/invalid.empty_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "ATTESTATION.items present and empty"
+    spec_ref: "RM common §attestation (Items_valid: items /= Void implies not items.is_empty)"
+  provenance: "authored 2026-08-02 as the invalid twin of cnf.attestation.signed: the same completed attestation with its items list emptied. Absence and emptiness are NOT the same state — RM common master04-generic_package.adoc §Attestation gives absence its own meaning (\"if this list is empty, the attestation is for the entire object\", which the class invariant realizes as items being Void), so an empty list is a defect, never a synonym for the whole-version attestation the valid fixtures carry"
+# The ORIGINAL_VERSION serialization vector: a committed version carrying BOTH
+# objects of the master04 §Attestation pending-then-signed pattern in its
+# `attestations` list (ORIGINAL_VERSION.attestations, RM common
+# UML/classes/org.openehr.rm.common.original_version.adoc §Attributes). Both
+# representations are codec-derived and gated against each other by
+# crates/openehr-its/tests/it/attested_version.rs.
+cnf.version.attested:
+  source: fixtures/attestation/attested_version.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "authored 2026-08-02 over the cnf.composition.minimal_event.v1 content (openEHR CNF Robot corpus, re-adjudicated 2026-07-21 to spec-text-only evidence) and normalized through crates/openehr-its/examples/canonical_convert.rs, so the committed bytes ARE the codec's canonical output"
+cnf.version.attested.xml:
+  source: fixtures/attestation/attested_version.v1.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "codec-derived from cnf.version.attested via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair). The document root is <version xsi:type=\"ORIGINAL_VERSION\">: ITS-XML ALL/Version.xsd publishes exactly one global element for the change-control package, `<xs:element name=\"version\" type=\"VERSION\"/>` over an abstract complexType, and XML Schema Part 1 §2.6.1/§3.4.6 requires an instance of an abstract declared type to name its concrete subtype with xsi:type"

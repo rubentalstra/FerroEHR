@@ -616,8 +616,8 @@ fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
 
 /// Each realization-register venue claim is checked against reality: a `Core`
 /// row's invariant name is a violation-message literal in the generated core
-/// file and its core function exists there; an `Impl` / `Wire` row's cited
-/// realizing file exists and names the invariant. A venue claim that stops
+/// file and its core function exists there; an `Impl` / `Wire` / `App` row's
+/// cited realizing file exists and names the invariant. A venue claim that stops
 /// being true therefore fails here rather than reading as enforcement that
 /// silently is not.
 #[test]
@@ -649,7 +649,7 @@ fn realization_register_venues_are_real() {
                     "{where_}: no violation message for it in validate/generated.rs",
                 );
             }
-            "Impl" | "Wire" => {
+            "Impl" | "Wire" | "App" => {
                 let path = repo.join(&a.site);
                 assert!(
                     path.is_file(),

@@ -1,0 +1,27 @@
+{
+    "_type": "UPDATE_ATTESTATION",
+    "committer": {
+        "_type": "PARTY_IDENTIFIED",
+        "name": "Dr Senior Reviewer"
+    },
+    "reason": {
+        "_type": "DV_CODED_TEXT",
+        "value": "signed",
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+                "_type": "TERMINOLOGY_ID",
+                "value": "openehr"
+            },
+            "code_string": "240"
+        }
+    },
+    "is_pending": false,
+    "items": [
+        {
+            "_type": "DV_EHR_URI",
+            "value": "ehr://cnf.example.org/8849182c-82ad-4088-a07f-48ead4180515/composition"
+        }
+    ],
+    "proof": "-----BEGIN PGP SIGNATURE-----\nCNF-ATTESTATION-PROOF-SIGNED\n-----END PGP SIGNATURE-----\n"
+}

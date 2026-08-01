@@ -10,8 +10,18 @@ prior art; these documents are the oracle.
 - Vendored by `scripts/vendor-spec-docs.sh` (re-run to refresh; pins live in
   the script — keep `docs/VERSIONS.md` in sync).
 - Text formats only (`.adoc`, `.md`, `.txt`, `.csv`, `.json`, `.yaml`,
-  `.robot`, `.xml`, `.opt`). Images/UML/XSD/PDF excluded — see each
-  component's `PROVENANCE.md` for the pinned commit to fetch them from.
+  `.robot`, `.xml`, `.opt`), **plus the UML class-diagram SVGs the chapters
+  reference** — the 129 files under `<COMPONENT>/docs/UML/diagrams/` that the
+  vendored text names as `image::{uml_diagrams_uri}/<name>.svg` (BASE 15,
+  RM 33, AM 27, LANG 31, SM 22, TERM 1; the other components reference none).
+  The upstream attribute is `:uml_diagrams_uri: UML/diagrams`
+  (`openEHR/specifications-AA_GLOBAL`, `docs/boilerplate/global_vars.adoc`),
+  relative to each component's `docs/` root, so the mirrored layout resolves
+  the references as published. Only referenced files are vendored, from the
+  same pinned commit as the text — a reference with no file at the pin fails
+  the vendoring run. Other images, UML `.xmi`/`.mdzip`, XSDs and PDFs are
+  excluded — see each component's `PROVENANCE.md` for the pinned commit to
+  fetch them from.
 - **Not a build input.** Codegen consumes `tools/openehr-codegen/vendor/**`
   (BMM/XSD/OAS) and `crates/openehr-its/schemas/**`; those stay authoritative
   for generation. This tree is for *reading and conformance-checking*.

@@ -13,8 +13,12 @@
 //! resolved from the `openehr-term` bundle at the render edge, never a
 //! hardcoded rubric.
 
+use openehr_base::prelude::TerminologyId;
+use openehr_rm::prelude::{
+    AuditDetailsData, CodePhrase, DvCodedText, DvDateTime, DvText, DvTextData, PartyProxy,
+};
 use openehr_term::bundle::openehr;
-use serde_json::{Value, json};
+use serde_json::Value;
 
 use crate::service::error::ServiceError;
 
@@ -226,40 +230,119 @@ impl AuditInput {
     }
 }
 
-/// Build an `AUDIT_DETAILS` from stored audit columns. `change_type` is the
-/// numeric `audit_change_type` group code stored in the `audit` row; the
-/// emitted `DV_CODED_TEXT` carries the code as `defining_code.code_string`
-/// (RM common master04 `AUDIT_DETAILS.Change_type_valid`) and the group rubric
-/// — resolved from the `openehr-term` bundle — as its `value`.
+/// An openEHR-terminology `DV_CODED_TEXT`: the group `code` as
+/// `defining_code.code_string` under the `openehr` terminology, with `rubric`
+/// as its displayable `value`. The one shared constructor for the coded texts
+/// this module and its callers mint (`AUDIT_DETAILS.change_type`,
+/// `ORIGINAL_VERSION.lifecycle_state`), so no site rebuilds the `CODE_PHRASE`
+/// by hand.
+pub(crate) fn openehr_coded_text(code: &str, rubric: String) -> DvCodedText {
+    DvCodedText {
+        value: rubric,
+        hyperlink: None,
+        formatting: None,
+        mappings: Vec::new(),
+        language: None,
+        encoding: None,
+        defining_code: CodePhrase {
+            terminology_id: TerminologyId {
+                value: OPENEHR.to_owned(),
+            },
+            code_string: code.to_owned(),
+            preferred_term: None,
+        },
+    }
+}
+
+/// A `DV_DATE_TIME` carrying an instant's ISO 8601 form — the shape
+/// `AUDIT_DETAILS.time_committed` (1..1) takes.
+pub(crate) fn dv_date_time(instant: &jiff::Timestamp) -> DvDateTime {
+    DvDateTime {
+        normal_status: None,
+        normal_range: None,
+        other_reference_ranges: Vec::new(),
+        magnitude_status: None,
+        accuracy: None,
+        value: instant.to_string(),
+    }
+}
+
+/// A plain `DV_TEXT` — the shape `AUDIT_DETAILS.description` (0..1) takes when
+/// the caller supplied only a string.
+pub(crate) fn dv_text(value: &str) -> DvText {
+    DvText::DvText(DvTextData {
+        value: value.to_owned(),
+        hyperlink: None,
+        formatting: None,
+        mappings: Vec::new(),
+        language: None,
+        encoding: None,
+    })
+}
+
+/// Decode a stored/assembled canonical `PARTY_PROXY` value into its RM type.
+///
+/// The committer travels between the service layer and storage as canonical
+/// JSON (an `audit.committer` jsonb column), so the typed builders below must
+/// read it back to place it in an `AUDIT_DETAILS`.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the value is not a canonical
+/// `PARTY_PROXY` (`AUDIT_DETAILS.committer` is 1..1 — RM common
+/// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes).
+pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError> {
+    openehr_its::json::from_canonical_value::<PartyProxy>(committer).map_err(|e| {
+        ServiceError::Unprocessable(format!(
+            "AUDIT_DETAILS.committer is not a canonical PARTY_PROXY: {e}"
+        ))
+    })
+}
+
+/// Build a typed `AUDIT_DETAILS` from stored audit columns. `change_type` is
+/// the numeric `audit_change_type` group code stored in the `audit` row; the
+/// `DV_CODED_TEXT` carries the code as `defining_code.code_string` (RM common
+/// master04 `AUDIT_DETAILS.Change_type_valid`) and the group rubric — resolved
+/// from the `openehr-term` bundle — as its `value`.
+///
+/// # Errors
+/// The [`party_proxy`] rejection when `committer` is not a canonical
+/// `PARTY_PROXY`.
+pub(crate) fn audit_details_typed(
+    system_id: &str,
+    change_type: &str,
+    description: Option<&str>,
+    committer: &Value,
+    time_committed: &jiff::Timestamp,
+) -> Result<AuditDetailsData, ServiceError> {
+    Ok(AuditDetailsData {
+        system_id: system_id.to_owned(),
+        time_committed: dv_date_time(time_committed),
+        change_type: openehr_coded_text(change_type, change_type_rubric(change_type)),
+        description: description.map(dv_text),
+        committer: party_proxy(committer)?,
+    })
+}
+
+/// The canonical-JSON `AUDIT_DETAILS` of [`audit_details_typed`], serialized
+/// through the native codec so the wire body carries `_type` first and the
+/// BMM's own attribute order.
+///
+/// # Errors
+/// The [`audit_details_typed`] rejection.
 pub(crate) fn audit_details(
     system_id: &str,
     change_type: &str,
     description: Option<&str>,
     committer: &Value,
     time_committed: &jiff::Timestamp,
-) -> Value {
-    let mut audit = json!({
-        "_type": "AUDIT_DETAILS",
-        "system_id": system_id,
-        "time_committed": { "_type": "DV_DATE_TIME", "value": time_committed.to_string() },
-        "change_type": {
-            "_type": "DV_CODED_TEXT",
-            "value": change_type_rubric(change_type),
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": OPENEHR },
-                "code_string": change_type
-            }
-        },
-        "committer": committer
-    });
-    if let (Some(desc), Value::Object(map)) = (description, &mut audit) {
-        map.insert(
-            "description".to_owned(),
-            json!({ "_type": "DV_TEXT", "value": desc }),
-        );
-    }
-    audit
+) -> Result<Value, ServiceError> {
+    Ok(openehr_its::json::to_canonical_value(&audit_details_typed(
+        system_id,
+        change_type,
+        description,
+        committer,
+        time_committed,
+    )?))
 }
 
 /// Validate a client-supplied commit `AUDIT_DETAILS`' non-terminology RM
@@ -276,8 +359,10 @@ pub(crate) fn audit_details(
 ///   `system_id` reaches the DB `System_id_valid` CHECK and surfaces as a
 ///   `500` — a validation failure must be `422`, not an internal error.
 /// - the committer `PARTY_PROXY`'s own `PARTY_IDENTIFIED`/`PARTY_RELATED`
-///   invariants `Basic_validity` + `Name_valid` (+ `Relationship_valid` for
-///   `PARTY_RELATED`; RM common master04 §Party Proxies). A PARTY that appears
+///   invariants `Basic_validity` + `Name_valid` (RM
+///   `UML/classes/org.openehr.rm.common.party_identified.adoc` §Invariants),
+///   plus `Relationship_valid` for `PARTY_RELATED`
+///   (`…org.openehr.rm.common.party_related.adoc` §Invariants). A PARTY that appears
 ///   as *content* is validated by the RM-invariant pass, but the audit
 ///   committer is stored verbatim, so it is checked here.
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
@@ -292,7 +377,7 @@ pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceErr
 }
 
 /// Enforce the committer `PARTY_PROXY`'s `Basic_validity` + `Name_valid`
-/// (RM common master04 §Party Proxies, `PARTY_IDENTIFIED`): a
+/// (RM `UML/classes/org.openehr.rm.common.party_identified.adoc` §Invariants): a
 /// `PARTY_IDENTIFIED`/`PARTY_RELATED` committer must carry at least one of
 /// `name` / `identifiers` / `external_ref`, and a present `name` must be
 /// non-empty. A `PARTY_RELATED` committer additionally requires its
@@ -334,8 +419,9 @@ fn validate_committer(committer: &Value) -> Result<(), ServiceError> {
 /// `PARTY_RELATED.relationship` (1..1 `DV_CODED_TEXT`) + `Relationship_valid`
 /// for an audit committer. The invariant is
 /// `terminology(openehr).has_code_for_group_id(subject_relationship,
-/// relationship.defining_code)` (RM common master04 §Party Proxies,
-/// `PARTY_RELATED`) — the code must BE an openEHR `subject_relationship` group
+/// relationship.defining_code)` (RM
+/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Invariants) — the
+/// code must BE an openEHR `subject_relationship` group
 /// member, so a `defining_code` from any other terminology fails the invariant
 /// too (the spec formula has no terminology escape hatch; openEHR specs are
 /// leading).
@@ -369,6 +455,8 @@ fn validate_party_related_relationship(committer: &Value) -> Result<(), ServiceE
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
 
     /// ITS-REST overview §"openehr-version and openehr-audit-details": a

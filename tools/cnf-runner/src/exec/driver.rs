@@ -1241,13 +1241,107 @@ fn json_shape(value: &Value) -> &'static str {
     }
 }
 
+/// The attestation change kind, spelled the one way it is spelled everywhere:
+/// the case-level `change_type` token, the member key carrying the
+/// `UPDATE_ATTESTATION` payload, and — because they coincide — the openEHR
+/// rubric of code 666 (TERM `SupportTerminology`, audit change type:
+/// `<concept id="666" rubric="attestation"/>`).
+///
+/// RM common `master06-change_control_package.adoc` §Contributions:
+/// "attestation of item: a new `ATTESTATION` is added to the attestations list
+/// of an existing `ORIGINAL_VERSION`; the `ATTESTATION.commit_audit.change_type`
+/// is set to the code `666|attestation|`".
+const ATTESTATION_TOKEN: &str = "attestation";
+/// The `audit_change_type` code the token above names (`666|attestation|`).
+const ATTESTATION_CODE: &str = "666";
+
 impl HttpDriver<'_> {
+    /// An openEHR `DV_CODED_TEXT` over the `openehr` terminology.
+    fn openehr_coded_text(code: &str, rubric: &str) -> Value {
+        serde_json::json!({
+            "_type": "DV_CODED_TEXT", "value": rubric,
+            "defining_code": { "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": code }
+        })
+    }
+
+    /// The `preceding_version_uid` a CONTRIBUTION member names, if any. A
+    /// list-valued capture (`created.version_uids[]`) addresses its single
+    /// member on a one-version commit set.
+    fn member_preceding(member: &Value) -> Option<Value> {
+        match member.get("preceding_version_uid") {
+            Some(Value::Array(items)) => items.first().cloned(),
+            Some(Value::Null) | None => None,
+            Some(other) => Some(other.clone()),
+        }
+    }
+
+    /// A `666|attestation|` CONTRIBUTION member: an `ATTESTATION` attached to
+    /// an EXISTING `ORIGINAL_VERSION`.
+    ///
+    /// RM common `master06-change_control_package.adoc` §Contributions makes
+    /// this member a change that commits NO new version — "all logical changes
+    /// … are achieved by physically committing new Versions, **or for
+    /// attestations, new Attestation objects to existing Versions**" — so it
+    /// carries neither `data` nor a version `lifecycle_state`; it names its
+    /// target with `preceding_version_uid` and its `commit_audit` IS the
+    /// `UPDATE_ATTESTATION` (ITS-REST `specifications/schemas/common/
+    /// UpdateAttestation.yaml`: `UPDATE_AUDIT` + `reason` + `is_pending`,
+    /// both required), supplied verbatim by the case's corpus fixture so an
+    /// invalid attestation shape reaches the wire unrepaired. The runner fills
+    /// only the `UPDATE_AUDIT` parts a client always sends and the fixture
+    /// does not state.
+    fn attestation_member(member: &Value) -> Value {
+        let mut audit = member
+            .get(ATTESTATION_TOKEN)
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
+        audit
+            .entry("_type")
+            .or_insert_with(|| Value::String("UPDATE_ATTESTATION".to_owned()));
+        audit
+            .entry("system_id")
+            .or_insert_with(|| Value::String("cnf-runner".to_owned()));
+        audit.entry("committer").or_insert_with(
+            || serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "cnf runner" }),
+        );
+        audit
+            .entry("change_type")
+            .or_insert_with(|| Self::openehr_coded_text(ATTESTATION_CODE, ATTESTATION_TOKEN));
+        let mut version = serde_json::json!({
+            "_type": "ORIGINAL_VERSION",
+            "commit_audit": Value::Object(audit)
+        });
+        if let Some(preceding) = Self::member_preceding(member)
+            && let Some(map) = version.as_object_mut()
+        {
+            map.insert(
+                "preceding_version_uid".to_owned(),
+                serde_json::json!({ "_type": "OBJECT_VERSION_ID", "value": preceding }),
+            );
+        }
+        version
+    }
+
     /// Build the canonical CONTRIBUTION envelope from the case model's
     /// bundled `versions:` construct (ITS contribution schema:
     /// `ORIGINAL_VERSION` members carrying `data` + `commit_audit` +
     /// `lifecycle_state`; `change_type` tokens map to the openEHR audit
     /// change-type codes — RM common `§change_control`).
     fn contribution_envelope(versions: &[Value]) -> Value {
+        // The envelope audit's aggregate change type. RM common
+        // `master06-change_control_package.adoc` §Contributions fixes the
+        // attestation-only value verbatim — "`666|attestation|`: used when the
+        // only changes are attestation of one or more of the member versions"
+        // — so an all-attestation change set reports 666 rather than claiming a
+        // creation nothing performed. Every other combination keeps the
+        // creation default.
+        let all_attestations = !versions.is_empty()
+            && versions.iter().all(|member| {
+                member.get("change_type").and_then(Value::as_str) == Some(ATTESTATION_TOKEN)
+            });
         let members: Vec<Value> = versions
             .iter()
             .map(|member| {
@@ -1267,6 +1361,9 @@ impl HttpDriver<'_> {
                     .get("change_type")
                     .and_then(Value::as_str)
                     .unwrap_or("creation");
+                if change == ATTESTATION_TOKEN {
+                    return Self::attestation_member(member);
+                }
                 let (code, label) = match change {
                     "modification" => ("251", "modification"),
                     "deletion" | "deleted" => ("523", "deleted"),
@@ -1306,14 +1403,7 @@ impl HttpDriver<'_> {
                 {
                     map.insert("data".to_owned(), data.clone());
                 }
-                // a list-valued capture (created.version_uids[]) addresses
-                // its single member on a one-version commit set
-                let preceding = match member.get("preceding_version_uid") {
-                    Some(Value::Array(items)) => items.first().cloned(),
-                    Some(Value::Null) | None => None,
-                    Some(other) => Some(other.clone()),
-                };
-                if let Some(preceding) = preceding
+                if let Some(preceding) = Self::member_preceding(member)
                     && let Some(map) = version.as_object_mut()
                 {
                     map.insert(
@@ -1326,6 +1416,11 @@ impl HttpDriver<'_> {
                 version
             })
             .collect();
+        let aggregate = if all_attestations {
+            Self::openehr_coded_text(ATTESTATION_CODE, ATTESTATION_TOKEN)
+        } else {
+            Self::openehr_coded_text("249", "creation")
+        };
         serde_json::json!({
             "_type": "CONTRIBUTION",
             "versions": members,
@@ -1333,10 +1428,7 @@ impl HttpDriver<'_> {
                 "_type": "AUDIT_DETAILS",
                 "system_id": "cnf-runner",
                 "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
-                "change_type": { "_type": "DV_CODED_TEXT", "value": "creation",
-                    "defining_code": { "_type": "CODE_PHRASE",
-                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                        "code_string": "249" } }
+                "change_type": aggregate
             }
         })
     }
@@ -3180,6 +3272,89 @@ mod tests {
         let other = CaptureName::parse("composition_body").unwrap();
         let err = HttpDriver::patched_body(&other, &set, &VarStore::default()).unwrap_err();
         assert!(err.contains("holds no resource body"), "{err}");
+    }
+
+    /// A `666|attestation|` member is the attestation wire shape RM common
+    /// `master06-change_control_package.adoc` §Contributions describes: it
+    /// commits no new version, so it carries NEITHER `data` NOR a version
+    /// `lifecycle_state`; it names its target with `preceding_version_uid`
+    /// and its `commit_audit` is the fixture's `UPDATE_ATTESTATION`, carried
+    /// verbatim. The envelope audit reports the attestation-only aggregate
+    /// (§Contributions: "`666|attestation|`: used when the only changes are
+    /// attestation of one or more of the member versions").
+    #[test]
+    fn an_attestation_member_commits_no_version_and_carries_the_fixture_audit() {
+        let envelope = HttpDriver::contribution_envelope(&[serde_json::json!({
+            "change_type": "attestation",
+            "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
+            "attestation": {
+                "_type": "UPDATE_ATTESTATION",
+                "reason": { "_type": "DV_TEXT", "value": "witnessed" },
+                "is_pending": false
+            }
+        })]);
+        let member = &envelope["versions"][0];
+        assert_eq!(member["_type"], serde_json::json!("ORIGINAL_VERSION"));
+        assert!(member.get("data").is_none(), "no content: {member}");
+        assert!(
+            member.get("lifecycle_state").is_none(),
+            "no new version, so no version lifecycle: {member}"
+        );
+        assert_eq!(
+            member["preceding_version_uid"]["value"],
+            serde_json::json!("8849182c-82ad-4088-a07f-48ead4180515::cnf::1")
+        );
+        let audit = &member["commit_audit"];
+        assert_eq!(audit["_type"], serde_json::json!("UPDATE_ATTESTATION"));
+        assert_eq!(audit["reason"]["value"], serde_json::json!("witnessed"));
+        assert_eq!(audit["is_pending"], serde_json::json!(false));
+        // the UPDATE_AUDIT parts the fixture left unstated
+        assert_eq!(
+            audit["change_type"]["defining_code"]["code_string"],
+            serde_json::json!("666")
+        );
+        assert!(audit["committer"]["name"].is_string(), "{audit}");
+        // the attestation-only aggregate
+        assert_eq!(
+            envelope["audit"]["change_type"]["defining_code"]["code_string"],
+            serde_json::json!("666")
+        );
+    }
+
+    /// An INVALID attestation fixture reaches the wire unrepaired — the runner
+    /// fills only the `UPDATE_AUDIT` parts, never the `UPDATE_ATTESTATION`
+    /// attributes under test, so a refusal case exercises the server's
+    /// `ATTESTATION` invariants rather than the runner's defaults.
+    #[test]
+    fn an_invalid_attestation_fixture_is_not_repaired() {
+        let envelope = HttpDriver::contribution_envelope(&[serde_json::json!({
+            "change_type": "attestation",
+            "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
+            "attestation": { "_type": "UPDATE_ATTESTATION", "is_pending": false, "items": [] }
+        })]);
+        let audit = &envelope["versions"][0]["commit_audit"];
+        assert!(
+            audit.get("reason").is_none(),
+            "reason stays absent: {audit}"
+        );
+        assert_eq!(audit["items"], serde_json::json!([]));
+    }
+
+    /// A change set that is NOT attestation-only keeps the creation aggregate.
+    #[test]
+    fn a_mixed_change_set_keeps_the_creation_aggregate() {
+        let envelope = HttpDriver::contribution_envelope(&[
+            serde_json::json!({ "change_type": "creation", "data": { "_type": "COMPOSITION" } }),
+            serde_json::json!({
+                "change_type": "attestation",
+                "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
+                "attestation": { "is_pending": true, "reason": { "value": "witnessed" } }
+            }),
+        ]);
+        assert_eq!(
+            envelope["audit"]["change_type"]["defining_code"]["code_string"],
+            serde_json::json!("249")
+        );
     }
 
     #[test]

@@ -173,8 +173,11 @@ fn set_write_headers(resp: &mut Response, base: &str, segment: &str, meta: Optio
 /// `VERSION.commit_audit.time_committed.value`". That is the `ORIGINAL_VERSION`'s
 /// own `commit_audit` for a version read, and the most recent revision-history
 /// item's first audit for a history read (`REVISION_HISTORY.items` is
-/// most-recent-last, RM common `master04-revision_history.adoc`
-/// §`REVISION_HISTORY`). A `VERSIONED_OBJECT` container body exposes no
+/// most-recent-last, RM common `master04-generic_package.adoc` §Revision
+/// History + `UML/classes/org.openehr.rm.common.revision_history.adoc` §items
+/// — "the items in this history in most-recent-last order", with
+/// `most_recent_version_time_committed`'s postcondition
+/// `items.last.audits.first.time_committed.value`). A `VERSIONED_OBJECT` container body exposes no
 /// commit audit — which is why the container READ does not use this seam:
 /// its `Last-Modified` rides the service metadata (the version spine's
 /// newest commit instant, overview §"`ETag` and Last-Modified").
@@ -426,7 +429,8 @@ mod tests {
     /// A `REVISION_HISTORY` carries no `uid`, so the `ETag` falls back to the
     /// addressed `VERSIONED_OBJECT.uid.value`; `Last-Modified` comes from the
     /// most recent item (`REVISION_HISTORY.items` is most-recent-last, RM common
-    /// `master04-revision_history.adoc`).
+    /// `master04-generic_package.adoc` §Revision History +
+    /// `UML/classes/org.openehr.rm.common.revision_history.adoc` §items).
     #[test]
     fn read_meta_of_a_revision_history() {
         let body = serde_json::json!({
