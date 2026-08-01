@@ -1,0 +1,1826 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-03-26</original_author>
+    <original_author id="name">Dr Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics, Australia</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Fatima Almeida, Critical SW, Portugal</other_contributors>
+    <other_contributors>Tomas Alme, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Anita Bjørnnes, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Einar Fosse, UNN HF, Norwegian Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Knut Harboe, Stavanger Universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Andreas Hering, Helse Bergen HF, Haukeland universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Shinji Kobayashi, Kyoto University, Japan</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Rose Mari Eikås, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Ole Martin Sand, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Pablo Pazos, CaboLabs.com Health Informatics, Uruguay</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Jussara Rotzsch, Hospital Alemão Oswaldo Cruz, Brazil</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Line Sæle, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Richard Townley-O'Neill, Australian Digital Health Agency, Australia</other_contributors>
+    <other_contributors>Gro-Hilde Ulriksen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">F73BABA6192202A6981F3A0E77AAEB92</other_details>
+    <other_details id="build_uid">175d6541-58bb-4ea9-83cf-1bfbedd06ffd</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>Generisk forespørsel om utførelse av en helsetjeneste, til annet helsepersonell eller andre organisasjoner.</purpose>
+      <keywords>rekvisisjon</keywords>
+      <keywords>bestilling</keywords>
+      <keywords>foreskriving</keywords>
+      <keywords>tjeneste</keywords>
+      <keywords>tjenesteyter</keywords>
+      <keywords>rekvirere</keywords>
+      <keywords>bestille</keywords>
+      <keywords>anmodning</keywords>
+      <keywords>forespørre</keywords>
+      <keywords>forespørsel</keywords>
+      <keywords>anmode</keywords>
+      <keywords>tilsyn</keywords>
+      <use>Brukes til å registrere en forespørsel om en helserelatert tjeneste eller aktivitet som skal utføres av en kliniker, organisasjon eller virksomhet.&#xD;
+&#xD;
+Arketypen er designer som et rammeverk som kan brukes som grunnlag for:&#xD;
+- En forespørsel om en helserelatert tjeneste, fra en kliniker eller organisasjon til en annen kliniker eller organisasjon. For eksempel: En henvisning til en spesialist for behandling eller second opinion, ansvarsoverføring til akuttmottaket, monitorering av vitale tegn hver 4. time, eller hjemmesykepleie fra kommunen.&#xD;
+- En forespørsel om oppfølging fra samme kliniker eller organisasjon, for eksempel kontroll på poliklinikk om 6 uker.&#xD;
+&#xD;
+Kliniske brukseksempler:&#xD;
+- Dersom en kliniker setter opp en kontrolltime om 6 uker: "Tjenestenavn" settes til "Kontroll". Dersom klinikeren skriver inn "6 uker" som tid for kontrolltime i brukergrensesnittet, vil det kliniske systemet registrere datoen 6 uker etter registreringsdatoen i elementet "Dato/tid forfall".&#xD;
+- Dersom en kliniker setter opp en pasient til "undervisning om diabetes" i "Tjenestenavn". Verdiene for "Årsak for forespørsel" kan være "Ny diagnose" og "Forebygging av ketoacidose". "Klinisk indikasjon" kan være "Diabetes type 1", som kan lenkes til en Problem/diagnose og/eller et Laboratorieprøveresultat. Dersom det er nødvendig med et kurs på 4 uker, med 4 ukentlige undervisningsøkter, må en bruke arketypene CLUSTER.service_direction og CLUSTER.timing_nondaily for å registrere kompleks timinginformasjon.&#xD;
+- Dersom en kliniker ordinerer en gjentagende blodprøve, som for eksempel INR: Den komplekse timingen for dette krever bruk av arketypene CLUSTER.service_direction og CLUSTER.timing_nondaily for å definere hver timing i en sekvens, for eksempel "daglig i en uke, ukentlig i 4 uker, månedlig i 6 måneder".&#xD;
+&#xD;
+En grunnleggende antagelse for denne arketypen er at den er en forespørsel for én enkelt helsetjeneste. Dersom man trenger en gjentagende tjeneste, kan dette spesifiseres ved å bruke arketypen CLUSTER.service_direction i SLOTet "Kompleks timing".&#xD;
+&#xD;
+I mange situasjoner vil det være mulig å registrere stegene som gjennomgås i utførelsen av forespørselen ved hjelp av den generiske arketypen ACTION.service. Imidlertid vil det være mange tilfeller der det vil være behov for en spesifikk ACTION-arketype, for å kunne oppfylle behov om spesifikke dataelementer, registreringsmønstre eller prosesstrinn. Eksempler på dette er ACTION.screening og ACTION.health_education.</use>
+      <misuse />
+      <copyright>© openEHR Foundation, Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>Generic request framework for an order for a health-related therapy or activity to be carried out.</purpose>
+      <keywords>request</keywords>
+      <keywords>order</keywords>
+      <keywords>therapy</keywords>
+      <keywords>provide</keywords>
+      <keywords>referral</keywords>
+      <use>Use to record an order or instruction for a health-related therapy or activity to be carried out.&#xD;
+&#xD;
+This archetype has been designed as a framework that can be used as the basis for an order for a health-related therapy or activity within the same department, organisation or agency, or self-care by the individual. For example: four hourly vital signs monitoring; bed rest; daily dressings.&#xD;
+&#xD;
+The default assumption for this archetype is that it is a request for a single therapeutic activity. If a series of activities are required, use the CLUSTER.service_direction or CLUSTER.therapeutic_direction archetype within the 'Complex timing' SLOT.&#xD;
+&#xD;
+In many situations it will be possible to record the steps that occur as part of this request being carried out using the corresponding generic ACTION.service. However, there will be many occasions where the required ACTION archetype will be very specific for purpose, as the data requirements for recording provision of many health-related services will need quite unique data elements, recording patterns or pathway steps. For example: ACTION.screening or ACTION.health_education.</use>
+      <misuse>Not to be used for a medication order. Use INSTRUCTION.medication_order for this purpose.</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>Quadro generico di richiesta per un servizio o un'attività sanitaria che deve essere fornita da un medico, da un'organizzazione o da un'agenzia.</purpose>
+      <keywords>richiesta, ordine, servizio, fornire, indirizzamento</keywords>
+      <use>Usato per registrare la richiesta di un servizio o di un'attività sanitaria da parte di un clinico, di un'organizzazione o di un'agenzia.&#xD;
+&#xD;
+Questo archetipo è stato progettato come una cornice che possa essere utilizzata come base per:&#xD;
+- una richiesta da un clinico, organizzazione o agenzia ad un altro clinico, organizzazione o agenzia per un servizio sanitario. Per esempio: la richiesta di un medico specialista per un trattamento o un secondo parere clinico; il trasferimento delle cure a un reparto di emergenza; il monitoraggio dei segni vitali ogni quattro ore; e la fornitura di servizi a domicilio da parte di un consiglio comunale; oppure&#xD;
+- una richiesta di un servizio di follow-up da programmare per lo stesso clinico, organizzazione o agenzia. Ad esempio: un appuntamento di controllo in ambulatorio in 6 settimane. &#xD;
+&#xD;
+Casi d'uso clinico:&#xD;
+- si prenda in considerazione l'idea di un clinico che ordini un appuntamento di follow-up tra 6 settimane. L'"Appuntamento di follow-up" sarà il "Nome del servizio". Se si inseriscono '6 settimane' come tempistica proposta per l'appuntamento nell'interfaccia utente, il sistema clinico registrerà la data a sei settimane da oggi nell'elemento "Tempistica per la fornitura del servizio".&#xD;
+- si consideri un clinico che ordina l'educazione al diabete come 'Nome del servizio'. I valori per 'Motivo della richiesta' possono essere 'Nuova diagnosi' e 'Prevenzione della chetoacidosi'. L'"Indicazione clinica" sarà "Diabete di tipo 1", che può essere collegato all'archetipo Problem Diagnosis e/o a Laboratory test results. Se è richiesto un corso di 4 settimane, con sessioni organizzate a intervalli settimanali in 4 occasioni separate, allora la complessa tempistica richiede l'uso dell'archetipo CLUSTER.service_direction e dell'associato CLUSTER.timing_nondaily.&#xD;
+- si prenda in considerazione un medico che ordina un esame del sangue ricorrente, come ad esempio un INR. La complessa tempistica per questo richiede l'uso del CLUSTER.service_direction e dell'archetipo CLUSTER.timing_nondaily associato per definire ogni tempistica in una sequenza di test, come ad esempio "giornalmente per una settimana, settimanalmente per 4 settimane, mensilmente per 6 mesi".&#xD;
+&#xD;
+Il presupposto di default per questo archetipo è che si tratti di una richiesta per un singolo servizio. Se è richiesta una serie di servizi, utilizzare l'archetipo CLUSTER.service_direction all'interno dello SLOT 'Tempistica Complessa'.&#xD;
+&#xD;
+In molte situazioni sarà possibile registrare i passaggi che si verificano nell'ambito di questa richiesta che viene effettuata utilizzando il corrispondente generico ACTION.service. Tuttavia, ci saranno molte occasioni in cui l'archetipo di ACTION richiesto sarà molto specifico per lo scopo, in quanto i requisiti di dati per la registrazione della fornitura di molti servizi sanitari avranno bisogno di elementi, pattern di registrazione o fasi di percorso piuttosto unici. Ad esempio: ACTION.screening o ACTION. health_education.&#xD;
+&#xD;
+&#xD;
+&#xD;
+</use>
+      <misuse />
+      <copyright>© openEHR Foundation, Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Nasjonal IKT HF, Norway</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+    <author id="name">Francesca Frexia</author>
+    <author id="organisation">CRS4 - Center for advanced studies, research and development in Sardinia, Pula (Cagliari), Italy</author>
+    <author id="email">francesca.frexia@crs4.it</author>
+  </translations>
+  <uid>
+    <value>c31fafb6-eaf1-4171-8be9-0212093b127f</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-INSTRUCTION.therapeutic_activity_order.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>INSTRUCTION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>activities</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ACTIVITY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>description</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ITEM_TREE</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+              <rm_attribute_name>items</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0121</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0148</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0135</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0062</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0064</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0152</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0065</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0068</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>defining_code</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_CODE_PHRASE">
+                        <rm_type_name>CODE_PHRASE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <terminology_id>
+                          <value>local</value>
+                        </terminology_id>
+                        <code_list>at0136</code_list>
+                        <code_list>at0137</code_list>
+                        <code_list>at0138</code_list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0040</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_INTERVAL&lt;DV_DATE_TIME&gt;</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>upper</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DATE_TIME</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>lower</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DATE_TIME</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0151</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.service_direction(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.therapeutic_direction\.v1/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>openEHR-EHR-CLUSTER\.service_direction(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.therapeutic_direction\.v1</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0145</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0144</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0147</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_BOOLEAN</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_PRIMITIVE_OBJECT">
+                        <rm_type_name>BOOLEAN</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <item xsi:type="C_BOOLEAN">
+                          <true_valid>true</true_valid>
+                          <false_valid>false</false_valid>
+                        </item>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0132</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>.*</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0149</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v0</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0076</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_BOOLEAN</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_PRIMITIVE_OBJECT">
+                        <rm_type_name>BOOLEAN</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <item xsi:type="C_BOOLEAN">
+                          <true_valid>true</true_valid>
+                          <false_valid>false</false_valid>
+                        </item>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0078</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0116</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>.*</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0150</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <cardinality>
+                <is_ordered>false</is_ordered>
+                <is_unique>false</is_unique>
+                <interval>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>1</lower>
+                </interval>
+              </cardinality>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0141</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0011</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0142</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0127</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0128</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.distribution\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.distribution\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0112</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Therapeutic activity</items>
+        <items id="description">An order or instruction for a health-related therapy or activity to be carried out.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Current Activity</items>
+        <items id="description">Current Activity.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Requester order identifier</items>
+        <items id="description">The local identifier assigned by the requesting clinical system.</items>
+        <items id="comment">Usually equivalent to the HL7 Placer Order Identifier.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Receiver order identifier</items>
+        <items id="description">The local identifier assigned to the request by the clinician or organisation receiving the request for therapy.</items>
+        <items id="comment">Usually equivalent to the HL7 Filler Order Identifier.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Activityy due</items>
+        <items id="description">The date/time, or acceptable interval of date/time, for provision of the therapy.</items>
+        <items id="comment">This data element allows for recording of the timing for a single therapy, either as a date and time, a date ranges or a text descriptor which can allow for 'next available. In practice, clinicians will often think in terms of ordering therapys as approximate timing, for example: review in 3 months, 6 months or 12 months. As clinical systems need more exact parameters to operate on, this '3 months' will usually be converted to an exact date 3 months from the date of recording and stored using this data element. If complex timing or sequences of timings are required, use the CLUSTER.service_direction archetype within the 'Complex timing' SLOT and this data element becomes redundant.</items>
+      </items>
+      <items code="at0062">
+        <items id="text">Reason for order</items>
+        <items id="description">A short phrase describing the reason for the order.</items>
+        <items id="comment">Coding of the 'Reason for order' with a coding system is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required.</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Reason description</items>
+        <items id="description">Narrative description about the reason for request.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Intent</items>
+        <items id="description">Description of the intent for the order.</items>
+        <items id="comment">Coding of the 'Intent' with a coding system is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Urgency</items>
+        <items id="description">Urgency of the order.</items>
+        <items id="comment">Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. If explicit timing is required then the Activity period should be clearly stated.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Supplementary information</items>
+        <items id="description">Supplementary information will be following the order.</items>
+        <items id="comment">Record as TRUE if additional information has been identified and will be forwarded when available. For example: pending test results.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Information description</items>
+        <items id="description">Description of the supplementary information.</items>
+      </items>
+      <items code="at0112">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0116">
+        <items id="text">Patient requirements</items>
+        <items id="description">Language, transport or other personal requirements to support the patient's attendance or participation in carrying out the activity.</items>
+      </items>
+      <items code="at0121">
+        <items id="text">Activity name</items>
+        <items id="description">The name of the single therapy or activity requested.</items>
+        <items id="comment">Coding of the 'Activity name' with a coding system is desirable, if available. For example: 'recommendation to rest in bed'; 'apply ice for 20 minutes every 2 hours'.</items>
+      </items>
+      <items code="at0127">
+        <items id="text">Order status</items>
+        <items id="description">The status of the order for the activity as indicated by the requester.</items>
+        <items id="comment">Status is used to denote whether this is the initial request, or a follow-up request to change or provide supplementary information. Coding with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0128">
+        <items id="text">Distribution list</items>
+        <items id="description">Details of additional clinicians, organisations or agencies who require copies of any communication.</items>
+      </items>
+      <items code="at0132">
+        <items id="text">Specific details</items>
+        <items id="description">Additional detail about the activity ordered.</items>
+      </items>
+      <items code="at0135">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the activity ordered.</items>
+        <items id="comment">This data point should be used to describe the named activity in more detail, including how it should be delivered, individual concerns and issues that might be encountered in carrying out the activity.</items>
+      </items>
+      <items code="at0136">
+        <items id="text">Emergency</items>
+        <items id="description">The request requires immediate attention.</items>
+      </items>
+      <items code="at0137">
+        <items id="text">Urgent</items>
+        <items id="description">The request requires prioritised attention.</items>
+      </items>
+      <items code="at0138">
+        <items id="text">Routine</items>
+        <items id="description">The request does not require prioritised scheduling.</items>
+      </items>
+      <items code="at0141">
+        <items id="text">Requester</items>
+        <items id="description">Details about the clinician or organisation requesting the therapy.</items>
+      </items>
+      <items code="at0142">
+        <items id="text">Receiver</items>
+        <items id="description">Details about the clinician or organisation receiving the request for therapy.</items>
+      </items>
+      <items code="at0144">
+        <items id="text">Activity period expiry</items>
+        <items id="description">The date/time that marks the conclusion of the clinically valid period of time for carrying out this activity.</items>
+        <items id="comment">This date/time is the equivalent to the latest possible date for carrying out the activity or to the date of expiry for this order. For example: an activity may be required to be completed before another event, such as scheduled surgery.</items>
+      </items>
+      <items code="at0145">
+        <items id="text">Activity period start</items>
+        <items id="description">The date/time that marks the beginning of the valid period of time for delivery of this activity.</items>
+        <items id="comment">This date/time is the equivalent to the earliest possible date for carrying out the activity. For example: sometimes a certain amount of time must pass before an activity can be carried out. For example: 'start mobilisation 2 days post surgery'.</items>
+      </items>
+      <items code="at0147">
+        <items id="text">Indefinite?</items>
+        <items id="description">The valid period for this order is open ended and has no date of expiry.</items>
+        <items id="comment">Record as TRUE to record explicity that the order has no expiry date. For example: required for a lifelong activity.</items>
+      </items>
+      <items code="at0148">
+        <items id="text">Activity type</items>
+        <items id="description">Category of therapy or activity ordered.</items>
+        <items id="comment">Coding of the 'Activity type' with a coding system is desirable, if available. If the 'Therapy name' was coded, it is possible for this data point to be derived from the code. For example: 'Self-care intervention'.</items>
+      </items>
+      <items code="at0149">
+        <items id="text">Supporting information</items>
+        <items id="description">Digital document, image, video or diagram supplied as additional information to support or inform the order.</items>
+      </items>
+      <items code="at0150">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the activity order not captured in other fields.</items>
+      </items>
+      <items code="at0151">
+        <items id="text">Complex timing</items>
+        <items id="description">Details about a complex order requiring a sequence of timings.</items>
+      </items>
+      <items code="at0152">
+        <items id="text">Clinical indication</items>
+        <items id="description">The clinical reason for the ordered therapy.</items>
+        <items id="comment">Coding of the clinical indication with a terminology is preferred, where possible. This data element allows multiple occurrences. For example: 'Sprained ankle' or 'Type 1 Diabetes mellitus'.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">*Therapeutic activity (en)</items>
+        <items id="description">Forespørsel om utførelse av en helsetjeneste, til annet helsepersonell eller andre organisasjoner.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Forespørsel</items>
+        <items id="description">Beskrivelse av tjenesten som forespørres.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Rekvisisjonsidentifikator</items>
+        <items id="description">Den lokale identifikatoren tilordnet av systemet til den som forespør tjenesten.</items>
+        <items id="comment">Som regel tilsvarende HL7 Placer Order Identifier.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Mottakers rekvisisjonsidentifikator</items>
+        <items id="description">Rekvisisjonens identifikator, tilordnet av den som mottar forespørselen.</items>
+        <items id="comment">Som regel tilsvarende HL7 Filler Order Identifier.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*Activityy due (en)</items>
+        <items id="description">*Dato/tid, eller akseptabelt intervall av dato/tid, da tjenesten skal utføres.</items>
+        <items id="comment">Dette dataelementet tillater registrering av timing for én tjeneste, enten som dato/tid, intervall av dato/tid, eller som en tekstbeskrivelsen som kan understøtte "neste tilgjengelige". I praksis vil klinikere ofte tenke i omtrentlig timing, for eksempel "revurdering om 3 måneder, 6 måneder eller 12 måneder. Siden kliniske systemer trenger mer eksakte tidsangivelser, vil "3 måneder" som regel konverteres til en eksakt dato 3 måneder fra registreringsdatoen, og lagres i dette dataelementet. Dersom det er behov for kompleks timing eller sekvenser av timing, bruk arketypen CLUSTER.service_direction i SLOTet "Kompleks timing". I disse tilfellene blir dette dataelementet redundant.</items>
+      </items>
+      <items code="at0062">
+        <items id="text">*Reason for order (en)</items>
+        <items id="description">*A short phrase describing the reason for the order. (en)</items>
+        <items id="comment">*Coding of the 'Reason for order' with a coding system is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Årsaksbeskrivelse</items>
+        <items id="description">Fritekstbeskrivelse av årsaken til forespørselen.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Hensikt</items>
+        <items id="description">*Description of the intent for the order. (en)</items>
+        <items id="comment">*Coding of the 'Intent' with a coding system is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Hastegrad</items>
+        <items id="description">*Urgency of the order. (en)</items>
+        <items id="comment">*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. If explicit timing is required then the Activity period should be clearly stated. (en)</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Supplerende informasjon</items>
+        <items id="description">*Supplementary information will be following the order. (en)</items>
+        <items id="comment">Registrer som SANN dersom ytterligere informasjon er identifisert, og vil bli ettersendt når den er tilgjengelig. For eksempel: ufullstendige prøvesvar.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Informasjonsbeskrivelse</items>
+        <items id="description">Beskrivelse av den supplerende informasjonen.</items>
+      </items>
+      <items code="at0112">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at0116">
+        <items id="text">Pasientens behov</items>
+        <items id="description">*Language, transport or other personal requirements to support the patient's attendance or participation in carrying out the activity. (en)</items>
+      </items>
+      <items code="at0121">
+        <items id="text">*Activity name (en)</items>
+        <items id="description">Navn på forespurt tjeneste.</items>
+        <items id="comment">*Coding of the 'Activity name' with a coding system is desirable, if available. For example: 'recommendation to rest in bed'; 'apply ice for 20 minutes every 2 hours'. (en)</items>
+      </items>
+      <items code="at0127">
+        <items id="text">*Order status (en)</items>
+        <items id="description">*The status of the order for the activity as indicated by the requester. (en)</items>
+        <items id="comment">Status brukes for å vise om dette er den primære forespørselen, en endring eller supplerende informasjon. Koding med en terminologi foretrekkes, der det er mulig.</items>
+      </items>
+      <items code="at0128">
+        <items id="text">Svarmottakere</items>
+        <items id="description">En liste over personer eller organisasjoner som bør motta svar på forespørselen.</items>
+      </items>
+      <items code="at0132">
+        <items id="text">Spesifikke detaljer</items>
+        <items id="description">*Additional detail about the activity ordered. (en)</items>
+      </items>
+      <items code="at0135">
+        <items id="text">Beskrivelse</items>
+        <items id="description">*Narrative description about the activity ordered. (en)</items>
+        <items id="comment">*This data point should be used to describe the named activity in more detail, including how it should be delivered, individual concerns and issues that might be encountered in carrying out the activity. (en)</items>
+      </items>
+      <items code="at0136">
+        <items id="text">Akutt</items>
+        <items id="description">Forespørselen krever øyeblikkelig oppmerksomhet.</items>
+      </items>
+      <items code="at0137">
+        <items id="text">Haster</items>
+        <items id="description">Forespørselen krever prioritert oppmerksomhet.</items>
+      </items>
+      <items code="at0138">
+        <items id="text">Rutine</items>
+        <items id="description">Forespørslene krever ikke prioritert oppmerksomhet.</items>
+      </items>
+      <items code="at0141">
+        <items id="text">Rekvirent</items>
+        <items id="description">Detaljer om helsepersonellet eller organisasjonen som har forespurt tjenesten.</items>
+      </items>
+      <items code="at0142">
+        <items id="text">Mottaker</items>
+        <items id="description">Detaljer om helsepersonellet eller organisasjonen som mottar tjenesteforespørselen.</items>
+      </items>
+      <items code="at0144">
+        <items id="text">*Activity period expiry (en)</items>
+        <items id="description">*The date/time that marks the conclusion of the clinically valid period of time for carrying out this activity. (en)</items>
+        <items id="comment">*This date/time is the equivalent to the latest possible date for carrying out the activity or to the date of expiry for this order. For example: an activity may be required to be completed before another event, such as scheduled surgery. (en)</items>
+      </items>
+      <items code="at0145">
+        <items id="text">*Activity period start (en)</items>
+        <items id="description">*The date/time that marks the beginning of the valid period of time for delivery of this activity. (en)</items>
+        <items id="comment">*This date/time is the equivalent to the earliest possible date for carrying out the activity. For example: sometimes a certain amount of time must pass before an activity can be carried out. For example: 'start mobilisation 2 days post surgery'. (en)</items>
+      </items>
+      <items code="at0147">
+        <items id="text">Uavgrenset?</items>
+        <items id="description">*The valid period for this order is open ended and has no date of expiry. (en)</items>
+        <items id="comment">*Record as TRUE to record explicity that the order has no expiry date. For example: required for a lifelong activity. (en)</items>
+      </items>
+      <items code="at0148">
+        <items id="text">*Activity type (en)</items>
+        <items id="description">*Category of therapy or activity ordered. (en)</items>
+        <items id="comment">*Coding of the 'Activity type' with a coding system is desirable, if available. If the 'Therapy name' was coded, it is possible for this data point to be derived from the code. For example: 'Self-care intervention'. (en)</items>
+      </items>
+      <items code="at0149">
+        <items id="text">Understøttende informasjon</items>
+        <items id="description">*Digital document, image, video or diagram supplied as additional information to support or inform the order. (en)</items>
+      </items>
+      <items code="at0150">
+        <items id="text">Kommentar</items>
+        <items id="description">*Additional narrative about the activity order not captured in other fields. (en)</items>
+      </items>
+      <items code="at0151">
+        <items id="text">Kompeks timing</items>
+        <items id="description">*Details about a complex order requiring a sequence of timings. (en)</items>
+      </items>
+      <items code="at0152">
+        <items id="text">Klinisk indikasjon</items>
+        <items id="description">Den kliniske årsaken for den forespurte tjenesten.</items>
+        <items id="comment">*Coding of the clinical indication with a terminology is preferred, where possible. This data element allows multiple occurrences. For example: 'Sprained ankle' or 'Type 1 Diabetes mellitus'. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">*Therapeutic activity (en)</items>
+        <items id="description">Richiesta di un servizio o di un'attività sanitaria da parte di un clinico, di un'organizzazione o di un'agenzia.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Attività corrente</items>
+        <items id="description">Attività corrente.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Identificativo dell'ordine per il richiedente</items>
+        <items id="description">L'identificativo locale assegnato dal sistema clinico richiedente.</items>
+        <items id="comment">Di solito equivalente a HL7 Placer Order Identifier.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Identificativo dell'ordine per il ricevente</items>
+        <items id="description">L'identificativo locale assegnato alla richiesta dal clinico o dall'organizzazione che riceve la richiesta per il servizio.</items>
+        <items id="comment">Di solito equivalente a  HL7 Filler Order Identifier.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*Activityy due (en)</items>
+        <items id="description">*La data/ora, o intervallo accettabile di data/ora, per la fornitura del servizio.</items>
+        <items id="comment">Questo dato permette di registrare la tempistica di un singolo servizio, sia come data e ora, sia come intervallo di date o come descrittore testuale che possa consentire l'immediata disponibilità. In pratica, i medici penseranno spesso in termini di ordini di servizi come tempistiche approssimative, ad esempio: revisione in 3 mesi, 6 mesi o 12 mesi. Poiché i sistemi clinici hanno bisogno di parametri più precisi per funzionare, questi "3 mesi" saranno di solito convertiti in una data esatta a 3 mesi dalla data di registrazione e memorizzati utilizzando questo dato. Se sono necessari tempi complessi o sequenze di temporizzazioni complesse, utilizzare l'archetipo CLUSTER.service_direction all'interno dello SLOT 'Tempistica Complessa' e questo dato diventa ridondante.</items>
+      </items>
+      <items code="at0062">
+        <items id="text">*Reason for order (en)</items>
+        <items id="description">*A short phrase describing the reason for the order. (en)</items>
+        <items id="comment">*Coding of the 'Reason for order' with a coding system is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Descrizione del motivo</items>
+        <items id="description">Descrizione narrativa del motivo della richiesta.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Intento</items>
+        <items id="description">*Description of the intent for the order. (en)</items>
+        <items id="comment">*Coding of the 'Intent' with a coding system is desirable, if available. This data element allows multiple occurrences to enable the user to record a multiple responses, if required. (en)</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Urgenza</items>
+        <items id="description">*Urgency of the order. (en)</items>
+        <items id="comment">*Specific definitions of emergency and urgent will vary between clinical contexts, clinical systems and the nature of the request itself, so have not been defined in this archetype. If explicit timing is required then the Activity period should be clearly stated. (en)</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Informazioni supplementari</items>
+        <items id="description">*Supplementary information will be following the order. (en)</items>
+        <items id="comment">Registrare come VERO se sono state identificate informazioni aggiuntive che saranno trasmesse quando disponibili. Ad esempio: in attesa dei risultati del test.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Descrizione delle informazioni</items>
+        <items id="description">Descrizione delle informazioni supplementari.</items>
+      </items>
+      <items code="at0112">
+        <items id="text">Estensione</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at0116">
+        <items id="text">Requisiti per il paziente</items>
+        <items id="description">*Language, transport or other personal requirements to support the patient's attendance or participation in carrying out the activity. (en)</items>
+      </items>
+      <items code="at0121">
+        <items id="text">*Activity name (en)</items>
+        <items id="description">Il nome del singolo servizio o attività richiesti.</items>
+        <items id="comment">*Coding of the 'Activity name' with a coding system is desirable, if available. For example: 'recommendation to rest in bed'; 'apply ice for 20 minutes every 2 hours'. (en)</items>
+      </items>
+      <items code="at0127">
+        <items id="text">*Order status (en)</items>
+        <items id="description">*The status of the order for the activity as indicated by the requester. (en)</items>
+        <items id="comment">Lo stato è usato per indicare se questa è la richiesta iniziale, o una richiesta successiva per cambiare o fornire informazioni supplementari. La codifica con una terminologia è preferibile, ove possibile.</items>
+      </items>
+      <items code="at0128">
+        <items id="text">Lista di distribuzione</items>
+        <items id="description">Dettagli di altri medici, organizzazioni o agenzie che richiedono copie di qualsiasi comunicazione.</items>
+      </items>
+      <items code="at0132">
+        <items id="text">Dettagli specifici</items>
+        <items id="description">*Additional detail about the activity ordered. (en)</items>
+      </items>
+      <items code="at0135">
+        <items id="text">Descrizione</items>
+        <items id="description">*Narrative description about the activity ordered. (en)</items>
+        <items id="comment">*This data point should be used to describe the named activity in more detail, including how it should be delivered, individual concerns and issues that might be encountered in carrying out the activity. (en)</items>
+      </items>
+      <items code="at0136">
+        <items id="text">Emergenza</items>
+        <items id="description">La richiesta richiede un'attenzione immediata.</items>
+      </items>
+      <items code="at0137">
+        <items id="text">Urgente</items>
+        <items id="description">La richiesta richiede un'attenzione prioritaria. </items>
+      </items>
+      <items code="at0138">
+        <items id="text">Routine</items>
+        <items id="description">La richiesta non richiede una programmazione con priorità.</items>
+      </items>
+      <items code="at0141">
+        <items id="text">Richiedente</items>
+        <items id="description">Dettagli sul clinico o sull'organizzazione che richiede il servizio.</items>
+      </items>
+      <items code="at0142">
+        <items id="text">Ricevente</items>
+        <items id="description">Dettagli sul clinico o sull'organizzazione che riceve la richiesta di servizio.</items>
+      </items>
+      <items code="at0144">
+        <items id="text">*Activity period expiry (en)</items>
+        <items id="description">*The date/time that marks the conclusion of the clinically valid period of time for carrying out this activity. (en)</items>
+        <items id="comment">*This date/time is the equivalent to the latest possible date for carrying out the activity or to the date of expiry for this order. For example: an activity may be required to be completed before another event, such as scheduled surgery. (en)</items>
+      </items>
+      <items code="at0145">
+        <items id="text">*Activity period start (en)</items>
+        <items id="description">*The date/time that marks the beginning of the valid period of time for delivery of this activity. (en)</items>
+        <items id="comment">*This date/time is the equivalent to the earliest possible date for carrying out the activity. For example: sometimes a certain amount of time must pass before an activity can be carried out. For example: 'start mobilisation 2 days post surgery'. (en)</items>
+      </items>
+      <items code="at0147">
+        <items id="text">Indefinito?</items>
+        <items id="description">*The valid period for this order is open ended and has no date of expiry. (en)</items>
+        <items id="comment">*Record as TRUE to record explicity that the order has no expiry date. For example: required for a lifelong activity. (en)</items>
+      </items>
+      <items code="at0148">
+        <items id="text">*Activity type (en)</items>
+        <items id="description">*Category of therapy or activity ordered. (en)</items>
+        <items id="comment">*Coding of the 'Activity type' with a coding system is desirable, if available. If the 'Therapy name' was coded, it is possible for this data point to be derived from the code. For example: 'Self-care intervention'. (en)</items>
+      </items>
+      <items code="at0149">
+        <items id="text">Informazione di supporto</items>
+        <items id="description">*Digital document, image, video or diagram supplied as additional information to support or inform the order. (en)</items>
+      </items>
+      <items code="at0150">
+        <items id="text">Commento</items>
+        <items id="description">*Additional narrative about the activity order not captured in other fields. (en)</items>
+      </items>
+      <items code="at0151">
+        <items id="text">Tempistica complessa</items>
+        <items id="description">*Details about a complex order requiring a sequence of timings. (en)</items>
+      </items>
+      <items code="at0152">
+        <items id="text">Indicazione clinica</items>
+        <items id="description">La motivazione clinica del servizio ordinato.</items>
+        <items id="comment">*Coding of the clinical indication with a terminology is preferred, where possible. This data element allows multiple occurrences. For example: 'Sprained ankle' or 'Type 1 Diabetes mellitus'. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

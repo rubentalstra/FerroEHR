@@ -1,0 +1,140 @@
+﻿archetype (adl_version=1.4; uid=3bf10765-4e4d-485d-bacd-dcb6c32c5a86)
+	openEHR-EHR-COMPOSITION.notification.v0
+
+concept
+	[at0000]	-- Notification
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			author = <
+				["name"] = <"Débora Farage">
+				["organisation"] = <"Core Consulting">
+				["email"] = <"contato@coreconsulting.com.br">
+			>
+			accreditation = <"Hospital Alemão Oswaldo Cruz">
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sistine Barretto-Daniels">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"Sistine.Barretto-Daniels@oceaninformatics.com">
+		["date"] = <"2009-12-01">
+	>
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Arquétipo genérico para carregar informação sobre uma notificação.">
+			use = <"Use como um arquétipo genérico para carregar informação sobre uma notificação.
+
+Por exemplo: se um relatório laboratorial específico é recebido por um sistema clínico, regras de negócio automáticas podem deflagar uma notificação a ser enviada a um clínico para início de uma tarefa.
+
+Tanto o notificador quanto o receptor podem ser o provedor de saúde ou o sistema clínico.">
+			keywords = <"notificação", "evento", "notificação de evento">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Generic container archetype to carry information about a notification.">
+			use = <"Use as a generic container archetype to carry information about a notification. 
+
+For example: if a specified laboratory report is received by a clincal system, automated business rules could trigger a notification to be sent to a monitoring clinician for initiation of a task.
+
+Both the notifier and the receiver could be either healthcare provider or a clinical system.">
+			keywords = <"notification", "event", "event notification">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["current_contact"] = <"Heather Leslie, Ocean Informatics<heather.leslie@oceaninformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"953EEA16669197D15BED60CB0D0D8BAD">
+		["build_uid"] = <"7c86e883-a5ea-457b-a168-f0ef44e27c4d">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	COMPOSITION[at0000] matches {	-- Notification
+		category matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {[openehr::433]}
+			}
+		}
+		context matches {
+			EVENT_CONTEXT matches {
+				other_context matches {
+					ITEM_TREE[at0001] matches {	-- Tree
+						items cardinality matches {0..*; unordered} matches {
+							ELEMENT[at0003] occurrences matches {0..1} matches {	-- Notification ID
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							allow_archetype CLUSTER[at0002] occurrences matches {0..*} matches {	-- Extension
+								include
+									archetype_id/value matches {/.*/}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Notification">
+					description = <"This is a generic composition used for all sorts of notifications, such as an infection event and surgical site surveillance event.  
+Document to communicate notifications to healthcare providers or be used as triggers for automated business rules.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local context or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+				["at0003"] = <
+					text = <"Notification ID">
+					description = <"Identification information about the notification.">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0000"] = <
+					text = <"Notificação">
+					description = <"Esta é uma composição genérica usada para todos os tipos de notificações, como em um evento de infecção ou de vigilância de eventos cirúrgicos.
+Documento para comunicar notificações a provedores de saúde para para ser usado como gatilhos para regras de negócio automáticas.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Extensão">
+					description = <"Informação adicional requerida para capturar contexto local ou para alinhar a outros modelos de referência/formalismos.">
+					comment = <"Por exemplo: requisitos de informação locais ou metadados adicionais para alinhar a equivalentes de FHIR ou CIMI.">
+				>
+				["at0003"] = <
+					text = <"Identificador da notificação">
+					description = <"Informação de identificação da notificação.">
+				>
+			>
+		>
+	>

@@ -1,0 +1,543 @@
+﻿archetype (adl_version=1.4; uid=df697075-a5b0-46d2-9fa2-ec1e40453abe)
+	openEHR-EHR-OBSERVATION.comfort_behaviour_scale.v0
+
+concept
+	[at0000]	-- Comfort behaviour scale
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			author = <
+				["name"] = <"Alan D. March">
+				["organisation"] = <"Hospital Universitario Austral, Pilar, Buenos Aires, Argentina">
+				["email"] = <"alandmarch@gmail.com">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Alan D. March">
+		["organisation"] = <"Hospital Universitario Austral, Pilar, Buenos Aires, Argentina">
+		["email"] = <"alandmarch@gmail.com">
+		["date"] = <"2016-08-31">
+	>
+	details = <
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			purpose = <"La escala Comfort Conductual es una modificación de la escala Comfotr original (1992), utilizada para la evaluación del dolor en pacientes pediatricos en unidad de cuidados intensivos y, complementariamente, para la evaluación del nivel de sedación en pacientes no quirúrgicos en unidad de cuidados intensivos.">
+			use = <"Utilizada para la evaluación del dolor y/o nivel de sedación en pacientes pediátricos internados en unidad de cuidados intensivos.">
+			keywords = <"Escala Comfort Conductual", "Escala Comfort B", "dolor", "sedación", "escala", "pediatria">
+			misuse = <"No debe ser utilizada para la evaluación del dolor y/o sedación en adultos.">
+			copyright = <"© openEHR Foundation(en), openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"The Comfort Behavioural scale is a modification of the original Comfort scale (1992), used for pain assesment in children in ICU and, complementarily, for sedation assessment in nonsurgical pediatric ICU patients.">
+			use = <"Used for pain and/or sedation assessment in pediatric ICU patients.">
+			keywords = <"Comfort Behavioural scale", "Comfort B scale", "pain", "sedation", "scale", "pediatric">
+			misuse = <"Not to be used for pain and/or sedation assessment in adult populations.">
+			copyright = <"© openEHR Foundation(en), openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["current_contact"] = <"Alan D. March <alandmarch@gmail.com>">
+		["revision"] = <"0.0.1-alpha">
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["references"] = <"Ambuel B, Hamlett KW, Marx CM, Blumer J. Assessing distress in pediatric intensive care environments: The COMFORT scale. Journal of Pediatric Psychology 17(1):95-109, 1992.
+van Dijk M,  Peters JWB, van Deventer P, Tibboel P. The COMFORT Behavior Scale: A tool for assessing pain and sedation in infants. American Journal of Nursing 105(1): 33-36, 2005.
+Ista E, van Dijk M, Tibboel D, de Hoog M. Assessment of sedation levels in pediatric intensive care patients can be improved by using the COMFORT \"behavior\" scale. Pediatric Critical Care Medicine 6(1):58-63, 2005.">
+		["build_uid"] = <"ee679330-780d-4591-bf62-08272420b12c">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["MD5-CAM-1.0.1"] = <"42E25E6D2E2368E6803922A5926EC175">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Escala Comfort B Conductual
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Alerta
+										value matches {
+											1|[local::at0005], 	-- Profundamente dormido
+											2|[local::at0006], 	-- Ligeramente dormido
+											3|[local::at0007], 	-- Somnoliento
+											4|[local::at0008], 	-- Despierto y alerta
+											5|[local::at0009]  	-- Despierto hiper-alerta (respuesta exagerada al estímulo)
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {	-- Calma/Agitación
+										value matches {
+											1|[local::at0011], 	-- Calmado
+											2|[local::at0012], 	-- Ligeramente ansioso
+											3|[local::at0013], 	-- Ansioso
+											4|[local::at0014], 	-- Muy ansioso (agitado, dificil de calmar)
+											5|[local::at0015]  	-- En pánico
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {	-- Respuesta respiratoria
+										value matches {
+											1|[local::at0017], 	-- Sin respiración espontanea
+											2|[local::at0018], 	-- Respiración espontanea o asistida por respirador
+											3|[local::at0019], 	-- Agitado o con resistencia al respirador
+											4|[local::at0020], 	-- Resistencia al respirador o tose con frecuencia
+											5|[local::at0021]  	-- Lucha con el respirador
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {	-- Llanto
+										value matches {
+											1|[local::at0023], 	-- Respiración tranquila, sin somidos de llanto
+											2|[local::at0024], 	-- Sollozo o quejidos ocasionales
+											3|[local::at0025], 	-- Lloriqueo (sonido monótono)
+											4|[local::at0026], 	-- Llanto
+											5|[local::at0027]  	-- Gritos o chillidos
+										}
+									}
+									ELEMENT[at0028] occurrences matches {0..1} matches {	-- Movimientos físicos
+										value matches {
+											1|[local::at0029], 	-- Sin movimientos
+											2|[local::at0030], 	-- Movimientos leves ocasionales
+											3|[local::at0031], 	-- Movimientos leves y frecuentes
+											4|[local::at0032], 	-- Movimientos vigorosos limitados a extremidades
+											5|[local::at0033]  	-- Movimientos vigorosos que incluyen torso y cabeza
+										}
+									}
+									ELEMENT[at0034] occurrences matches {0..1} matches {	-- Tono muscular
+										value matches {
+											1|[local::at0035], 	-- Músculos totalmente relajados; sin tono muscular
+											2|[local::at0036], 	-- Tono muscular disminuido; resistencia menor a la normal
+											3|[local::at0037], 	-- Tono muscular normal
+											4|[local::at0038], 	-- Tono muscular aumentado y flexión de dedos de mano y pié
+											5|[local::at0039]  	-- Rigidez muscular extrema y flexión de dedos de mano y pié
+										}
+									}
+									ELEMENT[at0040] occurrences matches {0..1} matches {	-- Tensión facial
+										value matches {
+											1|[local::at0041], 	-- Musculatura facial totalmente relajada
+											2|[local::at0042], 	-- Tono muscular facial normal
+											3|[local::at0043], 	-- Tensión muscular evidente, pero no sostenida en algunos músculos faciales
+											4|[local::at0044], 	-- Tensión muscular evidente sostenida en toda la musculatura facial
+											5|[local::at0045]  	-- Músculos faciales contorsionados y muecas
+										}
+									}
+									ELEMENT[at0046] occurrences matches {0..1} matches {	-- Puntaje total
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|6..30|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Comfort behaviour scale">
+					description = <"A numerical scale for pain and/or sedation assessment in pediatric ICU patients.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Alertness">
+					description = <"Degree of alertness.">
+				>
+				["at0005"] = <
+					text = <"Deeply asleep">
+					description = <"Eyes closed, no response to changes in the environment.">
+				>
+				["at0006"] = <
+					text = <"Lightly asleep">
+					description = <"Eyes mostly closed, occasional responses.">
+				>
+				["at0007"] = <
+					text = <"Drowsy">
+					description = <"Child closes his/her eyes frequently, less responsive to the environment.">
+				>
+				["at0008"] = <
+					text = <"Awake and alert">
+					description = <"Child responsive to the environment.">
+				>
+				["at0009"] = <
+					text = <"Awake and hyper-alert">
+					description = <"Exaggerated responses to environmental stimuli.">
+				>
+				["at0010"] = <
+					text = <"Calmness/Agitation">
+					description = <"Degree of calmness or agitation.">
+				>
+				["at0011"] = <
+					text = <"Calm">
+					description = <"Child appears serene and tranquil.">
+				>
+				["at0012"] = <
+					text = <"Slightly anxious">
+					description = <"Child shows slight anxiety.">
+				>
+				["at0013"] = <
+					text = <"Anxious">
+					description = <"Child appears agitated but remains in control.">
+				>
+				["at0014"] = <
+					text = <"Very anxious">
+					description = <"Child appears very agitated, just able to control.">
+				>
+				["at0015"] = <
+					text = <"Panicky">
+					description = <"Severe distress with loss of control">
+				>
+				["at0016"] = <
+					text = <"Respiratory response">
+					description = <"Degree of respiratory response.">
+					comment = <"Score only in mechanically ventilated children.">
+				>
+				["at0017"] = <
+					text = <"No spontaneous respiration">
+					description = <"No spontaneous respiration.">
+				>
+				["at0018"] = <
+					text = <"Spontaneous and ventilator respiration">
+					description = <"Both spontaneous and ventilator respiration.">
+				>
+				["at0019"] = <
+					text = <"Restlessness or resistance to ventilator">
+					description = <"Either restlessness or resistance to ventilator.">
+				>
+				["at0020"] = <
+					text = <"Actively breathes against ventilator or coughs regularly">
+					description = <"Either actively breathes against ventilator or coughs regularly.">
+				>
+				["at0021"] = <
+					text = <"Fights ventilator">
+					description = <"Fights ventilator.">
+				>
+				["at0022"] = <
+					text = <"Crying">
+					description = <"Whether the patient is crying.">
+					comment = <"Score only in spontaneously breathing children.">
+				>
+				["at0023"] = <
+					text = <"Quiet breathing, no crying sounds">
+					description = <"Quiet breathing, with no crying sounds.">
+				>
+				["at0024"] = <
+					text = <"Occasional sobbing or moaning">
+					description = <"Occasional sobbing or moaning.">
+				>
+				["at0025"] = <
+					text = <"Whining (monotonous sound)">
+					description = <"Whining (as monotonous sound).">
+				>
+				["at0026"] = <
+					text = <"Crying
+">
+					description = <"Actively crying
+.">
+				>
+				["at0027"] = <
+					text = <"Screaming or shrieking">
+					description = <"Screaming and/or shrieking.">
+				>
+				["at0028"] = <
+					text = <"Physical movement">
+					description = <"Degree of physical movement.">
+				>
+				["at0029"] = <
+					text = <"No movement">
+					description = <"No movements.">
+				>
+				["at0030"] = <
+					text = <"Occasional slight movements">
+					description = <"Occasional, (three or fewer) slight movements.">
+				>
+				["at0031"] = <
+					text = <"Frequen slight movements">
+					description = <"Frequent, (more than three) slight movements.">
+				>
+				["at0032"] = <
+					text = <"Vigorous movements limited to extremities">
+					description = <"Vigorous movements limited to extremities.">
+				>
+				["at0033"] = <
+					text = <"Vigorous movements including torso and head">
+					description = <"Vigorous movements including torso and head.">
+				>
+				["at0034"] = <
+					text = <"Muscle tone">
+					description = <"Degree of muscle tone.">
+				>
+				["at0035"] = <
+					text = <"Muscles totally relaxed; no muscle tone">
+					description = <"Muscles totally relaxed or no muscle tone.">
+				>
+				["at0036"] = <
+					text = <"Reduced muscle tone">
+					description = <"Reduced muscle tone; less resistance than normal">
+				>
+				["at0037"] = <
+					text = <"Normal muscle tone">
+					description = <"Normal muscle tone.">
+				>
+				["at0038"] = <
+					text = <"Increased muscle tone and flexion of fingers and toes">
+					description = <"Increased muscle tone and flexion of fingers and toes.">
+				>
+				["at0039"] = <
+					text = <"Extreme muscle rigidity and flexion of fingers and toes">
+					description = <"Extreme muscle rigidity and flexion of fingers and toes.">
+				>
+				["at0040"] = <
+					text = <"Facial tension">
+					description = <"Degree of facial tension.">
+				>
+				["at0041"] = <
+					text = <"Facial muscles totally relaxed
+">
+					description = <"Facial muscles are totally relaxed.
+">
+				>
+				["at0042"] = <
+					text = <"Normal facial tone">
+					description = <"Normal facial tone.">
+				>
+				["at0043"] = <
+					text = <"Tension evident in some facial muscles (not sustained)">
+					description = <"Tension evident in some facial muscles (not sustained).">
+				>
+				["at0044"] = <
+					text = <"Tension evident throughout facial muscles (sustained)">
+					description = <"Tension evident throughout facial muscles (sustained).">
+				>
+				["at0045"] = <
+					text = <"Facial muscles contorted and grimacing">
+					description = <"Facial muscles contorted and there is grimacing.">
+				>
+				["at0046"] = <
+					text = <"Total score">
+					description = <"Total score">
+				>
+			>
+		>
+		["es-ar"] = <
+			items = <
+				["at0000"] = <
+					text = <"Escala Comfort B Conductual">
+					description = <"Escala numérica para evaluación del dolor y/o nivel de sedación en pacientes pediátricos en terapia intensiva pediátrica.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Alerta">
+					description = <"Alerta">
+				>
+				["at0005"] = <
+					text = <"Profundamente dormido">
+					description = <"Ojos cerrados, ninguna respuesta a los cambios del entorno.">
+				>
+				["at0006"] = <
+					text = <"Ligeramente dormido">
+					description = <"Dirige la cabeza, ojos cerrados.">
+				>
+				["at0007"] = <
+					text = <"Somnoliento">
+					description = <"Cierra los ojos en forma frecuente.">
+				>
+				["at0008"] = <
+					text = <"Despierto y alerta">
+					description = <"Sensible a los cambios del entorno.">
+				>
+				["at0009"] = <
+					text = <"Despierto hiper-alerta (respuesta exagerada al estímulo)">
+					description = <"Respuesta exagerada al estímulo.">
+				>
+				["at0010"] = <
+					text = <"Calma/Agitación">
+					description = <"Nivel de calma y/o agitación.">
+				>
+				["at0011"] = <
+					text = <"Calmado">
+					description = <"Sereno y tranquilo.">
+				>
+				["at0012"] = <
+					text = <"Ligeramente ansioso">
+					description = <"Ligeramente ansioso">
+				>
+				["at0013"] = <
+					text = <"Ansioso">
+					description = <"Parece agitado pero se calma con cuidados.">
+				>
+				["at0014"] = <
+					text = <"Muy ansioso (agitado, dificil de calmar)">
+					description = <"Agitado, dificil de calmar.">
+				>
+				["at0015"] = <
+					text = <"En pánico">
+					description = <"En pánico, con pérdida de control.">
+				>
+				["at0016"] = <
+					text = <"Respuesta respiratoria">
+					description = <"Nivel de respuesta respiratoria.">
+					comment = <"*Score only in mechanically ventilated children.(en)">
+				>
+				["at0017"] = <
+					text = <"Sin respiración espontanea">
+					description = <"Sin respiración espontanea.">
+				>
+				["at0018"] = <
+					text = <"Respiración espontanea o asistida por respirador">
+					description = <"Respiración espontanea o asistida por respirador.">
+				>
+				["at0019"] = <
+					text = <"Agitado o con resistencia al respirador">
+					description = <"Agitado o con resistencia al respirador.">
+				>
+				["at0020"] = <
+					text = <"Resistencia al respirador o tose con frecuencia">
+					description = <"Resistencia al respirador o tose con frecuencia.">
+				>
+				["at0021"] = <
+					text = <"Lucha con el respirador">
+					description = <"Lucha con el respirador.">
+				>
+				["at0022"] = <
+					text = <"Llanto">
+					description = <"Nivel de llanto.">
+					comment = <"*Score only in spontaneously breathing children.(en)">
+				>
+				["at0023"] = <
+					text = <"Respiración tranquila, sin somidos de llanto">
+					description = <"Respiración tranquila, sin somidos de llanto.">
+				>
+				["at0024"] = <
+					text = <"Sollozo o quejidos ocasionales">
+					description = <"Sollozo o quejidos ocasionales.">
+				>
+				["at0025"] = <
+					text = <"Lloriqueo (sonido monótono)">
+					description = <"Lloriqueo (como sonido monótono).">
+				>
+				["at0026"] = <
+					text = <"Llanto">
+					description = <"Llanto activo.">
+				>
+				["at0027"] = <
+					text = <"Gritos o chillidos">
+					description = <"Gritos o chillidos.">
+				>
+				["at0028"] = <
+					text = <"Movimientos físicos">
+					description = <"Grado de movimientos físicos.">
+				>
+				["at0029"] = <
+					text = <"Sin movimientos">
+					description = <"Sin movimientos.">
+				>
+				["at0030"] = <
+					text = <"Movimientos leves ocasionales">
+					description = <"Movimientos leves ocasionales (3 o menos).">
+				>
+				["at0031"] = <
+					text = <"Movimientos leves y frecuentes">
+					description = <"Movimientos leves y frecuentes (mas de 3).">
+				>
+				["at0032"] = <
+					text = <"Movimientos vigorosos limitados a extremidades">
+					description = <"Movimientos vigorosos limitados a extremidades.">
+				>
+				["at0033"] = <
+					text = <"Movimientos vigorosos que incluyen torso y cabeza">
+					description = <"Movimientos vigorosos que incluyen torso y cabeza.">
+				>
+				["at0034"] = <
+					text = <"Tono muscular">
+					description = <"Nivel del tono muscular.">
+				>
+				["at0035"] = <
+					text = <"Músculos totalmente relajados; sin tono muscular">
+					description = <"Músculos totalmente relajados; sin tono muscular.">
+				>
+				["at0036"] = <
+					text = <"Tono muscular disminuido; resistencia menor a la normal">
+					description = <"Tono muscular disminuido; resistencia menor a la normal.">
+				>
+				["at0037"] = <
+					text = <"Tono muscular normal">
+					description = <"Tono muscular normal.">
+				>
+				["at0038"] = <
+					text = <"Tono muscular aumentado y flexión de dedos de mano y pié">
+					description = <"Tono muscular aumentado y flexión de dedos de mano y pié.">
+				>
+				["at0039"] = <
+					text = <"Rigidez muscular extrema y flexión de dedos de mano y pié">
+					description = <"Rigidez muscular extrema y flexión de dedos de mano y pié.">
+				>
+				["at0040"] = <
+					text = <"Tensión facial">
+					description = <"Nivel de tensión facial.">
+				>
+				["at0041"] = <
+					text = <"Musculatura facial totalmente relajada">
+					description = <"Musculatura facial totalmente relajada.">
+				>
+				["at0042"] = <
+					text = <"Tono muscular facial normal">
+					description = <"Tono muscular facial normal.">
+				>
+				["at0043"] = <
+					text = <"Tensión muscular evidente, pero no sostenida en algunos músculos faciales">
+					description = <"Tensión muscular evidente, pero no sostenida en algunos músculos faciales.">
+				>
+				["at0044"] = <
+					text = <"Tensión muscular evidente sostenida en toda la musculatura facial">
+					description = <"Tensión muscular evidente sostenida en toda la musculatura facial.">
+				>
+				["at0045"] = <
+					text = <"Músculos faciales contorsionados y muecas">
+					description = <"Músculos faciales contorsionados y muecas.">
+				>
+				["at0046"] = <
+					text = <"Puntaje total">
+					description = <"Puntaje total">
+				>
+			>
+		>
+	>

@@ -20,6 +20,8 @@ GENERATED=(
   crates/openehr-its/src/json_codec/generated
   crates/openehr-its/src/rest/generated
   crates/openehr-its/src/opt14
+  crates/openehr-its/src/aom2
+  crates/openehr-its/src/aom2_model
 )
 
 echo "regenerating spec crates (BMM → RM/BASE/AM/TERM/LANG)…"
@@ -32,6 +34,8 @@ echo "regenerating ITS-REST (DTOs + traits + routes)…"
 cargo run -q -p openehr-codegen -- emit-rest
 echo "regenerating OPT 1.4 model (opt14 types + XML codec)…"
 cargo run -q -p openehr-codegen -- emit-opt
+echo "regenerating the AOM2 archetype models (aom2 + aom2_model types + XML codecs)…"
+cargo run -q -p openehr-codegen -- emit-aom2
 echo "regenerating the RM attribute/type model (openehr-rm/src/model)…"
 cargo run -q -p openehr-codegen -- emit-rm-model
 echo "regenerating the RM invariant cores (openehr-rm/src/validate/generated.rs)…"
@@ -39,7 +43,7 @@ cargo run -q -p openehr-codegen -- emit-validate
 
 if ! git diff --quiet -- "${GENERATED[@]}"; then
   echo "::error::Generated code is out of sync with the vendored specs." >&2
-  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-json && … emit-rest && … emit-opt && … emit-rm-model && … emit-validate, then commit." >&2
+  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-json && … emit-rest && … emit-opt && … emit-aom2 && … emit-rm-model && … emit-validate, then commit." >&2
   git diff --stat -- "${GENERATED[@]}" >&2
   exit 1
 fi

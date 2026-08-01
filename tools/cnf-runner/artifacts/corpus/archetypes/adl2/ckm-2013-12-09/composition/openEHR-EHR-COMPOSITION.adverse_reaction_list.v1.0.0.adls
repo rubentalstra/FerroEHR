@@ -1,0 +1,92 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-COMPOSITION.adverse_reaction_list.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2013-03-14">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a persistent and managed list of all known adverse reactions experienced by the subject, or statements about positive exclusion or actual absence of information about adverse reactions, that may influence clinical decision-making and care provision.">
+			use = <"Use to record a persistent and managed list of all known adverse reactions (including allergies, hypersensitivities, side effects or intolerances) experienced by the subject, or statements about positive exclusion or actual absence of information about adverse reactions, that may influence clinical decision-making and care provision. 
+
+This list can be utilised as a source of up-to-date adverse reaction data for exchange or as the basis for decision support. 
+
+This list can be comprised of three types of archetype:
+- statements about the positive use of medications are recorded using the EVALUATION.adverse_reaction archetype; OR
+- a statement about the positive exclusion of medication use can be recorded using the specific EVALUATION.exclusion-adverse_reaction archetype - for example: \"No known adverse reactions\"; OR
+- a statement about no information being available - neither a positive and known presence of an adverse reaction nor a positive exclusion - can be recorded using the EVALUATION.absence archetype.
+
+In order for this list to be accurate and safe to use as the basis for decision support activities and for exchange, this list should ideally be curated by a clinician responsible for the health record, rather than managed automatically by the clinical system through business rules alone.">
+			keywords = <"adverse", "reaction", "allergy", "intolerance", "effect", "hypersensitivity", "list", "side">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "Sam Heard, Ocean Informatics, Australia", "Sistine Barretto-Daniels, Ocean Informatics, Australia">
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"7C6282FE2D669F7DF0CC7CA4958E4A57">
+	>
+
+definition
+	COMPOSITION[id1] matches {	-- Adverse Reaction List
+		category matches {
+			DV_CODED_TEXT[id6] matches {
+				defining_code matches {[at1]}
+			}
+		}
+		content matches {
+			allow_archetype EVALUATION[id3] matches {	-- Adverse Reactions
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.adverse_reaction(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype EVALUATION[id4] matches {	-- Exclusion Statement
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.exclusion-adverse_reaction(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype EVALUATION[id5] matches {	-- Absent Information
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.absence(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Adverse Reaction List">
+				description = <"A persistent and managed list of adverse reactions experienced by the subject that may influence clinical decision-making and care provision.">
+			>
+			["id3"] = <
+				text = <"Adverse Reactions">
+				description = <"Details about known adverse reactions.">
+			>
+			["id4"] = <
+				text = <"Exclusion Statement">
+				description = <"Positive statement about exclusion of known adverse reactions.">
+			>
+			["id5"] = <
+				text = <"Absent Information">
+				description = <"Positive statement that no information is available about adverse reactions.">
+			>
+			["at1"] = <
+				text = <"persistent">
+				description = <"persistent">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/431>
+		>
+	>

@@ -1,0 +1,95 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.sense_of_smell.v1
+
+concept
+	[at0000]	-- Sense of smell
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["date"] = <"14/11/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a patient's sense of smell or response to specific odour tests">
+			use = <"">
+			keywords = <"smell", "odour">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Sense of smell
+		items cardinality matches {0..*; unordered} matches {
+			CLUSTER[at0001] occurrences matches {0..*} matches {	-- Odour tested
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {	-- Name of odour
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Result
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0004, 	-- Correctly identified
+									at0005]	-- Incorrectly identified
+								}
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Sense of smell">
+					description = <"To record a patient's sense of smell or response to specific odour tests">
+				>
+				["at0001"] = <
+					text = <"Odour tested">
+					description = <"A series of odour tests for sense of smell">
+				>
+				["at0002"] = <
+					text = <"Name of odour">
+					description = <"The name of the odour tested">
+				>
+				["at0003"] = <
+					text = <"Result">
+					description = <"Was the odour correctly identified?">
+				>
+				["at0004"] = <
+					text = <"Correctly identified">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Incorrectly identified">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Comment">
+					description = <"A comment or text description of the patient's sense of smell">
+				>
+			>
+		>
+	>

@@ -1,0 +1,102 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-CLUSTER.birth_data_additional_detail_br.v1.0.0
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"20/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Coleta de dados da certidão de nascimento emitidas no Brasil">
+			use = <"Usado em serviços demográficos para coletar os itens livro, folha e termo da certidão de nascimento emitida no Brasil">
+			keywords = <"serviço demográfico", "dados da certidão de nascimento">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a person's birth data">
+			use = <"Used in demographic service to collect other birth certificate data in Brazil">
+			keywords = <"demographic service", "birth certificate data">
+			misuse = <"">
+		>
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Other birth certificate data
+		items matches {
+			ELEMENT[id2] matches {	-- Book number
+				value matches {
+					DV_TEXT[id5] 
+				}
+			}
+			ELEMENT[id3] matches {	-- Page number
+				value matches {
+					DV_TEXT[id6] 
+				}
+			}
+			ELEMENT[id4] matches {	-- Section
+				value matches {
+					DV_TEXT[id7] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["pt-br"] = <
+			["id1"] = <
+				text = <"Outros dados da certidão de nascimento">
+				description = <"Outros dados da certidão de nascimento brasileira">
+			>
+			["id2"] = <
+				text = <"Livro">
+				description = <"Número do livro da certidão de nascimento">
+			>
+			["id3"] = <
+				text = <"Folha">
+				description = <"Número da folha da certidão de nascimento">
+			>
+			["id4"] = <
+				text = <"Termo">
+				description = <"Número do termo da certidão de nascimento">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Other birth certificate data">
+				description = <"Other birth certificate data still used in Brazil">
+			>
+			["id2"] = <
+				text = <"Book number">
+				description = <"Book number where the birth was registered">
+			>
+			["id3"] = <
+				text = <"Page number">
+				description = <"Page number in the book where the birth was registered">
+			>
+			["id4"] = <
+				text = <"Section">
+				description = <"Section in the page where the birth was registered">
+			>
+		>
+	>

@@ -1,0 +1,535 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.problem_status.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["sl"] = <
+			language = <[ISO_639-1::sl]>
+			author = <
+				["name"] = <"mag. Biljana Prinčič">
+				["organisation"] = <"Marand d.o.o., Ljubljana, Slovenija">
+				["email"] = <"biljana.princic@marand.si">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2013-05-29">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record various status and context qualifiers which though commonly used within applications and in clinical messages but which are  highly contextually dependent or variably defined and used in practice.">
+			use = <"Use to qualify an EVALUATION.problem_diagnosis.v1 archetype, adding context and state specific information.  These qualifiers should be used with care as they are variably used in practice and interopaerablility cannot be assured unless usage is clearly defined within the community of sharing.">
+			keywords = <"problem", "active", "inactive", "status">
+			misuse = <"It should not be assumed that these qualifiers are safely interoperable unless further definition and alignment is agreed between all sharing parties. A problem which has been defined as 'Inactive' during a hospital admission cannot be assumed to be regarded as 'Inactive' in a primary care setting , where a much longer term perspective is being taken. Similarly terms such as Initial, Interim and Final, whilst helpful to the human observer are unlikely to be precisely enough defined to be safely computable e.g. for decision support.">
+		>
+		["sl"] = <
+			language = <[ISO_639-1::sl]>
+			purpose = <"Za zapisovanje različnih statusov, ki se ponavadi uporablja za aplikacijskimi in kliničnimi sporočili, ki so odvisna od definirane vsebine
+
+">
+			use = <"Za dodeljevanje pravic EVALUATION.problem_diagnosis.v1 archetype, dodaja informacije za povezovanje. ">
+			keywords = <"problem", "aktiven", "ni aktiven">
+			misuse = <"It should not be assumed that these qualifiers are safely interoperable unless further definition and alignment is agreed between all sharing parties. A problem which has been defined as 'Inactive' during a hospital admission cannot be assumed to be regarded as 'Inactive' in a primary care setting , where a much longer term perspective is being taken. Similarly terms such as Initial, Interim and Final, whilst helpful to the human observer are unlikely to be precisely enough defined to be safely computable e.g. for decision support. ">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", "Hugh Leslie, Ocean Informatics, Australia", "Sam Heard, Ocean Informatics, Australia">
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"F683FB4691EC3FFEE37CCEB3166ECD76">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Problem context qualifiers
+		items matches {
+			ELEMENT[id30] occurrences matches {0..1} matches {	-- Certainty
+				value matches {
+					DV_CODED_TEXT[id62] matches {
+						defining_code matches {[ac1]}		-- Certainty (synthesised)
+					}
+				}
+			}
+			ELEMENT[id25] occurrences matches {0..1} matches {	-- Impact
+				value matches {
+					DV_CODED_TEXT[id63] matches {
+						defining_code matches {[ac2]}		-- Impact (synthesised)
+					}
+				}
+			}
+			ELEMENT[id52] occurrences matches {0..1} matches {	-- Category
+				value matches {
+					DV_CODED_TEXT[id64] matches {
+						defining_code matches {[ac3]}		-- Category (synthesised)
+					}
+				}
+			}
+			ELEMENT[id4] occurrences matches {0..1} matches {	-- Active status
+				value matches {
+					DV_CODED_TEXT[id65] matches {
+						defining_code matches {[ac4]}		-- Active status (synthesised)
+					}
+				}
+			}
+			ELEMENT[id44] occurrences matches {0..1} matches {	-- Active status comment
+				value matches {
+					DV_TEXT[id66] 
+				}
+			}
+			ELEMENT[id5] occurrences matches {0..1} matches {	-- Evolution
+				value matches {
+					DV_CODED_TEXT[id67] matches {
+						defining_code matches {[ac5]}		-- Evolution (synthesised)
+					}
+				}
+			}
+			ELEMENT[id61] occurrences matches {0..1} matches {	-- Temporal context
+				value matches {
+					DV_CODED_TEXT[id68] matches {
+						defining_code matches {[ac6]}		-- Temporal context (synthesised)
+					}
+				}
+			}
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Episodicity
+				value matches {
+					DV_CODED_TEXT[id69] matches {
+						defining_code matches {[ac7]}		-- Episodicity (synthesised)
+					}
+				}
+			}
+			ELEMENT[id7] occurrences matches {0..1} matches {	-- Priority
+				value matches {
+					DV_TEXT[id70] 
+					DV_COUNT[id71] 
+				}
+			}
+			ELEMENT[id8] occurrences matches {0..1} matches {	-- Summarisation
+				value matches {
+					DV_BOOLEAN[id72] matches {
+						value matches {True, False}
+					}
+					DV_TEXT[id73] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Problem context qualifiers">
+				description = <"Additional status and contextual qualifiers factors related to a problem/diagnosis.">
+			>
+			["id2"] = <
+				text = <"Episodicity">
+				description = <"Episodicity is used within a primary care context to distinguish between ongoing and new episodes of a problem or diagnosis, primarily for public health or quality assessment purposes.">
+			>
+			["id4"] = <
+				text = <"Active status">
+				description = <"The degree to which the problem is active and relevant within the current clinical context.">
+			>
+			["id5"] = <
+				text = <"Evolution">
+				description = <"Records temporal/evidential progress towards identification of the problem or diagnosis, recognising that precise identification may take time to evolve as increasing amounts of evidence become available.">
+			>
+			["id7"] = <
+				text = <"Priority">
+				description = <"A numeric or textual representation of the priority assigned to the problem, relative to other problems in a list. This may be used to sort items according to perceived clinical priority or to filter problems felt to be of greater /lesser significance.">
+			>
+			["id8"] = <
+				text = <"Summarisation">
+				description = <"A flag or text/ coded item recording whether this problem/diagnosis should be presented in a patient summary. Applications may implement this in a variety of ways.">
+			>
+			["at17"] = <
+				text = <"Initial assessment">
+				description = <"The diagnosis has been made at the outset of the diagnostic process with limited evidence available.">
+			>
+			["at18"] = <
+				text = <"Interim/working assessment">
+				description = <"The problem or diagnosis has been identified with some confidence but further evidence has yet to be considered.">
+			>
+			["at19"] = <
+				text = <"Final assessment">
+				description = <"The problem or diagnosis is made at the end of the diagnostic process taking into account all available significant evidence. It is not expected to change.">
+			>
+			["id25"] = <
+				text = <"Impact">
+				description = <"Description of the impact of the problem or diagnosis on the patient as a whole. Unlike 'severity' this can be used to compare the clinical impact of different problems.">
+			>
+			["at27"] = <
+				text = <"Active">
+				description = <"The problem or diagnosis is currently active and clinically relevant.">
+			>
+			["at28"] = <
+				text = <"Inactive">
+				description = <"The problem or diagnosis is not completely resolved but is inactive or felt less relevant to the current clinical context.">
+			>
+			["at29"] = <
+				text = <"Resolved">
+				description = <"The problem or diagnosis is completely resolved and therefore not relevant to the current clinical context.">
+			>
+			["id30"] = <
+				text = <"Certainty">
+				description = <"The level of confidence in the identification of the problem or diagnosis.">
+			>
+			["at34"] = <
+				text = <"First ever">
+				description = <"The first ever occurence of this problem or diagnosis.">
+			>
+			["at35"] = <
+				text = <"New">
+				description = <"A new occurence of an existing problem or diagnosis.">
+			>
+			["at36"] = <
+				text = <"Ongoing">
+				description = <"Part of an ongoing occurence of an existing problem or diagnosis.">
+			>
+			["at37"] = <
+				text = <"None">
+				description = <"The problem has had no impact on the subject.">
+			>
+			["at38"] = <
+				text = <"Insignificant">
+				description = <"The problem has had very little overall impact on the subject's life or health.">
+			>
+			["at39"] = <
+				text = <"Significant">
+				description = <"The problem has had considerable overall impact on the subject's life or health.">
+			>
+			["at40"] = <
+				text = <"Life-threatening">
+				description = <"The problem has threatened the subject's life.">
+			>
+			["id44"] = <
+				text = <"Active status comment">
+				description = <"A text comment on the active status e.g describing the circumstances or evidence for resolution of a problem.">
+			>
+			["at45"] = <
+				text = <"Fatal">
+				description = <"The problem was fatal to the subject.">
+			>
+			["at46"] = <
+				text = <"Possible">
+				description = <"The probem has been identified with a low level of certainty.">
+			>
+			["at47"] = <
+				text = <"Equivocal">
+				description = <"The probem has been identified with only a moderate level of certainty.">
+			>
+			["at48"] = <
+				text = <"Probable">
+				description = <"The probem has been identified with a high level of certainty.">
+			>
+			["at49"] = <
+				text = <"Definite">
+				description = <"The probem has been identified with a very-high level of certainty.">
+			>
+			["at50"] = <
+				text = <"Confirmed">
+				description = <"The probem has been identified and confirmed against recognised criteria.">
+			>
+			["id52"] = <
+				text = <"Category">
+				description = <"Cateories of problem/ diagnosis/issue.">
+			>
+			["at53"] = <
+				text = <"Condition">
+				description = <"The issue is a condition.">
+			>
+			["at54"] = <
+				text = <"Symptom">
+				description = <"The issue is a symptom.">
+			>
+			["at55"] = <
+				text = <"Finding">
+				description = <"The issue is a clinical finding.">
+			>
+			["at56"] = <
+				text = <"Complaint">
+				description = <"The issue is a patient complaint.">
+			>
+			["at57"] = <
+				text = <"Functional limitation">
+				description = <"The issue is a functional limitation.">
+			>
+			["at58"] = <
+				text = <"Problem">
+				description = <"The issue is recognised to be causing a problem.">
+			>
+			["at59"] = <
+				text = <"Diagnosis">
+				description = <"The issue is regarded as a biomedical diagnosis.">
+			>
+			["at60"] = <
+				text = <"In remission">
+				description = <"The problem or issue is of a recurring nature but is currently quiescent.">
+			>
+			["id61"] = <
+				text = <"Temporal context">
+				description = <"Temporal context indicator aligned with SNOMEDCT.">
+			>
+			["at62"] = <
+				text = <"Past">
+				description = <"An issue occuring in the past.">
+			>
+			["at63"] = <
+				text = <"Current">
+				description = <"An issue which ocurred at present.">
+			>
+			["ac1"] = <
+				text = <"Certainty (synthesised)">
+				description = <"The level of confidence in the identification of the problem or diagnosis. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Impact (synthesised)">
+				description = <"Description of the impact of the problem or diagnosis on the patient as a whole. Unlike 'severity' this can be used to compare the clinical impact of different problems. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Category (synthesised)">
+				description = <"Cateories of problem/ diagnosis/issue. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Active status (synthesised)">
+				description = <"The degree to which the problem is active and relevant within the current clinical context. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Evolution (synthesised)">
+				description = <"Records temporal/evidential progress towards identification of the problem or diagnosis, recognising that precise identification may take time to evolve as increasing amounts of evidence become available. (synthesised)">
+			>
+			["ac6"] = <
+				text = <"Temporal context (synthesised)">
+				description = <"Temporal context indicator aligned with SNOMEDCT. (synthesised)">
+			>
+			["ac7"] = <
+				text = <"Episodicity (synthesised)">
+				description = <"Episodicity is used within a primary care context to distinguish between ongoing and new episodes of a problem or diagnosis, primarily for public health or quality assessment purposes. (synthesised)">
+			>
+		>
+		["sl"] = <
+			["id1"] = <
+				text = <"*Problem context qualifiers(en)">
+				description = <"*Additional status and contextual qualifiers factors related to a problem/diagnosis.(en)">
+			>
+			["id2"] = <
+				text = <"Epizoda">
+				description = <"Epizoda problema">
+			>
+			["id4"] = <
+				text = <"Aktivnost">
+				description = <"Stopnja aktivnosti problema">
+			>
+			["id5"] = <
+				text = <"*Evolution(en)">
+				description = <"*Records temporal/evidential progress towards identification of the problem or diagnosis, recognising that precise identification may take time to evolve as increasing amounts of evidence become available.(en)">
+			>
+			["id7"] = <
+				text = <"Prioriteta">
+				description = <"Prioriteta problema">
+			>
+			["id8"] = <
+				text = <"Povzetek">
+				description = <"Povzetek opisa">
+			>
+			["at17"] = <
+				text = <"Začetna diagnoza">
+				description = <"Opredelitev začetne diagnoze">
+			>
+			["at18"] = <
+				text = <"Vmesna diagnoza">
+				description = <"Opredelitev vmesne diagnoze">
+			>
+			["at19"] = <
+				text = <"Končna diagnoza">
+				description = <"Opredelitev končne diagnoze">
+			>
+			["id25"] = <
+				text = <"Vpliv">
+				description = <"Opis vpliva problema/diagnoze">
+			>
+			["at27"] = <
+				text = <"Aktiven">
+				description = <"Problem je trenutno aktiven in klinično relevanten">
+			>
+			["at28"] = <
+				text = <"Ni aktiven">
+				description = <"Problem trenutno ni aktiven">
+			>
+			["at29"] = <
+				text = <"Razrešen">
+				description = <"Problem j erazrešen">
+			>
+			["id30"] = <
+				text = <"Zanesljivost">
+				description = <"Zanesljivost opredeljenega problema oz. posatvljene diagnoze">
+			>
+			["at34"] = <
+				text = <"Prvič">
+				description = <"Problem se je pojavil prvič">
+			>
+			["at35"] = <
+				text = <"Nova">
+				description = <"Nova ponovitev starega problema/ ali diagnoze">
+			>
+			["at36"] = <
+				text = <"Sedanja">
+				description = <"Del epizode postavljene diagnoze lai problema">
+			>
+			["at37"] = <
+				text = <"Ni vpliva">
+				description = <"Problem oz. diagnoza nima vpliva">
+			>
+			["at38"] = <
+				text = <"Nepomemben">
+				description = <"Problem ima nepomemben vpliv">
+			>
+			["at39"] = <
+				text = <"Pomemben">
+				description = <"Problem ima pomemben vpliv">
+			>
+			["at40"] = <
+				text = <"Življensko nevaren">
+				description = <"Problem ogroža življenje pacienta">
+			>
+			["id44"] = <
+				text = <"*Active status comment(en)">
+				description = <"*A text comment on the active status e.g describing the circumstances or evidence for resolution of a problem.(en)">
+			>
+			["at45"] = <
+				text = <"Fatalen">
+				description = <"Diagnoz aoz problem je fatalen za pacienta">
+			>
+			["at46"] = <
+				text = <"*Possible(en)">
+				description = <"*The probem has been identified with a low level of certainty.(en)">
+			>
+			["at47"] = <
+				text = <"*Equivocal(en)">
+				description = <"*The probem has been identified with only a moderate level of certainty.(en)">
+			>
+			["at48"] = <
+				text = <"*Probable(en)">
+				description = <"*The probem has been identified with a high level of certainty.(en)">
+			>
+			["at49"] = <
+				text = <"*Definite(en)">
+				description = <"*The probem has been identified with a very-high level of certainty.(en)">
+			>
+			["at50"] = <
+				text = <"*Confirmed(en)">
+				description = <"*The probem has been identified and confirmed against recognised criteria.(en)">
+			>
+			["id52"] = <
+				text = <"*Category(en)">
+				description = <"*Cateories of problem/ diagnosis/issue.(en)">
+			>
+			["at53"] = <
+				text = <"*Condition(en)">
+				description = <"*The issue is a condition.(en)">
+			>
+			["at54"] = <
+				text = <"*Symptom(en)">
+				description = <"*The issue is a symptom.(en)">
+			>
+			["at55"] = <
+				text = <"*Finding(en)">
+				description = <"*The issue is a clinical finding.(en)">
+			>
+			["at56"] = <
+				text = <"*Complaint(en)">
+				description = <"*The issue is a patient complaint.(en)">
+			>
+			["at57"] = <
+				text = <"*Functional limitation(en)">
+				description = <"*The issue is a functional limitation.(en)">
+			>
+			["at58"] = <
+				text = <"*Problem(en)">
+				description = <"*The issue is recognised to be causing a problem.(en)">
+			>
+			["at59"] = <
+				text = <"*Diagnosis(en)">
+				description = <"*The issue is regarded as a biomedical diagnosis.(en)">
+			>
+			["at60"] = <
+				text = <"*In remission(en)">
+				description = <"*The problem or issue is of a recurring nature but is currently quiescent.(en)">
+			>
+			["id61"] = <
+				text = <"*Temporal context(en)">
+				description = <"**(en)">
+			>
+			["at62"] = <
+				text = <"*Past(en)">
+				description = <"*An issue occuring in the past.(en)">
+			>
+			["at63"] = <
+				text = <"*Current(en)">
+				description = <"*An issue which ocurred at present.(en)">
+			>
+			["ac1"] = <
+				text = <"Zanesljivost (synthesised)">
+				description = <"Zanesljivost opredeljenega problema oz. posatvljene diagnoze (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Vpliv (synthesised)">
+				description = <"Opis vpliva problema/diagnoze (synthesised)">
+			>
+			["ac3"] = <
+				text = <"*Category(en) (synthesised)">
+				description = <"*Cateories of problem/ diagnosis/issue.(en) (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Aktivnost (synthesised)">
+				description = <"Stopnja aktivnosti problema (synthesised)">
+			>
+			["ac5"] = <
+				text = <"*Evolution(en) (synthesised)">
+				description = <"*Records temporal/evidential progress towards identification of the problem or diagnosis, recognising that precise identification may take time to evolve as increasing amounts of evidence become available.(en) (synthesised)">
+			>
+			["ac6"] = <
+				text = <"*Temporal context(en) (synthesised)">
+				description = <"**(en) (synthesised)">
+			>
+			["ac7"] = <
+				text = <"Epizoda (synthesised)">
+				description = <"Epizoda problema (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at46", "at47", "at48", "at49", "at50">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at37", "at38", "at39", "at40", "at45">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at53", "at54", "at55", "at56", "at57", "at58", "at59">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at27", "at28", "at29", "at60">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at17", "at18", "at19">
+		>
+		["ac6"] = <
+			id = <"ac6">
+			members = <"at62", "at63">
+		>
+		["ac7"] = <
+			id = <"ac7">
+			members = <"at34", "at35", "at36">
+		>
+	>

@@ -1,0 +1,515 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-ACTION.informed_consent.v1
+
+concept
+	[at0000]	-- Informed Consent
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"09-10-2012">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the status of a request for, or record of, informed consent prior to performing a procedure, clinical trial or healthcare-related activity.">
+			use = <"Use to record the status of an order to obtain informed consent, including what is planned, scheduled, requested, provided, or withdrawn.
+
+This archetype has been designed to be a framework that will be adequate for requesting and recording a simple consent, but allow for additional details to be optionally added within the 'Details' SLOT to meet the specific requirements of a more complex clinical scenario.  For example, additional consent details can be included using the CLUSTER.consent_details archetype. Other archetypes can be developed and optionally included in the same SLOT for the purpose of recording specific details about the procedure, trial or activity. 
+
+The status of the informed consent is reflected by the pathway steps - requested, refused, provided, withdrawn etc.">
+			keywords = <"consent", "informed", "caveat">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"CommitteeDraft">
+	other_contributors = <>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["references"] = <"ASTM Standard E2369 - 05, \"Standard Specification for Continuity of Care Record (CCR)\", ASTM International, West Conshohocken, PA, 2003, DOI: 10.1520/E2369-05E02, www.astm.org.">
+		["MD5-CAM-1.0.1"] = <"946987A1D182E9C9FEE624EF6065E29D">
+	>
+
+definition
+	ACTION[at0000] matches {	-- Informed Consent
+		ism_transition matches {
+			ISM_TRANSITION[at0013] matches {	-- Planned
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::526]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0013]}		-- Planned
+					}
+				}
+			}
+			ISM_TRANSITION[at0019] matches {	-- Postponed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::527]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0019]}		-- Postponed
+					}
+				}
+			}
+			ISM_TRANSITION[at0018] matches {	-- Cancelled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::528]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0018]}		-- Cancelled
+					}
+				}
+			}
+			ISM_TRANSITION[at0027] matches {	-- Appointment Scheduled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::529]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0027]}		-- Appointment Scheduled
+					}
+				}
+			}
+			ISM_TRANSITION[at0014] matches {	-- Informed Consent Requested
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::
+							245, 
+							526]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0014]}		-- Informed Consent Requested
+					}
+				}
+			}
+			ISM_TRANSITION[at0015] matches {	-- Informed Consent Provided
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::245]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0015]}		-- Informed Consent Provided
+					}
+				}
+			}
+			ISM_TRANSITION[at0021] matches {	-- Informed Consent Not Obtained
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::245]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0021]}		-- Informed Consent Not Obtained
+					}
+				}
+			}
+			ISM_TRANSITION[at0016] matches {	-- Informed Consent Refused
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::531]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0016]}		-- Informed Consent Refused
+					}
+				}
+			}
+			ISM_TRANSITION[at0017] matches {	-- Informed Consent Withdrawn
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::531]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0017]}		-- Informed Consent Withdrawn
+					}
+				}
+			}
+			ISM_TRANSITION[at0022] matches {	-- Completed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::532]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0022]}		-- Completed
+					}
+				}
+			}
+		}
+		description matches {
+			ITEM_TREE[at0001] matches {	-- Tree
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {1..*} matches {	-- Procedure/Trial/Activity
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0030] occurrences matches {0..1} matches {	-- Procedure/Trial/Activity Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0031] occurrences matches {0..1} matches {	-- Intent
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0011] occurrences matches {0..1} matches {	-- Consent Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0003] occurrences matches {0..*} matches {	-- Details
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.consent_details(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.procedure_details(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Form of Consent
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0005, 	-- Written
+									at0006]	-- Verbal
+								}
+							}
+						}
+					}
+					ELEMENT[at0007] occurrences matches {0..1} matches {	-- Reason
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {	-- Start Date
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					ELEMENT[at0009] occurrences matches {0..1} matches {	-- End Date
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..*} matches {	-- Caveat
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0012] occurrences matches {0..1} matches {	-- Evidence of Consent
+						value matches {
+							DV_MULTIMEDIA matches {
+								media_type matches {
+									[openEHR::
+									387, 
+									388, 
+									389, 
+									390, 
+									391, 
+									392, 
+									393, 
+									394, 
+									395, 
+									396, 
+									397, 
+									398, 
+									399, 
+									400, 
+									409, 
+									410, 
+									411, 
+									412, 
+									413, 
+									425, 
+									426, 
+									427, 
+									428, 
+									429, 
+									415, 
+									416, 
+									417, 
+									418, 
+									419, 
+									420, 
+									421, 
+									422, 
+									423, 
+									424, 
+									401, 
+									402, 
+									404, 
+									405, 
+									406, 
+									407, 
+									414]
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0024] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0025] occurrences matches {0..1} matches {	-- Consent Document Used
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0026] occurrences matches {0..1} matches {	-- Review Date
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0028] occurrences matches {0..*} matches {	-- Consent Requester
+						include
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[at0029] occurrences matches {0..*} matches {	-- Consent Provider
+						include
+							archetype_id/value matches {/.*/}
+					}
+					CLUSTER[at0033] occurrences matches {0..*} matches {	-- Patient Information
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0032] occurrences matches {0..1} matches {	-- Name
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0035] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0034] occurrences matches {0..*} matches {	-- Multimedia Representation
+								value matches {
+									DV_MULTIMEDIA matches {
+										media_type matches {
+											[openEHR::
+											387, 
+											388, 
+											389, 
+											390, 
+											391, 
+											392, 
+											393, 
+											394, 
+											395, 
+											396, 
+											397, 
+											398, 
+											399, 
+											400, 
+											409, 
+											410, 
+											411, 
+											412, 
+											413, 
+											425, 
+											426, 
+											427, 
+											428, 
+											429, 
+											415, 
+											416, 
+											417, 
+											418, 
+											419, 
+											420, 
+											421, 
+											422, 
+											423, 
+											424, 
+											401, 
+											402, 
+											404, 
+											405, 
+											406, 
+											407, 
+											414]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Informed Consent">
+					description = <"Record of status and details of informed consent from a patient (or patient's agent) for a proposed procedure, trial or other healthcare-related activity (including treatments and investigations), based upon a clear appreciation and understanding of the facts, implications, and possible future consequences by the patient or patient's agent.">
+				>
+				["at0001"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Procedure/Trial/Activity">
+					description = <"Identification of the procedure, clinical trial or healthcare-related activity (including correct side/correct site, where appropriate) against which the consent status and details are recorded.">
+				>
+				["at0003"] = <
+					text = <"Details">
+					description = <"Additional structured details about the procedure/trial/activity itself or additional structured consent details.">
+					comment = <"For example: intent/purpose; anaesthetic details; disclosure of material risks; and proposed benefits discussed.">
+				>
+				["at0004"] = <
+					text = <"Form of Consent">
+					description = <"Form of the consent sought or provided.">
+				>
+				["at0005"] = <
+					text = <"Written">
+					description = <"Format of the consent is written.">
+				>
+				["at0006"] = <
+					text = <"Verbal">
+					description = <"Format of the consent is verbal.">
+				>
+				["at0007"] = <
+					text = <"Reason">
+					description = <"Reason that the care pathway step for the identified procedure, clinical trial or healthcare-related activity was carried out.">
+					comment = <"For example, the reason for 'consent refused' or 'consent withdrawn'.">
+				>
+				["at0008"] = <
+					text = <"Start Date">
+					description = <"Date, and optional time, when validity of the informed consent becomes active.">
+				>
+				["at0009"] = <
+					text = <"End Date">
+					description = <"Date, and optional time, when validity of the informed consent ceased.">
+				>
+				["at0010"] = <
+					text = <"Caveat">
+					description = <"Details of any qualifications or exemptions to the informed consent.">
+				>
+				["at0011"] = <
+					text = <"Consent Description">
+					description = <"Narrative description of the informed consent required or recorded prior to performing the proposed procedure, clinical trial or healthcare-related activity.">
+				>
+				["at0012"] = <
+					text = <"Evidence of Consent">
+					description = <"Evidence of consent status.">
+					comment = <"For example, audio of consent being requested or image of written consent obtained.">
+				>
+				["at0013"] = <
+					text = <"Planned">
+					description = <"Need for informed consent is identified.">
+				>
+				["at0014"] = <
+					text = <"Informed Consent Requested">
+					description = <"Informed consent has been requested from the patient or patient's agent, but no response has been received.">
+				>
+				["at0015"] = <
+					text = <"Informed Consent Provided">
+					description = <"Informed consent has been provided by the patient or patient's agent.">
+				>
+				["at0016"] = <
+					text = <"Informed Consent Refused">
+					description = <"In response to a request for informed consent, it has been refused by patient or patient's agent.">
+				>
+				["at0017"] = <
+					text = <"Informed Consent Withdrawn">
+					description = <"Following initial provision of informed consent, it has been withrawn by the patient or patient's agent.">
+				>
+				["at0018"] = <
+					text = <"Cancelled">
+					description = <"Intent to request informed consent has been cancelled, prior to requesting consent from patient or patient's agent..">
+				>
+				["at0019"] = <
+					text = <"Postponed">
+					description = <"Intent to request informed consent has been postponed.">
+				>
+				["at0021"] = <
+					text = <"Informed Consent Not Obtained">
+					description = <"Informed consent was not obtainable from either the patient or patient's advocate.">
+				>
+				["at0022"] = <
+					text = <"Completed">
+					description = <"Informed consent has been provided by the patient or patient's agent and the activity is now complete.">
+				>
+				["at0024"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0025"] = <
+					text = <"Consent Document Used">
+					description = <"Identification of the consent form or document used.">
+				>
+				["at0026"] = <
+					text = <"Review Date">
+					description = <"Date when consent status is due for review.">
+				>
+				["at0027"] = <
+					text = <"Appointment Scheduled">
+					description = <"An appointment has been scheduled to request consent.">
+				>
+				["at0028"] = <
+					text = <"Consent Requester">
+					description = <"Details about the healthcare provider who is requesting or recording the consent.">
+					comment = <"Insert archetyped demographic details in this SLOT if it is not possible to use other_participations.">
+				>
+				["at0029"] = <
+					text = <"Consent Provider">
+					description = <"Details about the subject (or subject's agent) who is being requested for, or providing, the consent for the procedure, clinical trial or healthcare-related activity.">
+					comment = <"Insert archetyped demographic details in this SLOT if it is not possible to use other_participations.">
+				>
+				["at0030"] = <
+					text = <"Procedure/Trial/Activity Description">
+					description = <"Narrative description of the procedure, clinical trial or healthcare-related activity.">
+				>
+				["at0031"] = <
+					text = <"Intent">
+					description = <"Description of the intent of the procedure, clinical trial or healthcare-related activity.">
+				>
+				["at0032"] = <
+					text = <"Name">
+					description = <"Identification of the information made available.">
+					comment = <"For example, the name of the form.">
+				>
+				["at0033"] = <
+					text = <"Patient Information">
+					description = <"Details about Patient Information made available to the subject or subject's agent.">
+				>
+				["at0034"] = <
+					text = <"Multimedia Representation">
+					description = <"Digital representation of the Patient Information made available.">
+				>
+				["at0035"] = <
+					text = <"Description">
+					description = <"Narrative description of the patient information made available.">
+				>
+			>
+		>
+	>

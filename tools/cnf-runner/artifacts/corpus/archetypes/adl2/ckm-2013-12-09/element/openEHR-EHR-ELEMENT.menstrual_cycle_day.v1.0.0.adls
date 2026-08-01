@@ -1,0 +1,43 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-ELEMENT.menstrual_cycle_day.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"19/07/2008">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the number of day's since the Last Normal Menstrual Period">
+			use = <"To reuse within multiple archetypes - for example, the cluster recording the details about menstrual cycles, plus use in the temperature observation">
+			keywords = <"menstrual", "cycle", "menstruation", "day", "woman", "female">
+			misuse = <"">
+		>
+	>
+
+definition
+	ELEMENT[id1] matches {	-- Current Day of Menstrual cycle
+		value matches {
+			DV_COUNT[id2] matches {
+				magnitude matches {|>=1|}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Current Day of Menstrual cycle">
+				description = <"Number of days since onset of last normal menstrual period">
+			>
+		>
+	>

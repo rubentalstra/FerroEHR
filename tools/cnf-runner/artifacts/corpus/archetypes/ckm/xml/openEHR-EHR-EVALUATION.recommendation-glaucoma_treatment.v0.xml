@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-07-04</original_author>
+    <original_author id="name">Aitor Eguzkitza</original_author>
+    <original_author id="organisation">Universidad Pública de Navarra - Complejo Hospitalario de Navarra</original_author>
+    <original_author id="email">aitor.eguzkiza@unavarra.es</original_author>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Bergen Hospital Trust, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Einar Fosse, National Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Shinji Kobayashi, Kyoto University, Japan</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>José Andonegui, Hospital de Navarra, jose.andonegui.navarro@cfnavarra.es</other_contributors>
+    <other_contributors>Luis Serrano, Universidad Pública de Navarra (UPNA), lserrano@unavarra.es</other_contributors>
+    <other_contributors>Jesús D. Trigo, Universidad Pública de Navarra (UPNA), jesusdaniel.trigo@unavarra.es</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">- American Academy of Ophthalmology, Glaucoma Panel. Primary open-angle glaucoma.  Preferred Practice Pattern® Guidelines. San Francisco, CA: American Academy of Ophthalmology; 2010.&#xD;
+- European Glaucoma Society. Terminology and guidelines for glaucoma. 4th ed. Savona, Italy: Publicomm srl; 2014.</other_details>
+    <other_details id="current_contact">Aitor Eguzkitza, Universidad Pública de Navarra - Complejo Hospitalario de Navarra&lt;aitor.eguzkiza@unavarra.es&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">467D38E1BA19364827E106AF6C346837</other_details>
+    <other_details id="build_uid">8e688bb7-2e08-445c-baa3-f4ac4deaa0ed</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a suggestion, advice or proposal about the most suitable treatment at a specific time, for each patient affected with glaucoma.</purpose>
+      <keywords>advice</keywords>
+      <keywords>proposal</keywords>
+      <keywords>suggestion</keywords>
+      <keywords>glaucoma</keywords>
+      <use>Use to record a suggestion, advice or proposal about the treatment of glaucoma, valid at a specific time of healthcare.&#xD;
+The statement is considered for the specific point-in-time it is registered, as the therapeutic guidelines may vary according to the context of the disease and the information evaluated in each clinical encounter.&#xD;
+For example, the treatment can be modified over time depending on the progression of the disease.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>820d5581-b8a4-464e-8008-b033c2874ad3</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-EVALUATION.recommendation-glaucoma_treatment.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000.1</concept>
+  <parent_archetype_id>
+    <value>openEHR-EHR-EVALUATION.recommendation.v1</value>
+  </parent_archetype_id>
+  <definition>
+    <rm_type_name>EVALUATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000.1</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002.1</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <assumed_value>
+                      <terminology_id>
+                        <value>local</value>
+                      </terminology_id>
+                      <code_string>at0.15</code_string>
+                    </assumed_value>
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0.14</code_list>
+                    <code_list>at0.15</code_list>
+                    <code_list>at0.9</code_list>
+                    <code_list>at0.10</code_list>
+                    <code_list>at0.11</code_list>
+                    <code_list>at0.16</code_list>
+                    <code_list>at0.17</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003.1</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <assumed_value>
+                      <terminology_id>
+                        <value>local</value>
+                      </terminology_id>
+                      <code_string>at0.12</code_string>
+                    </assumed_value>
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0.12</code_list>
+                    <code_list>at0.7</code_list>
+                    <code_list>at0.6</code_list>
+                    <code_list>at0.13</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0005</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0.10">
+        <items id="text">Laser therapy</items>
+        <items id="description">Laser trabeculoplasty lowers IOP by improving aqueous outflow. Presents an alternative for patients who cannot use medications reliably.</items>
+      </items>
+      <items code="at0.11">
+        <items id="text">Incisional glaucoma surgery</items>
+        <items id="description">Generally indicated when medicine or laser therapy is insufficient to control disease.</items>
+      </items>
+      <items code="at0.12">
+        <items id="text">Glaucoma stable</items>
+        <items id="description">No signs of progression identified in glaucoma.</items>
+      </items>
+      <items code="at0.13">
+        <items id="text">IOP unstable</items>
+        <items id="description">Target IOP not reached.</items>
+      </items>
+      <items code="at0.14">
+        <items id="text">No treatment</items>
+        <items id="description">No treatment is needed for the moment.</items>
+      </items>
+      <items code="at0.15">
+        <items id="text">Maintain treatment</items>
+        <items id="description">The patient is already receiving a treatment, to which is responding correctly.</items>
+      </items>
+      <items code="at0.16">
+        <items id="text">Cyclodestructive surgery</items>
+        <items id="description">Procedures that reduce the rate of aqueous production. There are several ways to reduce ciliary body function, such as cyclocryotherapy, transscleral and noncontact Nd:YAG laser, and transscleral and noncontact endodiode laser cyclophotocoagulation.</items>
+      </items>
+      <items code="at0.17">
+        <items id="text">Other glaucoma surgeries</items>
+        <items id="description">Alternative strategies of nonpenetrating glaucoma surgery. The two main types are viscocanalostomy and nonpenetrating deep sclerectomy.</items>
+      </items>
+      <items code="at0.6">
+        <items id="text">Progressive excavation of the papilla</items>
+        <items id="description">Progression of glaucomatous damage at the retinal nerve fiber layer (RNFL) identified on a increase in cupping of the neuroretinal rim.</items>
+      </items>
+      <items code="at0.7">
+        <items id="text">Visual field loss</items>
+        <items id="description">Progressive loss of visual field regarding previous examinations.</items>
+      </items>
+      <items code="at0.9">
+        <items id="text">Medical treatment</items>
+        <items id="description">Unless contraindicated, medical therapy is presently the most common initial intervention to lower IOP.</items>
+      </items>
+      <items code="at0000">
+        <items id="text">Recommendation</items>
+        <items id="description">A suggestion, advice or proposal for clinical management.</items>
+      </items>
+      <items code="at0000.1">
+        <items id="text">Recommended treatment for glaucoma</items>
+        <items id="description">A suggestion, advice or proposal toward application of the appropriate therapy for patients diagnosed with glaucoma.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Recommendation</items>
+        <items id="description">Narrative description of the recommendation.</items>
+        <items id="comment">May be coded, using a terminology, if required.</items>
+      </items>
+      <items code="at0002.1">
+        <items id="text">Therapeutic recommendation</items>
+        <items id="description">Narrative description of the most effective treatment based on the assessment of glaucoma.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Rationale</items>
+        <items id="description">Justification for the recommendation.</items>
+      </items>
+      <items code="at0003.1">
+        <items id="text">Rationale</items>
+        <items id="description">Justification for the recommendation.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0.13">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>24075007</code_string>
+        </value>
+      </items>
+      <items code="at0.14">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>83905007</code_string>
+        </value>
+      </items>
+      <items code="at0.17">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>424150007</code_string>
+        </value>
+      </items>
+      <items code="at0.6">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>247224002</code_string>
+        </value>
+      </items>
+      <items code="at0.7">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>416626008</code_string>
+        </value>
+      </items>
+      <items code="at0.9">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>243121000</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

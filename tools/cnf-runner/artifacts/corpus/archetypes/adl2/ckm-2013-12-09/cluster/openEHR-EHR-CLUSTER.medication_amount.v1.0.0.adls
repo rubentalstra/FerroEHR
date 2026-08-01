@@ -1,0 +1,192 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.medication_amount.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2012-12-03">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To describe the quantity or strength of a medicinal substance.">
+			use = <"Normally used in the context of medication INSRUCTION or ACTION archetypes.">
+			keywords = <"amount", "dose", "dosing", "quantity", "strength">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", ...>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"1EF02B6F5C5B360A198D9B5A3C4E5158">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Medication amount
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Amount
+				value matches {
+					DV_QUANTITY[id10] matches {
+						property matches {[at1]}
+						magnitude matches {|>=0.0|}
+						units matches {"1"}
+					}
+					DV_INTERVAL<DV_QUANTITY>[id11] matches {
+						upper matches {
+							DV_QUANTITY[id12] matches {
+								property matches {[at1]}
+								magnitude matches {|>=0.0|}
+								units matches {"1"}
+							}
+						}
+						lower matches {
+							DV_QUANTITY[id13] matches {
+								property matches {[at1]}
+								magnitude matches {|>=0.0|}
+								units matches {"1"}
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- Dose unit
+				value matches {
+					DV_CODED_TEXT[id14] matches {
+						defining_code matches {[ac2]}		-- Dose Unit
+					}
+				}
+			}
+			ELEMENT[id4] occurrences matches {0..1} matches {	-- Description
+				value matches {
+					DV_TEXT[id15] 
+				}
+			}
+			CLUSTER[id9] occurrences matches {0..1} matches {	-- Ratio amount numerator
+				items matches {
+					use_node ELEMENT[id16] occurrences matches {0..1} /items[id2]	-- /items[Amount]
+					use_node ELEMENT[id17] occurrences matches {0..1} /items[id3]	-- /items[Dose unit]
+				}
+			}
+			CLUSTER[id8] occurrences matches {0..1} matches {	-- Ratio amount denominator
+				items matches {
+					use_node ELEMENT[id18] occurrences matches {0..1} /items[id2]	-- /items[Amount]
+					use_node ELEMENT[id19] occurrences matches {0..1} /items[id3]	-- /items[Dose unit]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Medication amount">
+				description = <"The amount or strength of a medication or substance for medication orders, administrations, dispensing etc.">
+			>
+			["id2"] = <
+				text = <"Amount">
+				description = <"The value of the amount of medication as a real number.">
+			>
+			["id3"] = <
+				text = <"Dose unit">
+				description = <"The dose unit of this medication amount.">
+			>
+			["id4"] = <
+				text = <"Description">
+				description = <"Free text description of the amount which may consist of the amount value and amount dose unit.">
+			>
+			["id8"] = <
+				text = <"Ratio amount denominator">
+				description = <"The denominator value where the amount is described as a ratio e.g. 5mls where the amount is 2mg/5mls.">
+			>
+			["id9"] = <
+				text = <"Ratio amount numerator">
+				description = <"The numerator value where the amount is described as a ratio e.g. 2mg where the amount is 2mg/5mls.">
+			>
+			["ac2"] = <
+				text = <"Dose Unit">
+				description = <"Tablets, Capsules, Sachets, mg, L etc.">
+			>
+			["at1"] = <
+				text = <"Qualified real">
+				description = <"Qualified real">
+			>
+			["id16"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id17"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id18"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id19"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+		["sl"] = <
+			["id1"] = <
+				text = <"*Medication amount(en)">
+				description = <"*The amount or strength of a medication or substance for medication orders, administrations, dispensing etc.(en)">
+			>
+			["id2"] = <
+				text = <"*Amount(en)">
+				description = <"*The value of the amount of medication as a real number e.g 1, 1.5, 0.125. (en)">
+			>
+			["id3"] = <
+				text = <"*Dose unit(en)">
+				description = <"*The dose unit of this medication amount.(en)">
+			>
+			["id4"] = <
+				text = <"*Description(en)">
+				description = <"*Free text description of the amount which may consist of the amount value and amount dose unit.(en)">
+			>
+			["id8"] = <
+				text = <"*Ratio amount denominator(en)">
+				description = <"*The denominator value where the amount is described as a ratio e.g. 5mls where the amount is 2mg/5mls.(en)">
+			>
+			["id9"] = <
+				text = <"*Ratio amount numerator(en)">
+				description = <"*The numerator value where the amount is described as a ratio e.g. 2mg where the amount is 2mg/5mls.(en)">
+			>
+			["ac2"] = <
+				text = <"*Dose Unit(en)">
+				description = <"*Tablets, Capsules, Sachets, mg, L etc.(en)">
+			>
+			["at1"] = <
+				text = <"*Qualified real (en)">
+				description = <"*Qualified real (en)">
+			>
+			["id16"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id17"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id18"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+			["id19"] = <
+				text = <"*(added by post-parse processor)(en)">
+				description = <"*(added by post-parse processor)(en)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/380>
+		>
+	>

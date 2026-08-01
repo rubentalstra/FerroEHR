@@ -1,0 +1,284 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.macroscopy_colorectal_carcinoma.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"17/06/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record detailed findings about colorectal cancer found on macroscopic histopathological examination.">
+			use = <"To record detailed findings about macroscopic examination of tissue related to colo-rectal cancer.
+Use as a component archetype in the context of a suite of archetypes that make up a histopathology report ie OBSERVATION.lab_test.histopathology and CLUSTER.microscopy_colorectal_carcinoma.">
+			keywords = <"histopathology", "cancer", "laboratory", "lab", "malignancy", "pathology", "colonic", "rectal", "anal", "GI", "gastrointestinal", "bowel">
+			misuse = <"Not designed to be used within any other archetype other than OBSERVATION.lab_test.histopathology.">
+		>
+	>
+	other_contributors = <"Koray Atalag, University of Auckland, New Zealand", "Matt Cordell, NEHTA, Australia", "Heather Leslie,Ocean Informatics,Australia", "David McKillop, NEHTA, Australia", "Cathy Richardson, NEHTA, Australia", "David Rowed, Ocean Informatics, Australia">
+	references = <
+		["1"] = <"College of American Pathologists. Protocol for the Examination of Specimens from Patients with Primary Carcinomas of the Colon and Rectum [Internet]. 2009 Mar ;[cited 2009 Jul 28 ]">
+		["2"] = <"Available from: http://www.cap.org/apps/docs/committees/cancer/cancer_protocols/2008/colonrectum08_pw.pdf">
+		["3"] = <"Royal College of Pathologists. Dataset for colorectal cancer (2nd edition) [Internet]. 2007 Dec 4;[cited 2009 Jul 29 ]">
+		["4"] = <"Available from: http://www.rcpath.org/index.asp?PageID=1153">
+		["5"] = <"Royal College of Pathologists of Australasia. Colorectal Cancer Structured Reporting Protocol (1st Edition 2010). [Internet]. 2010;[cited 2010 Mar 21 ]">
+		["6"] = <"Available from: http://www.rcpa.edu.au//static/File/Asset%20library/public%20documents/Publications/StructuredReporting/COLORECTAL%20CANCER%20STRUCTURED%20REPORTING%20PROTOCOL%20for%20web.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"4243B86239E008CE0500331D107393A5">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Macroscopic findings - Colorectal cancer
+		items matches {
+			allow_archetype CLUSTER[id348] occurrences matches {0..1} matches {	-- Tumour dimensions
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[id331] occurrences matches {0..1} matches {	-- Maximum extramuscular extension
+				value matches {
+					DV_QUANTITY[id356] matches {
+						property matches {[at354]}
+						magnitude matches {|>=0.0|}
+						units matches {"mm"}
+					}
+				}
+			}
+			ELEMENT[id332] occurrences matches {0..1} matches {	-- Distance of tumour to nearest cut-end
+				value matches {
+					DV_QUANTITY[id357] matches {
+						property matches {[at354]}
+						magnitude matches {|>=0.0|}
+						units matches {"mm"}
+					}
+				}
+			}
+			ELEMENT[id333] occurrences matches {0..1} matches {	-- Distance of tumour to circumferential margin
+				value matches {
+					DV_QUANTITY[id358] matches {
+						property matches {[at354]}
+						magnitude matches {|>=0.0|}
+						units matches {"mm"}
+					}
+				}
+			}
+			ELEMENT[id354] occurrences matches {0..1} matches {	-- Distance of tumour from dentate line
+				value matches {
+					DV_QUANTITY[id359] matches {
+						property matches {[at354]}
+						magnitude matches {|>=0.0|}
+						units matches {"mm"}
+					}
+				}
+			}
+			ELEMENT[id334] occurrences matches {0..1} matches {	-- Anastomotic doughnuts submitted
+				value matches {
+					DV_BOOLEAN[id360] matches {
+						value matches {True, False}
+					}
+				}
+			}
+			CLUSTER[id350] occurrences matches {0..1} matches {	-- Tumour perforation
+				items matches {
+					ELEMENT[id335] occurrences matches {0..1} matches {	-- Tumour perforation
+						value matches {
+							DV_CODED_TEXT[id361] matches {
+								defining_code matches {[ac1]}		-- Tumour perforation (synthesised)
+							}
+						}
+					}
+					ELEMENT[id351] occurrences matches {0..1} matches {	-- Perforation location
+						value matches {
+							DV_CODED_TEXT[id362] matches {
+								defining_code matches {[ac2]}		-- Perforation location (synthesised)
+							}
+						}
+					}
+					ELEMENT[id355] occurrences matches {0..1} matches {	-- Comment
+						value matches {
+							DV_TEXT[id363] 
+						}
+					}
+				}
+			}
+			CLUSTER[id336] occurrences matches {0..1} matches {	-- For rectal tumours
+				items matches {
+					ELEMENT[id337] occurrences matches {0..1} matches {	-- Relationship to anterior peritoneal reflection
+						value matches {
+							DV_CODED_TEXT[id364] matches {
+								defining_code matches {[ac3]}		-- Relationship to anterior peritoneal reflection (synthesised)
+							}
+						}
+					}
+					ELEMENT[id338] occurrences matches {0..1} matches {	-- Intactness of the mesorectum
+						value matches {
+							DV_CODED_TEXT[id365] matches {
+								defining_code matches {[ac4]}		-- Intactness of the mesorectum (synthesised)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Macroscopic findings - Colorectal cancer">
+				description = <"Macroscopic anatomical pathology findings related to colorectal cancer.">
+			>
+			["id331"] = <
+				text = <"Maximum extramuscular extension">
+				description = <"The maximum extramuscular extension of the tumour.">
+			>
+			["id332"] = <
+				text = <"Distance of tumour to nearest cut-end">
+				description = <"The distance of the tumour to the nearest cut-end (i.e. proximal or distal margin). It is the measurement from the nearest cut end of the specimen and not the non-peritonealised (i.e. circumferential or radial) margin.">
+			>
+			["id333"] = <
+				text = <"Distance of tumour to circumferential margin">
+				description = <"The distance of the tumour to the circumferential or radial margin. It is the measurement to the non-peritonealised margin and not to the nearest cut-end (i.e. proximal,distal).">
+			>
+			["id334"] = <
+				text = <"Anastomotic doughnuts submitted">
+				description = <"Have anastomotic doughnuts been submitted for analysis?">
+			>
+			["id335"] = <
+				text = <"Tumour perforation">
+				description = <"Finding of tumour perforation.">
+			>
+			["id336"] = <
+				text = <"For rectal tumours">
+				description = <"Findings related solely to rectal tumours.">
+			>
+			["id337"] = <
+				text = <"Relationship to anterior peritoneal reflection">
+				description = <"The relationship of rectal tumour to the anterior peritoneal reflection.">
+			>
+			["id338"] = <
+				text = <"Intactness of the mesorectum">
+				description = <"An assessment of the intactness of the mesorectum.">
+			>
+			["at339"] = <
+				text = <"Incomplete">
+				description = <"The mesorectum is incompletely intact.">
+			>
+			["at340"] = <
+				text = <"Nearly complete">
+				description = <"The mesorectum is nearly completely intact.">
+			>
+			["at341"] = <
+				text = <"Complete">
+				description = <"The mesorectum is completely intact.">
+			>
+			["at342"] = <
+				text = <"Entirely above">
+				description = <"The tumour is entirely above the level of the peritoneal reflection anteriorly.">
+			>
+			["at343"] = <
+				text = <"Astride">
+				description = <"The tumour is astride (or at)  the level of the peritoneal reflection anteriorly.">
+			>
+			["at344"] = <
+				text = <"Entirely below">
+				description = <"The tumour is entirely below the level of the peritoneal reflection anteriorly.">
+			>
+			["at345"] = <
+				text = <"Present">
+				description = <"Tumour perforation is present.">
+			>
+			["at346"] = <
+				text = <"Absent">
+				description = <"Tumour perforation is absent.">
+			>
+			["at347"] = <
+				text = <"Indeterminate">
+				description = <"Presence of tumour perforation has not been determined.">
+			>
+			["id348"] = <
+				text = <"Tumour dimensions">
+				description = <"Details of maximum dimensions of the tumour.">
+			>
+			["at349"] = <
+				text = <"Indeterminate">
+				description = <"Intactness of the mesorectum has not been determined.">
+			>
+			["id350"] = <
+				text = <"Tumour perforation">
+				description = <"Findings related to tumour perforation.">
+			>
+			["id351"] = <
+				text = <"Perforation location">
+				description = <"The location of a perforation, if present.">
+			>
+			["at352"] = <
+				text = <"Serosal">
+				description = <"The perforation is serosal.">
+			>
+			["at353"] = <
+				text = <"Retro/infra peritoneal">
+				description = <"The perforation is retro/infra peritoneal.">
+			>
+			["id354"] = <
+				text = <"Distance of tumour from dentate line">
+				description = <"For abdominoperineal resection specimens, distance of tumour from the dentate line.">
+			>
+			["id355"] = <
+				text = <"Comment">
+				description = <"Furrher text comment on the perforation.">
+			>
+			["at354"] = <
+				text = <"Length">
+				description = <"Length">
+			>
+			["ac1"] = <
+				text = <"Tumour perforation (synthesised)">
+				description = <"Finding of tumour perforation. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Perforation location (synthesised)">
+				description = <"The location of a perforation, if present. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Relationship to anterior peritoneal reflection (synthesised)">
+				description = <"The relationship of rectal tumour to the anterior peritoneal reflection. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Intactness of the mesorectum (synthesised)">
+				description = <"An assessment of the intactness of the mesorectum. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at354"] = <http://openehr.org/id/122>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at345", "at346", "at347">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at352", "at353">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at342", "at343", "at344">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at339", "at340", "at341", "at349">
+		>
+	>

@@ -1,0 +1,849 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2016-05-31</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics UK</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>David Rowed, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Matt Cordell, NEHTA, Australia</other_contributors>
+    <other_contributors>David McKillop, NEHTA, Australia</other_contributors>
+    <other_contributors>Cathy Richardson, NEHTA, Australia</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>David Ellis, RCPA, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Gleason Score, Draft archetype [Internet]. Apperta UK, Apperta UK Clinical Knowledge Manager [cited: 2022-03-31]. Available from: https://ckm.apperta.org/ckm/archetypes/1051.32.376&#xD;
+&#xD;
+Gleason grading system. In: Wikipedia, the free encyclopedia [Internet]. 2016 [cited 2016 May 31]. Available from: https://en.wikipedia.org/w/index.php?title=Gleason_grading_system&amp;oldid=722952620&#xD;
+&#xD;
+Royal College of Pathologists of Australasia. Prostate Cancer (Radical Prostatectomy) Structured Reporting Protocol (1st Edition 2010). [Internet]. 2010;[cited 2010 Mar 21 ] Available from: http://www.rcpa.edu.au//static/File/Asset%20library/public%20documents/Publications/StructuredReporting/PROSTATE%20CANCER%20RAD%20PROS%20STRUCTURED%20REPORTING%20PROTOCOL%20for%20web.pdf&#xD;
+&#xD;
+Royal College of Pathologists. Dataset for prostate cancer histopathology reports [Internet]. 2009 ;[cited 2009 Jul 30 ]&#xD;
+Available from: http://www.rcpath.org/index.asp?PageID=1164&#xD;
+&#xD;
+College of American Pathologists. Protocol for the examination of specimens from patients with invasive carcinomas of the prostate gland [Internet]. 2007 Apr ;[cited 2009 Jul 30 ] Available from: http://www.cap.org/apps/docs/committees/cancer/cancer_protocols/2006/prostate06_ckw.pdf&#xD;
+&#xD;
+Epstein JI, Zelefsky MJ, Sjoberg DD, Nelson JB, Egevad L, Magi-Galluzzi C, Vickers AJ, Parwani AV, Reuter VE, Fine SW, Eastham JA. A contemporary prostate cancer grading system: a validated alternative to the Gleason score. European urology. 2016 Mar 31;69(3):428-35.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">7F7752328814828A811FB48D670B7997</other_details>
+    <other_details id="build_uid">0388b284-f8bc-44e1-9589-6060eadc3304</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Befunde im Zusammenhang mit dem Gleason-Score (Version ISUP2005) - einer Graduierungsskala für Prostatakrebs, ratifiziert von der International Society of Urological Pathologists (ISUP).</purpose>
+      <keywords>Histopathologie</keywords>
+      <keywords>Krebs</keywords>
+      <keywords>Labor</keywords>
+      <keywords>Prostata</keywords>
+      <keywords>Histologie</keywords>
+      <keywords>Bösartigkeit</keywords>
+      <keywords>Labor</keywords>
+      <keywords>Pathologie</keywords>
+      <keywords>Gleason</keywords>
+      <keywords>Score</keywords>
+      <keywords>Grad</keywords>
+      <keywords>Graduierung</keywords>
+      <use>Zur Darstellung von Befunden im Zusammenhang mit dem Gleason-Score (Version ISUP2005) - einer Graduierungsskala für Prostatakrebs, ratifiziert von der International Society of Urological Pathologists (ISUP).&#xD;
+&#xD;
+Als Komponenten-Archetyp im Kontext einer Reihe von Archetypen, die einen Histopathologie-Bericht bilden, z.B. OBSERVATION.laboratory_test.histopathology.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record findings related to the Gleason Score (ISUP2005 version) - a prostate cancer grading score ratified by the International Society of Urological Pathologists (ISUP).</purpose>
+      <keywords>histopathology</keywords>
+      <keywords>cancer</keywords>
+      <keywords>laboratory</keywords>
+      <keywords>prostate</keywords>
+      <keywords>histology</keywords>
+      <keywords>malignancy</keywords>
+      <keywords>lab</keywords>
+      <keywords>pathology</keywords>
+      <keywords>Gleason</keywords>
+      <keywords>score</keywords>
+      <keywords>grade</keywords>
+      <keywords>grading</keywords>
+      <use>Use to record findings related to the Gleason Score (ISUP2005 version) - a prostate cancer grading score ratified by the International Society of Urological Pathologists (ISUP).&#xD;
+&#xD;
+Use as a component archetype in the context of a suite of archetypes that make up a histopathology report ie OBSERVATION.laboratory_test.histopathology.</use>
+      <misuse />
+      <copyright>© copyright (c) 2010 openEHR foundation, Clinical Models UK, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Jan Schladetzky, Alina Rehberg</author>
+    <author id="organisation">University Hospital Schleswig-Holstein﻿​, Medizinische Hochschule Hannover</author>
+    <author id="email">jan.schladetzky@uksh.de, rehberg.alina@mh-hannover.de</author>
+  </translations>
+  <uid>
+    <value>8109a0e2-209f-4d6f-8d3c-a4cf282a270b</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.gleason_score.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0166</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0250</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0251</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0252</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0253</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0254</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0182</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0255</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0256</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0257</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0258</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0259</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0183</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0260</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0261</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0262</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0263</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0264</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0197</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>2</lower>
+                    <upper>10</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0265</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0266</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0267</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0268</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0269</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0270</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Gleason Score</items>
+        <items id="description">Gleason Score (ISUP2005 version) - a prostate cancer grading score ratified by the International Society of Urological Pathologists (ISUP), including Gleason Grade Groups.</items>
+      </items>
+      <items code="at0166">
+        <items id="text">Primary Gleason grade</items>
+        <items id="description">The primary Gleason grade.</items>
+      </items>
+      <items code="at0182">
+        <items id="text">Secondary Gleason grade</items>
+        <items id="description">The secondary Gleason grade.</items>
+      </items>
+      <items code="at0183">
+        <items id="text">Tertiary Gleason grade</items>
+        <items id="description">The tertiary Gleason grade.</items>
+      </items>
+      <items code="at0197">
+        <items id="text">Total Gleason score</items>
+        <items id="description">The sum of the primary and secondary Gleason grades.</items>
+        <items id="comment">The total Gleason score does not take account of the tertiary Gleason grade.</items>
+      </items>
+      <items code="at0250">
+        <items id="text">Grade 1</items>
+        <items id="description">The cancerous prostate closely resembles normal prostate tissue. The glands are small, well-formed, and closely packed.</items>
+      </items>
+      <items code="at0251">
+        <items id="text">Grade 2</items>
+        <items id="description">The tissue still has well-formed glands, but they are larger and have more tissue between them.</items>
+      </items>
+      <items code="at0252">
+        <items id="text">Grade 3</items>
+        <items id="description">The tissue still has recognizable glands, but the cells are darker. At high magnification, some of these cells have left the glands and are beginning to invade the surrounding tissue.</items>
+      </items>
+      <items code="at0253">
+        <items id="text">Grade 4</items>
+        <items id="description">The tissue has few recognizable glands. Many cells are invading the surrounding tissue.</items>
+      </items>
+      <items code="at0254">
+        <items id="text">Grade 5</items>
+        <items id="description">The tissue does not have recognizable glands. There are often just sheets of cells throughout the surrounding tissue.</items>
+      </items>
+      <items code="at0255">
+        <items id="text">Grade 1</items>
+        <items id="description">The cancerous prostate closely resembles normal prostate tissue. The glands are small, well-formed, and closely packed.</items>
+      </items>
+      <items code="at0256">
+        <items id="text">Grade 2</items>
+        <items id="description">The tissue still has well-formed glands, but they are larger and have more tissue between them.</items>
+      </items>
+      <items code="at0257">
+        <items id="text">Grade 3</items>
+        <items id="description">The tissue still has recognizable glands, but the cells are darker. At high magnification, some of these cells have left the glands and are beginning to invade the surrounding tissue.</items>
+      </items>
+      <items code="at0258">
+        <items id="text">Grade 4</items>
+        <items id="description">The tissue has few recognizable glands. Many cells are invading the surrounding tissue.</items>
+      </items>
+      <items code="at0259">
+        <items id="text">Grade 5</items>
+        <items id="description">The tissue does not have recognizable glands. There are often just sheets of cells throughout the surrounding tissue.</items>
+      </items>
+      <items code="at0260">
+        <items id="text">Grade 1</items>
+        <items id="description">The cancerous prostate closely resembles normal prostate tissue. The glands are small, well-formed, and closely packed.</items>
+      </items>
+      <items code="at0261">
+        <items id="text">Grade 2</items>
+        <items id="description">The tissue still has well-formed glands, but they are larger and have more tissue between them.</items>
+      </items>
+      <items code="at0262">
+        <items id="text">Grade 3</items>
+        <items id="description">The tissue still has recognizable glands, but the cells are darker. At high magnification, some of these cells have left the glands and are beginning to invade the surrounding tissue.</items>
+      </items>
+      <items code="at0263">
+        <items id="text">Grade 4</items>
+        <items id="description">The tissue has few recognizable glands. Many cells are invading the surrounding tissue.</items>
+      </items>
+      <items code="at0264">
+        <items id="text">Grade 5</items>
+        <items id="description">The tissue does not have recognizable glands. There are often just sheets of cells throughout the surrounding tissue.</items>
+      </items>
+      <items code="at0265">
+        <items id="text">Gleason Grade Group</items>
+        <items id="description">The Gleason Grade Group.</items>
+      </items>
+      <items code="at0266">
+        <items id="text">Grade Group 1</items>
+        <items id="description">Gleason score less than or equal to 6.</items>
+      </items>
+      <items code="at0267">
+        <items id="text">Grade Group 2</items>
+        <items id="description">Gleason score 7 (Primary grade 3 + Secondary grade 4).</items>
+      </items>
+      <items code="at0268">
+        <items id="text">Grade Group 3</items>
+        <items id="description">Gleason score 7 (Primary grade 4 + Secondary grade 3).</items>
+      </items>
+      <items code="at0269">
+        <items id="text">Grade Group 4</items>
+        <items id="description">Gleason score 8.</items>
+      </items>
+      <items code="at0270">
+        <items id="text">Grade Group 5</items>
+        <items id="description">Gleason score 9-10.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Gleason-Score</items>
+        <items id="description">Gleason-Score (Version ISUP2005) - eine Graduierungsskala für Prostatakrebs, ratifiziert von der International Society of Urological Pathologists (ISUP), einschließlich Gleason-Grad-Gruppen.&#xD;
+</items>
+      </items>
+      <items code="at0166">
+        <items id="text">Primärer Gleason-Grad</items>
+        <items id="description">Der primäre Gleason-Grad.</items>
+      </items>
+      <items code="at0182">
+        <items id="text">Sekundärer Gleason-Grad</items>
+        <items id="description">Der sekundäre Gleason-Grad.</items>
+      </items>
+      <items code="at0183">
+        <items id="text">Tertiärer Gleason-Grad</items>
+        <items id="description">Der tertiäre Gleason-Grad.</items>
+      </items>
+      <items code="at0197">
+        <items id="text">Gesamter Gleason-Score</items>
+        <items id="description">Die Summe des primären und sekundären Gleason-Grades.</items>
+        <items id="comment">Der gesamte Gleason-Score berücksichtigt nicht den tertiären Gleason-Grad.</items>
+      </items>
+      <items code="at0250">
+        <items id="text">Grad 1</items>
+        <items id="description">Die krebsartige Prostata ähnelt stark normalem Prostatagewebe. Die Drüsen sind klein, wohlgeformt und dicht angeordnet.</items>
+      </items>
+      <items code="at0251">
+        <items id="text">Grad 2</items>
+        <items id="description">Das Gewebe weist immer noch wohlgeformte Drüsen auf, jedoch sind sie größer und weisen mehr Gewebe zwischen sich auf.</items>
+      </items>
+      <items code="at0252">
+        <items id="text">Grad 3</items>
+        <items id="description">Das Gewebe hat immer noch erkennbare Drüsen, aber die Zellen sind dunkler. Bei starker Vergrößerung haben einige dieser Zellen die Drüsen verlassen und begonnen, in das umliegende Gewebe einzudringen.</items>
+      </items>
+      <items code="at0253">
+        <items id="text">Grad 4</items>
+        <items id="description">Das Gewebe hat nur wenige erkennbare Drüsen. Viele Zellen sind in das umliegende Gewebe eingedrungen.</items>
+      </items>
+      <items code="at0254">
+        <items id="text">Grad 5</items>
+        <items id="description">Das Gewebe besitzt keine erkennbaren Drüsen. Häufig finden sich lediglich Zellschichten im umliegenden Gewebe.</items>
+      </items>
+      <items code="at0255">
+        <items id="text">Grad 1</items>
+        <items id="description">Die krebsartige Prostata ähnelt stark normalem Prostatagewebe. Die Drüsen sind klein, wohlgeformt und dicht angeordnet.</items>
+      </items>
+      <items code="at0256">
+        <items id="text">Grad 2</items>
+        <items id="description">Das Gewebe weist immer noch wohlgeformte Drüsen auf, jedoch sind sie größer und weisen mehr Gewebe zwischen sich auf.</items>
+      </items>
+      <items code="at0257">
+        <items id="text">Grad 3</items>
+        <items id="description">Das Gewebe hat immer noch erkennbare Drüsen, aber die Zellen sind dunkler. Bei starker Vergrößerung haben einige dieser Zellen die Drüsen verlassen und begonnen, in das umliegende Gewebe einzudringen.</items>
+      </items>
+      <items code="at0258">
+        <items id="text">Grad 4</items>
+        <items id="description">Das Gewebe hat nur wenige erkennbare Drüsen. Viele Zellen sind in das umliegende Gewebe eingedrungen.</items>
+      </items>
+      <items code="at0259">
+        <items id="text">Grad 5</items>
+        <items id="description">Das Gewebe besitzt keine erkennbaren Drüsen. Häufig finden sich lediglich Zellschichten im umliegenden Gewebe.</items>
+      </items>
+      <items code="at0260">
+        <items id="text">Grad 1</items>
+        <items id="description">Die krebsartige Prostata ähnelt stark normalem Prostatagewebe. Die Drüsen sind klein, wohlgeformt und dicht angeordnet.</items>
+      </items>
+      <items code="at0261">
+        <items id="text">Grad 2</items>
+        <items id="description">Das Gewebe weist immer noch wohlgeformte Drüsen auf, jedoch sind sie größer und weisen mehr Gewebe zwischen sich auf.</items>
+      </items>
+      <items code="at0262">
+        <items id="text">Grad 3</items>
+        <items id="description">Das Gewebe hat immer noch erkennbare Drüsen, aber die Zellen sind dunkler. Bei starker Vergrößerung haben einige dieser Zellen die Drüsen verlassen und begonnen, in das umliegende Gewebe einzudringen.</items>
+      </items>
+      <items code="at0263">
+        <items id="text">Grad 4</items>
+        <items id="description">Das Gewebe hat nur wenige erkennbare Drüsen. Viele Zellen sind in das umliegende Gewebe eingedrungen.</items>
+      </items>
+      <items code="at0264">
+        <items id="text">Grad 5</items>
+        <items id="description">Das Gewebe besitzt keine erkennbaren Drüsen. Häufig finden sich lediglich Zellschichten im umliegenden Gewebe.</items>
+      </items>
+      <items code="at0265">
+        <items id="text">Gleason-Grad-Gruppe</items>
+        <items id="description">Die Gleason-Grad-Gruppe.</items>
+      </items>
+      <items code="at0266">
+        <items id="text">Graduierungsgruppe 1</items>
+        <items id="description">Gleason-Score kleiner oder gleich 6.</items>
+      </items>
+      <items code="at0267">
+        <items id="text">Graduierungsgruppe 2</items>
+        <items id="description">Gleason-Score 7 (Primärer Grad 3 + Sekundärer Grad 4).</items>
+      </items>
+      <items code="at0268">
+        <items id="text">Graduierungsgruppe 3</items>
+        <items id="description">Gleason-Score 7 (Primärer Grad 4 + Sekundärer Grad 3).</items>
+      </items>
+      <items code="at0269">
+        <items id="text">Graduierungsgruppe 4</items>
+        <items id="description">Gleason-Score 8.</items>
+      </items>
+      <items code="at0270">
+        <items id="text">Graduierungsgruppe 5</items>
+        <items id="description">Gleason-Score 9-10.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0166">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>384994009</code_string>
+        </value>
+      </items>
+      <items code="at0182">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>384995005</code_string>
+        </value>
+      </items>
+      <items code="at0183">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>385002007</code_string>
+        </value>
+      </items>
+      <items code="at0197">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>372278000</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

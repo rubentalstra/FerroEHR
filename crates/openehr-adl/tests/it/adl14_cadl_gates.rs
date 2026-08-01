@@ -120,6 +120,24 @@ const FIXTURES: &[(&str, Expect)] = &[
         "openEHR-EHR-CLUSTER.ordinal_pipe_shorthand.v1.adl",
         Expect::Pass,
     ),
+    // ── docs-text-silent forms the reference grammar admits and CKM emits ─
+    (
+        "openEHR-EHR-CLUSTER.term_constraint_open_and_mixed_ordinal.v1.adl",
+        Expect::Pass,
+    ),
+    // The empty inline dADL domain block, both spellings — lowers to the open
+    // constraint (#1465 family 3; the citation chain is in the fixture).
+    (
+        "openEHR-EHR-CLUSTER.empty_domain_block.v1.adl",
+        Expect::Pass,
+    ),
+    // Heterogeneous C_DV_QUANTITY list rows — partition into sibling
+    // alternatives (#1466; the conversion shape is pinned in
+    // `ckm_conversion_breadth.rs`).
+    (
+        "openEHR-EHR-CLUSTER.heterogeneous_quantity_rows.v1.adl",
+        Expect::Pass,
+    ),
     // ── 1.4 term-constraint definedness (master08 VATDF/VACDF) ────────────
     (
         "openEHR-EHR-CLUSTER.VATDF_undefined_listed_code.v1.adl",

@@ -1,0 +1,97 @@
+---
+paths: ["scripts/vendor-*.sh", "tools/cnf-runner/artifacts/corpus/**", "crates/openehr-adl/tests/corpus/**"]
+---
+
+# Vendoring external corpora (CKM, ADL libraries, upstream test material)
+
+Every externally-sourced corpus in this repo is fetched by a **committed
+`scripts/vendor-*.sh` script**, vendored **verbatim**, and stamped with a
+`PROVENANCE.md`. Never hand-download into the tree, never hand-edit a
+vendored file, never paste a corpus in from a chat transcript. To refresh or
+extend a corpus: change the script, re-run it, commit the result.
+
+| corpus | script | destination |
+|---|---|---|
+| openEHR spec text + CNF schedule | `scripts/vendor-spec-docs.sh` | `docs/specs/openehr/` |
+| CKM templates (OPT 1.4) — curated journey pack + full library | `scripts/vendor-ckm-templates.sh` | `tools/cnf-runner/artifacts/corpus/templates/ckm/{,full/}` |
+| CKM archetypes (**ADL 1.4**) | `scripts/vendor-ckm-archetypes.sh` | `tools/cnf-runner/artifacts/corpus/archetypes/ckm/adl14/` |
+| ADL **2** archetypes + their 1.4 twins | `scripts/vendor-adl2-archetypes.sh` | `crates/openehr-adl/tests/corpus/adl2-reference/`, `tools/cnf-runner/artifacts/corpus/archetypes/adl2/` |
+| CKM example skeletons (generated once vs a composed SUT) | `scripts/generate-ckm-examples.sh` | `…/templates/ckm/*.example.json` |
+
+## The openEHR CKM REST API — facts, verified 2026-08-01
+
+Base: `https://ckm.openehr.org/ckm/rest/v1`. There is no published OpenAPI
+document (`swagger.json`, `openapi.json`, `v3/api-docs` all 404), so these
+observations ARE the reference — re-verify with a probe before trusting a
+guess.
+
+- **Pagination is `?page=N&size=M` and nothing else.** `limit`, `pageSize`,
+  `maxResults`, `offset`, `count`, `rows`, `resultsPerPage`, `startIndex` are
+  all silently IGNORED and you get a **20-row first page** — which reads
+  exactly like "CKM only publishes 20 resources". This has burned time twice.
+  Every list fetch pages with page/size **and asserts the row count grew**
+  (both vendor scripts fail loud on `<= 20` rows).
+- Resource lists: `GET /templates`, `GET /archetypes`. Both return a flat JSON
+  array of metadata (`cid`, `resourceType`, `resourceMainId`,
+  `resourceMainDisplayName`, `status`, `modificationTime`,
+  `versionAssetLatest`; archetypes also carry `revisionLatest`).
+- Exports: `GET /templates/{cid}/opt` (OPT 1.4 XML),
+  `GET /archetypes/{cid}/adl` (ADL text), `GET /archetypes/{cid}/xml`
+  (AM 1.4 ARCHETYPE XML). `GET /{kind}/{cid}` returns the metadata.
+- **A 404 on an export is usually not a bug**: resources held in a private
+  CKM incubator are only exportable by a signed-in account with access. Record
+  them as unreachable in `PROVENANCE.md` — never silently skip, never drop the
+  row from the count.
+- Naming: archetypes have a stable HRID in `resourceMainId`
+  (`openEHR-EHR-CLUSTER.device.v1`) — use it as the file name. Templates have
+  a **UUID** there, so template file names are slugs derived from the display
+  name; those slugs are NOT stable across a display-name change, which is why
+  the curated journey pack keeps a hand-pinned slug per cid (a contract read
+  by `corpus/MANIFEST.yaml`, the journey definitions and
+  `generate-ckm-examples.sh` — never rename or drop one).
+
+## ADL 1.4 vs ADL 2.4 — where each dialect comes from
+
+We support **both** generations (`openehr-adl`; `am14`/`am24`), so the corpus
+must carry both. They come from **different sources**, and the split is not
+negotiable:
+
+- **ADL 1.4 → the live CKM.** `GET /archetypes/{cid}/adl` answers
+  `adl_version=1.4`. That is the only ADL CKM publishes.
+- **ADL 2 → `github.com/openEHR/adl-archetypes`, pinned by commit.** CKM has
+  **no ADL 2 export**: `/adl2`, `/adl14`, `/adl2.4`, `/opt2`, `/source` all
+  404, and `?format=ADL2` / `?version=2` are silently ignored and return
+  byte-identical 1.4 text. Never label a CKM export "ADL 2".
+- **Never generate the ADL 2 side with our own 1.4→2 converter.**
+  `openehr_adl::adl14::convert` has no spec basis (it is our own design —
+  archie is prior art only), so feeding its output back as the ADL 2 corpus
+  would validate the converter against itself. Upstream's own
+  `Reference/CKM_2013_12_09` tree carries `*.adl`/`*.adls` **pairs** of the
+  same archetypes — that pairing is the independent conversion reference.
+- The `openehr-adl` ADL 2 regression library
+  (`tests/corpus/adl2-reference/`) is vendored from the same pinned commit;
+  `scripts/vendor-adl2-archetypes.sh --check` proves the script still
+  reproduces the committed tree byte-for-byte. Its provenance record stays
+  `crates/openehr-adl/tests/corpus/PROVENANCE.md`.
+
+## A vendored corpus is not done until it is exercised
+
+Vendoring is half a change. The standing owner rule (`.claude/rules/testing.md`
+§CNF coverage) applies to every corpus here:
+
+- **100% of a vendored corpus is exercised**, with a coverage gate that fails
+  when a file is present but unreferenced — a big pack that nothing parses is
+  decoration, and it silently overstates what the suite proves.
+- **Adjudicated skips only.** Real-world CKM content contains genuinely
+  invalid artefacts (e.g. CKM cid `1013.26.61`, whose OPT carries an
+  `assumed_value` outside its constrained code list — AM 1.4
+  `Assumed_value_valid`). A file our conformant reader rejects is either a
+  spec-cited expected-rejection entry in the owning gate, or an
+  `artifacts/registers/ambiguities.yaml` entry — never a quiet exclusion and
+  never a weakened gate. The valid/invalid twins rule holds (testing.md).
+- Per-file `MANIFEST.yaml` entries carry verdict + defect for catalogue
+  fixtures; bulk breadth packs record their inventory + adjudications in the
+  pack's `PROVENANCE.md` and are driven by a directory-walking gate.
+- Size honesty: these packs are large (the full CKM template pack is ~100 MB
+  of XML; the archetype packs ~25 MB). That is acceptable for text that git
+  compresses well, but a pack is only worth its weight if a gate reads it.

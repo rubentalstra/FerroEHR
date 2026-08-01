@@ -1,0 +1,323 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.exam_pinna.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2013-02-05">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording a narrative description and clinical interpretation of the findings observed during the physical examination of the pinnae and associated mastoid region.">
+			use = <"Use to record a narrative description of the findings observed during the physical examination of the pinnae.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element.
+
+Specifically designed to be used within the CLUSTER.exam_ears archetype, but may be used within any clinically appropriate ENTRY or CLUSTER archetype related to physical examination of the ears.">
+			keywords = <"examination", "physical", "clinical", "findings", "exam", "pinna", "ear", "external", "auricle">
+			misuse = <"Not to be used for recording the clinical history - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom.
+
+Not to be used to record stand-alone clinical observations or measurements - use specific OBSERVATION archetypes. For example OBSERVATION.blood_pressure, OBSERVATION.body_weight, or OBSERVATION.height.">
+		>
+	>
+	references = <
+		["1"] = <"Examination - Pinnae, draft archetype, National eHealth Transition Authority [Internet]. NEHTA Clinical Knowledge Manager. Authored: 09 Oct 2012. Available at: http://dcm.nehta.org.auhttp://dcm.nehta.org.au/ckm/OKM.html#showarchetype_1013.1.1095 (accessed 05 Feb 2013).">
+		["2"] = <"Communication with clinical domain experts associated with Australia's Northern Territory Hearing Health Program.">
+		["3"] = <"Northern Territory Government, Department of Health: Hearing Health Program ENT Specialist Consultation Form 2011 12 07.">
+		["4"] = <"Northern Territory Government, Department of Health: Northern Territory Hearing Health Program Teleotology Nurse Consultation Form 2011 12 07.">
+		["5"] = <"Northern Territory Government, Department of Health: Northern Territory Hearing Health Program Audiologist Consultation Form 2011 12 07.">
+		["6"] = <"OATSIH: The Recommendations for Clinical Care Guidelines on the Management of Otitis Media in Aboriginal and Torres Strait Islander Populations (2010). Available at: http://www.health.gov.au/internet/publications/publishing.nsf/Content/CA2578620005D57ACA25792800821BE8?OpenDocument.">
+	>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"6C93E55DD83D850B88F86A2A91287AF2">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Examination - Pinnae
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Clinical Description
+				value matches {
+					DV_TEXT[id23] 
+				}
+			}
+			ELEMENT[id7] occurrences matches {0..1} matches {	-- Symmetry?
+				value matches {
+					DV_CODED_TEXT[id24] matches {
+						defining_code matches {[ac1]}		-- Symmetry? (synthesised)
+					}
+				}
+			}
+			CLUSTER[id10] occurrences matches {0..1} matches {	-- Per Pinna
+				items matches {
+					ELEMENT[id11] occurrences matches {0..1} matches {	-- Pinna Examined
+						value matches {
+							DV_CODED_TEXT[id25] matches {
+								defining_code matches {[ac2]}		-- Pinna Examined (synthesised)
+							}
+						}
+					}
+					ELEMENT[id15] occurrences matches {0..1} matches {	-- Clinical Description
+						value matches {
+							DV_TEXT[id26] 
+						}
+					}
+					ELEMENT[id14] occurrences matches {0..1} matches {	-- Post-auricular Scar
+						value matches {
+							DV_BOOLEAN[id27] matches {
+								value matches {True}
+							}
+						}
+					}
+					CLUSTER[id16] matches {	-- Detailed Examination
+						items matches {
+							ELEMENT[id17] occurrences matches {0..1} matches {	-- Pinna Structure
+								value matches {
+									DV_TEXT[id28] 
+								}
+							}
+							ELEMENT[id18] occurrences matches {0..1} matches {	-- Clinical Description
+								value matches {
+									DV_TEXT[id29] 
+								}
+							}
+							ELEMENT[id20] occurrences matches {0..1} matches {	-- Swollen
+								value matches {
+									DV_BOOLEAN[id30] matches {
+										value matches {True}
+									}
+								}
+							}
+							ELEMENT[id21] occurrences matches {0..1} matches {	-- Erythema
+								value matches {
+									DV_BOOLEAN[id31] matches {
+										value matches {True}
+									}
+								}
+							}
+							ELEMENT[id19] occurrences matches {0..1} matches {	-- Tender
+								value matches {
+									DV_BOOLEAN[id32] matches {
+										value matches {True}
+									}
+								}
+							}
+							allow_archetype CLUSTER[id22] matches {	-- Related Examination Detail
+								include
+									archetype_id/value matches {/.*/}
+							}
+						}
+					}
+					allow_archetype CLUSTER[id3] matches {	-- Related Examination Detail
+						include
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[id6] occurrences matches {0..1} matches {	-- Image Representation
+						value matches {
+							DV_MULTIMEDIA[id33] matches {
+								media_type matches {[ac3]}		-- Image Representation (synthesised)
+							}
+						}
+					}
+					ELEMENT[id4] matches {	-- Clinical Interpretation
+						value matches {
+							DV_TEXT[id34] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Examination - Pinnae">
+				description = <"Findings observed during the physical examination of the pinnae, or the external structure of the ears, and the associated mastoid region.">
+			>
+			["id2"] = <
+				text = <"Clinical Description">
+				description = <"Narrative description of the findings observed during a physical examination of the pinnae, including size, shape and position.">
+			>
+			["id3"] = <
+				text = <"Related Examination Detail">
+				description = <"Structured details of related physical examination findings for the identified pinna.">
+			>
+			["id4"] = <
+				text = <"Clinical Interpretation">
+				description = <"Single word, phrase or brief description represents the clinical meaning and significance of the physical examination findings.">
+			>
+			["id6"] = <
+				text = <"Image Representation">
+				description = <"Digital image or video taken, or a diagram drawn, during the physical examination of the body system or anatomical structure.">
+			>
+			["id7"] = <
+				text = <"Symmetry?">
+				description = <"Description of the symmetry of the ears in comparison to one another.">
+			>
+			["at8"] = <
+				text = <"Symmetrical">
+				description = <"The pinnae appear symmetrical - with both pinnae having similar size and shape.">
+			>
+			["at9"] = <
+				text = <"Asymmetrical">
+				description = <"The pinnae appear asymmetrical - with one pinna differing in size and/or shape to the other.">
+			>
+			["id10"] = <
+				text = <"Per Pinna">
+				description = <"Physical examination findings of an identified pinna.">
+			>
+			["id11"] = <
+				text = <"Pinna Examined">
+				description = <"Identification of the pinna examined.">
+			>
+			["at12"] = <
+				text = <"Left pinna">
+				description = <"Examination findings for the left pinna.">
+			>
+			["at13"] = <
+				text = <"Right pinna">
+				description = <"Examination findings for the right pinna.">
+			>
+			["id14"] = <
+				text = <"Post-auricular Scar">
+				description = <"Presence of post-auricular surgical scar observed.">
+			>
+			["id15"] = <
+				text = <"Clinical Description">
+				description = <"Narrative description of the findings observed during a physical examination of a specific pinna.">
+			>
+			["id16"] = <
+				text = <"Detailed Examination">
+				description = <"Findings on physical examination of specific anatomical structures of the identified pinna.">
+			>
+			["id17"] = <
+				text = <"Pinna Structure">
+				description = <"Identification of the the specific anatomical structure of the pinna or related anatomical region examined.">
+			>
+			["id18"] = <
+				text = <"Clinical Description">
+				description = <"Narrative description of the findings observed during a physical examination of a specific anatomical structure of the pinna.">
+			>
+			["id19"] = <
+				text = <"Tender">
+				description = <"Presence of tenderness of the identified anatomical structure of the pinna.">
+			>
+			["id20"] = <
+				text = <"Swollen">
+				description = <"Presence of swelling of the identified anatomical structure of the pinna.">
+			>
+			["id21"] = <
+				text = <"Erythema">
+				description = <"Presence of erythema, or redness, of the identified anatomical structure of the pinna.">
+			>
+			["id22"] = <
+				text = <"Related Examination Detail">
+				description = <"Structured details of related physical examination findings for the identified pinna structure.">
+			>
+			["at14"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at15"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at16"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at17"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at18"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at19"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at20"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at21"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at22"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at23"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at24"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at25"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at26"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Symmetry? (synthesised)">
+				description = <"Description of the symmetry of the ears in comparison to one another. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Pinna Examined (synthesised)">
+				description = <"Identification of the pinna examined. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Image Representation (synthesised)">
+				description = <"Digital image or video taken, or a diagram drawn, during the physical examination of the body system or anatomical structure. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at14"] = <http://openehr.org/id/425>
+			["at15"] = <http://openehr.org/id/426>
+			["at16"] = <http://openehr.org/id/427>
+			["at17"] = <http://openehr.org/id/428>
+			["at18"] = <http://openehr.org/id/429>
+			["at19"] = <http://openehr.org/id/401>
+			["at20"] = <http://openehr.org/id/402>
+			["at21"] = <http://openehr.org/id/404>
+			["at22"] = <http://openehr.org/id/405>
+			["at23"] = <http://openehr.org/id/406>
+			["at24"] = <http://openehr.org/id/407>
+			["at25"] = <http://openehr.org/id/414>
+			["at26"] = <http://openehr.org/id/518>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at8", "at9">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at12", "at13">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at14", "at15", "at16", "at17", "at18", "at19", "at20", "at21", "at22", "at23", "at24", "at25", "at26">
+		>
+	>

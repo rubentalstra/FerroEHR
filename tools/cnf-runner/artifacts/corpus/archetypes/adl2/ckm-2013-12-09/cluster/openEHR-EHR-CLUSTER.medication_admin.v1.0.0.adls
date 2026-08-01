@@ -1,0 +1,135 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.medication_admin.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["sl"] = <
+			language = <[ISO_639-1::sl]>
+			author = <
+				["name"] = <"Biljana Prinčič">
+				["organisation"] = <"Marand, Ljubljana">
+				["email"] = <"biljana.princic@marand.si">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2013-05-16">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To describe how a medication should be administered or was actually administered.">
+			use = <"To be used in INSTRUCTION.medication and ACTION.medication to describe the administration.">
+			keywords = <"medication administration", "injection", "infusion">
+			misuse = <"Not to be used for administration of anything other than medication.">
+		>
+		["sl"] = <
+			language = <[ISO_639-1::sl]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Ian McNicoll, Ocean Informatics, UK", ...>
+	references = <
+		["1"] = <"Medication administration, draft archetype, NEHTA Clinical Knowledge Manager [Internet]. : NEHTA. Authored: 10 Nov 2010. Available at: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.874_1 (accessed 15 May 2013).">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"6BA029E6118C5E5418053BE84D85C377">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Medication administration
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Route
+				value matches {
+					DV_TEXT[id7] 
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- Site
+				value matches {
+					DV_TEXT[id8] 
+				}
+			}
+			ELEMENT[id4] occurrences matches {0..1} matches {	-- Delivery method
+				value matches {
+					DV_TEXT[id9] 
+				}
+			}
+			ELEMENT[id5] occurrences matches {0..1} matches {	-- Dose duration
+				value matches {
+					DV_DURATION[id10] matches {
+						value matches {|>=PT0S|}
+					}
+				}
+			}
+			allow_archetype CLUSTER[id6] matches {	-- Infusion details
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.infusion_details(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Medication administration">
+				description = <"Information about the future or actual administration of medication.">
+			>
+			["id2"] = <
+				text = <"Route">
+				description = <"The route by which the medication is administered (e.g. oral, sublingual etc).">
+			>
+			["id3"] = <
+				text = <"Site">
+				description = <"A description of the site of administration.">
+			>
+			["id4"] = <
+				text = <"Delivery method">
+				description = <"The method of delivery if this should be specified (e.g. via a nebuliser or spacer).">
+			>
+			["id5"] = <
+				text = <"Dose duration">
+				description = <"The length of time over which to administer each dose (e.g. an intravenous administration may have to be over a period of 5 minutes).">
+			>
+			["id6"] = <
+				text = <"Infusion details">
+				description = <"Details of administration via infusion.">
+			>
+		>
+		["sl"] = <
+			["id1"] = <
+				text = <"Aplikacija cepiva">
+				description = <"Podatki o aplikaciji cepiva">
+			>
+			["id2"] = <
+				text = <"Pot uporabe">
+				description = <"Poti uporabe zdravila">
+			>
+			["id3"] = <
+				text = <"Mesto aplikacije">
+				description = <"Mesto aplikacije">
+			>
+			["id4"] = <
+				text = <"Vrsta aplikacije">
+				description = <"Vrsta apliciranja, če je določena (npr. inhalacije, oralno...)">
+			>
+			["id5"] = <
+				text = <"Trajanje doze aplikacije">
+				description = <"Čas trajanja ene doze apliciranega zdravila">
+			>
+			["id6"] = <
+				text = <"Podatki o infuziji">
+				description = <"Podatki o infuziji">
+			>
+		>
+	>

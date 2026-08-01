@@ -1,0 +1,52 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-COMPOSITION.review.v1
+
+concept
+	[at0000]	-- Review
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2012-12-11">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the details of a formal review of a subject's clinical situation or any specific aspect of their clinical care.">
+			use = <"Use to record the details of a formal review of a subject's clinical situation or any specific aspect of their clinical care. For example: use to record Medicines reviews; or Case Coordinator reviews.">
+			keywords = <"review", "assessment", "medicine", "clinical", "case", "file">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"CommitteeDraft">
+	other_contributors = <>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"2DC12B7D97D991644135FB1F47C6C102">
+	>
+
+definition
+	COMPOSITION[at0000] matches {	-- Review
+		category matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {[openehr::433]}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Review">
+					description = <"Composition for the recording of the details of a formal review of a subject's clinical situation or any specific aspect of their clinical care.">
+				>
+			>
+		>
+	>

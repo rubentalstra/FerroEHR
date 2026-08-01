@@ -1,0 +1,969 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2010-12-17</original_author>
+    <original_author id="name">Hugh Leslie</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <other_contributors>Stephen Chu, NEHTA, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Derived from: Derived from: Nutrition summary, Draft archetype [Internet]. Australian Digital Health Agency (NEHTA), ADHA Clinical Knowledge Manager. Authored: 2010 Dec 17. Available at: http://dcm.nehta.org.au/ckm#showArchetype_1013.1.931_1 (discontinued).</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, Australia&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">559F25C87D73B82A23AB0EE77152B626</other_details>
+    <other_details id="build_uid">79dbcb67-f65b-4e32-bed1-5c611d704415</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung einer Übersicht der Nahrungs- und Ernährungssituation einer Person, einschließlich der Auswirkungen auf die sozialen Faktoren der Gesundheit.</purpose>
+      <keywords>Ernährung</keywords>
+      <keywords>Nahrung</keywords>
+      <keywords>Fettleibigkeit</keywords>
+      <keywords>Übergewicht</keywords>
+      <keywords>Untergewicht</keywords>
+      <keywords>unterernährt</keywords>
+      <use>Zur Darstellung einer Übersicht der Nahrungs- und Ernährungssituation einer Person, einschließlich der Auswirkungen auf die sozialen Faktoren der Gesundheit.</use>
+      <misuse>Nicht zur Darstellung von Messungen wie Körpergewicht, Körpergröße oder Body Mass Index verwenden. Verwenden Sie dafür bestimmte Archetypen, um diese Messungen darzustellen - OBSERVATION.weight, OBSERVATION.height und OBSERVATION.body_mass_index.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record an overview of the food and nutritional situation for an individual, including the impact on social determinants of health.</purpose>
+      <keywords>nutrition</keywords>
+      <keywords>obese</keywords>
+      <keywords>overweight</keywords>
+      <keywords>underweight</keywords>
+      <keywords>malnourished</keywords>
+      <use>Use to record an overview of the food and nutritional situation for an individual, including the impact on social determinants of health.</use>
+      <misuse>Not to be used to record measurements such as body weight, height or Body Mass Index. Use specific archetypes to record these measurements - OBSERVATION.weight, OBSERVATION.height and OBSERVATION.body_mass_index.</misuse>
+      <copyright>© Australian Digital Health Agency, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nl</code_string>
+      </language>
+      <purpose>*To record an overview of the food and nutritional situation for an individual, including the impact on social determinants of health. (en)</purpose>
+      <keywords>*voeding</keywords>
+      <keywords>*obesitas</keywords>
+      <keywords>*overgewicht</keywords>
+      <keywords>*ondergewicht</keywords>
+      <keywords>*ondervoed</keywords>
+      <use>*Use to record an overview of the food and nutritional situation for an individual, including the impact on social determinants of health. (en)</use>
+      <misuse>*Not to be used to record measurements such as body weight, height or Body Mass Index. Use specific archetypes to record these measurements - OBSERVATION.weight, OBSERVATION.height and OBSERVATION.body_mass_index. (en)</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Simon Schumacher, Natalia Strauch</author>
+    <author id="organisation">HiGHmed, Medizinische Hochschule Hannover</author>
+    <author id="email">sschuma9@uni-koeln.de, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nl</code_string>
+    </language>
+    <author id="name">Martijn van Eenennaam</author>
+    <author id="organisation">Nedap Healthcare</author>
+    <author id="email">martijn.vaneenennaam@nedap.com</author>
+    <accreditation>Ph.D.</accreditation>
+  </translations>
+  <uid>
+    <value>43bd4e28-3c99-41d2-9be6-786a81e8cae3</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-EVALUATION.food_nutrition_summary.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>EVALUATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0011</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0013</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0014</code_list>
+                    <code_list>at0015</code_list>
+                    <code_list>at0016</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0020</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0004</code_list>
+                    <code_list>at0007</code_list>
+                    <code_list>at0005</code_list>
+                    <code_list>at0006</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0008</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0021</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0022</code_list>
+                    <code_list>at0023</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0012</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0018</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0019</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Food and nutrition summary</items>
+        <items id="description">Summary of the food and nutritional situation for an individual.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Nutrition status</items>
+        <items id="description">Description of the individual's nutritional status as assessed by a clinician, for example, malnourished or well nourished. Coding with a terminology is desirable, where possible.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Weight status</items>
+        <items id="description">Assessment of the individual's weight status.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Underweight</items>
+        <items id="description">Is underweight for age and sex according to BMI or other measure.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Overweight</items>
+        <items id="description">Is overweight for age and sex according to BMI or other measure.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Obese</items>
+        <items id="description">Is obese for age and sex according to BMI or other measure.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Normal</items>
+        <items id="description">Is normal weight for age and sex according to BMI or other measure.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Dietary preference</items>
+        <items id="description">A description of an individual's dietary preference.</items>
+        <items id="comment">For example: omnivore; vegetarian or vegan. Coding with a terminology is desirable, where possible.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Dietary constraints</items>
+        <items id="description">Description of a special dietary requirements or constraints.</items>
+        <items id="comment">For example: lactose or gluten free; low sodium. Coding with a terminology is desirable, where possible.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Comment</items>
+        <items id="description">Comment about the individual's nutrition.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the individual's diet and eating patterns.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Food security status</items>
+        <items id="description">Category describing the individual's perception about about secure and reliable access to food that is adequate in quantity and nutritional quality; culturally acceptable; safe; and acquired in socially acceptable ways.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Secure</items>
+        <items id="description">The individual has a sense of certainty and peace of mind about their access to appropriate food.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Changeable</items>
+        <items id="description">The individual has a sense of uncertainty about reliable and consistent access to appropriate food.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Insecure</items>
+        <items id="description">The individual has a sense of worry and concern about their access to appropriate food.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Last updated</items>
+        <items id="description">The date this summary was last updated.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Food security description</items>
+        <items id="description">Narrative description about the individual's ability to access appropriate food.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Milk supply</items>
+        <items id="description">The type of milk available for consumption.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Pasteurised</items>
+        <items id="description">Available milk is pasteurised.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Non-pasteurised</items>
+        <items id="description">Available milk is non-pasteurised.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Zusammenfassung der Ernährung und Ernährungsweise</items>
+        <items id="description">Zusammenfassung der Nahrungs- und Ernährungssituation einer Person.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ernährungsstatus</items>
+        <items id="description">Eine Beschreibung des Ernährungszustandes eines Individuums, wie zum Beispiel "unterernährt" oder "gut ernährt", welche durch einen Kliniker festgehalten wurde. Wenn möglich, ist das Codieren mit einer Terminologie zu bevorzugen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Gewichtsstatus</items>
+        <items id="description">Beurteilung des Gewichtsstatus des Individuums.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Untergewicht</items>
+        <items id="description">Untergewichtig in Bezug auf Alter und Geschlecht gemäß BMI oder anderen Messungen.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Übergewicht</items>
+        <items id="description">Übergewichtig in Bezug auf Alter und Geschlecht gemäß BMI oder anderen Messungen.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Fettleibig</items>
+        <items id="description">Fettleibig in Bezug auf Alter und Geschlecht gemäß BMI oder anderen Messungen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Normal</items>
+        <items id="description">Normalgewichtig in Bezug auf Alter und Geschlecht gemäß BMI oder anderen Messungen.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Ernährungspräferenz</items>
+        <items id="description">Eine Beschreibung der Ernährungspräferenz des Individuums.</items>
+        <items id="comment">Zum Beispiel: Omnivore; vegetarisch oder vegan. Wenn möglich, ist das Codieren mit einer Terminologie zu bevorzugen.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Ernährungseinschränkungen</items>
+        <items id="description">Beschreibung von speziellen Ernährungsanforderungen oder -einschränkungen.</items>
+        <items id="comment">Zum Beispiel: Laktose- oder glutenfrei; natriumarm. Wenn möglich, ist das Codieren mit einer Terminologie zu bevorzugen.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Kommentar</items>
+        <items id="description">Kommentar zu der Ernährung des Individuums.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Beschreibung</items>
+        <items id="description">Eine Beschreibung der Essgewohnheiten des Individuums.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Status der Ernährungssicherheit</items>
+        <items id="description">Kategorie, die die Wahrnehmung des Individuums über einen sicheren und zuverlässigen Zugang zu Nahrungsmitteln beschreibt, der in Bezug auf Quantität und Ernährungsqualität angemessen, kulturell akzeptabel, sicher und auf sozial verträgliche Weise erworben ist.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Sicher</items>
+        <items id="description">Die Person hat ein Gefühl von Sicherheit und Unbesorgtheit über den Zugang zu angemessener Nahrung.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Wechselhaft</items>
+        <items id="description">Die Person hat ein Gefühl von Unsicherheit über den zuverlässigen und konsistenten Zugang zu angemessener Nahrung.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Unsicher</items>
+        <items id="description">Die Person hat ein Gefühl von Angst und Sorge über sein Zugang zu angemessener Nahrung.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Letzte Aktualisierung</items>
+        <items id="description">Das Datum, an dem diese Zusammenfassung das letzte Mal aktualisiert wurde.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen oder CIMI-Modelle.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Beschreibung der Ernährungssicherheit</items>
+        <items id="description">Beschreibung der Fähigkeit der Person, auf geeignete Nahrung zuzugreifen.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Milchversorgung</items>
+        <items id="description">Die Art von Milch, die zum Verzehr verfügbar ist.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Pasteurisiert</items>
+        <items id="description">Verfügbare Milch wird pasteurisiert.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Nicht pasteurisiert.</items>
+        <items id="description">Die verfügbare Milch ist nicht pasteurisiert.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nl">
+      <items code="at0000">
+        <items id="text">Voedsel en voeding overzicht</items>
+        <items id="description">*Summary of the food and nutritional situation for an individual. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Voedingsstatus</items>
+        <items id="description">Beschrijving van het een individu's voedingsstatus zoals vastgesteld door een clinicus, bijvoorbeeld ondervoed of goed gevoed. Coderen met een terminologie is wenselijk indien mogelijk.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Gewichtstatus</items>
+        <items id="description">Vaststelling van de gewichtstatus van het individu.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Ondergewicht</items>
+        <items id="description">Heeft ondergewicht voor leeftijd en geslacht volgens BMI of een andere maatstaf.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Overgewicht</items>
+        <items id="description">Heeft overgewicht voor leeftijd en geslacht op basis van BMI of een andere maatstaf.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Obees</items>
+        <items id="description">Is obees voor leeftijd en geslacht op basis van BMI of een andere maatstaf.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Normaal</items>
+        <items id="description">Is normaal op gewicht voor leeftijd en geslacht volgens BMI of een andere maatstaf.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Voedingsvoorkeur</items>
+        <items id="description">Een omschrijving van de voedingsvoorkeur van het individu.</items>
+        <items id="comment">Bijvoorbeeld: omnivoor; vegetariër of veganist. Coderen met een terminologie is wenselijk indien mogelijk.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Dieetbeperkingen</items>
+        <items id="description">Beschrijving van de speciale voedseleisen of beperkingen.</items>
+        <items id="comment">Bijvoorbeeld: lactose- of glutenvrij; laag zout. Coderen met een terminologie is wenselijk indien mogelijk.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Opmerkingen</items>
+        <items id="description">Opmerkingen over over de voeding van het individu.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Omschrijving</items>
+        <items id="description">Verhalende beschrijving over het individu's dieet en eetgewoonten.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Voedselzekerheid</items>
+        <items id="description">*Category describing the individual's perception about about secure and reliable access to food that is adequate in quantity and nutritional quality; culturally acceptable; safe; and acquired in socially acceptable ways. (en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">*Secure (en)</items>
+        <items id="description">*The individual has a sense of certainty and peace of mind about their access to appropriate food. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">*Changeable (en)</items>
+        <items id="description">*The individual has a sense of uncertainty about their access to appropriate food. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Insecure (en)</items>
+        <items id="description">*The individual has a sense of worry and concern about their access to appropriate food. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Laatst bijgewerkt</items>
+        <items id="description">De datum waarop dit overzicht het laatst is bijgewerkt.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Uitbreiding</items>
+        <items id="description">Aanvullende informatie benodigd om het model uit te breiden met lokale materie of om aan te sluiten bij andere referentiemodellen/formalismen.</items>
+        <items id="comment">Bijvoorbeeld: lokale informatievereisten of aanvullende metadata om aan te sluiten bij FHIR of CIMI equivalenten.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Voedselzekerheid beschrijving</items>
+        <items id="description">*Narrative description about the individual's ability to access appropriate food. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Milk supply (en)</items>
+        <items id="description">*The type of milk available for consumption. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Pasteurised (en)</items>
+        <items id="description">*Available milk is pasteurised. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Non-pasteurised (en)</items>
+        <items id="description">*Available milk is non-pasteurised. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

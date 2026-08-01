@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-07-01</original_author>
+    <original_author id="name">Aitor Eguzkitza</original_author>
+    <original_author id="organisation">Universidad Pública de Navarra - Complejo Hospitalario de Navarra</original_author>
+    <original_author id="email">aitor.eguzkiza@unavarra.es</original_author>
+    <other_contributors>José Andonegui, Hospital de Navarra, jose.andonegui.navarro@cfnavarra.es</other_contributors>
+    <other_contributors>Luis Serrano, Universidad Pública de Navarra (UPNA), lserrano@unavarra.es</other_contributors>
+    <other_contributors>Jesús D. Trigo, Universidad Pública de Navarra (UPNA), jesusdaniel.trigo@unavarra.es</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">717D0501202E367D70AA41FC607D6475</other_details>
+    <other_details id="build_uid">80dc3f21-91ae-4e26-95ff-63cdad810f51</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>Register the clinical details for any therapy relating to a medicine, vaccine or other therapeutic good, from it is ordered until the medication is administered.</purpose>
+      <keywords>medication</keywords>
+      <keywords>drug</keywords>
+      <use>To be used whenever a complex clinical process comprehends the use, administration, dispensing or other care step relating to a medicine, vaccine or other therapeutic good.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Registrar la información clínica correspondiente a cualquier terapia relacionada con un medicamento, vacuna o otro producto terapéutico, desde que se ordena hasta que se administra el medicamento.</purpose>
+      <use>Utilícese cuando un proceso clínico complejo incluya el uso, administración, dispensación u otra etapa clínica relativa a un medicamento, vacuna u otro producto terapéutico.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">?</author>
+  </translations>
+  <uid>
+    <value>0734b50b-d522-4814-8168-136c1b4299b7</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-SECTION.medication_administration.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>SECTION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>INSTRUCTION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-INSTRUCTION\.medication_order(-[a-zA-Z0-9_]+)*\.v([0-9]+)/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-INSTRUCTION\.medication_order(-[a-zA-Z0-9_]+)*\.v([0-9]+)</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>ACTION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-ACTION\.medication(-[a-zA-Z0-9_]+)*\.v([0-9]+)/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-ACTION\.medication(-[a-zA-Z0-9_]+)*\.v([0-9]+)</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Procedimiento de administración de medicamentos</items>
+        <items id="description">Gestiona la planificación y posterior realización de un tratamiento oftálmico por medio de uso, administración, dosificación u otra etapa clínica relativa a un medicamento.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Solicitud de medicación</items>
+        <items id="description">Detalles de un medicamento, vacuna o cualquier otro elemento terapéutico acompañado de instrucciones para su uso.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Medicación realizada</items>
+        <items id="description">Acción derivada de una orden de medicación creada por un médico que especifique qué medicamentos tomar, cuándo, por cuánto tiempo, etc.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Medication administration procedure</items>
+        <items id="description">Manages the process of planning and then carrying out an ophthalmic treatment by means of use, administration, dispensing or other care step relating to a medicine.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Medication order</items>
+        <items id="description">Details about the prescription of a specific medication.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Medication action</items>
+        <items id="description">Details of any administration of medication conducted.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

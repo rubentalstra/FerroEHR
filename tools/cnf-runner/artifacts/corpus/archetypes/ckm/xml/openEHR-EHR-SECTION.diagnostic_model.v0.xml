@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-10-01</original_author>
+    <original_author id="name">Aitor Eguzkitza</original_author>
+    <original_author id="organisation">Universidad Pública de Navarra - Complejo Hospitalario de Navarra</original_author>
+    <original_author id="email">aitor.eguzkiza@unavarra.es</original_author>
+    <other_contributors>José Andonegui, Hospital de Navarra, jose.andonegui.navarro@cfnavarra.es</other_contributors>
+    <other_contributors>Luis Serrano, Universidad Pública de Navarra (UPNA), lserrano@unavarra.es</other_contributors>
+    <other_contributors>Jesús D. Trigo, Universidad Pública de Navarra (UPNA), jesusdaniel.trigo@unavarra.es</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Aitor Eguzkitza, Universidad Pública de Navarra - Complejo Hospitalario de Navarra&lt;aitor.eguzkiza@unavarra.es&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">4F011948082638F44C8ECE3C8755CD2C</other_details>
+    <other_details id="build_uid">2788f089-a048-451f-8979-86e7deb21992</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>Registering the consultation to reach a diagnostic or a therapeutic decision, based on the evaluation of predetermined diagnostic tests.</purpose>
+      <use>To evaluate different diagnostic models used on treating the same disease.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>1c1293f6-4239-410e-aef0-257b609454fa</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-SECTION.diagnostic_model.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>SECTION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>SECTION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>SECTION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>SECTION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Diagnostic model</items>
+        <items id="description">Manages any healthcare procedure that generates a diagnostic or a therapeutic decision as a result.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Study setting</items>
+        <items id="description">Information of interest about the setting of the current study aimed at later statistical and epidemiologic data mining purposes.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Diagnostic test analysis</items>
+        <items id="description">Information resulting from the analysis of predetermined diagnostic tests, whose outcomes are aimed at determine the diagnosis and/or treatment for a specific affection.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Assessment and therapeutic decision</items>
+        <items id="description">Diagnosis and/or therapeutic decisions made as a result of the assessment of the diagnostic tests above.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

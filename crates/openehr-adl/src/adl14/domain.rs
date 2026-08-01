@@ -182,8 +182,110 @@ pub(crate) enum DomainLoweringError {
     AssumedValueUnmatched(String),
 }
 
-/// Lower a parsed 1.4 inline dADL domain block into a `DV_QUANTITY`/`DV_ORDINAL`
-/// complex object.
+/// One constrained-member-set partition of a domain block's `list` rows —
+/// the constraints of one sibling alternative (#1466).
+struct Partition {
+    /// The partition's per-attribute plain constraints.
+    attributes: Vec<CAttribute>,
+    /// The partition's attribute tuple (co-constrained members).
+    attribute_tuples: Vec<CAttributeTuple>,
+}
+
+/// Partition a domain block's `list` rows by the EXACT set of member names
+/// each row constrains (#1466).
+///
+/// ADL 2 documents tuple rows only with a constraint in EVERY member
+/// (`ADL2/master04.4-cadl_second_order.adoc` §Tuple Constraints — no
+/// unconstrained tuple item exists), and "unconstrained" is said in ADL 2 by
+/// NOT constraining the attribute. So rows constraining different member sets
+/// cannot share one tuple; each partition becomes its own sibling alternative
+/// of the target RM type (alternatives at a node are ordinary cADL —
+/// `ADL1.4/master05-cadl.adoc` §Mixed Structures), and the deliberate row
+/// pairings (`deg` ↔ its range) stay enforced within their partition. Within
+/// a partition: one distinct attribute → a plain constraint merging its rows'
+/// values; two or more → an attribute tuple with one `C_PRIMITIVE_TUPLE` per
+/// row and NO holes. Homogeneous inputs (every row the same member set — the
+/// overwhelmingly common case) yield exactly one partition, identical to the
+/// pre-partition output. Partition order is first appearance; a row's own
+/// member order fixes the display order.
+///
+/// # Errors
+/// [`DomainLoweringError::Empty`] when a row value the primitive lowering
+/// cannot model is met — the whole block refuses rather than dropping a
+/// constraint.
+fn partition_list_rows(list: &OdinValue) -> Result<Vec<Partition>, DomainLoweringError> {
+    /// One `list` row: its member (name, value) pairs in source order.
+    type Row = Vec<(String, OdinValue)>;
+    let rows = domain_list_rows(list);
+    let mut groups: Vec<(Vec<String>, Vec<&Row>)> = Vec::new();
+    for row in &rows {
+        let mut names: Vec<String> = Vec::new();
+        for (k, _) in row {
+            if !names.iter().any(|n| n == k) {
+                names.push(k.clone());
+            }
+        }
+        let same_set = |a: &[String], b: &[String]| {
+            a.len() == b.len() && a.iter().all(|n| b.iter().any(|m| m == n))
+        };
+        if let Some((_, members)) = groups.iter_mut().find(|(g, _)| same_set(g, &names)) {
+            members.push(row);
+        } else {
+            groups.push((names, vec![row]));
+        }
+    }
+    let mut partitions = Vec::new();
+    for (names, rows) in groups {
+        let mut attributes: Vec<CAttribute> = Vec::new();
+        let mut attribute_tuples: Vec<CAttributeTuple> = Vec::new();
+        if names.len() >= 2 {
+            let members: Vec<CAttribute> = names.iter().map(|n| cattr_empty(n)).collect::<Vec<_>>();
+            let mut tuples: Vec<CPrimitiveTuple> = Vec::new();
+            for row in &rows {
+                let mut prim_members = Vec::new();
+                for n in &names {
+                    // Every name is constrained by every row of this partition
+                    // BY CONSTRUCTION; a row value the primitive lowering
+                    // cannot model still refuses the whole block.
+                    let Some(v) = row
+                        .iter()
+                        .find(|(k, _)| k == n)
+                        .and_then(|(_, v)| domain_value_to_primitive(n, v))
+                    else {
+                        return Err(DomainLoweringError::Empty);
+                    };
+                    prim_members.push(v);
+                }
+                tuples.push(CPrimitiveTuple {
+                    members: prim_members,
+                });
+            }
+            attribute_tuples.push(CAttributeTuple { members, tuples });
+        } else if let Some(name) = names.first() {
+            // Single attribute: merge the partition's values into one constraint.
+            let values: Vec<CPrimitiveObject> = rows
+                .iter()
+                .filter_map(|row| row.iter().find(|(k, _)| k == name))
+                .filter_map(|(_, v)| domain_value_to_primitive(name, v))
+                .collect();
+            if let Some(merged) = merge_primitives(values) {
+                attributes.push(cattr_single(name, primitive_to_cobject(merged)));
+            }
+        }
+        // An all-empty row set (names empty) contributes an alternative
+        // carrying only the shared prefix — "any value of the type".
+        partitions.push(Partition {
+            attributes,
+            attribute_tuples,
+        });
+    }
+    Ok(partitions)
+}
+
+/// Lower a parsed 1.4 inline dADL domain block into one or more
+/// `DV_QUANTITY`/`DV_ORDINAL` complex-object ALTERNATIVES — one per
+/// constrained-member-set partition of its `list` rows (#1466); homogeneous
+/// blocks (the common case) lower to exactly one.
 ///
 /// # Errors
 /// [`DomainLoweringError`] for an empty/unusable block or an `assumed_value` that
@@ -191,14 +293,46 @@ pub(crate) enum DomainLoweringError {
 pub(crate) fn lower_adl14_domain(
     rm_type: &str,
     odin: &OdinValue,
-) -> Result<CObject, DomainLoweringError> {
-    let OdinValue::Object(map) = untyped(odin) else {
-        // Empty `<>` or a bare scalar — nothing to constrain.
-        return Err(DomainLoweringError::Empty);
+) -> Result<Vec<CObject>, DomainLoweringError> {
+    let map = match untyped(odin) {
+        OdinValue::Object(map) if !map.is_empty() => map,
+        // An EMPTY domain block — `C_DV_QUANTITY <>` (or `< >` with only
+        // whitespace) — constrains the TYPE and nothing else: it lowers to the
+        // open complex object, exactly `DV_QUANTITY matches {*}`.
+        //
+        // NOTE (adjudicated 2026-08-01, #1465 family 3): the docs text ADMITS
+        // the form — the domain block's content is dADL
+        // (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE`, "sections
+        // of dADL syntax"), and the dADL chapter's own normative grammar makes
+        // the empty block its FIRST alternative
+        // (`ADL1.4/master04-dadl.adoc` §Syntax `untyped_single_attr_object_block:
+        // single_attr_object_complex_head SYM_END_DBLOCK | …`) with §Empty
+        // Sections stating "Empty sections are allowed at both internal and
+        // leaf node levels" and the principle "Empty sections can appear
+        // anywhere". The upstream regression fixture
+        // `FAIL_c_dv_quantity_minimal.v1.adl` ("Show that empty dADL objects
+        // are not accepted", tag SDINV) points the other way, but it is
+        // stalled reference DATA, not spec text — it never overrides the
+        // chapter's own grammar, and SDINV ("invalid ODIN section") would
+        // misclassify grammatical ODIN as a syntax error. 9 CKM archetypes
+        // rely on the form.
+        OdinValue::Empty | OdinValue::Object(_) => {
+            let target_rm = match rm_type {
+                "C_DV_ORDINAL" => "DV_ORDINAL",
+                "C_DV_QUANTITY" => "DV_QUANTITY",
+                _ => return Err(DomainLoweringError::Empty),
+            };
+            return Ok(vec![complex_object(
+                target_rm.to_owned(),
+                String::new(),
+                Vec::new(),
+                Vec::new(),
+                None,
+            )]);
+        }
+        // A bare scalar payload is not an empty section — nothing to lower.
+        _ => return Err(DomainLoweringError::Empty),
     };
-    if map.is_empty() {
-        return Err(DomainLoweringError::Empty);
-    }
     let target_rm = match rm_type {
         "C_DV_ORDINAL" => "DV_ORDINAL",
         "C_DV_QUANTITY" => "DV_QUANTITY",
@@ -208,7 +342,6 @@ pub(crate) fn lower_adl14_domain(
         _ => return Err(DomainLoweringError::Empty),
     };
     let mut attributes: Vec<CAttribute> = Vec::new();
-    let mut attribute_tuples: Vec<CAttributeTuple> = Vec::new();
 
     // `property = <[openehr::122]>` → a `property` at-code constraint (the
     // external code is rewritten to a synthesised at-code + binding by the
@@ -235,51 +368,32 @@ pub(crate) fn lower_adl14_domain(
         ));
     }
 
-    // `list = <["1"] = <units=<…> magnitude=<…>> …>` → per-attribute
-    // constraints. One distinct attribute → a plain constraint merging every
-    // row's values; two or more → an attribute tuple, one `C_PRIMITIVE_TUPLE`
-    // per row (`AOM2/master04.4`).
-    if let Some(list) = map.get("list") {
-        let rows = domain_list_rows(list);
-        // Distinct attribute names in first-appearance order.
-        let mut names: Vec<String> = Vec::new();
-        for row in &rows {
-            for (k, _) in row {
-                if !names.iter().any(|n| n == k) {
-                    names.push(k.clone());
-                }
-            }
-        }
-        if names.len() >= 2 {
-            let members: Vec<CAttribute> = names.iter().map(|n| cattr_empty(n)).collect::<Vec<_>>();
-            let mut tuples: Vec<CPrimitiveTuple> = Vec::new();
-            for row in &rows {
-                let mut prim_members = Vec::new();
-                for n in &names {
-                    let v = row
-                        .iter()
-                        .find(|(k, _)| k == n)
-                        .and_then(|(_, v)| domain_value_to_primitive(n, v))
-                        .unwrap_or_else(|| any_primitive(n));
-                    prim_members.push(v);
-                }
-                tuples.push(CPrimitiveTuple {
-                    members: prim_members,
-                });
-            }
-            attribute_tuples.push(CAttributeTuple { members, tuples });
-        } else if let Some(name) = names.first() {
-            // Single attribute: merge every row's values into one constraint.
-            let values: Vec<CPrimitiveObject> = rows
-                .iter()
-                .filter_map(|row| row.iter().find(|(k, _)| k == name))
-                .filter_map(|(_, v)| domain_value_to_primitive(name, v))
-                .collect();
-            if let Some(merged) = merge_primitives(values) {
-                attributes.push(cattr_single(name, primitive_to_cobject(merged)));
-            }
-        }
+    // `list` rows partition into one alternative per constrained member set
+    // (#1466) — see [`partition_list_rows`].
+    let mut partitions = match map.get("list") {
+        Some(list) => partition_list_rows(list)?,
+        None => Vec::new(),
+    };
+    if partitions.is_empty() {
+        // No `list` (or an empty one): a single alternative carrying only the
+        // row-independent constraints — the pre-partition shape.
+        partitions.push(Partition {
+            attributes: Vec::new(),
+            attribute_tuples: Vec::new(),
+        });
     }
+
+    // Assemble one sibling alternative per partition: the row-independent
+    // prefix (`property`, …) is row-independent, so every alternative carries
+    // its own copy.
+    let mut alternatives: Vec<(Vec<CAttribute>, Vec<CAttributeTuple>)> = partitions
+        .into_iter()
+        .map(|p| {
+            let mut attrs = attributes.clone();
+            attrs.extend(p.attributes);
+            (attrs, p.attribute_tuples)
+        })
+        .collect();
 
     // `assumed_value = <units=<"C"> magnitude=<8.0> …>` — the 1.4 domain
     // constrainer's assumed value is an INSTANCE of the constrained RM type
@@ -290,18 +404,46 @@ pub(crate) fn lower_adl14_domain(
     // in data, while assumed values don't"), so `default_value` is NOT a legal
     // carrier. The instance is therefore decomposed into its per-attribute leaves
     // and each leaf lands on the `C_PRIMITIVE_OBJECT.assumed_value` of the
-    // constraint this lowering already produced for that attribute.
+    // constraint of the ONE alternative whose rows admit the whole assumed
+    // combination (with several alternatives the instance belongs to exactly
+    // one, the same one-row rule tuples already follow); no alternative
+    // admitting it keeps the loud `AssumedValueUnmatched` refusal.
     if let Some(OdinValue::Object(assumed)) = map.get("assumed_value").map(untyped) {
-        apply_domain_assumed_values(assumed, &mut attributes, &mut attribute_tuples)?;
+        let mut placed = None;
+        let mut first_err = None;
+        for (idx, (attrs, tuples)) in alternatives.iter().enumerate() {
+            let mut try_attrs = attrs.clone();
+            let mut try_tuples = tuples.clone();
+            match apply_domain_assumed_values(assumed, &mut try_attrs, &mut try_tuples) {
+                Ok(()) => {
+                    placed = Some((idx, try_attrs, try_tuples));
+                    break;
+                }
+                Err(e) => first_err = first_err.or(Some(e)),
+            }
+        }
+        match placed {
+            Some((idx, attrs, tuples)) => {
+                let Some(slot) = alternatives.get_mut(idx) else {
+                    // Unreachable: `idx` came from enumerating this very Vec.
+                    return Err(DomainLoweringError::Empty);
+                };
+                *slot = (attrs, tuples);
+            }
+            None => {
+                return Err(
+                    first_err.unwrap_or(DomainLoweringError::AssumedValueUnmatched(String::new()))
+                );
+            }
+        }
     }
 
-    Ok(complex_object(
-        target_rm.to_owned(),
-        String::new(),
-        attributes,
-        attribute_tuples,
-        None,
-    ))
+    Ok(alternatives
+        .into_iter()
+        .map(|(attrs, tuples)| {
+            complex_object(target_rm.to_owned(), String::new(), attrs, tuples, None)
+        })
+        .collect())
 }
 
 /// Land the leaves of a domain block's `assumed_value` object on the constraints
@@ -537,16 +679,6 @@ fn domain_value_to_primitive(attr: &str, v: &OdinValue) -> Option<CPrimitiveObje
             merge_primitives(merged)
         }
         _ => None,
-    }
-}
-
-fn any_primitive(attr: &str) -> CPrimitiveObject {
-    if attr == "units" {
-        CPrimitiveObject::CString(cstring_values(&[]))
-    } else if attr == "precision" {
-        CPrimitiveObject::CInteger(cinteger_values(Vec::new()))
-    } else {
-        CPrimitiveObject::CReal(creal_values(Vec::new()))
     }
 }
 

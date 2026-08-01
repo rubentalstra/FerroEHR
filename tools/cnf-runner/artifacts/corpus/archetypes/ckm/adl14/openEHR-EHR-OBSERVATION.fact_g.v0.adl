@@ -1,0 +1,664 @@
+﻿archetype (adl_version=1.4; uid=b57c71f2-ced6-48b6-9515-a5b9be58f4af)
+	openEHR-EHR-OBSERVATION.fact_g.v0
+
+concept
+	[at0000]	-- FACT-G
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Vanessa Pereira">
+		["organisation"] = <"Pathfinder - Better">
+		["email"] = <"vanessa.pereira@better.care">
+		["date"] = <"2020-04-09">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results for each component parameter and their total sum for the FACT-G measure.">
+			use = <"Use to record the results for each component parameter and their total sum for the FACT-G measure.
+
+Several of the score item response scores are reversed on scoring, to convert a low response on a negatively phrased question to a high quality of life score, or opposite. Reversal is performed by subtracting the item response from 4.
+
+The subscale scores are calculated by summing the item scores after reversing the relevant item responses, multiplying by the number of items in the subscale, and dividing by the number of items answered.
+
+While openEHR archetypes are all freely available under an open license, the specific content of this archetype is copyright protected. Any use of this archetype within implementations must be in compliance with the terms established by the copyright owners.
+Copyright statement: © Copyright 1987, 1997 David Cella, Ph.D
+Terms and conditions for use: https://www.facit.org/FACITOrg/AboutUs/Copyright">
+			keywords = <"FACT, cancer, QOL, quality of life, assessment", ...>
+			misuse = <"Not to be used for recording any FACT measure for a specific tumour type such as FACT-C or FACT-Hep. Use an appropriate specialisation of this archetype for this purpose.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Elodie Léost, Medtronic, France", "Silje Ljosland Bakke, Helse Vest IKT AS, Norway">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Cella D. Facit.org Questionnaires. [Internet]. FACIT; 2020. Available from: https://www.facit.org/FACITOrg/Questionnaires.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"a20ee249db7afcc16bcba44b8c4ef74f">
+		["build_uid"] = <"45c591fd-f082-4b5e-82f5-553d702b55b1">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- FACT-G
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {0..*; unordered} matches {
+					INTERVAL_EVENT[at0002] occurrences matches {0..1} matches {    -- The past 7 days
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Lack of energy
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0005] occurrences matches {0..1} matches {    -- Nausea
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0006] occurrences matches {0..1} matches {    -- Trouble on meeting family needs due to physical condition
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {    -- Pain
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0008] occurrences matches {0..1} matches {    -- Bothered by side effects of treatment
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {    -- Felt ill
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {    -- Forced to spend time in bed
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0061] occurrences matches {0..1} matches {    -- Physical well-being subscale score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..28|}
+											}
+										}
+									}
+									ELEMENT[at0011] occurrences matches {0..1} matches {    -- Felt close to friends
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0012] occurrences matches {0..1} matches {    -- Got emotional support from family
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0013] occurrences matches {0..1} matches {    -- Got support from friends
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0014] occurrences matches {0..1} matches {    -- Family has accepted illness
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0015] occurrences matches {0..1} matches {    -- Satisfied with family communication about illness
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {    -- Felt close to partner
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {    -- Satisfied with sex life
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0062] occurrences matches {0..1} matches {    -- Social/family well-being subscale score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..28|}
+											}
+										}
+									}
+									ELEMENT[at0018] occurrences matches {0..1} matches {    -- Felt sad
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0019] occurrences matches {0..1} matches {    -- Satisfied with coping with illness
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0020] occurrences matches {0..1} matches {    -- Losing hope to fight against illness
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0021] occurrences matches {0..1} matches {    -- Felt nervous
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {    -- Worried about dying
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0023] occurrences matches {0..1} matches {    -- Worried that condition will get worse
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0063] occurrences matches {0..1} matches {    -- Emotional well-being subscale score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..24|}
+											}
+										}
+									}
+									ELEMENT[at0024] occurrences matches {0..1} matches {    -- Able to work (including work at home)
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0025] occurrences matches {0..1} matches {    -- Felt that work was fulfilling
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0026] occurrences matches {0..1} matches {    -- Able to enjoy life
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0027] occurrences matches {0..1} matches {    -- Accepted illness
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0028] occurrences matches {0..1} matches {    -- Slept well
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0029] occurrences matches {0..1} matches {    -- Enjoyed things usually done for fun
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0030] occurrences matches {0..1} matches {    -- Content with quality of life right now
+										value matches {
+											0|[local::at0056],
+											1|[local::at0057],
+											2|[local::at0058],
+											3|[local::at0059],
+											4|[local::at0060]
+										}
+									}
+									ELEMENT[at0064] occurrences matches {0..1} matches {    -- Functional well-being subscale score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..28|}
+											}
+										}
+									}
+									ELEMENT[at0055] occurrences matches {0..1} matches {    -- FACT-G total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..108|}
+											}
+										}
+									}
+								}
+							}
+						}
+						width matches {
+							DV_DURATION matches {
+								value matches {P7D}
+							}
+						}
+					}
+					EVENT[at0065] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							use_node ITEM_TREE /data[at0001]/events[at0002]/data[at0003]
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0049] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0051] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"FACT-G">
+					description = <"Functional Assessment of Cancer Therapy-General, a 27-Item measure of physical, role, emotional, and social/family functioning, as well as global quality of life in patients with cancer.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"The past 7 days">
+					description = <"The standard \"past 7 days\" recording of FACT scores.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Lack of energy">
+					description = <"I have a lack of energy">
+					comment = <"Section: Physical well-being.">
+					Subscale = <"PWB">
+					Item_code = <"GP1">
+					Question_number = <"1">
+				>
+				["at0005"] = <
+					text = <"Nausea">
+					description = <"I have nausea">
+					comment = <"Section: Physical well-being.">
+					Subscale = <"PWB">
+					Item_code = <"GP2">
+					Question_number = <"2">
+				>
+				["at0006"] = <
+					text = <"Trouble on meeting family needs due to physical condition">
+					description = <"Because of my physical condition, I have trouble meeting the needs of my family">
+					comment = <"Section: Physical well-being.">
+					Subscale = <"PWB">
+					Item_code = <"GP3">
+					Question_number = <"3">
+				>
+				["at0007"] = <
+					text = <"Pain">
+					description = <"I have pain">
+					comment = <"Section: Physical well-being.">
+					Subscale = <"PWB">
+					Item_code = <"GP4">
+					Question_number = <"4">
+				>
+				["at0008"] = <
+					text = <"Bothered by side effects of treatment">
+					description = <"I am bothered by side effects of treatment">
+					comment = <"Section: Physical well-being.">
+					Subscale = <"PWB">
+					Item_code = <"GP5">
+					Question_number = <"5">
+				>
+				["at0009"] = <
+					text = <"Felt ill">
+					description = <"I feel ill">
+					comment = <"Section: Physical well-being.">
+					Subscale = <"PWB">
+					Item_code = <"GP6">
+					Question_number = <"6">
+				>
+				["at0010"] = <
+					text = <"Forced to spend time in bed">
+					description = <"I am forced to spend time in bed">
+					comment = <"Section: Physical well-being.">
+					Subscale = <"PWB">
+					Item_code = <"GP7">
+					Question_number = <"7">
+				>
+				["at0011"] = <
+					text = <"Felt close to friends">
+					description = <"I feel close to my friends">
+					comment = <"Section: Social/Family well-being.">
+					Subscale = <"SWB">
+					Item_code = <"GS1">
+					Question_number = <"8">
+				>
+				["at0012"] = <
+					text = <"Got emotional support from family">
+					description = <"I get emotional support from my family">
+					comment = <"Section: Social/Family well-being.">
+					Subscale = <"SWB">
+					Item_code = <"GS2">
+					Question_number = <"9">
+				>
+				["at0013"] = <
+					text = <"Got support from friends">
+					description = <"I get support from my friends">
+					comment = <"Section: Social/Family well-being.">
+					Subscale = <"SWB">
+					Item_code = <"GS3">
+					Question_number = <"10">
+				>
+				["at0014"] = <
+					text = <"Family has accepted illness">
+					description = <"My family has accepted my illness">
+					comment = <"Section: Social/Family well-being.">
+					Subscale = <"SWB">
+					Item_code = <"GS4">
+					Question_number = <"11">
+				>
+				["at0015"] = <
+					text = <"Satisfied with family communication about illness">
+					description = <"I am satisfied with family communication about my illness">
+					comment = <"Section: Social/Family well-being.">
+					Subscale = <"SWB">
+					Item_code = <"GS5">
+					Question_number = <"12">
+				>
+				["at0016"] = <
+					text = <"Felt close to partner">
+					description = <"I feel close to my partner (or the person who is my main support)">
+					comment = <"Section: Social/Family well-being.">
+					Subscale = <"SWB">
+					Item_code = <"GS6">
+					Question_number = <"13">
+				>
+				["at0017"] = <
+					text = <"Satisfied with sex life">
+					description = <"I am satisfied with my sex life">
+					comment = <"Section: Social/Family well-being.">
+					Subscale = <"SWB">
+					Item_code = <"GS7">
+					Question_number = <"14">
+				>
+				["at0018"] = <
+					text = <"Felt sad">
+					description = <"I feel sad">
+					comment = <"Section: Emotional well-being.">
+					Subscale = <"EWB">
+					Item_code = <"GE1">
+					Question_number = <"15">
+				>
+				["at0019"] = <
+					text = <"Satisfied with coping with illness">
+					description = <"I am satisfied with how I am coping with my illness">
+					comment = <"Section: Emotional well-being.">
+					Subscale = <"EWB">
+					Item_code = <"GE2">
+					Question_number = <"16">
+				>
+				["at0020"] = <
+					text = <"Losing hope to fight against illness">
+					description = <"I am losing hope in the fight against my illness">
+					comment = <"Section: Emotional well-being.">
+					Subscale = <"EWB">
+					Item_code = <"GE3">
+					Question_number = <"17">
+				>
+				["at0021"] = <
+					text = <"Felt nervous">
+					description = <"I feel nervous">
+					comment = <"Section: Emotional well-being.">
+					Subscale = <"EWB">
+					Item_code = <"GE4">
+					Question_number = <"18">
+				>
+				["at0022"] = <
+					text = <"Worried about dying">
+					description = <"I worry about dying">
+					comment = <"Section: Emotional well-being.">
+					Subscale = <"EWB">
+					Item_code = <"GE5">
+					Question_number = <"19">
+				>
+				["at0023"] = <
+					text = <"Worried that condition will get worse">
+					description = <"I worry that my condition will get worse">
+					comment = <"Section: Emotional well-being.">
+					Subscale = <"EWB">
+					Item_code = <"GE6">
+					Question_number = <"20">
+				>
+				["at0024"] = <
+					text = <"Able to work (including work at home)">
+					description = <"I am able to work (include work at home)">
+					comment = <"Section: Functional well-being.">
+					Subscale = <"FWB">
+					Item_code = <"GF1">
+					Question_number = <"21">
+				>
+				["at0025"] = <
+					text = <"Felt that work was fulfilling">
+					description = <"My work (include work at home) is fulfilling">
+					comment = <"Section: Functional well-being.">
+					Subscale = <"FWB">
+					Item_code = <"GF2">
+					Question_number = <"22">
+				>
+				["at0026"] = <
+					text = <"Able to enjoy life">
+					description = <"I am able to enjoy life">
+					comment = <"Section: Functional well-being.">
+					Subscale = <"FWB">
+					Item_code = <"GF3">
+					Question_number = <"23">
+				>
+				["at0027"] = <
+					text = <"Accepted illness">
+					description = <"I have accepted my illness">
+					comment = <"Section: Functional well-being.">
+					Subscale = <"FWB">
+					Item_code = <"GF4">
+					Question_number = <"24">
+				>
+				["at0028"] = <
+					text = <"Slept well">
+					description = <"I am sleeping well">
+					comment = <"Section: Functional well-being.">
+					Subscale = <"FWB">
+					Item_code = <"GF5">
+					Question_number = <"25">
+				>
+				["at0029"] = <
+					text = <"Enjoyed things usually done for fun">
+					description = <"I am enjoying the things I usually do for fun">
+					comment = <"Section: Functional well-being.">
+					Subscale = <"FWB">
+					Item_code = <"GF6">
+					Question_number = <"26">
+				>
+				["at0030"] = <
+					text = <"Content with quality of life right now">
+					description = <"I am content with the quality of my life right now">
+					comment = <"Section: Functional well-being.">
+					Subscale = <"FWB">
+					Item_code = <"GF7">
+					Question_number = <"27">
+				>
+				["at0049"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0051"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0055"] = <
+					text = <"FACT-G total score">
+					description = <"Total score from from the PWB, SWB, EWB and FWB subscales. The higher the score, the better the QOL.">
+					comment = <"Scored by summing the PWB, SWB, EWB and FWB subscale scores.">
+				>
+				["at0056"] = <
+					text = <"Not at all">
+					description = <"">
+				>
+				["at0057"] = <
+					text = <"A little bit">
+					description = <"">
+				>
+				["at0058"] = <
+					text = <"Somewhat">
+					description = <"">
+				>
+				["at0059"] = <
+					text = <"Quite a bit">
+					description = <"">
+				>
+				["at0060"] = <
+					text = <"Very much">
+					description = <"">
+				>
+				["at0061"] = <
+					text = <"Physical well-being subscale score">
+					description = <"The score for the physical well-being subscale.">
+					comment = <"All items are reversed for scoring.">
+					Subscale = <"PWB">
+				>
+				["at0062"] = <
+					text = <"Social/family well-being subscale score">
+					description = <"The score for the social/family well-being subscale.">
+					comment = <"No items are reversed for scoring.">
+					Subscale = <"SWB">
+				>
+				["at0063"] = <
+					text = <"Emotional well-being subscale score">
+					description = <"The score for the emotional well-being subscale.">
+					comment = <"All items except 'Satisfied with coping with illness' are reversed for scoring.">
+					Subscale = <"EWB">
+				>
+				["at0064"] = <
+					text = <"Functional well-being subscale score">
+					description = <"The score for the functional well-being subscale.">
+					comment = <"No items are reversed for scoring.">
+					Subscale = <"FWB">
+				>
+				["at0065"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+			>
+		>
+	>

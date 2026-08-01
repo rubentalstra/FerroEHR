@@ -1,0 +1,854 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2009-01-27</original_author>
+    <original_author id="name">Dr Ian McNicoll / Liv Laugen</original_author>
+    <original_author id="organisation">Ocean Informatics / Oslo university hospital</original_author>
+    <original_author id="email">ian.mcnicoll@oceaninformatics.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Koray Atalag University of Auckland</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Hanne Marte Bårholm, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Clara Calleja Vega, CatSalut. Servei Català de la Salut., Spain</other_contributors>
+    <other_contributors>Stefan Dubois, Dep't of Pathology and Genetics, University Hospitals of Lund and Malmö, Sweden</other_contributors>
+    <other_contributors>Gunn Elin Blakkisrud, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Kåre Flø, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Helse Nord IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Sam Heard Ocean Informatics</other_contributors>
+    <other_contributors>Karsten Heusser, German Aerospace Center, Germany</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Maritn Kapinos, PROSOFT Košice, a.s., Slovakia</other_contributors>
+    <other_contributors>Martin Kapinos, PROSOFT Košice, a.s., Slovakia</other_contributors>
+    <other_contributors>Martin Koch, Servei Català de la Salut, Spain</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Siri Laronningen, Kreftregisteret, Norway</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Brad Littleton, Big Picture Medical, Australia</other_contributors>
+    <other_contributors>Nina Louise Jebsen, Haukeland Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Terje Nordberg, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Helge Pettersen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>JUAN MARTIN ROMERO, HOSPITAL UNIVERSITARIO 12 DE OCTUBRE, Spain</other_contributors>
+    <other_contributors>Terje Sagmyr, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ragnhild Schultz, OUS, Norway</other_contributors>
+    <other_contributors>Frode Stenvik, Helse Sør-Øst, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Erik Sundvall, Karolinska Institutet + Karolinska University Hospital, Region Stockholm + Linköping University, Sweden</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">Licence: This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.&#xD;
+</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references"></other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">C89FF9E2CDDE633A47ECCE539B0EFD75</other_details>
+    <other_details id="build_uid">0d0690ae-d84b-4648-9802-aa9eaaca3728</other_details>
+    <other_details id="revision">1.0.1</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Um Details über die Verarbeitung einer Probe aufzuzeichnen, das von einer Person zur weiteren Analyse, Konservierung oder Lagerung gesammelt wurde oder damit in Verbindung steht.</purpose>
+      <keywords>Probe</keywords>
+      <keywords>Labor</keywords>
+      <keywords>Probe</keywords>
+      <keywords>Histopathologie</keywords>
+      <keywords>Histologie</keywords>
+      <keywords>Pathologie</keywords>
+      <keywords>Zytologie</keywords>
+      <keywords>Filtration</keywords>
+      <keywords>Zentrifugation</keywords>
+      <keywords>Fleckenbildung</keywords>
+      <keywords>Fixierung</keywords>
+      <keywords>Dehydrierung</keywords>
+      <keywords>Einbettung</keywords>
+      <keywords>schneiden</keywords>
+      <keywords>Voranalytik</keywords>
+      <keywords>FFPE</keywords>
+      <keywords>Einfrieren</keywords>
+      <keywords>DNA</keywords>
+      <keywords>Extraktion</keywords>
+      <keywords>PCR, Histochemie</keywords>
+      <keywords>Immunhistochemie</keywords>
+      <keywords>FISCH</keywords>
+      <keywords>Inkubation</keywords>
+      <keywords>Scannen</keywords>
+      <keywords>WSI</keywords>
+      <keywords>Homogenisierung</keywords>
+      <use>Zur Aufzeichnung von Details über die Verarbeitung oder Vorbereitung einer Probe zur Analyse, Konservierung oder Lagerung, einschließlich spezifischer Prozesse wie Fixierung, Ausstrich, Paraffineinbettung, Zentrifugierung, Waschen, Schneiden, Ansäuern, Inkubation und Färbung.&#xD;
+&#xD;
+Die Begriffe „Vorbereitung“ und „Verarbeitung“ werden manchmal synonym verwendet und beschreiben manchmal bestimmte Schritte, die an der Probe zwischen der Entnahme und der Analyse durchgeführt werden. Dieser Archetyp soll zur Beschreibung aller durchgeführten relevanten Schritte verwendet werden, der Einfachheit halber wird der Begriff „Verarbeitung“ jedoch für beide verwendet.&#xD;
+&#xD;
+Der Archetyp wurde so konzipiert, dass er in den Archetyp CLUSTER.specimen eingebettet werden kann und die Details zu einem einzelnen Prozessschritt ODER einem mehrstufigen Prozess aufzeichnet. Wenn es nur einen Prozess oder Schritt gibt, verwenden Sie die Datenelemente auf Root-Ebene. Bei einem mehrstufigen Prozess kann jeder einzelne Schritt durch eine separate Instanz des internen Clusters „Prozessaktivität“ dargestellt werden, der für jeden Prozessschritt eine Instanz desselben CLUSTER.specimen_processing enthält.</use>
+      <misuse>Darf nicht zur Darstellung des Probentransports verwendet werden – Verwenden Sie für diesen Zweck CLUSTER.transportation.&#xD;
+Darf nicht zur Darstellung der Probenlagerung verwendet werden – Verwenden Sie zu diesem Zweck EVALUATION.specimen_summary.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om behandling av et prøvemateriale, tatt fra eller relatert til et individ, for videre analyse, konservering eller lagring.</purpose>
+      <keywords>laboratorie</keywords>
+      <keywords>histologi</keywords>
+      <keywords>patologi</keywords>
+      <keywords>cytologi</keywords>
+      <keywords>filtrering</keywords>
+      <keywords>filtrasjon</keywords>
+      <keywords>sentrifugering</keywords>
+      <keywords>farging</keywords>
+      <keywords>fiksering</keywords>
+      <keywords>fixering</keywords>
+      <keywords>dehydrering</keywords>
+      <keywords>støping</keywords>
+      <keywords>snitting</keywords>
+      <keywords>preanalytisk</keywords>
+      <keywords>FFPE</keywords>
+      <keywords>frysing</keywords>
+      <keywords>DNA</keywords>
+      <keywords>RNA</keywords>
+      <keywords>ekstraksjon</keywords>
+      <keywords>PCR</keywords>
+      <keywords>immunhistokjemi</keywords>
+      <keywords>FISH</keywords>
+      <keywords>inkubering</keywords>
+      <keywords>skanning</keywords>
+      <keywords>scanning</keywords>
+      <keywords>WSI</keywords>
+      <keywords>homogenisering</keywords>
+      <keywords>materiale</keywords>
+      <keywords>prøve</keywords>
+      <keywords>blod</keywords>
+      <keywords>væske</keywords>
+      <use>For å registrere detaljer om behandling eller preparering av et prøvemateriale for å gjøre det egnet for videre analyse, konservering eller lagring. Dette inkludert spesifikke prosesser som fiksering, utstryk, parafininnstøping, sentrifugering, vasking, snitting, surgjøring, inkubasjon og farging.&#xD;
+&#xD;
+Uttrykkene "preparering" og "behandling" brukes av og til om hverandre og av og til for å beskrive spesifikke trinn som utføres på prøvematerialet mellom innsamling og analyse. Denne arketype er ment å brukes for å beskrive alle relevante trinn som utføres, men for enkelhetens skyld brukes uttrykket "behandling" for å dekke begge deler.&#xD;
+&#xD;
+Denne arketypen er laget for å nøstes inn i CLUSTER.specimen (Prøvemateriale) arketypen og for å registrere detaljer om enten en enkelt behandlingsaktivitet eller alle individuelle trinn i en flertrinns behandlingsprosess. Hvis det kun er et prosesseringstrinn, holder det å bruke dataelementene på rotnivået. Hvis det derimot er en flertrinnsprosess, kan hvert enkelt trinn representeres ved å bruke en separat instans av denne arketypen, CLUSTER.specimen_processing (Provebehandling), i SLOTet "Behandlingsaktivitet".</use>
+      <misuse>Skal ikke brukes til prøvetransport - bruk CLUSTER.transportation (Transport av et objekt) til dette.&#xD;
+Skal ikke brukes til dokumentasjon av lagring av et prøvemateriale - bruk EVALUATION.specimen_summary (Prøvematerialesammendrag) til dette.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about the processing of a specimen collected from, or related to, an individual for further analysis, preservation or storage.</purpose>
+      <keywords>specimen</keywords>
+      <keywords>laboratory</keywords>
+      <keywords>sample</keywords>
+      <keywords>histopathology</keywords>
+      <keywords>histology</keywords>
+      <keywords>pathology</keywords>
+      <keywords>cytology</keywords>
+      <keywords>filtration</keywords>
+      <keywords>centrifugation</keywords>
+      <keywords>staining</keywords>
+      <keywords>fixation</keywords>
+      <keywords>dehydration</keywords>
+      <keywords>embedding</keywords>
+      <keywords>slicing</keywords>
+      <keywords>pre-analytics</keywords>
+      <keywords>FFPE</keywords>
+      <keywords>freezing</keywords>
+      <keywords>DNA</keywords>
+      <keywords>extraction</keywords>
+      <keywords>PCR, histochemistry</keywords>
+      <keywords>immunohistochemistry</keywords>
+      <keywords>FISH</keywords>
+      <keywords>incubation</keywords>
+      <keywords>scanning</keywords>
+      <keywords>WSI</keywords>
+      <keywords>homogenization</keywords>
+      <use>To record details about the processing or preparation of a specimen for analysis, preservation or storage, including specific processes such as fixation, smearing, paraffin embedding, centrifuging, washing, sectioning, acidification, incubation and staining.&#xD;
+&#xD;
+The terms 'preparation' and 'processing' are sometimes used interchangeably and sometimes to describe specific steps performed on the specimen between collection and analysis. This archetype is intended to be used to describe all the relevant steps performed, but for simplicity uses the term 'processing' to cover both.&#xD;
+&#xD;
+The archetype has been designed to be nested within the CLUSTER.specimen archetype and to record the details about a single process step OR a multistep process. If there is only one process or step, then use the data elements at root level. If there is a multistep process, each separate step can be represented using a separate instance of the 'Process activity' internal cluster which contains one instance of this same CLUSTER.specimen_processing for each process step.</use>
+      <misuse>Not to be used to represent specimen transportation - use CLUSTER.transportation for this purpose. &#xD;
+Not to be used to represent specimen storage - use EVALUATION.specimen_summary for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Simon Schumacher, Darin Leonhardt</author>
+    <author id="organisation">HiGHmed, PLRI</author>
+    <author id="email">sschuma9@uni-koeln.de, leonhardt.darin@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Liv Laugen</author>
+    <author id="organisation">​Oslo University Hospital, Norway, Oslo universitetssykehus</author>
+    <author id="email">liv.laugen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>f33562c3-f55f-4f43-a6c3-bfe60bb3f572</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.specimen_processing.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0094</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0089</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0074</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0096</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0097</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0091</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0088</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.device\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0086</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0071</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_COUNT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0092</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.specimen_processing\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.specimen_processing\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0093</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0095</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Specimen processing</items>
+        <items id="description">Details about the processing or preparation of a specimen.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Sequence</items>
+        <items id="description">The sequence number within a multi-step sequence.</items>
+        <items id="comment">For example: 2 or step 2 of 3. &#xD;
+If there is only one processing step event or if this instance is the overview of all processing step, this data element is redundant.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Method</items>
+        <items id="description">The technique or method used to process the specimen.</items>
+        <items id="comment">For example: fixation, embedding, sectioning, staining, scanning, centrifugation, freezing. Coding of the method with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0086">
+        <items id="text">Process activity</items>
+        <items id="description">Details of a single activity carried out during a multi-step process.</items>
+      </items>
+      <items code="at0088">
+        <items id="text">Device details</items>
+        <items id="description">Details of the device used in the processing activity.</items>
+      </items>
+      <items code="at0089">
+        <items id="text">Description</items>
+        <items id="description">A narrative description of the processing activity.</items>
+        <items id="comment">For example: 'Centrifuged EDTA plasma, separated the plasma from the cells by hand using a single channel pipette, froze the plasma within 2 hours.'</items>
+      </items>
+      <items code="at0091">
+        <items id="text">Additive</items>
+        <items id="description">Identification of a substance used in the processing.</items>
+        <items id="comment">For example: formalin for fixation, embryo culture media or buffer solution. This data element has multiple occurrences to allow more than one additive to be recorded.</items>
+      </items>
+      <items code="at0092">
+        <items id="text">Process activity details</items>
+        <items id="description">Details about a single activity within a multistep process.</items>
+      </items>
+      <items code="at0093">
+        <items id="text">Additional details</items>
+        <items id="description">Additional details about the processing of a specimen.</items>
+      </items>
+      <items code="at0094">
+        <items id="text">Process name</items>
+        <items id="description">The name of the processing activity.</items>
+        <items id="comment">For example: preparation for microscopic examination, sperm preparation for IVF treatment, fixation, dehydration, paraffin infiltration, centrifugation.</items>
+      </items>
+      <items code="at0095">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the processing of a specimen not captured in other fields.</items>
+      </items>
+      <items code="at0096">
+        <items id="text">Start date/time</items>
+        <items id="description">The date and time when the process activity started.</items>
+      </items>
+      <items code="at0097">
+        <items id="text">End date/time</items>
+        <items id="description">The date and time when the process activity ended.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Probenverarbeitung</items>
+        <items id="description">Einzelheiten zur Verarbeitung oder Vorbereitung einer Probe.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Sequenz</items>
+        <items id="description">Die Sequenznummer innerhalb einer mehrstufigen Sequenz.</items>
+        <items id="comment">Zum Beispiel: 2 oder Schritt 2 von 3.&#xD;
+Liegt nur ein Verarbeitungsschritt-Ereignis vor oder handelt es sich bei dieser Instanz um die Übersicht aller Verarbeitungsschritte, ist dieses Datenelement redundant.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Methode</items>
+        <items id="description">Die zur Verarbeitung der Probe verwendete Technik oder Methode.</items>
+        <items id="comment">Zum Beispiel: Fixieren, Einbetten, Schneiden, Färben, Scannen, Zentrifugieren, Einfrieren. Wenn möglich, wird die Kodierung der Methode mit einer Terminologie bevorzugt.</items>
+      </items>
+      <items code="at0086">
+        <items id="text">Prozessaktivität</items>
+        <items id="description">Details einer einzelnen Aktivität, die während eines mehrstufigen Prozesses ausgeführt wird.</items>
+      </items>
+      <items code="at0088">
+        <items id="text">Gerätebeschreibung</items>
+        <items id="description">Angaben zum Gerät, das bei der Verarbeitungsaktivität verwendet wird.</items>
+      </items>
+      <items code="at0089">
+        <items id="text">Beschreibung</items>
+        <items id="description">Eine narrative Beschreibung der Verarbeitungsaktivität.</items>
+        <items id="comment">Zum Beispiel: „Zentrifugiertes EDTA-Plasma, das Plasma wurde von Hand mit einer Einkanalpipette von den Zellen getrennt und das Plasma innerhalb von 2 Stunden eingefroren.“</items>
+      </items>
+      <items code="at0091">
+        <items id="text">Zusatzstoff</items>
+        <items id="description">Identifizierung eines bei der Verarbeitung verwendeten Stoffes.</items>
+        <items id="comment">Zum Beispiel: Formalin zur Fixierung, Embryo-Kulturmedium oder Pufferlösung. Dieses Datenelement kommt mehrfach vor, sodass mehr als ein Zusatzstoff erfasst werden kann.</items>
+      </items>
+      <items code="at0092">
+        <items id="text">Details zur Prozessaktivität</items>
+        <items id="description">Details zu einer einzelnen Aktivität innerhalb eines mehrstufigen Prozesses.</items>
+      </items>
+      <items code="at0093">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Zusätzliche Details zur Bearbeitung einer Probe.</items>
+      </items>
+      <items code="at0094">
+        <items id="text">Prozessname</items>
+        <items id="description">Der Name der Verarbeitungsaktivität.</items>
+        <items id="comment">Zum Beispiel: Vorbereitung für die mikroskopische Untersuchung, Vorbereitung der Spermien für die IVF-Behandlung, Fixierung, Dehydrierung, Paraffininfiltration, Zentrifugation.</items>
+      </items>
+      <items code="at0095">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzlicher Bericht über die Verarbeitung einer Probe, die in anderen Bereichen nicht erfasst wurde.</items>
+      </items>
+      <items code="at0096">
+        <items id="text">Startdatum/-uhrzeit</items>
+        <items id="description">Datum und Uhrzeit des Beginns der Prozessaktivität.</items>
+      </items>
+      <items code="at0097">
+        <items id="text">Enddatum/Uhrzeit</items>
+        <items id="description">Datum und Uhrzeit des Endes der Prozessaktivität.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Prøvebehandling</items>
+        <items id="description">Detaljer om preparering og behandling av et prøvemateriale.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Sekvensnummer</items>
+        <items id="description">Sekvensnummeret i en flertrinns preparering eller behandlingsaktivitet.</items>
+        <items id="comment">For eksempel: 2 eller trinn 2 av 3. &#xD;
+Hvis det bare er ett et enkelt preparering eller behandlingstrinn eller hvis denne forekomsten er sammendraget over alle behandlingstrinn, er dette dataelementet overflødig.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Metode</items>
+        <items id="description">Teknikken eller metoden som ble brukt for å behandle prøvematerialet.</items>
+        <items id="comment">For eksempel: fiksering, støping, snitting, farging, skanning, sentrifugering, frysing. Koding av metoden med en terminologi foretrekkes, der det er mulig.</items>
+      </items>
+      <items code="at0086">
+        <items id="text">Behandlingsaktivitet</items>
+        <items id="description">Detaljer om en enkelt behandlingsaktivitet utført under en flertrinnsprosess.</items>
+      </items>
+      <items code="at0088">
+        <items id="text">Medisinsk utstyr</items>
+        <items id="description">Detaljer om det medisinske utstyret som er brukt i behandlingsaktiviteten.</items>
+      </items>
+      <items code="at0089">
+        <items id="text">Beskrivelse</items>
+        <items id="description">En fritekstbeskrivelse om prøvebehandlingsaktiviteten.</items>
+        <items id="comment">For eksempel: "Sentrifugert EDTA-plasma, separert plasma fra cellene manuelt ved bruk av enkeltkanalpipette, frøs plasma innen 2 timer."</items>
+      </items>
+      <items code="at0091">
+        <items id="text">Tilsetningsstoff</items>
+        <items id="description">Identifisering av substansene som brukes i behandlingsaktiviteten.&#xD;
+&#xD;
+</items>
+        <items id="comment">For eksempel: formalin til fiksering, embryokultur, bufferløsning. Dette dataelementet er gjort gjentagende for å tillate at mer enn ett tilsetningsstoff kan registreres.</items>
+      </items>
+      <items code="at0092">
+        <items id="text">Behandlingsaktivitet detaljer</items>
+        <items id="description">Detaljer om en enkelt behandlingsaktivitet.</items>
+      </items>
+      <items code="at0093">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere detaljer om behandlingsaktiviteten.</items>
+      </items>
+      <items code="at0094">
+        <items id="text">Prøvebehandlingsnavn</items>
+        <items id="description">Navnet på behandlingsaktiviteten.</items>
+        <items id="comment">For eksempel: preparering av prøve for mikroskopisk undersøkelse, preparering av sæd til IVF behandling, fiksering, dehydrering, parafinstøping, sentrifugering.</items>
+      </items>
+      <items code="at0095">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om behandlingsaktiviteten som ikke dekkes av andre felt.</items>
+      </items>
+      <items code="at0096">
+        <items id="text">Start dato/tid</items>
+        <items id="description">Dato og tid da behandlingsaktiviteten startet.</items>
+      </items>
+      <items code="at0097">
+        <items id="text">Slutt dato/tid</items>
+        <items id="description">Dato og tid da behandlingsaktiviteten ble avsluttet.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

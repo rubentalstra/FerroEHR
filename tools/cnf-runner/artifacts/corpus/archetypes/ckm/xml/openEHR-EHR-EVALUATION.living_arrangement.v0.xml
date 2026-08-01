@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2018-05-29</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">National Housing and Homelessness Data Dictionary [Internet]. Canberra, Australia: Australian Institute of Health and Welfare (AIHW); 2013 [cited 2018 May 30]. Version 1. Cat. no. HOU 269. Available from: https://www.aihw.gov.au/getmedia/a47d4c86-a8aa-4f00-a889-42edea09cc2f/17841.pdf</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">ABF9FDFC61409964E8E6BAC30680936C</other_details>
+    <other_details id="build_uid">fc6cc6d4-b4ce-4fee-b620-896017612ab5</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung der Umstände dahingehend, wie eine Person allein oder mit anderen zusammen lebt.</purpose>
+      <keywords>allein</keywords>
+      <keywords>solo</keywords>
+      <keywords>Familie</keywords>
+      <keywords>Freunde</keywords>
+      <keywords>andere</keywords>
+      <keywords>Haushalt</keywords>
+      <use>Der Archetyp wird verwendet, um die Umstände darzustellen, wie eine Person alleine oder mit anderen lebt.&#xD;
+&#xD;
+Dieses Archetyp wurde als einer von mehreren Archetypen entworfen, die die soziale Verbundenheit einer Person in ihrer häuslichen Umgebung beschreiben.&#xD;
+&#xD;
+Im Rahmen dieses Archetyps soll der Begriff "Haushalt" Informationen über eine oder mehrere Personen erfassen, die zusammen leben und Mahlzeiten, wirtschaftliche Ressourcen und/oder Wohnraum teilen. In diesem Kontext kann ein einzelner Haushalt verschiedene Formen annehmen, wie zum Beispiel Patchwork-Familien, eine Studenten-WG, eine Wohngruppe oder eine allein lebende Person. Eine einzelne Unterkunft kann als mehrere Haushalte betrachtet werden, wenn sie keine Mahlzeiten oder Ressourcen teilen oder getrennte Wohnräume haben.</use>
+      <misuse>Nicht zur Darstellung allgemeiner Informationen über die aktuelle und vergangene Wohnsituation einer Person verwenden. Verwenden Sie dazu EVALUATION.housing_summary.&#xD;
+&#xD;
+Darf nicht verwendet werden, um Details der Wohnstätte, in der die Person wohnt, darzustellen – verwenden Sie CLUSTER.dwelling für diesen Zweck.&#xD;
+&#xD;
+Nicht zur Beschreibung der sozialen Verbindungen der Person verwenden, einschließlich der Identifizierung von Haushaltsmitgliedern - verwenden Sie dafür EVALUATION.social_network.&#xD;
+&#xD;
+Nicht zur Erfassung von Details zur Wohnsituation der Person oder des Wohnens für einen bestimmten Zeitraum verwenden. Verwenden Sie dafür CLUSTER.housing_record.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere om et et individ bor alene eller sammen med andre.</purpose>
+      <keywords>bor alene</keywords>
+      <keywords>familie</keywords>
+      <keywords>bokollektiv</keywords>
+      <keywords>bofellesskap</keywords>
+      <keywords>husholdning</keywords>
+      <keywords>kollektiv</keywords>
+      <keywords>hushold</keywords>
+      <keywords>husstand</keywords>
+      <use>For å registrere om et individ bor alene eller sammen med andre.&#xD;
+&#xD;
+Denne arketypen er en del av en arketypefamilie som beskriver den sosiale tilknytningen til et individs hjemmemiljø.&#xD;
+&#xD;
+I denne arketypen er intensjonen med begrepet 'boarrangement' å fange opp informasjon om en gruppe individer (en eller flere) som bor i samme bolig, inkludert å dele måltider, økonomiske ressurser og/eller boareal. En husholdning kan inkludere varianter av blandede familier, delt husholdning, bokollektiv, og et enkeltrom. Samtidig kan en enkelt bolig anses å inneholde flere husholdninger hvis de som bor der verken deler måltider eller økonomiske ressurser, eller har separat boareal.</use>
+      <misuse>Skal ikke brukes til å registrere overordnet informasjon om et individs nåværende og tidligere bolig- eller bosituasjon. Bruk EVALUATION.housing_summary (Boligsammendrag) til dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registrere detaljer om selve boligen der den enkelte bor - bruk CLUSTER.dwelling (Boligegenskaper) til dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å beskrive individets sosiale forbindelser, inkludert identifikasjon av husstandsmedlemmer - bruk EVALUATION.social_network (Sosialt nettverk) til dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registrere detaljer om et individs bolig eller boform for en bestemt tidsperiode. Bruk CLUSTER.housing_record (Bolig) til dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the circumstances about how an individual lives alone or with others.</purpose>
+      <keywords>alone</keywords>
+      <keywords>solo</keywords>
+      <keywords>family</keywords>
+      <keywords>friends</keywords>
+      <keywords>others</keywords>
+      <keywords>household</keywords>
+      <use>Use to record the circumstances about how an individual lives alone or with others. &#xD;
+&#xD;
+This archetype has been designed as one of a family of archetypes that describe the social connectedness of an individual in their home environment.&#xD;
+&#xD;
+Within this archetype, the intent of the concept of 'household' is to capture information about one or more people who reside together, including sharing meals, economic resources and/or living space. In this context, a single household might comprise varieties of blended families, a student share house, a group home, or a single person living alone. A single dwelling may be considered to contain multiple households if they don't share meals or resources, or have separate living spaces.</use>
+      <misuse>Not to be used to record overall information about an individual's current and past housing or housing situation. Use EVALUATION.housing_summary for this purpose.&#xD;
+&#xD;
+Not to be used to record details of the dwelling where the individual resides - use CLUSTER.dwelling for this purpose.&#xD;
+&#xD;
+Not to be used to describe the social connections of the individual, including identification of household members - use EVALUATION.social_network for this purpose.&#xD;
+&#xD;
+Not to be used to record details of the individual's housing or housing for a specified period of time. Use CLUSTER.housing_record for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>Registrare le circostanze di come un individuo vive da solo o con gli altri.</purpose>
+      <keywords>da solo</keywords>
+      <keywords>assolo</keywords>
+      <keywords>famiglia</keywords>
+      <keywords>amici</keywords>
+      <keywords>altri</keywords>
+      <keywords>famiglia</keywords>
+      <use>*Use to record the circumstances about how an individual lives alone or with others. &#xD;
+&#xD;
+This archetype has been designed as one of a family of archetypes that describe the social connectedness of an individual in their home environment.&#xD;
+&#xD;
+Within this archetype, the intent of the concept of 'household' is to capture information about one or more people who reside together, including sharing meals, economic resources and/or living space. In this context, a single household might comprise varieties of blended families, a student share house, a group home, or a single person living alone. A single dwelling may be considered to contain multiple households if they don't share meals or resources, or have separate living spaces. (en)</use>
+      <misuse>*Not to be used to record overall information about an individual's current and past housing or housing situation. Use EVALUATION.housing_summary for this purpose.&#xD;
+&#xD;
+Not to be used to record details of the dwelling where the individual resides - use CLUSTER.dwelling for this purpose.&#xD;
+&#xD;
+Not to be used to describe the social connections of the individual, including identification of household members - use EVALUATION.social_network for this purpose.&#xD;
+&#xD;
+Not to be used to record details of the individual's housing or housing for a specified period of time. Use CLUSTER.housing_record for this purpose. (en)</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Tanja Zeppernick, Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Zeppernick.Tanja@mh-hannover.de, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, Liv Laugen, Vebjørn Arntzen</author>
+    <author id="organisation">Helse Vest IKT AS, ​Oslo University Hospital, Norway</author>
+    <author id="email">silje.ljosland.bakke@helse-vest-ikt.no, liv.laugen@ous-hf.no, varntzen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+  </translations>
+  <uid>
+    <value>7badddf7-2954-4f05-9a4b-73219ee1bdf6</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-EVALUATION.living_arrangement.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>EVALUATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0004</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0005</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_COUNT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0013</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.person\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.person\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0008</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0012</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0011</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Living arrangement</items>
+        <items id="description">The circumstances about an individual living alone or with others.</items>
+        <items id="comment">This information will provide a sense of the level of support, both physically and emotionally, to which an individual may have access.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the living arrangements.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Living arrangement</items>
+        <items id="description">Single word or phrase that describes if an individual usually resides alone or with others.</items>
+        <items id="comment">Coding of the living arrangement with a terminology is preferred, where possible. The value sets for this data element are likely to vary between jurisdictions - it is anticipated that they will usually be set within a use-case specific template. For example: 'lives alone'; 'lives with family'; or 'lives with others'.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Household type</items>
+        <items id="description">Single word or phrase that describes the composition or structure of the household.</items>
+        <items id="comment">Coding of the household composition with a terminology is preferred, where possible. For example: single; sole parent with children aged less than 16 years; couple; couple with children aged less than 16 years; family; family with other non-related members present; or group of unrelated adults.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Household description</items>
+        <items id="description">Narrative description about the individuals who reside together, including sharing meals, economic resources and/or living space.</items>
+        <items id="comment">For example: a nuclear family, varieties of blended families, a student share house, a group home, or a single person living alone.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Number of household members</items>
+        <items id="description">The number of individuals who belong to the household.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Additional details</items>
+        <items id="description">Further details about the living arrangement.</items>
+        <items id="comment">This SLOT may be used to nest additional archetypes describing additional details about living arrangements that may be local to a jurisdiction.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the living arrangement not captured in other fields.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Last updated</items>
+        <items id="description">The date this summary was last updated.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Houshold members</items>
+        <items id="description">Name of the members of the houshold.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Borarrangement</items>
+        <items id="description">Under hvilke omstendigheter individet bor - sammen med andre eller alene.</items>
+        <items id="comment">Denne informasjonen kan gi opplysninger om hvilke nivå av hjelp og støtte, både fysisk og følelsesmessig, et individ har tilgang på i sin husholdning.&#xD;
+</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekst som beskriver boarrangementet.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Boarrangement</items>
+        <items id="description">Et enkelt ord eller uttrykk som beskriver om et individ vanligvis bor alene eller med andre.</items>
+        <items id="comment">Koding av boarrangementet med terminologi foretrekkes der det er mulig. Verdisettene for dette dataelementet vil sannsynligvis variere mellom jurisdiksjoner og det antas at det vil bli brukt brukerspesifikke verdisett. For eksempel: 'bor alene'; "bor med familien"; eller 'lever med andre'.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Husholdningstype</items>
+        <items id="description">Enkelt ord eller setning som beskriver sammensetningen eller strukturen til husholdningen.</items>
+        <items id="comment">Koding av husholdningssammensetningen med en terminologi er å foretrekke, der det er mulig. For eksempel: enslig; eneforsørger med barn under 18 år; par; par med barn under 18 år; kjernefamilie; familie med andre ikke-relaterte medlemmer til stede; eller gruppe av ikke-nærstående voksne (bokollektiv).</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Beskrivelse av husholdningen</items>
+        <items id="description">Fritekstbeskrivelse om individene som bor sammen, inkludert dele måltid, økonomiske ressurser og/eller boareal.</items>
+        <items id="comment">For eksempel: en kjernefamilie, varianter av blandede familier, et studentkollektiv, en gruppebolig eller en enslig person som bor alene.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Antall medlemmer av husholdningen</items>
+        <items id="description">Antall individer som tilhører husholdningen.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Flere detaljer om boarrangementet.</items>
+        <items id="comment">Dette SLOTet kan bli brukt til å nøste ytterligere arketyper som beskriver flere detaljer om boarrangement, for eksempel lokale varianter.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om boarrangementet som ikke fanges opp i andre felt.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Tilleggsinformasjon som kreves for å utvide modellen med lokalt innhold eller for å samkjøre med andre referansemodeller / formaliteter.</items>
+        <items id="comment">For eksempel: lokale informasjonskrav; eller eventuelt ytterligere metadata for å samkjøre med FHIR.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Sist oppdatert</items>
+        <items id="description">Datoen som denne registreringen sist ble oppdatert.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Husholdningsmedlemmer</items>
+        <items id="description">Navnet til medlemmene av husholdningen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Wohnsituation</items>
+        <items id="description">Die Umstände über eine Person, das allein oder mit anderen zusammen lebt.</items>
+        <items id="comment">Diese Information bietet einen Einblick in die tägliche Unterstützung, zu der eine Person in ihrer häuslichen Umgebung - sowohl körperlich als auch emotional - Zugang hat.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Beschreibung</items>
+        <items id="description">Beschreibung der Wohnsituation.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Wohnsituation</items>
+        <items id="description">Einzelnes Word oder Satz, um zu beschreiben, ob eine Person für gewöhnlich allein oder mit anderen zusammen wohnt.</items>
+        <items id="comment">Kodierung der Wohnsituation mit einer Terminologie ist, wo möglich, zu bevorzugen. Die Wertemengen für diese Datenelement können zwischen Zusätndigkeitsbereichen variieren - es wird erwartet, dass diese üblicherweise innerhalb Use-Case spezifischer Templates platziert werden. Zum Beispiel: "lebt allein"; "lebt mit der Familie"; oder "lebt mit Anderen".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Art des Haushaltes</items>
+        <items id="description">Einzelnes Wort oder eine Phrase, die die Zusammensetzung oder Struktur des Haushalts beschreibt.</items>
+        <items id="comment">Kodierung der Haushaltszusammensetzung mit einer Terminologie wird bevorzugt, soweit möglich. Zum Beispiel: alleinstehend; alleinerziehend mit Kindern im Alter von weniger als 16 Jahren; Paar; Paar mit Kindern im Alter von weniger als 16 Jahren; Familie; Familie mit anderen nicht verwandten Mitgliedern; oder Gruppe nicht verwandter Erwachsener.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Beschreibung des Haushalts</items>
+        <items id="description">Beschreibung über Individuen, die zusammen wohnen und sich Mahlzeiten, wirtschaftliche Ressourcen und/oder Wohnraum teilen.</items>
+        <items id="comment">Zum Beispiel: eine Kernfamilie, verschiedene Formen von Patchworkfamilien, ein Studentenwohnheim, ein betreutes Wohnen oder eine alleinstehende Person, die alleine lebt.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Anzahl der Haushaltsmitglieder</items>
+        <items id="description">Die Anzahl der Personen, die zum Haushalt gehören.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Weitere Details über die Wohnsituation.</items>
+        <items id="comment">Dieser SLOT kann verwendet werden, um zusätzliche Archetypen einzubetten, die zusätzliche Details über Wohnverhältnisse beschreiben können, die lokal für eine bestimmte Rechtsprechung relevant sind.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Kommentar</items>
+        <items id="description">Ergänzende Informationen zur Wohnsituation, die in anderen Bereichen nicht erfasst wurden.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen, die zur Erfassung lokaler Inhalte oder zur Anpassung an andere Referenzmodelle/Formalismen erforderlich sind.</items>
+        <items id="comment">Zum Beispiel: Lokale Informationsanforderungen oder zusätzliche Metadaten, um Verknüpfungen mit FHIR herzustellen.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Zuletzt aktualisiert</items>
+        <items id="description">Das Datum, an dem diese Zusammenfassung zuletzt aktualisiert wurde.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Haushaltsmitglieder</items>
+        <items id="description">Name der Haushaltsmitglieder.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">Disposizione abitativa</items>
+        <items id="description">Le circostanze di un individuo che vive da solo o con altri.</items>
+        <items id="comment">Queste informazioni forniranno un'idea del livello di supporto, sia fisico che emotivo, a cui un individuo può avere accesso. </items>
+      </items>
+      <items code="at0001">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Descrizione</items>
+        <items id="description">Descrizione narrativa della sistemazione abitativa.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Disposizione abitativa</items>
+        <items id="description">Singola parola o frase che descrive se un individuo risiede solitamente da solo o con altri.</items>
+        <items id="comment">Si preferisce, ove possibile, la codifica della sistemazione abitativa con una terminologia. I set di valori per questo elemento di dati possono variare da una giurisdizione all'altra - si prevede che saranno di solito impostati all'interno di un modello specifico per il caso d'uso. Ad esempio: "vive da solo", "vive con la famiglia" o "vive con altri".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Household type (en)</items>
+        <items id="description">*Single word or phrase that describes the composition or structure of the household. (en)</items>
+        <items id="comment">Si preferisce, ove possibile, la codifica della composizione della famiglia con una terminologia. Ad esempio: single; genitore unico con figli di età inferiore ai 16 anni; coppia; coppia con figli di età inferiore ai 16 anni; famiglia; famiglia con altri membri non imparentati presenti; o gruppo di adulti non imparentati. </items>
+      </items>
+      <items code="at0006">
+        <items id="text">Descrizione della casa</items>
+        <items id="description">*Narrative description about the individuals who reside together, including sharing meals, economic resources and/or living space.  (en)</items>
+        <items id="comment">*For example: a nuclear family, varieties of blended families, a student share house, a group home, or a single person living alone. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Numero di componenti della famiglia</items>
+        <items id="description">*The number of individuals who belong to the household. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Dettagli aggiuntivi</items>
+        <items id="description">Altri dettagli sulla sistemazione abitativa.</items>
+        <items id="comment">Questo SLOT può essere utilizzato per annidare ulteriori archetipi che descrivono ulteriori dettagli sulla sistemazione abitativa che possono essere locali in una giurisdizione.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Commento</items>
+        <items id="description">Narrativa aggiuntiva sulla sistemazione abitativa non catturata in altri campi.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Extension</items>
+        <items id="description">Informazioni aggiuntive necessarie per estendere il modello con contenuti locali o per allinearlo ad altri modelli/formalismi di riferimento.</items>
+        <items id="comment">Per esempio: requisiti informativi locali; o metadati aggiuntivi per allinearsi a FHIR.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Ultimo aggiornamento</items>
+        <items id="description">La data di questo riepilogo è stata aggiornata per l'ultima volta.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Houshold members (en)</items>
+        <items id="description">*Name of the members of the houshold. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

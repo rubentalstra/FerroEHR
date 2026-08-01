@@ -1,0 +1,486 @@
+﻿archetype (adl_version=1.4; uid=abd87a94-ec54-4335-8602-66f96b537c12)
+	openEHR-EHR-CLUSTER.imaging_exam-foetus.v1
+specialise
+	openEHR-EHR-CLUSTER.imaging_exam.v1
+
+concept
+	[at0000.1]	-- Imaging examination of a fetus
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Natalia Strauch, Martin Koch">
+				["organisation"] = <"Medizinische Hochschule Hannover, Servei Català de la Salut">
+				["email"] = <"Strauch.Natalia@mh-hannover.de, martinandreaskoch@catsalut.cat">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Peter Fedorcsak, Vebjørn Arntzen">
+				["organisation"] = <"University of Oslo, Oslo University Hospital">
+				["email"] = <"Peter Fedorcsak, Vebjørn Arntzen, varntzen@ous-hf.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2021-11-24">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Aufzeichnung der Befunde der radiologischen Untersuchung eines einzelnen Fötus oder Embryos und deren Interpretation.">
+			use = <"Wird verwendet, um die Ergebnisse der radiologischen Untersuchung eines einzelnen Fötus oder Embryos und deren Interpretation aufzuzeichnen.
+
+Verwenden Sie für jeden Fötus oder Embryo eine separate Instanz dieses Archetyps.
+
+Der beabsichtigte Anwendungsbereich dieses CLUSTER.imaging_exam-Archetyps besteht darin, letztendlich alle detaillierten Befunde der radiologischen Untersuchung des Fötus oder Embryos mit einer beliebigen Modalität aufzuzeichnen. Es wird erwartet, dass weitere Datenelemente hinzugefügt werden, wenn Anforderungen ermittelt und bestätigt werden.
+
+Dieser Archetyp ist für die Verschachtelung im SLOT „Zusätzliche Details“ im CLUSTER.imaging_exam-uterine_body, im SLOT „Strukturierte Bildgebungsbefunde“ im OBSERVATION.imaging_exam_result oder in anderen relevanten CLUSTER.imaging_exam-Archetypen vorgesehen, kann aber, sofern klinisch angebracht, auch in anderen ENTRY- oder CLUSTER-Archetypen verwendet werden. Wenn dieser Archetyp um weitere Ebenen strukturierter Ergebnisse erweitert werden muss, können zusätzliche Instanzen des CLUSTER.imaging_exam oder seiner Spezialisierungen im SLOT „Zusätzliche Details“ verschachtelt werden.">
+			keywords = <"Embryo", "Fötus", "Bildgebung", "Diagnose", "Radiologie", "Bild", "Ultraschall", "Fötus">
+			misuse = <"Darf nicht zur Aufzeichnung von Befunden aus bildgebenden Untersuchungen anderer Körperstrukturen oder -regionen als eines einzelnen Fötus oder Embryos verwendet werden. Verwenden Sie hierfür andere Archetypen aus der CLUSTER.imaging_exam-Familie.
+
+Nicht zur Erinnerung an das geschätzte Schwangerschaftsalter des Fötus verwenden. Verwenden Sie hierfür OBSERVATION.gestation.
+
+Nicht zur Aufzeichnung von Details im Zusammenhang mit den Gesamtbefunden, dem Kontext oder technischen Details im Zusammenhang mit dem Testergebnis einer vollständigen bildgebenden Untersuchung zu verwenden. Verwenden Sie hierfür OBERSERVATION.imaging_exam_result. Beispielsweise Anmerkungen zur Studienqualität, zu Differenzialdiagnosen und zum Gesamteindruck.">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere funn ved radiologisk undersøkelse av et enkelt intrauterint foster eller embryo og tolkning av funnene.">
+			use = <"Bruk for å registrere funn og klinisk tolkning ved bildediagnostisk undersøkelse av et foster eller embryo.
+
+Bruk en egen instans av denne arketypen for hvert enkelt foster eller embryo.
+
+Det tiltenkte omfanget for denne CLUSTER.imaging_exam (Bildediagnostisk undersøkelse) - arketypen er til slutt å kunne registrere alle detaljerte funn ved bildediagnostisk undersøkelse av et foster eller embryo uavhengig av modalitet. Det er forventet at flere dataelementer kan bli lagt til når krav til slike er identifisert og bekreftet.
+
+Denne arketypen er utformet for å bli nøstet i SLOT'et \"Ytterligere detaljer\" i arketypen CLUSTER.imaging_exam-uterine_body (Bildediagnostisk undersøkelse - livmor), SLOT'et \"Strukturerte funn\" i OBSERVATION.imaging_exam_result (Bildediagnostisk svar) eller i andre relevante Bildediagnostisk svar-arketyper, men kan også brukes innen andre ENTRY- og CLUSTER-arketyper der det er klinisk passende. Hvis denne arketypen, eller en spesialisering av denne, må utvides med flere nivåer med detaljerte funn eller observasjoner, kan flere forekomster av arketypen eller dens spesialiseringer nøstes i SLOT'et \"Ytterligere detaljer\".">
+			keywords = <"embryo", "foetus", "fetus", "foster", "bilde", "diagnostisk", "radiologi", "ultralyd">
+			misuse = <"Skal ikke brukes til å registrere funn fra undersøkelser av andre kroppsstrukturer enn et enkelt foster eller embryo. Bruk andre arketyper fra gruppen av CLUSTER.imaging_exam-arketyper for dette.
+
+Skal ikke brukes for å registrere den estimerte gestasjonsalder til fosteret. Bruk OBSERVATION.gestation til dette.
+
+Skal ikke brukes til å registrere overordnede undersøkelsesfunn, kontekst eller tekniske detaljer relatert til et fullstendig svar på billedundersøkelsen. Bruk arketypen OBSERVATION.imaging_exam_result (Bildediagnostisk svar) for å registrere dette, for eksempel kommentar om undersøkelseskvalitet, differensialdiagnose og overordnet konklusjon.">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the findings on radiological examination of a single foetus or embryo, and their interpretation.">
+			use = <"Use to record the findings on radiological examination of a single foetus or embryo, and their interpretation.
+
+Use a separate instance of this archetype for each foetus or embryo.
+
+The intended scope for this CLUSTER.imaging_exam archetype is to eventually record all detailed findings on radiological examination of the foetus or embryo using any modality. It is anticipated that further data elements may be added as requirements are identified and confirmed. 
+
+This archetype is designed to be nested within the 'Additional details' SLOT in the CLUSTER.imaging_exam-uterine_body, the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. If this archetype needs to be extended with further levels of structured findings, additional instances of the CLUSTER.imaging_exam or its specialisations can be nested in the 'Additional details' SLOT.">
+			keywords = <"embryo", "foetus", "imaging", "diagnostic", "radiology", "image", "ultrasound", "fetus">
+			misuse = <"Not to be used to record imaging examination findings for any body structure or region other than a single foetus or embryo. Use other archetypes from the CLUSTER.imaging_exam family for this purpose.
+
+Not to be used to record the estimated gestational age of the foetus. Use OBSERVATION.gestation for this purpose.
+
+Not to be used to record details related to the overall findings, context or technical details related to a complete imaging examination test result. Use the OBERSERVATION.imaging_exam_result for this purpose. For example, comments on the study quality, differential diagnoses, and overall impression.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"published">
+	other_contributors = <"Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)", "SB Bhattacharyya, Bhattacharyyas Clinical Records Research & Informatics LLP, India", "Peter Fedorcsak, University of Oslo, Norway (openEHR Editor)", "Heather Grain, Llewelyn Grain Informatics, Australia", "Evelyn Hovenga, EJSH Consulting, Australia", "Anjali Kulkarni, Karkinos, India", "Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Mikael Nyström, Cambio Healthcare Systems AB, Sweden", "Natalia Strauch, Medizinische Hochschule Hannover, Germany", "Norwegian Review Summary, Norwegian Public Hospitals, Norway", "Jeremy Tong, NHS, United Kingdom">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Rodgers SK, Chang C, DeBardeleben JT, Horrow MM. Normal and Abnormal US Findings in Early First-Trimester Pregnancy: Review of the Society of Radiologists in Ultrasound 2012 Consensus Panel Recommendations. Radiographics. 2015 Nov-Dec;35(7):2135-48. doi: 10.1148/rg.2015150092. PMID: 26562242.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"E97EF035504037521D2EF083783DAD01">
+		["build_uid"] = <"510fea66-163c-48d9-9e87-ee74d7e3d8e6">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.">
+		["revision"] = <"1.0.2">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {    -- Imaging examination of a foetus
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001.1] matches {    -- Body structure
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.1,    -- Foetus
+							at0.2]    -- Embryo
+						}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0003] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {    -- Imaging findings
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Additional details
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.imaging_exam-lymph_node(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lymph_node_group(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lesion(-[a-zA-Z0-9_]+)*\.v0/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Impression
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.7] occurrences matches {0..1} matches {    -- Label
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0.8] occurrences matches {0..1} matches {    -- Cardiac activity
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.9,    -- Presence
+							at0.10,    -- Absent
+							at0.11]    -- Indeterminate
+						}
+					}
+				}
+			}
+			ELEMENT[at0.12] occurrences matches {0..1} matches {    -- Heart rate
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::382]>
+						list = <
+							["1"] = <
+								units = <"/min">
+								magnitude = <|>=0.0|>
+								precision = <|0|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0.15] occurrences matches {0..1} matches {    -- Estimated weight
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::124]>
+						list = <
+							["1"] = <
+								units = <"g">
+								magnitude = <|>=0.0|>
+							>
+							["2"] = <
+								units = <"kg">
+								magnitude = <|>=0.0|>
+								precision = <|2|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0.16] occurrences matches {0..1} matches {    -- Estimated weight rationale
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0.1"] = <
+					text = <"Fetus">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"Absent">
+					description = <"No cardiac activity is observed.">
+				>
+				["at0.11"] = <
+					text = <"Indeterminate">
+					description = <"It is not possible to determine if cardiac activity is present or absent.">
+				>
+				["at0.12"] = <
+					text = <"Heart rate">
+					description = <"The observed heart rate for the fetus.">
+				>
+				["at0.15"] = <
+					text = <"Estimated weight">
+					description = <"Estimated fetal weight using imaging techniques.">
+				>
+				["at0.16"] = <
+					text = <"Estimated weight rationale">
+					description = <"Description about the evidence on which the estimation of weight was made.">
+				>
+				["at0.2"] = <
+					text = <"Embryo">
+					description = <"">
+				>
+				["at0.7"] = <
+					text = <"Label">
+					description = <"A label for the embryo or fetus.">
+					comment = <"Used to differentiate findings for each embryo or fetus in a multiple pregnancy.">
+				>
+				["at0.8"] = <
+					text = <"Cardiac activity">
+					description = <"Presence of cardiac activity.">
+				>
+				["at0.9"] = <
+					text = <"Presence">
+					description = <"Cardiac activity is observed.">
+				>
+				["at0000"] = <
+					text = <"Imaging examination of a body structure">
+					description = <"Findings on radiological examination of a specified body structure or region.">
+				>
+				["at0000.1"] = <
+					text = <"Imaging examination of a fetus">
+					description = <"Findings on radiological examination of a single fetus or embryo in utero.">
+				>
+				["at0001"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+					comment = <"For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended. If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT become redundant.">
+				>
+				["at0001.1"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+					comment = <"If the body structure has been fully identified in this 'Body structure' element, then the 'Body site' data element and 'Structured body site' SLOT becomes redundant.">
+				>
+				["at0002"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body under examination.">
+					comment = <"For example: a lymph node group (body structure) which found in the 'Right axilla'. Coding of 'Body site' with a terminology, such as SNOMED CT, is desirable. If the body site has been fully identified in the 'Body structure' data element, this data element becomes redundant.">
+				>
+				["at0003"] = <
+					text = <"Structured body site">
+					description = <"Structured details about the area of the body under examination.">
+					comment = <"For example: details about a relative anatomical location, such as '2cm distal to the appendix'. If the body site has been fully identified in the 'Body structure' or 'Body site' data elements, then this SLOT becomes redundant.">
+				>
+				["at0004"] = <
+					text = <"Imaging findings">
+					description = <"Narrative description of the imaging findings observed during this examination.">
+				>
+				["at0005"] = <
+					text = <"Additional details">
+					description = <"Additional structured details about imaging findings for the identified body structure or region, or findings of related structures.">
+				>
+				["at0006"] = <
+					text = <"Impression">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of all imaging findings for the identified body structure.">
+					comment = <"Also referred to as 'Interpretation' or 'Opinion'. For example: 'No abnormality detected' or 'Free fluid present'. Coding of the 'Impression' with a terminology is permitted, if useful. Multiple occurrences allow for more than one coded impression. A narrative description may include a comparison with previous studies of the identified body structure, if appropriate.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the imaging findings of the body structure, not captured in other fields.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0.1"] = <
+					text = <"Foster">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"Fraværende">
+					description = <"Ingen hjerteaktivitet er observert.">
+				>
+				["at0.11"] = <
+					text = <"Ubestemmelig">
+					description = <"Det er ikke mulig å bestemme om hjerteaktivitet er tilstede eller fraværende.">
+				>
+				["at0.12"] = <
+					text = <"Hjertefrekvens">
+					description = <"Frekvensen for hjerteslag for embryo eller foster.">
+				>
+				["at0.15"] = <
+					text = <"Estimert vekt">
+					description = <"Fostervekt estimert med bildediagnostiske metoder.">
+				>
+				["at0.16"] = <
+					text = <"Rasjonale for vekt">
+					description = <"Beskrivelse av bevis som ligger til grunn for estimatet av fostervekt.">
+				>
+				["at0.2"] = <
+					text = <"Embryo">
+					description = <"">
+				>
+				["at0.7"] = <
+					text = <"Merkelapp">
+					description = <"Identifisering eller betegnelse for aktuelt embryo eller foster.">
+					comment = <"Brukes for å skille mellom funn for hvert embryo eller foster i et flerlingsvangerskap, f. eks TV1 og TV2.">
+				>
+				["at0.8"] = <
+					text = <"Hjerteaktivitet">
+					description = <"Tilstedeværelse av hjerteaktivitet.">
+				>
+				["at0.9"] = <
+					text = <"Tilstede">
+					description = <"Hjerteaktivitet er observert.">
+				>
+				["at0000"] = <
+					text = <"Bildediagnostisk undersøkelse - kroppsstruktur">
+					description = <"Funn eller observasjoner ved radiologisk undersøkelse av et definert organ eller en kroppsdel.">
+				>
+				["at0000.1"] = <
+					text = <"Bildediagnostisk undersøkelse - foster">
+					description = <"Funn ved radiologisk undersøkelse av et enkelt foster eller embryo og tolkning av funnene.">
+				>
+				["at0001"] = <
+					text = <"Kroppsstruktur">
+					description = <"Identifisering av organet eller kroppsdelen som svaret gjelder.">
+					comment = <"For eksempel \"Lever\", \"Høyre ankel\" eller \"Lymfeknutegruppe\". Det er anbefalt å kode kroppsstruktur med en passende terminologi, som SNOMED CT. Dersom den aktuelle strukturen i kroppen er fullt ut angitt i dette \"Kroppsstruktur\"-elementet er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\" eller \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0001.1"] = <
+					text = <"Kroppsstruktur">
+					description = <"Identifisering av strukturen i kroppen eller regionen som er undersøkt.">
+					comment = <"Dersom den aktuelle strukturen i kroppen er fullt ut angitt i dette \"Kroppsstruktur\"-elementet er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\" eller \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0002"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"Identifisering av organ eller kroppsdel.">
+					comment = <"For eksempel en lymfeknutegruppe (Kroppsstruktur) som er funnet i \"Høyre aksille\" (Anatomisk lokalisasjon). Det er ønskelig å kode \"Anatomisk lokalisasjon\" med en terminologi, som SNOMED CT. Dersom den anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\".">
+				>
+				["at0003"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"Strukturerte detaljer om organ eller kroppsdel.">
+					comment = <"For eksempel detaljert om en relativ anatomisk lokalisasjon, som \"2 cm distalt for appendix\". Dersom den nøyaktige eller relative anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0004"] = <
+					text = <"Funn">
+					description = <"Fritekstlig beskrivelse av funn eller observasjoner på bilder tatt under denne undersøkelsen.">
+				>
+				["at0005"] = <
+					text = <"Ytterligere detaljer">
+					description = <"Ytterligere strukturerte detaljer om funn eller observasjoner på bilder for det definerte organet eller kroppsdelen, eller om funn eller observasjoner hos tilhørende kroppsstrukturer.">
+				>
+				["at0006"] = <
+					text = <"Resymé">
+					description = <"Enkeltord, frase eller kortfattet beskrivelse som uttrykker den kliniske betydningen av alle funn og observasjoner for den definerte kroppsstrukturen.">
+					comment = <"Kan også kalles \"Tolkning\" eller \"Inntrykk\". For eksempel \"Uten anmerkning\" eller \"Fri væske\". Dersom det er nyttig, er det åpent for å kode \"Resymé\" med en terminologi. Flere svar kan kodes ved at elementet er åpent for å være gjentakende. En beskrivelse i fritektst kan også brukes og kan inneholde en sammenligning med tidligere undersøkelser av samme kroppsstruktur.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn eller observasjoner på bilder av kroppsstrukturen og som ikke er fanget i andre felt.">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0.1"] = <
+					text = <"Foetus">
+					description = <"">
+				>
+				["at0.10"] = <
+					text = <"Abwesend">
+					description = <"Es ist keine Herzaktivität zu beobachten.">
+				>
+				["at0.11"] = <
+					text = <"Unbestimmt">
+					description = <"Es ist nicht möglich festzustellen, ob eine Herzaktivität vorhanden ist oder nicht.">
+				>
+				["at0.12"] = <
+					text = <"Herzfrequenz">
+					description = <"Die beobachtete Herzfrequenz des Fötus.">
+				>
+				["at0.15"] = <
+					text = <"Geschätztes Gewicht">
+					description = <"Geschätztes fetales Gewicht mithilfe bildgebender Verfahren.">
+				>
+				["at0.16"] = <
+					text = <"Begründung für das geschätzte Gewicht">
+					description = <"Beschreibung der Beweise, auf deren Grundlage die Gewichtsschätzung erfolgte.">
+				>
+				["at0.2"] = <
+					text = <"Embryo">
+					description = <"">
+				>
+				["at0.7"] = <
+					text = <"Identifisering">
+					description = <"Identifisering eller betegnelse for aktuelt embryo eller foster.">
+					comment = <"Brukes for a skille mellom funn for hvert embryo eller foster i et flerlingsvangerskap, f. eks TV1 og TV2.">
+				>
+				["at0.8"] = <
+					text = <"Herzaktivität">
+					description = <"Vorhandensein von Herzaktivität.">
+				>
+				["at0.9"] = <
+					text = <"Vorhanden">
+					description = <"Herzaktivität wird beobachtet.">
+				>
+				["at0000"] = <
+					text = <"Bildgebende Untersuchung einer Körperstruktur">
+					description = <"Befunde zur radiologischen Untersuchung einer bestimmten Körperstruktur oder -region.">
+				>
+				["at0000.1"] = <
+					text = <"Bildgebende Untersuchung eines Fötus">
+					description = <"Befunde der radiologischen Untersuchung eines einzelnen Fötus oder Embryos im Uterus.">
+				>
+				["at0001"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"Zum Beispiel: „Leber“, „Rechter Knöchel“ oder „Lymphknotengruppe“. Es wird empfohlen, die Körperstruktur mit einer geeigneten Terminologie wie SNOMED CT zu kodieren. Wenn die Körperstruktur in diesem Element „Körperstruktur“ vollständig identifiziert wurde, werden das Datenelement „Körperstelle“ und der SLOT „Strukturierte Körperstelle“ überflüssig.">
+				>
+				["at0001.1"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"Wenn die Körperstruktur in diesem Element „Körperstruktur“ vollständig identifiziert wurde, werden das Datenelement „Körperstelle“ und der SLOT „Strukturierte Körperstelle“ überflüssig.">
+				>
+				["at0002"] = <
+					text = <"Körperstelle">
+					description = <"Identifizierung des zu untersuchenden Bereichs des Körpers.">
+					comment = <"Zum Beispiel: eine Lymphknotengruppe (Körperstruktur), die sich in der „rechten Achselhöhle“ befindet. Eine Kodierung von „Körperstelle“ mit einer Terminologie, wie z. B. SNOMED CT, ist wünschenswert. Wenn die Körperstelle im Datenelement „Körperstruktur“ vollständig identifiziert wurde, wird dieses Datenelement überflüssig.">
+				>
+				["at0003"] = <
+					text = <"Körperstelle strukturiert">
+					description = <"Strukturierte Angaben zum untersuchten Körperbereich.">
+					comment = <"Zum Beispiel: Angaben zu einer relativen anatomischen Lokalisation, wie z. B. „2 cm distal zum Blinddarm“. Wenn die Körperstelle in den Datenelementen „Körperstruktur“ oder „Körperstelle“ vollständig identifiziert wurde, wird dieser SLOT überflüssig.">
+				>
+				["at0004"] = <
+					text = <"Bildgebende Befunde">
+					description = <"Beschreibung der bei dieser Untersuchung beobachteten bildgebenden Befunde.">
+				>
+				["at0005"] = <
+					text = <"Zusätzliche Angaben">
+					description = <"Zusätzliche strukturierte Angaben zu bildgebenden Befunden für die identifizierte Körperstruktur oder -region oder befundbezogene Strukturen.">
+				>
+				["at0006"] = <
+					text = <"Interpretation">
+					description = <"Einzelnes Wort, Satz oder kurze Beschreibung, die die klinische Bedeutung und Signifikanz aller bildgebenden Befunde für die identifizierte Körperstruktur darstellt.">
+					comment = <"Auch als „Eindruck“ oder „Meinung“ bezeichnet. Zum Beispiel: „Keine Anomalie erkannt“ oder „Freie Flüssigkeit vorhanden“. Eine Kodierung des „Interpretation“ mit einer Terminologie ist zulässig, sofern sinnvoll. Mehrere Vorkommen ermöglichen mehr als eine codierte Interpretation. Eine einfache Beschreibung kann gegebenenfalls einen Vergleich mit früheren Studien der identifizierten Körperstruktur beinhalten.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Zusätzlicher Text über die bildgebenden Befunde der Körperstruktur, der in anderen Bereichen nicht erfasst wurde.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0.1"] = <[SNOMED-CT::83418008]>
+				["at0.2"] = <[SNOMED-CT::57991002]>
+			>
+		>
+	>

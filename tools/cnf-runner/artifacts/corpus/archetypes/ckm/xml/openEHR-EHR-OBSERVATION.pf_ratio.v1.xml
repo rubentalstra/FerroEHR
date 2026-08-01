@@ -1,0 +1,690 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-03-27</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Grant Forrest, NHS Scotland, United Kingdom</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, Helse-Nord, FSE, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Ana Pereira, CINTESIS, CUF-Porto, Portugal</other_contributors>
+    <other_contributors>Søren Pischke, MD PhD, Senior Consultant, Department of Emergencies and Critical Care, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Benjamin Senst, Germany</other_contributors>
+    <other_contributors>Trine Strand, Oslo Universitetssykehus (OUS), Norway</other_contributors>
+    <other_contributors>Natalia Strauch, Medizinische Hochschule Hannover, Germany</other_contributors>
+    <other_contributors>Roy Støle, OUS, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Micaela Thierley, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Rowan Thomas, St. Vincent's Hospital Melbourne, Australia</other_contributors>
+    <other_contributors>Jeremy Tong, NHS, United Kingdom</other_contributors>
+    <other_contributors>Guri Tømmervåg, DIPS AS, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Mortelliti MP, Manning HL. Acute respiratory distress syndrome. Am Fam Physician. 2002 May 1;65(9):1823-30. PMID: 12018805.&#xD;
+&#xD;
+ICU management and referral guidelines for severe hypoxic respiratory failure [Internet]. Wales: South Wales Critical Care Network; 2015 Dec [cited 2020 Jun 09]. 15p. Available from http://www.wales.nhs.uk/sites3/documents/962/Welsh%20Critical%20Care%20Networks%20-%20Severe%20hypoxic%20respiratory%20failure%20guidelines.pdf.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">1578D2EB4E8A8C1105AC775D3ECDC659</other_details>
+    <other_details id="build_uid">28bca6f3-7696-4b48-bd0c-766ad4dfd8d5</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Repräsentation des Verhältnisses zwischen dem Sauerstoffpartialdruck im Blut (PaO2) und dem Sauerstoffanteil in der eingeatmeten Luft (FiO2).</purpose>
+      <keywords>Carrico</keywords>
+      <keywords>Horovitz</keywords>
+      <keywords>Index</keywords>
+      <keywords>Ratio</keywords>
+      <keywords>PF</keywords>
+      <keywords>Oxygenierungsindex</keywords>
+      <keywords>Quotient</keywords>
+      <keywords>Horovitz-Quotient</keywords>
+      <keywords>PaO2</keywords>
+      <keywords>FiO2</keywords>
+      <use>Zur Repräsentation des Verhältnisses zwischen dem Sauerstoffpartialdruck im Blut (PaO2) und dem Sauerstoffanteil in der eingeatmeten Luft (FiO2).&#xD;
+&#xD;
+Der Wert von PaO2 wird in der Regel an einer anderen Stelle in der Patientenakte als Teil eines arteriellen Blutgas-Testergebnisses protokolliert (OBSERVATION.laboratory_test_result).&#xD;
+&#xD;
+Der Wert von FiO2 wird in der Regel an anderer Stelle in der Patientenakte unter Verwendung des Datenelements "FiO2" (at0052) im CLUSTER.inspired_oxygen dargestellt.&#xD;
+&#xD;
+Dieses Verhältnis kann in anderen Scores verwendet werden, z. B. im SOFA-Score (OBSERVATION.sofa_score), im SMART-COP-Risiko-Score, im ARDS-Schweregrad-Score und im Simplified Acute Physiology Score (SAPS) II.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere ratio mellom partialtrykk av oksygen i blod (PaO₂) og fraksjon av oksygen i den innåndede luften (FiO₂).</purpose>
+      <keywords>Carrico</keywords>
+      <keywords>Horowitz</keywords>
+      <keywords>indeks</keywords>
+      <keywords>ratio</keywords>
+      <keywords>PF</keywords>
+      <keywords>P/F</keywords>
+      <keywords>PaO2</keywords>
+      <keywords>FiO2</keywords>
+      <keywords>oksygenering</keywords>
+      <keywords>oksygeneringsbehov</keywords>
+      <use>Bruk for å registrere ratio mellom partialtrykk av oksygen i blod (PaO₂) og fraksjon av oksygen i den innåndede luften (FiO₂).&#xD;
+&#xD;
+Verdien for PaO₂ blir normalt registrert annet sted i pasientjournalen, for eksempel som del av svar på arteriell blodgassanalyse (OBSERVATION.laboratory_test_result).&#xD;
+&#xD;
+Verdien for FiO₂ blir normalt registrert annet sted i pasientjournalen, i elementet 'FiO₂' (at0052) i CLUSTER.inspired_oxygen (Innåndet oksygen).&#xD;
+&#xD;
+Denne ratioen kan brukes i andre skårer, som for eksempel SOFA skår (OBSERVATION.sofa_score), SMART-COP risk skår, ARDS severity score og Simplified Acute Physiology Score (SAPS) II.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>Use to record the ratio between the partial pressure of oxygen in blood (PaO₂) and the fraction of oxygen in the inspired air (FiO₂).</purpose>
+      <keywords>Carrico</keywords>
+      <keywords>Horowitz</keywords>
+      <keywords>index</keywords>
+      <keywords>ratio</keywords>
+      <keywords>PF</keywords>
+      <keywords>P/F</keywords>
+      <keywords>PaO2</keywords>
+      <keywords>FiO2</keywords>
+      <use>Use to record the ratio between the partial pressure of oxygen in blood (PaO₂), and the fraction of oxygen in the inspired air (FiO₂).&#xD;
+&#xD;
+The value of PaO₂ will usually be recorded elsewhere in the health record as part of an arterial blood gas test result (OBSERVATION.laboratory_test_result).&#xD;
+&#xD;
+The value of FiO₂ will usually be recorded elsewhere in the health record using the 'FiO₂' data element (at0052) in the CLUSTER.inspired_oxygen.&#xD;
+&#xD;
+This ratio may be used within other scores, such as SOFA Score (OBSERVATION.sofa_score), SMART-COP risk score, ARDS severity score and Simplified Acute Physiology Score (SAPS) II.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout, Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">ballout.sarah@mh-hannover.de, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand, Vebjørn Arntzen</author>
+    <author id="organisation">Helse Bergen University Hospital, Oslo University Hospital</author>
+    <author id="email">varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>b312f5ea-febf-4d8d-9e8a-0fae15c6f20e</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.pf_ratio.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <property>
+                          <terminology_id>
+                            <value>openehr</value>
+                          </terminology_id>
+                          <code_string>125</code_string>
+                        </property>
+                        <list>
+                          <units>kPa</units>
+                        </list>
+                        <list>
+                          <units>mm[Hg]</units>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0007</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0008</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0009</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0010</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">PaO₂/FiO₂ ratio</items>
+        <items id="description">Ratio between the partial pressure of oxygen in blood (PaO₂) and the fraction of oxygen in the inhaled air (FiO₂).</items>
+        <items id="comment">Also known as the PF ratio, Carrico index or Horowitz quotient.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any point in time event</items>
+        <items id="description">Default, unspecified point in time event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Ratio</items>
+        <items id="description">Calculated ratio.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Clinical interpretation</items>
+        <items id="description">A clinical interpretation of the PaO₂/FiO₂ ratio.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the PaO₂/FiO₂ ratio not captured in other fields.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Confounding factors</items>
+        <items id="description">Issues or factors that may impact on measurement of the PaO₂/FiO₂ ratio, not captured in other fields.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">PaO2/FiO2-Quotient</items>
+        <items id="description">Verhältnis zwischen dem Partialdruck des Sauerstoffs im Blut (PaO2) und dem Anteil des Sauerstoffs in der eingeatmeten Luft (FiO2).</items>
+        <items id="comment">Auch bekannt als PF-Ratio, Oxygenierungs-Index oder Horovitz-Quotient.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis zu einem Zeitpunkt.</items>
+        <items id="description">Standardwert, ein undefinierter/s Zeitpunkt oder Intervallereignis, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">PaO2/FiO2-Quotient</items>
+        <items id="description">Berechneter Verhältniswert.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Klinische Interpretation</items>
+        <items id="description">Klinische Interpretation des PaO2/FiO2-Quotienten.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Beschreibung des PaO2/FiO2-Quotienten, die in anderen Feldern nicht dargestellt wurde.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Item tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Störfaktoren</items>
+        <items id="description">Probleme oder Faktoren, die sich auf die Messung des PaO2/FiO2-Quotienten auswirken können, die in anderen Feldern nicht dargestellt wurden.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">PaO₂/FiO₂ ratio</items>
+        <items id="description">Ratio mellom partialtrykk av oksygen i blod (PaO₂) og fraksjon av oksygen i den innåndede luften (FiO₂).</items>
+        <items id="comment">Også kjent som PF ratio, Carrico index eller Horrowitz kvotient.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert tidspunkthendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Ratio</items>
+        <items id="description">Kalkulert ratio.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Klinisk tolkning</items>
+        <items id="description">En klinisk tolkning av PaO₂/FiO₂ ratio.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om PaO₂/FiO₂ ratio og som ikke er fanget i andre felt.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Fritekstbeskrivelse av faktorer som kan ha påvirkning på målingen av PaO₂/FiO₂ ratio.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

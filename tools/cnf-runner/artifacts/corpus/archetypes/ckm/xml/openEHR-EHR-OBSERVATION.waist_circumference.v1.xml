@@ -1,0 +1,937 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2017-05-11</original_author>
+    <original_author id="name">Silje Ljosland Bakke</original_author>
+    <original_author id="organisation">Nasjonal IKT, Norway</original_author>
+    <original_author id="email">silje.ljosland.bakke@nasjonalikt.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Malin Berg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, FSE, Helse Nord, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Roar Holm, Helse Vest IKT A/S, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Pétur Júlíusson, Barneklinikken, HUS og K2, UIB, Norway</other_contributors>
+    <other_contributors>Adriana Kitajima, CORE Consulting, Brazil</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Harmony Kosola, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Health Systems, Australia</other_contributors>
+    <other_contributors>Inge Lindseth, Balderklinikken, Norway</other_contributors>
+    <other_contributors>Priscila Maranhão, MEDCIDS-FMUP, Portugal</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Vladimir Pizzo, Hospital Sírio Libanês, Brazil</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Raymond Simkus, Brookswood Family Practice, Canada</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Stian Torleif Varpe, Helse Bergen, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">Nasjonal IKT</other_details>
+    <other_details id="references">World Health Organization. (2011). Waist circumference and waist-hip ratio: Report of a WHO expert consultation, Geneva, 8-11 December 2008 [cited 2017 oct 2]. Available from: http://apps.who.int/iris/bitstream/10665/44583/1/9789241501491_eng.pdf&#xD;
+&#xD;
+Júlíusson, P. B., Vinsjansen, S., Nilsen, B., Sælensminde, H., Vågset, R., &amp; Eide, G. E. (2005). Måling av vekst og vekt: En oversikt over anbefalte teknikker. Pediatrisk Endokrinologi, 19, 23-9  [cited 2017 oct 2]. Available from: http://pediatrisk-endokrinologi.no/2005/1/Juliusson_et_al_2005_1.pdf</other_details>
+    <other_details id="original_namespace">no.nasjonalikt</other_details>
+    <other_details id="original_publisher">Nasjonal IKT</other_details>
+    <other_details id="custodian_namespace">no.nasjonalikt</other_details>
+    <other_details id="MD5-CAM-1.0.1">7F1C34CFAFD8EDF99B050A576DCDBC0E</other_details>
+    <other_details id="build_uid">398ca131-91f6-499d-aa69-9a50b013a0f1</other_details>
+    <other_details id="revision">1.0.5</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera måttet på midjans omkrets.</purpose>
+      <keywords>antropometri</keywords>
+      <keywords>mätningar</keywords>
+      <keywords>uppskattningar</keywords>
+      <keywords>omkretts</keywords>
+      <keywords>midja</keywords>
+      <keywords>omfång</keywords>
+      <keywords>buk</keywords>
+      <use>Används för att registrera midjemåttet.&#xD;
+&#xD;
+Det finns ingen enighet om exakt var midjemåttet ska mätas. I fall där detta är viktigt för tolkningen av resultatet, ska detta dokumenteras i elementet 'metod'.&#xD;
+&#xD;
+Denna arketyp kan också användas för att registrera en uppskattning av midjemåttet i ett kliniskt scenario där det inte är möjligt att tillförlitligt mäta midjemåttet - till exempel, vid mätning av ett barn som inte samarbetar. Detta är inte uttalat modellerat i arketypen, eftersom referensmodellen för openEHR tillåter attributet uppskattning för varje angiven kvantitativ datatyp. Vid implementering, till exempel, i en applikations användargränssnitt kan klinikerna tillåtas att markera en passande benämnd kryssruta bredvid datafältet för 'midjemått' för att indikera att registreringen midjemått är en uppskattning och inte ett faktiskt värde.</use>
+      <misuse>Används inte för att registrera hur hastigheten på midjemåttet ökar eller minskar. Använd istället en arketyp för tillväxthastighet för detta ändamål.&#xD;
+&#xD;
+Används inte för att registrera midjemåttet på någon annan kroppsdel. Använd istället OBSERVATION.body_segment i dessa sammanhang, förutom då mer specifika arketyper finns som till exempel OBSERVATION.hip_circumference.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>Vyötärön ympärysmittaustuloksen tallentamiseen.</purpose>
+      <keywords>antropometria, mittaus, arviointi, ympärysmitta, vyötärö, ympärysmitta, vatsa</keywords>
+      <use>Käytä vyötärön ympärysmittaustuloksen tallentamiseen.&#xD;
+&#xD;
+Vyötärön ympärysmitta tulee mitata voimassa olevien suositusten mukaisesti. Tapauksissa, joissa tämä on tärkeää tuloksien tulkinnan kannalta, tämä olisi dokumentoitava "Menetelmä"-elementissä.&#xD;
+&#xD;
+Käytä tallentamaan muutoksia toistuvista mittauksista. Tämä voidaan tällä hetkellä mallintaa templaatissa rajoittamalla "mikä tahansa tapahtuma" aikaväliksi, johon liittyy tarvittaessa matemaattinen funktio.&#xD;
+&#xD;
+Tätä arkkityyppiä voidaan käyttää myös vyötärön ympärysmittauksen arvioinnin tallentamiseen kliinisessä skenaariossa, jossa ei ole mahdollista mitata tarkkaa vyötärön ympärysmittaa - esimerkiksi mitattaessa yhteistyökyvytöntä lasta. Tätä ei ole mallinnettu arkkityypissä, koska openEHR-referenssimalli sallii Arvio-attribuutin mille tahansa Quantity-tietotyypille. Sovelluksen käyttöliittymä voi tarjota asianmukaisen valintaruudun "Vyötärönympärys"-kentän vieressä, minkä avulla käyttäjä voi osoittaa, että tallennettu vyötärön ympärysmitta on likiarvio eikä todellinen.</use>
+      <misuse>Ei tule käyttää tallentamaan nopeutta, jolla vyötärön ympärysmitta kasvaa tai laskee. Käytä tätä tarkoitusta varten OBSERVATION.growth_velocity-arkkityyppiä.&#xD;
+&#xD;
+Ei tule käyttää toisen ruumiinosan ympärysmitan tallentamiseen. Käytä OBSERVATION.body_segment:iä näissä olosuhteissa, paitsi jos on olemassa tarkempia arkkityyppejä, kuten OBSERVATION.hip_circumference.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere målingen av midjeomkrets.</purpose>
+      <keywords>antropometri</keywords>
+      <keywords>måling</keywords>
+      <keywords>estimering</keywords>
+      <keywords>omkrets</keywords>
+      <keywords>livvidde</keywords>
+      <keywords>mageomfang</keywords>
+      <keywords>midjemål</keywords>
+      <keywords>bukomkrets</keywords>
+      <keywords>somatometri</keywords>
+      <use>Bruk for å registrere målingen midjeomkrets.&#xD;
+&#xD;
+Det finnes en rekke ulike metoder for måling av midjeomkrets. I tilfeller der det er viktig for tolkningen av resultatet bør metoden dokumenteres i dataelementet "Metode".&#xD;
+&#xD;
+Brukes til å registrere endring ved gjentatte målinger. Dette kan modelleres ved å begrense "Uspesifisert hendelse" i en templat til et intervall med en tilhørende matematisk funksjon for "økning".&#xD;
+&#xD;
+Denne arketypen kan også brukes for å registrere et anslag av midjeomkrets i et klinisk scenario der det ikke er mulig å få til en nøyaktig måling, f.eks. ved måling av et barn som ikke samarbeider. Dette er ikke modellert eksplisitt inn i arketypen, siden openEHR referansemodellen tillater attributten "Approksimering" for datatypen "Quantity". Ved implementasjon kan f.eks. et brukergrensesnitt tillate klinikerne å velge en avkrysningsboks ved siden av elementet "Midjeomkrets" for å indikere at omkretsen er en approksimering heller enn en faktisk måling.</use>
+      <misuse>Brukes ikke til å registrere hastigheten midjeomkretsen øker eller avtar, bruk en egen arketype for veksthastighet for dette formålet.&#xD;
+&#xD;
+Brukes ikke til å registrere omkretsen av andre kroppsdeler. Bruk OBSERVATION.body_segment i disse tilfellene med unntak av hvor det finnes mer spesifikke arketyper som for eksempel OBSERVATION.hip_circumference.</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para gravar a circunferência da cintura de um indivíduo.&#xD;
+</purpose>
+      <keywords>antropometria</keywords>
+      <keywords>medição</keywords>
+      <keywords>estimativa</keywords>
+      <keywords>circunferência</keywords>
+      <keywords>cintura</keywords>
+      <keywords>circunferência da cintura</keywords>
+      <keywords>abdominal</keywords>
+      <use>Use para gravar a circunferência da cintura de um indivíduo.&#xD;
+&#xD;
+Não há acordo claro onde exatamente a medida da circunferência da cintura deve ser feita. Em casos onde isso é importante para a interpretação dos resultados, deve estar documentado no elemento "Método".&#xD;
+&#xD;
+Usar para registar a mudança a partir de medições repetidas. Isto pode ser atualmente modelado restringindo o "qualquer evento" para um intervalo em um modelo com função matemática associada, conforme o caso.&#xD;
+&#xD;
+Este arquétipo também pode ser usado para gravar uma medição aproximada da circunferência da cintura, em um cenário clínico em que não é possível medir uma circunferência da cintura acurada - por exemplo, a medição de uma criança não colaborativa. Isto não é modelado explicitamente no arquétipo, já que o modelo de referência openEHR permite o atributo de aproximação para qualquer de tipo de dados quantitativo. Na implementação, por exemplo, uma interface de usuário da aplicação pode permitir aos clínicos selecionar numa caixa de verificação, apropriadamente marcada ao lado do campo de dados de circunferência da cintura para indicar que a circunferência da cintura gravada é uma aproximação, não uma medida exata. &#xD;
+</use>
+      <misuse>Não deve ser usado para gravar a velocidade na qual a circunferência da cintura aumenta ou diminui. Use o arquétipo de velocaidade de crescimento para este propósito.&#xD;
+&#xD;
+Não deve ser usado para gravar a circunferência de outra parte do corpo. Usar OBSERVATION.body_segment nestas circunstâncias, exceto quando existem arquétipos mais específicos tais como OBSERVATION.hip_circumference.&#xD;
+</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the measurement of the circumference of the waist.</purpose>
+      <keywords>anthropometry</keywords>
+      <keywords>measurement</keywords>
+      <keywords>estimation</keywords>
+      <keywords>circumference</keywords>
+      <keywords>waist</keywords>
+      <keywords>girth</keywords>
+      <keywords>abdominal</keywords>
+      <use>Use to record the measurement of the circumference of the waist. &#xD;
+&#xD;
+There is no clear agreement on exactly where the waist circumference should be measured. In cases where this is important to the interpretation of the results, this should be documented in the 'Method' element.&#xD;
+&#xD;
+Use to record change from repeated measurements. This can currently be modeled by constraining the 'any event' to an interval in a template with an associated mathematical function, as appropriate.&#xD;
+&#xD;
+This archetype can also be used for recording an approximation of the waist circumference measurement in a clinical scenario where it is not possible to measure an accurate waist circumference - for example, measuring an uncooperative child. This is not modelled explicitly in the archetype as the openEHR Reference model allows the attribute of Approximation for any Quantity data type. At implementation, for example, an application user interface could allow clinicians to select an appropriately labelled check box adjacent to the 'Waist circumference' data field to indicate that the recorded waist circumference is an approximation, rather than actual.</use>
+      <misuse>Not to be used to record the speed of which the waist circumference is growing or decreasing. Use a growth velocity archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record the circumference of another body part. Use OBSERVATION.body_segment in these circumstances except where more specific archetypes exist such as OBSERVATION.hip_circumference.</misuse>
+      <copyright>© openEHR Foundation, Nasjonal IKT HF</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Andreas Sundström</author>
+    <author id="organisation">Capio S:t Gorans Hospital</author>
+    <author id="email">andreas.sundstrom@capiostgoran.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+    <author id="name">Vesa Peltola, Heidi Koikkalainen</author>
+    <author id="organisation">Tietoevry, Finland</author>
+    <author id="email">heidi.koikkalainen@freshehr.com</author>
+    <other_details id="other_contributors">Riikka Lahtela, Istekki, Finland&#xD;
+Henri Huttunen, UNA Oy, Finland&#xD;
+Anna-Leena Karvonen, Tietoevry, Finland</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke and John Tore Valand</author>
+    <author id="organisation">Nasjonal IKT HF; Helse Bergen HF</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Débora Farage, Fernanda Maia, Adriana Kitajima, Ana Paula Andrade, Clóvis Puttini</author>
+    <author id="organisation">Core Consulting</author>
+    <author id="email">contato@coreconsulting.com.br</author>
+    <accreditation>Hospital Alemão Oswaldo Cruz (HAOC)</accreditation>
+  </translations>
+  <uid>
+    <value>fe27b1d0-6ba4-49aa-9ad7-e555a2739bee</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.waist_circumference.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <property>
+                          <terminology_id>
+                            <value>openehr</value>
+                          </terminology_id>
+                          <code_string>122</code_string>
+                        </property>
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0.0</lower>
+                            <upper>500.0</upper>
+                          </magnitude>
+                          <units>cm</units>
+                        </list>
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <upper_included>false</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0.0</lower>
+                            <upper>400.0</upper>
+                          </magnitude>
+                          <units>[in_i]</units>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0007</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>1</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0008</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0009</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0013</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0012</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Waist circumference</items>
+        <items id="description">The measurement of the distance around the waist.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Waist circumference</items>
+        <items id="description">The measurement of the circumference of the waist.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Device</items>
+        <items id="description">Details about the device used for the measurement.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the measurement of waist circumference not captured in other fields.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Confounding factors</items>
+        <items id="description">Narrative description of any issues or factors that may impact on the measurement.</items>
+        <items id="comment">For example: uncooperative child.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local context or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Method</items>
+        <items id="description">The method how the waist circumference was measured.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Circunferência da cintura</items>
+        <items id="description">A medida da circunferência da cintura.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Circunferência da cintura</items>
+        <items id="description">A medida da circunferência da cintura.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Dispositivo</items>
+        <items id="description">Detalhes sobre o dispositivo usado para a medida.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Comentário</items>
+        <items id="description">Narrativa adicional sobre a circunferência da cintura não capturado em outros campos.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Fatores de confundimento</items>
+        <items id="description">Descrição narrativa sobre quaisquer problemas ou fatores que podem impactar a medida.</items>
+        <items id="comment">Por exemplo: criança não cooperativa.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Qualquer evento</items>
+        <items id="description">Padrão, ponto não específico no tempo ou intervalo que pode ser definido em nível de modelo ou em tempo de execução.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Extensão</items>
+        <items id="description">Informações adicionais, necessárias para capturar o contexto local ou para alinhar com outros modelos de referência / formalismos.</items>
+        <items id="comment">Por exemplo: departamento de informações do hospital local ou metadados adicionais para alinhar ao FHIR ou CIMI equivalentes.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Método</items>
+        <items id="description">O método e/ou local anatômico preciso onde a medição da circunferência da cintura foi realizada.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Midjeomkrets</items>
+        <items id="description">Måling av distansen rundt midjen.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Midjeomkrets</items>
+        <items id="description">Måling av midjeomkretsen</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Måleutstyr</items>
+        <items id="description">Detaljer om utstyret som ble brukt til målingen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om målingen av midjeomkrets som ikke er registrert i andre felt.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Fritekstbeskrivelse av problemer eller faktorer som kan ha påvirkning på målingene.</items>
+        <items id="comment">For eksempel ikke-samarbeidende barn.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR eller CIMI.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Metode</items>
+        <items id="description">Metoden som ble brukt til målingen av midjeomkretsen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Midjemått</items>
+        <items id="description">Måttet på avståndet runt midjan.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Midjemått</items>
+        <items id="description">Måttet på midjans omkrets.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Utrustning</items>
+        <items id="description">Information om utrustningen som användes för mätningen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare beskrivning av midjemåttet som inte fångas i andra fält.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Påverkande faktorer</items>
+        <items id="description">Beskrivning av eventuella problem eller faktorer som kan påverka mätningen.</items>
+        <items id="comment">Till exempel: icke-samarbetsvilligt barn.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Ospecificerad händelse</items>
+        <items id="description">Standard, ospecificerad händelse vid en tidpunkt eller ett tidsintervall som explicit kan definieras i en mall eller vid körning av program.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Ytterligare information</items>
+        <items id="description">Ytterligare information som krävs för att fånga lokal kontext eller för anpassning till andra referensmodeller och formalismer.</items>
+        <items id="comment">T.ex. lokala informationskrav eller ytterligare metadata för att anpassa sig till FHIR- eller CIMI-ekvivalenter.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Metod</items>
+        <items id="description">Metoden för hur midjemåttet mättes.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">Vyötärönympärys</items>
+        <items id="description">Vyötärönympäryksen mittaustulos.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Vyötärönympärys</items>
+        <items id="description">Vyötärönympäryksen mittaustulos.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Laite</items>
+        <items id="description">Laite, jolla vyötärönympärys mitataan.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Kommentti</items>
+        <items id="description">Mittauksen kertomusmuodossa olevat lisätiedot, joita ei voida ilmoittaa muissa kentissä.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Sekoittavat tekijät</items>
+        <items id="description">Kertomusmuodossa oleva kuvaus ongelmista tai tekijöistä, jotka saattavat vaikuttaa mittaukseen.</items>
+        <items id="comment">Esimerkiksi: yhteistyökyvytön lapsi.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Mikä tahansa tapahtuma</items>
+        <items id="description">Oletusarvo, määrittämätön ajanhetki tai aikaväli, joka voidaan nimenomaisesti määritellä templaatilla tai suorituksen aikana.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Laajennus</items>
+        <items id="description">Lisätiedot, joita tarvitaan paikallisen sisällön kirjaamiseksi tai yhtenäistämiseksi muiden viitemallien tai formalismien kanssa.</items>
+        <items id="comment">Esimerkki: paikallisia tietovaatimuksia tai metadataa yhdistettäväksi FHIR tai CIMI tietomalleihin.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Menetelmä</items>
+        <items id="description">Vyötärönympäryksen mittaamisen menetelmä.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

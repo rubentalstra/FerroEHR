@@ -1,0 +1,195 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.move-joint.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.move.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For describing the findings on movement of a joint.">
+			use = <"">
+			keywords = <"movement", "joint">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"95163F18290F91409530D7901DF344FA">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Movement of a joint
+		/items[id37]/items[id38]/items matches {
+			use_node ELEMENT[id41.1] /items[id37]/items[id5]/items[id8]	-- /items[id37]/items[id5]/items[id8]
+			use_node ELEMENT[id41.2] /items[id37]/items[id5]/items[id7]	-- /items[id37]/items[id5]/items[id7]
+			use_node ELEMENT[id41.3] /items[id37]/items[id5]/items[id20]	-- /items[id37]/items[id5]/items[id20]
+		}
+		/items[id37]/items[id5]/items[id6]/value matches {
+			DV_CODED_TEXT[id45.1] matches {
+				defining_code matches {[ac0.1]}		-- Movement (synthesised)
+			}
+		}
+		/items[id37]/items[id5]/items[id36]/value[id47]/magnitude matches {|0.0..360.0|}
+		/items[id37]/items matches {
+			CLUSTER[id0.14] occurrences matches {0..1} matches {	-- Abnormal movement
+				items matches {
+					CLUSTER[id0.16] matches {	-- Ligament testing
+						items matches {
+							ELEMENT[id0.15] occurrences matches {0..1} matches {	-- Name
+								value matches {
+									DV_TEXT[id0.22] 
+								}
+							}
+							ELEMENT[id0.21] occurrences matches {0..1} matches {	-- Movement or stress
+								value matches {
+									DV_CODED_TEXT[id0.23] matches {
+										defining_code 
+									}
+								}
+							}
+							ELEMENT[id0.17] occurrences matches {0..1} matches {	-- Finding
+								value matches {
+									DV_CODED_TEXT[id0.24] matches {
+										defining_code matches {[ac0.2]}		-- Finding (synthesised)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.1"] = <
+				text = <"Flexion">
+				description = <"Movement through contraction of the flexor muscles.">
+			>
+			["at0.10"] = <
+				text = <"Inversion">
+				description = <"Rotation towards the midline.">
+			>
+			["at0.11"] = <
+				text = <"Rotation">
+				description = <"Movement throughout a circle.">
+			>
+			["at0.12"] = <
+				text = <"Opening">
+				description = <"Opening of the joint.">
+			>
+			["at0.13"] = <
+				text = <"Closing">
+				description = <"Closing of the joint.">
+			>
+			["id0.14"] = <
+				text = <"Abnormal movement">
+				description = <"*">
+			>
+			["id0.15"] = <
+				text = <"Name">
+				description = <"Clinical description of any abnormal movement findings.">
+			>
+			["id0.16"] = <
+				text = <"Ligament testing">
+				description = <"*">
+			>
+			["id0.17"] = <
+				text = <"Finding">
+				description = <"*">
+			>
+			["at0.18"] = <
+				text = <"Normal">
+				description = <"*">
+			>
+			["at0.19"] = <
+				text = <"Lax">
+				description = <"*">
+			>
+			["at0.2"] = <
+				text = <"Extension">
+				description = <"Movement through the extensor muscles.">
+			>
+			["at0.20"] = <
+				text = <"Subluxing">
+				description = <"*">
+			>
+			["id0.21"] = <
+				text = <"Movement or stress">
+				description = <"*">
+			>
+			["at0.3"] = <
+				text = <"Abduction">
+				description = <"Movement of the distal part away from the midline.">
+			>
+			["at0.4"] = <
+				text = <"Adduction">
+				description = <"Movement of the distal part towards the midline.">
+			>
+			["at0.5"] = <
+				text = <"Internal rotation">
+				description = <"Rotating the anterior aspect distal to the joint towards the midline.">
+			>
+			["at0.6"] = <
+				text = <"External rotation">
+				description = <"Rotation of the anterior aspect distal to the joint away from the midline.">
+			>
+			["at0.7"] = <
+				text = <"Supination">
+				description = <"Rotation of the distal part into the anatomical position.">
+			>
+			["at0.8"] = <
+				text = <"Pronation">
+				description = <"Rotation of the distal part away from the anatomical position.">
+			>
+			["at0.9"] = <
+				text = <"Eversion">
+				description = <"Rotation away from the midline.">
+			>
+			["id1.1"] = <
+				text = <"Movement of a joint">
+				description = <"Movement of a joint as part of physical examination.">
+			>
+			["id41.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id41.2"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id41.3"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac0.1"] = <
+				text = <"Movement (synthesised)">
+				description = <"A specific movement. (synthesised)">
+			>
+			["ac0.2"] = <
+				text = <"Finding (synthesised)">
+				description = <"* (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.1", "at0.2", "at0.3", "at0.4", "at0.5", "at0.6", "at0.7", "at0.8", "at0.9", "at0.10", "at0.11", "at0.12", "at0.13">
+		>
+		["ac0.2"] = <
+			id = <"ac0.2">
+			members = <"at0.18", "at0.19", "at0.20">
+		>
+	>

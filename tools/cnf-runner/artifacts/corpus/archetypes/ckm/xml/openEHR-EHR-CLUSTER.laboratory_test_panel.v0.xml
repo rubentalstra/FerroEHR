@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-07-20</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics, UK</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Nasjonal IKT, Norway</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Pathology Test Result, Draft Archetype [Internet]. Australian Digital Health Agency, Australian Digital Health Agency Clinical Knowledge Manager [cited: 2017-06-27]. Available from: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.839 &#xD;
+&#xD;
+Pathology (Data Specifications) Version 1.0 [Internet]. Sydney, Australia: National E-Health Transition Authority; 2007 May 29 [cited 2011 Jul 11]; Available at http://www.nehta.gov.au/component/docman/doc_download/962-pathology-v10&#xD;
+&#xD;
+Laboratory Technical Framework, Volume 3: Content, Revision 3.0 [Internet]. USA: IHE International; 2011 May 19; [cited 2011 Jul 11]. Available from: http://www.ihe.net/Technical_Framework/index.cfm#laboratory&#xD;
+&#xD;
+Hl7 FHIR Observation resource: HL7 [Internet]; [cited 2017 Jun 27]. Available from http://www.hl7.org/implement/standards/fhir/observation.html</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">16ACB1FB473C63B4BC99E2DDF970BED2</other_details>
+    <other_details id="build_uid">0d4d4802-dd56-45e3-accf-96ac97c242b3</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Dient zur Erfassung von Laborergebnissen als Panel/Profil von Einzelresultaten. Verbreitet im medizinischen Labor, z.B. bei biochemischen, hämatologischen und immunologischen Tests.</purpose>
+      <keywords>Labor, Pathologie, Panel, Profil</keywords>
+      <use>Dient zur Erfassung von Laborergebnissen als Panel/Profil von Einzelresultaten. Verbreitet im medizinischen Labor, z.B. bei biochemischen, hämatologischen und immunologischen Tests. Wird normalerweise als abgeleitete Klasse von OBSERVATION.laboratory_test_result verwendet.&#xD;
+&#xD;
+Wenn komplexere Resultatsstrukturen erforderlich sind, kann es hilfreich sein, den Archetyp zu spezialisieren oder durch einen anderen zu ersetzen.</use>
+      <misuse>Nicht zur Erfassung von makroskopischen/mikroskopischen Resultaten in der anatomischen Pathologie.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere laboratorieanalyser som en enkeltverdi eller i en analysepakke.</purpose>
+      <keywords>laboratorie</keywords>
+      <keywords>panel</keywords>
+      <keywords>batteri</keywords>
+      <keywords>analytt</keywords>
+      <keywords>analyse</keywords>
+      <keywords>svar</keywords>
+      <keywords>resultat</keywords>
+      <keywords>pakke</keywords>
+      <use>For å registrere laboratorieanalyser som en enkeltverdi eller i en analysepakke. Brukes normalt i arketypen OBSERVATION.laboratory_test.&#xD;
+&#xD;
+Navnene på elementene Laboratoriesvar/Svarverdi vil ordinært erstattes i en templat elller applikasjon med navnet på den spesifikke analysen. f.eks. "Hemoglobin", og ofte kodet med en terminologi som NLK, SNOMED CT eller LOINC.&#xD;
+&#xD;
+Der det kreves mer komplekse svarmønstre kan det være nødvendig å spesialisere denne arketypen, eller erstatte den med en annen.</use>
+      <misuse>Skal ikke brukes til å registrere funn ved patologiundersøkelser.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record laboratory test results in a panel/battery/profile structure common to clinical pathology testing for example biochemistry, haematology and immunology.</purpose>
+      <keywords>laboratory</keywords>
+      <keywords>pathology</keywords>
+      <keywords>panel</keywords>
+      <keywords>battery</keywords>
+      <keywords>profile</keywords>
+      <use>To record laboratory test results in a panel/battery structure common to clinical pathology testing  biochemistry, haematology and immunology. Normally used in conjunction with a parent &#xD;
+OBSERVATION.laboratory_test_result.&#xD;
+&#xD;
+Where other more complex result patterns are required it may be helpful to specialise this archetype or substitute another.</use>
+      <misuse>Not to be used to record Anatomical pathology macroscopic/microscopic findings.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Anneka Sargeant</author>
+    <author id="organisation">UMG Göttingen</author>
+    <author id="email">anneka.sargeant@med.uni-goettingen.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Nasjonal IKT HF</author>
+  </translations>
+  <uid>
+    <value>440253f1-61d9-49d3-ae27-58129bbeb6e0</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.laboratory_test_panel.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0013</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.laboratory_test_panel(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.laboratory_test_analyte(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.specimen(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.laboratory_test_panel(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.laboratory_test_analyte(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.specimen(-[a-zA-Z0-9_]+)*\.v0</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Laboratory test panel</items>
+        <items id="description">Laboratory test result as a panel/battery/profile structure common to clinical pathology testing.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Panel detail</items>
+        <items id="description">Further details including the individual analytes, specimen for the panel or a further nested panel.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">*Laboratory test panel(en)</items>
+        <items id="description">*Laboratory test result as a panel/battery format common to clinical pathology testing.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*Panel detail(en)</items>
+        <items id="description">*Further details including the individual analytes, specimen for the panel or a further nested panel.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Labortest-Panel</items>
+        <items id="description">Laborergebnis als Panel/Profil von Einzelresultaten. Verbreitet im medizinischen Labor.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Panel-Detail</items>
+        <items id="description">Weitere Details zum Panel, einschließlich der einzelnen Analyte, Proben für das Panel oder weitere, verschachtelte Panels.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

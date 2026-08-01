@@ -22,6 +22,13 @@ const XSD_V1_DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL"
 );
+/// The AOM2 archetype-schema dir of the v1 bundle — the input to `emit-aom2`.
+/// The bundle's own `examples/` documents live beside it and are the corpus the
+/// generated codec is gated against.
+const XSD_AOM2_DIR: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/AOM2"
+);
 /// v2 (namespace `.../v2`) XSD root (per-component release folders). Supplies the
 /// RM-instance types the v1 `ALL/` bundle lacks (EHR + demographic) or carries
 /// stale (extract) to the emit-xml input.
@@ -45,11 +52,12 @@ pub(crate) fn run() -> std::process::ExitCode {
         "emit-json" => cmd_emit_json(),
         "emit-rest" => cmd_emit_rest(),
         "emit-opt" => cmd_emit_opt(),
+        "emit-aom2" => cmd_emit_aom2(),
         "emit-rm-model" => cmd_emit_rm_model(),
         "emit-validate" => cmd_emit_validate(),
         other => {
             eprintln!(
-                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-rm-model`, or `emit-validate`"
+                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-aom2`, `emit-rm-model`, or `emit-validate`"
             );
             return std::process::ExitCode::from(EXIT_USAGE);
         }
@@ -339,22 +347,28 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Emit the OPT 1.4 model (`opt14`): typed Rust types + canonical-XML
-/// `ToXml`/`FromXml` for `OPERATIONAL_TEMPLATE`, generated from the AM/OPT
-/// constraint XSD closure (`Template.xsd` + includes). RM instance types
-/// resolve to the already-generated `openehr-base`/`openehr-rm` impls.
-fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
-    let base = compose("base")?;
-    let rm = compose("rm")?;
-    let base_specs = emittable_specs(&base.model, &base.own_schema);
-    let rm_specs = emittable_specs(&rm.model, &rm.own_schema);
+/// Emit one XSD-driven constraint-model module (`types.rs` + `impls.rs` +
+/// `mod.rs`) under `crates/openehr-its/src/<dir>`.
+///
+/// Shared by every `emit_opt` target so the three modules (`opt14`, `aom2`,
+/// `aom2_model`) stay structurally identical: only the XSD closure, the emission
+/// target (module path + banners) and the module surface differ. The generate/
+/// resolve partition is the same in all three — the closures share
+/// `Resource.xsd`+`BaseTypes.xsd` with the RM-instance set, and those shared types
+/// resolve to the already-generated `openehr-base`/`openehr-rm` XML impls while the
+/// archetype constraint model is generated fresh.
+fn emit_xsd_model(
+    base_specs: &std::collections::BTreeSet<String>,
+    rm_specs: &std::collections::BTreeSet<String>,
+    files: &[PathBuf],
+    dir: &str,
+    target: &'static emit_opt::ModelTarget,
+    module: &emit_opt::ModuleSpec,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let xsd = xsd::XsdModel::parse_files(files)?;
+    let model = emit_opt::OptModel::new(&xsd, base_specs, rm_specs, target);
 
-    // The AM/OPT constraint schemas share `Resource.xsd`+`BaseTypes.xsd` with the
-    // RM-instance set; those shared types resolve to the RM/BASE XML impls.
-    let xsd = xsd::XsdModel::parse_files(&xsd::am_files_v1(Path::new(XSD_V1_DIR)))?;
-    let model = emit_opt::OptModel::new(&xsd, &base_specs, &rm_specs);
-
-    let gen_dir = Path::new(ITS_ROOT).join("src/opt14");
+    let gen_dir = Path::new(ITS_ROOT).join("src").join(dir);
     std::fs::create_dir_all(&gen_dir)?;
 
     let mut unmatched = Vec::new();
@@ -363,7 +377,7 @@ fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
     let mod_path = gen_dir.join("mod.rs");
     std::fs::write(&types_path, model.emit_types())?;
     std::fs::write(&impls_path, model.emit_impls(&mut unmatched))?;
-    std::fs::write(&mod_path, emit_opt::OptModel::emit_mod())?;
+    std::fs::write(&mod_path, emit_opt::emit_module(module))?;
 
     let written = vec![types_path, impls_path, mod_path];
     rustfmt(&written)?;
@@ -374,6 +388,64 @@ fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
         unmatched.len()
     );
     Ok(())
+}
+
+/// Emit the OPT 1.4 model (`opt14`): typed Rust types + canonical-XML
+/// `ToXml`/`FromXml` for `OPERATIONAL_TEMPLATE`, generated from the AM/OPT
+/// constraint XSD closure (`Template.xsd` + includes). RM instance types
+/// resolve to the already-generated `openehr-base`/`openehr-rm` impls.
+fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
+    let base = compose("base")?;
+    let rm = compose("rm")?;
+    let base_specs = emittable_specs(&base.model, &base.own_schema);
+    let rm_specs = emittable_specs(&rm.model, &rm.own_schema);
+
+    emit_xsd_model(
+        &base_specs,
+        &rm_specs,
+        &xsd::am_files_v1(Path::new(XSD_V1_DIR)),
+        "opt14",
+        &emit_opt::OPT_TARGET,
+        &emit_opt::OPT_MODULE,
+    )
+}
+
+/// Emit BOTH AOM2 archetype XML serializations the vendored bundle publishes,
+/// each from its own closure into its own module:
+///
+/// - `aom2` — the **persistent** form (`P_Archetype.xsd` → `P_AUTHORED_ARCHETYPE`),
+///   the shape the bundle's 8 example documents carry;
+/// - `aom2_model` — the AOM **model** form (`Archetype.xsd` → `AUTHORED_ARCHETYPE`).
+///
+/// They are two closures rather than one merged model because both schemas
+/// declare the same top-level element `archetype` with different root types and
+/// define same-named supporting types; see [`xsd::AOM2_FILES`] /
+/// [`xsd::AOM2_MODEL_FILES`] for the full adjudication, including why the model
+/// form's entry points are typed to `AUTHORED_ARCHETYPE` and not to the
+/// `abstract` `ARCHETYPE` the schema's global element names.
+fn cmd_emit_aom2() -> Result<(), Box<dyn std::error::Error>> {
+    let base = compose("base")?;
+    let rm = compose("rm")?;
+    let base_specs = emittable_specs(&base.model, &base.own_schema);
+    let rm_specs = emittable_specs(&rm.model, &rm.own_schema);
+    let aom2_dir = Path::new(XSD_AOM2_DIR);
+
+    emit_xsd_model(
+        &base_specs,
+        &rm_specs,
+        &xsd::aom2_files(aom2_dir),
+        "aom2",
+        &emit_opt::AOM2_TARGET,
+        &emit_opt::AOM2_MODULE,
+    )?;
+    emit_xsd_model(
+        &base_specs,
+        &rm_specs,
+        &xsd::aom2_model_files(aom2_dir),
+        "aom2_model",
+        &emit_opt::AOM2_MODEL_TARGET,
+        &emit_opt::AOM2_MODEL_MODULE,
+    )
 }
 
 /// Emit the static RM attribute/type model (`openehr-rm/src/model/`) — the AQL

@@ -1,0 +1,279 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.inspection.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A generic archetype for recording the findings on inspection.">
+			use = <"For use with the exam clusters for recording findings on inspection">
+			keywords = <"inspect", "visual">
+			misuse = <"Should only be used in the exam observation">
+		>
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Inspection
+		items matches {
+			CLUSTER[id2] occurrences matches {0..1} matches {	-- Normal statements
+				items matches {
+					ELEMENT[id3] matches {	-- Normal statement
+						value matches {
+							DV_TEXT[id54] 
+						}
+					}
+				}
+			}
+			ELEMENT[id49] occurrences matches {0..1} matches {	-- Clinical Description
+				value matches {
+					DV_TEXT[id55] 
+				}
+			}
+			CLUSTER[id7] occurrences matches {0..1} matches {	-- Findings
+				items matches {
+					ELEMENT[id37] occurrences matches {0..1} matches {	-- Colour description
+						value matches {
+							DV_TEXT[id56] 
+						}
+					}
+					CLUSTER[id6] occurrences matches {0..1} matches {	-- Location
+						items matches {
+							ELEMENT[id23] matches {	-- Description
+								value matches {
+									DV_CODED_TEXT[id57] matches {
+										defining_code 
+									}
+								}
+							}
+						}
+					}
+					CLUSTER[id19] occurrences matches {0..1} matches {	-- Shape or distribution
+						items matches {
+							ELEMENT[id20] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT[id58] 
+								}
+							}
+							ELEMENT[id21] occurrences matches {0..1} matches {	-- Symmetrical
+								value matches {
+									DV_BOOLEAN[id59] matches {
+										value matches {True, False}
+									}
+								}
+							}
+						}
+					}
+					ELEMENT[id52] occurrences matches {0..1} matches {	-- Contour
+						value matches {
+							DV_TEXT[id60] 
+						}
+					}
+					ELEMENT[id28] occurrences matches {0..1} matches {	-- Overlying skin or surface
+						value matches {
+							DV_TEXT[id61] 
+						}
+					}
+					ELEMENT[id25] occurrences matches {0..1} matches {	-- Surrounds
+						value matches {
+							DV_TEXT[id62] 
+						}
+					}
+					CLUSTER[id29] occurrences matches {0..1} matches {	-- Edge
+						items matches {
+							ELEMENT[id34] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT[id63] 
+								}
+							}
+							ELEMENT[id30] occurrences matches {0..1} matches {	-- Definition
+								value matches {
+									DV_CODED_TEXT[id64] matches {
+										defining_code matches {[ac1]}		-- Definition (synthesised)
+									}
+								}
+							}
+						}
+					}
+					ELEMENT[id35] occurrences matches {0..1} matches {	-- Translucent
+						value matches {
+							DV_BOOLEAN[id65] matches {
+								value matches {True, False}
+							}
+						}
+					}
+					CLUSTER[id50] occurrences matches {0..1} matches {	-- Detail
+						items matches {
+							allow_archetype CLUSTER[id53] occurrences matches {0..1} matches {	-- Cluster: Exam
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam\.v1/}
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[id51] occurrences matches {0..1} matches {	-- Drawing
+				value matches {
+					DV_MULTIMEDIA[id66] matches {
+						media_type matches {[ac2]}		-- Drawing (synthesised)
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Inspection">
+				description = <"The findings on physical examination by inspection">
+			>
+			["id2"] = <
+				text = <"Normal statements">
+				description = <"An optional group of statements about the normality of the inspection">
+			>
+			["id3"] = <
+				text = <"Normal statement">
+				description = <"A specific statement about the normality of inspection">
+			>
+			["id6"] = <
+				text = <"Location">
+				description = <"The location of any findings">
+			>
+			["id7"] = <
+				text = <"Findings">
+				description = <"Specific findings on inspection">
+			>
+			["id19"] = <
+				text = <"Shape or distribution">
+				description = <"The shape or distribution of the object inspected">
+			>
+			["id20"] = <
+				text = <"Description">
+				description = <"Description of the ">
+			>
+			["id21"] = <
+				text = <"Symmetrical">
+				description = <"Whether the distribution is symmetrical">
+			>
+			["id23"] = <
+				text = <"Description">
+				description = <"Description of the location of the findings">
+			>
+			["id25"] = <
+				text = <"Surrounds">
+				description = <"Description of immediate surrounds to object">
+			>
+			["id28"] = <
+				text = <"Overlying skin or surface">
+				description = <"A description of the surface">
+			>
+			["id29"] = <
+				text = <"Edge">
+				description = <"Findings about the edge of the object under inspection">
+			>
+			["id30"] = <
+				text = <"Definition">
+				description = <"The nature of the edge of the object of examination">
+			>
+			["at31"] = <
+				text = <"Well defined">
+				description = <"The edge is clearly defined">
+			>
+			["at32"] = <
+				text = <"Moderately defined">
+				description = <"The edge is defined but less clear in places">
+			>
+			["at33"] = <
+				text = <"Poorly defined">
+				description = <"The edge is not defined clearly in many places">
+			>
+			["id34"] = <
+				text = <"Description">
+				description = <"Description of the edge or border of the object of inspection">
+			>
+			["id35"] = <
+				text = <"Translucent">
+				description = <"Is the object of inspection translucent?">
+			>
+			["id37"] = <
+				text = <"Colour description">
+				description = <"The colour of the object under inspection">
+			>
+			["id49"] = <
+				text = <"Clinical Description">
+				description = <"Clinical description of the findings on inspection">
+			>
+			["id50"] = <
+				text = <"Detail">
+				description = <"Detailed examination of a finding on inspection">
+			>
+			["id51"] = <
+				text = <"Drawing">
+				description = <"A drawing of the findings on inspection">
+			>
+			["id52"] = <
+				text = <"Contour">
+				description = <"The contour of the object of inspection">
+			>
+			["id53"] = <
+				text = <"Cluster: Exam">
+				description = <"Exam details">
+			>
+			["at34"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at35"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at36"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at37"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at38"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Definition (synthesised)">
+				description = <"The nature of the edge of the object of examination (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Drawing (synthesised)">
+				description = <"A drawing of the findings on inspection (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at34"] = <http://openehr.org/id/425>
+			["at35"] = <http://openehr.org/id/426>
+			["at36"] = <http://openehr.org/id/427>
+			["at37"] = <http://openehr.org/id/428>
+			["at38"] = <http://openehr.org/id/429>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at31", "at32", "at33">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at34", "at35", "at36", "at37", "at38">
+		>
+	>

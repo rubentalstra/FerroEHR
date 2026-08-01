@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2008-07-07</original_author>
+    <original_author id="name">D B Hutchinson</original_author>
+    <original_author id="organisation">NHS CFH UK</original_author>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, UK</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">EB35384930A3C9471F6C43E2C2D2B773</other_details>
+    <other_details id="build_uid">e71a528c-347d-4688-a0cb-2c7a871303da</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere opplysninger om målgruppe for en distribusjon eller melding. Dette kan være til en navngitt gruppe, kategori, til enkeltpersoner eller organisasjoner.</purpose>
+      <keywords>kopi til</keywords>
+      <keywords>melding</keywords>
+      <keywords>notifikasjon</keywords>
+      <keywords>beskjed</keywords>
+      <keywords>notat</keywords>
+      <keywords>distribusjon</keywords>
+      <keywords>e-post</keywords>
+      <keywords>e-mail</keywords>
+      <keywords>fax</keywords>
+      <keywords>brev</keywords>
+      <use>Brukes normalt i sammenheng med en serviceforespørsel, rapport eller annen kommunikasjon som er ment å bli distribuert til andre parter. Kan brukes som en del av en forespørsel eller annen instruks om å angi andre parter som bør inkluderes eller 'med kopi "i responsen, og for å indikere hvilke andre partefir som faktisk ble notifisert i responsen.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the details of the target of a distribution or notification. This may be to a named group or category or to individual persons or organisations.</purpose>
+      <keywords>cc</keywords>
+      <keywords>notification</keywords>
+      <use>Normally used within the context of a service request, report or other communication which is intended to be distributed to other parties. May be used as part of a request or other instruction to specify other parties who should be included or 'cced' in the response, and to indicate which other parties were actually notified in the response.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sl</code_string>
+      </language>
+      <purpose>Skupina naslovnikov, seznam prejemnikov</purpose>
+      <keywords>cc</keywords>
+      <keywords>distribution list</keywords>
+      <keywords>prejemnik</keywords>
+      <keywords>naslovnik</keywords>
+      <keywords>skupina naslovnikov</keywords>
+      <keywords>seznam prejemnikov</keywords>
+      <use />
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Lars Bitsch-Larsen</author>
+    <author id="organisation">Haukeland University Hospital of Bergen, Norway</author>
+    <author id="email">lbla@helse-bergen.no</author>
+    <accreditation>MD, DEAA, MBA, spec in anesthesia, spec in tropical medicine.</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sl</code_string>
+    </language>
+    <author id="name">Uroš Rajkovič, Biljana Prinčič</author>
+    <author id="organisation">Slovenia</author>
+    <author id="email">uros.rajkovic@fov.uni-mb.si, biljana.princic@marand.si</author>
+  </translations>
+  <uid>
+    <value>d06666ef-9c25-34f4-b203-7d42fe4ddd01</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.distribution.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0012</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_BOOLEAN</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0011</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_INTERNAL_REF">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <target_path>/items[at0003]</target_path>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.individual_professional\.v0|openEHR-EHR-CLUSTER\.individual_professional\.v1|openEHR-EHR-CLUSTER\.individual_personal\.v0|openEHR-EHR-CLUSTER\.individual_personal\.v1|openEHR-EHR-CLUSTER\.organisation\.v0|openEHR-EHR-CLUSTER\.organisation\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.individual_professional\.v0|openEHR-EHR-CLUSTER\.individual_professional\.v1|openEHR-EHR-CLUSTER\.individual_personal\.v0|openEHR-EHR-CLUSTER\.individual_personal\.v1|openEHR-EHR-CLUSTER\.organisation\.v0|openEHR-EHR-CLUSTER\.organisation\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Distribution</items>
+        <items id="description">Details of the target of communication distribution, whether to identified individual parties or as a category.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Communication mode</items>
+        <items id="description">The communications mode by which the distribution is to be made.</items>
+        <items id="comment">e.g. fax, email.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Date sent</items>
+        <items id="description">Date that the distribution was sent.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Recipient details</items>
+        <items id="description">An individual person or organisation to whom the distribution applies.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Group category</items>
+        <items id="description">A named category of group e.g. Social work, patient representatives to whom the distribution applies.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Recipient identifier</items>
+        <items id="description">Unique identifier for an individual recipient.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Individual recipient</items>
+        <items id="description">Distribution details for an individual recipient.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Urgent</items>
+        <items id="description">If true the notification should be distributed made as a matter of urgency.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sl">
+      <items code="at0000">
+        <items id="text">Obveščanje</items>
+        <items id="description">Seznam prejemnikov - skupina posameznikov, ki so naslovniki sporočila</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Način komunikacija</items>
+        <items id="description">Način obveščanja</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Datum odpošiljanja</items>
+        <items id="description">Datum obveščanja - distribuiranja sporočila</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Podrobnosti o prejemniku</items>
+        <items id="description">Posameznik ali organizacija, na koga je naslovljeno sporočilo</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Skupina</items>
+        <items id="description">Ime skupine prejemnikov, npr. 'zdravniki predstojniki oddelkov'</items>
+      </items>
+      <items code="at0010">
+        <items id="text">ID prejemnika</items>
+        <items id="description">Unikatni identifikator posameznika (primarni ključ, ki določa posameznika)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Posamezni prejemnik</items>
+        <items id="description">Podatki o posameznem prejemniku</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Nujno</items>
+        <items id="description">Če potrebna nujna obravnava?</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Distribusjon</items>
+        <items id="description">Detaljer om den målgruppen som meddelelsen skal distribueres til, enten for identifikasjon av et individuelle parter eller som kategori.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Kommunikasjons modus</items>
+        <items id="description">Den metode som anvendes til distribusjon av meddelelsen.</items>
+        <items id="comment">fx fax, e-post, brev.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Forsendelse dato</items>
+        <items id="description">Dato for utsending av meddelelse.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Mottaker dealjer</items>
+        <items id="description">En individuell person eller organisasjon som meddelelsen vedrører.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Gruppe kategori</items>
+        <items id="description">En navngitt gruppe fx sosialt arbeide, pasient representanter som meddelelsen vedrører.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Mottaker identifikator</items>
+        <items id="description">Unik identifikator for en individuell mottaker.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Individuell mottaker</items>
+        <items id="description">Distribusjons detaljer for en individuell mottaker.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Haster</items>
+        <items id="description">Hvis sant: meddelelsen bør sendes som hastemeddelelse.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

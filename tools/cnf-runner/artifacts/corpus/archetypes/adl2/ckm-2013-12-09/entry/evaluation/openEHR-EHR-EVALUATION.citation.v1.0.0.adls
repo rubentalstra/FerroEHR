@@ -1,0 +1,58 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.citation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"18/06/2010">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Shell ENTRY archetype to contain the Citation cluster.">
+			use = <"Use as the shell ENTRY archetype to contain the CLUSTER.citation archetype when a citation is required to occur as a stand-alone instance of information. The actual data elements are fully detailed within CLUSTER.citation, which is able to be inserted within a slot in this EVALUATION or as part of the fuller context of any other archetype, as required.">
+			keywords = <"citation", "reference">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", ...>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"D371F261D964C649EE5CDC90E440C3C2">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Citation
+		data matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					allow_archetype CLUSTER[id3] matches {	-- Citation content
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.citation(-[a-zA-Z0-9_]+)*\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Citation">
+				description = <"Reference to information held elsewhere, in the same EHR or external to the EHR.">
+			>
+			["id3"] = <
+				text = <"Citation content">
+				description = <"Citation details (specified in CLUSTER archetype).">
+			>
+		>
+	>

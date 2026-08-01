@@ -1,0 +1,144 @@
+﻿archetype (adl_version=1.4; uid=9d344b24-50ab-438d-9020-41e5333ec2bf)
+	openEHR-EHR-OBSERVATION.telecommunication.v0
+
+concept
+	[at0000]	-- Telecommunication Record
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2013-01-25">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record evidence of interactions between healthcare providers that support the record of health care.">
+			use = <"Use to record the (bi-directional) text conversation, or video- or audio-conference recording, between two or more parties and which is captured as part of the record of health care. For example, capture a phone or online chat conversation between remote healthcare providers about patient management decisions; or audio- and video-conference recordings that record aspects of telemedicine consultations or case conferences. 
+
+The record of interaction may take place over a specified interval of time.">
+			keywords = <"chat", "videoconference", "audioconference", "conversation", "discussion", "teleconference", "telehealth", "telecommunication">
+			misuse = <"">
+			copyright = <"© Australian Digital Health Agency, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Stephen Chu, NEHTA, Australia", "Christian Ghan, The Chris O'Brien Lifehouse at RPA, Australia", "Sam Heard, Ocean Informatics, Australia (Editor)", "Oliver Hosking, Remote Health NT, Australia", "Heather Leslie, Atomica Informatics, Australia (Editor)", "Fabian Schwarz, NT Health, Australia", "Gary Sinclair, NT DoH, Australia">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Derived from: Telecommunication record, Draft archetype [Internet]. Australian Digital Health Agency (NEHTA), ADHA Clinical Knowledge Manager. Authored: 2013 Jan 25. Available at: http://dcm.nehta.org.au/ckm#showArchetype_1013.1.1198_4 (discontinued)">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics, Australia<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"F3B6F79FCF2DF34B6799439152C8E9AC">
+		["build_uid"] = <"bc080c9f-9ec6-4678-b8e6-bba14c4f8a39">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Telecommunication Record
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..*} matches {	-- Start Time
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0005] occurrences matches {0..1} matches {	-- Record
+										value matches {
+											DV_MULTIMEDIA matches {
+												media_type matches {[openEHR::]}
+											}
+										}
+									}
+									ELEMENT[at0004] occurrences matches {0..*} matches {	-- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+					INTERVAL_EVENT[at0006] occurrences matches {0..*} matches {	-- Recording Interval
+						math_function matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {[openehr::640]}
+							}
+						}
+						data matches {
+							use_node ITEM_TREE /data[at0001]/events[at0002]/data[at0003]	-- /data[Event Series]/events[Start Time]/data[Tree]
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0008] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0009] occurrences matches {0..*} matches {	-- Device
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+					allow_archetype CLUSTER[at0010] occurrences matches {0..*} matches {	-- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Telecommunication Record">
+					description = <"Record of a telecommunication, usually a text conversation, or video- or teleconference recording between two or more parties, captured as part of the record of health care.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Start Time">
+					description = <"The time that represents the start of the telecommunication.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the telecommunication.">
+				>
+				["at0005"] = <
+					text = <"Record">
+					description = <"The actual record of any telecommunication between two or more healthcare providers.">
+				>
+				["at0006"] = <
+					text = <"Recording Interval">
+					description = <"The period of time over which the telecommunication was recorded.">
+				>
+				["at0008"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0009"] = <
+					text = <"Device">
+					description = <"Details of device used to capture the telecommunication.">
+				>
+				["at0010"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+	>

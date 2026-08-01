@@ -37,7 +37,36 @@ is refused too). Proven by
 
 - **NEVER hand-edit anything under a `generated/` directory** — the
   `codegen-drift` CI job regenerates and fails on any diff
-  (`/regen-codegen` runs emit + emit-xml + emit-rest + the check).
+  (`/regen-codegen` runs emit + emit-xml + emit-rest + the check). The three
+  XSD-driven ARCHETYPE modules `opt14/`, `aom2/` and `aom2_model/` are generated
+  wholesale (every file carries the `@generated` banner) and are drift-guarded
+  the same way, even though they are not under a `generated/` dir.
+- **Three XSD-driven archetype codecs, one pipeline** (`render/emit_opt.rs`,
+  one curated closure each in `load/xsd.rs`):
+
+  | module | subcommand | closure | root |
+  |---|---|---|---|
+  | `opt14` | `emit-opt` | `AM_FILES_V1` (`Template.xsd`) | `<template>` = `OPERATIONAL_TEMPLATE` |
+  | `aom2` | `emit-aom2` | `AOM2_FILES` (`P_Archetype.xsd`) | `<archetype>` = `P_AUTHORED_ARCHETYPE` |
+  | `aom2_model` | `emit-aom2` | `AOM2_MODEL_FILES` (`Archetype.xsd`) | `<archetype>` = `AUTHORED_ARCHETYPE` |
+
+  Everything module-specific is an `emit_opt::ModelTarget` parameter (module
+  path, `@generated` banner, doc labels), never a constant: a hardcoded value
+  silently stamps one module's identity onto another's files.
+  The two AOM2 serializations stay SEPARATE closures — both schemas declare the
+  top-level element `archetype` with different root types and define same-named
+  supporting types, so merging them resolves the abstract slots inconsistently.
+  `aom2_model`'s entry points are typed to `AUTHORED_ARCHETYPE`, not to the
+  `ARCHETYPE` its global element names: `ARCHETYPE` is `abstract="true"` with no
+  derived type in the closure (`AUTHORED_ARCHETYPE` extends `AUTHORED_RESOURCE`
+  and re-uses the body via `<xs:group ref="ARCHETYPE"/>`).
+- `openehr-its` has NO model-form instance corpus and cannot get one (all 8
+  vendored `AOM2/examples/*.xml` are persistent-form; upstream publishes ADL text
+  only). `tests/it/aom2_model_xml.rs` is therefore a construct → serialize →
+  parse self-consistency gate, and `tests/it/aom2_xml.rs` reads all 8 examples.
+  Both assert the archetype BODY is non-empty, because that body sits behind
+  `xs:group` references — a codec that dropped group refs would round-trip every
+  document vacuously over an empty envelope.
 - The vendored inputs are authoritative: XSDs at `schemas/xml/`, ITS-JSON
   schema at `schemas/json/` (validation oracle), REST OAS at
   `vendor/rest-oas/` — pinned to the same commit as the spec text under

@@ -1,0 +1,1092 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2012-05-03</original_author>
+    <original_author id="name">Gustavo Bacelar-Silva</original_author>
+    <original_author id="organisation">Faculty of Medicine of Porto University</original_author>
+    <original_author id="email">mail@gustavobacelar.com</original_author>
+    <other_contributors>Rong Chen, Cambio Healthcare Systems, Sweden</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>José Hilário Patriarca de Almeida, Faculty of Medicine of Porto University, Portugal</other_contributors>
+    <other_contributors>Ricardo Cruz-Correia, Faculty of Medicine of Porto University, Portugal</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">HDCN-- Calculators, GFR / 1.73 m² by MDRD (± SUN and SAlb) Calculator. Available at: http://www.hdcn.com/calcf/gfr.htm. Accessed May, 2012.&#xD;
+&#xD;
+Levey AS, Bosch JP, Lewis JB, Greene T, Rogers N, Roth D. A more accurate method to estimate glomerular filtration rate from serum creatinine: A new prediction equation. Modification of Diet in Renal Disease Study Group. Ann Intern Med 1999; 130: 461-70&#xD;
+&#xD;
+Levey AS, Coresh J, Greene T, Stevens LA, Zhang YL, Hendriksen S, Kusek JW, Van Lente F; Chronic Kidney Disease Epidemiology Collaboration. Using standardized serum creatinine values in the modification of diet in renal disease study equation for estimating glomerular filtration rate.Ann Intern Med. 2006 Aug 15; 145 (4): 247-54.&#xD;
+&#xD;
+NKDEP - National Kideny Disease Education Program, GFR Calculators. Available at: http://www.nkdep.nih.gov/lab-evaluation/gfr-calculators.shtml. Accessed May, 2012.&#xD;
+&#xD;
+Schwartz GJ, Muñoz A, Schneider MF, et al. New equations to estimate GFR in children with CKD. J Am Soc Nephrol. 2009: 20 (3): 629-37.&#xD;
+&#xD;
+Schwartz GJ and Work DF. Measurement and estimation of GFR in children and adolescents. Clin J Am Soc Nephrol. 2009; 4 (11): 1832-43.&#xD;
+&#xD;
+Colin C. Geddes, Yook Mun Woo, Stefan Brady, Glomerular filtration rate—what is the rationale and justification of normalizing GFR for body surface area?, Nephrology Dialysis Transplantation, Volume 23, Issue 1, January 2008, Pages 4–6, https://doi.org/10.1093/ndt/gfm662</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">783378739686DE258C9E187CEE934050</other_details>
+    <other_details id="build_uid">e267f265-ed9a-4c62-8231-0174d25b6c42</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>*To record the estimated glomerular filtration rate (eGFR) of an individual. (en)</purpose>
+      <keywords>kidney function</keywords>
+      <keywords>glomerular filtration rate</keywords>
+      <keywords>GFR</keywords>
+      <keywords>creatinine</keywords>
+      <keywords>kidney</keywords>
+      <keywords>chronic kidney disease</keywords>
+      <keywords>CKD-EPI formula</keywords>
+      <keywords>MDRD formula</keywords>
+      <keywords>Schwartz equation</keywords>
+      <use>*Use to record the estimated glomerular filtration rate (eGFR) of an individual.&#xD;
+&#xD;
+There are multiple formulas used to calculate the eGFR. The formula used to calculate the eGFR can be recorded in the Protocol.&#xD;
+&#xD;
+It is also possible to record the method of recording - either calculated and directly entered by the clinician or calculated and entered by the clinical software system. (en)</use>
+      <misuse>*Not to be used to record values of formula components, such as creatinine. These should be recorded using archetypes designed for this purpose, such as OBSERVATION.laboratory_test_result. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>si</code_string>
+      </language>
+      <purpose>*To record the estimated glomerular filtration rate (eGFR) of an individual. (en)</purpose>
+      <keywords>kidney function</keywords>
+      <keywords>glomerular filtration rate</keywords>
+      <keywords>GFR</keywords>
+      <keywords>creatinine</keywords>
+      <keywords>kidney</keywords>
+      <keywords>chronic kidney disease</keywords>
+      <keywords>CKD-EPI formula</keywords>
+      <keywords>MDRD formula</keywords>
+      <keywords>Schwartz equation</keywords>
+      <use>*Use to record the estimated glomerular filtration rate (eGFR) of an individual.&#xD;
+&#xD;
+There are multiple formulas used to calculate the eGFR. The formula used to calculate the eGFR can be recorded in the Protocol.&#xD;
+&#xD;
+It is also possible to record the method of recording - either calculated and directly entered by the clinician or calculated and entered by the clinical software system. (en)</use>
+      <misuse>*Not to be used to record values of formula components, such as creatinine. These should be recorded using archetypes designed for this purpose, such as OBSERVATION.laboratory_test_result. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>el</code_string>
+      </language>
+      <purpose>*To record the estimated glomerular filtration rate (eGFR) of an individual. (en)</purpose>
+      <keywords>kidney function</keywords>
+      <keywords>glomerular filtration rate</keywords>
+      <keywords>GFR</keywords>
+      <keywords>creatinine</keywords>
+      <keywords>kidney</keywords>
+      <keywords>chronic kidney disease</keywords>
+      <keywords>CKD-EPI formula</keywords>
+      <keywords>MDRD formula</keywords>
+      <keywords>Schwartz equation</keywords>
+      <use>*Use to record the estimated glomerular filtration rate (eGFR) of an individual.&#xD;
+&#xD;
+There are multiple formulas used to calculate the eGFR. The formula used to calculate the eGFR can be recorded in the Protocol.&#xD;
+&#xD;
+It is also possible to record the method of recording - either calculated and directly entered by the clinician or calculated and entered by the clinical software system. (en)</use>
+      <misuse>*Not to be used to record values of formula components, such as creatinine. These should be recorded using archetypes designed for this purpose, such as OBSERVATION.laboratory_test_result. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the estimated glomerular filtration rate (eGFR) of an individual.</purpose>
+      <keywords>kidney function</keywords>
+      <keywords>glomerular filtration rate</keywords>
+      <keywords>GFR</keywords>
+      <keywords>creatinine</keywords>
+      <keywords>kidney</keywords>
+      <keywords>chronic kidney disease</keywords>
+      <keywords>CKD-EPI formula</keywords>
+      <keywords>MDRD formula</keywords>
+      <keywords>Schwartz equation</keywords>
+      <use>Use to record the estimated glomerular filtration rate (eGFR) of an individual.&#xD;
+&#xD;
+There are multiple formulas used to calculate the eGFR. The formula used to calculate the eGFR can be recorded in the Protocol.&#xD;
+&#xD;
+It is also possible to record the method of recording - either calculated and directly entered by the clinician or calculated and entered by the clinical software system.</use>
+      <misuse>Not to be used to record values of formula components, such as creatinine. These should be recorded using archetypes designed for this purpose, such as OBSERVATION.laboratory_test_result.&#xD;
+			Not to be used to record the directly measured Glomerular filtration rate - Use the OBSERVATION.laboratory_test_result for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>da</code_string>
+      </language>
+      <purpose>*To record the estimated glomerular filtration rate (eGFR) of an individual. (en)</purpose>
+      <keywords>*kidney function(en)</keywords>
+      <keywords>*glomerular filtration rate(en)</keywords>
+      <keywords>*GFR(en)</keywords>
+      <keywords>*creatinine(en)</keywords>
+      <keywords>*kidney(en)</keywords>
+      <keywords>*chronic kidney disease(en)</keywords>
+      <keywords>*CKD-EPI formula(en)</keywords>
+      <keywords>*MDRD formula(en)</keywords>
+      <keywords>*Schwartz equation(en)</keywords>
+      <use>*Use to record the estimated glomerular filtration rate (eGFR) of an individual.&#xD;
+&#xD;
+There are multiple formulas used to calculate the eGFR. The formula used to calculate the eGFR can be recorded in the Protocol.&#xD;
+&#xD;
+It is also possible to record the method of recording - either calculated and directly entered by the clinician or calculated and entered by the clinical software system. (en)</use>
+      <misuse>*Not to be used to record values of formula components, such as creatinine. These should be recorded using archetypes designed for this purpose, such as OBSERVATION.laboratory_test_result. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Jimmy Axelsson</author>
+    <author id="organisation">Cambio Healthcare Systems</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>si</code_string>
+    </language>
+    <author id="name">?</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>el</code_string>
+    </language>
+    <author id="name">?</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>da</code_string>
+    </language>
+    <author id="name">?</author>
+  </translations>
+  <uid>
+    <value>00aabfe0-aedc-4157-899d-5c5a8db20490</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.estimated_glomerular_filtration_rate.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <property>
+                          <terminology_id>
+                            <value>openehr</value>
+                          </terminology_id>
+                          <code_string>126</code_string>
+                        </property>
+                        <list>
+                          <units>mL/min/{1.73_m2}</units>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0020</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <units>ml/min</units>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0018</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0013</code_list>
+                    <code_list>at0014</code_list>
+                    <code_list>at0015</code_list>
+                    <code_list>at0017</code_list>
+                    <code_list>at0016</code_list>
+                    <code_list>at0021</code_list>
+                    <code_list>at0025</code_list>
+                    <code_list>at0026</code_list>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0007</code_list>
+                    <code_list>at0008</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0024</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="da">
+      <items code="at0000">
+        <items id="text">*Estimated glomerular filtration rate (eGFR) (en)</items>
+        <items id="description">*Calculated estimate of glomerular filtration rate as an indicator of renal function. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*History(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Any timed recording of Body Mass Index.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Single(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Relative eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate normalised to a body surface area of 1.73m² (mL/min/1.73m²). (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Method(en)</items>
+        <items id="description">*The method of entering the Estimated Glomerular Filtration Rate.(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Automatic entry(en)</items>
+        <items id="description">*Calculated and entered automatically by the clinical system. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Direct entry(en)</items>
+        <items id="description">*Calculated and entered directly by user. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Formula(en)</items>
+        <items id="description">*Formula used to calculate the Estimated Glomerular Filtration Rate.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*MDRD formula - non-IDMS-normalized serum Cr(en)</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using standard creatinine measurement. (en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">*MDRD formula - IDMS-normalized serum Cr(en)</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using creatinine measured by an IDMS-calibrated assay. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">*CKD-EPI Creatinine (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Cockcroft-Gault formula(en)</items>
+        <items id="description">*Estimated creatinine clearance rate (eCCr) using Cockcroft-Gault formula. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Bedside Schwartz equation(en)</items>
+        <items id="description">*Bedside IDMS-traceable Schwartz GFR Calculator for Children. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">kommentar</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Absolute eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate calculated using the relative eGFR, weight and height. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*LM Revised(en)</items>
+        <items id="description">*Revised Lund-Malmö Study equation. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Extension (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">*CKD-EPI Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using cystatin C. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*CKD-EPI Creatinine-Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine and cystatin C. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="el">
+      <items code="at0000">
+        <items id="text">*Estimated glomerular filtration rate (eGFR) (en)</items>
+        <items id="description">*Calculated estimate of glomerular filtration rate as an indicator of renal function. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*History(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Any timed recording of Body Mass Index.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Single(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Relative eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate normalised to a body surface area of 1.73m² (mL/min/1.73m²). (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Method(en)</items>
+        <items id="description">*The method of entering the Estimated Glomerular Filtration Rate.(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Automatic entry(en)</items>
+        <items id="description">*Calculated and entered automatically by the clinical system. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Direct entry(en)</items>
+        <items id="description">*Calculated and entered directly by user. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">*Formula(en)</items>
+        <items id="description">*Formula used to calculate the Estimated Glomerular Filtration Rate.(en)</items>
+      </items>
+      <items code="at0013">
+        <items id="text">*MDRD formula - non-IDMS-normalized serum Cr(en)</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using standard creatinine measurement. (en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">*MDRD formula - IDMS-normalized serum Cr(en)</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using creatinine measured by an IDMS-calibrated assay. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">*CKD-EPI Creatinine (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">*Cockcroft-Gault formula(en)</items>
+        <items id="description">*Estimated creatinine clearance rate (eCCr) using Cockcroft-Gault formula. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">*Bedside Schwartz equation(en)</items>
+        <items id="description">*Bedside IDMS-traceable Schwartz GFR Calculator for Children. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Σχόλιο</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Absolute eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate calculated using the relative eGFR, weight and height. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*LM Revised(en)</items>
+        <items id="description">*Revised Lund-Malmö Study equation. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Extension (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">*CKD-EPI Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using cystatin C. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*CKD-EPI Creatinine-Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine and cystatin C. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Estimated glomerular filtration rate (eGFR)</items>
+        <items id="description">Calculated estimate of glomerular filtration rate as an indicator of renal function.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Any timed recording of Body Mass Index.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Single</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Relative eGFR</items>
+        <items id="description">Estimation of glomerular filtration rate normalised to a body surface area of 1.73m² (mL/min/1.73m²).</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Method</items>
+        <items id="description">The method of entering the Estimated Glomerular Filtration Rate.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Automatic entry</items>
+        <items id="description">Calculated and entered automatically by the clinical system.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Direct entry</items>
+        <items id="description">Calculated and entered directly by user.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Formula</items>
+        <items id="description">Formula used to calculate the Estimated Glomerular Filtration Rate.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">MDRD formula - non-IDMS-normalized serum Cr</items>
+        <items id="description">Modification of Diet in Renal Disease study formula using standard creatinine measurement.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">MDRD formula - IDMS-normalized serum Cr</items>
+        <items id="description">Modification of Diet in Renal Disease study formula using creatinine measured by an IDMS-calibrated assay.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">CKD-EPI Creatinine</items>
+        <items id="description">Chronic Kidney Disease Epidemiology Collaboration formula using creatinine.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Cockcroft-Gault formula</items>
+        <items id="description">Estimated creatinine clearance rate (eCCr) using Cockcroft-Gault formula.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Bedside Schwartz equation</items>
+        <items id="description">Bedside IDMS-traceable Schwartz GFR Calculator for Children.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the eGFR, not captured in other fields.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Absolute eGFR</items>
+        <items id="description">Estimation of glomerular filtration rate calculated using the relative eGFR, weight and height.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">LM Revised</items>
+        <items id="description">Revised Lund-Malmö Study equation.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Extension</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">CKD-EPI Cystatin C</items>
+        <items id="description">Chronic Kidney Disease Epidemiology Collaboration formula using cystatin C.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">CKD-EPI Creatinine-Cystatin C</items>
+        <items id="description">Chronic Kidney Disease Epidemiology Collaboration formula using creatinine and cystatin C.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">*Estimated glomerular filtration rate (eGFR) (en)</items>
+        <items id="description">*Calculated estimate of glomerular filtration rate as an indicator of renal function. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Historia</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Vilken händelse som helst</items>
+        <items id="description">Daterad registrering av Body Mass Index.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Träd</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Relative eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate normalised to a body surface area of 1.73m² (mL/min/1.73m²). (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Metod</items>
+        <items id="description">Metoden som används för att registrera värdet av den beräknade glomerulära filtrationshastigheten.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Automatisk registrering</items>
+        <items id="description">*Calculated and entered automatically by the clinical system. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Direktregistrering</items>
+        <items id="description">*Calculated and entered directly by user. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Formel</items>
+        <items id="description">Formeln som används för att beräkna den glomerulära filtrationshastigheten. </items>
+      </items>
+      <items code="at0013">
+        <items id="text">MDRD-formel - ej IDMS-normaliserat serum Cr</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using standard creatinine measurement. (en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">MDRD-formel - IDMS-normaliserat serum Cr</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using creatinine measured by an IDMS-calibrated assay. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">*CKD-EPI Creatinine (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Cockcroft-Gault formel</items>
+        <items id="description">*Estimated creatinine clearance rate (eCCr) using Cockcroft-Gault formula. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Bedside Schwartz ekvation</items>
+        <items id="description">*Bedside IDMS-traceable Schwartz GFR Calculator for Children. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Kommentar</items>
+        <items id="description">Utrymme för ytterligare kommentarer.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Absolute eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate calculated using the relative eGFR, weight and height. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*LM Revised(en)</items>
+        <items id="description">*Revised Lund-Malmö Study equation. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Extension (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">*CKD-EPI Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using cystatin C. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*CKD-EPI Creatinine-Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine and cystatin C. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="si">
+      <items code="at0000">
+        <items id="text">*Estimated glomerular filtration rate (eGFR) (en)</items>
+        <items id="description">*Calculated estimate of glomerular filtration rate as an indicator of renal function. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*History(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Any timed recording of Body Mass Index.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Single</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Relative eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate normalised to a body surface area of 1.73m² (mL/min/1.73m²). (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Method</items>
+        <items id="description">The method of entering the Estimated Glomerular Filtration Rate.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Automatic entry</items>
+        <items id="description">*Calculated and entered automatically by the clinical system. (en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Direct entry</items>
+        <items id="description">*Calculated and entered directly by user. (en)</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Formula</items>
+        <items id="description">Formula used to calculate the Estimated Glomerular Filtration Rate.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">MDRD formula - non-IDMS-normalized serum Cr</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using standard creatinine measurement. (en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">MDRD formula - IDMS-normalized serum Cr</items>
+        <items id="description">*Modification of Diet in Renal Disease study formula using creatinine measured by an IDMS-calibrated assay. (en)</items>
+      </items>
+      <items code="at0015">
+        <items id="text">*CKD-EPI Creatinine (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine. (en)</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Cockcroft-Gault formula</items>
+        <items id="description">*Estimated creatinine clearance rate (eCCr) using Cockcroft-Gault formula. (en)</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Bedside Schwartz equation</items>
+        <items id="description">*Bedside IDMS-traceable Schwartz GFR Calculator for Children. (en)</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Comment</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Absolute eGFR (en)</items>
+        <items id="description">*Estimation of glomerular filtration rate calculated using the relative eGFR, weight and height. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*LM Revised(en)</items>
+        <items id="description">*Revised Lund-Malmö Study equation. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Extension (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">*CKD-EPI Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using cystatin C. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*CKD-EPI Creatinine-Cystatin C (en)</items>
+        <items id="description">*Chronic Kidney Disease Epidemiology Collaboration formula using creatinine and cystatin C. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

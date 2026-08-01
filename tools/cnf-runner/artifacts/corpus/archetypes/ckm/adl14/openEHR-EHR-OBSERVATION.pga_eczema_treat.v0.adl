@@ -1,0 +1,137 @@
+﻿archetype (adl_version=1.4; uid=1a7803e5-9bd0-4ca9-a0bc-6d52305f06d5)
+	openEHR-EHR-OBSERVATION.pga_eczema_treat.v0
+
+concept
+	[at0000]	-- PGA eczema (TREAT)
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Dmitri Wall">
+		["organisation"] = <"Irish Skin Foundation">
+		["email"] = <"dmitri.wall@gmail.com">
+		["date"] = <"2015-02-05">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To be used by a patient to estimate the severity of their atopic dermatitis. This PGA is being utilised by the TREAT eczema group.">
+			use = <"">
+			keywords = <"Atopic Dermatitis", "Dermatology", "Disease severity score", "Effectiveness outcome parameter", "Severity scale">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Ian McNicoll, freshEHR Clinical Informatics, UK", ...>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"The treatment of severe atopic eczema trial (TREAT) trial. Available from: http://www.isrctn.com/ISRCTN15837754">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"C2F5B4EAEFFE61CF1BA1ADA368E4A059">
+		["build_uid"] = <"398e6531-69e4-4a65-8352-fd897eb7d56b">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- PGA eczema (TREAT)
+		data matches {
+			HISTORY[at0001] matches {    -- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Assessment
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007],
+											3|[local::at0008],
+											4|[local::at0009],
+											5|[local::at0010]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0011] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0012] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"PGA eczema (TREAT)">
+					description = <"Patient global assessment (PGA) to describe the severity of their eczema for the treatment of severe atopic eczema trial (TREAT).">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Assessment">
+					description = <"The patient's assessment of their eczema.">
+				>
+				["at0005"] = <
+					text = <"Clear">
+					description = <"Clear.">
+				>
+				["at0006"] = <
+					text = <"Almost clear">
+					description = <"Almost clear.">
+				>
+				["at0007"] = <
+					text = <"Mild disease">
+					description = <"Mild disease.">
+				>
+				["at0008"] = <
+					text = <"Moderate disease">
+					description = <"Moderate disease.">
+				>
+				["at0009"] = <
+					text = <"Severe disease">
+					description = <"Severe disease.">
+				>
+				["at0010"] = <
+					text = <"Very severe disease">
+					description = <"Very severe disease.">
+				>
+				["at0011"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0012"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+	>

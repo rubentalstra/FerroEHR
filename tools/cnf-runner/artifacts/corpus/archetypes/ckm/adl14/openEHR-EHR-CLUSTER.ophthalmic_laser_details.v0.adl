@@ -1,0 +1,304 @@
+﻿archetype (adl_version=1.4; uid=b5bc83c9-5229-486d-86e0-7c1bbf47e52b)
+	openEHR-EHR-CLUSTER.ophthalmic_laser_details.v0
+
+concept
+	[at0000]	-- Ophthalmic laser procedure details
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			author = <
+				["name"] = <"?">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Aitor Eguzkitza">
+		["organisation"] = <"Universidad Pública de Navarra - Complejo Hospitalario de Navarra">
+		["email"] = <"aitor.eguzkiza@unavarra.es">
+		["date"] = <"2014-05-23">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Registering specific details about laser-based therapeutic procedures aimed at treat a specific ophthalmic disease.">
+			use = <"To provide details about planning or conducting an ophthalmic intervention involving laser techniques.">
+			keywords = <"Photocoagulation", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["es"] = <
+			language = <[ISO_639-1::es]>
+			purpose = <"Registro de detalles específicos acerca del procedimiento de fotocoagulación cuando éste se utiliza para tratar una enfermedad oftálmica concreta.">
+			use = <"*(en)">
+			misuse = <"*(en)">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["revision"] = <"0.0.1-alpha">
+		["build_uid"] = <"f858d187-5ef9-4724-b28a-24677e43c879">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["MD5-CAM-1.0.1"] = <"9A36C918CE8137A4516F75AB6096E44A">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Detalles acerca de fotocoagulación
+		items cardinality matches {2..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {1..2} matches {	-- Lateralidad
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0002, 	-- Ojo izquierdo
+							at0003, 	-- Ojo derecho
+							at0004]	-- Ambos ojos
+						}
+					}
+				}
+			}
+			CLUSTER[at0012] occurrences matches {1..*} matches {	-- Procedimiento láser
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0013] matches {	-- Técnica láser
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {[ac0001]}		-- Procedimientos oftálmicos con láser
+							}
+						}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {	-- Dispositivo láser
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {[ac0002]}		-- Dispositivos láser de uso oftálmico
+							}
+						}
+					}
+					ELEMENT[at0014] occurrences matches {0..*} matches {	-- Tipo de láser
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0016, 	-- Láser focal
+									at0017, 	-- Láser en rejilla
+									at0022, 	-- Láser macular focal
+									at0023, 	-- Láser macular en rejilla
+									at0021, 	-- PRP
+									at0018, 	-- PRP en sector
+									at0019, 	-- Láser circular
+									at0020, 	-- Delimitación láser
+									at0024]	-- Otro
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["es"] = <
+			items = <
+				["at0000"] = <
+					text = <"Detalles acerca de fotocoagulación">
+					description = <"Define los detalles específicos relativos a tratamientos oftálmicos que impliquen fotocoagulación.">
+				>
+				["at0001"] = <
+					text = <"Lateralidad">
+					description = <"Ojos en los cuales se aplica el tratamiento por fotocoagulación.">
+				>
+				["at0002"] = <
+					text = <"Ojo izquierdo">
+					description = <"Se observa el ojo izquierdo.">
+				>
+				["at0003"] = <
+					text = <"Ojo derecho">
+					description = <"Se observa el ojo derecho.">
+				>
+				["at0004"] = <
+					text = <"Ambos ojos">
+					description = <"La intervención se realiza en ambos ojos del paciente.">
+				>
+				["at0008"] = <
+					text = <"Dispositivo láser">
+					description = <"Identifica el láser requerido para llevar a cabo la intervención.">
+				>
+				["at0012"] = <
+					text = <"Procedimiento láser">
+					description = <"Detalles acerca del procedimiento láser.">
+				>
+				["at0013"] = <
+					text = <"Técnica láser">
+					description = <"Metodología escogida para el tratamiento láser.">
+				>
+				["at0014"] = <
+					text = <"Tipo de láser">
+					description = <"Estrategia de distribución de la fotocoagulación láser por la superficie oftálmica.">
+				>
+				["at0016"] = <
+					text = <"Láser focal">
+					description = <"Fotocoagulación láser focal.">
+				>
+				["at0017"] = <
+					text = <"Láser en rejilla">
+					description = <"Fotocoagulación láser en rejilla.">
+				>
+				["at0018"] = <
+					text = <"PRP en sector">
+					description = <"Fotocoagulación con láser panretiniana centrada en un sector específico de polo posterior.">
+				>
+				["at0019"] = <
+					text = <"Láser circular">
+					description = <"La fotocoagulación delimita un anillo alrededor de una estructura ocular concreta.">
+				>
+				["at0020"] = <
+					text = <"Delimitación láser">
+					description = <"Delimitación láser.">
+				>
+				["at0021"] = <
+					text = <"PRP">
+					description = <"Fotocoagulacion panretiniana con laser.">
+				>
+				["at0022"] = <
+					text = <"Láser macular focal">
+					description = <"Terapia por láser macular focal.">
+				>
+				["at0023"] = <
+					text = <"Láser macular en rejilla">
+					description = <"Terapia por láser macular en rejilla.">
+				>
+				["at0024"] = <
+					text = <"Otro">
+					description = <"Otro tipo de terapia con láser.">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Ophthalmic laser procedure details">
+					description = <"Specific details concerning ophthalmic therapies involving the use of laser.">
+				>
+				["at0001"] = <
+					text = <"Laterality">
+					description = <"Eyes in which the laser-based treatment is applied.">
+				>
+				["at0002"] = <
+					text = <"Left eye">
+					description = <"Left eye observation.">
+				>
+				["at0003"] = <
+					text = <"Right eye">
+					description = <"Right eye observation.">
+				>
+				["at0004"] = <
+					text = <"Both eyes">
+					description = <"Treatment performed on both eyes of the patient.">
+				>
+				["at0008"] = <
+					text = <"Laser device">
+					description = <"Identifies the type of laser device needed to perform the treatment.">
+				>
+				["at0012"] = <
+					text = <"Laser procedure">
+					description = <"Details of the laser procedure.">
+				>
+				["at0013"] = <
+					text = <"Laser technique">
+					description = <"Method chosen for the laser treatment.">
+				>
+				["at0014"] = <
+					text = <"Laser type">
+					description = <"How laser burns are distributed along eye surface.">
+				>
+				["at0016"] = <
+					text = <"Focal laser">
+					description = <"Focal laser.">
+				>
+				["at0017"] = <
+					text = <"Grid photocoagulation">
+					description = <"Grid photocoagulation.">
+				>
+				["at0018"] = <
+					text = <"Sector PRP">
+					description = <"Panretinal laser photocoagulation focused on a specific sector of posterior pole.">
+				>
+				["at0019"] = <
+					text = <"Circle of laser">
+					description = <"Photocoagulation delimits a ring around a specific eye structure.">
+				>
+				["at0020"] = <
+					text = <"Laser demarcation">
+					description = <"Laser demarcation.">
+				>
+				["at0021"] = <
+					text = <"PRP">
+					description = <"Panretinal laser photocoagulation.">
+				>
+				["at0022"] = <
+					text = <"Focal macular">
+					description = <"Focal macular laser therapy.">
+				>
+				["at0023"] = <
+					text = <"Grid macular">
+					description = <"Grid macular laser therapy.">
+				>
+				["at0024"] = <
+					text = <"Other">
+					description = <"Another type of laser therapy.">
+				>
+			>
+		>
+	>
+	constraint_definitions = <
+		["es"] = <
+			items = <
+				["ac0001"] = <
+					text = <"Procedimientos oftálmicos con láser">
+					description = <"Procedimientos láser disponibles con fines oftálmicos.">
+				>
+				["ac0002"] = <
+					text = <"Dispositivos láser de uso oftálmico">
+					description = <"Lista de dispositivos láser disponibles para fines oftálmicos.">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["ac0001"] = <
+					text = <"Ophthalmic laser procedures">
+					description = <"Available laser procedures with ophthalmic purposes.">
+				>
+				["ac0002"] = <
+					text = <"Ophthalmic laser devices">
+					description = <"List of laser devices available for ophthalmic purposes.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0001"] = <[SNOMED-CT::272741003]>
+				["at0002"] = <[SNOMED-CT::362503005]>
+				["at0003"] = <[SNOMED-CT::362502000]>
+				["at0004"] = <[SNOMED-CT::362508001]>
+				["at0008"] = <[SNOMED-CT::122456005]>
+				["at0016"] = <[SNOMED-CT::397538008]>
+				["at0017"] = <[SNOMED-CT::397539000]>
+				["at0018"] = <[SNOMED-CT::397574004]>
+				["at0021"] = <[SNOMED-CT::312713003]>
+			>
+		>
+	>

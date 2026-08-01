@@ -1,0 +1,777 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2022-03-09</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Keisha Barwise, MOHW/IDB HSSP Project, Jamaica</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Randi Brendberg, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Candice de Lisser, Ministry of Health and Wellness, Jamaica</other_contributors>
+    <other_contributors>Ludvig Eek Hofmann, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Regional forvaltning EPJ, Helse Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Rebecka Hansson, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Gunnar Jårvik, Helse Vest IKT AS, Norway</other_contributors>
+    <other_contributors>Gunn-Lisbeth Kleiven, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Natalia Strauch, Medizinische Hochschule Hannover, Germany</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Anders Thurin, VGR, Sweden</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">115BE3902B9D840E56B6ACDD0C104711</other_details>
+    <other_details id="build_uid">b7115967-bdb4-4f38-aa3f-880ee53559ef</other_details>
+    <other_details id="revision">1.0.4</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Informationen über eine bestimmte Art der elektronischen Kommunikation, wie sie bekannt ist oder im Rahmen der klinischen Dokumentation verstanden wird.</purpose>
+      <keywords>Telefon, Mobiltelefon, E-Mail, Fax, Pager, Chat, Soziale Medien, asynchron, Kommunikation, SoMe</keywords>
+      <use>Zur Darstellung von Informationen über eine bestimmte Art der elektronischen Kommunikation für eine Person oder Organisation, wie sie bekannt ist oder im Rahmen der klinischen Dokumentation verstanden wird. Dies geschieht üblicherweise ad hoc oder wenn es nicht angemessen oder möglich ist, ein formelles Register oder einen Index zu verwenden.</use>
+      <misuse>Nicht für komplexe Kommunikationsdarstellung oder -verwaltung zu verwenden, wie z. B. bevorzugte Telefonnummern oder Gültigkeit der Nutzung. Verwenden Sie zu diesem Zweck einen formellen Master Patient Index oder Health Provider Index oder Archetypen, die auf dem demografischen Informationsmodell von openEHR basieren.&#xD;
+&#xD;
+Darf nicht verwendet werden, um das formelle Identifikationsmanagement darzustellen oder zu ersetzen oder um ein offizielles demografisches Register oder einen Index zu führen. Verwenden Sie zu diesem Zweck einen formellen Master Patient Index oder Health Provider Index oder Archetypen, die auf dem openEHR Demographic Information Model basieren.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-pt</code_string>
+      </language>
+      <purpose>Registar detalhes sobre um tipo específico de comunicação eletrónica tal como é conhecido ou compreendido no decurso da documentação clínica.</purpose>
+      <keywords>telefone, telemóvel, e-mail, fax, pager, chat, redes sociais, assíncrono, comunicação</keywords>
+      <use>Utilize para registar detalhes sobre um tipo específico de comunicação eletrónica de um indivíduo ou organização, tal como é conhecido ou compreendido no decurso da documentação clínica. Isto é normalmente ad hoc ou quando não é apropriado ou possível utilizar um registo ou índice formal.</use>
+      <misuse>Não deve ser utilizado para representação ou gestão de comunicações complexas, tais como números de telefone preferenciais ou datas válidas de utilização. Utilize um Índice Mestre de Doentes ou um Índice de Prestadores de Cuidados de Saúde formal para esta finalidade, ou arquétipos baseados no Modelo de Informação Demográfica openEHR.&#xD;
+&#xD;
+Não deve ser utilizado para representar ou substituir a gestão formal de identificação ou para efeitos de manutenção de um registo ou índice demográfico oficial. Utilize um Índice Mestre de Doentes ou um Índice de Prestadores de Cuidados de Saúde formal para esta finalidade, ou arquétipos baseados no Modelo de Informação Demográfica openEHR.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om en spesifikk type elektronisk kommunikasjon som man har informasjon om eller har forstått, i det kliniske dokumentasjonsarbeidet.</purpose>
+      <keywords>telefon, mobil, e-post, faks, personsøker, chat, asynkron dialog, sosiale media, kommunikasjon, SoMe,</keywords>
+      <use>Brukes for å registrere detaljer om en spesifikk type elektronisk kommunikasjon for en person eller en organisasjon, som man har informasjon om eller har forstått, i det kliniske dokumentasjonsarbeidet. Brukes ofte ad hoc eller i de tilfeller når det ikke er ønskelig eller mulig å bruke et formelt demografisk register eller indeks.</use>
+      <misuse>Brukes ikke til kompleks kommunikasjonsadministrasjon, for eksempel foretrukne telefonnummer eller gyldige bruksdatoer. Bruk et formelt pasientregister, helsepersonellregister eller arketyper basert på openEHR demografisk informasjonsmodell til dette formålet.&#xD;
+	&#xD;
+Brukes ikke til å representere eller erstatte de formelle demografiske opplysninger for formell identitetsforvaltning eller for å opprettholde et demografisk register eller en indeks. Bruk et formelt pasientregister, helsepersonellregister eller arketyper basert på openEHR demografisk informasjonsmodell til dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about a specified type of electronic communication as it is known or understood in the course of clinical documentation.</purpose>
+      <keywords>telephone, phone, mobile, email, fax, pager, chat, social media, asynchronous, communication, SoMe</keywords>
+      <use>Use to record details about a specified type of electronic communication for an individual or an organisation as it is known or understood in the course of clinical documentation. This is commonly ad hoc or when it is not appropriate or possible to use a formal register or index.</use>
+      <misuse>Not to be used for complex communication representation or management, such as preferred phone numbers or valid dates of usage. Use a formal Master Patient Index or Health Provider Index for this purpose, or archetypes based on the openEHR Demographic Information Model.&#xD;
+&#xD;
+Not to be used to represent or replace formal identification management or for the purposes of maintaining an official demographic register or index. Use a formal Master Patient Index or Health Provider Index for this purpose, or archetypes based on the openEHR Demographic Information Model.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Pour enregistrer les détails relatifs à un type spécifique de communication électronique, tel qu'il est connu ou entendu dans le cadre de la documentation clinique.</purpose>
+      <keywords>téléphone, portable, e-mail, courriel, fax, pager, chat, réseaux sociaux, asynchrone, communication, médias sociaux</keywords>
+      <use>À utiliser pour enregistrer les détails relatifs à un type spécifique de communication électronique concernant une personne ou une organisation, tels qu’ils sont connus ou entendu dans le cadre de la documentation clinique. Cette pratique est généralement ponctuelle ou intervient lorsqu’il n’est pas approprié ou possible d’utiliser un registre ou un index officiel.</use>
+      <misuse>À ne pas utiliser pour enregister la représentation ou la gestion de communications complexes, telles que les numéros de téléphone préférés ou les dates d’utilisation valides. Utilisez un index principal des patients (Master Patient Index) ou un index des prestataires de soins (Health Provider Index) formel, ou encore des archétypes basés sur le modèle d’informations démographiques openEHR à cette fin.&#xD;
+&#xD;
+À ne pas utiliser pour enregister une gestion formelle de l’identification, ni à des fins de tenue d’un registre ou d’un index démographique officiel. Utilisez un index principal des patients ou un index des prestataires de soins de santé officiel, ou encore des archétypes basés sur le modèle d’informations démographiques openEHR à cette fin.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-pt</code_string>
+    </language>
+    <author id="name">Hugo Silva</author>
+    <author id="organisation">University of Minho</author>
+    <author id="email">pg50416@uminho.pt</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Kanika Kuwelker, John Tore Valand, Liv Laugen</author>
+    <author id="organisation">Helse Vest IKT, Helse Bergen, ​Oslo University Hospital, Norway</author>
+    <author id="email">kanika.kuwelker@helse-vest-ikt.no, john.tore.valand@helse-vest-ikt.no, liv.laugen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Jonas Bucher</author>
+    <author id="organisation">Cistec AG</author>
+    <author id="email">jonas.bucher@cistec.com</author>
+  </translations>
+  <uid>
+    <value>92cf3ce0-8de6-47bf-b479-e229e5aab7da</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.electronic_communication.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0005</code_list>
+                <code_list>at0006</code_list>
+                <code_list>at0007</code_list>
+                <code_list>at0008</code_list>
+                <code_list>at0009</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_URI</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0010</code_list>
+                <code_list>at0011</code_list>
+                <code_list>at0012</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0013</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Electronic communication</items>
+        <items id="description">Details about a specified type of electronic communication.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Type</items>
+        <items id="description">The type or form of electronic communication.</items>
+        <items id="comment">The DV_CODED_TEXT value set supports recording of the most common electronic communications used in health. If other alternatives are required the DV_TEXT data type can be used to record other types of electronic communication such as social media or video conferencing URLs within a template.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Value</items>
+        <items id="description">The unique combination of alphanumeric characters, relevant for representation of 'Type'.</items>
+        <items id="comment">For example: area code + landline phone/pager number; country code + mobile phone number; or email address.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Purpose</items>
+        <items id="description">The purpose or use for the identified type of electronic communication.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the electronic communication not captured in other fields.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Mobile (cellular) telephone</items>
+        <items id="description">For SMS or voice calls.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Telephone (excluding mobile telephone)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Email</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Pager</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Fax</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Business use</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">Personal use</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">Both business and personal use</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Additional details</items>
+        <items id="description">Additional details about the electronic communication.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Elektronische Kommunikation</items>
+        <items id="description">Details zu einer bestimmten Art der elektronischen Kommunikation.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Art</items>
+        <items id="description">Die Art oder Form der elektronischen Kommunikation.</items>
+        <items id="comment">Der Wertesatz DV_CODED_TEXT unterstützt die Repräsentation der am häufigsten im Gesundheitswesen verwendeten elektronischen Kommunikation. Wenn andere Alternativen erforderlich sind, kann der Datentyp DV_TEXT verwendet werden, um andere Arten elektronischer Kommunikation wie Social Media- oder URLs zur Videokonferenz in einem Template darzustellen.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Daten</items>
+        <items id="description">Die eindeutige Kombination alphanumerischer Zeichen, die für die Darstellung von "Art" relevant ist.</items>
+        <items id="comment">Zum Beispiel: Vorwahl + Telefon/Pagernummer; Ländervorwahl + Mobiltelefonnummer oder E-Mail-Adresse.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Zweck</items>
+        <items id="description">Der Zweck oder die Verwendung für die identifizierte Art der elektronischen Kommunikation.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Beschreibung der elektronischen Kommunikation, die in anderen Bereichen nicht erfasst wurde.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Mobiltelefon</items>
+        <items id="description">Für SMS oder Sprachanrufe.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Telefon (kein Mobiltelefon)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">E-Mail</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Pager</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Fax</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Geschäftliche Nutzung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">Private Nutzung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">Geschäftliche und private Nutzung</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Zusätzliche Details</items>
+        <items id="description">Weitere Details zur elektronischen Kommunikation.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Elektronisk kommunikasjon</items>
+        <items id="description">Detaljer om en spesifikk type elektronisk kommunikasjon.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Type</items>
+        <items id="description">Typen eller formen for elektronisk kommunikasjon.</items>
+        <items id="comment">Verdisettet for "Kodet tekst" støtter registrering av de vanligste elektroniske kommunikasjonsformene i helsetjenesten. Ved behov for andre alternativer kan datatypen "Fri eller kodet tekst" benyttes for å registrere andre former for elektronisk kommunikasjon, som sosiale medier eller videokonferanser, når man bygger et templat.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Verdi</items>
+        <items id="description">Den unike kombinasjonen av alfanumeriske tegn for å representere "Type".</items>
+        <items id="comment">For eksempel: landskode + mobilnummer eller e-postadresse.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Bruksområde</items>
+        <items id="description">Formålet med den spesifikke typen elektronisk kommunikasjon.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om elektronisk kommunikasjon som ikke er registrert i andre felt.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Mobiltelefon</items>
+        <items id="description">For SMS eller lydsamtaler.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Telefon (ikke mobiltelefon)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">E-post</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Personsøker</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Faks</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Arbeid</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">Privat</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">Både arbeid og privat</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere detaljer om den elektroniske kommunikasjonen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-pt">
+      <items code="at0000">
+        <items id="text">Comunicação eletrónica</items>
+        <items id="description">Detalhes sobre um tipo específico de comunicação eletrónica.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tipo</items>
+        <items id="description">O tipo ou forma de comunicação eletrónica.</items>
+        <items id="comment">O conjunto de valores DV_CODED_TEXT suporta a gravação das comunicações electrónicas mais comuns utilizadas na saúde. Se forem necessárias outras alternativas, o tipo de dados DV_TEXT pode ser utilizado para registar outros tipos de comunicação eletrónica, como redes sociais ou URLs de videoconferência dentro de um template.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Valor</items>
+        <items id="description">A combinação única de caracteres alfanuméricos, relevante para a representação do 'Tipo'.</items>
+        <items id="comment">Por exemplo: indicativo + número de telefone fixo/pager, indicativo do país + número de telemóvel; ou endereço de e-mail.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Propósito</items>
+        <items id="description">O propósito ou utilização do tipo identificado de comunicação eletrónica.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Comentário</items>
+        <items id="description">Narrativa adicional sobre a comunicação eletrónica não captada noutros campos.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Telemóvel</items>
+        <items id="description">Para SMS ou chamadas de voz.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Telefone</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Email</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Pager</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Fax</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Uso comercial</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">Uso pessoal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">Uso comercial e pessoal</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Detalhes adicionais</items>
+        <items id="description">Detalhes adicionais sobre a comunicação eletrónica.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Communication électronique</items>
+        <items id="description">Détails relatifs à un type spécifique de communication électronique.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Type</items>
+        <items id="description">Le type ou la forme de communication électronique.</items>
+        <items id="comment">L'ensemble de valeurs DV_CODED_TEXT permet d'enregistrer les communications électroniques les plus courantes utilisées dans le domaine de la santé. Si d'autres alternatives sont nécessaires, le type de données DV_TEXT peut être utilisé pour enregistrer d'autres types de communications électroniques, tels que les réseaux sociaux ou les URL de visioconférence, au sein d'un template.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Valeur</items>
+        <items id="description">Combinaison unique de caractères alphanumériques, permettant de représenter le « Type ».</items>
+        <items id="comment">Par exemple : indicatif régional + numéro de téléphone fixe/de téléavertisseur ; indicatif pays + numéro de téléphone mobile ; ou adresse e-mail.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Usage</items>
+        <items id="description">La fonction ou l'usage du type de communication électronique identifié.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Commentaire</items>
+        <items id="description">Informations supplémentaires concernant la communication électronique qui ne sont pas reprises dans d’autres champs.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Téléphone mobile (portable)</items>
+        <items id="description">Pour les SMS ou les appels vocaux.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Téléphone (à l'exclusion des téléphones portables)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Courriel</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Téléavertisseur</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Fax</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">Usage professionnelle</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">Usage personnel</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">Usage professionnel et personnel</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">Détails supplémentaires</items>
+        <items id="description">Détails supplémentaires concernant la communication électronique.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

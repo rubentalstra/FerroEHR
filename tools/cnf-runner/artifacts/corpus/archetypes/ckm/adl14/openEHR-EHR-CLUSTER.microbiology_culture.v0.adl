@@ -1,0 +1,217 @@
+﻿archetype (adl_version=1.4; uid=d74eed57-7cb9-480a-9874-57b4678ad5f4)
+	openEHR-EHR-CLUSTER.microbiology_culture.v0
+
+concept
+	[at0000]	-- Microbiology culture findings
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2024-08-09">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"C522EABD15498EC9E8284C13F8F6E7D1">
+		["build_uid"] = <"2e0f45b0-628d-4af9-8b54-78c285f03854">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Microbiology culture findings
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {    -- Description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0002] occurrences matches {0..*} matches {    -- Per organism findings
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0003] occurrences matches {0..1} matches {    -- Organism name
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {    -- Growth
+						value matches {
+							DV_TEXT matches {*}
+							C_DV_QUANTITY <
+								
+								list = <
+									["1"] = <
+										units = <"{cfu}/mL">
+									>
+									["2"] = <
+										units = <"{cfu}/g">
+									>
+									["3"] = <
+										units = <"{cells}/mL">
+									>
+									["4"] = <
+										units = <"%">
+									>
+									["5"] = <
+										units = <"{pfu}/mL">
+									>
+								>
+							>
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0005,    -- None
+									at0006,    -- Light
+									at0007,    -- Moderate
+									at0008]    -- Heavy
+								}
+							}
+						}
+					}
+					CLUSTER[at0009] occurrences matches {0..1} matches {    -- Susceptibility test
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0010] occurrences matches {0..1} matches {    -- Antimicrobial
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0011] occurrences matches {0..1} matches {    -- Minimum inhibitory concentration (MIC)
+								value matches {
+									C_DV_QUANTITY <
+										
+										list = <
+											["1"] = <
+												units = <"mg/L">
+											>
+											["2"] = <
+												units = <"ug/mL">
+											>
+										>
+									>
+								}
+							}
+							ELEMENT[at0012] occurrences matches {0..1} matches {    -- Interpretation
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0013,    -- Sensitive
+											at0014,    -- Intermediate
+											at0015]    -- Resistant
+										}
+									}
+								}
+							}
+						}
+					}
+					ELEMENT[at0016] occurrences matches {0..1} matches {    -- Organism comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0017] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Microbiology culture findings">
+					description = <"Findings observed from culturing a specimen to detect and identify microorganisms.">
+				>
+				["at0001"] = <
+					text = <"Description">
+					description = <"">
+				>
+				["at0002"] = <
+					text = <"Per organism findings">
+					description = <"">
+				>
+				["at0003"] = <
+					text = <"Organism name">
+					description = <"">
+				>
+				["at0004"] = <
+					text = <"Growth">
+					description = <"Amount of organisms observed, reported as either qualitative or quantitative measurements.">
+					comment = <"ho">
+				>
+				["at0005"] = <
+					text = <"None">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"Light">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Moderate">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Heavy">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Susceptibility test">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Antimicrobial">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"Minimum inhibitory concentration (MIC)">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Interpretation">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Sensitive">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"Intermediate">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Resistant">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Organism comment">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Comment">
+					description = <"">
+				>
+			>
+		>
+	>

@@ -1,10 +1,16 @@
-//! OPT 1.4 emitter (`emit-opt`): generates a typed Rust model
-//! (`opt14`) + canonical-XML `ToXml`/`FromXml` impls for the openEHR
-//! **operational template** XML (`<template>` = `OPERATIONAL_TEMPLATE`).
+//! The XSD-driven constraint-model emitter: generates a typed Rust model +
+//! canonical-XML `ToXml`/`FromXml` impls for each vendored ARCHETYPE-family XSD
+//! closure. Three targets, one pipeline (see [`ModelTarget`]):
+//!
+//! | target | subcommand | closure | root |
+//! |---|---|---|---|
+//! | `opt14` | `emit-opt` | `Template.xsd` + includes | `<template>` = `OPERATIONAL_TEMPLATE` |
+//! | `aom2` | `emit-aom2` | `P_Archetype.xsd` + includes | `<archetype>` = `P_AUTHORED_ARCHETYPE` |
+//! | `aom2_model` | `emit-aom2` | `Archetype.xsd` + includes | `<archetype>` = `AUTHORED_ARCHETYPE` |
 //!
 //! Unlike `emit-xml` (which drives off the BMM model), this emitter builds its
-//! [`XmlType`]s directly from the **AM/OPT constraint XSD closure**
-//! (`Template.xsd` + its includes). The generate/resolve partition:
+//! [`XmlType`]s directly from the XSD closure. The generate/resolve partition
+//! (described below for `opt14`, and identical for the AOM2 targets):
 //!
 //! - a complexType that `openehr-base`/`openehr-rm` already export (with a
 //!   generated `ToXml`/`FromXml`) **resolves** to that crate's prelude — the RM
@@ -63,8 +69,50 @@ use crate::render::naming;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
-/// The Rust module path the generated types live at (an `openehr-its` submodule).
-const PRELUDE: &str = "crate::opt14";
+/// The Rust module path the OPT model's generated types live at.
+///
+/// The prelude is a MODEL PARAMETER, not a constant of this emitter: the same
+/// XSD-driven pipeline emits several `openehr-its` submodules (`opt14`, `aom2`,
+/// `aom2_model`), and every generated impl and defaulted literal must name the
+/// module it is being emitted INTO. A hardcoded path here silently emits `aom2`
+/// impls that reference `crate::opt14` types.
+pub(crate) const OPT_PRELUDE: &str = "crate::opt14";
+
+/// The Rust module path the AOM2 persistent-form model's generated types live at.
+pub(crate) const AOM2_PRELUDE: &str = "crate::aom2";
+
+/// The Rust module path the AOM2 model-form model's generated types live at.
+pub(crate) const AOM2_MODEL_PRELUDE: &str = "crate::aom2_model";
+
+/// The `opt14` emission target (OPT 1.4 operational templates).
+pub(crate) static OPT_TARGET: ModelTarget = ModelTarget {
+    generator: "emit-opt",
+    prelude: OPT_PRELUDE,
+    types_subject: "OPT 1.4 operational templates",
+    impls_subject: "OPT 1.4",
+    type_label: "AOM/OPT",
+    field_label: "OPT",
+};
+
+/// The `aom2` emission target (the AOM2 persistent form, `P_Archetype.xsd`).
+pub(crate) static AOM2_TARGET: ModelTarget = ModelTarget {
+    generator: "emit-aom2",
+    prelude: AOM2_PRELUDE,
+    types_subject: "AOM2 persistent-form archetypes",
+    impls_subject: "AOM2 persistent-form archetype",
+    type_label: "AOM2 persistent-form",
+    field_label: "AOM2 persistent-form",
+};
+
+/// The `aom2_model` emission target (the AOM2 model form, `Archetype.xsd`).
+pub(crate) static AOM2_MODEL_TARGET: ModelTarget = ModelTarget {
+    generator: "emit-aom2",
+    prelude: AOM2_MODEL_PRELUDE,
+    types_subject: "AOM2 model-form archetypes",
+    impls_subject: "AOM2 model-form archetype",
+    type_label: "AOM2 model-form",
+    field_label: "AOM2 model-form",
+};
 
 /// Resource-metadata types that must be generated from the **OPT XSD** shape
 /// rather than resolved to the `openehr-base`/`openehr-rm` impls: the BMM
@@ -124,20 +172,26 @@ const OPAQUE_TYPES: &[&str] = &["T_VIEW"];
 /// optional-single), so any downstream multiplicity check (composition validation) must
 /// resolve multiplicity from the `definition`/archetype, never trust a defaulted
 /// `0..1` from this reader.
-fn lenient_default(field_name: &str) -> Option<String> {
-    match field_name {
+///
+/// The match is on the field name **and its declared XSD type**, never the name
+/// alone: `existence`/`occurrences` are `IntervalOfInteger` elements in the OPT
+/// closure but `MultiplicityInterval` elements in the AOM2 model closure, and a
+/// name-only match would emit an `Intervalofinteger` literal into a
+/// `Multiplicityinterval` field. Keeping the type exact also keeps the concession
+/// confined to the shapes it was adjudicated for.
+fn lenient_default(field_name: &str, type_name: &str, prelude: &str) -> Option<String> {
+    match (field_name, type_name) {
         // `rm_type_name` joins the lenient set for differential
         // `T_COMPLEX_OBJECT` children in real exports: `<constraints>` overlay
         // nodes may carry only `default_value` + `differential_path`
         // (e.g. the corpus `non_unique_aql_paths.opt`).
-        "node_id" | "purpose" | "rm_type_name" => Some("String::new()".to_owned()),
-        "occurrences" | "existence" => Some(
-            "crate::opt14::Intervalofinteger { \
+        ("node_id" | "purpose" | "rm_type_name", "xs:string") => Some("String::new()".to_owned()),
+        ("occurrences" | "existence", "IntervalOfInteger") => Some(format!(
+            "{prelude}::Intervalofinteger {{ \
              lower_included: Some(true), upper_included: Some(true), \
              lower_unbounded: false, upper_unbounded: false, \
-             lower: Some(0), upper: Some(1) }"
-                .to_owned(),
-        ),
+             lower: Some(0), upper: Some(1) }}"
+        )),
         _ => None,
     }
 }
@@ -161,7 +215,34 @@ enum Resolved {
     Gen(String, bool),
 }
 
-/// The generate/resolve model for the OPT XSD closure.
+/// Everything about the emission TARGET that varies between the XSD-driven
+/// closures this emitter serves (`opt14`, `aom2`, `aom2_model`).
+///
+/// All of it is a model parameter rather than a constant for the same reason the
+/// prelude is: three modules come out of one emitter, and a hardcoded value
+/// silently stamps one module's identity onto another's files — an `aom2_model`
+/// impl referencing `crate::opt14` types, or an `emit-aom2` output whose banner
+/// tells the reader to re-run `emit-opt`.
+pub(crate) struct ModelTarget {
+    /// The `openehr-codegen` subcommand that regenerates the target, named in
+    /// every `// @generated` banner.
+    pub(crate) generator: &'static str,
+    /// The `openehr-its` module path the emitted types live at
+    /// (e.g. [`OPT_PRELUDE`]).
+    pub(crate) prelude: &'static str,
+    /// What `types.rs` is a model OF ("OPT 1.4 operational templates").
+    pub(crate) types_subject: &'static str,
+    /// The model name used in the `impls.rs` title ("OPT 1.4").
+    pub(crate) impls_subject: &'static str,
+    /// The spec-family label substituted into a per-type doc comment: "AOM/OPT"
+    /// yields `openEHR AOM/OPT <spec name>.`
+    pub(crate) type_label: &'static str,
+    /// The spec-family label substituted into a per-field doc comment: "OPT"
+    /// yields `… attribute/element of the OPT <spec name> XSD type.`
+    pub(crate) field_label: &'static str,
+}
+
+/// The generate/resolve model for one XSD closure.
 pub(crate) struct OptModel<'a> {
     xsd: &'a XsdModel,
     base_specs: &'a BTreeSet<String>,
@@ -170,6 +251,8 @@ pub(crate) struct OptModel<'a> {
     generate: BTreeSet<String>,
     /// The subset of `generate` that are abstract polymorphic slots → enums.
     enum_specs: BTreeSet<String>,
+    /// The emission target's identity (module path, banners, doc labels).
+    target: &'static ModelTarget,
 }
 
 /// A generated field: the `emit_xml` [`XmlField`] plus the Rust type for its
@@ -186,6 +269,7 @@ impl<'a> OptModel<'a> {
         xsd: &'a XsdModel,
         base_specs: &'a BTreeSet<String>,
         rm_specs: &'a BTreeSet<String>,
+        target: &'static ModelTarget,
     ) -> Self {
         let generate: BTreeSet<String> = xsd
             .types
@@ -211,6 +295,7 @@ impl<'a> OptModel<'a> {
             rm_specs,
             generate,
             enum_specs,
+            target,
         }
     }
 
@@ -363,7 +448,7 @@ impl<'a> OptModel<'a> {
                 let default = if is_bool && !e.optional && !e.multiple {
                     Some("false".to_string())
                 } else if !e.optional && !e.multiple {
-                    lenient_default(&e.name)
+                    lenient_default(&e.name, &e.type_name, self.target.prelude)
                 } else {
                     None
                 };
@@ -387,13 +472,10 @@ impl<'a> OptModel<'a> {
 
     /// Build the [`XmlType`] for a generated spec (for the `emit_xml` impls).
     fn xml_type(&self, spec: &str) -> Option<XmlType> {
-        let ty = self.xsd.types.get(spec)?;
+        self.xsd.types.get(spec)?;
         let rust = naming::type_name(spec);
-        if ty.is_abstract {
+        if self.enum_specs.contains(spec) {
             let descendants = self.xsd.descendants(spec);
-            if descendants.is_empty() {
-                return None;
-            }
             let variants = descendants
                 .iter()
                 .map(|d| XmlVariant {
@@ -421,14 +503,18 @@ impl<'a> OptModel<'a> {
         }
     }
 
-    /// Emit the type declarations (`opt14/types.rs`).
+    /// Emit the type declarations (the target module's `types.rs`).
     #[must_use]
     pub(crate) fn emit_types(&self) -> String {
         let mut b = String::new();
+        let _ = write!(
+            b,
+            "// @generated by openehr-codegen ({}) — DO NOT EDIT.\n\
+             //! Typed Rust model for openEHR {}.\n\n",
+            self.target.generator, self.target.types_subject
+        );
         b.push_str(
-            "// @generated by openehr-codegen (emit-opt) — DO NOT EDIT.\n\
-             //! Typed Rust model for openEHR OPT 1.4 operational templates.\n\n\
-             #![allow(\n    \
+            "#![allow(\n    \
              dead_code,\n    \
              non_snake_case,\n    \
              non_camel_case_types,\n    \
@@ -446,22 +532,47 @@ impl<'a> OptModel<'a> {
                 continue;
             };
             let rust = naming::type_name(spec);
-            let doc = format!("/// openEHR AOM/OPT `{spec}`.\n");
-            if ty.is_abstract {
+            let mut doc = format!("/// openEHR {} `{spec}`.\n", self.target.type_label);
+            // An `abstract="true"` complexType that NOTHING in the closure derives
+            // from cannot be an `xsi:type` dispatch enum, and it is still a slot
+            // type real documents must fill (`Archetype.xsd` declares
+            // `C_ATTRIBUTE` abstract yet types `C_COMPLEX_OBJECT.attributes` with
+            // it). It is emitted as the plain shape a document has to present —
+            // never dropped, which would leave a dangling field type.
+            //
+            // NOTE: such a type is NOT added to the variant set of the enums it
+            // descends from. `XsdModel::descendants` reports concrete subtypes
+            // only, which is the XSD rule for `xsi:type` (a type declared abstract
+            // is not a legal `xsi:type` value); the closures we emit contain no
+            // slot declared as an ancestor of one of these types, so the two
+            // readings are indistinguishable on the wire today. Revisit if a
+            // future closure declares such a slot.
+            if ty.is_abstract && !self.enum_specs.contains(spec) {
+                let _ = writeln!(
+                    b,
+                    "/// openEHR {} `{spec}` — declared `abstract` in the XSD with no\n\
+                     /// concrete subtype in this schema closure, so it is emitted as the\n\
+                     /// plain shape a conforming document must present at its slots.",
+                    self.target.type_label
+                );
+                doc = String::new();
+            }
+            if self.enum_specs.contains(spec) {
                 let descendants = self.xsd.descendants(spec);
-                if descendants.is_empty() {
-                    continue;
-                }
                 b.push_str(&doc);
-                // OPT 1.4 is an XML-only model (`ToXml`/`FromXml`); it carries no
-                // serde — the OPT types are plain data records parsed from XML.
+                // These are XML-only models (`ToXml`/`FromXml`); they carry no
+                // serde — the types are plain data records parsed from XML.
                 b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
                 let _ = writeln!(b, "pub enum {rust} {{");
                 for d in &descendants {
                     let ident = naming::type_name(d);
                     // A variant is a public item `missing_docs` checks; the XSD
                     // carries no per-subtype prose, so name the subtype.
-                    let _ = writeln!(b, "    /// The OPT `{d}` subtype of `{spec}`.");
+                    let _ = writeln!(
+                        b,
+                        "    /// The {} `{d}` subtype of `{spec}`.",
+                        self.target.field_label
+                    );
                     let _ = writeln!(b, "    {ident}({ident}),");
                 }
                 b.push_str("}\n\n");
@@ -472,8 +583,8 @@ impl<'a> OptModel<'a> {
                 for f in self.fields(spec) {
                     let _ = writeln!(
                         b,
-                        "    /// The `{}` attribute/element of the OPT `{spec}` XSD type.",
-                        f.xml.wire_name
+                        "    /// The `{}` attribute/element of the {} `{spec}` XSD type.",
+                        f.xml.wire_name, self.target.field_label
                     );
                     let _ = writeln!(b, "    pub {}: {},", f.xml.rust_name, f.decl_type);
                 }
@@ -483,15 +594,19 @@ impl<'a> OptModel<'a> {
         b
     }
 
-    /// Emit the `ToXml`/`FromXml` impls (`opt14/impls.rs`), reusing the
-    /// `emit-xml` per-type emitters over the XSD-derived [`XmlType`]s.
+    /// Emit the `ToXml`/`FromXml` impls (the target module's `impls.rs`), reusing
+    /// the `emit-xml` per-type emitters over the XSD-derived [`XmlType`]s.
     #[must_use]
     pub(crate) fn emit_impls(&self, unmatched: &mut Vec<(String, String)>) -> String {
         let mut b = String::new();
+        let _ = write!(
+            b,
+            "// @generated by openehr-codegen ({}) — DO NOT EDIT.\n\
+             //! Canonical-XML `ToXml`/`FromXml` impls for the {} model.\n\n",
+            self.target.generator, self.target.impls_subject
+        );
         b.push_str(
-            "// @generated by openehr-codegen (emit-opt) — DO NOT EDIT.\n\
-             //! Canonical-XML `ToXml`/`FromXml` impls for the OPT 1.4 model.\n\n\
-             #![allow(\n    \
+            "#![allow(\n    \
              non_snake_case,\n    \
              clippy::all,\n    \
              clippy::pedantic,\n    \
@@ -509,39 +624,176 @@ impl<'a> OptModel<'a> {
         );
         for spec in &self.generate {
             if let Some(ty) = self.xml_type(spec) {
-                emit_to_xml(&mut b, &ty, PRELUDE, self.xsd, unmatched);
-                emit_from_xml(&mut b, &ty, PRELUDE, self.xsd);
+                emit_to_xml(&mut b, &ty, self.target.prelude, self.xsd, unmatched);
+                emit_from_xml(&mut b, &ty, self.target.prelude, self.xsd);
             }
         }
         b
     }
+}
 
-    /// Emit `opt14/mod.rs`: module wiring, re-export, and the `from_xml` entry.
-    #[must_use]
-    pub(crate) fn emit_mod() -> String {
-        "// @generated by openehr-codegen (emit-opt) — DO NOT EDIT.\n\
-         //! openEHR OPT 1.4 operational-template model + canonical-XML codec.\n\
-         //!\n\
-         //! Parse an operational template with [`from_xml`]; the root element is\n\
-         //! `<template>` (`OPERATIONAL_TEMPLATE`).\n\n\
-         mod impls;\n\
-         mod types;\n\
-         pub use types::*;\n\n\
-         /// Parse an operational-template XML document into an [`OperationalTemplate`].\n\
-         ///\n\
-         /// # Errors\n\
-         /// Propagates canonical-XML parse errors.\n\
-         pub fn from_xml(xml: &str) -> Result<OperationalTemplate, crate::xml::runtime::XmlError> {\n\
-         crate::xml::runtime::from_xml(xml)\n\
-         }\n\n\
-         /// Serialize an [`OperationalTemplate`] back to OPT 1.4 XML (root\n\
-         /// `<template>`, `http://schemas.openehr.org/v1`).\n\
-         ///\n\
-         /// # Errors\n\
-         /// Propagates canonical-XML serialization errors.\n\
-         pub fn to_xml(opt: &OperationalTemplate) -> Result<String, crate::xml::runtime::XmlError> {\n\
-         crate::xml::runtime::to_xml(opt, \"template\", crate::xml::runtime::Namespace::V1)\n\
-         }\n"
-            .to_string()
+/// One `from_xml`/`to_xml` pair to emit for a generated XML module.
+pub(crate) struct EntryPoint {
+    /// Appended to `from_xml`/`to_xml` so several roots can coexist in one
+    /// module (`""` for the primary pair).
+    pub(crate) suffix: &'static str,
+    /// The generated Rust type of the document root.
+    pub(crate) root_rust: &'static str,
+    /// The XML root element name.
+    pub(crate) root_element: &'static str,
+    /// Human phrase for the doc comment ("operational template").
+    pub(crate) what: &'static str,
+    /// The indefinite article for [`Self::root_rust`] ("an"/"a"), so the
+    /// generated prose stays grammatical across roots.
+    pub(crate) article: &'static str,
+    /// The wire label used in the serialize doc ("OPT 1.4 XML").
+    pub(crate) wire: &'static str,
+    /// The spec/XSD type name, named in the module docs.
+    pub(crate) spec_name: &'static str,
+}
+
+/// What a generated XML module's `mod.rs` should say and expose.
+pub(crate) struct ModuleSpec {
+    /// The `openehr-codegen` subcommand that produced it.
+    pub(crate) generator: &'static str,
+    /// The module's one-line `//!` title.
+    pub(crate) title: &'static str,
+    /// The document roots to expose.
+    pub(crate) entry_points: &'static [EntryPoint],
+    /// Extra `//!` paragraphs appended after the entry-point lines — the
+    /// module's adjudications (root-type choice, corpus ceiling). One entry per
+    /// paragraph; a blank line is emitted between them.
+    pub(crate) notes: &'static [&'static str],
+}
+
+/// The `opt14/mod.rs` surface.
+pub(crate) static OPT_MODULE: ModuleSpec = ModuleSpec {
+    generator: "emit-opt",
+    title: "openEHR OPT 1.4 operational-template model + canonical-XML codec.",
+    entry_points: &[EntryPoint {
+        suffix: "",
+        root_rust: "OperationalTemplate",
+        root_element: "template",
+        what: "operational template",
+        article: "an",
+        wire: "OPT 1.4 XML",
+        spec_name: "OPERATIONAL_TEMPLATE",
+    }],
+    notes: &[],
+};
+
+/// The `aom2/mod.rs` surface (the AOM2 persistent form).
+pub(crate) static AOM2_MODULE: ModuleSpec = ModuleSpec {
+    generator: "emit-aom2",
+    title: "openEHR AOM2 persistent-form archetype model + canonical-XML codec.",
+    entry_points: &[EntryPoint {
+        suffix: "",
+        root_rust: "PAuthoredArchetype",
+        root_element: "archetype",
+        what: "persistent-form AOM2 archetype",
+        article: "a",
+        wire: "AOM2 persistent-form archetype XML",
+        spec_name: "P_AUTHORED_ARCHETYPE",
+    }],
+    notes: &[
+        "This is the PERSISTENT (`P_AOM`) AOM2 serialization — `P_Archetype.xsd`, whose\n\
+         own header calls it \"uses P_AOM types - much more space efficient\". It is the\n\
+         form the bundle's 8 `AOM2/examples/*.xml` documents carry\n\
+         (`xsi:schemaLocation=\"… ../P_Archetype.xsd\"`). The bundle's other archetype\n\
+         serialization — the AOM model form — is [`crate::aom2_model`].",
+    ],
+};
+
+/// The `aom2_model/mod.rs` surface (the AOM2 model form).
+pub(crate) static AOM2_MODEL_MODULE: ModuleSpec = ModuleSpec {
+    generator: "emit-aom2",
+    title: "openEHR AOM2 model-form archetype model + canonical-XML codec.",
+    entry_points: &[EntryPoint {
+        suffix: "",
+        root_rust: "AuthoredArchetype",
+        root_element: "archetype",
+        what: "model-form AOM2 archetype",
+        article: "a",
+        wire: "AOM2 model-form archetype XML",
+        spec_name: "AUTHORED_ARCHETYPE",
+    }],
+    notes: &[
+        "This is the AOM MODEL form — `Archetype.xsd`, whose own header calls it \"uses\n\
+         AOM-like types - not space-efficient\": the AOM2 classes themselves\n\
+         (`C_COMPLEX_OBJECT`, `C_ATTRIBUTE`, `ARCHETYPE_TERMINOLOGY`,\n\
+         `MultiplicityInterval`), as opposed to the persistent `P_AOM` form in\n\
+         [`crate::aom2`]. Both schemas declare the top-level element `<archetype>`, so\n\
+         a document's ROOT TYPE — not its element name — decides which module reads it.",
+        "Root type: `Archetype.xsd` declares\n\
+         `<xs:element name=\"archetype\" type=\"ARCHETYPE\"/>`, but `ARCHETYPE` is\n\
+         `abstract=\"true\"` and no complexType in the closure derives from it —\n\
+         `AUTHORED_ARCHETYPE` extends `AUTHORED_RESOURCE` and re-uses the archetype body\n\
+         through `<xs:group ref=\"ARCHETYPE\"/>` instead. `AUTHORED_ARCHETYPE` is\n\
+         therefore the only instantiable archetype root the schema offers, and the entry\n\
+         points here are typed to it; `Archetype` itself is not emitted, because an\n\
+         abstract type with no concrete subtype can never appear on the wire.",
+        "Corpus ceiling: openEHR publishes NO model-form instance documents. All 8\n\
+         `AOM2/examples/*.xml` are persistent-form, `openEHR/adl-archetypes` publishes\n\
+         ADL text only, and `specifications-ITS-XML` has no further branch to vendor. So\n\
+         this codec is gated by construct → serialize → parse self-consistency\n\
+         (`openehr-its` `tests/it/aom2_model_xml.rs`), not by an upstream corpus. That\n\
+         ceiling is stated rather than implied.",
+    ],
+};
+
+/// Emit a generated XML module's `mod.rs` — wiring, re-export, and one
+/// `from_xml`/`to_xml` pair per document root.
+///
+/// Shared by every XSD-driven emitter so the module surface stays identical
+/// across them; the roots are the only thing that varies.
+#[must_use]
+pub(crate) fn emit_module(spec: &ModuleSpec) -> String {
+    let mut b = String::new();
+    let _ = writeln!(
+        b,
+        "// @generated by openehr-codegen ({}) — DO NOT EDIT.",
+        spec.generator
+    );
+    let _ = writeln!(b, "//! {}", spec.title);
+    let _ = writeln!(b, "//!");
+    for e in spec.entry_points {
+        let _ = writeln!(
+            b,
+            "//! Parse {} {} with [`from_xml{}`]; the root element is `<{}>` (`{}`).",
+            e.article, e.what, e.suffix, e.root_element, e.spec_name
+        );
     }
+    for note in spec.notes {
+        let _ = writeln!(b, "//!");
+        for line in note.lines() {
+            let _ = writeln!(b, "//! {line}");
+        }
+    }
+    let _ = writeln!(b, "\nmod impls;\nmod types;\npub use types::*;");
+    for e in spec.entry_points {
+        let _ = writeln!(
+            b,
+            "\n/// Parse {} {} XML document into {} [`{}`].\n\
+             ///\n\
+             /// # Errors\n\
+             /// Propagates canonical-XML parse errors.\n\
+             pub fn from_xml{}(xml: &str) -> Result<{}, crate::xml::runtime::XmlError> {{\n\
+             crate::xml::runtime::from_xml(xml)\n\
+             }}",
+            e.article, e.what, e.article, e.root_rust, e.suffix, e.root_rust
+        );
+        let _ = writeln!(
+            b,
+            "\n/// Serialize {} [`{}`] back to {} (root `<{}>`,\n\
+             /// `http://schemas.openehr.org/v1`).\n\
+             ///\n\
+             /// # Errors\n\
+             /// Propagates canonical-XML serialization errors.\n\
+             pub fn to_xml{}(value: &{}) -> Result<String, crate::xml::runtime::XmlError> {{\n\
+             crate::xml::runtime::to_xml(value, \"{}\", crate::xml::runtime::Namespace::V1)\n\
+             }}",
+            e.article, e.root_rust, e.wire, e.root_element, e.suffix, e.root_rust, e.root_element
+        );
+    }
+    b
 }

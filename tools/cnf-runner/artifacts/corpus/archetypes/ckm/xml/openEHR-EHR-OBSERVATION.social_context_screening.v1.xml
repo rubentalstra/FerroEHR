@@ -1,0 +1,2051 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-03-13</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Nuno Abreu, Oporto Hospital Center, Portugal</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ivar Berge, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Hugo Claudio Briceño García, Catsalut, Spain</other_contributors>
+    <other_contributors>Stefan Dubois, Dep't of Pathology and Genetics, University Hospitals of Lund and Malmö, Sweden</other_contributors>
+    <other_contributors>Gunn Elin Blakkisrud, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Kåre Flø, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Regional forvaltning EPJ, Helse Nord, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Sølvi Johansen, Oslo Universitetssykehus, Ullevål, Norway</other_contributors>
+    <other_contributors>Mika Kiviaho, Tietoevry, Finland</other_contributors>
+    <other_contributors>Lise Kristin Knutsen, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Jamie LaPaglia, Claim Clarity, United States</other_contributors>
+    <other_contributors>Liv Laugen, Oslo universitetssykehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Hanne Marte Bårholm, Helse Vest IKT, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Svenne Naumann, Finnmarkssykehuset, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Sobath Premaratne, Barts Health NHS Trust, United Kingdom</other_contributors>
+    <other_contributors>FREDERICO RIBEIRO, Hospital das Clínicas da UFPE, Brazil</other_contributors>
+    <other_contributors>Marte Rime Bø, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Michael Seneviratne, NHS, United Kingdom</other_contributors>
+    <other_contributors>Andre Smitt-Ingebretsen, Sørlandet sykehus HF, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Kanthan Theivendran, NHS, United Kingdom</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">286C7F69DB47328F7184D68EA3A8190E</other_details>
+    <other_details id="build_uid">aca218e9-d7d8-4672-a2e1-3ca01d5366db</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.</other_details>
+    <other_details id="revision">1.1.2</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Schaffung von Rahmenbedingungen für die Darstellung von Antworten auf vordefinierte Screening-Fragen zum sozialen Kontext.</purpose>
+      <keywords>Obdachlosigkeit</keywords>
+      <keywords>obdachlos</keywords>
+      <keywords>Wohnraum</keywords>
+      <keywords>wohnen</keywords>
+      <keywords>Glücksspiel</keywords>
+      <keywords>spielsüchtig</keywords>
+      <keywords>Beschäftigung</keywords>
+      <keywords>Arbeit</keywords>
+      <keywords>Ausbildung</keywords>
+      <keywords>Schule</keywords>
+      <keywords>Bildung</keywords>
+      <keywords>Sicherheit</keywords>
+      <keywords>Häusliche Gewalt</keywords>
+      <keywords>Gewalt</keywords>
+      <keywords>Abhängigkeit</keywords>
+      <keywords>Sucht</keywords>
+      <keywords>Vormundschaft</keywords>
+      <keywords>Missbrauch</keywords>
+      <keywords>Unsicherheit</keywords>
+      <keywords>Inklusion</keywords>
+      <keywords>Ausgrenzung</keywords>
+      <keywords>Transport</keywords>
+      <keywords>Mobilität</keywords>
+      <keywords>Gerechtigkeit</keywords>
+      <keywords>Notlage</keywords>
+      <keywords>Arbeitslosigkeit</keywords>
+      <keywords>Stress</keywords>
+      <keywords>Alphabetisierung</keywords>
+      <keywords>Wohlbefinden</keywords>
+      <keywords>Sozial</keywords>
+      <keywords>Soziologisch</keywords>
+      <keywords>Sozioökonomisch</keywords>
+      <keywords>Armut</keywords>
+      <keywords>Hunger</keywords>
+      <keywords>Flüchtling</keywords>
+      <keywords>Migration</keywords>
+      <keywords>Migrant</keywords>
+      <keywords>Einwanderer</keywords>
+      <keywords>Minderheit</keywords>
+      <use>Verwendung als Rahmenbedingung für die Erfassung von Antworten auf vordefinierte Screening-Fragen zum sozialen Kontext.&#xD;
+&#xD;
+Häufige Anwendungsfälle sind unter anderem:&#xD;
+- Systematische Befragung während Konsultationen, zum Beispiel:&#xD;
+--- Sind Sie obdachlos? Ja, Nein, Unbekannt&#xD;
+--- Fühlen Sie sich sozial isoliert?&#xD;
+--- Fühlen Sie sich zu Hause/in der Schule/bei der Arbeit sicher?&#xD;
+--- Glauben Sie, dass Sie spielsüchtig zu sein?&#xD;
+--- Sind Personen von Ihnen abhängig?&#xD;
+--- Benötigen Sie einen Dolmetscher, wenn Sie die Klinik besuchen?&#xD;
+&#xD;
+Die Semantik dieses Archetyps ist absichtlich locker gehalten, und eine Abfrage dieses Archetyps wäre normalerweise nur im Kontext des jeweiligen Templates sinnvoll oder sicher. In einen Template wird jedes Datenelement in der Regel in die spezifische Frage umbenannt, die gestellt wird. Wenn Wertemengen für allgemeine Anwendungsfälle vorgeschlagen wurden, können diese für die lokale Verwendung angepasst werden, indem die Datentypen DV_TEXT oder DV_BOOLEAN verwendet werden, um spezifische Anwendungsfälle abzubilden.&#xD;
+&#xD;
+Die EVENT-Struktur aus dem Referenzmodell kann verwendet werden, um anzugeben, ob sich die Fragen auf einen bestimmten Zeitpunkt oder einen bestimmten Zeitraum beziehen. Es soll eine separate Instanz dieses Archetyps verwendet werden, um klar zwischen einem Fragebogen zu unterscheiden, der Informationen zum sozialen Kontext zu einem beliebigen Zeitpunkt in der Vergangenheit erfasst, und einem Fragebogen, der Informationen zum sozialen Kontext innerhalb eines festgelegten Zeitintervalls erhebt – zum Beispiel: "Sind Sie derzeit zu Hause sicher?" und "Haben Sie in den letzten 4 Wochen häusliche Gewalt erlebt?".&#xD;
+&#xD;
+Die Quelle der Informationen in einer Fragebogenantwort kann je nach Kontext variieren, lässt sich jedoch mithilfe des Elements „Information provider“ im Referenzmodell eindeutig identifizieren.&#xD;
+&#xD;
+Dieser Archetyp wurde als Screening-Instrument oder zur Erfassung einfacher Daten im Fragebogenformat für Situationen wie beispielsweise ein Krankheitsregister entwickelt. Wenn im Rahmen des Screening-Prozesses ein sozialer Kontext, ein Problem identifiziert wird und die Details als Teil einer laufenden Gesundheitsakte erfasst und gespeichert werden sollen, sollten alle weiteren spezifischen Details zum sozialen Kontext unter Verwendung von für den klinischen Zweck vorgesehenen Archetypen aufgezeichnet werden.</use>
+      <misuse>Nicht zur Erfassung des sozialen Kontexts ausserhalb eines Screenings verwenden. Verwenden Sie zu diesem Zweck vorhandene Archetypen – beispielsweise EVALUATION.housing, EVALUATION.education, EVALUATION.occupation, EVALUATION.social_network und andere Archetypen innerhalb des Projekts „Sozialer Kontext“ – https://ckm.openehr.org/ckm/projects/1013.30.39.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>*To create a framework for recording answers to pre-defined screening questions about the social context. (en)</purpose>
+      <keywords>*homelessness (en)</keywords>
+      <keywords>*housing (en)</keywords>
+      <keywords>*gambling (en)</keywords>
+      <keywords>*employment (en)</keywords>
+      <keywords>*safety (en)</keywords>
+      <keywords>*domestic (en)</keywords>
+      <keywords>*violence (en)</keywords>
+      <keywords>*dependant (en)</keywords>
+      <keywords>*guardian (en)</keywords>
+      <keywords>*situation (en)</keywords>
+      <keywords>*circumstances (en)</keywords>
+      <keywords>*abuse (en)</keywords>
+      <keywords>*education (en)</keywords>
+      <keywords>*insecurity (en)</keywords>
+      <keywords>*inclusion (en)</keywords>
+      <keywords>*exclusion (en)</keywords>
+      <keywords>*transportation (en)</keywords>
+      <keywords>*equity (en)</keywords>
+      <keywords>*hardship (en)</keywords>
+      <keywords>*unemployment (en)</keywords>
+      <keywords>*stress (en)</keywords>
+      <keywords>*connection (en)</keywords>
+      <keywords>*literacy (en)</keywords>
+      <keywords>*wellness (en)</keywords>
+      <keywords>*social (en)</keywords>
+      <keywords>*sociological (en)</keywords>
+      <keywords>*socioeconomic (en)</keywords>
+      <keywords>*poverty (en)</keywords>
+      <keywords>*hunger (en)</keywords>
+      <keywords>*refugee (en)</keywords>
+      <keywords>*immigrant (en)</keywords>
+      <keywords>*minority (en)</keywords>
+      <use>*Use to create a framework for recording answers to pre-defined screening questions about the social context.&#xD;
+&#xD;
+Common use cases include, but are not limited to:&#xD;
+- Systematic enquiry in any consultation, for example:&#xD;
+--- Are you homeless? Yes, No, Unknown&#xD;
+--- Do you feel socially isolated?&#xD;
+--- Do you feel safe at home/school/work?&#xD;
+--- Do you think you are a problem gambler?&#xD;
+--- How many children do you have under the age of 18?&#xD;
+--- Are any individuals dependent on you?&#xD;
+--- Do you need an interpreter when you visit the clinic?&#xD;
+&#xD;
+The semantics of this archetype are intentionally loose, and querying this archetype would normally only be useful or safe within the context of each specific template. In a template, each data element would usually be renamed to the specific question asked. Where value sets have been proposed for common use cases, these can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case.&#xD;
+&#xD;
+The EVENT structure from the reference model can be used to specify whether the questions relate to a point in time or over a period of time. Use a separate instance of this archetype to distinguish between a questionnaire recording information about a social context issue that has been present at any time in the past and information about a social context issue within a specified time interval - for example, the difference between "Are you safe at home now?" compared to "Have you experienced any domestic violence in the past 4 weeks?"&#xD;
+&#xD;
+The source of the information in a questionnaire response may vary in different contexts but can be specifically identified using the 'Information provider' element in the Reference Model.&#xD;
+&#xD;
+This archetype has been designed to be used as a screening tool or to record simple questionnaire-format data for use in situations such as a disease registry. If the screening process identifies a social context circumstance, issue or concern and it is intended that the details are to be recorded and persisted as part of an ongoing health record, any further specific details about the social context should be recorded using archetypes specific for the clinical purpose. (en)</use>
+      <misuse>*Not to be used to record persistent details about social context-related concepts. Use existing archetypes for this purpose - for example EVALUATION.housing, EVALUATION.education, EVALUATION. occupation, EVALUATION.social_network and other archetypes within the Social context project - https://ckm.openehr.org/ckm/projects/1013.30.39. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å lage et rammeverk for registrering av svar på forhåndsdefinerte spørsmål om sosiale forhold.</purpose>
+      <keywords>hjemløs</keywords>
+      <keywords>uten fast bolig</keywords>
+      <keywords>UFB</keywords>
+      <keywords>spillavhengighet</keywords>
+      <keywords>sikkerhet</keywords>
+      <keywords>vold</keywords>
+      <keywords>mobbing</keywords>
+      <keywords>diskriminering</keywords>
+      <keywords>foresatt</keywords>
+      <keywords>verge</keywords>
+      <keywords>omstendigheter</keywords>
+      <keywords>forhold</keywords>
+      <keywords>forsørger</keywords>
+      <keywords>rus</keywords>
+      <keywords>barn</keywords>
+      <keywords>bolig</keywords>
+      <keywords>nettverk</keywords>
+      <keywords>barnevern</keywords>
+      <keywords>gambling</keywords>
+      <keywords>arbeid</keywords>
+      <keywords>arbeidsledig</keywords>
+      <keywords>misbruk</keywords>
+      <keywords>utdanning</keywords>
+      <keywords>sikkerhet</keywords>
+      <keywords>usikkerhet</keywords>
+      <keywords>inkludering</keywords>
+      <keywords>ekskludering</keywords>
+      <keywords>transport</keywords>
+      <keywords>likeverd</keywords>
+      <keywords>lidelse</keywords>
+      <keywords>stress</keywords>
+      <keywords>sosial</keywords>
+      <keywords>sosioøkonomisk</keywords>
+      <keywords>fattigdom</keywords>
+      <keywords>sult</keywords>
+      <keywords>flyktning</keywords>
+      <keywords>immigrant</keywords>
+      <keywords>minoritet</keywords>
+      <keywords>asyl</keywords>
+      <use>Bruk for å lage et rammeverk for registrering av svar på forhåndsdefinerte spørsmål om sosiale forhold.&#xD;
+&#xD;
+Vanlige bruksområder inkluderer, men er ikke begrenset til:&#xD;
+- Systematiske spørsmål ved konsultasjoner, for eksempel:&#xD;
+--- Har du fast bopel? Ja, Nei, Ukjent.&#xD;
+--- Føler du deg isolert sosialt?&#xD;
+--- Føler du deg trygg hjemme/på skolen/på jobb?&#xD;
+--- Tenker du at du er spillavhengig?&#xD;
+--- Er det noen mennesker som du har ansvar for og som er avhengig av deg?&#xD;
+--- Trenger du tolk mens du er på sykehuset?&#xD;
+&#xD;
+Semantikken i denne arketypen er med vilje løst definert, og spørringer etter data i denne arketypen vil normalt bare være hensiktsmessig eller sikkert i konteksten av det spesifikke templatet. I et templat vil hvert dataelement vanligvis døpes om til det (spesifikke) spørsmålet man ønsker svar på. Flere steder er det foreslått verdisett som passer til de vanligste bruksområder, men det er allikevel mulig å tilpasse/endre verdisett for lokal bruk ved å benytte de alternative datatypene DV_TEXT eller DV_BOOLEAN i stedet.&#xD;
+&#xD;
+EVENT-strukturen fra arketypens referansemodell kan brukes for å spesifisere om spørsmålene relateres til et tidspunkt eller til et tidsintervall. Bruk egne instanser av denne arketypen for å skille mellom spørsmål om sosialrelaterte emner som gjelder et hvilket som helst tidspunkt eller for et tidsintervall. For eksempel; "Opplever du vold i nære forhold i dag?" sammenlignet med "Har du opplevd vold i nære forhold de siste fire ukene?"&#xD;
+&#xD;
+Kilden til informasjonen i et spørreskjema kan variere i ulike kontekster, men kan identifiseres spesifikt ved å benytte "Information provider" elementet i openEHR referansemodell.&#xD;
+&#xD;
+Denne arketypen er laget for å bli brukt i et spørreskjema eller for å registrere enkle strukturerte data til for eksempel et sykdomsregister. Dersom det i spørreskjemaet identifiseres at det er noe i de sosiale forholdene som bør lagres i den elektroniske journalen, utover et øyeblikksbilde, er det tenkt at dette skal lagres i persistente arketyper laget spesielt for klinisk bruk.</use>
+      <misuse>Skal ikke brukes til å registrere varige detaljer om spesifikke sosiale kontekstrelaterte konsepter. Bruk eksisterende arketyper for dette, for eksempel EVALUATION.housing (Boligsammendrag), EVALUATION.education (Utdanningssammendrag), EVALUATION. occupation (Arbeidssammedrag), EVALUATION.social_network (Sosialt nettverk) og andre arketyper som finnes i det norske bibliotekets prosjekt "Sosialinformasjon" - https://arketyper.no/ckm/projects/1078.43.70, eller det internasjonale bibliotekets "Social context" project - https://ckm.openehr.org/ckm/projects/1013.30.39.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To create a framework for recording answers to pre-defined screening questions about the social context.</purpose>
+      <keywords>homelessness</keywords>
+      <keywords>housing</keywords>
+      <keywords>gambling</keywords>
+      <keywords>employment</keywords>
+      <keywords>safety</keywords>
+      <keywords>domestic</keywords>
+      <keywords>violence</keywords>
+      <keywords>dependent</keywords>
+      <keywords>guardian</keywords>
+      <keywords>situation</keywords>
+      <keywords>circumstances</keywords>
+      <keywords>abuse</keywords>
+      <keywords>education</keywords>
+      <keywords>insecurity</keywords>
+      <keywords>inclusion</keywords>
+      <keywords>exclusion</keywords>
+      <keywords>transportation</keywords>
+      <keywords>equity</keywords>
+      <keywords>hardship</keywords>
+      <keywords>unemployment</keywords>
+      <keywords>stress</keywords>
+      <keywords>connection</keywords>
+      <keywords>literacy</keywords>
+      <keywords>wellness</keywords>
+      <keywords>social</keywords>
+      <keywords>sociological</keywords>
+      <keywords>socioeconomic</keywords>
+      <keywords>poverty</keywords>
+      <keywords>hunger</keywords>
+      <keywords>refugee</keywords>
+      <keywords>immigrant</keywords>
+      <keywords>minority</keywords>
+      <use>Use to create a framework for recording answers to pre-defined screening questions about the social context.&#xD;
+&#xD;
+Common use cases include, but are not limited to:&#xD;
+- Systematic enquiry in any consultation, for example:&#xD;
+--- Are you homeless? Yes, No, Unknown&#xD;
+--- Do you feel socially isolated?&#xD;
+--- Do you feel safe at home/school/work?&#xD;
+--- Do you think you are a problem gambler?&#xD;
+--- Are any individuals dependent on you?&#xD;
+--- Do you need an interpreter when you visit the clinic?&#xD;
+&#xD;
+The semantics of this archetype are intentionally loose, and querying this archetype would normally only be useful or safe within the context of each specific template. In a template, each data element would usually be renamed to the specific question asked. Where value sets have been proposed for common use cases, these can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case.&#xD;
+&#xD;
+The EVENT structure from the reference model can be used to specify whether the questions relate to a point in time or over a period of time. Use a separate instance of this archetype to distinguish between a questionnaire recording information about a social context issue that has been present at any time in the past and information about a social context issue within a specified time interval - for example, the difference between "Are you safe at home now?" compared to "Have you experienced any domestic violence in the past 4 weeks?"&#xD;
+&#xD;
+The source of the information in a questionnaire response may vary in different contexts but can be specifically identified using the 'Information provider' element in the Reference Model.&#xD;
+&#xD;
+This archetype has been designed to be used as a screening tool or to record simple questionnaire-format data for use in situations such as a disease registry. If the screening process identifies a social context circumstance, issue or concern and it is intended that the details are to be recorded and persisted as part of an ongoing health record, any further specific details about the social context should be recorded using archetypes specific for the clinical purpose.</use>
+      <misuse>Not to be used to record persistent details about social context-related concepts. Use existing archetypes for this purpose - for example EVALUATION.housing, EVALUATION.education, EVALUATION. occupation, EVALUATION.social_network and other archetypes within the Social context project - https://ckm.openehr.org/ckm/projects/1013.30.39.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>*To create a framework for recording answers to pre-defined screening questions about the social context. (en)</purpose>
+      <keywords>*homelessness (en)</keywords>
+      <keywords>*housing (en)</keywords>
+      <keywords>*gambling (en)</keywords>
+      <keywords>*employment (en)</keywords>
+      <keywords>*safety (en)</keywords>
+      <keywords>*domestic (en)</keywords>
+      <keywords>*violence (en)</keywords>
+      <keywords>*dependant (en)</keywords>
+      <keywords>*guardian (en)</keywords>
+      <keywords>*situation (en)</keywords>
+      <keywords>*circumstances (en)</keywords>
+      <keywords>*abuse (en)</keywords>
+      <keywords>*education (en)</keywords>
+      <keywords>*insecurity (en)</keywords>
+      <keywords>*inclusion (en)</keywords>
+      <keywords>*exclusion (en)</keywords>
+      <keywords>*transportation (en)</keywords>
+      <keywords>*equity (en)</keywords>
+      <keywords>*hardship (en)</keywords>
+      <keywords>*unemployment (en)</keywords>
+      <keywords>*stress (en)</keywords>
+      <keywords>*connection (en)</keywords>
+      <keywords>*literacy (en)</keywords>
+      <keywords>*wellness (en)</keywords>
+      <keywords>*social (en)</keywords>
+      <keywords>*sociological (en)</keywords>
+      <keywords>*socioeconomic (en)</keywords>
+      <keywords>*poverty (en)</keywords>
+      <keywords>*hunger (en)</keywords>
+      <keywords>*refugee (en)</keywords>
+      <keywords>*immigrant (en)</keywords>
+      <keywords>*minority (en)</keywords>
+      <use>*Use to create a framework for recording answers to pre-defined screening questions about the social context.&#xD;
+&#xD;
+Common use cases include, but are not limited to:&#xD;
+- Systematic enquiry in any consultation, for example:&#xD;
+--- Are you homeless? Yes, No, Unknown&#xD;
+--- Do you feel socially isolated?&#xD;
+--- Do you feel safe at home/school/work?&#xD;
+--- Do you think you are a problem gambler?&#xD;
+--- How many children do you have under the age of 18?&#xD;
+--- Are any individuals dependent on you?&#xD;
+--- Do you need an interpreter when you visit the clinic?&#xD;
+&#xD;
+The semantics of this archetype are intentionally loose, and querying this archetype would normally only be useful or safe within the context of each specific template. In a template, each data element would usually be renamed to the specific question asked. Where value sets have been proposed for common use cases, these can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case.&#xD;
+&#xD;
+The EVENT structure from the reference model can be used to specify whether the questions relate to a point in time or over a period of time. Use a separate instance of this archetype to distinguish between a questionnaire recording information about a social context issue that has been present at any time in the past and information about a social context issue within a specified time interval - for example, the difference between "Are you safe at home now?" compared to "Have you experienced any domestic violence in the past 4 weeks?"&#xD;
+&#xD;
+The source of the information in a questionnaire response may vary in different contexts but can be specifically identified using the 'Information provider' element in the Reference Model.&#xD;
+&#xD;
+This archetype has been designed to be used as a screening tool or to record simple questionnaire-format data for use in situations such as a disease registry. If the screening process identifies a social context circumstance, issue or concern and it is intended that the details are to be recorded and persisted as part of an ongoing health record, any further specific details about the social context should be recorded using archetypes specific for the clinical purpose. (en)</use>
+      <misuse>*Not to be used to record persistent details about social context-related concepts. Use existing archetypes for this purpose - for example EVALUATION.housing, EVALUATION.education, EVALUATION. occupation, EVALUATION.social_network and other archetypes within the Social context project - https://ckm.openehr.org/ckm/projects/1013.30.39. (en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Créer un cadre pour l'enregistrement des réponses à des questions prédéfinies sur le contexte sociale.&#xD;
+</purpose>
+      <keywords>sans-abri</keywords>
+      <keywords>sans-abrisme</keywords>
+      <keywords>logement</keywords>
+      <keywords>jeu pathologique</keywords>
+      <keywords>jeu compulsif</keywords>
+      <keywords>jeu compulsif</keywords>
+      <keywords>ludomanie</keywords>
+      <keywords>emploi</keywords>
+      <keywords>travail</keywords>
+      <keywords>sécurité</keywords>
+      <keywords>domestique</keywords>
+      <keywords>familial</keywords>
+      <keywords>violence</keywords>
+      <keywords>personne à charge</keywords>
+      <keywords>personne dépendante</keywords>
+      <keywords>tuteur</keywords>
+      <keywords>tutelle</keywords>
+      <keywords>situation</keywords>
+      <keywords>circonstances</keywords>
+      <keywords>abus</keywords>
+      <keywords>éducation</keywords>
+      <keywords>formation</keywords>
+      <keywords>insécurité</keywords>
+      <keywords>inclusion</keywords>
+      <keywords>exclusion</keywords>
+      <keywords>transport</keywords>
+      <keywords>mobilité</keywords>
+      <keywords>équité</keywords>
+      <keywords>difficultés</keywords>
+      <keywords>chômage</keywords>
+      <keywords>stress</keywords>
+      <keywords>connexion</keywords>
+      <keywords>alphabétisation</keywords>
+      <keywords>bien-être</keywords>
+      <keywords>social</keywords>
+      <keywords>sociologique</keywords>
+      <keywords>socioéconomique</keywords>
+      <keywords>pauvreté</keywords>
+      <keywords>faim</keywords>
+      <keywords>réfugié</keywords>
+      <keywords>immigrant</keywords>
+      <keywords>minorité</keywords>
+      <use>À utiliser pour créer un cadre permettant d'enregistrer les réponses à des questions prédéfinies sur le contexte social.&#xD;
+&#xD;
+Les cas d'utilisation les plus courants sont, entre autres, les suivants&#xD;
+- L'interrogation systématique lors d'une consultation, par exemple :&#xD;
+--- Êtes-vous sans domicile ? Oui, Non, Inconnu&#xD;
+--- Vous sentez-vous socialement isolé(e) ?&#xD;
+--- Vous sentez-vous en sécurité à la maison / à l’école / au travail ?&#xD;
+--- Avez-vous des problèmes de jeu d’argent ?&#xD;
+--- Des personnes sont-elles dépendantes de vous ?&#xD;
+--- Avez-vous besoin d’un interprète lors de votre visite à la clinique ?&#xD;
+&#xD;
+&#xD;
+La sémantique de cet archétype est intentionnellement floue, et requêter cet archétype ne serait normalement utile ou sûre que dans le contexte de chaque modèle spécifique. Dans un modèle, chaque élément de données est généralement renommé en fonction de la question spécifique posée. Lorsque des ensembles de valeurs ont été proposés pour des cas d'utilisation courants, ils peuvent être adaptés à un usage local en utilisant les types de données DV_TEXT ou DV_BOOLEAN pour correspondre à chaque cas d'utilisation spécifique.&#xD;
+&#xD;
+La structure EVENT du modèle de référence peut être utilisée pour spécifier si les questions se rapportent à un moment donné ou à une période de temps. Utilisez une instance distincte de cet archétype pour faire la distinction entre un questionnaire enregistrant des informations sur un problème lié au contexte social ayant pu survenir à tout moment dans le passé, et un questionnaire portant sur un problème lié au contexte social survenu dans un intervalle de temps donné - par exemple la différence entre "Vous sentez-vous en sécurité à la maison actuellement ?" et "Avez-vous été victime de violences domestiques au cours des 4 dernières semaines ?"&#xD;
+&#xD;
+La source des informations contenues dans une réponse à un questionnaire peut varier selon le contexte, mais elle peut être spécifiquement identifiée à l'aide de l'élément "Fournisseur d'informations" du modèle de référence.&#xD;
+&#xD;
+Cet archétype a été conçu pour être utilisé comme outil de dépistage ou pour enregistrer des données simples sous forme de questionnaire en vue d'une utilisation dans des situations telles qu'un registre des maladies. Si le processus de dépistage identifie une circonstance, un problème ou une inquiétude liée au contexte social et il est prévu de d’enregistrer les détails dans le dossier de santé, tout renseignement supplémentaire sur le contexte social doit être enregistré à l’aide d’archétypes dédiés à des fins cliniques.&#xD;
+</use>
+      <misuse>Ne pas utiliser pour enregistrer des détails persistants sur des concepts liés au contexte social. Utilisez les archétypes existants à cette fin, par exemple EVALUATION.housing, EVALUATION.education, EVALUATION.occupation, EVALUATION.social_network et d'autres archétypes du projet "Social context" - https://ckm.openehr.org/ckm/projects/1013.30.39.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Crear un marc per registrar respostes a preguntes de cribratge predefinides sobre el context social.</purpose>
+      <keywords>sense llar</keywords>
+      <keywords>habitatge</keywords>
+      <keywords>joc d'atzar</keywords>
+      <keywords>ocupació</keywords>
+      <keywords>seguretat</keywords>
+      <keywords>domèstic</keywords>
+      <keywords>violència</keywords>
+      <keywords>dependent</keywords>
+      <keywords>tutor</keywords>
+      <keywords>situació</keywords>
+      <keywords>circumstàncies</keywords>
+      <keywords>abús</keywords>
+      <keywords>educació</keywords>
+      <keywords>inseguretat</keywords>
+      <keywords>inclusió</keywords>
+      <keywords>exclusió</keywords>
+      <keywords>transport</keywords>
+      <keywords>equitat</keywords>
+      <keywords>dificultats</keywords>
+      <keywords>atur</keywords>
+      <keywords>estrès</keywords>
+      <keywords>connexió</keywords>
+      <keywords>alfabetització</keywords>
+      <keywords>benestar</keywords>
+      <keywords>social</keywords>
+      <keywords>sociològic</keywords>
+      <keywords>socioeconòmic</keywords>
+      <keywords>pobresa</keywords>
+      <keywords>fam</keywords>
+      <keywords>refugiat</keywords>
+      <keywords>immigrant</keywords>
+      <keywords>minoria</keywords>
+      <use>Utilitzeu-lo per crear un marc per registrar respostes a preguntes de cribratge predefinides sobre el context social.&#xD;
+&#xD;
+Els casos d'ús comuns inclouen, entre d'altres:&#xD;
+- Consulta sistemàtica en qualsevol consulta, per exemple:&#xD;
+--- Ets una persona sense llar? Sí, No, Desconegut&#xD;
+--- Et sents socialment aïllat?&#xD;
+--- Et sents segur a casa/escola/feina?&#xD;
+--- Creus que tens problemes amb el joc?&#xD;
+--- Hi ha alguna persona que depengui de tu?&#xD;
+--- Necessites un intèrpret quan visites la clínica?&#xD;
+&#xD;
+La semàntica d'aquest arquetip és intencionadament flexible, i consultar aquest arquetip normalment només seria útil o segur dins del context de cada plantilla específica. En una plantilla, cada element de dades normalment es canviaria de nom a la pregunta específica que es fa. Quan s'han proposat conjunts de valors per a casos d'ús comuns, aquests es poden adaptar per a l'ús local mitjançant l'opció de tipus de dades DV_TEXT o DV_BOOLEAN per coincidir amb cada cas d'ús específic.&#xD;
+&#xD;
+L'estructura EVENT del model de referència es pot utilitzar per especificar si les preguntes es refereixen a un punt en el temps o a un període de temps. Utilitzeu una instància separada d'aquest arquetip per distingir entre un qüestionari que registra informació sobre un problema de context social que ha estat present en qualsevol moment del passat i informació sobre un problema de context social dins d'un interval de temps especificat; per exemple, la diferència entre "Esteu segur a casa ara?" en comparació amb "Heu experimentat violència domèstica en les darreres 4 setmanes?".&#xD;
+&#xD;
+La font de la informació en una resposta al qüestionari pot variar en diferents contextos, però es pot identificar específicament mitjançant l'element "Information provider" ("Proveïdor d'informació") del Model de Referència.&#xD;
+&#xD;
+Aquest arquetip s'ha dissenyat per ser utilitzat com a eina de cribratge o per registrar dades simples en format de qüestionari per al seu ús en situacions com ara un registre de malalties. Si el procés de cribratge identifica una circumstància, problema o preocupació de context social i es pretén que els detalls es registrin i es preservin com a part d'un historial mèdic continu, qualsevol altre detall específic sobre el context social s'ha de registrar mitjançant arquetips específics per a la finalitat clínica.</use>
+      <misuse>No s'ha d'utilitzar per registrar detalls persistents sobre conceptes relacionats amb el context social. Utilitzeu arquetips existents per a aquest propòsit, per exemple, EVALUATION.housing, EVALUATION.education, EVALUATION.occupation, EVALUATION.social_network i altres arquetips dins del projecte Social context: https://ckm.openehr.org/ckm/projects/1013.30.39.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Crear un marco para registrar respuestas a preguntas de cribado predefinidas sobre el contexto social.</purpose>
+      <keywords>Sin hogar</keywords>
+      <keywords>Vivienda</keywords>
+      <keywords>Juego</keywords>
+      <keywords>Empleo</keywords>
+      <keywords>Seguridad</keywords>
+      <keywords>Violencia doméstica</keywords>
+      <keywords>Dependiente</keywords>
+      <keywords>Tutor</keywords>
+      <keywords>Situación</keywords>
+      <keywords>Circunstancias</keywords>
+      <keywords>Abuso</keywords>
+      <keywords>Educación</keywords>
+      <keywords>Inseguridad</keywords>
+      <keywords>Inclusión</keywords>
+      <keywords>Exclusión</keywords>
+      <keywords>Transporte</keywords>
+      <keywords>Equidad</keywords>
+      <keywords>Dificultades</keywords>
+      <keywords>Desempleo</keywords>
+      <keywords>Estrés</keywords>
+      <keywords>Conexión</keywords>
+      <keywords>Alfabetización</keywords>
+      <keywords>Bienestar</keywords>
+      <keywords>Social</keywords>
+      <keywords>Sociológico</keywords>
+      <keywords>Socioeconómico</keywords>
+      <keywords>Pobreza</keywords>
+      <keywords>Hambre</keywords>
+      <keywords>Refugiado</keywords>
+      <keywords>Inmigrante</keywords>
+      <keywords>Minoría</keywords>
+      <use>Usar para crear un marco para registrar las respuestas a preguntas de cribado predefinidas sobre el contexto social.&#xD;
+&#xD;
+Los casos de uso comunes incluyen, entre otros:&#xD;
+- Investigación sistemática en cualquier consulta, por ejemplo:&#xD;
+--- ¿Es usted una persona sin hogar? Sí, No, Desconocido&#xD;
+--- ¿Se siente socialmente aislado?&#xD;
+--- ¿Se siente seguro en casa, en la escuela o en el trabajo?&#xD;
+--- ¿Cree que tiene problemas con el juego?&#xD;
+--- ¿Hay alguna persona que dependa de usted?&#xD;
+--- ¿Necesita un intérprete cuando visita la clínica?&#xD;
+&#xD;
+La semántica de este arquetipo es intencionadamente flexible, y consultarlo normalmente solo sería útil o seguro dentro del contexto de cada plantilla específica. En una plantilla, cada elemento de datos se renombraría generalmente según la pregunta específica formulada. Cuando se han propuesto conjuntos de valores para casos de uso comunes, estos pueden adaptarse para uso local utilizando los tipos de datos DV_TEXT o DV_BOOLEAN para que coincidan con cada caso de uso específico.&#xD;
+&#xD;
+La estructura EVENT del modelo de referencia permite especificar si las preguntas se refieren a un momento específico o a un período determinado. Utilice una instancia independiente de este arquetipo para distinguir entre un cuestionario que registra información sobre un problema de contexto social presente en algún momento del pasado y la información sobre un problema de contexto social dentro de un intervalo de tiempo específico; por ejemplo, la diferencia entre "¿Se encuentra seguro en casa ahora?" y "¿Ha sufrido violencia doméstica en las últimas 4 semanas?".&#xD;
+&#xD;
+La fuente de información de una respuesta al cuestionario puede variar según el contexto, pero se puede identificar específicamente mediante el elemento "Information provider" ("Proveedor de información") del Modelo de Referencia.&#xD;
+&#xD;
+Este arquetipo se ha diseñado para utilizarse como herramienta de cribado o para registrar datos sencillos en formato de cuestionario para su uso en situaciones como un registro de enfermedades. Si el proceso de cribado identifica una circunstancia, problema o inquietud de contexto social y se pretende que los detalles se registren y conserven como parte de un historial clínico continuo, cualquier otro detalle específico sobre el contexto social debe registrarse utilizando arquetipos específicos para el propósito clínico.</use>
+      <misuse>No debe utilizarse para registrar detalles persistentes sobre conceptos relacionados con el contexto social. Para ello, utilice los arquetipos existentes, por ejemplo, EVALUACIÓN.housing, EVALUACIÓN.education, EVALUACIÓN.occupation, EVALUACIÓN.social_network y otros arquetipos del proyecto Contexto social: https://ckm.openehr.org/ckm/projects/1013.30.39.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Johann Keller</author>
+    <author id="organisation">x-tention</author>
+    <author id="email">johann.keller@x-tention.ch</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Marit Alice Venheim, John Tore Valand, Vebjørn Arntzen, Liv Laugen</author>
+    <author id="organisation">Helse Vest IKT AS, Helse Bergen, Oslo University Hospital, ​Oslo University Hospital, Norway</author>
+    <author id="email">marit.alice.venheim@helse-vest-ikt.no, john.tore.valand@helse-bergen.no, varntzen@ous-hf.no, john.tore.valand@helse-vest-ikt.no, liv.laugen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Johann Keller</author>
+    <author id="organisation">x-tention</author>
+    <author id="email">johann.keller@x-tention.ch</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez, Clara Calleja Vega</author>
+    <author id="organisation">Sistema de Salut de Catalunya, CatSalut. Servei Català de la Salut.</author>
+    <author id="email">lauramoral@catsalut.cat, ccalleja@catsalut.cat</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez</author>
+    <author id="organisation">Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+  </translations>
+  <uid>
+    <value>23185f94-2926-4f62-9c6e-e3c36f5e2864</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.social_context_screening.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0022</node_id>
+                    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                      <rm_attribute_name>items</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0004</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0048</code_list>
+                                <code_list>at0049</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0005</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>defining_code</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_CODE_PHRASE">
+                                <rm_type_name>CODE_PHRASE</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <terminology_id>
+                                  <value>local</value>
+                                </terminology_id>
+                                <code_list>at0023</code_list>
+                                <code_list>at0024</code_list>
+                                <code_list>at0027</code_list>
+                                <code_list>at0050</code_list>
+                              </children>
+                            </attributes>
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_BOOLEAN</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>0</lower>
+                        </occurrences>
+                        <node_id>at0051</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_DATE_TIME</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_INTERVAL&lt;DV_DATE_TIME&gt;</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_INTERVAL&lt;DV_DURATION&gt;</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="ARCHETYPE_SLOT">
+                        <rm_type_name>CLUSTER</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>0</lower>
+                        </occurrences>
+                        <node_id>at0026</node_id>
+                        <includes>
+                          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                          <expression xsi:type="EXPR_BINARY_OPERATOR">
+                            <type>Boolean</type>
+                            <operator>2007</operator>
+                            <precedence_overridden>false</precedence_overridden>
+                            <left_operand xsi:type="EXPR_LEAF">
+                              <type>String</type>
+                              <item xsi:type="xsd:string">archetype_id/value</item>
+                              <reference_type>attribute</reference_type>
+                            </left_operand>
+                            <right_operand xsi:type="EXPR_LEAF">
+                              <type>C_STRING</type>
+                              <item xsi:type="C_STRING">
+                                <pattern>.*</pattern>
+                              </item>
+                              <reference_type>constraint</reference_type>
+                            </right_operand>
+                          </expression>
+                        </includes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>ELEMENT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>0</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id>at0025</node_id>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_TEXT</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                          </children>
+                        </attributes>
+                      </children>
+                      <cardinality>
+                        <is_ordered>false</is_ordered>
+                        <is_unique>false</is_unique>
+                        <interval>
+                          <lower_included>true</lower_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>true</upper_unbounded>
+                          <lower>1</lower>
+                        </interval>
+                      </cardinality>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0044</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>.*</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0052</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0021</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Social context screening questionnaire</items>
+        <items id="description">Series of questions and associated answers used to screen about the social environment and social situation which may impact the health and well-being of the individual, especially to identify potential issues or risks.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Context</items>
+        <items id="description">Identification of a specific social circumstance, issue or concern relevant for the questionnaire or grouping of such, by name.</items>
+        <items id="comment">This element offers a choice between free and coded text. It is anticipated that the list of coded values will grow as requirements are identified. Coding of the 'Context' with a terminology is preferred, where possible - for example, relevant terms within the Social context finding hierarchy in SNOMED CT (SCTID: 108329005). Alternatively as free text, for example 'Social isolation', 'Discrimination', 'Minority stress'.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Presence?</items>
+        <items id="description">Has there been experience of the specified 'Context'?</items>
+        <items id="comment">In a template, the data element would usually be renamed to the specific question asked. The proposed value set can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Specific social context</items>
+        <items id="description">Details about a specified social context or issue, or a grouping of these, relevant for the screening purpose.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Yes</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">No</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the specific social context, not captured in other fields.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Additional details</items>
+        <items id="description">Additional details or questions about the specific social context.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Unknown</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">Screening purpose</items>
+        <items id="description">The context or reason for screening.</items>
+        <items id="comment">This data element is intended to provide collection context for the question/answer groups when queried at a later date. It is not expected that this data element will be exposed to the individual, but only stored in data. For example: pre-admission screening or the name of the actual questionnaire.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Additional details</items>
+        <items id="description">Additional structured details or questions about screening for social context items.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Homeless</items>
+        <items id="description">The individual does not have a stable place to live.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Interpreter needed</items>
+        <items id="description">The individual needs assistance with language translation.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Unsure</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">Timing</items>
+        <items id="description">Indication of timing related to the specified 'Context.'.</items>
+        <items id="comment">The 'Timing' data element has deliberately been loosely modelled to support the myriad of ways that it can be used in questionnaires to capture timing information related to the social context. The specific and intended semantics can be further clarified in a template. For example: the start or stop date and/or time; the age of the individual at onset; or the duration of time since the social context had an impact. A partial date is valid, using the DV_DATE_TIME data type, to record only a year.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Overall comment</items>
+        <items id="description">Additional narrative about the screening for any social context, not captured in other fields.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">*Social context screening questionnaire (en)</items>
+        <items id="description">*Series of questions and associated answers used to screen about the social environment and social situation which may impact the health and well-being of the individual, especially to identify potential issues or risks. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Context (en)</items>
+        <items id="description">*Identification of a specific social circumstance, issue or concern relevant for the questionnaire or grouping of such, by name.  (en)</items>
+        <items id="comment">*This element offers a choice between free and coded text. It is anticipated that the list of coded values will grow as requirements are identified. Coding of the 'Context' with a terminology is preferred, where possible - for example, relevant terms within the Social context finding hierarchy in SNOMED CT (SCTID: 108329005). (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Olemassalolo</items>
+        <items id="description">*Has there been experience of the specified 'Context'? (en)</items>
+        <items id="comment">*In a template, the data element would usually be renamed to the specific question asked. The proposed value set can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Specific social context (en)</items>
+        <items id="description">*Details about a specified social context or issue, or a grouping of these, relevant for the screening purpose. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Yes (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">*No (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Kommentit</items>
+        <items id="description">*Additional narrative about the specific social context, not captured in other fields. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Additional details or questions about the specific social context. (en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Unknown (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">*Screening purpose(en)</items>
+        <items id="description">*The context or reason for screening. (en)</items>
+        <items id="comment">*This data element is intended to provide collection context for the question/answer groups when queried at a later date. It is not expected that this data element will be exposed to the individual, but only stored in data. For example: pre-admission screening or the name of the actual questionnaire. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Additional structured details or questions about screening for social context items. (en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Homeless (en)</items>
+        <items id="description">*The individual does not have a stable place to live. (en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Interpreter needed (en)</items>
+        <items id="description">*The individual needs assistance with language translation (en)</items>
+      </items>
+      <items code="at0050">
+        <items id="text">*Unsure (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">*Timing (en)</items>
+        <items id="description">*Indication of timing related to the specified 'Context.'. (en)</items>
+        <items id="comment">*The 'Timing' data element has deliberately been loosely modelled to support the myriad of ways that it can be used in questionnaires to capture timing information related to the social context. The specific and intended semantics can be further clarified in a template. For example: the start or stop date and/or time; the age of the individual at onset; or the duration of time since the social context had an impact. A partial date is valid, using the DV_DATE_TIME data type, to record only a year. (en)</items>
+      </items>
+      <items code="at0052">
+        <items id="text">*Overall comment (en)</items>
+        <items id="description">*Additional narrative about the screening for any social context, not captured in other fields. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Kartleggingsspørsmål om sosiale forhold</items>
+        <items id="description">Spørsmål og tilhørende svar som brukes til å kartlegge sosialt miljø og sosiale forhold som kan ha betydning for helse og velferd til et individ, spesielt for å identifisere potensielle utfordringer eller risiko.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifikk hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Sosialt forhold</items>
+        <items id="description">Navngiving av et spesifikt sosialt forhold, problem eller bekymring som er relevant for spørreskjemaet, eller en gruppering av slike.</items>
+        <items id="comment">Dette elementet tilbyr valg mellom fritekst og kodet tekst. Det er antatt at listen av kodede verdier vil vokse ettersom man identifiserer flere behov. Det er anbefalt å kode "Sosialt forhold" med en terminologi dersom det er mulig - for eksempel relevante termer innen hierarkiet til SNOMED CT's Social context finding hierarchy (SCTID: 108329005). Alternativt som fritekst, for eksempel "Forsørgelsesbyrde", "Sosial isolasjon", "Diskriminering", "Minoritetsstress".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tilstede?</items>
+        <items id="description">Har individet hatt noen erfaring med det spesifserte "Sosialt forhold"?</items>
+        <items id="comment">I templat vil navnet på dataelementet normalt omformuleres til det spesifikke spørsmålet. Det foreslåtte verdisettet kan tilpasses/endres i det enkelte bruksområde ved å benytte de alternative datatypene DV_TEXT eller DV_BOOLEAN.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Spesifikt sosialt forhold</items>
+        <items id="description">Detaljer om et spesifikt sosialt forhold, eller en gruppering av slike, som er innenfor kartleggingsformålet.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Ja</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">Nei</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om det spesifikke sosiale forholdet som ikke er registrert/omfattet av andre felt.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer eller spørsmål om det spesifikke sosiale forholdet.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Ukjent</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">Kartleggingsformål</items>
+        <items id="description">Konteksten eller årsaken for kartleggingen.</items>
+        <items id="comment">Dette dataelementet er ment for å sette en kontekst for samlingen av spørsmål/svar til bruk senere for å gjøre spørringer på dataene. Det er ikke forventet at dette dataelementet skal være synlig for en bruker av skjemaet, men kun tilgjengelig i de lagrede dataene. For eksempel: "Preoperativ screening" eller navnet på det faktiske spørreskjemaet.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer eller spørsmål om kartleggingen av sosiale forhold.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Hjemløs</items>
+        <items id="description">Individet har ingen fast bopel.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Trenger tolk</items>
+        <items id="description">Individet trenger assistanse til oversettelse.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Usikker</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">Tidsangivelse</items>
+        <items id="description">Tidsangivelse for det spesifikke sosiale forholdet.</items>
+        <items id="comment">Dataelementet "Tidsangivelse" er med hensikt løst modellert for å støtte ulike måter å angi tidsangivelser for bekymringen, plagen, problemet eller diagnosen i et spørreskjema. Den konkrete semantikken defineres i templatet. For eksempel: Bekymringen, plagen, problemet eller diagnosen faktiske dato og/eller klokkeslett, start- og slutttid for bekymringen, plagen, problemet eller diagnosen, et tidsintervall for når bekymringen, plagen, problemet eller diagnosen oppstod, varigheten av bekymringen, plagen, problemet eller diagnosen, individets alder på tidspunktet for bekymringen, plagen, problemet eller diagnosen, eller hvor lenge det siden det oppstod. Kan være en deldato, for eksempel bare år, ved å bruke datatypen DV_DATE_TIME.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Overordnet kommentar</items>
+        <items id="description">Ytterligere fritekst om kartleggingen av sosiale forhold som ikke er fanget opp i andre felt.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">*Social context screening questionnaire (en)</items>
+        <items id="description">*Series of questions and associated answers used to screen about the social environment and social situation which may impact the health and well-being of the individual, especially to identify potential issues or risks. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Qualsiasi evento</items>
+        <items id="description">Evento predefinito, non specificato nel tempo o nell'intervallo di tempo, che può essere definito esplicitamente in un modello o in fase di esecuzione.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Context (en)</items>
+        <items id="description">*Identification of a specific social circumstance, issue or concern relevant for the questionnaire or grouping of such, by name.  (en)</items>
+        <items id="comment">*This element offers a choice between free and coded text. It is anticipated that the list of coded values will grow as requirements are identified. Coding of the 'Context' with a terminology is preferred, where possible - for example, relevant terms within the Social context finding hierarchy in SNOMED CT (SCTID: 108329005). (en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Presenza?</items>
+        <items id="description">*Has there been experience of the specified 'Context'? (en)</items>
+        <items id="comment">*In a template, the data element would usually be renamed to the specific question asked. The proposed value set can be adapted for local use by using the DV_TEXT or the DV_BOOLEAN datatypes choice to match each specific use case. (en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Estensione</items>
+        <items id="description">*Additional information required to extend the model with local content or to align with other reference models or formalisms. (en)</items>
+        <items id="comment">*For example: local information requirements; or additional metadata to align with FHIR. (en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*Specific social context (en)</items>
+        <items id="description">*Details about a specified social context or issue, or a grouping of these, relevant for the screening purpose. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Yes (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">*No (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Commento</items>
+        <items id="description">*Additional narrative about the specific social context, not captured in other fields. (en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Additional details or questions about the specific social context. (en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Unknown (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">Scopo dello screening</items>
+        <items id="description">*The context or reason for screening. (en)</items>
+        <items id="comment">*This data element is intended to provide collection context for the question/answer groups when queried at a later date. It is not expected that this data element will be exposed to the individual, but only stored in data. For example: pre-admission screening or the name of the actual questionnaire. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Additional structured details or questions about screening for social context items. (en)</items>
+      </items>
+      <items code="at0048">
+        <items id="text">*Homeless (en)</items>
+        <items id="description">*The individual does not have a stable place to live. (en)</items>
+      </items>
+      <items code="at0049">
+        <items id="text">*Interpreter needed (en)</items>
+        <items id="description">*The individual needs assistance with language translation (en)</items>
+      </items>
+      <items code="at0050">
+        <items id="text">*Unsure (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">*Timing (en)</items>
+        <items id="description">*Indication of timing related to the specified 'Context.'. (en)</items>
+        <items id="comment">*The 'Timing' data element has deliberately been loosely modelled to support the myriad of ways that it can be used in questionnaires to capture timing information related to the social context. The specific and intended semantics can be further clarified in a template. For example: the start or stop date and/or time; the age of the individual at onset; or the duration of time since the social context had an impact. A partial date is valid, using the DV_DATE_TIME data type, to record only a year. (en)</items>
+      </items>
+      <items code="at0052">
+        <items id="text">*Overall comment (en)</items>
+        <items id="description">*Additional narrative about the screening for any social context, not captured in other fields. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">Qüestionari de detecció del context social</items>
+        <items id="description">Sèrie de preguntes i respostes associades que s'utilitzen per avaluar l'entorn social i la situació social que poden afectar la salut i el benestar de l'individu, especialment per identificar possibles problemes o riscos.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Qualsevol esdeveniment</items>
+        <items id="description">Esdeveniment per defecte, d'un punt o interval de temps no especificat, que es pot definir explícitament en una plantilla o en temps d'execució.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Context</items>
+        <items id="description">Identificació d'una circumstància social, problema o preocupació específica rellevant per al qüestionari o agrupació d'aquests, pel seu nom.</items>
+        <items id="comment">Aquest element ofereix una opció entre text lliure i codificat. Es preveu que la llista de valors codificats creixi a mesura que s'identifiquin els requisits. Es prefereix la codificació del "Context" amb una terminologia, sempre que sigui possible; per exemple, termes rellevants dins de la jerarquia de cerca de context social a SNOMED CT (SCTID: 108329005). Alternativament, com a text lliure, per exemple, "Aïllament social", "Discriminació", "Estrès de les minories".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Presència</items>
+        <items id="description">Hi ha hagut experiència amb el «context» especificat?</items>
+        <items id="comment">En una plantilla, l'element de dades normalment es rebatejarà amb el nom de la pregunta específica que es fa. El conjunt de valors proposat es pot adaptar per a ús local mitjançant l'opció de tipus de dades DV_TEXT o DV_BOOLEAN per adaptar-lo a cada cas d'ús específic.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Extensió</items>
+        <items id="description">Informació addicional necessària per ampliar el model amb contingut local o per alinear-lo amb altres models o formalismes de referència.</items>
+        <items id="comment">Per exemple: requisits d'informació local; o metadades addicionals per alinear-se amb FHIR.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Context social específic</items>
+        <items id="description">Detalls sobre un context o problema social especificat, o un grup d'aquests, rellevants per a la finalitat del cribratge.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Si</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">No</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Comentari</items>
+        <items id="description">Narrativa addicional sobre el context social específic, no recollida en altres camps.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Detalls addicionals</items>
+        <items id="description">Detalls o preguntes addicionals sobre el context social específic.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Desconegut</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">Propòsit de cribratge</items>
+        <items id="description">El context o el motiu del cribratge.</items>
+        <items id="comment">Aquest element de dades té com a objectiu proporcionar un context de recopilació per als grups de preguntes/respostes quan es consultin posteriorment. No s'espera que aquest element de dades s'exposi a l'individu, sinó que només s'emmagatzemi a les dades. Per exemple: cribratge previ a l'ingrés o el nom del qüestionari real.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Detalls addicionals</items>
+        <items id="description">Detalls estructurats addicionals o preguntes sobre el cribratge d'elements de context social.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Sense llar</items>
+        <items id="description">La persona no té un lloc estable on viure.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Necessitat d'intèrpret</items>
+        <items id="description">La persona necessita ajuda amb la traducció d'idiomes.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Dubtós</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">Temps</items>
+        <items id="description">Indicació del temps relacionat amb el «Context» especificat.</items>
+        <items id="comment">L'element de dades "Temps" s'ha modelat deliberadament de manera flexible per donar suport a la infinitat de maneres en què es pot utilitzar en qüestionaris per capturar informació temporal relacionada amb el context social. La semàntica específica i prevista es pot aclarir més en una plantilla. Per exemple: la data i/o l'hora d'inici o finalització; l'edat de l'individu a l'inici; o la durada del temps des que el context social va tenir un impacte. Una data parcial és vàlida, utilitzant el tipus de dades DV_DATE_TIME, per registrar només un any.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Comentari general</items>
+        <items id="description">Narrativa addicional sobre la detecció per a qualsevol context social, no recollida en altres camps.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Cuestionario de cribado del contexto social</items>
+        <items id="description">Serie de preguntas y respuestas asociadas que se utilizan para investigar el entorno social y la situación social que pueden afectar la salud y el bienestar del individuo, especialmente para identificar posibles problemas o riesgos.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Cualquier evento</items>
+        <items id="description">Evento predeterminado, de punto en el tiempo o intervalo no especificado, que puede definirse explícitamente en una plantilla o en tiempo de ejecución.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Contexto</items>
+        <items id="description">Identificación de una circunstancia, problema o preocupación social específica relevante para el cuestionario o agrupación de las mismas, por su nombre.</items>
+        <items id="comment">Este elemento ofrece la opción de texto libre y codificado. Se prevé que la lista de valores codificados aumente a medida que se identifiquen los requisitos. Se prefiere codificar el «Contexto» con una terminología, siempre que sea posible; por ejemplo, términos relevantes dentro de la jerarquía de búsqueda de contexto social en SNOMED CT (SCTID: 108329005). También se puede usar como texto libre, por ejemplo, «Aislamiento social», «Discriminación» o «Estrés de minorías».</items>
+      </items>
+      <items code="at0005">
+        <items id="text">¿Presencia?</items>
+        <items id="description">¿Ha tenido experiencia con el 'Contexto' especificado?</items>
+        <items id="comment">En una plantilla, el elemento de datos normalmente se renombraría según la pregunta específica formulada. El conjunto de valores propuesto puede adaptarse para uso local mediante los tipos de datos DV_TEXT o DV_BOOLEAN para cada caso de uso específico.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Extensión</items>
+        <items id="description">Se requiere información adicional para ampliar el modelo con contenido local o para alinearlo con otros modelos de referencia o formalismos.</items>
+        <items id="comment">Por ejemplo: requisitos de información local; o metadatos adicionales para alinearse con FHIR.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Contexto social específico</items>
+        <items id="description">Detalles sobre un contexto o tema social específico, o una agrupación de ellos, relevantes para el propósito del cribado.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Si</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">No</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Comentario</items>
+        <items id="description">Narrativa adicional sobre el contexto social específico, no captada en otros campos.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Detalles adicionales</items>
+        <items id="description">Detalles adicionales o preguntas sobre el contexto social específico.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Desconocido</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">Propósito del cribado</items>
+        <items id="description">El contexto o motivo del cribado.</items>
+        <items id="comment">Este elemento de datos proporciona contexto para la recopilación de datos de los grupos de preguntas y respuestas cuando se consulten posteriormente. No se espera que este elemento de datos se exponga al individuo, sino que solo se almacene en los datos. Por ejemplo: la evaluación previa al ingreso o el nombre del cuestionario actual.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Detalles adicionales</items>
+        <items id="description">Narrativa adicional sobre el contexto social del cribado, no captada en otros campos.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Sin hogar</items>
+        <items id="description">El individuo no tiene un lugar estable donde vivir.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Necesidad de intérprete</items>
+        <items id="description">La persona necesita ayuda con la traducción del idioma.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Dudoso</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">Tiempo</items>
+        <items id="description">Indicación de tiempo relacionado con el 'Contexto' especificado.</items>
+        <items id="comment">El elemento de datos "Tiempo" se ha modelado deliberadamente de forma flexible para facilitar su uso en cuestionarios para capturar información temporal relacionada con el contexto social. La semántica específica y prevista puede aclararse con más detalle en una plantilla. Por ejemplo: la fecha y/o hora de inicio o fin; la edad de la persona al inicio; o el tiempo transcurrido desde que el contexto social tuvo un impacto. Una fecha parcial es válida, utilizando el tipo de dato DV_DATE_TIME, para registrar solo un año.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Comentario general</items>
+        <items id="description">Narrativa adicional sobre el cribado para cualquier contexto social, no captada en otros campos.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Questionnaire d'évaluation du contexte social</items>
+        <items id="description">Série de questions et de réponses associées, utilisées pour évaluer l’environnement social et la situation sociale, afin de déterminer leur impact sur la santé et le bien-être de l’individu, et d’identifier d’éventuels problèmes ou risques.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tout événement</items>
+        <items id="description">Par défaut, point dans le temps non spécifié ou événement d'intervalle qui peut être explicitement défini dans un modèle ou au moment de l'exécution.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Contexte</items>
+        <items id="description">Identification, par leur nom, d’une circonstance, d’un problème ou d’une préoccupation sociale spécifique pertinent pour le questionnaire, ou regroupement de ceux-ci.</items>
+        <items id="comment">Cet élément offre le choix entre un texte libre et un texte codé. Il est prévu que la liste des valeurs codées evolue au fur et à mesure de l’identification des besoins. Dans la mesure du possible, il est préférable de coder le “contexte” à l’aide d’une terminologie — par exemple, les termes pertinents de la hiérarchie “constatation à propos du contexte social” dans SNOMED CT (SCTID : 108329005). À défaut, un texte libre peut être utilisé, comme par exemple : “Isolement social”, “Discrimination”, “Stress lié à l’appartenance à une minorité”.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Présence ?</items>
+        <items id="description">L’individu a-t-il eu une expérience du contexte spécifié ?</items>
+        <items id="comment">Dans un modèle, l'élément de données est généralement renommé en fonction de la question spécifique posée. L'ensemble de valeurs proposé peut être adapté à un usage local en utilisant les types de données DV_TEXT ou DV_BOOLEAN pour répondre à chaque cas d'utilisation spécifique.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Extension</items>
+        <items id="description">Informations supplémentaires nécessaires pour étendre le modèle au contenu local ou pour l'aligner sur d'autres modèles de référence ou formalismes.</items>
+        <items id="comment">Par exemple : exigences locales en matière d'information ou métadonnées supplémentaires pour s'aligner sur FHIR.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Contexte social spécifique</items>
+        <items id="description">Détails concernant un problème ou un contexte social spécifique, ou un regroupement de ceux-ci, pertinent pour l'objectif du dépistage.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Oui</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">Non</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Commentaire</items>
+        <items id="description">Récit supplémentaire sur le contexte social spécifique, non saisi dans les autres champs.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Détails supplémentaires</items>
+        <items id="description">Détails structurés ou questions sur le contexte social spécifique.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Inconnu</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">Objectif du dépistage</items>
+        <items id="description">Le contexte ou la raison du dépistage.</items>
+        <items id="comment">Cet élément de données est destiné à fournir un contexte de collecte pour les groupes de questions/réponses lors d'une requête ultérieure. Il n'est pas prévu que cet élément de données soit exposé à l'individu, mais seulement stocké dans les données. Par exemple : la sélection préalable à l'admission ou le nom du questionnaire proprement dit.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Détails supplémentaires</items>
+        <items id="description">Détails structurées ou questions sur l'évaluation du contexte social.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Sans abri</items>
+        <items id="description">L'individu n'a pas de domicile fixe.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Interprète nécessaire</items>
+        <items id="description">L’individu a besoin d’assistance pour la traduction.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Incertain</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">Timing</items>
+        <items id="description">Indication du timing lié au contexte spécifié.</items>
+        <items id="comment">L'élément de données "Timing" a été délibérément modélisé de manière souple afin de prendre en charge la myriade de façons dont il peut être utilisé dans les questionnaires pour saisir des indications temporelles liées à un contexte social. La sémantique spécifique et prévue peut être précisée dans un modèle. Par exemple : le moment exact du contexte social ; la date du début et de la fin du contexte social ; l’intervalle pendant lequel il s’est déroulé ; sa durée ; l’âge de l’individu au moment du contexte social ; le temps écoulé depuis ce contexte social.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Commentaire général</items>
+        <items id="description">Récit supplémentaire sur l’évaluation du contexte social, non saisi dans les autres champs.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Screening-Fragebogen zum sozialen Kontext</items>
+        <items id="description">Eine Reihe von Fragen und zugehörigen Antworten, um das soziale Kontext zu untersuchen und Faktoren zu identifizieren die sich auf das Wohlbefinden des Patienten auswirken können.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Standardwert, ein undefinierter/s Zeitpunkt oder Intervallereignis, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kontext</items>
+        <items id="description">Identifizierung einer bestimmten sozialen Situation oder eines Problems, das für den Fragebogen relevant ist, oder Gruppe derer.</items>
+        <items id="comment">Dieses Element bietet die Wahl zwischen freiem und kodiertem Text. Es ist davon auszugehen, dass die Liste der kodierten Werte mit der Identifizierung weiterer Anforderungen wachsen wird. Die Kodierung des „Kontexts“ mithilfe einer Terminologie sollte bevorzugt werden - beispielsweise können relevante Begriffe innerhalb der Hierarchie „Sozialer Kontext“ in SNOMED CT (SCTID: 108329005) genutzt werden. Alternativ kann auch Freitext verwendet werden, etwa „Soziale Isolation“, „Diskriminierung“ oder „Minderheitenstress“.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Vorhanden?</items>
+        <items id="description">Wurde der angegebene Kontext erlebt?</items>
+        <items id="comment">In einem Template würde das Datenelement normalerweise in die spezifische gestellte Frage umbenannt. Der vorgeschlagene Wertesatz kann für die lokale Verwendung angepasst werden, indem die Datentypauswahl DV_TEXT oder DV_BOOLEAN verwendet wird, um jedem spezifischen Anwendungsfall zu entsprechen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Spezifischer sozialer Kontext</items>
+        <items id="description">Details zu einem spezifischen sozialen Kontext oder Problem, oder Gruppe derer, die für das Screening relevant sind.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Ja</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0024">
+        <items id="text">Nein</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0025">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Angaben zum spezifischen sozialen Kontext, die nicht anderswo erfasst werden.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Zusätzliche Angaben</items>
+        <items id="description">Zusätzliche Angaben oder Fragen zum spezifischen sozialen Kontext.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Unbekannt</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0034">
+        <items id="text">Zweck des Screenings</items>
+        <items id="description">Der Kontext oder Grund für das Screening.</items>
+        <items id="comment">Dieses Datenelement soll bei einer späteren Abfrage den Erhebungskontext für die Frage/Antwort-Gruppen bereitstellen. Es ist für die interne Speicherung vorgesehen, eine Einbeziehung des Patienten bei der Erfassung wird nicht erwartet. Zum Beispiel: "Screening vor der Aufnahme" oder der Name des eigentlichen Fragebogens.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Zusätzliche Angaben</items>
+        <items id="description">Zusätzliche Angaben oder Fragen zum sozialen Kontext im Allgemeinen.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Obdachlos</items>
+        <items id="description">Die Person hat keinen festen Wohnsitz.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Dolmetscher erforderlich</items>
+        <items id="description">Die Person benötigt Hilfe mit dem Übersetzen.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Unsicher</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0051">
+        <items id="text">Zeitangaben</items>
+        <items id="description">Wann die Situation erlebt wurde.</items>
+        <items id="comment">Das Datenelement „Timing“ wurde bewusst flexibel gestaltet, um die vielfältigen Einsatzmöglichkeiten in Fragebögen zu unterstützen. Die konkrete und beabsichtigte Semantik kann in einem Template weiter spezifiziert werden. Beispiele hierfür sind: Start- oder Enddatum und/oder Uhrzeit; das Alter der Person zum Zeitpunkt des Auftretens; oder die Dauer seit dem Einfluss des sozialen Kontexts. Auch ein unvollständiges Datum ist zulässig, wobei der Datentyp DV_DATE_TIME beispielsweise die Erfassung nur des Jahres ermöglicht.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">Allgemeiner Kommentar</items>
+        <items id="description">Zusätzliche Angaben zum sozialen Kontext im Allgemeinen, die nicht anderswo erfasst werden.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0023">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>373066001</code_string>
+        </value>
+      </items>
+      <items code="at0024">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>373067005</code_string>
+        </value>
+      </items>
+      <items code="at0027">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>261665006</code_string>
+        </value>
+      </items>
+      <items code="at0048">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>32911000</code_string>
+        </value>
+      </items>
+      <items code="at0049">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>315594003</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

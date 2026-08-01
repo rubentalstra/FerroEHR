@@ -1,0 +1,1323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2008-11-10</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Tomas Alme, DIPS, Norway</other_contributors>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Stein Arne Rimehaug, Sunnaas sykehus, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Heidi Aursand, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Nsah Bernard, UCL Institute of Health Informatics, United Kingdom</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Greg Burch, Tiny Medical Apps, United Kingdom</other_contributors>
+    <other_contributors>Ady Angelica Castro Acosta, CIBERES-Hospital 12 de Octubre, Spain</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Stig Erik Hegrestad, Helse Førde, Norway</other_contributors>
+    <other_contributors>Shahla Foozonkhah, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Einar Fosse, National Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Sebastian Garde, Ocean Informatics, Germany</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Dunmail Hodkinson, Black Pear Software Ltd, UK</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Brit Jorun Liseth, Haukeland Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Thomas Kilvær, Universitetssykehuset Nord Norge, Norway</other_contributors>
+    <other_contributors>Shinji Kobayashi, Kyoto University, Japan</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Sabine Leh, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Vesna Levasic, Orthopaedic Hospital Valdoltra, Slovenia</other_contributors>
+    <other_contributors>Neranga Liyanaarachchi, Ministry of Health, Postgraduate Institute of Medicine, Sri Lanka</other_contributors>
+    <other_contributors>Rikard Lovstrom, Swedish Medical Association, Sweden</other_contributors>
+    <other_contributors>Hallvard Lærum, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Luis Marco Ruiz, Norwegian Center for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Jayashree Panickar, Karolinska Institute, Sweden</other_contributors>
+    <other_contributors>Ana Pereira, CINTESIS, CUF-Porto, Portugal</other_contributors>
+    <other_contributors>Osmeire Sanzovo, Sanzovo &amp; Chamelette, Brazil</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Trine Strand, Oslo Universitetssykehus (OUS), Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Rowan Thomas, St. Vincent's Hospital Melbourne, Australia</other_contributors>
+    <other_contributors>Anders Thurin, SU, Sweden</other_contributors>
+    <other_contributors>Richard Townley-O'Neill, NEHTA, Australia</other_contributors>
+    <other_contributors>Gro-Hilde Ulriksen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Dmitri Wall, Irish Skin Foundation, Ireland</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Johnson CC, Roberts S, Mintz D, Fabricant PD, Hotchkiss RN, Daluiski A. Location of Osteochondritis Dissecans Lesions of the Capitellum. J Hand Surg Am. 2018 Apr 17. pii: S0363-5023(17)31317-5. doi: 10.1016/j.jhsa.2018.03.017. [Epub ahead of print] PubMed PMID: 29678428.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">9D4671A3EC612FCA6F5DE51D22762470</other_details>
+    <other_details id="build_uid">edd7cbdb-bc37-46a9-8e0a-ab559dcc63c5</other_details>
+    <other_details id="revision">1.1.3</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Registrering av strukturerade detaljer om en fysisk plats på eller i människokroppen som beskrivs i termer av riktning och eventuellt avståndet från platsen till ett centralt landmärke.</purpose>
+      <keywords>plats</keywords>
+      <keywords>lokalisation</keywords>
+      <keywords>anatomisk</keywords>
+      <keywords>kroppsställe</keywords>
+      <keywords>lokalisering</keywords>
+      <keywords>placering</keywords>
+      <keywords>cirkulär riktning</keywords>
+      <keywords>mittpunkt</keywords>
+      <keywords>klocka</keywords>
+      <keywords>referensriktning</keywords>
+      <keywords>anatomi</keywords>
+      <keywords>topografisk anatomi</keywords>
+      <keywords>makroskopisk anatomi</keywords>
+      <keywords>makroskopisk</keywords>
+      <keywords>anatomiskt område</keywords>
+      <use>Används för att registrera strukturerade detaljer om en fysisk plats på eller i människokroppen som beskrivs med hjälp av riktningen och eventuellt avståndet till platsen från ett centralt landmärke. Riktningen kommer att vara relativt den identifierade referensriktningen som kan antydas i vissa undersökningar - till exempel klockan 12 vid undersökning av bröst eller anus.&#xD;
+&#xD;
+Den här arketypen är speciellt utformad för att användas inom ramen för alla lämpliga ENTRY- eller CLUSTER-arketyper som anger kroppsställets sammanhang. Den kan också användas i CLUSTER.anatomical_location-arketypen i SLOT för "Alternativ struktur".&#xD;
+&#xD;
+I situationer där CLUSTER.anatomical_location endast kan användas för att ange ett större och/eller ospecifikt kroppsområde kan användningen av denna arketyp inom SLOT för "Alternativ struktur" stödja en mer exakt registrering. Till exempel hemorrojder vid klockan 7, där referenspunkten vid klockan 12 är perineum eller den främre ytan av kroppen, med patienten i litotomiläge.</use>
+      <misuse>Används inte för att ange en enkel plats för en namngiven plats på kroppen, t.ex. vänster lårben eller den mediala aspekten av näsan. Använd CLUSTER.anatomical_location för detta ändamål.&#xD;
+&#xD;
+Används inte för att ange en relativ plats för en fysisk plats på kroppen, t.ex. ett blåmärke som ligger 5 cm under naveln. Använd CLUSTER.anatomical_location_relative för detta ändamål.&#xD;
+</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere strukturerte detaljer om ett enkelt fysisk sted på eller i menneskekroppen, beskrevet ved retningen og valgfritt avstanden av stedet fra et sentralt landemerke.</purpose>
+      <keywords>sted</keywords>
+      <keywords>lokasjon</keywords>
+      <keywords>anatomisk</keywords>
+      <keywords>kroppssted</keywords>
+      <keywords>lokalisering</keywords>
+      <keywords>omtrentlig</keywords>
+      <keywords>ur</keywords>
+      <keywords>klokke</keywords>
+      <keywords>anatomi</keywords>
+      <keywords>topografisk anatomi</keywords>
+      <keywords>makroskopisk anatomi</keywords>
+      <keywords>makroskopisk</keywords>
+      <keywords>anatomisk område</keywords>
+      <keywords>urskive</keywords>
+      <keywords>plassering</keywords>
+      <use>Brukes for å registrere strukturerte detaljer om ett enkelt fysisk sted på eller i menneskekroppen, beskrevet ved retningen og valgfritt avstanden av stedet fra et sentralt landemerke. Retningen beskrives i forhold til en referanseretning som i noen undersøkelser er underforstått, for eksempel kl. 12 ved undersøkelse av bryster eller anus.&#xD;
+&#xD;
+Arketypen er spesifikt utviklet for å brukes innenfor en hvilken som helst passende ENTRY- eller CLUSTER-arketype som gir kroppsstedet en kontekst. Den kan også brukes i arketypen CLUSTER.anatomical_location, i SLOTet "Alternativ struktur".&#xD;
+&#xD;
+I situasjoner der CLUSTER.anatomical_location kun kan brukes for å angi et større og/eller uspesifikt kroppsområde, kan bruk av denne arketypen innenfor "Alternativ struktur"-SLOTet støtte en mer presis registrering. For eksempel en hemorroide kl 7, der referansepunktet kl 12 er perineum eller den anteriore overflaten av kroppen, med pasienten i litotomiposisjon.</use>
+      <misuse>Brukes ikke for å angi en enkel lokalisering av et navngitt sted på kroppen, som f.eks. venstre femur eller det mediale aspektet av nesen. Bruk CLUSTER.anatomical_location for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å angi en relativ lokalisering av et fysisk sted på kroppen, som f.eks. et blåmerke som ligger 5 cm under navlen. Bruk CLUSTER.anatomical_location_relative for dette formålet.&#xD;
+</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>تسجيل المكان التشريحي بالتفصيل</purpose>
+      <keywords>الموقع</keywords>
+      <keywords>المكان</keywords>
+      <keywords>تشريحي</keywords>
+      <use />
+      <misuse>لا يستخدم لتحديد حالات الحدوث في جانب واحد أو في الجانبين - حيث إن ذلك متعلق بتقييم قد يتضمن العديد من الأماكن</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sl</code_string>
+      </language>
+      <purpose>*To record details about anatomical location.(en)</purpose>
+      <keywords>*location(en)</keywords>
+      <keywords>*site(en)</keywords>
+      <keywords>*anatomical(en)</keywords>
+      <use />
+      <misuse>*Not for specifiying unilateral/bilateral occurence - this is related to an evaluation which perhaps includes multiple locations.(en)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record structured details about a physical site on or within the human body that is described in terms of the direction, and optionally the distance, of the site from a central landmark.</purpose>
+      <keywords>location</keywords>
+      <keywords>site</keywords>
+      <keywords>anatomical</keywords>
+      <keywords>relative</keywords>
+      <keywords>approximate</keywords>
+      <keywords>anatomic region</keywords>
+      <keywords>topographic anatomy</keywords>
+      <keywords>macroscopic anatomy</keywords>
+      <keywords>macroscopic</keywords>
+      <keywords>anatomic</keywords>
+      <keywords>anatomy</keywords>
+      <keywords>clock</keywords>
+      <keywords>o'clock</keywords>
+      <keywords>position</keywords>
+      <keywords>surface anatomy</keywords>
+      <use>Use to record structured details about a physical site on or within the human body that is described in terms of the direction, and optionally the distance, of the site from a central landmark. The direction will be relative to the identified reference direction which may be implied in some examinations - for example, the 12 o'clock in examination of the breast or anus.&#xD;
+&#xD;
+This archetype is specifically designed to be used within the context of any appropriate ENTRY or CLUSTER archetypes which supply the context of the identified body site, or nesting in the 'Alternative Structure' SLOT within the CLUSTER.anatomical_location.&#xD;
+&#xD;
+In the situation where the CLUSTER.anatomical_location can only be used to name a large and/or non-specific body part, the use of this archetype within the 'Alternative Structure' SLOT will support recording of a more precise location - for example, a haemorrhoid located at 7 o'clock, where the 12 o'clock reference point is the perineum, or anterior surface of the body, with the patient in the lithotomy position.</use>
+      <misuse>Not to be used to specify a simple location of a named physical site in the body, such as left femur or medial aspect of nose. Use the CLUSTER.anatomical_location archetype for this purpose.&#xD;
+&#xD;
+Not to be used to specify a relative location of a physical site in the body, such as a bruise that is 5 cm inferior to the umbilicus. Use the CLUSTER.anatomical_location_relative for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Registrar detalls estructurats sobre una part dins o del cos que es descriu en termes de la direcció, i opcionalment la distància, del lloc des d'una posició central.</purpose>
+      <keywords>ubicació</keywords>
+      <keywords>lloc</keywords>
+      <keywords>anatòmica</keywords>
+      <keywords>relativa</keywords>
+      <keywords>aproximada</keywords>
+      <keywords>regió anatòmica</keywords>
+      <keywords>anatomia topogràfica</keywords>
+      <keywords>anatomia macroscòpica</keywords>
+      <keywords>macroscòpic</keywords>
+      <keywords>anatòmica</keywords>
+      <keywords>anatomia</keywords>
+      <keywords>rellotge</keywords>
+      <keywords>posició</keywords>
+      <keywords>anatomia</keywords>
+      <keywords>superficial</keywords>
+      <use>S'utilitza per registrar detalls estructurats sobre una part dins o del cos que es descriu en termes de la direcció, i opcionalment la distància, del lloc des d'una posició central. La direcció serà relativa a la direcció de referència identificada que pot estar implicada en alguns exàmens - per exemple, les 12 en l'examen del pit o l'anus.&#xD;
+&#xD;
+Aquest arquetip està dissenyat específicament per a ser utilitzat en el context de qualsevol arquetip d'ENTRADA o CLUSTER apropiat que subministri el context del lloc del cos identificat, o nidificant en la RANURA 'Estructura alternativa' dins del CLUSTER.anatomical.location.&#xD;
+&#xD;
+En la situació en què el CLUSTER.anatomical_location només es pugui utilitzar per nomenar una part corporal gran i/o no específica, l'ús d'aquest arquetip dins de la RANURA 'Estructura alternativa' permetrà registrar una ubicació més precisa - per exemple, una hemorroide situada a les 7 en punt, on el punt de referència de les 12 en punt és el perineu, o superfície anterior del cos, amb el pacient en la posició de litotomia.</use>
+      <misuse>No s'ha d'utilitzar per especificar una part senzilla del cos, com el fèmur esquerre o l'aspecte medial del nas. Utilitzar l'arquetip CLUSTER.anatomical.location per a aquest propòsit.&#xD;
+&#xD;
+No s'ha d'utilitzar per especificar una ubicació relativa d'un lloc físic en el cos, com un blau que és 5 cm inferior del mèlic. Utilitzeu el CLUSTER.anatomical.location.relative per a aquesta finalitat.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Registrar detalles estructurados sobre una localización física en el cuerpo humano o dentro de él, que se describe en términos de la dirección y, opcionalmente, la distancia del sitio desde un punto de referencia central.</purpose>
+      <keywords>ubicación</keywords>
+      <keywords>sitio</keywords>
+      <keywords>anatómico</keywords>
+      <keywords>relativo</keywords>
+      <keywords>aproximado</keywords>
+      <keywords>región anatómica</keywords>
+      <keywords>anatomía topográfica</keywords>
+      <keywords>anatomía macroscópica</keywords>
+      <keywords>anatomía macroscópica</keywords>
+      <keywords>anatomía</keywords>
+      <keywords>reloj</keywords>
+      <keywords>en punto</keywords>
+      <keywords>posición</keywords>
+      <keywords>anatomía de superficie</keywords>
+      <use>Se utiliza para registrar detalles estructurados sobre una localización anatómica del cuerpo humano, descrita en términos de su dirección y, opcionalmente, su distancia desde un punto de referencia central. La dirección será relativa a la dirección de referencia identificada, que puede estar implícita en algunos exámenes; por ejemplo, las 12 en punto en un examen de mama o ano.&#xD;
+&#xD;
+Este arquetipo está diseñado específicamente para usarse en el contexto de cualquier arquetipo de ENTRY o CLUSTER que proporcione el contexto de la zona corporal identificada, o que se anide en la ranura "Estructura alternativa" dentro de CLUSTER.anatomical_location.&#xD;
+&#xD;
+En caso de que CLUSTER.anatomical_location solo pueda usarse para nombrar una parte corporal grande o inespecífica, el uso de este arquetipo dentro de l SLOT "Estructura alternativa" facilitará el registro de una ubicación más precisa; por ejemplo, una hemorroide ubicada a las 7 en punto, donde el punto de referencia de las 12 en punto es el perineo, o la superficie anterior del cuerpo, con la paciente en posición de litotomía.</use>
+      <misuse>No debe usarse para especificar la ubicación simple de un sitio físico en el cuerpo, como el fémur izquierdo o la cara medial de la nariz. Para ello, utilice el arquetipo CLUSTER.anatomical_location.&#xD;
+&#xD;
+No debe usarse para especificar la ubicación relativa de un sitio físico en el cuerpo, como un hematoma 5 cm por debajo del ombligo. Para ello, utilice el arquetipo CLUSTER.anatomical_location_relative.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Linda Aulin</author>
+    <author id="organisation">Region Stockholm, Karolinska University Hospital</author>
+    <author id="email">linda.aulin@sll.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Nasjonal IKT HF</author>
+    <author id="email">silje.ljosland.bakke@nasjonalikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sl</code_string>
+    </language>
+    <author id="name">Biljana Princic</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Tradcrea - Laura Moral López, Laura Moral Lopez</author>
+    <author id="organisation">Servei Català de Salut, Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Clara Calleja Vega</author>
+    <author id="organisation">CatSalut. Servei Català de la Salut.</author>
+    <author id="email">ccalleja@catsalut.cat</author>
+  </translations>
+  <uid>
+    <value>f114b64a-30e8-4646-a6dd-fee53863cc33</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.anatomical_location_circle.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0065</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0079</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0061</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0067</code_list>
+                <code_list>at0068</code_list>
+                <code_list>at0069</code_list>
+                <code_list>at0070</code_list>
+                <code_list>at0071</code_list>
+                <code_list>at0072</code_list>
+                <code_list>at0073</code_list>
+                <code_list>at0074</code_list>
+                <code_list>at0075</code_list>
+                <code_list>at0076</code_list>
+                <code_list>at0077</code_list>
+                <code_list>at0078</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DURATION</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_DURATION">
+                  <pattern>PTHM</pattern>
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>PT0M</lower>
+                    <upper>PT12H</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <magnitude>
+                <lower_included>false</lower_included>
+                <upper_included>false</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>-360.0</lower>
+                <upper>360.0</upper>
+              </magnitude>
+              <units>deg</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0080</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>122</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </precision>
+              <units>cm</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </precision>
+              <units>[in_i]</units>
+            </list>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>true</upper_unbounded>
+                <lower>0.0</lower>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </precision>
+              <units>mm</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0023</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0054</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">*Circular anatomical location(en)</items>
+        <items id="description">*A physical site on or within the human body that is described in terms of the 2D position of the hour hand of a clock, relative to an identified reference point.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Description(en)</items>
+        <items id="description">*Narrative description that can be used to further refine and support structured data about the circular location. (en)</items>
+        <items id="comment">*For example: a tattoo covers the bottom half of this area.(en)</items>
+      </items>
+      <items code="at0054">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0061">
+        <items id="text">*Circular direction(en)</items>
+        <items id="description">*Identification of a single direction by describing it as a position of the hour hand or a number of degrees with respect to the reference direction, as seen by the examiner.</items>
+        <items id="comment">*For example: the position of haemorrhoids in the anal canal are commonly described at 3 o'clock, 7 o'clock and 11 o'clock. In this situation the perineum is situated at 12 o'clock with patient in the lithotomy position, and regarded as the reference point.(en)</items>
+      </items>
+      <items code="at0065">
+        <items id="text">*Reference direction(en)</items>
+        <items id="description">*Identification of a single axis or direction which represents the 12 o'clock or 0° position on an imaginary 2D circle superimposed over the body site, as seen by the examiner.</items>
+        <items id="comment">*For example: the reference point is commonly the head if examining the breast or detail on a skin lesion; or the perineum if examining the anus in the lithotomy position.(en)</items>
+      </items>
+      <items code="at0067">
+        <items id="text">*One o'clock(en)</items>
+        <items id="description">*The body site is located at the one o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0068">
+        <items id="text">*Two o'clock(en)</items>
+        <items id="description">*The body site is located at the two o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0069">
+        <items id="text">*Three o'clock(en)</items>
+        <items id="description">*The body site is located at the three o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0070">
+        <items id="text">*Four o'clock(en)</items>
+        <items id="description">*The body site is located at the four o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0071">
+        <items id="text">*Five o'clock(en)</items>
+        <items id="description">*The body site is located at the five o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0072">
+        <items id="text">*Six o'clock(en)</items>
+        <items id="description">*The body site is located at the six o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0073">
+        <items id="text">*Seven o'clock(en)</items>
+        <items id="description">*The body site is located at the seven o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0074">
+        <items id="text">*Eight o'clock(en)</items>
+        <items id="description">*The body site is located at the eight o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0075">
+        <items id="text">*Nine o'clock(en)</items>
+        <items id="description">*The body site is located at the nine o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0076">
+        <items id="text">*Ten o'clock(en)</items>
+        <items id="description">*The body site is located at the ten o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0077">
+        <items id="text">*Eleven o'clock(en)</items>
+        <items id="description">*The body site is located at the eleven o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0078">
+        <items id="text">*Twelve o'clock(en)</items>
+        <items id="description">*The body site is located at the twelve o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0079">
+        <items id="text">*Centre landmark(en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0080">
+        <items id="text">*Distance from landmark (en)</items>
+        <items id="description">*Distance of location from the identified central landmark. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sl">
+      <items code="at0000">
+        <items id="text">*Circular anatomical location(en)</items>
+        <items id="description">*A physical site on or within the human body that is described in terms of the 2D position of the hour hand of a clock, relative to an identified reference point.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*Description(en)</items>
+        <items id="description">*Narrative description that can be used to further refine and support structured data about the circular location. (en)</items>
+        <items id="comment">*For example: a tattoo covers the bottom half of this area.(en)</items>
+      </items>
+      <items code="at0054">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0061">
+        <items id="text">*Circular direction(en)</items>
+        <items id="description">*Identification of a single direction by describing it as a position of the hour hand or a number of degrees with respect to the reference direction, as seen by the examiner.</items>
+        <items id="comment">*For example: the position of haemorrhoids in the anal canal are commonly described at 3 o'clock, 7 o'clock and 11 o'clock. In this situation the perineum is situated at 12 o'clock with patient in the lithotomy position, and regarded as the reference point.(en)</items>
+      </items>
+      <items code="at0065">
+        <items id="text">*Reference direction(en)</items>
+        <items id="description">*Identification of a single axis or direction which represents the 12 o'clock or 0° position on an imaginary 2D circle superimposed over the body site, as seen by the examiner.</items>
+        <items id="comment">*For example: the reference point is commonly the head if examining the breast or detail on a skin lesion; or the perineum if examining the anus in the lithotomy position.(en)</items>
+      </items>
+      <items code="at0067">
+        <items id="text">*One o'clock(en)</items>
+        <items id="description">*The body site is located at the one o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0068">
+        <items id="text">*Two o'clock(en)</items>
+        <items id="description">*The body site is located at the two o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0069">
+        <items id="text">*Three o'clock(en)</items>
+        <items id="description">*The body site is located at the three o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0070">
+        <items id="text">*Four o'clock(en)</items>
+        <items id="description">*The body site is located at the four o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0071">
+        <items id="text">*Five o'clock(en)</items>
+        <items id="description">*The body site is located at the five o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0072">
+        <items id="text">*Six o'clock(en)</items>
+        <items id="description">*The body site is located at the six o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0073">
+        <items id="text">*Seven o'clock(en)</items>
+        <items id="description">*The body site is located at the seven o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0074">
+        <items id="text">*Eight o'clock(en)</items>
+        <items id="description">*The body site is located at the eight o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0075">
+        <items id="text">*Nine o'clock(en)</items>
+        <items id="description">*The body site is located at the nine o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0076">
+        <items id="text">*Ten o'clock(en)</items>
+        <items id="description">*The body site is located at the ten o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0077">
+        <items id="text">*Eleven o'clock(en)</items>
+        <items id="description">*The body site is located at the eleven o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0078">
+        <items id="text">*Twelve o'clock(en)</items>
+        <items id="description">*The body site is located at the twelve o'clock position relative to the identified reference point.(en)</items>
+      </items>
+      <items code="at0079">
+        <items id="text">*Centre landmark(en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0080">
+        <items id="text">*Distance from landmark (en)</items>
+        <items id="description">*Distance of location from the identified central landmark. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Circular anatomical location</items>
+        <items id="description">A physical site on or within the human body that is described in terms of the direction, and optionally the distance, of the site from a central landmark.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Description</items>
+        <items id="description">Narrative description that can be used to further refine and support structured data about the circular location.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Multimedia representation</items>
+        <items id="description">Image or other media used to support identification of the location on the body.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">Circular direction</items>
+        <items id="description">Identification of the angle of the direction to the physical site relative to the reference direction, either as the position of an hour hand on a clockface or number of degrees.</items>
+        <items id="comment">For example: the position of haemorrhoids in the anal canal are commonly described at 3 o'clock, 7 o'clock and 11 o'clock. In this situation the perineum is situated at 12 o'clock with patient in the lithotomy position, and regarded as the reference direction. For degrees, positive values are angles in the clockwise direction, while negative values are in the anti-clockwise direction.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Reference direction</items>
+        <items id="description">Identification of a single direction which represents the 12 o'clock or 0° position on an imaginary circle superimposed over the body site, as seen by the examiner.</items>
+        <items id="comment">For example: the reference axis is commonly towards the head if examining the breast or detail on a skin lesion; towards the perineum if examining the anus in the lithotomy position; or towards the anterior humeral line if examining the humerus.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">One o'clock</items>
+        <items id="description">The body site is located at the one o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Two o'clock</items>
+        <items id="description">The body site is located at the two o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0069">
+        <items id="text">Three o'clock</items>
+        <items id="description">The body site is located at the three o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0070">
+        <items id="text">Four o'clock</items>
+        <items id="description">The body site is located at the four o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Five o'clock</items>
+        <items id="description">The body site is located at the five o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0072">
+        <items id="text">Six o'clock</items>
+        <items id="description">The body site is located at the six o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Seven o'clock</items>
+        <items id="description">The body site is located at the seven o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Eight o'clock</items>
+        <items id="description">The body site is located at the eight o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0075">
+        <items id="text">Nine o'clock</items>
+        <items id="description">The body site is located at the nine o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Ten o'clock</items>
+        <items id="description">The body site is located at the ten o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0077">
+        <items id="text">Eleven o'clock</items>
+        <items id="description">The body site is located at the eleven o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Twelve o'clock</items>
+        <items id="description">The body site is located at the twelve o'clock position relative to the identified reference point.</items>
+      </items>
+      <items code="at0079">
+        <items id="text">Centre landmark</items>
+        <items id="description">Identified body site used as a reference point for centre of the imaginary circle.</items>
+        <items id="comment">For example: the nipple when examining a breast; or the anus when examining haemorrhoids.</items>
+      </items>
+      <items code="at0080">
+        <items id="text">Distance from landmark</items>
+        <items id="description">Distance of location from the identified central landmark.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Sirkulær anatomisk lokalisering</items>
+        <items id="description">Et fysisk sted på eller i menneskekroppen, beskrevet ved retningen og valgfritt avstanden av stedet fra et sentralt landemerke.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse som kan brukes for å ytterligere presisere og støtte den sirkulære lokaliseringen.</items>
+        <items id="comment">For eksempel "en tatovering dekker den nedre delen av området".</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Multimediarepresentasjon</items>
+        <items id="description">Bilde eller annet medium brukt for å understøtte identifikasjonen av kroppsstedet.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">Sirkulær retning</items>
+        <items id="description">Retningens vinkel til det fysiske stedet i forhold til referanseretningen, enten som posisjonen av en timeviser på en urskive eller som et antall grader.</items>
+        <items id="comment">For eksempel: lokalisering av hemoroider i analkanalen beskrives ofte som klokken 3, klokken 7 og klokken 11. I dette eksempelet er perineum klokken tolv når pasienten er i litotomiposisjonen og blir regnet som referanseretningen. For grader er positive verdier vinkler i retning med urviseren, mens negative verdier er mot urviseren.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Referanseretning</items>
+        <items id="description">En enkelt retning som representerer klokken 12 eller 0° på en tenkt sirkel som er plassert over et sted på kroppen, som observert av den som utfører undersøkelsen.</items>
+        <items id="comment">For eksempel: referanseaksen er vanligvis mot hodet når man undersøker et bryst eller en detalj på en hudlesjon, mot perineum når man undersøker anus i litotomiposisjonen, eller mot den anteriore overamslinjen når man undersøker humerus.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Klokken 1</items>
+        <items id="description">Kroppsstedet er kl. 1 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Klokken 2</items>
+        <items id="description">Kroppsstedet er kl. 2 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0069">
+        <items id="text">Klokken 3</items>
+        <items id="description">Kroppsstedet er kl. 3 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0070">
+        <items id="text">Klokken 4</items>
+        <items id="description">Kroppsstedet er kl. 4 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Klokken 5</items>
+        <items id="description">Kroppsstedet er kl. 5 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0072">
+        <items id="text">Klokken 6</items>
+        <items id="description">Kroppsstedet er kl. 6 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Klokken 7</items>
+        <items id="description">Kroppsstedet er kl. 7 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Klokken 8</items>
+        <items id="description">Kroppsstedet er kl. 8 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0075">
+        <items id="text">Klokken 9</items>
+        <items id="description">Kroppsstedet er kl. 9 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Klokken 10</items>
+        <items id="description">Kroppsstedet er kl. 10 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0077">
+        <items id="text">Klokken 11</items>
+        <items id="description">Kroppsstedet er kl. 11 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Klokken 12</items>
+        <items id="description">Kroppsstedet er kl. 12 relativt til referansepunktet.</items>
+      </items>
+      <items code="at0079">
+        <items id="text">Midtpunkt</items>
+        <items id="description">Stedet på kroppen som brukes som referansepunkt for midtpunktet i den tenkte sirkelen.</items>
+        <items id="comment">For eksempel: brystvorten når man undersøker et bryst eller anus når man undersøker hemoroider.</items>
+      </items>
+      <items code="at0080">
+        <items id="text">Avstand fra midtpunktet</items>
+        <items id="description">Avstanden av lokaliseringen fra det beskrevne midtpunktet.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Cirkulär anatomisk lokalisation</items>
+        <items id="description">En fysisk plats på eller inom människokroppen som beskrivs i termer av riktningen och eventuellt avståndet till platsen från ett centralt landmärke.&#xD;
+&#xD;
+</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Beskrivning</items>
+        <items id="description">Fritextbeskrivning som kan användas för att ytterligare specificera detaljer om det cirkulära stället.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Digital representation</items>
+        <items id="description">Bild eller annat media som används för att stödja identifiering av kroppsstället.&#xD;
+</items>
+      </items>
+      <items code="at0061">
+        <items id="text">Cirkulär riktning</items>
+        <items id="description">Riktningens vinkel mot det fysiska stället i förhållande till referensriktningen, antingen som positionen för en timme på en urtavla eller som ett antal grader.&#xD;
+</items>
+        <items id="comment">Till exempel: lokalisering av hemorrojder i analkanalen beskrivs ofta som klockan 3, 7 och 11. I detta exempel är perineum klockan tolv när patienten är i litotomiläge och betraktas som referensriktningen. För grader är positiva värden medsols, medan negativa värden är moturs.&#xD;
+</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Referensriktning</items>
+        <items id="description">En enda riktning som representerar klockan 12 eller 0° på en imaginär cirkel placerad över en plats på kroppen, som observerats av den person som utför undersökningen.&#xD;
+</items>
+        <items id="comment">Till exempel: referensaxeln är vanligtvis mot huvudet när man undersöker ett bröst eller en detalj av en hudskada, mot perineum när man undersöker anus i litotomiläge eller mot den främre övre extremitetslinjen när man undersöker humerus.&#xD;
+</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Klockan ett</items>
+        <items id="description">Kroppsstället är beläget klockan ett i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Klockan två</items>
+        <items id="description">Kroppsstället ligger vid klockan två i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0069">
+        <items id="text">Klockan tre</items>
+        <items id="description">Kroppsstället ligger vid klockan tre i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0070">
+        <items id="text">Klockan fyra</items>
+        <items id="description">Kroppsstället ligger vid klockan fyra i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Klockan fem</items>
+        <items id="description">Kroppsstället ligger vid klockan fem i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0072">
+        <items id="text">Klockan sex</items>
+        <items id="description">Kroppsstället ligger vid klockan sex i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Klockan sju</items>
+        <items id="description">Kroppsstället ligger vid klockan sju i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Klockan åtta</items>
+        <items id="description">Kroppsstället ligger vid klockan åtta i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0075">
+        <items id="text">Klockan nio</items>
+        <items id="description">Kroppsstället ligger vid klockan nio i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Klockan tio</items>
+        <items id="description">Kroppsstället ligger vid klockan tio i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0077">
+        <items id="text">Klockan elva</items>
+        <items id="description">Kroppsstället ligger vid klockan elva i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Klockan tolv</items>
+        <items id="description">Kroppsstället ligger vid klockan tolv i förhållande till den identifierade referenspunkten.</items>
+      </items>
+      <items code="at0079">
+        <items id="text">Mittpunkt</items>
+        <items id="description">Identifierat kroppsställe som används som mittpunkt för den imaginära cirkeln.</items>
+        <items id="comment">Till exempel: bröstvårtan när man undersöker ett bröst, eller anus vid undersökning av hemorrojder.</items>
+      </items>
+      <items code="at0080">
+        <items id="text">Avstånd från mittpunkten</items>
+        <items id="description">Avstånd till platsen från den identifierade mittpunkten.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">Ubicació anatòmica circular</items>
+        <items id="description">Una part dins o del cos que es descriu en termes de la direcció, i opcionalment la distància, del lloc des d'una posició central.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Descripció</items>
+        <items id="description">Descripció narrativa que es pot utilitzar per refinar i donar suport a dades estructurades sobre la ubicació circular.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Representació multimèdia</items>
+        <items id="description">Imatge o altres suports utilitzats per donar suport a la identificació de la ubicació en el cos.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">Direcció circular</items>
+        <items id="description">Identificació de l'angle de la direcció cap al lloc físic en relació amb la direcció de referència, ja sigui com la posició d'una mà d'una hora en un rellotge o nombre de graus.</items>
+        <items id="comment">Exemple: la posició de les hemorroides en el canal anal es descriu comunament a les 3 en punt, 7 en punt i 11 en punt. En aquesta situació, el perineu està situat a les 12 en punt amb pacient en la posició de litotomia, i considerat com la direcció de referència. Per graus, els valors positius són angles en la direcció en el sentit de les agulles del rellotge, mentre que els valors negatius són en la direcció antihorari.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Direcció de referència</items>
+        <items id="description">Identificació d'una única direcció que representa la posició de les 12 o 0° en un cercle imaginari sobreposat sobre el lloc del cos, com veu l'examinador.</items>
+        <items id="comment">Exemple: l'eix de referència és comunament cap al cap si s'examina el pit o el detall en una lesió de la pell; cap al perineu si s'examina l'anus en la posició de litotomia; o cap a la línia humeral anterior si s'examina l'húmer.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Una en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de la una en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Dos en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les dues en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0069">
+        <items id="text">Tres en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les tres en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0070">
+        <items id="text">Quatre en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les quatre en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Cinc en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les cinc en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0072">
+        <items id="text">Sis en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les sis en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Set en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les set en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Vuit en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les vuit en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0075">
+        <items id="text">Nou en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les nou en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Deu en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les deu en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0077">
+        <items id="text">Onze en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les onze en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Dotze en punt</items>
+        <items id="description">El lloc del cos es troba a la posició de les dotze en punt en relació amb el punt de referència identificat.</items>
+      </items>
+      <items code="at0079">
+        <items id="text">Punt de referència del centre</items>
+        <items id="description">Lloc del cos identificat utilitzat com a punt de referència per al centre del cercle imaginari.</items>
+        <items id="comment">Exemple: el mugró quan s'examina un pit; o l'anus quan s'examinen hemorroides.</items>
+      </items>
+      <items code="at0080">
+        <items id="text">Distància des de la posició central</items>
+        <items id="description">Distància d'ubicació des de la posició central identificada.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Ubicación anatómica circular</items>
+        <items id="description">Un sitio físico en o dentro del cuerpo humano que se describe en términos de la dirección, y opcionalmente la distancia, del sitio desde un punto de referencia central.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Descripción</items>
+        <items id="description">Descripción narrativa que puede utilizarse para refinar y respaldar datos estructurados sobre la ubicación circular.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">Representación multimedia</items>
+        <items id="description">Imagen u otro medio utilizado para respaldar la identificación de la ubicación en el cuerpo.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">Dirección circular</items>
+        <items id="description">Identificación del ángulo de la dirección con respecto al sitio físico en relación con la dirección de referencia, ya sea como la posición de la manecilla de la hora en la esfera de un reloj o en grados.</items>
+        <items id="comment">Por ejemplo: la posición de las hemorroides en el canal anal se describe comúnmente a las 3, 7 y 11 en punto. En esta situación, el perineo se sitúa a las 12 en punto con el paciente en posición de litotomía, y se considera la dirección de referencia. Para grados, los valores positivos corresponden a ángulos en sentido horario, mientras que los negativos corresponden a ángulos en sentido antihorario.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Dirección de referencia</items>
+        <items id="description">Identificación de una sola dirección que representa las 12 en punto o los 0° en un círculo imaginario superpuesto sobre el sitio corporal, tal como lo ve el examinador.</items>
+        <items id="comment">Por ejemplo: el eje de referencia comúnmente es hacia la cabeza si se examina la mama o el detalle de una lesión de la piel; hacia el perineo si se examina el ano en posición de litotomía; o hacia la línea humeral anterior si se examina el húmero.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Una en punto</items>
+        <items id="description">El sitio corporal se encuentra a la una en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0068">
+        <items id="text">Dos en punto</items>
+        <items id="description">El sitio corporal se encuentra a las dos en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0069">
+        <items id="text">Tres en punto</items>
+        <items id="description">El sitio corporal se encuentra a las tres en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0070">
+        <items id="text">Cuatro en punto</items>
+        <items id="description">El sitio corporal se encuentra a las cuatro en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0071">
+        <items id="text">Cinco en punto</items>
+        <items id="description">El sitio corporal se encuentra a las cinco en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0072">
+        <items id="text">Seis en punto</items>
+        <items id="description">El sitio corporal se encuentra a las seis en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Siete en punto</items>
+        <items id="description">El sitio corporal se encuentra a las siete en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Ocho en punto</items>
+        <items id="description">El sitio corporal se encuentra a las ocho en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0075">
+        <items id="text">Nueve en punto</items>
+        <items id="description">El punto del cuerpo se encuentra a las nueve en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Diez en punto</items>
+        <items id="description">El punto del cuerpo se encuentra a las diez en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0077">
+        <items id="text">Once en punto</items>
+        <items id="description">El punto del cuerpo se encuentra a las once en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Doce en punto</items>
+        <items id="description">El punto del cuerpo se encuentra a las doce en punto con respecto al punto de referencia identificado.</items>
+      </items>
+      <items code="at0079">
+        <items id="text">Punto de referencia central</items>
+        <items id="description">El punto del cuerpo identificado se utiliza como punto de referencia para el centro del círculo imaginario.</items>
+        <items id="comment">Por ejemplo: el pezón al examinar una mama; o el ano al examinar hemorroides.</items>
+      </items>
+      <items code="at0080">
+        <items id="text">Distancia desde el punto de referencia</items>
+        <items id="description">Distancia de la ubicación desde el punto de referencia central identificado.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

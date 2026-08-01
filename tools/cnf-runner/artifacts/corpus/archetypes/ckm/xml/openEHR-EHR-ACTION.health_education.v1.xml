@@ -1,0 +1,2893 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2011-05-24</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Siw Anita Bratli, Nasjonal kompetansetjeneste for læring og mestring innen helse, Norway</other_contributors>
+    <other_contributors>Rita Apelt, Department of Health,NT, Australia</other_contributors>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Stein Arne Rimehaug, Sunnaas sykehus, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Nsah Bernard, UCL Institute of Health Informatics, United Kingdom</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Birgitte Bjerkely, Senter for sjeldne diagnoser, OUS, Norway</other_contributors>
+    <other_contributors>Fatemeh Chalabianloo, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Kåre Flø, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Tim Garden, NTG Department of Health, Australia</other_contributors>
+    <other_contributors>Tanya Gardner, CAAC, Australia</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Brit Jorun Liseth, Haukeland Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Sabine Leh, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Chunlan Ma, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Alan March, Hospital Universitario Austral, Argentina</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Jeremy Oats, NT Health, Australia</other_contributors>
+    <other_contributors>Jussara Rotzsch, Hospital Alemão Oswaldo Cruz, Brazil</other_contributors>
+    <other_contributors>Rosalie Schultz, Anyinginyi Health Aboriginal Corporation, Australia</other_contributors>
+    <other_contributors>Ingrid Skard, Edproof, Norway</other_contributors>
+    <other_contributors>Eivind Stormo, DIPS AS, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Susanne Trønnes, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jo Wright, NT Dept of Health, Australia</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Division of Health Promotion, Education, and Communication (HPR), World Health Organization. Health Promotion Glossary [Internet]. Geneva: World Health Organization; 1998 [cited 2018 May 31]. Available from: http://apps.who.int/iris/handle/10665/64546.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">5FA332C7BDDBAC93271B8B5D035A6FA2</other_details>
+    <other_details id="build_uid">a54c6b36-1840-44d5-9324-2b3fd27d26ec</other_details>
+    <other_details id="revision">1.1.3</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Details zur Kommunikation, die zur Verbesserung der Gesundheitskompetenz und der Lebenskompetenzen geführt wird.</purpose>
+      <keywords>Information</keywords>
+      <keywords>Bildung</keywords>
+      <keywords>Beratung</keywords>
+      <keywords>Datenblatt</keywords>
+      <keywords>Anweisung</keywords>
+      <keywords>Demonstration</keywords>
+      <keywords>Unterrichten</keywords>
+      <keywords>Kompetenz</keywords>
+      <keywords>Orientierungshilfe</keywords>
+      <keywords>Ausbildung</keywords>
+      <keywords>Schulung</keywords>
+      <keywords>Rat</keywords>
+      <keywords>Coaching</keywords>
+      <use>Verwenden Sie diesen Archetyp, um Details zur Kommunikation darzustellen, die zur Verbesserung der Gesundheitskompetenz und der Lebenskompetenzen geführt wird.&#xD;
+&#xD;
+Die Bereitstellung von Gesundheitsberatung kann Folgendes umfassen, ist jedoch nicht darauf beschränkt:&#xD;
+- mündliche Beratung&#xD;
+- eine technische Vorführung oder&#xD;
+- Aushändigung vom physischen Material, z. B. Informationsblätter über die Risiken einer Vasektomie.&#xD;
+&#xD;
+Die Lebenskompetenzen können, ohne darauf beschränkt zu sein, die Verabreichung von Medikamenten, die Selbstinjektion und die postoperative Selbstpflege umfassen.&#xD;
+&#xD;
+Wenn es sich bei der angebotenen Beratung um einen Kurs oder eine Reihe von Aktivitäten handelt, werden die Details zu jeder Aktivität oder jedem Kontakt im "Pathway"-Verlaufsschritt "Beratung angeboten" dargestellt. Wenn der gesamte Kurs abgeschlossen ist, werden die Daten im "Pathway"-Verlaufsschritt "Beratung abgeschlossen" aufgezeichnet. Wenn es sich bei der angebotenen Beratung um eine einzelne Aktivität oder einen Kontakt handelt, werden die Daten gleichzeitig für "Beratung angeboten" und "Beratung abgeschlossen" repräsentiert.</use>
+      <misuse>Nicht zur Darstellung der Einwilligungserklärung zur Gesundheitsberatung verwenden - zum Beispiel Einwilligung in eine Vasektomie nach Aushändigung eines Informationsblatts. Verwenden Sie dazu den Archetyp ACTION.informed_consent.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera detaljer om rådgivning/undervisning/kommunikation avsedd att öka hälsokunskap och praktiska färdigheter</purpose>
+      <keywords>information</keywords>
+      <keywords>utbildning</keywords>
+      <keywords>faktablad</keywords>
+      <keywords>instruktion</keywords>
+      <keywords>demonstration</keywords>
+      <keywords>kompetens</keywords>
+      <keywords>rådgivning</keywords>
+      <keywords>råd</keywords>
+      <keywords>träning</keywords>
+      <keywords>färdighetsträning</keywords>
+      <keywords>coachning</keywords>
+      <use>Används för att registrera rådgivning/undervisning/kommunikation avsedd att öka hälsokunskap och praktiska färdigheter (ofta relaterade till hälsotillstånd)&#xD;
+&#xD;
+Kan inkludera, men är inte begränsat till:&#xD;
+- muntlig rådgivning,&#xD;
+- demonstration av teknik, eller&#xD;
+- att dela ut fysikt material, exempelvis faktablad om risker med ett ingrepp&#xD;
+&#xD;
+Färdighetsträning kan inkludera, men är inte begränsat till:&#xD;
+att ta medicin, själv-injektion, postoperativ egenvård&#xD;
+&#xD;
+Om utbildningen ges som en kurs eller en rad aktiviteter så kan information om varje aktivitet eller besök registreras som process-steg märkta "Rådgivning/utbildning genomförd", och när hela kursen är slutförd registreras process-steget "Rådgivning/utbildning fullbordad"&#xD;
+&#xD;
+Om rådgivningen/utbildningen är en enda aktivitet eller ett besök, kommer data registreras samtidigt för "Rådgivning/utbildning genomförd" och "Rådgivning/utbildning fullbordad".</use>
+      <misuse>Ska inte användas för att registrera samtycke kopplat till hälsoutbildning - till exempel att godkänna en vasektomi efter att ha delgivit ett faktablad. Använd "ACTION.informed_consent" för det istället.&#xD;
+</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om kommunikasjon som har til hensikt å øke evne til å forstå og anvende helseinformasjon og å mestre praktiske ferdigheter eller livet relatert til helsetilstanden.</purpose>
+      <keywords>informasjon</keywords>
+      <keywords>opplæring</keywords>
+      <keywords>undervisning</keywords>
+      <keywords>brosjyre</keywords>
+      <keywords>faktaark</keywords>
+      <keywords>opplæringsmateriell</keywords>
+      <keywords>trening</keywords>
+      <keywords>demonstrasjon</keywords>
+      <keywords>øving</keywords>
+      <keywords>mestring</keywords>
+      <keywords>mestre</keywords>
+      <keywords>læring</keywords>
+      <keywords>LMS</keywords>
+      <keywords>helsepedagogikk</keywords>
+      <keywords>veiledning</keywords>
+      <keywords>kurs</keywords>
+      <keywords>helseveiledning</keywords>
+      <keywords>rådgivning</keywords>
+      <keywords>coaching</keywords>
+      <use>Bruk for å registrere detaljer om kommunikasjon som har til hensikt å øke evne til å forstå og anvende helseinformasjon, og å mestre praktiske ferdigheter eller livet relatert til helsetilstanden.&#xD;
+&#xD;
+Evnen til å forstå og anvende helseinformasjon kan inkludere, men er ikke begrenset til;&#xD;
+- muntlig rådgivning&#xD;
+- demonstrasjon av en teknikk, eller&#xD;
+- utdeling av fysisk materiell, for eksempel å registrere at et faktaark om vasektomi er gitt til et individ.&#xD;
+&#xD;
+Praktiske ferdighetene kan inkludere, men er ikke begrenset til; &#xD;
+- administrasjon av medikamenter&#xD;
+- sette sprøyter på seg selv&#xD;
+- stelle en stomi eller &#xD;
+- hvordan ta vare på seg selv i postoperativ fase. &#xD;
+Eksempel på mestring kan være å mestre medisinske, praktiske, relasjonelle og emosjonelle aspekter ved MS.&#xD;
+&#xD;
+Hvis undervisningen som blir gitt er et kurs med en serie av aktiviteter, vil detaljer om hver enkelt aktivitet bli registrert innen prosesstrinnet "Undervisning gitt", og når hele kurset er ferdig, vil data bli registrert innen prosesstrinnet "Undervisning fullført". Hvis undervisningen som er gitt består av en enkelt aktivitet eller under en konsultasjon, vil data bli registrert samtidig i prosesstrinnene "Undervisning gitt" og "Undervisning fullført".</use>
+      <misuse>Skal ikke brukes for å registrere samtykke, for eksempel samtykke til vasektomi etter å ha fått utdelt faktaark om vasektomi. Bruk ACTION.informed_consent til dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about communication to improve health literacy and life skills.</purpose>
+      <keywords>information</keywords>
+      <keywords>education</keywords>
+      <keywords>fact sheet</keywords>
+      <keywords>instruction</keywords>
+      <keywords>demonstration</keywords>
+      <keywords>teaching</keywords>
+      <keywords>literacy</keywords>
+      <keywords>guidance</keywords>
+      <keywords>training</keywords>
+      <keywords>advice</keywords>
+      <keywords>coaching</keywords>
+      <use>Use to record details about communication to improve health literacy and life skills.&#xD;
+&#xD;
+Provision of health education may include, but is not limited to: &#xD;
+- verbal advice; &#xD;
+- a demonstration of a technique; or &#xD;
+- handing out physical material, for example, fact sheets about the risks of a vasectomy.&#xD;
+&#xD;
+The life skills may include, but are not limited to, medication administration, self-injection, and post-operative self-care.&#xD;
+&#xD;
+If the education provided is a course or series of activities then details about each activity or visit will be recorded against the 'Education provided' pathway step and when the entire course is completed then the data will be recorded against the 'Education completed' pathway step. If the education provided is a single activity or visit, then data will be recorded simultaneously for 'Education provided' and 'Education completed'.</use>
+      <misuse>Not to be used to record consent about health education - for example, consent to a vasectomy after provision of a fact sheet. Use ACTION.informed_consent for this purpose.</misuse>
+      <copyright>© National E-Health Transition Authority, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>id</code_string>
+      </language>
+      <purpose>Untuk menyimpan detail komunikasi guna meningkatkan literasi kesehatan dan keterampilan hidup.</purpose>
+      <keywords>*information(en)</keywords>
+      <keywords>*education(en)</keywords>
+      <keywords>*fact sheet(en)</keywords>
+      <keywords>*instruction(en)</keywords>
+      <keywords>*demonstration(en)</keywords>
+      <keywords>*teaching(en)</keywords>
+      <keywords>*literacy(en)</keywords>
+      <keywords>*guidance(en)</keywords>
+      <keywords>*training(en)</keywords>
+      <keywords>*advice(en)</keywords>
+      <keywords>*coaching(en)</keywords>
+      <use>Digunakan untuk merekam detail tentang komunikasi guna meningkatkan literasi kesehatan dan keterampilan hidup.&#xD;
+&#xD;
+Penyelenggaraan edukasi kesehatan dapat termasuk di antaranya, tapi tidak terbatas pada:&#xD;
+- saran lisan;&#xD;
+- demonstrasi suatu teknik; atau&#xD;
+- pemberian material fisik, sebagai contoh, pamflet tentang risiko vasektomi.&#xD;
+&#xD;
+Kecakapan hidup dapat mencakup, tapi tidak terbatas pada, penggunaan obat-obatan, swa-injeksi, dan swa-rawat pasca operasi.&#xD;
+&#xD;
+Jika edukasi yang diberikan adalah kursus atau rangkaian kegiatan maka detail tentang setiap kegiatan atau kunjungan akan dicatat pada jalur 'Edukasi yang diberikan' dan ketika seluruh kursus diselesaikan maka data akan dicatat pada jalur 'Edukasi yang diselesaikan'. Jika edukasi yang diberikan merupakan satu kegiatan atau kunjungan, maka data akan dicatat secara bersamaan untuk 'Edukasi yang diberikan' dan 'Edukasi yang diselesaikan'.</use>
+      <misuse>Tidak digunakan untuk mencatat persetujuan tentang pendidikan kesehatan - misalnya, persetujuan vasektomi setelah pemberian pamflet edukasi. Gunakan ACTION.informed_consent untuk tujuan ini.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>zh-cn</code_string>
+      </language>
+      <purpose>用于记录关于旨在提升健康素养和生活技能的沟通交流的详情。</purpose>
+      <keywords>信息</keywords>
+      <keywords>资料</keywords>
+      <keywords>教育</keywords>
+      <keywords>宣教</keywords>
+      <keywords>课程</keywords>
+      <keywords>讲座</keywords>
+      <keywords>说明资料</keywords>
+      <keywords>情况说明书</keywords>
+      <keywords>资料页</keywords>
+      <keywords>资料单</keywords>
+      <keywords>教导</keywords>
+      <keywords>嘱咐</keywords>
+      <keywords>嘱托</keywords>
+      <keywords>指令</keywords>
+      <keywords>演示</keywords>
+      <keywords>示范</keywords>
+      <keywords>教学</keywords>
+      <keywords>教授</keywords>
+      <keywords>示教</keywords>
+      <keywords>素养</keywords>
+      <keywords>素质</keywords>
+      <keywords>文化</keywords>
+      <keywords>引导</keywords>
+      <keywords>指导</keywords>
+      <keywords>指导意见</keywords>
+      <keywords>培训</keywords>
+      <keywords>训练</keywords>
+      <keywords>建议</keywords>
+      <keywords>忠告</keywords>
+      <keywords>教练</keywords>
+      <keywords>辅导</keywords>
+      <use>用于记录关于旨在提升健康素养和生活技能的沟通交流的详情。&#xD;
+&#xD;
+健康教育的提供过程可能包括但不仅限于：&#xD;
+- 口头建议；&#xD;
+- 技术/方法演示；&#xD;
+- 分发实物材料，如关于输精管切除术风险的说明资料。&#xD;
+&#xD;
+生活技能可包括但不限于给药、自我注射和术后自我护理。&#xD;
+&#xD;
+如果所提供的教育是一门课程/讲座或者一系列的活动，则要依据“所提供的教育”（Education provided）路径步骤，来记录每次活动或就诊/访视的详情，而当整个课程/讲座完成之后，则要依据“所完成的教育”（Education completed）路径步骤来记录相应的数据。如果所提供的教育是单次的活动或就诊/访视，则要同时记录关于“所提供的教育”和“所完成的教育”的数据。</use>
+      <misuse>并非旨在用于记录关于健康教育的同意信息；例如，在提供说明资料之后同意进行输精管结扎术。对于此类的目的，应当采用知情同意原始型 ACTION.informed_consent。</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Erik Sundvall, Elham Gholami</author>
+    <author id="organisation">Region Östergötland + Linköping University, SLL</author>
+    <author id="email">erik.sundvall@regionostergotland.se, elham.gholami@sll.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjørn Arntzen, John Tore Valand</author>
+    <author id="organisation">Oslo universitetssykehus HF, Norway, Helse Bergen</author>
+    <author id="email">varntzen@ous-hf.no, john.tore.valand@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>id</code_string>
+    </language>
+    <author id="name">Aly Lamuri</author>
+    <author id="organisation">Indonesia Medical Education and Research Institute</author>
+    <author id="email">lamuri.aly8@gmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>zh-cn</code_string>
+    </language>
+    <author id="name">Lin Zhang</author>
+    <author id="organisation">Taikang Insurance Group</author>
+    <author id="email">linforest@163.com</author>
+    <accreditation>?</accreditation>
+  </translations>
+  <uid>
+    <value>bbf04420-92d9-46a5-8a82-99cb39ed88bb</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-ACTION.health_education.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>ACTION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>ism_transition</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>526</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0006</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>526</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0018</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0014</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>527</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0014</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0015</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>528</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0015</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>529</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0007</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>245</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0008</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0017</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>530</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0017</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0016</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>531</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0016</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ISM_TRANSITION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0013</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>current_state</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>openehr</value>
+                </terminology_id>
+                <code_list>532</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>careflow_step</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0013</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>description</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0035</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0004</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0025</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.multimedia(-[a-zA-Z0-9_]+)*\.v0</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0033</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0020</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_COUNT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0010</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0019</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0026</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0027</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0030</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0028</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.individual_professional(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.individual_professional(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0031</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0029</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.individual_professional(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.individual_professional(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.organisation(-[a-zA-Z0-9_]+)*\.v0</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0032</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.individual_personal(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.individual_personal(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0034</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.interpreter_details(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.interpreter_details(-[a-zA-Z0-9_]+)*\.v0</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0023</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Health education</items>
+        <items id="description">Communication to improve health literacy and life skills.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Topic name</items>
+        <items id="description">Identification of the topic of health education, by name.</items>
+        <items id="comment">The 'Topic' could identify a single piece of information or a single skill, or it may be the name of a training course or program that may be delivered over multiple sessions or visits. The name may indicate that the education was transferred to a group or the individual.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the health education.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Method</items>
+        <items id="description">Method by which the health education was communicated to the individual.</items>
+        <items id="comment">For example: verbal; demonstration; mobile app; or printed material.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Education planned</items>
+        <items id="description">Education has been planned but no steps have been taken to initiate education.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Education scheduled</items>
+        <items id="description">Appointment for education scheduled.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Education provided</items>
+        <items id="description">Education session or material provided.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Reason</items>
+        <items id="description">Reason that the pathway step for the identified health education was carried out.</items>
+        <items id="comment">For example: 'Suspended - Patient too tired to continue'; or 'Not completed - Patient did not attend all 4 visits'.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Education completed</items>
+        <items id="description">All planned activities for education have been successfully completed.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Education postponed</items>
+        <items id="description">Education has been postponed prior to commencement.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Education cancelled</items>
+        <items id="description">Education has been cancelled prior to commencement.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Education not completed</items>
+        <items id="description">Education session was abandoned before complete.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Education suspended</items>
+        <items id="description">Planned education sessions were suspended after commencement.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Education recommended</items>
+        <items id="description">Education has been recommended but no steps have been taken to initiate education.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Outcome</items>
+        <items id="description">Description of the outcome of health education.</items>
+        <items id="comment">Coding with an external terminology is optional. For example: a narrative description about the individual's understanding and skill from the educator's point of view or forwarded by the individual; or 'Passed'/'Not passed' status for an assessment.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Session Number</items>
+        <items id="description">Number of the education session in an multi-session course.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local context or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Material details</items>
+        <items id="description">Structured details about the education material provided to the individual.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Scheduled date/ time</items>
+        <items id="description">The date and/or time on which the education activity is intended to be performed.</items>
+        <items id="comment">Only for use in association with the 'Education scheduled' pathway step.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the activity or care pathway step not captured in other fields.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Requestor</items>
+        <items id="description">Details about the healthcare provider or organisation requesting the education.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Receiver</items>
+        <items id="description">Details about the healthcare provider or organisation who received the request for education.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Requestor order identifier</items>
+        <items id="description">The local ID assigned to the order by the healthcare provider or organisation requesting the education.</items>
+        <items id="comment">This is equivalent to Placer Order Number in HL7 v2 specifications.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Receiver order identifier</items>
+        <items id="description">The ID assigned to the order by the healthcare provider or organisation receiving the request for education. This is also referred to as Filler Order Identifier.</items>
+        <items id="comment">This is equivalent to Filler Order Number in HL7 v2 specifications.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Recipient</items>
+        <items id="description">Recipient of the health education.</items>
+        <items id="comment">In most situations this will be the subject of care. This data element is most relevant if the recipient is being educated on behalf of the subject of care. For example: carer; next of kin; child; or parent.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Additional details</items>
+        <items id="description">Additional structured details about the health education.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Interpreter details</items>
+        <items id="description">Details about the interpretation.</items>
+        <items id="comment">Including language, method and identification of the interpreter.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Clinical indication</items>
+        <items id="description">The clinical reason for the education activity.</items>
+        <items id="comment">For example: 'Diabetes' or 'Cancer management'. Coding of the indication with a terminology is preferred, where possible. This data element allows multiple occurrences.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Helseinformasjon/undervisning</items>
+        <items id="description">Detaljer om kommunikasjon som har til hensikt å øke evne til å forstå og anvende helseinformasjon, og å mestre praktiske ferdigheter eller livet relatert til helsetilstanden.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Emne</items>
+        <items id="description">Navn på tema for helseinformasjonen/undervisningen.</items>
+        <items id="comment">Emnet kan være et identifisert enkelt tema eller en ferdighet, eller kan være navnet på et kurs som går over flere økter eller konsultasjoner. Navnet kan indikere om helseinformasjonen/undervisningen var rettet mot en gruppe eller et enkelt individ.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Beskrivelse i fritekst om helseinformasjonen/undervisningen.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Metode</items>
+        <items id="description">Hvilken metode som ble brukt da helseinformasjon/undervisning ble kommunisert.</items>
+        <items id="comment">For eksempel muntlig, skriftlig, demonstrasjon, praktisk øving eller mobilapplikasjon.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Helseinformasjon/undervisning planlagt</items>
+        <items id="description">Helseinformasjon/undervisning er planlagt, men ingen aktivitet er gjort for å initiere den.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Helseinformasjon/undervisning tidsfestet</items>
+        <items id="description">Det er gjort en avtale for når helseinformasjonen/undervisningen skal gjennomføres.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Helseinformasjon/undervisning gjennomført</items>
+        <items id="description">Helseinformasjon/undervisning er utført eller informasjonsmateriellet er overlevert. Dette kan være når en av flere økter er gjennomført, eller et emne er informert om eller undervist i, uten at man har nådd målet for informasjonen/undervisningen og status kan settes til "Helseinformasjon/undervisning fullført".</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Årsak</items>
+        <items id="description">Årsak til at det aktuelle prosesstrinnet ble utført.</items>
+        <items id="comment">For eksempel: prosesstrinnet "Helseinformasjon/undervisning midlertidig stanset - Pasient for sliten til å fortsette" eller prosesstrinnet "Helseinformasjon/undervisning ikke fullført - Deltok ikke på alle øktene".</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Helseinformasjon/undervisning fullført</items>
+        <items id="description">Alle planlagte aktiviteter for helseinformasjon/undervisning er gjennomført.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Helseinformasjon/undervisning utsatt</items>
+        <items id="description">Helseinformasjon/undervisning er utsatt før den er påbegynt.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Helseinformasjon/undervisning er kansellert</items>
+        <items id="description">Helseinformasjon/undervisning er kansellert før den er påbegynt.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Helseinformasjon/undervisning ikke fullført</items>
+        <items id="description">Helseinformasjon/undervisning ble avbrutt før den ble fullført.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Helseinformasjon/undervisning midlertidig stanset</items>
+        <items id="description">Helseinformasjon/undervisning, eller serien av økter er midlertidig stanset etter at den/de ble påbegynt.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Helseinformasjon/undervisning anbefalt</items>
+        <items id="description">Helseinformasjon/undervisning er anbefalt, men ingen aktivitet er gjort for å initiere den.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Resultat</items>
+        <items id="description">Beskrivelse av resultatet av helseinformasjonen/undervisningen.</items>
+        <items id="comment">For eksempel: En fritekstbeskrivelse om individets forståelse og kompetanse sett fra den som gir informasjonen/undervisningen sitt synspunkt eller videreformidlet av individet selv, eller "Bestått"/"Ikke bestått". Koding med ekstern terminologi er mulig.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Sesjonsnummer</items>
+        <items id="description">Nummeret på sesjonen dersom det er en serie på et antall økter.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR eller CIMI.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Detaljer om materiell</items>
+        <items id="description">Strukturerte detaljer om opplæringsmateriellet som er gitt til individet.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Planlagt dato/tid</items>
+        <items id="description">Dato eller dato/tid når undervisningsaktiviteten er planlagt utført.</items>
+        <items id="comment">Kun til bruk i forbindelse med prosesstrinnet "Helseinformasjon/undervisning tidsfestet".</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om aktiviteten eller prosesstrinnet som ikke representeres i andre elementer.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Rekvirent</items>
+        <items id="description">Detaljer om helsepersonellet eller organisasjonen som har rekvirert helseinformasjonen/undervisningen.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Mottaker</items>
+        <items id="description">Detaljer om helsepersonellet eller organisasjonen som mottar forespørselen om helseinformasjon/undervisning.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">RekvisisjonsID</items>
+        <items id="description">Den lokale IDen tilordnet rekvisisjonen av helsepersonellet eller organisasjonen som har rekvirert helseinformasjonen/undervisningen.</items>
+        <items id="comment">Tilsvarer "Placer Order Number" i HL7 v2-spesifikasjonene.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Mottakers rekvisisjonsID</items>
+        <items id="description">IDen tilordnet rekvisisjonen av helsepersonellet eller organisasjonen som mottar forespørselen.</items>
+        <items id="comment">Tilsvarer "Filler Order Number" i HL7 v2-spesifikasjonene.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Subjektet</items>
+        <items id="description">Mottakeren av helseinformasjon/undervisning.</items>
+        <items id="comment">I de fleste tilfeller er dette det samme som helsetjenestemottaker. Dette elementet er mest relevant dersom mottaker av helseinformasjonen/undervisningen mottar denne på vegne av individet det gjelder, for eksempel pårørende, omsorgsperson, barn, forelder, lærer eller helsepersonell.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om helseinformasjonen/undervisningen.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Detaljer om tolking</items>
+        <items id="description">Detaljer om tolking som ble utført.</items>
+        <items id="comment">Inkludert språk, metode og identifisering av den som utførte tolkingen.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Klinisk indikasjon</items>
+        <items id="description">Den kliniske årsaken for den forespurte helseinformasjon/undervisningsaktiviteten.</items>
+        <items id="comment">For eksempel: "Diabetes" eller "Kreftbehandling". Koding av indikasjonen med et kodeverk er ønskelig, dersom tilgjengelig. Dette dataelementet tillater flere forekomster.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Hälsorådgivning/information/undervisning</items>
+        <items id="description">Kommunikation avsedd att öka hälsokunskap och praktiska färdigheter (ofta relaterade till hälsotillstånd)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ämne</items>
+        <items id="description">Namn/benämning för rådgivningen/undervisningen</items>
+        <items id="comment">"Ämnet" kan avse enskild information, kunskap eller en färdighet, det kan även vara namnet på en utbildning, kurs eller ett program som ges vid flera tillfällen eller besök. Benämningen kan visa om utbildningen var individuell eller i grupp.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Beskrivning</items>
+        <items id="description">Beskrivande text om rådgivningen/utbildningen</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Metod</items>
+        <items id="description">Metod genom vilken rådgivningen/hälsoutbildningen genomförs.</items>
+        <items id="comment">Exempelvis: muntligt, demonstration, mobilapp eller skriftligt/tryckt material</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Rådgivning/utbildning planerad</items>
+        <items id="description">Rådgivning/utbildning är planerad men inga övriga åtgärder har gjorts för att påbörja den.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Rådgivning/utbildning inbokad</items>
+        <items id="description">Rådgivning/utbildning har bokats eller schemalagts.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Rådgivning/utbildning genomförd</items>
+        <items id="description">Rådginings-/utbildningstillfälle har genomförts eller råd/undervisningsmaterial har delats ut.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Orsak</items>
+        <items id="description">Orsak till att detta processteg nåddes</items>
+        <items id="comment">Exempelvis "Pausat - patienten var för trött för att fortsätta" eller "Rådgivning ej fullbordad - patienten kom inte till alla fyra undervisningstillfällen"</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Rådgivning/utbildning fullbordad</items>
+        <items id="description">All planerad rådgivning/utbildning har genomförts.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Rådgivning/utbildning uppskjuten</items>
+        <items id="description">Rådgivning/utbildning sköts upp innan den hade påbörjats.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Rådgivning/utbildning inställd</items>
+        <items id="description">Rådgivning/utbildning ställdes in innan den hade påbörjats.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Rådgivning/utbildning ej fullbordad</items>
+        <items id="description">Rådgivning/utbildning avbröts innan den var fullbordad.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Rådgivning/utbildning pausad</items>
+        <items id="description">Planerad rådgivning/utbildning har pausats (efter att ha påbörjats).</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Rådgivning/utbildning rekommenderas</items>
+        <items id="description">Rådgivning/utbildning har rekommenderats men inga åtgärder har gjorts för att påbörja den.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Resultat</items>
+        <items id="description">Beskrivning av rådgivningens/undervisningens resultat</items>
+        <items id="comment">Exempelvis beskrivande text om individens förtåelse och förmåga sett ur undervisarens synvinkel. eller berättad av individen själv. Alternativt "godkänd"/"ej godkänd". Kodning med extern terminologi är möjlig.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Undervisningstillfälle</items>
+        <items id="description">Numret i ordningen av antal tillfällen i en kurs med flera tillfällen.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Utökning</items>
+        <items id="description">Plats för att infoga ytterligare information som krävs för att fånga upp lokalt innehåll eller för att anpassa sig till andra referensmodeller/format.</items>
+        <items id="comment">Till exempel: Lokala informationskrav eller ytterligare metadata för att anpassa sig till FHIR- eller CIMI-motsvarigheter.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Detaljer om materialet</items>
+        <items id="description">Beskivning av materialet som individen fick. (kan exempelvis vara bild/kopia)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Bokad/schemalagd tidpunkt</items>
+        <items id="description">Datumet och/eller tiden då rådgivnings/undervisningsaktiviteten ska genomföras.</items>
+        <items id="comment">Detta ska bara användas för processteget "Rådgivning inbokad"</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare beskrivning av aktiviteten eller processteget som inte redan fångats i övriga fält.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Beställare/Remittent</items>
+        <items id="description">Detaljer om den som beställt rådgivningen/undervisningen</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Remissmottagare/utförare</items>
+        <items id="description">Detaljer om den som genomför utbildningen/rådgivningen &#xD;
+</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Beställarens ID för beställningen/remissen</items>
+        <items id="description">Lokalt beställnings/remiss-ID tilldelat av beställande/remitterande vårdgivare eller organisation som efterfrågar utbildningen/rådgivningen</items>
+        <items id="comment">Detta motsvarar "Placer Order Number" i HL7 v2 specifikationerna.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Remissmottagarens ID för beställningen/remissen</items>
+        <items id="description">Lokalt beställnings/remiss-ID tilldelat av mottagande vårdgivare eller organisation som genomför utbildningen/rådgivningen &#xD;
+</items>
+        <items id="comment">Detta motsvarar "Filler Order Number" i HL7 v2 specifikationerna.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Informationsmottagare/Kursdeltagare</items>
+        <items id="description">Den som tar emot råden/undervisningen.</items>
+        <items id="comment">I många fall är detta patienten/vårdtagaren själv. Detta fält är relevant att fylla i främst då informationsmottagaren/kursdeltagaren är någon annan som blir utbidad å patientens vägnar. Exempelvis: vårdare, vårdnadshavare, släkting, barn eller förälder.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Ytterligare detaljer</items>
+        <items id="description">Plats för att infoga ytterligare strukturerade detaljer om rådgivningen/undervisningen</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Information om tolk</items>
+        <items id="description">Detaljer om tolkhjälp.</items>
+        <items id="comment">Inklusive språk, metod och identifiering av tolk.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">*Clinical indication(en)</items>
+        <items id="description">*The clinical reason for the education activity.(en)</items>
+        <items id="comment">*For example: 'Diabetes' or 'Cancer management'. Coding of the indication with a terminology is preferred, where possible. This data element allows multiple occurrences.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Gesundheitsberatung</items>
+        <items id="description">Kommunikation zur Verbesserung der Gesundheitskompetenz und der Lebenskompetenzen.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Thema</items>
+        <items id="description">Identifizierung des Themas der Gesundheitsberatung mit Namen.</items>
+        <items id="comment">Das "Thema" kann eine einzelne Information oder eine einzelne Kompetenz identifizieren, oder es kann der Name eines Schulungskurses oder -programms sein, der/das über mehrere Sitzungen oder Visiten hinweg angeboten werden kann. Der Name kann darauf hinweisen, dass die Beratung auf eine Gruppe oder eine Einzelperson gerichtet wurde.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Beschreibung</items>
+        <items id="description">Beschreibung der Gesundheitsberatung.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Methode</items>
+        <items id="description">Methode, mit der die Gesundheitsberatung der Person erteilt wurde.</items>
+        <items id="comment">Zum Beispiel: verbal, Demonstration, App oder gedrucktes Material.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Beratung geplant</items>
+        <items id="description">Beratung ist geplant, aber es wurden keine Schritte unternommen, um Beratung zu initiieren.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Beratung terminiert</items>
+        <items id="description">Termin für die Beratung festgelegt.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Beratung angeboten</items>
+        <items id="description">Beratungssitzung oder Material angeboten.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Grund</items>
+        <items id="description">Grund, warum der Pathway-Schritt für die identifizierte Gesundheitsberatung durchgeführt wurde.</items>
+        <items id="comment">Zum Beispiel: "Unterbrochen - Patient zu müde, um fortzufahren"; oder "Nicht abgeschlossen - Der Patient hat nicht an allen vier Terminen teilgenommen".</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Beratung abgeschlossen</items>
+        <items id="description">Alle geplanten Beratungsaktivitäten wurden erfolgreich abgeschlossen.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Beratung verschoben</items>
+        <items id="description">Die Beratung wurde noch vor Beginn verschoben.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Beratung abgesagt</items>
+        <items id="description">Die Beratung wurde noch vor Beginn abgesagt.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Beratung nicht abgeschlossen</items>
+        <items id="description">Die Beratungssitzungen wurde vor Abschluss abgebrochen.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Beratung unterbrochen</items>
+        <items id="description">Geplante Beratungssitzungen wurden nach Beginn ausgesetzt.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Beratung empfohlen</items>
+        <items id="description">Beratung wurde empfohlen, aber es wurden keine Schritte unternommen, um Beratung zu initiieren.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Ergebnis</items>
+        <items id="description">Beschreibung des Ergebnisses der Gesundheitsberatung.</items>
+        <items id="comment">Die Codierung mit einer externen Terminologie ist optional. Zum Beispiel: eine einfache Beschreibung des Verständnisses und der Fähigkeiten der Person aus Sicht des Beraters oder von der Person weitergeleitet oder "Bestanden/Nicht bestanden"- Status für eine Bewertung.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Sitzungsnummer</items>
+        <items id="description">Nummer der Beratungssitzung in einem Kurs mit mehreren Sitzungen.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen oder CIMI-Modelle.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Material</items>
+        <items id="description">Strukturierte Angaben zum Beratungsmaterial, das der Person zur Verfügung gestellt wird.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Termin Datum/Uhrzeit</items>
+        <items id="description">Datum und / oder Uhrzeit der Durchführung der Beratungsaktivität.</items>
+        <items id="comment">Nur zur Verwendung in Verbindung mit dem Pfadschritt "Beratung terminiert".</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Beschreibung über den Aktivitäts- oder Pflegeschritt, der in anderen Feldern nicht erfasst wurde.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Anforderer</items>
+        <items id="description">Angaben über den Gesundheitsdienstleister oder die Organisation, die die Beratung anfordert.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Empfänger</items>
+        <items id="description">Angaben zu dem Gesundheitsdienstleister oder der Organisation, die die Anforderung zur Beratung erhalten hat.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Anforderer ID</items>
+        <items id="description">Die lokale ID, die dem Auftrag von dem Gesundheitsdienstleister oder der Organisation, die die Beratung anfordert, zugewiesen wurde.</items>
+        <items id="comment">Dies entspricht "Placer Order Number" in den HL7 v2-Spezifikationen.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Empfänger ID</items>
+        <items id="description">Die ID, die dem Antrag von dem Gesundheitsdienstleister oder der Organisation zugewiesen wurde, die den Antrag auf Beratung erhalten hat. Dies wird auch als Filler Order Identifier bezeichnet.</items>
+        <items id="comment">Dies entspricht "Filler Order Number" in den HL7 v2-Spezifikationen.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Beratungsempfänger</items>
+        <items id="description">Empfänger der Gesundheitsberatung.</items>
+        <items id="comment">In den meisten Situationen ist dies der Patient. Dieses Datenelement ist am relevantesten, wenn der Beratungsempfänger im Auftrag des Patienten beraten wird. Zum Beispiel: Betreuer, nächste Verwandte, Kind oder Eltern.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Zusätzliche Angaben</items>
+        <items id="description">Zusätzliche strukturierte Angaben zur Gesundheitsberatung.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Dolmetscher</items>
+        <items id="description">Angaben zum Dolmetscher.</items>
+        <items id="comment">Einschließlich Sprache, Methode und Identifikation des Dolmetschers.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Klinische Indikation</items>
+        <items id="description">Der klinische Grund für die Beratungsaktivität.</items>
+        <items id="comment">Zum Beispiel: „Diabetes“ oder „Krebsmanagement“. Eine Codierung der Indikation mit einer Terminologie wird nach Möglichkeit bevorzugt. Dieses Datenelement kann mehrmals auftreten.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="zh-cn">
+      <items code="at0000">
+        <items id="text">健康教育</items>
+        <items id="description">旨在提升健康素养和生活技能的沟通交流。</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">主题名称</items>
+        <items id="description">采用名称对于健康教育主题的明确/标识。</items>
+        <items id="comment">“主题”（Topic）可以明确/标识的是某项信息或技能，或者也可能是某一培训课程或讲座的名称，而该课程或讲座可能会份多个服务时段（一节课程/讲座）或多次就诊/访视来提供。 这一名称可能会表明，已将教育转交给了某一团体或个人。</items>
+      </items>
+      <items code="at0003">
+        <items id="text">描述</items>
+        <items id="description">关于健康教育的文本叙述型说明。</items>
+      </items>
+      <items code="at0004">
+        <items id="text">方法</items>
+        <items id="description">对当前人员开展健康教育或者说向其传达健康教育信息时所采用的方法。</items>
+        <items id="comment">例如：口头方式、示范/演示、手机/移动应用程序（App）或者打印/印刷材料。</items>
+      </items>
+      <items code="at0006">
+        <items id="text">已计划的教育</items>
+        <items id="description">已经对教育活动进行了计划，但尚未采取启动教育的步骤/措施。</items>
+      </items>
+      <items code="at0007">
+        <items id="text">已排程的教育</items>
+        <items id="description">已经安排了旨在教育的预约。</items>
+      </items>
+      <items code="at0008">
+        <items id="text">所提供的教育</items>
+        <items id="description">所提供的教育服务时段（一节课程/讲座）或材料。</items>
+      </items>
+      <items code="at0010">
+        <items id="text">原因</items>
+        <items id="description">关于当时开展所标识的健康教育的这一路径步骤的原因。</items>
+        <items id="comment">例如：“已暂停 - 患者过于劳累而难以继续”，或者“未完成 - 所有4次就诊/访视，患者均为到场/参加”。</items>
+      </items>
+      <items code="at0013">
+        <items id="text">所完成的教育</items>
+        <items id="description">已经成功地完成了所有已计划的教育活动。</items>
+      </items>
+      <items code="at0014">
+        <items id="text">已推迟的教育</items>
+        <items id="description">教育已经在开始之前遭到推迟。</items>
+      </items>
+      <items code="at0015">
+        <items id="text">已取消的教育</items>
+        <items id="description">教育已经在开始之前遭到取消。</items>
+      </items>
+      <items code="at0016">
+        <items id="text">未完成的教育</items>
+        <items id="description">教育服务时段（一节课程/讲座）在完成之前遭到放弃。</items>
+      </items>
+      <items code="at0017">
+        <items id="text">已暂停的教育</items>
+        <items id="description">已计划的教育服务时段（一节课程/讲座）在开始之后遭到了暂停/中止。</items>
+      </items>
+      <items code="at0018">
+        <items id="text">已推荐的教育</items>
+        <items id="description">已经推荐/建议开展教育，但尚未采取启动教育的步骤/措施。</items>
+      </items>
+      <items code="at0019">
+        <items id="text">效果</items>
+        <items id="description">关于健康教育的效果/结果/结局。</items>
+        <items id="comment">采用外部术语集进行编码属于可选项。例如：从教育/宣教人员来看，或者当前人员所报告的，关于当前人员的理解和技能情况的文本叙述型说明；或者，效果评估结果的状况“及格/不及格”。</items>
+      </items>
+      <items code="at0020">
+        <items id="text">服务时段编号</items>
+        <items id="description">多节课程/讲座之中当前服务时段（一节）的编号。</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">扩展</items>
+        <items id="description">采集本地语境/上下文背景或者是与其他的参考模型/形式化体系进行协调统一时所需的其他信息。</items>
+        <items id="comment">例如：本地医院科室信息或者是其他旨在与FHIR或CIMI等价元素/结构进行协调统一的元数据。</items>
+      </items>
+      <items code="at0025">
+        <items id="text">资料详情</items>
+        <items id="description">关于提供给当前人员的教育资料/材料的结构化详情。</items>
+      </items>
+      <items code="at0026">
+        <items id="text">所安排的日期/时间</items>
+        <items id="description">计划安排开展教育活动的日期和/或时间。</items>
+        <items id="comment">仅供与“已排程的教育”（Education scheduled）路径步骤关联起来使用。</items>
+      </items>
+      <items code="at0027">
+        <items id="text">备注</items>
+        <items id="description">关于其他字段之中所未采集的活动或照护服务路径的文本叙述型注释。</items>
+      </items>
+      <items code="at0028">
+        <items id="text">申请方</items>
+        <items id="description">关于申请当前教育/宣教[服务]的健康医疗服务人员或组织机构的详情。</items>
+      </items>
+      <items code="at0029">
+        <items id="text">接收方</items>
+        <items id="description">关于接收/收到当前教育/宣教[服务]申请的健康医疗服务人员或组织机构的详情。</items>
+      </items>
+      <items code="at0030">
+        <items id="text">申请方医嘱标识符</items>
+        <items id="description">申请当前教育/宣教[服务]的健康医疗服务人员或组织机构为当前医嘱/申请所指定的本地标识符。</items>
+        <items id="comment">该标识符等同于HL7 v2规范之中的开立方医嘱编号（Placer Order Number）。</items>
+      </items>
+      <items code="at0031">
+        <items id="text">接收方医嘱标识符</items>
+        <items id="description">接收/收到关于当前教育/宣教[服务]的申请的健康医疗服务人员或组织机构为当前医嘱/申请所指定的本地标识符。该标识符又称为执行方医嘱标识符（Filler Order Identifier）。</items>
+        <items id="comment">该标识符等同于HL7 v2规范之中的执行方医嘱编号（Filler Order Number）。</items>
+      </items>
+      <items code="at0032">
+        <items id="text">接受者</items>
+        <items id="description">当前健康教育的接受者。</items>
+        <items id="comment">在大多数情况下，接受者将是照护服务对象（患者）。 该数据元最适合于接受者属于是代表照护服务对象（患者）来接受教育/宣教时的情形。 例如：照顾者（非正规照护人员）、直系亲属/近亲属、子女或父母。</items>
+      </items>
+      <items code="at0033">
+        <items id="text">其他详情</items>
+        <items id="description">更多其他关于当前健康教育的结构化详情。</items>
+      </items>
+      <items code="at0034">
+        <items id="text">口译人员详情</items>
+        <items id="description">关于口译人员的详情。</items>
+        <items id="comment">包括口译人员的语种/语言、方法和身份标识信息。</items>
+      </items>
+      <items code="at0035">
+        <items id="text">临床适应证</items>
+        <items id="description">教育活动的临床原因。</items>
+        <items id="comment">例如：“糖尿病”或“癌症管理”。最好尽可能采用统一的术语集来编码适应证。该数据元允许多次出现。</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="id">
+      <items code="at0000">
+        <items id="text">Edukasi kesehatan</items>
+        <items id="description">Komunikasi untuk meningkatkan literasi kesehatan dan kecakapan hidup.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Nama topik</items>
+        <items id="description">Identifikasi topik edukasi kesehatan, berdasarkan nama.</items>
+        <items id="comment">'Topik' dapat mengidentifikasi satu bagian informasi atau satu keterampilan, atau mungkin nama kursus pelatihan atau program yang dapat disampaikan melalui beberapa sesi atau kunjungan. Nama dapat mengindikasikan sekiranya edukasi diberikan pada kelompok atau individu.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Deskripsi</items>
+        <items id="description">Deksripsi naratif tentang edukasi kesehatan.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Metode</items>
+        <items id="description">Metode komunikasi edukasi kesehatan kepada individu.</items>
+        <items id="comment">Misalnya: lisan; demonstrasi; aplikasi seluler; atau bahan cetak.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Edukasi direncanakan</items>
+        <items id="description">Edukasi telah direncanakan tetapi tidak ada langkah yang diambil untuk memulai edukasi.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Edukasi dijadwalkan</items>
+        <items id="description">Penjadwalan untuk janji temu edukasi.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Edukasi diberikan</items>
+        <items id="description">Sesi edukasi atau materi yang diberikan.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Alasan</items>
+        <items id="description">Alasan dilakukannya jalur edukasi kesehatan yang dimaksud.</items>
+        <items id="comment">Misalnya: 'Ditangguhkan - Pasien terlalu lelah untuk melanjutkan'; atau 'Tidak selesai - Pasien tidak menghadiri semua 4 kunjungan'.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Edukasi selesai</items>
+        <items id="description">Semua kegiatan yang direncanakan untuk edukasi telah berhasil diselesaikan.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Edukasi ditunda</items>
+        <items id="description">Edukasi telah ditunda sebelum dimulai.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Edukasi dibatalkan</items>
+        <items id="description">Edukasi telah dibatalkan sebelum dimulai.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Edukasi tidak selesai</items>
+        <items id="description">Sesi edukasi ditinggalkan sebelum selesai.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Edukasi ditangguhkan</items>
+        <items id="description">Sesi edukasi yang direncanakan ditangguhkan setelah dimulai.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Edukasi direkomendasikan</items>
+        <items id="description">Edukasi telah direkomendasikan tetapi tidak ada langkah yang diambil untuk memulai edukasi.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Hasil</items>
+        <items id="description">Deskripsi hasil edukasi kesehatan.</items>
+        <items id="comment">Pengkodean dengan terminologi eksternal bersifat opsional. Misalnya: deskripsi naratif tentang pemahaman dan keterampilan individu dari sudut pandang pendidik atau diteruskan oleh individu; atau status 'Lulus'/'Tidak lulus' untuk penilaian.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Jumlah sesi</items>
+        <items id="description">Jumlah sesi pendidikan dalam kursus multi-sesi.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Ekstensi</items>
+        <items id="description">Informasi tambahan diperlukan untuk menangkap konteks lokal atau menyelaraskan dengan model referensi/formalisme lainnya.</items>
+        <items id="comment">Misalnya: Informasi departemen rumah sakit lokal atau metadata tambahan agar selaras dengan FHIR atau CIMI yang setara.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Detail materi</items>
+        <items id="description">Rincian terstruktur tentang materi edukasi yang diberikan kepada individu.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Tanggal/waktu terjadwal</items>
+        <items id="description">Tanggal dan/atau waktu di mana kegiatan edukasi yang dimaksud dilaksanakan.</items>
+        <items id="comment">Hanya untuk digunakan terkait dengan jalur 'Pendidikan terjadwal'.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Komentar</items>
+        <items id="description">Narasi tambahan tentang aktivitas atau jalur perawatan yang tidak terekam di bidang lain.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Pemohon</items>
+        <items id="description">Detail tentang penyedia layanan kesehatan atau organisasi yang meminta edukasi.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Penerima (institusi)</items>
+        <items id="description">Detail tentang penyedia layanan kesehatan atau organisasi yang menerima permintaan edukasi.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Pengidentifikasi pesanan pemohon</items>
+        <items id="description">ID lokal yang ditetapkan untuk pesanan oleh penyedia layanan kesehatan atau organisasi yang meminta edukasi.</items>
+        <items id="comment">Ini setara dengan Placer Order Number dalam spesifikasi HL7 v2.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Pengidentifikasi pesanan penerima</items>
+        <items id="description">ID yang ditetapkan untuk pesanan oleh penyedia layanan kesehatan atau organisasi yang menerima permintaan edukasi. Ini juga disebut sebagai Filler Order Identifier.</items>
+        <items id="comment">Ini setara dengan Filler Order Number dalam spesifikasi HL7 v2.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Penerima</items>
+        <items id="description">Penerima edukasi kesehatan</items>
+        <items id="comment">Umumnya, ini adalah subjek perawatan. Elemen data ini paling relevan jika penerima edukasi merupakan wali dari subjek perawatan. Misalnya: pengasuh; keluarga terdekat; anak; atau orang tua.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Detail tambahan</items>
+        <items id="description">Rincian terstruktur tambahan tentang edukasi kesehatan.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Detail penerjemah</items>
+        <items id="description">Detail tentang interpretasi</items>
+        <items id="comment">Termasuk bahasa, metode, dan identifikasi juru bahasa.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Indikasi klinis</items>
+        <items id="description">Alasan klinis dilakukannya edukasi.</items>
+        <items id="comment">Misalnya: 'Diabetes' atau 'Manajemen kanker'. Pengkodean indikasi dengan terminologi lebih dipilih, jika memungkinkan. Elemen data ini memungkinkan kejadian berganda.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2016-05-12</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics Ltd. UK</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>Silje Ljosland Bakke, Helse Bergen HF, Norway (Editor)</other_contributors>
+    <other_contributors>John Bennett, NEHTA, Australia</other_contributors>
+    <other_contributors>Sharmila Biswas, Australia</other_contributors>
+    <other_contributors>Stephen Chu, NEHTA, Australia (Editor)</other_contributors>
+    <other_contributors>Matthew Cordell, NEHTA, Australia</other_contributors>
+    <other_contributors>Gail Easterbrook, Flinders Medical Centre, Australia</other_contributors>
+    <other_contributors>David Evans, Queensland Health, Australia</other_contributors>
+    <other_contributors>Sarah Gaunt, NEHTA, Australia</other_contributors>
+    <other_contributors>Trina Gregory, cpc, Australia</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia (Editor)</other_contributors>
+    <other_contributors>Mary Kelaher, NEHTA, Australia</other_contributors>
+    <other_contributors>Robert L'egan, NEHTA, Australia</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (Editor)</other_contributors>
+    <other_contributors>Susan McIndoe, Royal District Nursing Service, Australia</other_contributors>
+    <other_contributors>David McKillop, NEHTA, Australia</other_contributors>
+    <other_contributors>Chris Mitchell, RACGP, Australia</other_contributors>
+    <other_contributors>Stewart Morrison, NEHTA, Australia</other_contributors>
+    <other_contributors>Chris Pearce, Melbourne East GP Network, Australia</other_contributors>
+    <other_contributors>Camilla Preeston, Royal Australian College of General Practitioners, Australia</other_contributors>
+    <other_contributors>Margaret Prichard, NEHTA, Australia</other_contributors>
+    <other_contributors>Cathy Richardson, NEHTA, Australia</other_contributors>
+    <other_contributors>Robyn Richards, NEHTA - Clinical Terminology, Australia</other_contributors>
+    <other_contributors>John Taylor, NEHTA, Australia</other_contributors>
+    <other_contributors>Richard Townley-O'Neill, NEHTA, Australia (Editor)</other_contributors>
+    <other_contributors>Kylie Young, The Royal Australian College of General Practitioners, Australia</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics Ltd., UK</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Medication instruction, Draft Archetype [Internet]. nehta, Australia, nehta Clinical Knowledge Manager [cited: 2015-12-15]. Available from: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.838&#xD;
+&#xD;
+Intermountain Healthcare Medication order model, Personal Communication to Sam Heard by Dr Stan Huff.&#xD;
+&#xD;
+Royal Australian College of General Practitioners. Fact Sheet: Medicines List. 2010.&#xD;
+&#xD;
+NHS HSCIC Messaging Implementation Manual (GP2GP messages) http://www.uktcregistration.nss.cfh.nhs.uk/trud3&#xD;
+&#xD;
+Standards for medication and medical device records – technical annex [Internet]. RCP London. [cited 2015 Dec 15]. Available from: https://www.rcplondon.ac.uk/projects/outputs/standards-medication-and-medical-device-records-technical-annex</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">EE0C097D86C864115F3C4480B21599C4</other_details>
+    <other_details id="build_uid">4a9c019c-c940-4714-a18f-5834625b9778</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Erfassung der Menge eines Arzneimittels, eines Impfstoffs oder eines anderen therapeutischen Mittels, das dem Patienten im Rahmen einer Zulassung, Abgabe oder Verabreichung zur Verfügung gestellt oder verabreicht wurde, und zwar sowohl im Rahmen der ursprünglichen Arzneimittelverschreibung als auch in einem Folgevorgang.</purpose>
+      <use>Soll zur Erfassung der Menge eines Arzneimittels, eines Impfstoffs oder eines anderen therapeutischen Mittels, das dem Patienten im Rahmen einer Zulassung, Abgabe oder Verabreichung zur Verfügung gestellt oder verabreicht wurde, und zwar sowohl im Rahmen der ursprünglichen Arzneimittelverschreibung als auch in einem Folgevorgang, verwendet werden.</use>
+      <misuse>Dieser Archetyp sollte nicht dazu verwendet werden, die ursprüngliche Dosismenge als Teil einer Dosisanweisung oder der Wirkstärke eines Präparats zu erfassen. Diese werden als Teil der INSTRUCTION Verordnung von Arzneimitteln oder des CLUSTERs Arzneimittel erfasst.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere mengden legemiddel, vaksine, eller annen terapeutisk vare som skal leveres eller utleveres til pasienten, som del av en autorisering, utlevering eller administrering, både i legemiddelforordningen og i en påfølgende legemiddelhandling.</purpose>
+      <use>Brukes til å registrere mengden legemiddel, vaksine, eller annen terapeutisk vare som skal leveres eller utleveres til pasienten, som del av en autorisering, utlevering eller administrering, både i legemiddelforordningen og i en påfølgende legemiddelhandling.</use>
+      <misuse>Brukes ikke for å registre en dose eller styrke som del av en anvisning. Disse registreres som en del av arketypene INSTRUCTION.medication_order eller CLUSTER.medication_substance.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>*To record the amount of a medication, vaccine or other therapeutic item to be supplied or supplied to the patient, as part of authorisation, dispensing or administration, both in the context of the original medication order and in a subsequent action. (en)</purpose>
+      <keywords>Suprimento de medicamentos</keywords>
+      <use>*Use to record the amount of a medication, vaccine or other therapeutic item to be supplied or supplied to the patient, as part of authorisation, dispensing or administration, both in the context of the original medication order and in a subsequent action. (en)</use>
+      <misuse>Este arquétipo não deve ser usado para registrar a quantidade da dose, concentração, forma farmacêutica de uma preparação de medicamento. Estes são registrados como parte da INSTRUCTION de medicamentos, ou CLUSTER de Substâncias Medicamentosas.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the amount of a medication, vaccine or other therapeutic item to be supplied or supplied to the patient, as part of authorisation, dispensing or administration, both in the context of the original medication order and in a subsequent action.</purpose>
+      <use>Use to record the amount of a medication, vaccine or other therapeutic item to be supplied or supplied to the patient, as part of authorisation, dispensing or administration, both in the context of the original medication order and in a subsequent action.</use>
+      <misuse>This archetype should not be used to record the original dose amount as part of a dose direction or the strength of a preparation. These are recorded as part of the Medication Order INSTRUCTION, or Medication Substance CLUSTER.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Kim Werle</author>
+    <author id="organisation">MHH</author>
+    <author id="email">werle.kimkatrin@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, John Tore Valand, Vebjørn Arntzen</author>
+    <author id="organisation">Nasjonal IKT HF, Helse Bergen HF, Oslo University Hospital</author>
+    <author id="email">varntzen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Beatriz de Faria Leao</author>
+    <author id="organisation">Bleao Informática em Saúde</author>
+    <author id="email">bfleao@terra.com.br</author>
+    <accreditation>MD, PhD</accreditation>
+  </translations>
+  <uid>
+    <value>365f8abf-be21-43e8-bb00-f053ca88947a</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.medication_supply_amount.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>0</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0161</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0131</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0158</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>1</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0159</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0142</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DURATION</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>DV_DURATION</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_DURATION">
+                  <pattern>PYMWDTS</pattern>
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>P0D</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Medication supply amount</items>
+        <items id="description">Details related to the amount of a medication, vaccine or other therapeutic item to be supplied or supplied to the patient, as part of authorisation, dispensing or administration.</items>
+      </items>
+      <items code="at0131">
+        <items id="text">Amount</items>
+        <items id="description">The amount of medication, vaccine or therapeutic good intended to be supplied or actually supplied.</items>
+        <items id="comment">For example: '30' as magnitude and 'tablets' as unit; or '100' as magnitude and 'ml' as unit.</items>
+      </items>
+      <items code="at0142">
+        <items id="text">Duration of supply</items>
+        <items id="description">The period of time for which the medication should be dispensed or for which a suppy was dispensed.</items>
+        <items id="comment">The dispenser is asked to supply sufficient quantity of medication to cover the defined period.</items>
+      </items>
+      <items code="at0158">
+        <items id="text">Number of packs</items>
+        <items id="description">The number of packs specified by the prescriber or dispensed by the dispenser.</items>
+      </items>
+      <items code="at0159">
+        <items id="text">Pack size</items>
+        <items id="description">The pack size specifed by the prescriber or dispensed by the dispenser.</items>
+        <items id="comment">For example: '300 ' as magnitude and 'tablets' as unit; or '28' as magnitude and 'ml' as unit.</items>
+      </items>
+      <items code="at0161">
+        <items id="text">Amount description</items>
+        <items id="description">A narrative representation of the amount The amount of medication, vaccine or therapeutic good intended to be supplied or actually supplied.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Leveringsmengde for legemidler</items>
+        <items id="description">Detaljer om mengden legemiddel, vaksine eller andre terapeutiske varer som skal leveres eller utleveres til pasienten, som del av en autorisering, utlevering eller administrering.</items>
+      </items>
+      <items code="at0131">
+        <items id="text">Mengde</items>
+        <items id="description">Mengden legemiddel, vaksine eller terapeutisk vare som ønskes levert eller som faktisk er levert.</items>
+        <items id="comment">For eksempel '30' som magnitude og 'tabletter' som unit; eller '100' som magnitude og 'ml' som unit.</items>
+      </items>
+      <items code="at0142">
+        <items id="text">Utleveringsperiode</items>
+        <items id="description">Tidsperioden da legemiddelet skal utleveres eller ble utlevert for.</items>
+        <items id="comment">Apoteket bes om å utlevere tilstrekkelig mengde av legemiddelet for å dekke den definerte tidsperioden.</items>
+      </items>
+      <items code="at0158">
+        <items id="text">Antall pakker</items>
+        <items id="description">Antall pakker som er spesifisert av foreskriver eller utlevert av apotek.</items>
+      </items>
+      <items code="at0159">
+        <items id="text">Pakningsstørrelse</items>
+        <items id="description">Pakningsstørrelsen spesifisert av foreskriver eller utlevert av apotek.</items>
+        <items id="comment">For eksempel '300' som magnitude og 'tabletter' som unit; eller '28' som magnitude og 'ml' som unit.</items>
+      </items>
+      <items code="at0161">
+        <items id="text">Mengdebeskrivelse</items>
+        <items id="description">En fritekstrepresentasjon av mengden legemiddel, vaksine eller terapeutisk vare som er ønsket levert eller faktisk levert.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Quantidade de medicamento a ser fornecida</items>
+        <items id="description">Detalhes relacionados à quantidade de medicamento, vacina ou outro item terapêutico a ser fornecido ao paciente, como parte da autorização, distribuição ou administração.</items>
+      </items>
+      <items code="at0131">
+        <items id="text">Quantidade</items>
+        <items id="description">A quantidade de medicamento, vacina ou item terapêutico a ser fornecido ou de fato fornecido.</items>
+        <items id="comment">*For example: '30' as magnitude and 'tablets' as unit; or '100' as magnitude and 'ml' as unit. (en)</items>
+      </items>
+      <items code="at0142">
+        <items id="text">Duração do suprimento</items>
+        <items id="description">O período de tempo para o qual a medicação deve ser dispensada ou para o qual foi uma prescrição foi dispensada.</items>
+        <items id="comment">Solicita-se ao dispensador que forneça quantidade suficiente de medicamento para cobrir o período definido.</items>
+      </items>
+      <items code="at0158">
+        <items id="text">Número de embalagens</items>
+        <items id="description">O número de embalagens especificado pelo prescritor ou dispensado pelo dispensador.</items>
+      </items>
+      <items code="at0159">
+        <items id="text">Tamanho da embalagem</items>
+        <items id="description">O tamanho do pacote especificado pelo prescrito ou dispensado pelo dispensador.</items>
+        <items id="comment">*For example: '300 ' as magnitude and 'tablets' as unit; or '28' as magnitude and 'ml' as unit. (en)</items>
+      </items>
+      <items code="at0161">
+        <items id="text">Descrição da quantidade</items>
+        <items id="description">A quantidade de medicamento, vacina ou item terapêutico a ser fornecido ou de fato fornecido.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Bereitgestellte Arzneimittelmenge</items>
+        <items id="description">Angaben zur Menge eines Arzneimittels, eines Impfstoffs oder eines anderen therapeutischen Mittels, das im Rahmen der Zulassung, Abgabe oder Verabreichung dem Patienten zur Verfügung gestellt oder verabreicht wird.</items>
+      </items>
+      <items code="at0131">
+        <items id="text">Menge</items>
+        <items id="description">Die Menge des Arzneimittels, des Impfstoffs oder des therapeutischen Mittels, das zur Verfügung gestellt werden soll oder tatsächlich bereitgestellt wurde.</items>
+        <items id="comment">Zum Beispiel: "30" als Wert und "Tabletten" als Einheit; oder "100" als Wert und "ml" als Einheit.</items>
+      </items>
+      <items code="at0142">
+        <items id="text">Dauer der Bereitstellung</items>
+        <items id="description">Der Zeitraum, für den das Arzneimittel bereitgestellt werden sollte oder für den ein Vorrat ausgegeben wurde.</items>
+        <items id="comment">Der Ausgebende wird gebeten, eine ausreichende Menge an Arzneimitteln für den festgelegten Zeitraum zur Verfügung zu stellen.</items>
+      </items>
+      <items code="at0158">
+        <items id="text">Anzahl der Packungen</items>
+        <items id="description">Die Anzahl der Packungen, die vom Verschreibenden angegeben oder vom Ausgebenden ausgehändigt wurden.</items>
+      </items>
+      <items code="at0159">
+        <items id="text">Packungsgröße</items>
+        <items id="description">Die Packungsgröße, die vom Verschreibenden angegeben oder vom Ausgebenden ausgehändigt wurden.</items>
+        <items id="comment">Zum Beispiel: "300" als Wert und "Tabletten" als Einheit; oder "28" als Wert und "ml" als Einheit.</items>
+      </items>
+      <items code="at0161">
+        <items id="text">Beschreibung der Menge</items>
+        <items id="description">Die Menge des Arzneimittels, des Impfstoffs oder des therapeutischen Mittels, das zur Verfügung gestellt werden soll oder tatsächlich bereitgestellt wurde.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

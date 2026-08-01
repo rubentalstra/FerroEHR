@@ -14,11 +14,12 @@
 //!   clean under the ADL 1.4 phase-1 subset
 //!   ([`openehr_adl::validate::validate_source_integrity`] in the 1.4 dialect;
 //!   every file here
-//!   is `regression`-tagged PASS), EXCEPT `FAIL_c_dv_quantity_minimal.v1.adl`
-//!   which rejects at parse with `SDINV` (its `regression` tag) — an empty
-//!   `(C_DV_QUANTITY) <>` inline dADL block — and the two concept-less
-//!   fixtures, which reject with `SACO` against the spec text over their own
-//!   `PASS` tag (adjudication + citation at the assertion site).
+//!   is `regression`-tagged PASS), with THREE adjudicated overrides:
+//!   `FAIL_c_dv_quantity_minimal.v1.adl` PARSES over its own FAIL/`SDINV` tag
+//!   (an empty `(C_DV_QUANTITY) <>` block is grammatical dADL the docs text
+//!   admits — adjudication + citations at the assertion site, #1465), and the
+//!   two concept-less fixtures reject with `SACO` against the spec text over
+//!   their own `PASS` tag (adjudication + citation at the assertion site).
 //! - `features/**/*.adl` — parse (1.4 dialect) clean.
 //! - `adl14-dadl/*.adl` — the hand-written dADL breadth tree, claimed by
 //!   `adl14_dadl_breadth.rs` (accept/refuse per fixture, leaf values
@@ -104,12 +105,30 @@ fn every_adl_file_is_claimed_with_an_outcome() {
             claimed += 1;
         } else if r.contains("validity/legacy_adl_1.4/") {
             if r.contains("FAIL_c_dv_quantity_minimal") {
-                // The SDINV reject: an empty `(C_DV_QUANTITY) <>` domain block.
+                // Adjudicated against the spec text, over the fixture's own
+                // FAIL name, "not accepted" purpose text and `SDINV` tag
+                // (#1465 family 3): the empty `(C_DV_QUANTITY) <>` block IS
+                // grammatical — the domain block's content is dADL
+                // (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE`),
+                // the dADL chapter's own grammar admits the empty block
+                // (`ADL1.4/master04-dadl.adoc` §Syntax
+                // `untyped_single_attr_object_block`, first alternative) and
+                // §Empty Sections allows empty sections anywhere — so it
+                // lowers to the open `DV_QUANTITY matches {*}` constraint.
+                // The fixture is stalled reference DATA and never overrides
+                // the chapter's own text; its expectation is reported
+                // upstream rather than honoured. It still REFUSES — the file
+                // also carries no `concept` section, which ADL 1.4 mandates
+                // (`ADL1.4/master08-adl.adoc` §Syntax Specification
+                // `arch_concept`, §Validity VARCN — the same SACO adjudication
+                // as the two concept-less fixtures below) — so the refusal
+                // stands on the spec-grounded defect, not the intended one.
                 let err = parse_artefact(&src, Dialect::Adl14)
-                    .expect_err("FAIL_c_dv_quantity_minimal must reject");
+                    .expect_err("FAIL_c_dv_quantity_minimal still refuses: no concept section");
                 assert!(
-                    err.iter().any(|e| e.code == SyntaxErrorCode::Sdinv),
-                    "{r}: expected SDINV, got {:?}",
+                    err.iter().any(|e| e.code == SyntaxErrorCode::Saco)
+                        && !err.iter().any(|e| e.code == SyntaxErrorCode::Sdinv),
+                    "{r}: expected SACO (missing concept) and no SDINV, got {:?}",
                     err.iter().map(|e| e.code).collect::<Vec<_>>()
                 );
             } else if CONCEPT_LESS.iter().any(|f| r.ends_with(f)) {

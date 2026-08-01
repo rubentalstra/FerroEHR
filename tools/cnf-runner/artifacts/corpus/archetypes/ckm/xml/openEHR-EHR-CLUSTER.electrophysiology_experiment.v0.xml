@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>cs</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2016-04-04</original_author>
+    <original_author id="name">Václav Papež</original_author>
+    <original_author id="organisation">University of West Bohemia</original_author>
+    <original_author id="email">vpapez@kiv.zcu.cz</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Based on odML terminology http://portal.g-node.org/odml/terminologies/v1.0/experiment/electrophysiology.xml, v.1.0, d. 2012-01-02 </other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">344CA243823B82B7345A26459A05FF9C</other_details>
+    <other_details id="build_uid">438b6157-c12e-49ee-bd25-085917a41cad</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>cs</code_string>
+      </language>
+      <purpose>Describes basic atributtes of electrophysilogy experiments according to odML terminology.</purpose>
+      <keywords>experiment</keywords>
+      <keywords>electrophysiology</keywords>
+      <use />
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <uid>
+    <value>31fc8d28-8943-48c1-abc1-17a2e725990c</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.electrophysiology_experiment.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0002</code_list>
+                <code_list>at0003</code_list>
+                <code_list>at0004</code_list>
+                <code_list>at0005</code_list>
+                <code_list>at0006</code_list>
+                <code_list>at0007</code_list>
+                <code_list>at0008</code_list>
+                <code_list>at0009</code_list>
+                <code_list>at0010</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0011</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0012</code_list>
+                <code_list>at0013</code_list>
+                <code_list>at0014</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="cs">
+      <items code="at0000">
+        <items id="text">Electrophysiology</items>
+        <items id="description">Properties for describing an electrophysiological experiment.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Type</items>
+        <items id="description">Intracellular recording of single cell responses with sharp microelectrodes.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">intracellular recording</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0003">
+        <items id="text">extracellular recording</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0004">
+        <items id="text">patch clamp</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0005">
+        <items id="text">whole cell patch</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0006">
+        <items id="text">loose patch</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0007">
+        <items id="text">ERG</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0008">
+        <items id="text">EEG</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0009">
+        <items id="text">EKG</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0010">
+        <items id="text">EMG</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Subtype</items>
+        <items id="description">Subtype of this electrophysiological experiment.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">single electrode recording</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0013">
+        <items id="text">dual electrode recording</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0014">
+        <items id="text">multi electrode recording</items>
+        <items id="description">*</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="ODMLID">
+      <items code="at0001">
+        <value>
+          <terminology_id>
+            <value>ODMLID</value>
+          </terminology_id>
+          <code_string>ODMLID012002</code_string>
+        </value>
+      </items>
+      <items code="at0011">
+        <value>
+          <terminology_id>
+            <value>ODMLID</value>
+          </terminology_id>
+          <code_string>ODMLID012003</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

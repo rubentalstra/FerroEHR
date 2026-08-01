@@ -1,0 +1,145 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.environmental_conditions.v1
+
+concept
+	[at0000]	-- Environmental conditions
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"19/07/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record information about environmental conditions that may be impacting on the patient's wellbeing.">
+			use = <"To re-use within multiple archetypes - for example the State within the temperature archetype.">
+			keywords = <"humidity", "temperature", "ambient", "thermal stress", "wind", "chill", "wet bulb globe">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Knut Bernstein", "Sam Heard">
+	other_details = <
+		["references"] = <"">
+		["MD5-CAM-1.0.1"] = <"9F993D7F0E7F0C39E3E133E47FF63171">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Environmental conditions
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Ambient Temperature
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::127]>
+						list = <
+							["1"] = <
+								units = <"°C">
+							>
+							["2"] = <
+								units = <"°F">
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Relative humidity
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::507]>
+						list = <
+							["1"] = <
+								units = <"%">
+								precision = <|1|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- Wind Velocity
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::338]>
+						list = <
+							["1"] = <
+								units = <"km/h">
+							>
+							["2"] = <
+								units = <"m/h">
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- Wind Chill Temperature
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::127]>
+						list = <
+							["1"] = <
+								units = <"°C">
+								precision = <|1|>
+							>
+							["2"] = <
+								units = <"°F">
+								precision = <|1|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0010] occurrences matches {0..1} matches {	-- Wet Bulb Globe Temperature
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::127]>
+						list = <
+							["1"] = <
+								units = <"°C">
+							>
+							["2"] = <
+								units = <"°F">
+								precision = <|1|>
+							>
+						>
+					>
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Environmental conditions">
+					description = <"Record environmental conditions to which the patient is exposed.">
+				>
+				["at0001"] = <
+					text = <"Ambient Temperature">
+					description = <"The temperature of the environment in which the patient is situated.  If this archetype is used within a state model, the assumed value is 21 degrees Celsius or 69.8 degrees Fahrenheit.">
+				>
+				["at0002"] = <
+					text = <"Relative humidity">
+					description = <"Humidity of the environment in which the patient is situated.">
+				>
+				["at0003"] = <
+					text = <"Wind Velocity">
+					description = <"Measure of wind velocity.">
+				>
+				["at0005"] = <
+					text = <"Wind Chill Temperature">
+					description = <"The apparent temperature felt on exposed skin, which is a function of the air temperature and wind speed - usually used in low temperature environements where the apparent temperature is lower than the measured air temperature.">
+				>
+				["at0010"] = <
+					text = <"Wet Bulb Globe Temperature">
+					description = <"A composite temperature used to estimate the effect of temperature, humidity, and solar radiation on humans - usually used in exposure to high temperatures.">
+				>
+			>
+		>
+	>

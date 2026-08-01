@@ -1,0 +1,532 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.imaging_exam.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Grahame Grieve">
+		["organisation"] = <"Health Intersections Pty Ltd">
+		["email"] = <"grahame@healthintersections.com.au">
+		["date"] = <"2011-02-07">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the findings and interpretation of an imaging examination, or series of examinations, performed.">
+			use = <"Use to record all results related to the diagnostic imaging aspects of any imaging examinations performed. 
+
+Use to record the imaging examination components (only) of a more complex procedure, including those that may have been undertaken under imaging guidance.
+
+More complex procedures (such as echocardiaograms or Bone density scans) may be represented using templates or specialised archetypes where additional report content is appropriate.
+
+Will normally be reported back to the requesting clinician as one component within the context of an overall COMPOSITION-based report.">
+			misuse = <"Not to be used to record non-imaging examination findings or activities. For example when imaging is performed as part of a procedure the information related to the procedure must be recorded using the ACTION.procedure archetype or an OBSERVATION for the operative findings. This archetype will only be used to record the findings from the imaging.
+
+Not to be used to record details about any parallel procedure undertaken. Use the specific procedure-related archetypes, for example ACTION.procedure.
+
+Not to be used to record details about medications administered during the imaging test. Use specific medication-related archetypes, for example ACTION.medication.">
+		>
+	>
+	other_contributors = <"Sharmila Biswas, Australia", "Eric Browne", "David Cartwright, Queensland Health, Australia", "Stephen Chu, NEHTA, Australia (Editor)", "Matthew Cordell, NEHTA, Australia", "Andre de Wolf, NeHTA, Australia", "David Evans, Queensland Health, Australia", "Jacquie Garton-Smith, Royal Perth Hospital and DoHWA, Australia", "Grahame Grieve, Health Intersections Pyty Ltd, Australia (Editor)", "Mary Kelaher, NEHTA, Australia", "Diane Kirkham, NEHTA, Australia", "Robert L'egan, NEHTA, Australia", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Mike Martyn, The Hobart Anaesthetic Group, Australia", "Ian McNicoll, Ocean Informatics UK, United Kingdom", "Chris Mitchell, RACGP, Australia", "Stewart Morrison, NEHTA, Australia", "Michael Osborne, Mater Health Services, Australia", "Ning Pan", "Chris Pearce, Melbourne East GP Network, Australia", "Jodie Pycroft, Adelaide Northern Division of General Practice Ltd, Australia", "Cathy Richardson, NEHTA, Australia", "Stephen Royce, NEHTA, Australia", "Eleanor Royle", "Don Stewart", "Michael Thompson, Queensland Health, Australia", "Gordon Tomes, Australian Institute of Health and Welfare, Australia", "Richard Townley-O'Neill, NEHTA, Australia">
+	references = <
+		["1"] = <"IHE.net Technical Frameworks - Radiology [Internet]. [date unknown];[cited 2011 Jan 2 ] Available from: http://www.ihe.net/Technical_Framework/index.cfm#radiology">
+		["2"] = <"RSNA.org: Radiology Reporting [Internet]. [date unknown];[cited 2011 Jan 2 ] Available from: http://www.rsna.org/Informatics/radreports.cfm">
+		["3"] = <"Radiology Written Report Guideline Project (Draft Consultation); December 2010.">
+		["4"] = <"Diagnostic Imaging data specifications; NEHTA, version 1.0, 2007 Jun 29.">
+		["5"] = <"Imaging examination result, draft archetype, NEHTA Clinical Knowledge Manager [Internet]. London: NEHTA. Authored: 11 Feb 2007. Available at: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.943_6 (accessed 16 Sep 2013).">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"E115450A8DA092A0431A3D9777634573">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Imaging examination result
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items cardinality matches {2..*; unordered} matches {
+									ELEMENT[id5] matches {	-- Examination result name
+										value matches {
+											DV_TEXT[id44] 
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Modality
+										value matches {
+											DV_TEXT[id45] 
+										}
+									}
+									allow_archetype CLUSTER[id7] matches {	-- Anatomical site
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1/}
+									}
+									ELEMENT[id8] matches {	-- Overall result status
+										value matches {
+											DV_CODED_TEXT[id46] matches {
+												defining_code matches {[ac1]}		-- Overall result status (synthesised)
+											}
+										}
+									}
+									ELEMENT[id25] occurrences matches {0..1} matches {	-- DateTime result issued
+										value matches {
+											DV_DATE_TIME[id47] 
+										}
+									}
+									ELEMENT[id15] occurrences matches {0..1} matches {	-- Clinical information provided
+										value matches {
+											DV_TEXT[id48] 
+										}
+									}
+									ELEMENT[id9] occurrences matches {0..1} matches {	-- Findings
+										value matches {
+											DV_TEXT[id49] 
+										}
+									}
+									CLUSTER[id16] occurrences matches {0..1} matches {	-- Result group
+										items matches {
+											CLUSTER[id17] matches {	-- Result
+												items matches {
+													ELEMENT[id18] occurrences matches {0..1} 	-- Result value
+													ELEMENT[id19] matches {	-- Result comment
+														value matches {
+															DV_TEXT[id50] 
+														}
+													}
+												}
+											}
+											allow_archetype CLUSTER[id20] matches {	-- Anatomical site
+												include
+													archetype_id/value matches {/.*/}
+											}
+										}
+									}
+									ELEMENT[id21] matches {	-- Radiological diagnosis
+										value matches {
+											DV_TEXT[id51] 
+										}
+									}
+									ELEMENT[id22] occurrences matches {0..1} matches {	-- Conclusion
+										value matches {
+											DV_TEXT[id52] 
+										}
+									}
+									ELEMENT[id23] matches {	-- Examination result representation
+										value matches {
+											DV_MULTIMEDIA[id53] matches {
+												media_type matches {[ac2]}		-- Examination result representation (synthesised)
+											}
+										}
+									}
+									ELEMENT[id24] occurrences matches {0..1} matches {	-- Examination comment
+										value matches {
+											DV_TEXT[id54] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id26] matches {
+				items matches {
+					allow_archetype CLUSTER[id27] matches {	-- Receiving imaging service
+						include
+							archetype_id/value matches {/.*/}
+					}
+					CLUSTER[id28] matches {	-- Examination request details
+						items matches {
+							ELEMENT[id29] occurrences matches {0..1} matches {	-- Requester order identifier
+								value matches {
+									DV_IDENTIFIER[id55] 
+								}
+							}
+							ELEMENT[id30] matches {	-- Examination requested name
+								value matches {
+									DV_TEXT[id56] 
+								}
+							}
+							allow_archetype CLUSTER[id31] matches {	-- Requester
+								include
+									archetype_id/value matches {/.*/}
+							}
+							ELEMENT[id32] occurrences matches {0..1} matches {	-- Receiver order identifier
+								value matches {
+									DV_IDENTIFIER[id57] 
+								}
+							}
+							ELEMENT[id33] occurrences matches {0..1} matches {	-- DICOM study identifier
+								value matches {
+									DV_URI[id58] 
+								}
+							}
+							ELEMENT[id34] occurrences matches {0..1} matches {	-- Report identifier
+								value matches {
+									DV_IDENTIFIER[id59] 
+								}
+							}
+							CLUSTER[id35] matches {	-- Image details
+								items matches {
+									ELEMENT[id36] occurrences matches {0..1} matches {	-- Image identifier
+										value matches {
+											DV_IDENTIFIER[id60] 
+										}
+									}
+									ELEMENT[id37] occurrences matches {0..1} matches {	-- DICOM series identifier
+										value matches {
+											DV_IDENTIFIER[id61] 
+										}
+									}
+									ELEMENT[id38] occurrences matches {0..1} matches {	-- View
+										value matches {
+											DV_TEXT[id62] 
+										}
+									}
+									ELEMENT[id39] occurrences matches {0..1} matches {	-- Position
+										value matches {
+											DV_TEXT[id63] 
+										}
+									}
+									ELEMENT[id40] occurrences matches {0..1} matches {	-- Image DateTime
+										value matches {
+											DV_DATE_TIME[id64] 
+										}
+									}
+									ELEMENT[id41] occurrences matches {0..1} matches {	-- Image
+										value matches {
+											DV_MULTIMEDIA[id65] matches {
+												media_type matches {[ac3]}		-- Image (synthesised)
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[id42] matches {	-- Examination procedure
+						include
+							archetype_id/value matches {/.*/}
+					}
+					CLUSTER[id43] matches {	-- Compared image details
+						items matches {
+							use_node ELEMENT[id66] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id29]	-- /protocol[id26]/items[Examination request details]/items[Requester order identifier]
+							use_node ELEMENT[id67] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id33]	-- /protocol[id26]/items[Examination request details]/items[DICOM study identifier]
+							use_node ELEMENT[id68] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id35]/items[id36]	-- /protocol[id26]/items[Examination request details]/items[Image details]/items[Image identifier]
+							use_node ELEMENT[id69] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id35]/items[id37]	-- /protocol[id26]/items[Examination request details]/items[Image details]/items[DICOM series identifier]
+							use_node ELEMENT[id70] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id35]/items[id38]	-- /protocol[id26]/items[Examination request details]/items[Image details]/items[View]
+							use_node ELEMENT[id71] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id35]/items[id39]	-- /protocol[id26]/items[Examination request details]/items[Image details]/items[Position]
+							use_node ELEMENT[id72] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id35]/items[id40]	-- /protocol[id26]/items[Examination request details]/items[Image details]/items[Image DateTime]
+							use_node ELEMENT[id73] occurrences matches {0..1} /protocol[id26]/items[id28]/items[id35]/items[id41]	-- /protocol[id26]/items[Examination request details]/items[Image details]/items[Image]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Imaging examination result">
+				description = <"Record the findings and interpretation of an imaging examination, or series of examinations, performed.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Any event.">
+			>
+			["id5"] = <
+				text = <"Examination result name">
+				description = <"Identification of the imaging examination or procedure performed, typically including modality and anatomical location (including laterality). Coding with a terminology, potientially a pre-coordinated term specifying both modality and anatomical location, is desirable where possible. Possible candidate terminologies: LOINC, SNOMED CT or RadLex.">
+			>
+			["id6"] = <
+				text = <"Modality">
+				description = <"The imaging method used to perform the examination e.g Ultrasound, CT, X-ray. Coding with a terminology is desirable, where possible. If the modality is specified by a code in the Examination result name, then this field is not required.">
+			>
+			["id7"] = <
+				text = <"Anatomical site">
+				description = <"Details of the anatomical site of imaging examination, including laterality, if all individual findings and results are related to the same anatomical location. If the anatomical site is sufficiently specified with a code in the Examination test name, then this additional data is not required. Finer-grained multiple anatomical sites may be represented per ‘Result group’.">
+			>
+			["id8"] = <
+				text = <"Overall result status">
+				description = <"The status of the examination result as a whole.">
+			>
+			["id9"] = <
+				text = <"Findings">
+				description = <"Narrative description of findings, including comparative findings.">
+			>
+			["at10"] = <
+				text = <"Registered">
+				description = <"No result yet available.">
+			>
+			["at11"] = <
+				text = <"Interim">
+				description = <"This is an initial or interim result: data may be missing or verification not been performed.">
+			>
+			["at12"] = <
+				text = <"Final">
+				description = <"The result is complete and verified by the responsible radiologist.">
+			>
+			["at13"] = <
+				text = <"Amended">
+				description = <"The result has been modified subsequent to being Final, and is complete and verified by the radiologist.">
+			>
+			["at14"] = <
+				text = <"Cancelled / Aborted">
+				description = <"The result is not available because the examination was not started or completed.">
+			>
+			["id15"] = <
+				text = <"Clinical information provided">
+				description = <"Description of clinical information available at the time of interpretation of results, and which may a link to the original clinical information provided in the examination request.">
+			>
+			["id16"] = <
+				text = <"Result group">
+				description = <"A group of structured results. Results may be grouped by anatomical location or by some other name or code to describe what binds all the results together. If a name or code is used, it is provided by run-time re-naming of the 'Result group' element or may be fixed in a specialised archetype or template. Coding with a terminology, potentially a pre-coordinated term including specimen type, is preferred where possible for the name. Should be coded with LOINC or SNOMED CT.">
+			>
+			["id17"] = <
+				text = <"Result">
+				description = <"Specific detailed result, including both the value of the result item and additional information that may be useful for clinical interpretation. Results include whatever specific data items imaging services report as part of the clinical service; it may include measurements. These are often referred to as 'Structured Findings'. The result is identified by run-time re-naming of the 'Result group' element or may be fixed in a specialised archetype or template. Coding with a terminology, potentially a pre-coordinated term including specimen type, is preferred where possible for the name. Should be coded with LOINC or SNOMED CT. Examples include cardiac ejection fraction or bone density.">
+			>
+			["id18"] = <
+				text = <"Result value">
+				description = <"Actual value of the result. Most result values will be numerical measurements, but others may be coded concepts or free text.">
+			>
+			["id19"] = <
+				text = <"Result comment">
+				description = <"May include statements about significant, unexpected or unreliable 
+values, or information about the source of the value where this may be relevant to the interpretation of the result.">
+			>
+			["id20"] = <
+				text = <"Anatomical site">
+				description = <"Details about the individual anatomical location to which these ‘Result group’ examination results refer, where finer-grained representation of Anatomical location is required.">
+			>
+			["id21"] = <
+				text = <"Radiological diagnosis">
+				description = <"Single word, phrase or brief description representing the 'Conclusion'. Coding with a terminology is preferred, where possible.">
+			>
+			["id22"] = <
+				text = <"Conclusion">
+				description = <"Concise and clinically contextualised narrative interpretation of the imaging examination findings.">
+			>
+			["id23"] = <
+				text = <"Examination result representation">
+				description = <"Rich text representation of the entire result as issued by the diagnostic service. Multiple formats are allowed but they must be semantically equivalent.">
+			>
+			["id24"] = <
+				text = <"Examination comment">
+				description = <"Additional narrative about the examination not captured in other fields. For example, recommendations for future examinations; a comment on appropriateness of the examination or on quality of images, if separate to findings; or a note that the film was given to the patient.">
+			>
+			["id25"] = <
+				text = <"DateTime result issued">
+				description = <"The date and/or time that the result was issued for the recorded 'Examination result status'.">
+			>
+			["id27"] = <
+				text = <"Receiving imaging service">
+				description = <"Demographic details about the receiving imaging service performing the imaging test.">
+			>
+			["id28"] = <
+				text = <"Examination request details">
+				description = <"Details concerning a single examination requested. Note: Usually there is one examination request for each result, however in some circumstances multiple examination requests may be represented using a single Imaging examination result archetype.">
+			>
+			["id29"] = <
+				text = <"Requester order identifier">
+				description = <"The local identifier assigned to the order by the order requester. Equivalent to the HL7 Placer Order Identifier.">
+			>
+			["id30"] = <
+				text = <"Examination requested name">
+				description = <"Identification of imaging examination or procedure requested, where the examination requested differs from the examination actually performed.">
+			>
+			["id31"] = <
+				text = <"Requester">
+				description = <"Details about the clinician or organisation requesting the imaging examination.">
+			>
+			["id32"] = <
+				text = <"Receiver order identifier">
+				description = <"The local identifier assigned to the examination order by the order filler, usually by the Radiology Information System (RIS). Usually equivalent to the HL7 Filler Order Number.">
+			>
+			["id33"] = <
+				text = <"DICOM study identifier">
+				description = <"Unique identifier of this study allocated by the imaging service.">
+			>
+			["id34"] = <
+				text = <"Report identifier">
+				description = <"The local identifier given to the imaging examination report.">
+			>
+			["id35"] = <
+				text = <"Image details">
+				description = <"Images referred to, or provided, to assist clinical understanding of the examination. If attached image is in DICOM format, all the fields below should be populated so the values are available to software that does not process DICOM images.">
+			>
+			["id36"] = <
+				text = <"Image identifier">
+				description = <"Unique identifier of this image allocated by the imaging service (often the DICOM image instance UID).">
+			>
+			["id37"] = <
+				text = <"DICOM series identifier">
+				description = <"Unique identifier of this series allocated by the imaging service.">
+			>
+			["id38"] = <
+				text = <"View">
+				description = <"The name of the imaging view e.g Lateral or Antero-posterior (AP). Coding using a terminology is desirable, where possible.">
+			>
+			["id39"] = <
+				text = <"Position">
+				description = <"Description of the subject of care's positon when the image was performed.">
+			>
+			["id40"] = <
+				text = <"Image DateTime">
+				description = <"Specific date/time the imaging examination was performed.">
+			>
+			["id41"] = <
+				text = <"Image">
+				description = <"An attached or referenced image of a current view.">
+			>
+			["id42"] = <
+				text = <"Examination procedure">
+				description = <"Additional structured details of imaging examination methodology followed. For example, structured details about the examination technique, prepraration or contrast medium used.">
+			>
+			["id43"] = <
+				text = <"Compared image details">
+				description = <"Details of previous images used for comparison.">
+			>
+			["at15"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at16"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at17"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at18"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at19"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at20"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at21"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at22"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at23"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at24"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at25"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at26"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at27"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at28"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id66"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id67"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id68"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id69"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id70"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id71"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id72"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id73"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Overall result status (synthesised)">
+				description = <"The status of the examination result as a whole. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Examination result representation (synthesised)">
+				description = <"Rich text representation of the entire result as issued by the diagnostic service. Multiple formats are allowed but they must be semantically equivalent. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Image (synthesised)">
+				description = <"An attached or referenced image of a current view. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at15"] = <http://openehr.org/id/517>
+			["at16"] = <http://openehr.org/id/518>
+			["at17"] = <http://openehr.org/id/519>
+			["at18"] = <http://openehr.org/id/682>
+			["at19"] = <http://openehr.org/id/683>
+			["at20"] = <http://openehr.org/id/417>
+			["at21"] = <http://openehr.org/id/418>
+			["at22"] = <http://openehr.org/id/419>
+			["at23"] = <http://openehr.org/id/637>
+			["at24"] = <http://openehr.org/id/425>
+			["at25"] = <http://openehr.org/id/426>
+			["at26"] = <http://openehr.org/id/427>
+			["at27"] = <http://openehr.org/id/428>
+			["at28"] = <http://openehr.org/id/429>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at10", "at11", "at12", "at13", "at14">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at15", "at16", "at17", "at18", "at19", "at20", "at21", "at22">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at23", "at24", "at25", "at26", "at27", "at28">
+		>
+	>

@@ -1,0 +1,206 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.triage.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			author = <
+				["name"] = <"Dr. Leonardo Der Jachadurian">
+				["organisation"] = <"Bitios.com">
+			>
+			accreditation = <"Medical Doctor (Internal Medicine Specialist)">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.biz">
+		["date"] = <"12/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"An evaluative statement for the conclusions or summary by a clinician regarding need for priority of treatment">
+			use = <"">
+			keywords = <"triage", "evaluation", "assessment">
+			misuse = <"">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"بيان لتقييم الاستنتاجات أو الملخص الذي يقوم به الطبيب السريري لأولويات المعالجة.">
+			use = <"">
+			keywords = <"الفرز", "التقييم", "التقدير">
+			misuse = <"">
+		>
+		["es-ar"] = <
+			language = <[ISO_639-1::es-ar]>
+			purpose = <"Evaluación hecha por un médico, respecto a que prioridad es requerida para el manejo de la condición médica que motivó la evaluación.">
+			use = <"">
+			keywords = <"triage", "evaluación", "priorización">
+			misuse = <"">
+		>
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Triage evaluation
+		data matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Triage evaluation
+						value matches {
+							DV_ORDINAL[id10] matches {
+								[value, symbol] matches {
+									[{1}, {[at15]}],
+									[{2}, {[at16]}],
+									[{3}, {[at17]}],
+									[{4}, {[at18]}],
+									[{5}, {[at19]}]
+								}
+							}
+						}
+					}
+					ELEMENT[id9] occurrences matches {0..1} matches {	-- Rationale
+						value matches {
+							DV_TEXT[id11] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Triage evaluation">
+				description = <"The evaluation of need for immediacy of treatment">
+			>
+			["id3"] = <
+				text = <"Triage evaluation">
+				description = <"Record of need for prioritisation of treatment">
+			>
+			["id9"] = <
+				text = <"Rationale">
+				description = <"The rationale for the evaluation provided">
+			>
+			["at15"] = <
+				text = <"Immediate">
+				description = <"*">
+			>
+			["at16"] = <
+				text = <"Very urgent">
+				description = <"*">
+			>
+			["at17"] = <
+				text = <"Urgent">
+				description = <"*">
+			>
+			["at18"] = <
+				text = <"Standard">
+				description = <"*">
+			>
+			["at19"] = <
+				text = <"Non-urgent">
+				description = <"*">
+			>
+			["ac1"] = <
+				text = <"Triage evaluation (synthesised)">
+				description = <"Record of need for prioritisation of treatment (synthesised)">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"تقييم الفرز">
+				description = <"تقييم الحاجة لفورية المعالجة">
+			>
+			["id3"] = <
+				text = <"تقييم الفرز">
+				description = <"تسجيل للحاجة إلى ترتيب أولويات المعالجة">
+			>
+			["id9"] = <
+				text = <"الأساس المنطقي">
+				description = <"الأساس المنطقي للتقييم الذي يتم تقديمه">
+			>
+			["at15"] = <
+				text = <" مباشر/فوري/عاجل">
+				description = <"*">
+			>
+			["at16"] = <
+				text = <"عاجل/مُلِحّ جدا">
+				description = <"*">
+			>
+			["at17"] = <
+				text = <"عاجل/مُلِحّ">
+				description = <"*">
+			>
+			["at18"] = <
+				text = <"عياري">
+				description = <"*">
+			>
+			["at19"] = <
+				text = <"غير عاجل/غير مُلِحّ">
+				description = <"*">
+			>
+			["ac1"] = <
+				text = <"تقييم الفرز (synthesised)">
+				description = <"تسجيل للحاجة إلى ترتيب أولويات المعالجة (synthesised)">
+			>
+		>
+		["es-ar"] = <
+			["id1"] = <
+				text = <"Evaluación Triage">
+				description = <"Evaluación de que urgencia es requerida para el tratamiento.">
+			>
+			["id3"] = <
+				text = <"Evaluación Triage">
+				description = <"Registro de la necesidad de priorización del tratamiento.">
+			>
+			["id9"] = <
+				text = <"Fundamentación">
+				description = <"La fundamentación de la evaluación provista.">
+			>
+			["at15"] = <
+				text = <"Inmediata">
+				description = <"*">
+			>
+			["at16"] = <
+				text = <"Muy urgente">
+				description = <"*">
+			>
+			["at17"] = <
+				text = <"Urgente">
+				description = <"*">
+			>
+			["at18"] = <
+				text = <"Estándar">
+				description = <"*">
+			>
+			["at19"] = <
+				text = <"No urgente">
+				description = <"*">
+			>
+			["ac1"] = <
+				text = <"Evaluación Triage (synthesised)">
+				description = <"Registro de la necesidad de priorización del tratamiento. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at15", "at16", "at17", "at18", "at19">
+		>
+	>

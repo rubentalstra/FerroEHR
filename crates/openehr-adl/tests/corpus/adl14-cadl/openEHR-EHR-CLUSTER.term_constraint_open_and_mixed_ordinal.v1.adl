@@ -1,0 +1,112 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.term_constraint_open_and_mixed_ordinal.v1
+
+concept
+	[at0000]	-- Open term constraint and mixed ordinal alternatives
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Open term constraint and mixed ordinal alternatives
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Open local code
+				value matches {
+					DV_CODED_TEXT matches {
+						-- An EMPTY code list: the constraint names the
+						-- terminology and constrains the code no further.
+						-- ADL1.4/master09-customising_adl.adoc §Custom Syntax
+						-- introduces this spelling only with a non-empty set, so
+						-- the empty set is docs-text SILENT; the vendored
+						-- normative grammar resolves it —
+						-- cadl14_primitives.g4 `c_qualified_term_code :
+						-- '[' terminology_id '::' ( … )? ']'` makes the whole
+						-- code-list group optional. CKM emits this form.
+						defining_code matches {[local::]}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Open external code
+				value matches {
+					DV_MULTIMEDIA matches {
+						-- The same empty-list form against an EXTERNAL
+						-- terminology, as CKM's own library writes it.
+						media_type matches {[openEHR::]}
+					}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- Typed alternative first
+				value matches {
+					-- ADL1.4/master05-cadl.adoc §Mixed Structures: a node's
+					-- block is "a series of possible constraints on objects"
+					-- and "at any given node, all three types can co-exist" —
+					-- so the ordinal shorthand (cadl14.g4 `c_ordinal`, one of
+					-- the `c_non_primitive_object` alternatives) is one sibling
+					-- among others, not the sole occupant of its block. Typed
+					-- alternative BEFORE the ordinal terms.
+					DV_TEXT matches {*}
+					0|[local::at0005],
+					1|[local::at0006],
+					2|[local::at0007]
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {	-- Ordinal terms first
+				value matches {
+					-- The same mixture in the OTHER order — both orders occur
+					-- in real CKM archetypes.
+					0|[local::at0005],
+					1|[local::at0006]
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Open term constraint and mixed ordinal alternatives">
+					description = <"Accepting fixture: an empty qualified code list, and the ordinal shorthand beside a typed alternative in both orders.">
+				>
+				["at0001"] = <
+					text = <"Open local code">
+					description = <"A coded text constrained to the local terminology with no code list.">
+				>
+				["at0002"] = <
+					text = <"Open external code">
+					description = <"A media type constrained to an external terminology with no code list.">
+				>
+				["at0003"] = <
+					text = <"Typed alternative first">
+					description = <"A typed alternative followed by ordinal terms in one block.">
+				>
+				["at0004"] = <
+					text = <"Ordinal terms first">
+					description = <"Ordinal terms followed by a typed alternative in one block.">
+				>
+				["at0005"] = <
+					text = <"+">
+					description = <"Mild.">
+				>
+				["at0006"] = <
+					text = <"++">
+					description = <"Moderate.">
+				>
+				["at0007"] = <
+					text = <"+++">
+					description = <"Severe.">
+				>
+			>
+		>
+	>

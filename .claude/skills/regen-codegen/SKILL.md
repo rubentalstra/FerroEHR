@@ -25,6 +25,7 @@ files — that is what this regenerates.
    cargo run -p openehr-codegen -- emit-json       # openehr-its canonical-JSON ToJson/FromJson codec
    cargo run -p openehr-codegen -- emit-rest       # openehr-its ITS-REST contract
    cargo run -p openehr-codegen -- emit-opt        # openehr-its opt14 (OPT 1.4 model + XML codec)
+   cargo run -p openehr-codegen -- emit-aom2       # openehr-its aom2 + aom2_model (both AOM2 archetype XML serializations)
    cargo run -p openehr-codegen -- emit-rm-model   # openehr-rm src/model (static RM attribute/type model)
    cargo run -p openehr-codegen -- emit-validate   # openehr-rm src/validate/generated.rs (RM invariant cores)
    ```

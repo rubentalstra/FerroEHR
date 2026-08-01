@@ -1,0 +1,358 @@
+﻿archetype (adl_version=1.4; uid=601552da-338d-426f-8ce0-606e6a70b1ab)
+	openEHR-EHR-OBSERVATION.edmonton_frail_scale.v0
+
+concept
+	[at0000]	-- Edmonton frail scale
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Hildegard Franke">
+		["organisation"] = <"freshEHR Clinical Informatics Ltd.">
+		["email"] = <"hildi@freshehr.com">
+		["date"] = <"2017-05-23">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For the recording of the Edmonton Frail Scale individual domain items and overall score.">
+			use = <"Use to record the Edmonton Frail Scale items and score.">
+			misuse = <"">
+			copyright = <"© Clinical Models UK">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"UK Clinical Models">
+		["references"] = <"https://www.nscphealth.co.uk/edmontonscale-pdf">
+		["current_contact"] = <"Hildegard Franke, freshEHR Clinical Informatics Ltd.<hildi@freshehr.com>">
+		["original_namespace"] = <"uk.org.clinicalmodels">
+		["original_publisher"] = <"UK Clinical Models">
+		["custodian_namespace"] = <"uk.org.clinicalmodels">
+		["MD5-CAM-1.0.1"] = <"4BAA265CF602FE7232DE36EC2EFA7BCA">
+		["build_uid"] = <"c3f22a3d-6d15-464e-b3ff-c7584fa7b4a7">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Edmonton frail scale
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..1} matches {	-- Point in time
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Cognition: clock drawing
+										value matches {
+											0|[local::at0005], 	-- No errors
+											1|[local::at0006], 	-- Minor spacing error
+											2|[local::at0007]  	-- Other errors
+										}
+									}
+									ELEMENT[at0008] occurrences matches {0..1} matches {	-- Hospital admissions
+										value matches {
+											0|[local::at0009], 	-- None
+											1|[local::at0010], 	-- Once or twice
+											2|[local::at0011]  	-- More than twice
+										}
+									}
+									ELEMENT[at0012] occurrences matches {0..1} matches {	-- General health description
+										value matches {
+											0|[local::at0013], 	-- Excellent, very good, good
+											1|[local::at0014], 	-- Fair
+											2|[local::at0015]  	-- Poor
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {	-- Functional independence
+										value matches {
+											0|[local::at0017], 	-- None or one
+											1|[local::at0018], 	-- Two to four
+											2|[local::at0019]  	-- Five to eight
+										}
+									}
+									ELEMENT[at0020] occurrences matches {0..1} matches {	-- Social support
+										value matches {
+											0|[local::at0021], 	-- Always
+											1|[local::at0022], 	-- Sometimes
+											2|[local::at0023]  	-- Never
+										}
+									}
+									ELEMENT[at0024] occurrences matches {0..1} matches {	-- Medication use
+										value matches {
+											0|[local::at0025], 	-- No
+											1|[local::at0026]  	-- Yes
+										}
+									}
+									ELEMENT[at0027] occurrences matches {0..1} matches {	-- Forget to take medications
+										value matches {
+											0|[local::at0028], 	-- No
+											1|[local::at0029]  	-- Yes
+										}
+									}
+									ELEMENT[at0030] occurrences matches {0..1} matches {	-- Nutrition
+										value matches {
+											0|[local::at0031], 	-- No
+											1|[local::at0032]  	-- Yes
+										}
+									}
+									ELEMENT[at0033] occurrences matches {0..1} matches {	-- Mood
+										value matches {
+											0|[local::at0034], 	-- No
+											1|[local::at0035]  	-- Yes
+										}
+									}
+									ELEMENT[at0036] occurrences matches {0..1} matches {	-- Continence
+										value matches {
+											0|[local::at0037], 	-- No
+											1|[local::at0038]  	-- Yes
+										}
+									}
+									ELEMENT[at0039] occurrences matches {0..1} matches {	-- Functional performance
+										value matches {
+											0|[local::at0040], 	-- 0 to 10 seconds
+											1|[local::at0041], 	-- 11 to 20 seconds
+											2|[local::at0042]  	-- More than 20 seconds or unwilling or requiring assistance
+										}
+									}
+									ELEMENT[at0043] occurrences matches {0..1} matches {	-- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..17|}
+											}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0044] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0045] occurrences matches {0..*} matches {	-- Confounding factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0046] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0047] occurrences matches {0..*} matches {	-- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Edmonton frail scale">
+					description = <"Edmonton Frail Scale.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Point in time">
+					description = <"A specific date and/or time which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Cognition: clock drawing">
+					description = <"Abilty to place numbers and hands in the correct position on a pre-drawn circle to indicate a clock.">
+				>
+				["at0005"] = <
+					text = <"No errors">
+					description = <"The subject made no errors.">
+				>
+				["at0006"] = <
+					text = <"Minor spacing error">
+					description = <"The subject made one or more minor spacing errors.">
+				>
+				["at0007"] = <
+					text = <"Other errors">
+					description = <"The subject made other errors.">
+				>
+				["at0008"] = <
+					text = <"Hospital admissions">
+					description = <"Number of times admitted to hospital in last year.">
+				>
+				["at0009"] = <
+					text = <"None">
+					description = <"The subject has not been admitted to hospital in the last year.">
+				>
+				["at0010"] = <
+					text = <"Once or twice">
+					description = <"The subject has been admitted to hospital once or twice in the last year.">
+				>
+				["at0011"] = <
+					text = <"More than twice">
+					description = <"The subject has been admitted to hospital more than twice in the last year.">
+				>
+				["at0012"] = <
+					text = <"General health description">
+					description = <"General description of health.">
+				>
+				["at0013"] = <
+					text = <"Excellent, very good, good">
+					description = <"The subject describes their general health as excellent, very good or good.">
+				>
+				["at0014"] = <
+					text = <"Fair">
+					description = <"The subject describes their general health as fair.">
+				>
+				["at0015"] = <
+					text = <"Poor">
+					description = <"The subject describes their general health as poor.">
+				>
+				["at0016"] = <
+					text = <"Functional independence">
+					description = <"Number of activities requiring help.">
+				>
+				["at0017"] = <
+					text = <"None or one">
+					description = <"The subject requires help with none or one activities.">
+				>
+				["at0018"] = <
+					text = <"Two to four">
+					description = <"The subject requires help with two to four activities.">
+				>
+				["at0019"] = <
+					text = <"Five to eight">
+					description = <"The subject requires help with five to eight activities.">
+				>
+				["at0020"] = <
+					text = <"Social support">
+					description = <"Able to count on someone willing and able to meet needs when help required.">
+				>
+				["at0021"] = <
+					text = <"Always">
+					description = <"The subject always has social support.">
+				>
+				["at0022"] = <
+					text = <"Sometimes">
+					description = <"The subject sometimes has social support.">
+				>
+				["at0023"] = <
+					text = <"Never">
+					description = <"The subject never has social support.">
+				>
+				["at0024"] = <
+					text = <"Medication use">
+					description = <"Using five or more different prescription medications on a regular basis.">
+				>
+				["at0025"] = <
+					text = <"No">
+					description = <"The subject does not use five or more different prescription medications on a regular basis.">
+				>
+				["at0026"] = <
+					text = <"Yes">
+					description = <"The subject uses five or more different prescription medications on a regular basis.">
+				>
+				["at0027"] = <
+					text = <"Forget to take medications">
+					description = <"Does the subject forget to take their prescription medications at times?">
+				>
+				["at0028"] = <
+					text = <"No">
+					description = <"The subject does not forget to take their prescription medications.">
+				>
+				["at0029"] = <
+					text = <"Yes">
+					description = <"The subject at times forgets to take their prescription medications.">
+				>
+				["at0030"] = <
+					text = <"Nutrition">
+					description = <"Has the subject recently lost weight so that clothing has become looser?">
+				>
+				["at0031"] = <
+					text = <"No">
+					description = <"The subject has not lost weight recently.">
+				>
+				["at0032"] = <
+					text = <"Yes">
+					description = <"The subject has lost weight recently.">
+				>
+				["at0033"] = <
+					text = <"Mood">
+					description = <"Does the subject often feel sad or depressed?">
+				>
+				["at0034"] = <
+					text = <"No">
+					description = <"The subject does not feel sad or depressed.">
+				>
+				["at0035"] = <
+					text = <"Yes">
+					description = <"The subject often feels sad or depressed.">
+				>
+				["at0036"] = <
+					text = <"Continence">
+					description = <"Does the subject have a problem with losing control of urine unvoluntarily?">
+				>
+				["at0037"] = <
+					text = <"No">
+					description = <"The subject does not have a problem with losing control of urine involuntarily.">
+				>
+				["at0038"] = <
+					text = <"Yes">
+					description = <"The subject has a problems with losing control of urine involuntary.">
+				>
+				["at0039"] = <
+					text = <"Functional performance">
+					description = <"Length of time taken to get up from chair, walk to mark about 3 metres away at a safe and comforable pace and return to chair.">
+				>
+				["at0040"] = <
+					text = <"0 to 10 seconds">
+					description = <"The subject takes 0 to 10 seconds to perform the task.">
+				>
+				["at0041"] = <
+					text = <"11 to 20 seconds">
+					description = <"The subject takes 11 to 20 seconds to perform the task.">
+				>
+				["at0042"] = <
+					text = <"More than 20 seconds or unwilling or requiring assistance">
+					description = <"The subject takes more than 20 seconds to perform the task or is unwilling or requires help.">
+				>
+				["at0043"] = <
+					text = <"Total score">
+					description = <"Sum of individual scores.">
+				>
+				["at0044"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0045"] = <
+					text = <"Confounding factors">
+					description = <"Record any issues or factors that may impact on the observation or the score.">
+				>
+				["at0046"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0047"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local context or to align with other reference models/formalisms.">
+					comment = <"e.g. Local hospital departmental infomation or additional metadata to align with HL7 or CDISC equivalents.">
+				>
+			>
+		>
+	>

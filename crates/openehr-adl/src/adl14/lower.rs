@@ -51,9 +51,17 @@ impl Parser<'_> {
     /// [`Parser::parse_adl14_domain_object`] instead of being mis-parsed as a
     /// generic type.
     pub(crate) fn is_adl14_domain_block_start(&self) -> bool {
+        // After the `<`: a lowercase attribute name (a populated dADL object),
+        // or an immediate `>` (the EMPTY block, `C_DV_QUANTITY <>` — legal
+        // dADL per `ADL1.4/master04-dadl.adoc` §Empty Sections and its own
+        // grammar, adjudicated in #1465). The empty form cannot be a generic
+        // cADL type: `master05-cadl.adoc` §Symbols `V_TYPE_IDENTIFIER`
+        // requires a NON-EMPTY generic parameter list
+        // (`[A-Z]{IDCHAR}*<[a-zA-Z0-9,_<>]+>`), so `<` directly followed by
+        // `>` is unambiguous.
         matches!(self.peek(), Some(Token::AlphaUcId(_)))
             && matches!(self.peek_at(1), Some(Token::SymLt))
-            && matches!(self.peek_at(2), Some(Token::AlphaLcId(_)))
+            && matches!(self.peek_at(2), Some(Token::AlphaLcId(_) | Token::SymGt))
     }
 
     /// True if the cursor is at a 1.4 qualified/listed terminology constraint
@@ -112,7 +120,22 @@ impl Parser<'_> {
             )?;
             let mut codes: Vec<String> = Vec::new();
             let mut assumed: Option<String> = None;
-            loop {
+            // An EMPTY code list — `[local::]`, `[openEHR::]` — names the
+            // terminology and constrains the code to nothing further.
+            //
+            // NOTE: `ADL1.4/master09-customising_adl.adoc` §Custom Syntax
+            // introduces this compact spelling only with a non-empty set
+            // ("specify the terminology, and then a set of code_strings"), so
+            // the empty set is docs-text SILENT. The vendored normative
+            // grammar resolves the silence: `cadl14_primitives.g4`
+            // `c_qualified_term_code : '[' terminology_id '::' ( … )? ']'`
+            // makes the whole code-list group optional. Real CKM content
+            // relies on it in both directions of 13 years of export
+            // (`media_type matches {[openEHR::]}`), so refusing it would
+            // reject conformant real-world archetypes over a silence.
+            // The verbatim form (`terminology::`) is preserved for the
+            // converter exactly as the non-empty spelling is.
+            while !matches!(self.peek(), Some(Token::RBracket)) {
                 match self.peek().cloned() {
                     // External codes may be bare integers (`[openehr:: 253, …]`)
                     // as well as at/ac/id codes (`[local:: at0136, …]`).
@@ -426,7 +449,10 @@ impl Parser<'_> {
         clippy::too_many_lines,
         reason = "one linear parse: the type name, the ODIN block's token span, then one dispatch per lowered domain type"
     )]
-    pub(crate) fn parse_adl14_domain_object(&mut self, parenthesised: bool) -> PResult<CObject> {
+    pub(crate) fn parse_adl14_domain_object(
+        &mut self,
+        parenthesised: bool,
+    ) -> PResult<Vec<CObject>> {
         let start = self.cur_span().start;
         if parenthesised {
             self.pos += 1; // '('
@@ -523,10 +549,10 @@ impl Parser<'_> {
                 parts.assumed.as_deref(),
                 span,
             )?;
-            return Ok(adl14_terminology_code(constraint));
+            return Ok(vec![adl14_terminology_code(constraint)]);
         }
         match lower_adl14_domain(&rm_type, &odin) {
-            Ok(obj) => Ok(obj),
+            Ok(objs) => Ok(objs),
             Err(DomainLoweringError::Empty) => {
                 self.push(
                     SyntaxErrorCode::Sdinv,

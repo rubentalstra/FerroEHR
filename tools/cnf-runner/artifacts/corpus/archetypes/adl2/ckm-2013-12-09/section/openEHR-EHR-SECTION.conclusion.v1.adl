@@ -1,0 +1,86 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-SECTION.conclusion.v1
+
+concept
+	[at0000]	-- Conclusion
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			author = <
+				["name"] = <"Art Latyp; Латыпов Артур Шамилевич">
+				["organisation"] = <"RusBITech РусБИТех, Москва">
+			>
+			accreditation = <"hmm">
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"11/04/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Section to bring together all archetypes involved in recording the conclusion in an encounter with a patient">
+			use = <"">
+			keywords = <"diagnosis", "differential diagnosis">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			purpose = <"Раздел для объединения всех архетипов, описывающих выводы (заключения) в результате встречи с пациентом ">
+			use = <"">
+			keywords = <"диагностика", "диагноз", "дифдиагноз", "дифференциальный", "заключение", "вывод">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+	other_details = <
+		["references"] = <"">
+	>
+
+definition
+	SECTION[at0000] matches {	-- Conclusion
+		items cardinality matches {0..*; unordered} matches {
+			allow_archetype EVALUATION[at0001] occurrences matches {0..*} matches {
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.differential_diagnosis\.v1|openEHR-EHR-EVALUATION\.problem\.v1|openEHR-EHR-EVALUATION\.problem-diagnosis\.v1/}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Conclusion">
+					description = <"Section to record conclusions of an encounter with a patient">
+				>
+				["at0001"] = <
+					text = <"Evaluation of a problem, diagnosis etc.">
+					description = <"*">
+				>
+			>
+		>
+		["ru"] = <
+			items = <
+				["at0000"] = <
+					text = <"Заключение">
+					description = <"Раздел для записи заключения (выводов) после встречи с пациентом (осмотра, консультации) ">
+				>
+				["at0001"] = <
+					text = <"Оценка проблемы, диагноз и т.д.">
+					description = <"Итоговое мнение врача после осмотра пациента, включая диагноз">
+				>
+			>
+		>
+	>

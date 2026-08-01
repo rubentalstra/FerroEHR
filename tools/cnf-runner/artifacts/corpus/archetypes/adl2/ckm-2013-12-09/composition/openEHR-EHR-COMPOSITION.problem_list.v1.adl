@@ -1,0 +1,151 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-COMPOSITION.problem_list.v1
+
+concept
+	[at0000]	-- Problem List
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ko"] = <
+			language = <[ISO_639-1::ko]>
+			author = <
+				["name"] = <"Seung-Jong Yu">
+				["organisation"] = <"Yonsei FM Clinic">
+			>
+			accreditation = <"Medical Doctor">
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics, Australia">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2013-02-19">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a persistent and managed list of diagnoses identified or problems experienced by the subject, or previous procedures performed, that may influence clinical decision-making and care provision.">
+			use = <"Use to record a persistent and managed list of diagnoses identified or problems experienced by the subject, or previous procedures performed, that may influence clinical decision-making and care provision. 
+
+This list can be utilised as a source of up-to-date problem list data for exchange or as the basis for decision support. 
+
+This list can be comprised of three types of archetype:
+- statements about the positive presence of problems, diagnoses or previous procedures are recorded using the EVALUATION.problem_diagnosis and/or ACTION.procedure archetypes; OR
+- a statement about the positive exclusion of medication use can be recorded using the specific EVALUATION.exclusion-problem_diagnosis or EVALUATION.exclusion-procedure archetypes - for example: \"No significant problems or diagnoses\" or No history of significant operations or procedures\"; OR
+- a statement about no information being available - neither a positive presence of a problem, diagnosis or procedure performed nor a positive exclusion - can be recorded using the EVALUATION.absence archetype.
+
+In order for this list to be accurate and safe to use as the basis for decision support activities and for exchange, this Problem List should ideally be curated by a clinician responsible for the health record, rather than managed automatically by the clinical system through business rules alone.">
+			keywords = <"problem", "list", "diagnosis", "diagnoses", "procedure">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["ko"] = <
+			language = <[ISO_639-1::ko]>
+			purpose = <"확인된 진단이나 환자가 겪는 문제 또는 임상의사결정과 환자진료에 영향을 줄 수 있는 이전에 시행된 처치에 대한 영구적으로 관리되는 목록">
+			use = <"확인된 진단이나 환자가 겪는 문제 또는 임상의사결정과 환자진료에 영향을 줄 수 있는 이전에 시행된 처치에 대한 영구적으로 관리되는 목록을 기록하는데 사용
+
+이 목록은 교환이나 의사결정을 위한 근거로써 최근의 문제목록 데이터로써 이용될 수 있다.
+
+이 목록은 3가지의 아키타입 종류들로 구성된다.
+
+- 문제나 진단 또는 이전에 받은 처치가 있는(positive presence) 경우에 EVALUATION.problem_diagnosis 와/또는 ACTION.procedure 아키타입들을 이용하여 진술문이 기록된다; 또는
+
+- 의료의 이용이 없는(positive exclusion) 경우에 특별한 EVALUATION.exclusion-problem_diagnosis 또는 EVALUATION.exclusion-procedure 아키타입들을 이용하여 진술문이 기록될 수 있다 - 예를 들어, \"중요한 문제들이나 진단들이 없음\" 이나 \"중요한 수술들이나 처치들의 이력이 없음\"; 또는
+
+- 이용가능한 정보가 없는 것(문제나 진단 또는 처치를 받거나 받지 않은 두 경우가 모두 아님)에 대한 진술문이 EVALUATION.absence 아키타입을 이용하여 기록될 수 있다.
+
+이 목록이 의사결정과 교환의 근거로서 정확하고 안전하게 사용되기 위해서는 이 문제목록은 비즈니스 규칙들에 따라 임상시스템에 의해서 자동적으로 관리되기 보다는 이상적으로 기록에 책임이 있는 임상의에 의해 관리되어야 한다.">
+			keywords = <"*problem(en)", "*list(en)", "*diagnosis(en)", "*diagnoses(en)", "*procedure(en)">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"CommitteeDraft">
+	other_contributors = <"Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "Heather Leslie, Ocean Informatics, Australia", "Sistine Barretto-Daniels, Ocean Informatics, Australia">
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"BFA848F52FAB6BB43DD1E6A9249D11DF">
+	>
+
+definition
+	COMPOSITION[at0000] matches {	-- Problem List
+		category matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {[openehr::431]}
+			}
+		}
+		content cardinality matches {1..*; unordered} matches {
+			allow_archetype EVALUATION[at0002] occurrences matches {0..*} matches {	-- Problems or Diagnoses
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype ACTION[at0003] occurrences matches {0..*} matches {	-- Procedures
+				include
+					archetype_id/value matches {/openEHR-EHR-ACTION\.procedure(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype EVALUATION[at0004] occurrences matches {0..*} matches {	-- Exclusion Statements
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.exclusion-problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-EVALUATION\.exclusion-procedure(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype EVALUATION[at0005] occurrences matches {0..*} matches {	-- Absent Information
+				include
+					archetype_id/value matches {/openEHR-EHR-EVALUATION\.absence(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Problem List">
+					description = <"A persistent and managed list of diagnoses identified or problems experienced by the subject, or procedures performed, that may influence clinical decision-making and care provision.">
+				>
+				["at0002"] = <
+					text = <"Problems or Diagnoses">
+					description = <"Details about identified problems or diagnoses.">
+				>
+				["at0003"] = <
+					text = <"Procedures">
+					description = <"Details about identified procedures that have been performed.">
+				>
+				["at0004"] = <
+					text = <"Exclusion Statements">
+					description = <"Positive statement about the known exclusion of known problems or diagnoses and procedures performed.">
+					comment = <"For example: \"No significant problems or diagnoses\" or No history of significant operations or procedures\".">
+				>
+				["at0005"] = <
+					text = <"Absent Information">
+					description = <"Positive statement that no information is available about identification of problems or diagnoses, nor procedures performed.">
+				>
+			>
+		>
+		["ko"] = <
+			items = <
+				["at0000"] = <
+					text = <"문제 목록">
+					description = <"확인된 진단이나 환자가 겪는 문제 또는 임상의사결정과 환자진료에 영향을 줄 수 있는 이전에 시행된 처치에 대한 영구적으로 관리되는 목록">
+				>
+				["at0002"] = <
+					text = <"문제 또는 진단">
+					description = <"확인된 문제 또는 진단에 대한 상세사항">
+				>
+				["at0003"] = <
+					text = <"처치">
+					description = <"시행된 적이 있는 확인된 처치에 대한 상세사항">
+				>
+				["at0004"] = <
+					text = <"배제 진술문">
+					description = <"알려진 문제 또는 진단과 시행된 처치가 없다는 진술문 ">
+					comment = <"예 :  \"중요한 문제들이나 진단들이 없음\" 이나 \"중요한 수술들이나 처치들의 이력이 없음\".">
+				>
+				["at0005"] = <
+					text = <"정보 부재">
+					description = <"문제나 진단 또는 시행된 처치를 확인하는데 있어서 이용가능한 정보가 없다는 진술문.">
+				>
+			>
+		>
+	>

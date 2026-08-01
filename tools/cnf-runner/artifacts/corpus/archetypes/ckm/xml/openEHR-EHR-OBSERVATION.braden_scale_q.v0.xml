@@ -1,0 +1,2442 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2011-08-01</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics, UK</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo universitetssykehus HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, National ICT Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University Hospital, Bergen, Norway</other_contributors>
+    <other_contributors>Karen Bjøro, Norsk Sykepleierforbund, Norway</other_contributors>
+    <other_contributors>Rui Coutinho, Centro Hospitalar do Porto, Portugal</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Øygunn Leite Kallevik, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Knut Nesheim, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Mona Oppedal, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Navin Ramachandran, NHS, United Kingdom</other_contributors>
+    <other_contributors>Tanja Riise, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Line Sæle, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Bergstrom, N., Braden, B., Laguzza, A. &amp; Holman, A. (1987). The Braden Scale for predicting pressure sore risk. Nursing Research. 36(4), 205-210.&#xD;
+&#xD;
+Braden, B. J. &amp; Blanchard, S. (2007). Risk assessment in pressure ulcer prevention. In D. L. Krasner, G. T. Rodeheaver, &amp; R. G. Sibbald (Eds.), Chronic Wound Care: A Clinical Source Book for Healthcare Professionals (4th ed.). Wayne PA: HMP Communications&#xD;
+&#xD;
+Ayello, E.A. &amp; Braden, B. (2002) How and why to do pressure ulcer risk assessment. Advances in Wound Care, 15 (3), 125-131.&#xD;
+&#xD;
+Prevention Plus - Home of the Braden Scale [Internet]. [date unknown];[cited 2011 Aug 1] Available from: http://bradenscale.com/index.htm&#xD;
+&#xD;
+Braden Scale for Predicting Pressure Score Risk [Internet]. [date unknown];[cited 2011 Aug 1] Available from: http://bradenscale.com/images/bradenscale.pdf&#xD;
+&#xD;
+Braden Scale for Predicting Pressure Score Risk in Home Care [Internet]. [date unknown];[cited 2011 Aug 1] Available from: http://bradenscale.com/images/bschome.pdf&#xD;
+&#xD;
+Norwegian translation by Bjøro (1998), from Metode for å redusere forekomst av trykksår ved norske sykehjem, Sintef (2007). https://www.sintef.no/globalassets/upload/helse/levekar-og-tjenester/forebygging-av-trykksar-i-sykehjem.pdf</other_details>
+    <other_details id="current_contact">Ian McNicoll, freshEHR Clinical Informatics, UK, ian@freshehr.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">2DD276BFA2A93F684E3CEBEEB1816B90</other_details>
+    <other_details id="build_uid">50c4784a-2779-4afa-b53f-9ec7f56e2ef8</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>Voidaan käyttää tallentamaan tietoja tekijöistä, joita käytetään painehaavojen kehittymisen riskin arvioimiseen, ja Braden Scale -kokonaispisteet.</purpose>
+      <keywords>paine, kipeä, haava, Braden, aikuinen, tulos, arviointi</keywords>
+      <use>Käytä arvioitaessa painehaavan kehittymisen riskiä aikuisväestössä tai 5-vuotiaiden ja sitä vanhempien lasten hoidossa sekä sairaalassa että kotikäytössä.&#xD;
+&#xD;
+Käytettävissä on kaksi yleistä vaihtoehtoa, joista toinen on tarkoitettu sairaalaan ja toinen kotikäyttöön. Ne eroavat toisistaan vain kosteustietoelementin kuvauksessa, jossa vuodevaatteiden muutoksen taajuutta kuvataan kotikäyttöön "kolme kertaa vuorokaudessa" tai "kerran vuorokaudessa" sairaalassa. Koska näillä kahdella kuvauksella on sama olennainen merkitys, tämä arkkityyppi on käyttänyt yleisimmin sovellettavaa sanamuotoa, joka perustuu kotikäyttöön.&#xD;
+&#xD;
+Vaikka OpenEHR-arkkityypit ovat vapaasti käytettävissä avoimen lisenssin alla, tämän Braden Scale -arkettityypin erityinen sisältö on tekijänoikeussuojattu. Tämän arkkityypin käyttö toteutuksissa on noudatettava tekijänoikeuksien omistajien asettamia ehtoja.&#xD;
+&#xD;
+Copyright statement: Barbara Braden and Nancy Bergstrom, 1988 All rights reserved&#xD;
+&#xD;
+Copyright information: http://bradenscale.com/copyright.htm.</use>
+      <misuse>Ei saa käyttää, ellei tekijänoikeuksia ole noudatettu - katso http://bradenscale.com/copyright.htm.&#xD;
+&#xD;
+Braden-asteikkoa ei pitäisi käyttää lapsille, joiden ikä on 21 päivän ja 5 vuoden välillä. Käytä lapsille tarkoitettua Paediatric Braden Scale -arkkityyppiä.&#xD;
+&#xD;
+Braden Scalea ei tule käyttää alle 21-vuotiaille lapsille. Käytä vastasyntyneille kehitettyä  Neonatal Braden Scale -arkkityyppiä.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>Registrar información acerca de los factores utilziados para evaluar el riesgo de desarrollo de úlceras de decúbito, con el puntaje total de la Escala de Braden.</purpose>
+      <keywords>decúbito</keywords>
+      <keywords>escara</keywords>
+      <keywords>úlcera</keywords>
+      <keywords>Braden</keywords>
+      <keywords>adulto</keywords>
+      <keywords>puntaje</keywords>
+      <keywords>evaluación</keywords>
+      <use>Utilizar para evaluar el riesgo de desarrollo de úlceras por decúbito en poblaciones adultas y en niños de 5 o más años de edad, tanto en el hospital como en la comunidad.&#xD;
+Existen dos variantes comunmente utilizadas: una esta dirigida al uso hospitalario y otra para el uso en el hogar. SOlo difieren en la descripción del dato Humedad. donde la frecuencia de cambio de la ropa de cama se decribe como "tres veces en 24 horas" para el uso en el hogar y "una vez por turno" para el uso hospitalario. Como estas dos descripciones tienen el esencialmente el mismo significado, este arquetipo utiliza el fraseo mas generalmente aplicado, basado en la variante de uso en el hogar.&#xD;
+En tanto que los arquetipos openEHR se encuentran libremente disponibles bajo una licencia abierta, el contenido específico de la escala de Braden se encuentra protegido por un derecho de autor. Cualquier uso de este arquetipo en una implementación debe cumplir con los términos establecidos por los titulares del derecho de autor.&#xD;
+Declaración de derecho de autor: Barbara Braden y Nancy Bergstrom, 1988 Todos los derechos reservados.&#xD;
+Información sobre el derecho de autor: http://bradenscale.com/copyright.htm</use>
+      <misuse>No utilizar excepto se hayan cumplimentado los término del derecho de autor - ver http://bradenscale.com/copyright.htm para detalles.&#xD;
+La Escala de Braden no debe ser utilizada en niños entre 21 días y cinco años de edad. Utilizar un arquetipo especialmente diseñado para la Escala de Braden Pediátrica.&#xD;
+La Escala de Braden no debe ser utilizada en niños menores de 21 días de edad. Utilizar un arquetipo especialmente diseñado para la Escala de Braden Neonatal.&#xD;
+</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere informasjon om risikofaktorer for utvikling av trykksår, samt utregning av totalskår.&#xD;
+</purpose>
+      <keywords>trykk</keywords>
+      <keywords>sår</keywords>
+      <keywords>braden</keywords>
+      <keywords>skår</keywords>
+      <keywords>score</keywords>
+      <keywords>vurdering</keywords>
+      <keywords>decubitus</keywords>
+      <keywords>dekubitus</keywords>
+      <keywords>dekutbitalsår</keywords>
+      <keywords>ernæring</keywords>
+      <keywords>mobilitet</keywords>
+      <keywords>hud</keywords>
+      <keywords>forflytning</keywords>
+      <keywords>forebygging</keywords>
+      <keywords>risikofaktorer</keywords>
+      <keywords>liggesår</keywords>
+      <use>Brukes for å vurdere risiko for utvikling av trykksår hos voksne eller hos barn som er 5 år eller eldre både i spesialist- og i primærhelsetjenesten. Den publiserte skalaen har to varianter, en for sykehus og en for bruk i hjemmet. Disse har kun små forskjeller i beskrivelsen i dataelementet "Fuktighet" hvor foreslått frekvens av sengetøyskift er satt til "tre ganger per 24 timer" for hjemmebruk og "en gang per vakt" for sykehusbruk. Da de to beskrivelsene har samme meningsinnhold, baseres denne arketypen på varianten for hjemmebruk da denne har den mest generiske ordlyden.&#xD;
+&#xD;
+openEHR-arketyper er fritt tilgjengelige under en åpen lisens, men det spesifikke innholdet i denne Braden-skala-arketypen er opphavsrettslig beskyttet. All bruk av denne arketypen i implementasjoner må gjøres i henhold til vilkår gitt av innehaverne av opphavsretten.&#xD;
+&#xD;
+Erklæring om opphavsrett: Barbara Braden and Nancy Bergstrom, 1988 All rights reserved.&#xD;
+&#xD;
+Informasjon om opphavsretten: http://bradenscale.com/copyright.htm.</use>
+      <misuse>Braden-skala skal ikke brukes med mindre opphavsrettsbetingelsene er oppfylt - for detaljer se: &#xD;
+http://bradenscale.com/copyright.htm.&#xD;
+&#xD;
+Braden-skala skal ikke benyttes for barn som er mellom 21 dager og 5 år gamle. Bruk egen arketype for Pediatrisk Braden-skala for dette formålet.&#xD;
+&#xD;
+Braden-skala skal ikke benyttes for barn som er yngre enn 21 dager gamle - Bruk egen arketype for Neonatal Braden-skala for dette formålet.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Registrar informações sobre os fatores utilizados para avaliar o risco de desenvolvimento de úlceras por pressão e a pontuação total da Escala de Braden.</purpose>
+      <keywords>pressão</keywords>
+      <keywords>ferida</keywords>
+      <keywords>úlcera</keywords>
+      <keywords>Braden</keywords>
+      <keywords>adulto</keywords>
+      <keywords>score</keywords>
+      <keywords>avaliação</keywords>
+      <use>Use para avaliar o risco de desenvolvimento de úlceras por pressão em uma população adulta ou para crianças com 5 anos ou mais, tanto em ambientes hospitalares quanto em comunitários.&#xD;
+&#xD;
+Existem duas variantes comumente utilizadas - uma destinada a uso hospitalar e outra a uso doméstico. Elas diferem apenas na descrição do elemento de dados de umidade onde a frequência de mudança de cama é descrita como "três vezes em 24 horas" para uso doméstico ou "uma vez por turno" para uso hospitalar. Como estas duas descrições tem o mesmo significado essencial, este arquétipo usou a formulação mais aplicável, baseada na variante de uso doméstico.&#xD;
+&#xD;
+Enquanto os arquétipos openEHR estão todos disponíveis gratuitamente sob uma licença aberta, o conteúdo específico deste arquétipo de Escala de Braden é protegido por direitos autorais. Qualquer uso deste arquétipo dentro de implementações deve estar em conformidade com os termos estabelecidos pelos proprietários de direitos autorais.&#xD;
+&#xD;
+Declaração de direitos autorais: Barbara Braden and Nancy Bergstrom, 1988 All rights reserved&#xD;
+&#xD;
+Informações sobre direitos autorais: http://bradenscale.com/copyright.htm</use>
+      <misuse>Não deve ser utilizado a menos que os termos dos direitos autorais tenham sido observados - consulte os detalhes em http://bradenscale.com/copyright.htm. &#xD;
+&#xD;
+A escala de Braden não deve ser utilizada para crianças entre 21 dias e 5 anos. Use um arquétipo projetado especificamente para a escala de Braden Pediátrica.&#xD;
+&#xD;
+A escala de Braden não deve ser utilizada para ser utilizada para crianças menores de 21 dias. Use um arquétipo projetado especificamente para a escala de Braden Neonatal.&#xD;
+&#xD;
+</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record information about factors used to assess the risk of pressure ulcer development, and the total Braden Scale score.</purpose>
+      <keywords>pressure</keywords>
+      <keywords>sore</keywords>
+      <keywords>ulcer</keywords>
+      <keywords>Braden</keywords>
+      <keywords>adult</keywords>
+      <keywords>score</keywords>
+      <keywords>assessment</keywords>
+      <use>Use to assess risk of pressure ulcer development in children aged between 21 days and 5 years.&#xD;
+&#xD;
+There are two commonly used variants - one intended for hospital use and the other for home use. They differ only in the description of the Moisture data element where the frequency of bedding change is described as "three times per 24 hours" for home use or "once per shift" for hospital use. As these two descriptions have the same essential meaning, this archetype has used the most generally applicable wording, based on the home use variant.&#xD;
+&#xD;
+While openEHR archetypes are all freely available under an open license, the specific content of this Braden Scale archetype is copyright protected. Any use of this archetype within implementations must be in compliance with the terms established by the copyright owners. &#xD;
+&#xD;
+Copyright statement: Barbara Braden and Nancy Bergstrom, 1988 All rights reserved&#xD;
+&#xD;
+Copyright information: http://bradenscale.com/copyright.htm.</use>
+      <misuse>Not to be used unless the terms of copyright have been observed -see http://bradenscale.com/copyright.htm for details.&#xD;
+&#xD;
+The Braden Scale should not be used for children between 21 days and 5 years. Use the Braden Q scale for this purpose - OBSERVATION.braden_scale-q.&#xD;
+&#xD;
+The Braden Scale should not be used for children aged less than 21 days. Use the Neonatal Skin Risk Assessment Scale (NSRAS) for this purpose - OBSERVATION.nsras.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>zh-cn</code_string>
+      </language>
+      <purpose>旨在记录那些有关用于评估压疮发生风险的因素的信息以及布雷登量表总分。</purpose>
+      <keywords>压力</keywords>
+      <keywords>压迫</keywords>
+      <keywords>疮</keywords>
+      <keywords>溃疡</keywords>
+      <keywords>压疮</keywords>
+      <keywords>压力性溃疡</keywords>
+      <keywords>褥疮</keywords>
+      <keywords>布雷登</keywords>
+      <keywords>Braden</keywords>
+      <keywords>布拉登</keywords>
+      <keywords>布莱登</keywords>
+      <keywords>贝登</keywords>
+      <keywords>量表</keywords>
+      <keywords>布雷登量表</keywords>
+      <keywords>Braden量表</keywords>
+      <keywords>布拉登量表</keywords>
+      <keywords>布莱登量表</keywords>
+      <keywords>贝登量表</keywords>
+      <keywords>布雷登压疮评估量表</keywords>
+      <keywords>布雷登压疮风险预测量表</keywords>
+      <keywords>布雷登压疮危险因素预测量表</keywords>
+      <keywords>成年人</keywords>
+      <keywords>成年</keywords>
+      <keywords>成人</keywords>
+      <keywords>评分</keywords>
+      <keywords>分数</keywords>
+      <keywords>得分</keywords>
+      <keywords>分值</keywords>
+      <keywords>评估</keywords>
+      <keywords>评价</keywords>
+      <use>用于评估成年人群或5岁及以上儿童在医院和社区环境中发生压疮的风险。&#xD;
+&#xD;
+布雷登量表有两种常用的变体，即医院版和居家版。二者的区别仅仅是对于潮湿数据元素的描述；其中，二者对于床单更换频率的描述分别为医院版的“每班一次”和居家版的“每24小时三次”。这两种描述本质上的含义相同，因此，本原始型采用的是最为普遍适用的居家版措辞。&#xD;
+&#xD;
+所有的openEHR原始型按开放许可协议均为免费提供，但这个布雷登量表原始型的具体内容却受版权保护。实施项目之中对于该原始型的任何应用必须遵循版权所有方所确定的条款。&#xD;
+&#xD;
+版权声明：Barbara Braden和Nancy Bergstrom，版权所有 © 1988&#xD;
+版权信息：http://bradenscale.com/copyright.htm。&#xD;
+</use>
+      <misuse>除非遵守版权条款，否则不得使用 – 有关详细信息，请参阅http://bradenscale.com/copyright.htm。&#xD;
+&#xD;
+不应当布雷登量表用于21天至5岁的儿童。请采用专为儿科布雷登量表而设计的原始型。&#xD;
+&#xD;
+不应当布雷登量表用于21天以下的儿童。请采用专为新生儿布雷登量表而设计的原始型。&#xD;
+</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+    <author id="name">Vesa Peltola</author>
+    <author id="organisation">Tieto Finland</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Alan March</author>
+    <author id="organisation">Hospital Universitario Austral, Pilar, Buenos Aires, Argentina.</author>
+    <author id="email">alandmarch@gmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand og Silje Ljosland Bakke</author>
+    <author id="organisation">Helse Bergen og Nasjonal IKT</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Osmeire Chamelette Sanzovo</author>
+    <author id="organisation">Hospital Sírio Libanês - SP</author>
+    <author id="email">osmeire.acsanzovo@hsl.org.br</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>zh-cn</code_string>
+    </language>
+    <author id="name">Lin Zhang</author>
+    <author id="organisation">Taikang Insurance Group</author>
+    <author id="email">linforest@163.com</author>
+    <accreditation>Confused</accreditation>
+  </translations>
+  <uid>
+    <value>e4a8da61-f40a-4bb1-ad64-ce8f2330c847</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.braden_scale_q.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0005</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0006</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0007</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0008</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0009</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0015</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0016</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0010</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0037</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0038</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0039</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0040</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0019</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0026</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0027</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0028</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0029</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0020</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0030</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0031</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0032</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0033</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0021</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0023</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0024</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0025</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0042</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0043</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0044</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0045</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0046</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0022</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>7</lower>
+                                <upper>28</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0035</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0036</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Modified Braden Q scale</items>
+        <items id="description">The Modified Braden Q scale is a tool used to assess the risk of pressure ulcer development in children aged between 21 days and 5 years.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Sensory perception</items>
+        <items id="description">Ability to respond meaningfully to pressure-related discomfort.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Completely Limited</items>
+        <items id="description">Unresponsive (does not moan, flinch or grasp) to painful stimuli due to diminished level of consciousness or sedation. OR, limited ability to feel pain over most of body surface.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Very Limited</items>
+        <items id="description">Responds to only painful stimuli. Cannot communicate discomfort except by moaning or restlessness; OR has sensory impairment that limits the ability to feel pain or discomfort over half of body.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Slightly Limited</items>
+        <items id="description">Responds to verbal commands, but cannot always communicate discomfort or need to be turned; OR, has sensory impairment that limits the ability to feel pain or discomfort in one or two extremities.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">No Impairment</items>
+        <items id="description">Responds to verbal commands. Has no sensory deficit that would limit ability to feel or communicate pain or discomfort.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Moisture</items>
+        <items id="description">Degree to which skin is exposed to moisture.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Activity</items>
+        <items id="description">Degree of physical ability.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Constantly moist</items>
+        <items id="description">Skin is kept moist almost constantly by perspiration, urine, drainage etc. Dampness is detected every time patient is moved or turned.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Very moist</items>
+        <items id="description">Skin is often, but not always, moist. Linen must be changed at least every 8 hours.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Occasionally moist</items>
+        <items id="description">Skin is occasionally moist, requiring linen change every 12 hours.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Rarely moist</items>
+        <items id="description">Skin is usually dry, routine diaper changes; linen only requires changing every 24 hours.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Mobility</items>
+        <items id="description">Ability to change and control body position.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Nutrition</items>
+        <items id="description">Usual food intake pattern.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Friction and shear</items>
+        <items id="description">Friction occurs when skin moves against support surfaces. Shear occurs when skin and adjacent bony surface slide across one another.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Total score</items>
+        <items id="description">The sum of the ordinal scores recorded for each of the seven component responses.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Significant problem</items>
+        <items id="description">Spasticity, contractures, itching or agitation leads to almost constant thrashing and friction.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Problem</items>
+        <items id="description">Requires moderate to maximum assistance in moving. Complete lifting without sliding against sheets is impossible. Frequently slides down in bed or chair, requiring frequent repositioning with maximum assistance.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Potential problem</items>
+        <items id="description">Moves feebly or requires minimum assistance. During a move, skin probably slides to some extent against sheets, chair, restraint or other devices. Maintains relative good position in chair or bed most of the time but occasionally slides down.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Completely immobile</items>
+        <items id="description">Does not make even slight changes in body or extremity position without assistance.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Very limited</items>
+        <items id="description">Makes occasional slight changes in body or extremity position but unable to completely turn self independently.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Slightly limited</items>
+        <items id="description">Makes frequent though slight changes in body or extremity position independently.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">No limitations</items>
+        <items id="description">Makes major and frequent changes in position without assistance.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Very poor</items>
+        <items id="description">NPO and/or maintained on clear fluids, or IVs for more than 5 days OR albumin &lt; 2.5 mg/dl OR never eats a complete meal. Rarely eats more than half of any food offered. Protein intake includes only 2 servings of meat or dairy products per day. Takes fluids poorly. Does not take a liquid dietary supplement.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Inadequate</items>
+        <items id="description">Is on a liquid diet or tube feedings/TPN, which provide inadequate calories and minerals for age OR albumin&lt;3mg/dl OR rarely eats a complete meal and generally eats only half of any food offered. Protein intake includes only 3 servings of meat or dairy products per day. Occasionally will take a dietary supplement.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Adequate</items>
+        <items id="description">Is on tube feedings or TPN, which provides adequate calories and minerals for age OR eats over half of most meals. Eats a total of 4 servings of protein each day. Occasionally eats between meals. Does not require supplementation.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Excellent</items>
+        <items id="description">Is on a normal diet providing adequate calories for age. For example, eats most of every meal. Never refuses a meal. Usually eats a total of 4 or more servings of meat and dairy products. Occasionally eats between meals. Does not require supplementation.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the assessment of the Braden scale, not captured in other fields.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Bedfast</items>
+        <items id="description">Confined to bed.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Chairfast</items>
+        <items id="description">Ability to walk severely limited or non-existent. Cannot bear own weight and/or must be assisted into chair or wheelchair.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Walks occasionally</items>
+        <items id="description">Walks occasionally during day, but for very short distances, with or without assistance. Spends majority of each shift in bed or chair.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">All patients too young to ambulate OR walks frequently</items>
+        <items id="description">Walks outside the room at least twice a day.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Tissue perfusion &amp; oxygenation</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Extremely compromised</items>
+        <items id="description">Hypotensive (MAP&lt;50mmHg; &lt;40 in newborn) or the patient does not physiologicvally tolerate position changes.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Compromised</items>
+        <items id="description">Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be&gt; 2 seconds; serum pH is &lt; 7.40.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Adequate</items>
+        <items id="description">Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be 2 seconds; serum pH is normal.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Excellent</items>
+        <items id="description">Normotensive, oxygen saturation &gt;95%; normal haemoglobin; capillary refill &lt;2 seconds.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">*Modified Braden Q scale (en)</items>
+        <items id="description">Braden-skala for vurdering av trykksår er et verktøy som brukes for å vurdere risiko for trykksårutvikling hos voksne og hos barn som er eldre enn fem år gamle.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Evnen til å oppfatte og reagere på stimuli</items>
+        <items id="description">Evnen til å reagere hensiktsmessig ved ubehag som er trykkrelatert.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Totalt redusert</items>
+        <items id="description">Reagerer ikke på smertestimuli på grunn av redusert bevissthetsnivå eller sedasjon, (stønner ikke, avverger ikke) eller har redusert evne til å kjenne smerte over mesteparten av kroppens overflate.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Meget redusert</items>
+        <items id="description">Reagerer kun på smertestimuli. Kommuniserer ikke ubehag unntatt ved stønn eller rastløshet eller har redusert evne til å oppfatte sansestimuli med begrenset evne til å kjenne smerte eller ubehag over halvparten av kroppens overflate.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Noe redusert</items>
+        <items id="description">Reagerer på verbale stimuli men klarer ikke alltid å formidle ubehag eller behov for å bli snudd eller&#xD;
+har noe redusert evne til å oppfatte sansestimuli med begrenset evne til å kjenne smerte eller behag i en eller to ekstremiteter.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Ikke redusert</items>
+        <items id="description">Reagerer på muntlige beskjeder. Har ingen svikt i sanseapparat med begrensning av evnen til å kjenne eller gi uttrykk for smerte eller ubehag.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Fuktighet</items>
+        <items id="description">I hvor stor grad er huden utsatt for fuktighet.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Aktivitet</items>
+        <items id="description">Grad av fysisk aktivitet.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Fuktig mesteparten av tiden</items>
+        <items id="description">Huden er fuktig store deler av tiden på grunn av svette, urin o.l. Fuktighet kjennes hver gang pasienten skal flyttes eller snus.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Fuktig</items>
+        <items id="description">Huden er ofte fuktig, men ikke alltid. Sengetøyskift er nødvendig minst 3 ganger per 24 timer.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Fuktig av og til</items>
+        <items id="description">Huden er fuktig av og til, sengetøyskift er nødvendig omtrent en gang pr. dag.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Sjelden fuktig</items>
+        <items id="description">Huden er vanligvis tørr, sengetøyet skiftes kun til fastsatte tidspunkter.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Mobilitet</items>
+        <items id="description">Evne til å styre kroppen og skifte stilling.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Ernæring</items>
+        <items id="description">Vanlig mønster for fødeinntak/ ernæring .</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Friksjon og skyveeffekt</items>
+        <items id="description">Friksjon oppstår når hud beveges mot overflater. Skyveeffekt oppstår når hud og underliggende bein beveges over hverandre.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Braden totalskår</items>
+        <items id="description">*The sum of the ordinal scores recorded for each of the seven component responses. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Problem</items>
+        <items id="description">Trenger moderat til maksimalt hjelp ved forflytning. Løfting uten gnidning mot sengetøy er ikke mulig. Glir ofte ned i sengen eller stolen. Trenger hyppig stillingsendring med maksimal assistanse. Muskelspasmer, kontrakturer eller agitasjon medfører friksjon nesten hele tiden.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Potensielt problem</items>
+        <items id="description">Er svak og skral eller trenger noe hjelp til å bevege seg. Under forflytning glir huden til en viss grad mot laken, stol eller hjelpemidler. Opprettholder bra stilling i stol eller seng mesteparten av tiden, men glir ned av og til.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Ikke noe øyensynlig problem</items>
+        <items id="description">Forflytter seg i seng og i stol uten hjelp og har tilstrekkelig muskelstyrke til å løfte seg helt fra&#xD;
+underlaget ved forflytning. Opprettholder god stilling i seng eller stol til enhver tid.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Fullstendig immobil</items>
+        <items id="description">Gjør ingen endringer i kroppens stilling eller endring av ekstremiteters stilling uten hjelp.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Meget begrenset</items>
+        <items id="description">Gjør av og til mindre endringer i kroppens eller ekstremitetenes stilling, men er ikke i stand til å gjøre hyppige eller større endringer uten hjelp.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Noe begrenset</items>
+        <items id="description">Gjør hyppige eller mindre endringer i kroppens eller ekstremitetenes stilling selv.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Ingen begrensninger</items>
+        <items id="description">Gjør store og hyppige endringer i stilling uten hjelp.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Svært dårlig</items>
+        <items id="description">Spiser aldri et fullstendig måltid. Spiser sjelden mer enn en tredjedel av maten som tilbys. Spiser to porsjoner eller mindre av proteiner (kjøtt eller melkeprodukter) pr. dag. Tar ikke drikke med ernæringstilskudd, eller Er null pr. os og/eller får kun klar væske eller intravenøst i mer enn 5 døgn.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Sannsynligvis utilstrekkelig</items>
+        <items id="description">Spiser sjelden et fullstendig måltid og spiser kun omtrent halvparten av maten som tilbys. Proteininntak omfatter kun tre porsjoner kjøtt eller melkeprodukter pr. dag. Får ernæringstilskudd av og til, eller får mindre enn optimal mengde flytende kost eller sondenæring.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Tilstrekkelig</items>
+        <items id="description">Spiser mer enn halvparten av de fleste måltider. Spiser totalt fire porsjoner protein (kjøtt eller melkeprodukter) pr. dag. Avviser av og til et måltid, men tar vanligvis tilskudd hvis tilbudt. eller&#xD;
+Får sondeernæring eller totalparenteral ernæring, som sannsynligvis tilfredsstiller ernæringsbehovet.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Meget bra</items>
+        <items id="description">Spiser mesteparten av hvert måltid. Avviser aldri et måltid. Spiser vanligvis fire eller flere porsjoner med kjøtt og melkeprodukter. Spiser av og til mellom måltider. Har ikke behov for ernæringstilskudd.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere kommentar om bruk av Braden-skalaen.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">*Extension (en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.&#xD;
+&#xD;
+ (en)</items>
+        <items id="comment">*For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents. (en)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Bedfast (en)</items>
+        <items id="description">*Confined to bed. (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Chairfast (en)</items>
+        <items id="description">*Ability to walk severely limited or non-existent. Cannot bear own weight and/or must be assisted into chair or wheelchair. (en)</items>
+      </items>
+      <items code="at0039">
+        <items id="text">*Walks occasionally (en)</items>
+        <items id="description">*Walks occasionally during day, but for very short distances, with or without assistance. Spends majority of each shift in bed or chair. (en)</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*All patients too young to ambulate OR walks frequently (en)</items>
+        <items id="description">*Walks outside the room at least twice a day. (en)</items>
+      </items>
+      <items code="at0042">
+        <items id="text">*Tissue perfusion &amp; oxygenation (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">*Extremely compromised (en)</items>
+        <items id="description">*Hypotensive (MAP&lt;50mmHg; &lt;40 in newborn) or the patient does not physiologicvally tolerate position changes. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Compromised (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be&gt; 2 seconds; serum pH is &lt; 7.40. (en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Adequate (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be 2 seconds; serum pH is normal. (en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Excellent (en)</items>
+        <items id="description">*Normotensive, oxygen saturation &gt;95%; normal haemoglobin; capillary refill &lt;2 seconds. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">*Modified Braden Q scale (en)</items>
+        <items id="description">A Escala de Braden para Previsão do Risco de Feridas por Pressão é uma ferramenta utilizada para avaliar o risco de desenvolvimento de úlceras por pressão em adultos e crianças com idade superior a cinco anos.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Qualquer evento</items>
+        <items id="description">Padrão, ponto indeterminado no evento de tempo que pode ser definido explicitamente em um modelo ou em tempo de execução.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Percepção sensorial</items>
+        <items id="description">Capacidade de responder significativamente ao desconforto relacionado à pressão.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Completamente limitada</items>
+        <items id="description">Não responde (não geme, vacila ou compreende) a estímulos dolorosos, devido ao reduzido nível de consciência ou sedação. OU limitada capacidade de sentir dor na maior parte do corpo.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Muito limitada</items>
+        <items id="description">Responde apenas a estímulos dolorosos. Não pode comunicar o desconforto exceto por gemidos ou inquietação. OU tem uma deficiência sensorial que limita a capacidade de sentir dor ou desconforto em metade do corpo.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Um pouco limitada</items>
+        <items id="description">Responde a comandos verbais, mas não pode sempre comunicar o desconforto ou a necessidade de ser virado (mudança de decúbito). OU tem algum comprometimento sensorial que limita a capacidade de sentir dor ou desconforto em 1 ou 2 extremidades.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Sem prejuízo</items>
+        <items id="description">Responde aos comandos verbais. Não tem déficit sensorial que limite a capacidade de sentir ou verbalizar dor ou desconforto.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Umidade</items>
+        <items id="description">Grau ao qual a pele é exposta à umidade.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Atividade</items>
+        <items id="description">Grau de habilidade física.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Constantemente úmido</items>
+        <items id="description">A pele permanece úmida quase constantemente por suor, urina, etc.. A umidade é detectada sempre que o paciente é movido ou virado.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Muito úmido</items>
+        <items id="description">A pele fica frequentemente, mas não sempre úmida. Roupa de cama deve ser trocada aproximadamente 3 vezes em 24 horas.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Ocasionalmente úmido</items>
+        <items id="description">a pele fica ocasionalmente úmida, exigindo uma mudança da roupa de cama aproximadamente uma vez por dia.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Raramente úmido</items>
+        <items id="description">A pele fica geralmente seca, a troca da roupa de cama deve ser feita apenas em intervalos de rotina.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Mobilidade</items>
+        <items id="description">Capacidade de mudar e controlar a posição do corpo.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Nutrição</items>
+        <items id="description">Padrão de ingestão alimentar habitual.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Atrito e cisalhamento</items>
+        <items id="description">Fricção ocorre quando a pele se move contra superfícies de apoio. O cisalhamento ocorre quando a pele e a superfície óssea adjacente deslizam uma sobre a outra.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Score total</items>
+        <items id="description">*The sum of the ordinal scores recorded for each of the seven component responses. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Problema</items>
+        <items id="description">Requer assistência de moderada a máxima em movimento. O levantamento completo sem deslizamento contra lençóis é impossível. Freqüentemente desliza para baixo na cama ou cadeira, exigindo freqüentes reposicionamentos com assistência máxima. Espasticidade, contraturas ou agitação levam a atritos quase constantes.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Problema potencial</items>
+        <items id="description">Move-se devagar ou requer assistência mínima. Durante um movimento de pele provavelmente desliza em certa medida contra lençóis, cadeira, restrições ou outros dispositivos. Mantêm a posição relativamente boa na cadeira ou na cama na maioria das vezes, mas ocasionalmente desliza para baixo.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Aparentemente sem problema</items>
+        <items id="description">Move-se na cama e na cadeira de forma independente e tem força muscular suficiente para levantar completamente durante o movimento. Mantêm boa posição na cama ou cadeira.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Completamente imóvel</items>
+        <items id="description">Não faz pequenas alterações na posição do corpo ou nas extremidades em auxílio.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Muito limitado</items>
+        <items id="description">Faz mudanças ocasionais na posição do corpo ou nas extremidades mas é incapaz de fazer mudanças frequentes ou significativas de forma independente.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Um pouco limitado</items>
+        <items id="description">Faz mudanças frequentes, embora sutis, na posição do corpo ou da extremidade de forma independente.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Sem limitação</items>
+        <items id="description">Faz mudanças importantes e frequentes na posição sem assistência.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Muito pobre</items>
+        <items id="description">Nunca come uma refeição completa. Raramente come mais do 1/3 de qualquer alimento oferecido. Come 2 porções ou menos de proteína (carne ou produtos lácteos) por dia. Dificuldade em ingerir fluídos. Não toma um suplemento dietético liquido. OU é não se alimenta por boca e/ou é mantido por líquidos ou endovenosa por mais de 5 dias.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Provavelmente inadequado</items>
+        <items id="description">Raramente come uma refeição completa e geralmente come somente metade de qualquer alimento oferecido. O consumo de proteínas inclui apenas 3 porções de carne ou de produtos lácteos por dia. Ocasionalmente toma um suplemento dietético. OU recebe uma quantidade inferior à quantidade ótima de dieta líquida ou alimentação por tubo.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Adequada</items>
+        <items id="description">Come mais da metade da maioria das refeições. come um total de 4 porções d proteína (carne, produtos lácteos por dia). Ocasionalmente, recusa uma refeição, mas geralmente toma um suplemento quando oferecido OU utiliza um tubo de alimentação ou regime de nutrição parenteral total (NPT) que provavelmente atende a maioria de suas necessidades nutricionais.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Excelente</items>
+        <items id="description">Come a maior parte da refeição. Nunca recusa uma refeição. Geralmente come um total de 4 ou mais porções de carne e produtos lácteos. Ocasionalmente come entre as refeições. Não requer suplementação.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Comentários</items>
+        <items id="description">Narrativa adicional sobre a avaliação da escala de Braden não informada nas avaliações estruturadas.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">*Extension (en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.&#xD;
+&#xD;
+ (en)</items>
+        <items id="comment">*For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents. (en)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Bedfast (en)</items>
+        <items id="description">*Confined to bed. (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Chairfast (en)</items>
+        <items id="description">*Ability to walk severely limited or non-existent. Cannot bear own weight and/or must be assisted into chair or wheelchair. (en)</items>
+      </items>
+      <items code="at0039">
+        <items id="text">*Walks occasionally (en)</items>
+        <items id="description">*Walks occasionally during day, but for very short distances, with or without assistance. Spends majority of each shift in bed or chair. (en)</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*All patients too young to ambulate OR walks frequently (en)</items>
+        <items id="description">*Walks outside the room at least twice a day. (en)</items>
+      </items>
+      <items code="at0042">
+        <items id="text">*Tissue perfusion &amp; oxygenation (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">*Extremely compromised (en)</items>
+        <items id="description">*Hypotensive (MAP&lt;50mmHg; &lt;40 in newborn) or the patient does not physiologicvally tolerate position changes. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Compromised (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be&gt; 2 seconds; serum pH is &lt; 7.40. (en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Adequate (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be 2 seconds; serum pH is normal. (en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Excellent (en)</items>
+        <items id="description">*Normotensive, oxygen saturation &gt;95%; normal haemoglobin; capillary refill &lt;2 seconds. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">*Modified Braden Q scale (en)</items>
+        <items id="description">La Escala de Braden para pa predicción de úlceras de decúbito es una herramienta utilizada para evaluar el riesgo de desarrollo de úlceras de decúbito en adultos y niños mayores de 5 años de edad.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Por defecto, un momento en el tiempo que puede ser explícitamente definifo en una plantilla o en tiempo de ejecución.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Percepción sensorial</items>
+        <items id="description">Capacidad para responder significativamente al desconfort relacionado con la presión.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Completamente limitada</items>
+        <items id="description">No responde (no se queja, no se defiende ni se agarra) ante estímulos dolorosos, por un nivel disminuido de conciencia o sedación o capacidad limitada para sentir dolor sobre la mayoría de la superficie corporal.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Muy limitada</items>
+        <items id="description">Responde solamente a estímulos dolorosos. No puede comunicar el disconfort excepto por quejido o agitación O tiene un deterioro sensorial que limita la capacidad para sentir dolor O disconfort sobre la mitad del cuerpo.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Levemente limitada</items>
+        <items id="description">Responde a órdenes verbales pero no siempre puede comunicar el disconfort o la necesidad de ser volteado o tiene alguna alteración sensorial que limita la capacidad para sentir dolor o disconfort en una o dos extremidades</items>
+      </items>
+      <items code="at0008">
+        <items id="text">No alterada</items>
+        <items id="description">Responde a órdenes verbales. No tiene déficit sensorial que limite la capacidad de sentir o manifestar dolor o disconfort.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Humedad</items>
+        <items id="description">Grado en el cual la piel está expuesta a la humedad.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Actividad</items>
+        <items id="description">Grado de actividad física.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Constantemente húmeda</items>
+        <items id="description">La piel permanece húmeda casi constantemente por sudoración, orina, etc. Cada vez que es movilizado o girado, se encuentra mojado.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Muy húmeda</items>
+        <items id="description">La piel está frecuentemente húmeda. Las sábanas deben cambiarse por lo menos una vez por turno (cada ocho horas).</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Ocasionalmente húmeda</items>
+        <items id="description">La piel está ocasionalmente húmeda, requieriendo un cambio extra de sábanas aproximadamente una vez al día (cada 12 horas).</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Rara vez húmeda</items>
+        <items id="description">La piel está usualmente seca; las sábanas requieren cambio con intervalos de rutina (cada 24 horas).</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Movilidad</items>
+        <items id="description">Capacidad para cambiar y controlar la posición del cuerpo.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Nutrición</items>
+        <items id="description">Patrón usual de consumo alimentario.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Fricción y deslizamiento</items>
+        <items id="description">La fricción ocurre cuando la piel se mueve contra las superficies de apoyo. El deslizamiento ocurre cuando la piel y la superficie osea adyacente se deslizan una sobre otra.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Puntaje total</items>
+        <items id="description">*The sum of the ordinal scores recorded for each of the seven component responses. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Es un problema</items>
+        <items id="description">Requiere asistencia de moderada a máxima al movilizarlo. Levantarlo completamente sin deslizarlo sobre las sábanas es imposible. Frecuentemente se desliza en la cama o en la silla y requiere constantes cambios de posición con un máximo de asistencia. La espasticidad y contracturas llevan a fricción casi constante.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Es un problema potencial</items>
+        <items id="description">Se mueve debilmente o requiere mínima asistencia. Durante un movimiento, la piel probablemente se desliza en algún grado contra las sábanas, la silla u otros objetos. Mantiene relativamente buena posición en la silla o en la cama la mayoría del tiempo, pero ocasionalmente se desliza hacia abajo.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Sin problema aparente</items>
+        <items id="description">Se mueve en la cama o en la silla y tiene suficiente fuerza muscular para sostenerse completamente durante el movimiento. Mantiene buena posición en la cama o en la silla en todo momento.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Completamente inmóvil</items>
+        <items id="description">No realiza siquiera ligeros cambios en la posición del cuerpo o las extremidades sin asistencia.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Muy limitada</items>
+        <items id="description">Realiza cambios mínimos y ocasionales de la posición del cuerpo o las extremidades, pero es incapaz de realizar cambios frecuentes o significativos en forma independiente.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Ligeramente limitada</items>
+        <items id="description">Realiza cambios frecuentes aunque ligeros en la posición del cuerpo o de las extremidades en forma independiente.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Sin limitaciones</items>
+        <items id="description">Realiza cambios mayores y frecuentes en la posición sin asistencia.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Muy pobre</items>
+        <items id="description">Nunca come una comida completa. Rara vez come más de un tercio de cualquier comida ofrecida. Come dos porciones o menos de proteínas (carne o lácteos) por día. Toma poco líquido. O no toma un suplemento alimenticio líquido y/o está sin vía oral o con dieta líquida clara o intravenosa por más de cinco días.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Probablemente inadecuada</items>
+        <items id="description">Rara vez come una comida completa y generalmente come solo la mitad de cualquier comida ofrecida. La ingesta de proteínas incluye solamente tres porciones de carne o productos lácteos por día. Ocasionalmente toma un suplemento alimenticio. O recibe menos de la cantidad óptima de dieta líquida o alimentación por sonda.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Adecuada</items>
+        <items id="description">Come más de la mitad de la mayoría de las comidas. Come el total de cuatro porciones de proteína por día. Ocasionalmente rechaza una comida pero usualmente toma un suplemento alimenticio si se le ofrece o está siendo alimentado por sonda o nutrición parenteral.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Excelente</items>
+        <items id="description">Come la mayoría de todas las comidas, nunca rechaza una comida, usualmente come un total de cuatro o más porciones de carne y productos lácteos, ocasionalmente come entre comidas. No requiere suplemento alimenticio.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Comentario</items>
+        <items id="description">Narrativa adicional acerca de la evaluación de la Escala de Braden, no capturada en la evaluación estructurada.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">*Extension (en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.&#xD;
+&#xD;
+ (en)</items>
+        <items id="comment">*For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents. (en)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Bedfast (en)</items>
+        <items id="description">*Confined to bed. (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Chairfast (en)</items>
+        <items id="description">*Ability to walk severely limited or non-existent. Cannot bear own weight and/or must be assisted into chair or wheelchair. (en)</items>
+      </items>
+      <items code="at0039">
+        <items id="text">*Walks occasionally (en)</items>
+        <items id="description">*Walks occasionally during day, but for very short distances, with or without assistance. Spends majority of each shift in bed or chair. (en)</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*All patients too young to ambulate OR walks frequently (en)</items>
+        <items id="description">*Walks outside the room at least twice a day. (en)</items>
+      </items>
+      <items code="at0042">
+        <items id="text">*Tissue perfusion &amp; oxygenation (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">*Extremely compromised (en)</items>
+        <items id="description">*Hypotensive (MAP&lt;50mmHg; &lt;40 in newborn) or the patient does not physiologicvally tolerate position changes. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Compromised (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be&gt; 2 seconds; serum pH is &lt; 7.40. (en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Adequate (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be 2 seconds; serum pH is normal. (en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Excellent (en)</items>
+        <items id="description">*Normotensive, oxygen saturation &gt;95%; normal haemoglobin; capillary refill &lt;2 seconds. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="zh-cn">
+      <items code="at0000">
+        <items id="text">*Modified Braden Q scale (en)</items>
+        <items id="description">布雷登压疮风险预测量表（Braden Scale for Predicting Pressure Sore Risk）是用于评估成人和5岁以上儿童压疮发生风险的工具。</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">任何事件</items>
+        <items id="description">默认，在某一模板之中或在运行时所可能明确定义的未加详细说明的时间点或时段事件。</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">感觉</items>
+        <items id="description">对压力相关不适做出明显反应的能力。</items>
+      </items>
+      <items code="at0005">
+        <items id="text">完全受限</items>
+        <items id="description">由于意识水平减弱或镇静作用，对疼痛刺激无反应（无呻吟、退缩或抓握）。或者，大部分身体的疼痛感觉能力有限。</items>
+      </items>
+      <items code="at0006">
+        <items id="text">非常受限</items>
+        <items id="description">仅对疼痛刺激有反应。除了呻吟或烦躁不安/辗转不安/躁动之外，无法表达不适。或者，存在感觉障碍，限制了1/2身体感觉疼痛或不适的能力。</items>
+      </items>
+      <items code="at0007">
+        <items id="text">轻度受限</items>
+        <items id="description">能够回应口头命令，但并不一定总能表达不适或者说自己需要翻身。或者，存在某些程度的感觉障碍，限制了1个或2个肢体感觉疼痛或不适的能力。</items>
+      </items>
+      <items code="at0008">
+        <items id="text">无感觉障碍</items>
+        <items id="description">能够回应口头命令。没有会限制其疼痛或不适感觉或表达能力的感觉缺陷。</items>
+      </items>
+      <items code="at0009">
+        <items id="text">潮湿</items>
+        <items id="description">皮肤的潮湿[暴露]程度。</items>
+      </items>
+      <items code="at0010">
+        <items id="text">体力活动</items>
+        <items id="description">体力水平。</items>
+      </items>
+      <items code="at0015">
+        <items id="text">持续潮湿</items>
+        <items id="description">排汗、尿液等原因使皮肤几乎不断地保持着潮湿状态。每次移动患者或为其翻身时才会发现潮湿的情况。</items>
+      </items>
+      <items code="at0016">
+        <items id="text">非常潮湿</items>
+        <items id="description">皮肤往往处于潮湿状态，但并不总是如此。24小时内必须更换3次床单。</items>
+      </items>
+      <items code="at0017">
+        <items id="text">偶尔潮湿</items>
+        <items id="description">皮肤偶尔会湿润，每天大约需要多更换一次床单。</items>
+      </items>
+      <items code="at0018">
+        <items id="text">很少潮湿</items>
+        <items id="description">皮肤通常为干燥状态，只需要常规定期更换床单。</items>
+      </items>
+      <items code="at0019">
+        <items id="text">体位变换能力</items>
+        <items id="description">改变和控制体位的能力。</items>
+      </items>
+      <items code="at0020">
+        <items id="text">营养状况</items>
+        <items id="description">通常的食物摄入模式。</items>
+      </items>
+      <items code="at0021">
+        <items id="text">摩擦力和剪切力</items>
+        <items id="description">当皮肤在支撑表面上移动时会发生摩擦。当皮肤和相邻骨表面相向滑动时会发生剪切。</items>
+      </items>
+      <items code="at0022">
+        <items id="text">总分</items>
+        <items id="description">*The sum of the ordinal scores recorded for each of the seven component responses. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">存在问题</items>
+        <items id="description">移动时需要中等至大量的协助。无法在不在床单上滑动的情况下完全抬起身体/肢体。经常从床榻上或椅子/轮椅上滑下，且经常需要在给予大量协助的情况下重新恢复体位/姿势。痉挛、挛缩或躁动导致着几乎持续不断的摩擦。</items>
+      </items>
+      <items code="at0024">
+        <items id="text">可能存在问题</items>
+        <items id="description">能够自由地移动或需要很少的协助。在移动的过程中，皮肤可能会在一定程度上摩擦着滑过床单、椅子/轮椅、约束物或其他的装置/物品。大多数时候，能够在椅子/轮椅或床榻上保持相对较好的体位/姿势，但偶尔也会滑下来。</items>
+      </items>
+      <items code="at0025">
+        <items id="text">无明显问题</items>
+        <items id="description">能够独立地在床榻上和椅子/轮椅上移动，且具有足够的肌肉力量，从而在移动过程中能够完全抬起身体/肢体。能够在床榻上和椅子/轮椅上保持良好的体位/姿势。</items>
+      </items>
+      <items code="at0026">
+        <items id="text">完全无法变换体位</items>
+        <items id="description">在没有协助的情况下，无法轻微变换身体或肢体的姿势/位置。</items>
+      </items>
+      <items code="at0027">
+        <items id="text">非常有限</items>
+        <items id="description">偶尔会轻微变换身体或肢体的姿势/位置，但无法独立进行频繁或大幅度的变换。</items>
+      </items>
+      <items code="at0028">
+        <items id="text">轻度有限</items>
+        <items id="description">能够独立地轻微但却频繁变换身体或肢体的姿势/位置。</items>
+      </items>
+      <items code="at0029">
+        <items id="text">无任何限制</items>
+        <items id="description">在没有协助的情况下，能够大幅度而又频繁地变换身体或肢体的姿势/位置。</items>
+      </items>
+      <items code="at0030">
+        <items id="text">非常糟糕</items>
+        <items id="description">从来无法彻底吃完一顿饭。很少吃完超过1/3的任何食物。每天吃2份或更少的蛋白质（肉类或乳制品）。液体摄入不佳。无法服用液体膳食补充剂。或者，肠外营养（NPO）和/或清流食或维持静脉注射超过5天时间。</items>
+      </items>
+      <items code="at0031">
+        <items id="text">可能不足</items>
+        <items id="description">很少彻底吃完一顿饭，且通常只能吃完所提供食物的约1/2。蛋白质摄入量仅仅是每天包含3份肉类或乳制品。偶尔会服用膳食补充剂。或者，能够接受低于最佳量的流质食物或管饲。</items>
+      </items>
+      <items code="at0032">
+        <items id="text">营养充足</items>
+        <items id="description">大多数情况下能够吃完一半以上的饭菜。每天共计能进食4份蛋白质（肉类、乳制品）。偶尔会拒绝一顿饭，但通常会服用所提供的膳食补充剂，或者是接受可能会满足其大部分营养需求的管饲或全胃肠外营养（total parenteral nutrition，TPN）方案。</items>
+      </items>
+      <items code="at0033">
+        <items id="text">营养丰富</items>
+        <items id="description">大多数情况下能够吃完一顿饭。从不拒绝吃饭。通常，每天共计能进食4份或更多的肉类和乳制品。偶尔会在两餐之间进食。不需要服用膳食补充剂。</items>
+      </items>
+      <items code="at0034">
+        <items id="text">注释</items>
+        <items id="description">结构化的风险评估内容当中并未采集/记录的，关于布雷登量表评估的其他文字叙述。</items>
+      </items>
+      <items code="at0035">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">*Extension (en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.&#xD;
+&#xD;
+ (en)</items>
+        <items id="comment">*For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents. (en)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Bedfast (en)</items>
+        <items id="description">*Confined to bed. (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Chairfast (en)</items>
+        <items id="description">*Ability to walk severely limited or non-existent. Cannot bear own weight and/or must be assisted into chair or wheelchair. (en)</items>
+      </items>
+      <items code="at0039">
+        <items id="text">*Walks occasionally (en)</items>
+        <items id="description">*Walks occasionally during day, but for very short distances, with or without assistance. Spends majority of each shift in bed or chair. (en)</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*All patients too young to ambulate OR walks frequently (en)</items>
+        <items id="description">*Walks outside the room at least twice a day. (en)</items>
+      </items>
+      <items code="at0042">
+        <items id="text">*Tissue perfusion &amp; oxygenation (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">*Extremely compromised (en)</items>
+        <items id="description">*Hypotensive (MAP&lt;50mmHg; &lt;40 in newborn) or the patient does not physiologicvally tolerate position changes. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Compromised (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be&gt; 2 seconds; serum pH is &lt; 7.40. (en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Adequate (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be 2 seconds; serum pH is normal. (en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Excellent (en)</items>
+        <items id="description">*Normotensive, oxygen saturation &gt;95%; normal haemoglobin; capillary refill &lt;2 seconds. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">*Modified Braden Q scale (en)</items>
+        <items id="description">Painehaavariskin arviointiin tarkoitettua Braden-asteikkoa käytetään painehaavojen kehittymisen riskin arviointiin aikuisilla ja yli viisivuotiailla lapsilla.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tapahtumasarja</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Mikä tahansa tapahtuma</items>
+        <items id="description">Oletusarvoinen, määrittämättömänä ajanhetkenä ilmenevä tapahtuma, joka voi olla määritetty tarkasti jossakin mallissa tai suorituksen aikana.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Tuntoaisti</items>
+        <items id="description">Kyky reagoida tarkoituksenmukaisesti paineeseen liittyvään epämukavuuteen.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Täysin rajoittunut</items>
+        <items id="description">Ei reagoi lainkaan kipuun (esim. ei sävähdä tai tartu kiinni) tajunnan heikentymisen tai rauhoittavan lääkityksen vuoksi. TAI Kiputunto rajoittunutta suurimmassa osassa kehoa.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Hyvin rajoittunut</items>
+        <items id="description">Reagoi vain kipuun. Pystyy ilmaisemaan kivun ja epämukavuuden tunteen vain valittamalla tai rauhattomana käytöksenä. TAI Tuntopuutos rajoittaa kivun tai epämukavuuden aistimista yli puolessa kehon osista.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Hieman rajoittunut</items>
+        <items id="description">Reagoi puheeseen, muttei aina pysty ilmaisemaan omaa epämukavuuttaan tai tunne tarvetta vaihtaa asentoa. TAI Tuntopuutos rajoittaa kivun ja epämukavuuden tunnetta yhdessä tai kahdessa raajassa.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Normaali</items>
+        <items id="description">Reagoi puheeseen. Ei aistipuutoksia, jotka rajoittaisivat kykyä tuntea tai kipua ja epämukavuutta.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Kosteus</items>
+        <items id="description">Ihon kosteusaltistuksen määrä.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Aktiivisuus</items>
+        <items id="description">Fyysisen toimintakyvyn vertailuaste.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Jatkuvasti kostea</items>
+        <items id="description">Iho pysyy koko ajan kosteana (hiki, virtsa, tms. erite). Aina potilasta liikutettaessa havaitaan kosteutta.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Erittäin kostea</items>
+        <items id="description">Iho on usein, muttei aina, kostea. Petivaatteet ja pyjama täytyy vaihtaa jopa kolme kertaa vuorokaudessa.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Satunnaisesti kostea</items>
+        <items id="description">Iho on ajoittain kostea. Petivaatteet ja pyjama täytyy vaihtaa kerran vuorokaudessa.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Harvoin kostea</items>
+        <items id="description">Iho on tavallisesti kuiva. Petivaatteet ja pyjama vaihdetaan tavanomaisin väliajoin.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Liikkuvuus</items>
+        <items id="description">Kyky muuttaa ja hallita kehon asentoa.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Ravitsemus</items>
+        <items id="description">Perusruokamäärän saanti.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Kudoksen venyminen ja leikkausvoimat</items>
+        <items id="description">Kitkaa syntyy, kun iho liikkuu potilasta tukevia pintoja vasten. Leikkausvoimia ilmenee, kun iho ja sen viereinen luinen pinta liukuvat toisiinsa nähden eri suuntiin.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Kokonaispisteet</items>
+        <items id="description">*The sum of the ordinal scores recorded for each of the seven component responses. (en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Ongelma</items>
+        <items id="description">Tarvitsee liikkumisessa kohtalaista tai suurinta mahdollista apua. Nostaminen on mahdotonta ilman liu’uttamista lakanoita vasten. Valahtaa usein kasaan tuolissa tai sängyssä istuessa eikä pysty itse korjaamaan asentoaan. Kudoksiin kohdistuu jatkuvaa kitkaa spastisuuden, kontraktuurien tai levottomuuden vuoksi.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Mahdollinen ongelma</items>
+        <items id="description">Liikkuu sujuvasti tai tarvitsee vain vähän apua liikkumiseen. Liikkuessa iho luultavasti hankautuu lakanoita, tuolia, laitoja tai muita apuvälineitä vasten. Pystyy pitämään suhteellisen hyvin asennon tuolissa tai sängyssä. Mahdollisesti silloin tällöin valuu kuitenkin jossakin määrin kasaan.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Ei havaittavaa ongelmaa</items>
+        <items id="description">Liikkuu sängyssä tai tuolissa itsenäisesti ja omaa riittävästi lihasvoimia itsensä nostamiseen. Ylläpitää hyvin asennon vuoteessa ja tuolissa.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Täysin liikuntakyvytön</items>
+        <items id="description">Ei pysty muuttamaan kehon tai raajojen asentoa vähääkään ilman apua.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Hyvin rajoittunut</items>
+        <items id="description">Kykenee satunnaisesti liikuttamaan vähän kehoaan tai raajojaan, muttei kykene toistuviin merkityksellisiin asennonmuutoksiin ilman apua.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Hieman rajoittunut</items>
+        <items id="description">Kykenee itsenäisesti toistuviin, vaikkakin vähäisiin, kehon tai raajojen asennonmuutoksiin.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Ei rajoitusta</items>
+        <items id="description">Kykenee merkittäviin ja toistuviin asennonmuutoksiin ilman ulkopuolista apua.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Hyvin huono</items>
+        <items id="description">Ei syö koskaan koko ateriaa. Harvoin syö 1/3 tarjotusta ruoasta. Syö kaksi annosta (liha- tai maitotuotteet) tai vähemmän proteiinia päivässä. Ottaa nesteitä vähän. Ei ota nestemäisiä lisäravintovalmisteita. TAI ei syö mitään suun kautta, ja/tai potilasta ylläpidetään kirkkailla nesteillä tai täydellisellä parenteraalisella ravitsemuksella yli 5 vrk.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Todennäköisesti riittämätön</items>
+        <items id="description">Syö harvoin koko aterian ja syö yleensä vain 1/2 tarjotusta ruoasta. Syö vain kolme annosta (liha- tai maitotuotteet) proteiinia päivässä. Ottaa silloin tällöin lisäravintovalmisteita. TAI Ei saa normaalia määrää ravintoa nestemäisestä tai ravinnonsiirtoletkuruoasta.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Riittävä</items>
+        <items id="description">Syö yli puolet useimmista aterioista. Syö neljä annosta proteiinipitoista ruokaa päivässä (liha- tai maitotuotteet). Kieltäytyy joskus ateriasta, mutta ottaa yleensä lisäravintovalmisteen tarjottaessa TAI on letkuruokinnassa tai täydellisessä parenteraalisessa ravitsemuksessa, joka todennäköisesti täyttää suurimman osan potilaan ravinnontarpeesta.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Erinomainen</items>
+        <items id="description">Syö suurimman osan jokaisesta ateriasta. Syö aina tarjotut ruoat. Syö yleensä vähintään 4 annosta liha- tai maitotuotteita. Syö joskus aterioiden välillä. Ei tarvitse lisäravintovalmisteita.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Kommentti</items>
+        <items id="description">Kertomusmuodossa olevat tiedot Braden-asteikolla tehdystä arvioinnista, joita ei voida ilmoittaa rakenteisissa muodossa olevissa kohdissa.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0036">
+        <items id="text">*Extension (en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.&#xD;
+&#xD;
+ (en)</items>
+        <items id="comment">*For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents. (en)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">*Bedfast (en)</items>
+        <items id="description">*Confined to bed. (en)</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Chairfast (en)</items>
+        <items id="description">*Ability to walk severely limited or non-existent. Cannot bear own weight and/or must be assisted into chair or wheelchair. (en)</items>
+      </items>
+      <items code="at0039">
+        <items id="text">*Walks occasionally (en)</items>
+        <items id="description">*Walks occasionally during day, but for very short distances, with or without assistance. Spends majority of each shift in bed or chair. (en)</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*All patients too young to ambulate OR walks frequently (en)</items>
+        <items id="description">*Walks outside the room at least twice a day. (en)</items>
+      </items>
+      <items code="at0042">
+        <items id="text">*Tissue perfusion &amp; oxygenation (en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0043">
+        <items id="text">*Extremely compromised (en)</items>
+        <items id="description">*Hypotensive (MAP&lt;50mmHg; &lt;40 in newborn) or the patient does not physiologicvally tolerate position changes. (en)</items>
+      </items>
+      <items code="at0044">
+        <items id="text">*Compromised (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be&gt; 2 seconds; serum pH is &lt; 7.40. (en)</items>
+      </items>
+      <items code="at0045">
+        <items id="text">*Adequate (en)</items>
+        <items id="description">*Normotensive oxygen saturation may be &lt;95%; haemoglobin may be &lt;10mg/dl; capillary refill may be 2 seconds; serum pH is normal. (en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Excellent (en)</items>
+        <items id="description">*Normotensive, oxygen saturation &gt;95%; normal haemoglobin; capillary refill &lt;2 seconds. (en)</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="LOINC">
+      <items code="at0004">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>38222-6</code_string>
+        </value>
+      </items>
+      <items code="at0005">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9603-7</code_string>
+        </value>
+      </items>
+      <items code="at0006">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9605-4</code_string>
+        </value>
+      </items>
+      <items code="at0007">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9605-2</code_string>
+        </value>
+      </items>
+      <items code="at0008">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9606-0</code_string>
+        </value>
+      </items>
+      <items code="at0009">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>38229-1</code_string>
+        </value>
+      </items>
+      <items code="at0010">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>38223-4</code_string>
+        </value>
+      </items>
+      <items code="at0015">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9607-8</code_string>
+        </value>
+      </items>
+      <items code="at0016">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9608-6</code_string>
+        </value>
+      </items>
+      <items code="at0017">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9609-4</code_string>
+        </value>
+      </items>
+      <items code="at0018">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9610-2</code_string>
+        </value>
+      </items>
+      <items code="at0019">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>38224-2</code_string>
+        </value>
+      </items>
+      <items code="at0020">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>38225-9</code_string>
+        </value>
+      </items>
+      <items code="at0021">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>38226-7</code_string>
+        </value>
+      </items>
+      <items code="at0022">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>38227-5</code_string>
+        </value>
+      </items>
+      <items code="at0023">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9617-7</code_string>
+        </value>
+      </items>
+      <items code="at0024">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9618-5</code_string>
+        </value>
+      </items>
+      <items code="at0025">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9619-3</code_string>
+        </value>
+      </items>
+      <items code="at0026">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9614-4</code_string>
+        </value>
+      </items>
+      <items code="at0029">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA120-8</code_string>
+        </value>
+      </items>
+      <items code="at0030">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9615-1</code_string>
+        </value>
+      </items>
+      <items code="at0031">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9616-9</code_string>
+        </value>
+      </items>
+      <items code="at0032">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA8913-1</code_string>
+        </value>
+      </items>
+      <items code="at0033">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>LA9206-9</code_string>
+        </value>
+      </items>
+    </term_bindings>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0000">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>413139004</code_string>
+        </value>
+      </items>
+      <items code="at0022">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>443428004</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-01-14</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">heather.leslie@oceaninformatics.com</original_author>
+    <other_contributors>Vebjoern Arntzen, Oslo university hospital, Norway</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, National ICT Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Bjoern Naess, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Exclusion of examination, Draft Archetype [Internet]. Australian Digital Health Agency, Australian Digital Health Agency Clinical Knowledge Manager [cited: 2017-06-22]. Available from: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.1383</other_details>
+    <other_details id="current_contact">Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">11722D1648956DB241F8FD1043ECBEA8</other_details>
+    <other_details id="build_uid">a4632f85-f88d-4ea0-921e-f027d79ce0f6</other_details>
+    <other_details id="revision">1.1.2</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Dokumentation einer nicht durchgeführten körperlichen Untersuchung oder eines nicht durchgeführten klinischen Tests.</purpose>
+      <keywords>Ausschluss</keywords>
+      <keywords>Behandlung</keywords>
+      <keywords>Untersuchung</keywords>
+      <keywords>durchgeführt</keywords>
+      <keywords>abgeschlossen</keywords>
+      <use>Um zu dokumentieren, dass eine körperliche Untersuchung oder ein klinischer Test nicht durchgeführt wurde. Optional kann der Grund angegeben werden.&#xD;
+&#xD;
+Zur Dokumentation einer Untersuchung oder einzelner Komponenten einer Untersuchung die nicht durchgeführt wurde(n). Der Archetyp kann nicht als eigenständiger Archetyp verwendet werden. Er kann innerhalb eines EXAMINATION-Archetyps, der den Kontext für die durchzuführende Untersuchung liefert, verwendet werden. Beispielsweise ermöglicht das Einfügen dieses Archetyps in den EXAMINATION-Detail SLOT innerhalb der OBSERVATION.exam-Klasse, die Dokumentation, dass keine körperliche Untersuchung durchgeführt wurde. Das Einfügen dieses Archetyps in den Details-SLOT eines untersuchungsbezogenen CLUSTER-Archetyps, wie z.B. CLUSTER.exam_eye_pupil, ermöglicht die Dokumentation, dass nur die Untersuchung einer Pupille stattgefunden hat. Die zweite Pupille konnte, z.B. durch eine Gesichtsverletzung, nicht untersucht werden.&#xD;
+&#xD;
+Dieser Archetyp kann auch in anderen OBSERVATION- oder CLUSTER-Archetypen verwendet werden, um nicht durchführbare Tests oder Messungen zu dokumentieren. Zum Beispiel OBSERVATION.audiogram oder OBSERVATION.cgas.&#xD;
+&#xD;
+Durch den Einsatz dieses Archetyps kann insbesondere auf die Verwendung von Markierungen oder Terminologien, um eine Negation im Rahmen einer körperlichen Untersuchung auszudrücken, verzichtet werden. &#xD;
+&#xD;
+Es kann davon ausgegangen werden, dass bei unvollständigen Untersuchungen oder klinischen Beurteilungen nur Daten von erfolgreich durchgeführten Maßnahmen dokumentiert werden. &#xD;
+</use>
+      <misuse>Nicht zur Dokumentation von klinischen Befunden, die während der körperlichen Untersuchung oder eines klinischen Tests beobachtet wurden. Für diese Zwecke bitte die vorgesehenen Archetypen verwenden.&#xD;
+&#xD;
+Nicht zur Dokumentation von nicht aufgetretenden oder nicht vorhandenen Nebenwirkungen, Familienanamnesen, Medikamenteneinnahmen, Verfahren, Problemen oder Diagnosen - hierfür sollten die Archetypen EVALUATION.exclusion_global oder EVALUATION.exclusion_specific verwendet werden.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>*To record that a physical examination or clinical test was not performed.(en)</purpose>
+      <use>*Use to record that a physical examination or clinical test was not performed, with an optional statement about the reason for the non-performance.&#xD;
+&#xD;
+This archetype has been designed to be used to allow recording of 'no examination was done' at multiple levels of the examination process. It will never be used as a stand-alone archetype but always inside an examination archetype that provides the context for the examination being performed. For example, insertion of this archetype into the Examination Detail' SLOT within OBSERVATION.exam allows for recording that no physical examination was performed. Similarly, insertion of this archetype into the Details SLOT of any examination-related CLUSTER archetype, such as CLUSTER.exam_eye_pupil, allows recording that no physical examination was performed only for examination of a specified pupil, perhaps because a facial injury prevented the pupil being visualised.&#xD;
+&#xD;
+This archetype may also be used within other OBSERVATION, or relevent CLUSTER, archetypes to allow recording of the inability to test or measure other clinical findings. For example: OBSERVATION.audiogram or OBSERVATION.cgas.&#xD;
+&#xD;
+In particular, this archetype has specifically been designed to avoid the need to use flags or terminology to express negation about a record of physical examination or clinical findings within the health record.&#xD;
+&#xD;
+It is reasonable to assume that if the examination or clinical assessment was partially performed, then only data about the component successfully performed will be recorded.(en)</use>
+      <misuse>*Not to be used to record the details about clinical findings observed on physical examination or during clinical testing. Use specific archetypes for these purposes.&#xD;
+&#xD;
+Not to be used to record the exclusion or absence of adverse reactions, family history, medication use, procedures, problems or diagnoses - use EVALUATION.exclusion_global or EVALUATION.exclusion_specific for this purpose.(en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Registrera att en fysisk undersökning eller kliniskt test inte utfördes.</purpose>
+      <keywords>uteslutning</keywords>
+      <keywords>examen</keywords>
+      <keywords>undersökning</keywords>
+      <keywords>klar</keywords>
+      <keywords>genomförde</keywords>
+      <use>Används för att registrera att en fysisk undersökning eller ett kliniskt test inte har utförts, med ett valfritt uttalande om orsaken till bristen på prestanda.&#xD;
+&#xD;
+Denna arketyp har utformats för att användas för att möjliggöra registrering av "ingen undersökning gjordes" på flera nivåer av undersökningsprocessen. Den kommer aldrig att användas som en fristående arketyp utan alltid i en undersökningsarketyp som ger sammanhanget för den undersökning som utförs. Till exempel kan infogning av denna arketyp i undersökningsdetaljens SLOT i OBSERVATION.exam möjliggöra registrering av att ingen fysisk undersökning utfördes. På samma sätt möjliggör införandet av denna arketyp i Detaljer-SLOTEN av någon undersökningsrelaterad CLUSTER-arketyp, såsom CLUSTER.exam_eye_pupil, registrering att ingen fysisk undersökning utfördes endast för undersökning av en specifik elev, kanske för att en ansiktsskada förhindrade att eleven kunde visualiseras .&#xD;
+&#xD;
+Denna arketyp kan också användas inom andra OBSERVATIONER eller relevanta CLUSTER-arketyper för att möjliggöra registrering av oförmågan att testa eller mäta andra kliniska resultat. Till exempel: OBSERVATION.audiogram eller OBSERVATION.cgas.&#xD;
+&#xD;
+I synnerhet har denna arketyp specifikt utformats för att undvika behovet av att använda flaggor eller terminologi för att uttrycka negation om ett register över fysisk undersökning eller kliniska fynd inom hälsojournalen.&#xD;
+&#xD;
+Det är rimligt att anta att om undersökningen eller den kliniska bedömningen delvis utfördes, registreras endast data om den framgångsrika komponenten.</use>
+      <misuse>Är inte utformad för att registrera detaljer om kliniska fynd som observerats vid fysisk undersökning eller under klinisk testning. Använd specifika arketyper för dessa ändamål.&#xD;
+&#xD;
+Är inte utformad för att registrera uteslutning eller frånvaro av biverkningar, familjehistoria, läkemedelsanvändning, procedurer, problem eller diagnoser - använd EVALUATION.exclusion_global eller EVALUATION.exclusion_specific för detta ändamål.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record that a physical examination or clinical test was not performed.</purpose>
+      <keywords>exclusion</keywords>
+      <keywords>exam</keywords>
+      <keywords>examination</keywords>
+      <keywords>done</keywords>
+      <keywords>performed</keywords>
+      <use>Use to record that a physical examination or clinical test was not performed, with an optional statement about the reason for the non-performance.&#xD;
+&#xD;
+This archetype has been designed to be used to allow recording of 'no examination was done' at multiple levels of the examination process. It will never be used as a stand-alone archetype but always inside an examination archetype that provides the context for the examination being performed. For example, insertion of this archetype into the Examination Detail' SLOT within OBSERVATION.exam allows for recording that no physical examination was performed. Similarly, insertion of this archetype into the Details SLOT of any examination-related CLUSTER archetype, such as CLUSTER.exam_eye_pupil, allows recording that no physical examination was performed only for examination of a specified pupil, perhaps because a facial injury prevented the pupil being visualised.&#xD;
+&#xD;
+This archetype may also be used within other OBSERVATION, or relevent CLUSTER, archetypes to allow recording of the inability to test or measure other clinical findings. For example: OBSERVATION.audiogram or OBSERVATION.cgas.&#xD;
+&#xD;
+In particular, this archetype has specifically been designed to avoid the need to use flags or terminology to express negation about a record of physical examination or clinical findings within the health record.&#xD;
+&#xD;
+It is reasonable to assume that if the examination or clinical assessment was partially performed, then only data about the component successfully performed will be recorded.</use>
+      <misuse>Not to be used to record the details about clinical findings observed on physical examination or during clinical testing. Use specific archetypes for these purposes.&#xD;
+&#xD;
+Not to be used to record the exclusion or absence of adverse reactions, family history, medication use, procedures, problems or diagnoses - use EVALUATION.exclusion_global or EVALUATION.exclusion_specific for this purpose.</misuse>
+      <copyright>© Australian Digital Health Agency, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Ramona Wellmann</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">wellmann.ramona@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+    <author id="name">Riikka Lahtela</author>
+    <author id="organisation">Istekki</author>
+    <author id="email">riikka.lahtela@istekki.fi</author>
+    <other_details id="other_contributors">Henri Huttunen, UNA Oy, Finland; Heidi Koikkalainen, FreshEHR</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Therese Lindberg</author>
+    <author id="organisation">Cambio CDS</author>
+    <author id="email">therese.lindberg@cambio.se</author>
+  </translations>
+  <uid>
+    <value>6c9ede6d-923b-4b22-9005-3fdf4e853a0c</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.exclusion_exam.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_BOOLEAN</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>BOOLEAN</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_BOOLEAN">
+                  <true_valid>true</true_valid>
+                  <false_valid>false</false_valid>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Exclusion of examination</items>
+        <items id="description">Positive statement to record that a physical examination or clinical test was not performed.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Examination not done</items>
+        <items id="description">Statement to explicity record that the examination was not performed.</items>
+        <items id="comment">Record as True if the examination was not performed.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Reason</items>
+        <items id="description">Reason for the 'not done' statement.</items>
+        <items id="comment">For example: patient factors, equipment factors, time constraints.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Ausschluss einer Untersuchung</items>
+        <items id="description">Eine Aussage, dass eine körperliche Untersuchung oder ein klinischer Test nicht durchgeführt wurde.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Nicht durchgeführte Untersuchung</items>
+        <items id="description">Eine Aussage die ausdrücklich erfasst, dass die Untersuchung nicht durchgeführt wurde.</items>
+        <items id="comment">Die Aussage wird als "wahr" erfasst, wenn die Untersuchung nicht durchgeführt wurde.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Grund</items>
+        <items id="description">Begründung der Aussage "nicht durchgeführt".</items>
+        <items id="comment">Zum Beispiel: patientenbezogene Gründe, Ausstattungsgründe, zeitliche Beschränkungen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">Tutkimuksen pois jättäminen</items>
+        <items id="description">*Positive statement to record that a physical examination or clinical test was not performed.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tutkimusta ei tehty</items>
+        <items id="description">*Statement to explicity record that the examination was not performed.(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Reason(en)</items>
+        <items id="description">*Reason for the 'not done' statement.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Uteslutning av undersökning</items>
+        <items id="description">Positivt uttalande för att registrera att en fysisk undersökning eller kliniskt test inte utfördes.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Undersökningen är inte klar</items>
+        <items id="description">Uttalande för att uttryckligen registrera att undersökningen inte utfördes.</items>
+        <items id="comment">Record as True if the examination was not performed.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Anledning</items>
+        <items id="description">Anledningen till uttalandet "inte klar".</items>
+        <items id="comment">Till exempel: patientfaktorer, utrustningsfaktorer, tidsbegränsningar.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

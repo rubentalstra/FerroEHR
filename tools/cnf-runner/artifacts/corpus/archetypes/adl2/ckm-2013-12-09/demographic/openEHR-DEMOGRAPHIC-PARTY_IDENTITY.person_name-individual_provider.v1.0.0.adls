@@ -1,0 +1,225 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-PARTY_IDENTITY.person_name-individual_provider.v1.0.0
+
+specialize
+	openEHR-DEMOGRAPHIC-PARTY_IDENTITY.person_name.v1
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Rigoleta Dutra & Sergio Miranda Freire">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"20/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a individual healthcare provider name">
+			use = <"Used in demographic services to represent the names that an individual healthcare provider is known by">
+			keywords = <"demographic service", "individual healthcar provider's name">
+			misuse = <"">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação do nome de um profissional de saúde">
+			use = <"Utilizado em serviços demográficos para representar os nomes que um profissional de saúde pode ter">
+			keywords = <"serviço demográfico", "nome de um profissional de saúde">
+			misuse = <"">
+		>
+	>
+	references = <
+		["1"] = <"ISO/DTS 27527:2007(E) - Provider Identification - Draft Technnical Specification - International Organization for Standardization">
+	>
+
+definition
+	PARTY_IDENTITY[id1.1] matches {	-- Individual healthcare provider name
+		/details[id2]/items matches {
+			CLUSTER[id3] matches {
+				items matches {
+					ELEMENT[id11] matches {
+						value matches {
+							DV_TEXT[id0.6] 
+						}
+					}
+					ELEMENT[id12] matches {
+						value matches {
+							DV_COUNT[id0.7] 
+						}
+					}
+				}
+			}
+			CLUSTER[id4] occurrences matches {1..*} matches {
+				items matches {
+					ELEMENT[id13] matches {
+						value matches {
+							DV_TEXT[id0.8] 
+						}
+					}
+					ELEMENT[id14] matches {
+						value matches {
+							DV_COUNT[id0.9] 
+						}
+					}
+				}
+			}
+			CLUSTER[id5] matches {
+				items matches {
+					ELEMENT[id15] matches {
+						value matches {
+							DV_CODED_TEXT[id0.10] matches {
+								defining_code matches {[ac1]}
+							}
+						}
+					}
+					ELEMENT[id16] matches {
+						value matches {
+							DV_COUNT[id0.11] 
+						}
+					}
+				}
+			}
+			CLUSTER[id6] matches {
+				items matches {
+					ELEMENT[id17] matches {
+						value matches {
+							DV_CODED_TEXT[id0.12] matches {
+								defining_code matches {[ac2]}
+							}
+						}
+					}
+					ELEMENT[id18] matches {
+						value matches {
+							DV_COUNT[id0.13] 
+						}
+					}
+				}
+			}
+			CLUSTER[id7] occurrences matches {1..*} matches {
+				items matches {
+					ELEMENT[id19] matches {
+						value matches {
+							DV_CODED_TEXT[id0.14] matches {
+								defining_code matches {[ac0.1]}		-- Name usage (synthesised)
+							}
+						}
+					}
+					ELEMENT[id20] matches {
+						value matches {
+							DV_INTERVAL<DV_DATE>[id0.15] 
+						}
+					}
+					ELEMENT[id21] occurrences matches {0..1} matches {
+						value matches {
+							DV_TEXT[id0.16] 
+						}
+					}
+				}
+			}
+			ELEMENT[id10.1] occurrences matches {0} 	-- Conditional Use
+			CLUSTER[id0.2] matches {	-- Restricted name usage
+				items matches {
+					ELEMENT[id0.3] 	-- Type of restriction
+					ELEMENT[id0.4] matches {	-- Restriction interval
+						value matches {
+							DV_INTERVAL[id0.17] 
+						}
+					}
+					ELEMENT[id0.5] matches {	-- Available provider
+						value matches {
+							DV_TEXT[id0.18] 
+						}
+					}
+				}
+			}
+		}
+		/details[id2]/items[id8]/items[id22]/value matches {
+			DV_CODED_TEXT[id32.1] matches {
+				defining_code matches {[ac3]}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.2"] = <
+				text = <"Restricted name usage">
+				description = <"This set of data elements apply to a specific name set and are used within computer systems to restrict the way a name is used or displayed in that system">
+			>
+			["id0.3"] = <
+				text = <"Type of restriction">
+				description = <"An indicator of special conditions or rules that shall be applied to an individual provider name">
+			>
+			["id0.4"] = <
+				text = <"Restriction interval">
+				description = <"Indicates the period of time where this restriction applies">
+			>
+			["id0.5"] = <
+				text = <"Available provider">
+				description = <"This field indicates those providers who should be able to see this name and the details assoociated with it">
+			>
+			["id1.1"] = <
+				text = <"Individual healthcare provider name">
+				description = <"Person name when performing the role of a healthcare provider">
+			>
+			["id10.1"] = <
+				text = <"Conditional Use">
+				description = <"An indicator of specific conditions or rules that should be applied to a person's name">
+			>
+			["ac0.1"] = <
+				text = <"Name usage (synthesised)">
+				description = <"A classification that enables differentiation between the usage of names for a person. An individual name may have many name uses (synthesised)">
+			>
+		>
+		["pt-br"] = <
+			["id0.2"] = <
+				text = <"Grupo de utilização restrita do nome">
+				description = <"Este conjunto de dados se aplica a um nome específico e é usado em sistemas computacionais para restringir o modo como um nome é usado ou exibido naquele sistema">
+			>
+			["id0.3"] = <
+				text = <"Tipo de restrição">
+				description = <"Um indicador de condições especiais que devem ser aplicadas ao nome do profissional">
+			>
+			["id0.4"] = <
+				text = <"Intervalo da restrição">
+				description = <"Indica o período de tempo em que esta restrição se aplica">
+			>
+			["id0.5"] = <
+				text = <"Identificador do prestador">
+				description = <"Este campo indica os prestadores que podem visualizar este nome e os detalhes associados a ele">
+			>
+			["id1.1"] = <
+				text = <"Nome do profissional de saúde">
+				description = <"Nome de uma pessoa ao atuar como profissional de saúde">
+			>
+			["id10.1"] = <
+				text = <"Indicador de uso condicional">
+				description = <"Um indicador das condições específicas ou regras que devem ser aplicadas ao nome de uma pessoa">
+			>
+			["ac0.1"] = <
+				text = <"Uso do nome (synthesised)">
+				description = <"Uma classificação que permite a diferenciação entre os usos do nome de uma pessoa. Um nome de um indivíduo pode ter muitos usos (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at24", "at25", "at26", "at27", "at28", "at29">
+		>
+	>

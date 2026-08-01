@@ -1,0 +1,1098 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.waterlow_score.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2011-08-01">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the individual elements and overall score of the Waterlow Score (or Scale), for the purpose of estimating the risk of a patient developing a pressure sore or ulcer.">
+			use = <"Use to record details of a Waterlow score, normally in conjunction which a more general clinical assessment of pressure sore risk. Users and implenters should familiarise themselves with the Guidance Notes.
+
+For some categries of recording e.g Build - weight for height, only a single score can be selected. For others e.g. Skin type Visual Risk areas, more than one risk can be entered to contribute to the overall score. 
+Some categories have overall limits e.g.  although mutiple Neurological deficits can be recorded , the total score for all such risks cannot exceed 6. 
+Some centres expect only a total to be recorded for a whole category in which case, individual risk elements should not be captured.">
+			keywords = <"pressure", "ulcer", "risk", "sore", "scale", "skin">
+			misuse = <"The Waterlow score is Copyright Protected © 2005-2007 judy-waterlow.co.uk and should not be used outside the terms of the copyright.">
+		>
+	>
+	references = <
+		["1"] = <"The Waterlow Score [Internet];[cited 2011 Aug 1] Available from: http://www.judy-waterlow.co.uk/waterlow_score.htm">
+		["2"] = <"The Waterlow Score Card [Internet];[cited 2011 Aug 1] Available from: http://www.judy-waterlow.co.uk/downloads/Waterlow%20Score%20Card-front.pdf">
+		["3"] = <"Ferguson ML, Bauer J, Gallagher B,Capra S, Christie DRH, Mason BR. Validation of a malnutrition screening tool for patients receiving radiotherapy. Australasian Radiology. 1999;43:325–327">
+	>
+	other_details = <
+		["current_contact"] = <"Dr Ian McNicoll, Ocean Informatics, United Kingdom, ian.mcnicoll@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"5648B8340272B1AC66E333AEFDA11A94">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Waterlow score
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id9] occurrences matches {0..1} matches {	-- Sex
+										value matches {
+											DV_ORDINAL[id154] matches {
+												[value, symbol] matches {
+													[{1}, {[at29]}],
+													[{2}, {[at30]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id10] occurrences matches {0..1} matches {	-- Age group
+										value matches {
+											DV_ORDINAL[id155] matches {
+												[value, symbol] matches {
+													[{0}, {[at135]}],
+													[{1}, {[at31]}],
+													[{2}, {[at32]}],
+													[{3}, {[at33]}],
+													[{4}, {[at34]}],
+													[{5}, {[at35]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Build/weight for height
+										value matches {
+											DV_ORDINAL[id156] matches {
+												[value, symbol] matches {
+													[{0}, {[at21]}],
+													[{1}, {[at22]}],
+													[{2}, {[at23]}],
+													[{3}, {[at24]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Continence
+										value matches {
+											DV_ORDINAL[id157] matches {
+												[value, symbol] matches {
+													[{0}, {[at25]}],
+													[{1}, {[at26]}],
+													[{2}, {[at27]}],
+													[{3}, {[at28]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id8] occurrences matches {0..1} matches {	-- Mobility
+										value matches {
+											DV_ORDINAL[id158] matches {
+												[value, symbol] matches {
+													[{0}, {[at36]}],
+													[{1}, {[at37]}],
+													[{2}, {[at38]}],
+													[{3}, {[at39]}],
+													[{4}, {[at40]}],
+													[{5}, {[at41]}]
+												}
+											}
+										}
+									}
+									CLUSTER[id130] occurrences matches {0..1} matches {	-- Nutritional risk
+										items matches {
+											ELEMENT[id55] occurrences matches {0..1} matches {	-- Weight loss
+												value matches {
+													DV_ORDINAL[id159] matches {
+														[value, symbol] matches {
+															[{0}, {[at132]}],
+															[{1}, {[at56]}],
+															[{2}, {[at57]}],
+															[{3}, {[at58]}],
+															[{4}, {[at59]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id45] occurrences matches {0..1} matches {	-- Appetite
+												value matches {
+													DV_ORDINAL[id160] matches {
+														[value, symbol] matches {
+															[{0}, {[at46]}],
+															[{1}, {[at47]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id131] occurrences matches {0..1} matches {	-- Nutritional score
+												value matches {
+													DV_COUNT[id161] matches {
+														magnitude matches {|0..5|}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[id67] occurrences matches {0..1} matches {	-- Skin type visual risk areas
+										items matches {
+											ELEMENT[id117] occurrences matches {0..1} matches {	-- Healthy
+												value matches {
+													DV_ORDINAL[id162] matches {
+														[value, symbol] matches {
+															[{0}, {[at117]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id118] occurrences matches {0..1} matches {	-- Tissue-paper
+												value matches {
+													DV_ORDINAL[id163] matches {
+														[value, symbol] matches {
+															[{1}, {[at118]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id119] occurrences matches {0..1} matches {	-- Dry
+												value matches {
+													DV_ORDINAL[id164] matches {
+														[value, symbol] matches {
+															[{1}, {[at119]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id120] occurrences matches {0..1} matches {	-- Oedematous
+												value matches {
+													DV_ORDINAL[id165] matches {
+														[value, symbol] matches {
+															[{1}, {[at120]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id121] occurrences matches {0..1} matches {	-- Clammy, pyrexia
+												value matches {
+													DV_ORDINAL[id166] matches {
+														[value, symbol] matches {
+															[{1}, {[at121]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id122] occurrences matches {0..1} matches {	-- Discoloured - Stage 1
+												value matches {
+													DV_ORDINAL[id167] matches {
+														[value, symbol] matches {
+															[{2}, {[at122]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id123] occurrences matches {0..1} matches {	-- Pressure ulcer - Stage 2-4
+												value matches {
+													DV_ORDINAL[id168] matches {
+														[value, symbol] matches {
+															[{2}, {[at123]}]
+														}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[id71] occurrences matches {0..1} matches {	-- Tissue malnutrition
+										items matches {
+											ELEMENT[id124] occurrences matches {0..1} matches {	-- Terminal cachexia
+												value matches {
+													DV_ORDINAL[id169] matches {
+														[value, symbol] matches {
+															[{8}, {[at124]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id125] occurrences matches {0..1} matches {	-- Single organ failure
+												value matches {
+													DV_ORDINAL[id170] matches {
+														[value, symbol] matches {
+															[{5}, {[at125]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id126] occurrences matches {0..1} matches {	-- Multiple organ failure
+												value matches {
+													DV_ORDINAL[id171] matches {
+														[value, symbol] matches {
+															[{8}, {[at126]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id127] occurrences matches {0..1} matches {	-- Peripheral vascular disease
+												value matches {
+													DV_ORDINAL[id172] matches {
+														[value, symbol] matches {
+															[{5}, {[at127]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id128] occurrences matches {0..1} matches {	-- Anaemia (Hb < 8 g/dl)
+												value matches {
+													DV_ORDINAL[id173] matches {
+														[value, symbol] matches {
+															[{2}, {[at128]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id129] occurrences matches {0..1} matches {	-- Smoking
+												value matches {
+													DV_ORDINAL[id174] matches {
+														[value, symbol] matches {
+															[{1}, {[at129]}]
+														}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[id74] occurrences matches {0..1} matches {	-- Neurological deficit
+										items matches {
+											ELEMENT[id151] occurrences matches {0..1} matches {	-- Diabetes, MS, CVA
+												value matches {
+													DV_ORDINAL[id175] matches {
+														[value, symbol] matches {
+															[{0}, {[at137]}],
+															[{4}, {[at138]}],
+															[{5}, {[at139]}],
+															[{6}, {[at140]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id152] occurrences matches {0..1} matches {	-- Motor / sensory deficit
+												value matches {
+													DV_ORDINAL[id176] matches {
+														[value, symbol] matches {
+															[{0}, {[at137]}],
+															[{4}, {[at138]}],
+															[{5}, {[at139]}],
+															[{6}, {[at140]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id153] occurrences matches {0..1} matches {	-- Paraplegia
+												value matches {
+													DV_ORDINAL[id177] matches {
+														[value, symbol] matches {
+															[{0}, {[at137]}],
+															[{4}, {[at138]}],
+															[{5}, {[at139]}],
+															[{6}, {[at140]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id136] occurrences matches {0..1} matches {	-- Combined neurological deficit
+												value matches {
+													DV_ORDINAL[id178] matches {
+														[value, symbol] matches {
+															[{0}, {[at137]}],
+															[{4}, {[at138]}],
+															[{5}, {[at139]}],
+															[{6}, {[at140]}]
+														}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[id69] occurrences matches {0..1} matches {	-- Major surgery or trauma
+										items matches {
+											ELEMENT[id115] occurrences matches {0..1} matches {	-- Orthopaedic /spinal
+												value matches {
+													DV_ORDINAL[id179] matches {
+														[value, symbol] matches {
+															[{0}, {[at154]}],
+															[{5}, {[at144]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id145] occurrences matches {0..1} matches {	-- Duration of surgery
+												value matches {
+													DV_ORDINAL[id180] matches {
+														[value, symbol] matches {
+															[{0}, {[at155]}],
+															[{5}, {[at146]}],
+															[{8}, {[at147]}]
+														}
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[id68] occurrences matches {0..1} matches {	-- Medication
+										items matches {
+											ELEMENT[id107] occurrences matches {0..1} matches {	-- Cytotoxics
+												value matches {
+													DV_ORDINAL[id181] matches {
+														[value, symbol] matches {
+															[{0}, {[at142]}],
+															[{4}, {[at143]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id108] occurrences matches {0..1} matches {	-- Steroids
+												value matches {
+													DV_ORDINAL[id182] matches {
+														[value, symbol] matches {
+															[{0}, {[at142]}],
+															[{4}, {[at143]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id109] occurrences matches {0..1} matches {	-- Anti-inflammatories
+												value matches {
+													DV_ORDINAL[id183] matches {
+														[value, symbol] matches {
+															[{0}, {[at142]}],
+															[{4}, {[at143]}]
+														}
+													}
+												}
+											}
+											ELEMENT[id141] occurrences matches {0..1} matches {	-- Combined medication risk
+												value matches {
+													DV_ORDINAL[id184] matches {
+														[value, symbol] matches {
+															[{0}, {[at142]}],
+															[{4}, {[at143]}]
+														}
+													}
+												}
+											}
+										}
+									}
+									ELEMENT[id15] occurrences matches {0..1} matches {	-- Waterlow score
+										value matches {
+											DV_COUNT[id185] matches {
+												magnitude matches {|>=1|}
+											}
+										}
+									}
+									ELEMENT[id16] occurrences matches {0..1} matches {	-- Overall risk grade
+										value matches {
+											DV_ORDINAL[id186] matches {
+												[value, symbol] matches {
+													[{10}, {[at17]}],
+													[{15}, {[at18]}],
+													[{20}, {[at19]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id20] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT[id187] 
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[id72] matches {
+								items matches {
+									ELEMENT[id73] matches {	-- Confounding factors
+										value matches {
+											DV_TEXT[id188] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id133] matches {
+				items matches {
+					ELEMENT[id134] occurrences matches {0..1} matches {	-- Score version
+						value matches {
+							DV_TEXT[id189] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Waterlow score">
+				description = <"The Waterlow Score, Pressure Ulcer Risk Assessment Tool.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Any event.">
+			>
+			["ac2"] = <
+				text = <"Age group (synthesised)">
+				description = <"Risk conferred by the age range of the subject. (synthesised)">
+			>
+			["id5"] = <
+				text = <"Build/weight for height">
+				description = <"Risk conferred by the subject's build, based on a BMI calculation.">
+			>
+			["id6"] = <
+				text = <"Continence">
+				description = <"Risk conferred by the subject's degree of continence.">
+			>
+			["id8"] = <
+				text = <"Mobility">
+				description = <"Risk conferred by the mobility level of the subject.">
+			>
+			["id9"] = <
+				text = <"Sex">
+				description = <"Risk conferred by the sex of the subject.">
+			>
+			["id10"] = <
+				text = <"Age group">
+				description = <"Risk conferred by the age range of the subject.">
+			>
+			["id15"] = <
+				text = <"Waterlow score">
+				description = <"The total summed score of all recorded individual risks.">
+			>
+			["id16"] = <
+				text = <"Overall risk grade">
+				description = <"Overall Waterlow Score.">
+			>
+			["at17"] = <
+				text = <"10+ At risk">
+				description = <"The subject is at risk of developing a pressure ulcer.">
+			>
+			["at18"] = <
+				text = <"15+ High risk">
+				description = <"The subject is at high risk of developing a pressure ulcer.">
+			>
+			["at19"] = <
+				text = <"20+ Very high risk">
+				description = <"The subject is at very high risk of developing a pressure ulcer.">
+			>
+			["id20"] = <
+				text = <"Comment">
+				description = <"Additional narrative comment about the Score.">
+			>
+			["at21"] = <
+				text = <"Average">
+				description = <"The subject's build is average : BMI 20-24.9 .">
+			>
+			["at22"] = <
+				text = <"Above average">
+				description = <"The subject's build is above average : BMI 25-29.9 .">
+			>
+			["at23"] = <
+				text = <"Obese">
+				description = <"The subject is obese : BMI over 30 .">
+			>
+			["at24"] = <
+				text = <"Below average">
+				description = <"The subject's build is below average : BMI below 20 .">
+			>
+			["at25"] = <
+				text = <"Complete / catheterised">
+				description = <"The subject is completely continent or catheterised.">
+			>
+			["at26"] = <
+				text = <"Urinary incontinence">
+				description = <"The subject is incontinent of urine.">
+			>
+			["at27"] = <
+				text = <"Faecal incontinence">
+				description = <"The subject is incontinent of faeces.">
+			>
+			["at28"] = <
+				text = <"Urinary and faecal incontinence">
+				description = <"The subject is incontinent of urine and faeces.">
+			>
+			["at29"] = <
+				text = <"Male">
+				description = <"The subject is male.">
+			>
+			["at30"] = <
+				text = <"Female">
+				description = <"The subject is female.">
+			>
+			["at31"] = <
+				text = <"14-49">
+				description = <"The subject is aged between 14-49.">
+			>
+			["at32"] = <
+				text = <"50-64">
+				description = <"The subject is aged between 50-64.">
+			>
+			["at33"] = <
+				text = <"65-74">
+				description = <"The subject is aged between 65-74.">
+			>
+			["at34"] = <
+				text = <"75-80">
+				description = <"The subject is aged between 75-80.">
+			>
+			["at35"] = <
+				text = <"80+">
+				description = <"The subject is aged over 80.">
+			>
+			["at36"] = <
+				text = <"Fully mobile">
+				description = <"The subject is fully mobile.">
+			>
+			["at37"] = <
+				text = <"Restless/ fidgety">
+				description = <"The subject is restless and fidgety.">
+			>
+			["at38"] = <
+				text = <"Apathetic">
+				description = <"The subject is apathetic.">
+			>
+			["at39"] = <
+				text = <"Restricted">
+				description = <"The subject's mobility is restricted.">
+			>
+			["at40"] = <
+				text = <"Bedbound">
+				description = <"The subject is confined to bed e.g by traction.">
+			>
+			["at41"] = <
+				text = <"Chairbound">
+				description = <"The subject is confined to a chair or wheelchair.">
+			>
+			["id45"] = <
+				text = <"Appetite">
+				description = <"Risk conferred by the subject's appetite and eating habit.">
+			>
+			["at46"] = <
+				text = <"Average">
+				description = <"The subject is eating normally and has a normal appetite.">
+			>
+			["at47"] = <
+				text = <"Poor">
+				description = <"The subject is eating poorly or has a poor appetite.">
+			>
+			["id55"] = <
+				text = <"Weight loss">
+				description = <"Risk conferred by recent weight loss.">
+			>
+			["at56"] = <
+				text = <"0.5-5kg">
+				description = <"The subject has recently lost 0.5-5kg in weight.">
+			>
+			["at57"] = <
+				text = <"5-10kg (or Amount unsure)">
+				description = <"The subject has recently lost 5-10kg in weight.">
+			>
+			["at58"] = <
+				text = <"10-15kg">
+				description = <"The subject has recently lost 10-15kg in weight or the amount of weight loss is unknown.">
+			>
+			["at59"] = <
+				text = <"Over 15kg">
+				description = <"The subject has recently lost  over 15kg in weight.">
+			>
+			["id67"] = <
+				text = <"Skin type visual risk areas">
+				description = <"Category of risks assessed by skin inspection.">
+			>
+			["id68"] = <
+				text = <"Medication">
+				description = <"Risk associated with medication.  Each medication can be scored between 0-4 but a total of 4 only can be given by all risks in the Medication category.">
+			>
+			["id69"] = <
+				text = <"Major surgery or trauma">
+				description = <"Risk associated with major surgery or trauma.">
+			>
+			["id71"] = <
+				text = <"Tissue malnutrition">
+				description = <"Category of risks conferred by tissue malnutrition.">
+			>
+			["id73"] = <
+				text = <"Confounding factors">
+				description = <"Issues that may affect interpretation of the score.">
+			>
+			["id74"] = <
+				text = <"Neurological deficit">
+				description = <"Risk conferred by neurological deficit. Each identified risk can be scored between 4-6 but a maximum of 6 only can be given for the whole neurological deficit category.">
+			>
+			["id107"] = <
+				text = <"Cytotoxics">
+				description = <"The subject is receiving cytotoxic medication.">
+			>
+			["id108"] = <
+				text = <"Steroids">
+				description = <"The subject is receiving high-dose or long-term steroid medication.">
+			>
+			["id109"] = <
+				text = <"Anti-inflammatories">
+				description = <"The subject is receiving anti-inflammatory medication.">
+			>
+			["id115"] = <
+				text = <"Orthopaedic /spinal">
+				description = <"Risks related to orthopaedic or spinal surgery.">
+			>
+			["id117"] = <
+				text = <"Healthy">
+				description = <"The skin appears healthy.">
+			>
+			["id118"] = <
+				text = <"Tissue-paper">
+				description = <"The skin has a tissue-paper quality.">
+			>
+			["id119"] = <
+				text = <"Dry">
+				description = <"The skin is dry.">
+			>
+			["id120"] = <
+				text = <"Oedematous">
+				description = <"The skin is oedematous.">
+			>
+			["id121"] = <
+				text = <"Clammy, pyrexia">
+				description = <"The aptient appears clammy or pyrexic.">
+			>
+			["id122"] = <
+				text = <"Discoloured - Stage 1">
+				description = <"The skin is dicoloured - Pressure sore - Grade 1.">
+			>
+			["id123"] = <
+				text = <"Pressure ulcer - Stage 2-4">
+				description = <"The skin has a frank pressure sore - Stage 2-4.">
+			>
+			["id124"] = <
+				text = <"Terminal cachexia">
+				description = <"The subject is terminally-ill and shows significant weight-loss.">
+			>
+			["id125"] = <
+				text = <"Single organ failure">
+				description = <"The patent has single organ/system failure e.g. respiratory, cardiac, liver, renal.">
+			>
+			["id126"] = <
+				text = <"Multiple organ failure">
+				description = <"The subject has multiple organ/system failure.">
+			>
+			["id127"] = <
+				text = <"Peripheral vascular disease">
+				description = <"The subject has peripheral vascular disease.">
+			>
+			["id128"] = <
+				text = <"Anaemia (Hb < 8 g/dl)">
+				description = <"The subject is significantly anaemic. Hb less than 8 mg/dl.">
+			>
+			["id129"] = <
+				text = <"Smoking">
+				description = <"The subject is a smoker.">
+			>
+			["id130"] = <
+				text = <"Nutritional risk">
+				description = <"An estimate of nutritional risk based on the MST nutritional score but can make use of another compatible nutritional score.">
+			>
+			["id131"] = <
+				text = <"Nutritional score">
+				description = <"The nutritional score total, derived from Appetite and Weight loss scores or recorded directly from another compatible nutritional scoring system.">
+			>
+			["at132"] = <
+				text = <"No recent weight loss">
+				description = <"The subject has not recently lost weight.">
+			>
+			["ac10"] = <
+				text = <"Dry (synthesised)">
+				description = <"The skin is dry. (synthesised)">
+			>
+			["id134"] = <
+				text = <"Score version">
+				description = <"The version of the score used, normally recorded as the year.">
+			>
+			["at135"] = <
+				text = <"Less than 14 years">
+				description = <"The subject is under 14 years old.">
+			>
+			["id136"] = <
+				text = <"Combined neurological deficit">
+				description = <"An overall estimate of neurological deficit. Should not be used if individual neurological deficit risks are recorded.">
+			>
+			["at137"] = <
+				text = <"No neurological deficit">
+				description = <"The subject has no overall neurological deficit.">
+			>
+			["at138"] = <
+				text = <"Mild neurological deficit">
+				description = <"The subject has a mild overall neurological deficit.">
+			>
+			["at139"] = <
+				text = <"Moderate neurological deficit">
+				description = <"The subject has a moderate overall neurological deficit.">
+			>
+			["at140"] = <
+				text = <"Severe neurological deficit">
+				description = <"The subject has a severe overall neurological deficit.">
+			>
+			["id141"] = <
+				text = <"Combined medication risk">
+				description = <"Overall pressure ulcer risk related to medication. Should not be recorded if individual medication risks are used.">
+			>
+			["at142"] = <
+				text = <"No medication risk">
+				description = <"The subject has no risk related to medication.">
+			>
+			["at143"] = <
+				text = <"Significant medication risk">
+				description = <"The subject has significant risk related to medication.">
+			>
+			["at144"] = <
+				text = <"Orthopaedic /spinal surgery">
+				description = <"The subject has undergone orthopaedic or spinal surgery.">
+			>
+			["id145"] = <
+				text = <"Duration of surgery">
+				description = <"Risks imparted by length of surgery.">
+			>
+			["at146"] = <
+				text = <"On table > 2 hrs (Past 48 hrs)">
+				description = <"The subject has had surgery within the past 48 hours lasting over 2 hours.">
+			>
+			["at147"] = <
+				text = <"On table > 6 hrs (Past 48 hrs)">
+				description = <"The subject has had surgery within the past 48 hours lasting over 6 hours.">
+			>
+			["id151"] = <
+				text = <"Diabetes, MS, CVA">
+				description = <"The subject has diabetes, multiple sclerosis or has had a stroke.">
+			>
+			["id152"] = <
+				text = <"Motor / sensory deficit">
+				description = <"The subject has a motor or sensory deficit.">
+			>
+			["id153"] = <
+				text = <"Paraplegia">
+				description = <"The subject has a paraplegia.">
+			>
+			["at154"] = <
+				text = <"No orthopaedic / spinal surgery">
+				description = <"The subject has no risk related to spinal / orthopaedic surgery.">
+			>
+			["at155"] = <
+				text = <"On table < 2 hrs or not in ast 48 hrs">
+				description = <"The subject has had surgery more than 48 hrs ago or lasting for less than 2 hours.">
+			>
+			["at117"] = <
+				text = <"Healthy">
+				description = <"The skin appears healthy.">
+			>
+			["at118"] = <
+				text = <"Tissue-paper">
+				description = <"The skin has a tissue-paper quality.">
+			>
+			["at119"] = <
+				text = <"Dry">
+				description = <"The skin is dry.">
+			>
+			["at120"] = <
+				text = <"Oedematous">
+				description = <"The skin is oedematous.">
+			>
+			["at121"] = <
+				text = <"Clammy, pyrexia">
+				description = <"The aptient appears clammy or pyrexic.">
+			>
+			["at122"] = <
+				text = <"Discoloured - Stage 1">
+				description = <"The skin is dicoloured - Pressure sore - Grade 1.">
+			>
+			["at123"] = <
+				text = <"Pressure ulcer - Stage 2-4">
+				description = <"The skin has a frank pressure sore - Stage 2-4.">
+			>
+			["at124"] = <
+				text = <"Terminal cachexia">
+				description = <"The subject is terminally-ill and shows significant weight-loss.">
+			>
+			["at125"] = <
+				text = <"Single organ failure">
+				description = <"The patent has single organ/system failure e.g. respiratory, cardiac, liver, renal.">
+			>
+			["at126"] = <
+				text = <"Multiple organ failure">
+				description = <"The subject has multiple organ/system failure.">
+			>
+			["at127"] = <
+				text = <"Peripheral vascular disease">
+				description = <"The subject has peripheral vascular disease.">
+			>
+			["at128"] = <
+				text = <"Anaemia (Hb < 8 g/dl)">
+				description = <"The subject is significantly anaemic. Hb less than 8 mg/dl.">
+			>
+			["at129"] = <
+				text = <"Smoking">
+				description = <"The subject is a smoker.">
+			>
+			["ac1"] = <
+				text = <"Sex (synthesised)">
+				description = <"Risk conferred by the sex of the subject. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Build/weight for height (synthesised)">
+				description = <"Risk conferred by the subject's build, based on a BMI calculation. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Continence (synthesised)">
+				description = <"Risk conferred by the subject's degree of continence. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Mobility (synthesised)">
+				description = <"Risk conferred by the mobility level of the subject. (synthesised)">
+			>
+			["ac6"] = <
+				text = <"Weight loss (synthesised)">
+				description = <"Risk conferred by recent weight loss. (synthesised)">
+			>
+			["ac7"] = <
+				text = <"Appetite (synthesised)">
+				description = <"Risk conferred by the subject's appetite and eating habit. (synthesised)">
+			>
+			["ac8"] = <
+				text = <"Healthy (synthesised)">
+				description = <"The skin appears healthy. (synthesised)">
+			>
+			["ac9"] = <
+				text = <"Tissue-paper (synthesised)">
+				description = <"The skin has a tissue-paper quality. (synthesised)">
+			>
+			["ac11"] = <
+				text = <"Oedematous (synthesised)">
+				description = <"The skin is oedematous. (synthesised)">
+			>
+			["ac12"] = <
+				text = <"Clammy, pyrexia (synthesised)">
+				description = <"The aptient appears clammy or pyrexic. (synthesised)">
+			>
+			["ac13"] = <
+				text = <"Discoloured - Stage 1 (synthesised)">
+				description = <"The skin is dicoloured - Pressure sore - Grade 1. (synthesised)">
+			>
+			["ac14"] = <
+				text = <"Pressure ulcer - Stage 2-4 (synthesised)">
+				description = <"The skin has a frank pressure sore - Stage 2-4. (synthesised)">
+			>
+			["ac15"] = <
+				text = <"Terminal cachexia (synthesised)">
+				description = <"The subject is terminally-ill and shows significant weight-loss. (synthesised)">
+			>
+			["ac16"] = <
+				text = <"Single organ failure (synthesised)">
+				description = <"The patent has single organ/system failure e.g. respiratory, cardiac, liver, renal. (synthesised)">
+			>
+			["ac17"] = <
+				text = <"Multiple organ failure (synthesised)">
+				description = <"The subject has multiple organ/system failure. (synthesised)">
+			>
+			["ac18"] = <
+				text = <"Peripheral vascular disease (synthesised)">
+				description = <"The subject has peripheral vascular disease. (synthesised)">
+			>
+			["ac19"] = <
+				text = <"Anaemia (Hb < 8 g/dl) (synthesised)">
+				description = <"The subject is significantly anaemic. Hb less than 8 mg/dl. (synthesised)">
+			>
+			["ac20"] = <
+				text = <"Smoking (synthesised)">
+				description = <"The subject is a smoker. (synthesised)">
+			>
+			["ac21"] = <
+				text = <"Diabetes, MS, CVA (synthesised)">
+				description = <"The subject has diabetes, multiple sclerosis or has had a stroke. (synthesised)">
+			>
+			["ac22"] = <
+				text = <"Motor / sensory deficit (synthesised)">
+				description = <"The subject has a motor or sensory deficit. (synthesised)">
+			>
+			["ac23"] = <
+				text = <"Paraplegia (synthesised)">
+				description = <"The subject has a paraplegia. (synthesised)">
+			>
+			["ac24"] = <
+				text = <"Combined neurological deficit (synthesised)">
+				description = <"An overall estimate of neurological deficit. Should not be used if individual neurological deficit risks are recorded. (synthesised)">
+			>
+			["ac25"] = <
+				text = <"Orthopaedic /spinal (synthesised)">
+				description = <"Risks related to orthopaedic or spinal surgery. (synthesised)">
+			>
+			["ac26"] = <
+				text = <"Duration of surgery (synthesised)">
+				description = <"Risks imparted by length of surgery. (synthesised)">
+			>
+			["ac27"] = <
+				text = <"Cytotoxics (synthesised)">
+				description = <"The subject is receiving cytotoxic medication. (synthesised)">
+			>
+			["ac28"] = <
+				text = <"Steroids (synthesised)">
+				description = <"The subject is receiving high-dose or long-term steroid medication. (synthesised)">
+			>
+			["ac29"] = <
+				text = <"Anti-inflammatories (synthesised)">
+				description = <"The subject is receiving anti-inflammatory medication. (synthesised)">
+			>
+			["ac30"] = <
+				text = <"Combined medication risk (synthesised)">
+				description = <"Overall pressure ulcer risk related to medication. Should not be recorded if individual medication risks are used. (synthesised)">
+			>
+			["ac31"] = <
+				text = <"Overall risk grade (synthesised)">
+				description = <"Overall Waterlow Score. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at29", "at30">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at135", "at31", "at32", "at33", "at34", "at35">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at21", "at22", "at23", "at24">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at25", "at26", "at27", "at28">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at36", "at37", "at38", "at39", "at40", "at41">
+		>
+		["ac6"] = <
+			id = <"ac6">
+			members = <"at132", "at56", "at57", "at58", "at59">
+		>
+		["ac7"] = <
+			id = <"ac7">
+			members = <"at46", "at47">
+		>
+		["ac8"] = <
+			id = <"ac8">
+			members = <"at117", ...>
+		>
+		["ac9"] = <
+			id = <"ac9">
+			members = <"at118", ...>
+		>
+		["ac10"] = <
+			id = <"ac10">
+			members = <"at119", ...>
+		>
+		["ac11"] = <
+			id = <"ac11">
+			members = <"at120", ...>
+		>
+		["ac12"] = <
+			id = <"ac12">
+			members = <"at121", ...>
+		>
+		["ac13"] = <
+			id = <"ac13">
+			members = <"at122", ...>
+		>
+		["ac14"] = <
+			id = <"ac14">
+			members = <"at123", ...>
+		>
+		["ac15"] = <
+			id = <"ac15">
+			members = <"at124", ...>
+		>
+		["ac16"] = <
+			id = <"ac16">
+			members = <"at125", ...>
+		>
+		["ac17"] = <
+			id = <"ac17">
+			members = <"at126", ...>
+		>
+		["ac18"] = <
+			id = <"ac18">
+			members = <"at127", ...>
+		>
+		["ac19"] = <
+			id = <"ac19">
+			members = <"at128", ...>
+		>
+		["ac20"] = <
+			id = <"ac20">
+			members = <"at129", ...>
+		>
+		["ac21"] = <
+			id = <"ac21">
+			members = <"at137", "at138", "at139", "at140">
+		>
+		["ac22"] = <
+			id = <"ac22">
+			members = <"at137", "at138", "at139", "at140">
+		>
+		["ac23"] = <
+			id = <"ac23">
+			members = <"at137", "at138", "at139", "at140">
+		>
+		["ac24"] = <
+			id = <"ac24">
+			members = <"at137", "at138", "at139", "at140">
+		>
+		["ac25"] = <
+			id = <"ac25">
+			members = <"at154", "at144">
+		>
+		["ac26"] = <
+			id = <"ac26">
+			members = <"at155", "at146", "at147">
+		>
+		["ac27"] = <
+			id = <"ac27">
+			members = <"at142", "at143">
+		>
+		["ac28"] = <
+			id = <"ac28">
+			members = <"at142", "at143">
+		>
+		["ac29"] = <
+			id = <"ac29">
+			members = <"at142", "at143">
+		>
+		["ac30"] = <
+			id = <"ac30">
+			members = <"at142", "at143">
+		>
+		["ac31"] = <
+			id = <"ac31">
+			members = <"at17", "at18", "at19">
+		>
+	>

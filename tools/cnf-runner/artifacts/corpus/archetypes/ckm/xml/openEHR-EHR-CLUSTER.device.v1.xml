@@ -1,0 +1,2354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2010-06-29</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Tomas Alme, DIPS, Norway</other_contributors>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo universitetssykehus HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Mate Bestek, 3fs, Slovenia</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Diego Bosca, VeraTech for Health, Spain</other_contributors>
+    <other_contributors>Margaret Campbell, Queensland Health, Australia</other_contributors>
+    <other_contributors>Rong Chen, Cambio Healthcare Systems, Sweden</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Stephen Chu, Queensland Health, Australia</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Samo Drnovsek, Marand ltd, Slovenia</other_contributors>
+    <other_contributors>Ivan Drvaric, NIJZ- National institute for public health of Slovenia, Slovenia</other_contributors>
+    <other_contributors>Shahla Foozonkhah, Iran ministry of health and education, Iran</other_contributors>
+    <other_contributors>Einar Fosse, National Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, FSE, Helse Nord, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Grahame Grieve, Australia</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Gorazd Kalan, Outpatient pediatric care clinic, Slovenia</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Daniel Karlsson, National Board of Health and Welfare, Sweden</other_contributors>
+    <other_contributors>Jeanette Krabbedal-Mathisen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Russell Leftwich, Russell B Leftwich MD, United States</other_contributors>
+    <other_contributors>Sabine Leh, Haukeland University Hospital, Department of Pathology, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Vesna Levasic, Orthopaedic Hospital Valdoltra, Slovenia</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Luis Marco Ruiz, Norwegian Center for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Bjoern Naess, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Dave Nurse, Allocate Software, United Kingdom</other_contributors>
+    <other_contributors>Anne Pauline Anderssen, Helse Nord RHF, Norway</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Živa Rant, National Institute of Public Health, Slovenia</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Thor-Einar Stemland, Helse Bergen, FOU Seksjon for e-helse, Norway</other_contributors>
+    <other_contributors>Micaela Thierley, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Nils Thomas Songstad, UNN HF, BUK, Barneavdelingen., Norway</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Nils Widnes, Helse-Bergen, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">HL7 FHIR Resource - Device R0.0.82 DSTU1 [Internet]. Health Level Seven International; [accessed 2015 Feb 25]. Available from: http://hl7.org/fhir/DSTU1/device.html.&#xD;
+&#xD;
+Guidelines for 64-bit Global Identifier (EUI-64) [Internet]. IEEE Standards Association [cited: 2015-02-25]. Available from: http://standards.ieee.org/regauth/oui/tutorials/EUI64.html.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, heather.leslie@atomicainformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">B4AF4C8AA2F8BFB7EC593F747120036D</other_details>
+    <other_details id="build_uid">3a525fa5-5061-4864-8368-ad1ea93ac1d4</other_details>
+    <other_details id="revision">1.1.6</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Erfassung der Daten eines Medizingerätes, welches in der Gesundheitsversorgung eingesetzt wird.</purpose>
+      <keywords>Medizingerät</keywords>
+      <keywords>Maschine</keywords>
+      <keywords>Implantat</keywords>
+      <keywords>Gerät</keywords>
+      <keywords>Katheter</keywords>
+      <keywords>Prothese</keywords>
+      <keywords>Hilfsmittel</keywords>
+      <keywords>biomedizinisch</keywords>
+      <keywords>Instrument</keywords>
+      <keywords>Gerätschaften</keywords>
+      <keywords>Ausrüstung</keywords>
+      <keywords>Messgerät</keywords>
+      <keywords>Monitor</keywords>
+      <keywords>Software</keywords>
+      <use>Zur Erfassung der Details eines Medizingerätes, welches in der Gesundheitsversorgung eingesetzt wird.&#xD;
+&#xD;
+Die Verwendung des Begriffs "Medizingerät" variiert je nach Kontext. In der Welt der Standards bezieht sich der Begriff „Gerät“ in der Regel auf mechanische oder elektronische Geräte, die das Gesundheitswesen unterstützen und eine strenge Dokumentation in Bezug auf Standortverfolgung, Wartung, Kalibrierung, Softwareversionen usw. erfordern. Im terminologischen Kontext ist die Verwendung von Medizingeräten sehr weit verbreitet, einschließlich aller medizinischen Produkte, die für die direkte oder indirekte Bereitstellung der klinischen Versorgung verwendet werden können, sofern sie nicht auf eine Weise wirken, die eine direkte pharmakologische, metabolische oder immunologische Wirkung hat.&#xD;
+&#xD;
+Beispiele für medizinische Geräte reichen von einfachen Geräten wie Blasenkathetern, Zungenspateln, Kontaktlinsen, künstlichen Gelenkimplantaten, Brustimplantaten und einfachen&#xD;
+Verbänden bis hin zu fortschrittlichen Geräten wie künstlichen Herzen, Spritzenpumpen, Spirometern, Anwendungen für Mobiltelefone und computergestützten Geräten zur Erfassung medizinischer Point-of-Care-Messungen. &#xD;
+&#xD;
+In der komplexen Situation, in der ein chirurgisch implantiertes Gerät als Mittel zur Abgabe von Therapeutika, wie bei einer Chemotherapie direkt in den Körper verwendet wird, werden mit diesem Archetyp nur die Details des Medizinprodukts selbst, sowie die Bestellung von Medikamenten und Details zum Medikament aufgezeichnet. Die tatsächliche Verabreichung des therapeutischen Mittels wird unter Verwendung spezifischer arzneimittelbezogener Instruktions- und Aktionsarchetypen aufgezeichnet. &#xD;
+&#xD;
+Dieser Archetyp soll das Gerüst für die strukturierte Darstellung von Medizingeräten bereitstellen. Die hier enthaltenen Datenelemente sind für keinen Gerätetyp spezifisch. Für Einmalprodukte sind normalerweise Datenelemente wie Chargennummer und Verfallsdatum erforderlich. Im Gegensatz dazu sind diese normalerweise nicht relevant für langlebige Geräte, die häufig eine Reihe von Kennungen aufweisen, einschließlich UID, Seriennummer, Modell usw.&#xD;
+&#xD;
+Darüber hinaus erfordern verschiedene Arten von Geräten spezifische Informationen, die für ihren Zweck relevant sind. Diese Daten können mithilfe bestimmter CLUSTER-Archetypen aufgezeichnet werden, die im SLOT "Specific Properties" (Spezifische Eigenschaften) eingefügt sind. Zum Beispiel: Für die Verwendung eines Harnkatheters sind möglicherweise zusätzliche Angaben zum Durchmesser und der Länge des Katheters, Materialzusammensetzung, Anzahl der Lumen usw. erforderlich.&#xD;
+&#xD;
+Wenn das Medizinprodukt eine Reihe von Komponenten enthält, welche für eine Aufzeichnung von Details erforderlich ist, sollte jede einzelne Komponente explizit unter Verwendung eines zusätzlichen Archetyps CLUSTER.device aufgezeichnet werden, der in den SLOT 'Components' eingefügt wird.&#xD;
+&#xD;
+Im Datenfeld 'Software-Version' kann nur eine Version erfasst werden. Dies gilt hauptsächlich für ein Gerät, bei dem es sich um ausschließlich eine Softwareanwendung handelt. Wenn das Gerät über mehrere Software- oder Hardwarekomponenten verfügt, die spezifiziert werden müssen, sollte dies unter Verwendung des Zusatzes CLUSTER.device erfolgen, der in den SLOT 'Components' eingefügt wird.&#xD;
+&#xD;
+Verwenden Sie den Archetyp CLUSTER.device_details, der in den SLOT 'Asset Management' in diesem Archetyp eingefügt ist, um zusätzliche Details für dauerhafte oder andauernde Geräte aufzuzeichnen, die sich auf den Besitz, die Verfolgung des physischen Standorts, Wartungspläne usw. beziehen.&#xD;
+&#xD;
+Dieser Archetyp wurde für die allgemeine Verwendung in anderen Archetypen entwickelt, die ein Gerät beschreiben müssen. Beispiele sind: OBSERVATION.blood_pressure für das Blutdruckmessgerät; OBSERVATION.ecg für das EKG-Gerät; BEOBACHTUNG.Urinanalyse der Reagenzstreifen und der zum Testen verwendeten Vorrichtung; ACTION.procedure; und CLUSTER.exam_tympanic_membrane, um das verwendete Otoskop zu beschreiben.</use>
+      <misuse>Nicht zur Aufzeichnung von Daten bezüglich der Medizinprodukte, die eine direkte pharmakologische, metabolische oder immunologische Wirkung&#xD;
+haben, verwenden. Zum Beispiel: Ein mit Arzneimitteln imprägnierter Verband, für den ein Rezept erforderlich ist, sollte unter Verwendung des Archetyps INSTRUCTION.medication_order aufgezeichnet werden, der sich&#xD;
+auf die Wirkstoffe, die Dosierung usw. konzentriert.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera uppgifter om en medicinteknisk produkt som används vid tillhandahållandet av hälso- och sjukvård.&#xD;
+&#xD;
+</purpose>
+      <keywords>medicinteknisk produkt</keywords>
+      <keywords>maskin</keywords>
+      <keywords>implantat</keywords>
+      <keywords>apparat</keywords>
+      <keywords>kateter</keywords>
+      <keywords>protes</keywords>
+      <keywords>hjälpmedel</keywords>
+      <keywords>biomedicinsk</keywords>
+      <keywords>instrument</keywords>
+      <keywords>utrustning</keywords>
+      <keywords>mätare</keywords>
+      <keywords>monitorera</keywords>
+      <keywords>övervaka</keywords>
+      <use>Används för att registrera uppgifter om en medicinteknisk produkt som används vid tillhandahållande av hälso- och sjukvård.&#xD;
+&#xD;
+Användningen av termen "medicinteknisk produkt" varierar beroende på sammanhang. Inom standardisering tenderar termen ”medicinteknisk produkt” generellt användas för att beskriva mekaniska eller elektroniska produkter som stöder hälso- och sjukvården och kräver noggrann dokumentation om lokalisation, underhåll, kalibrering, programvaruversion etcetera. Inom terminologins sammanhang är användningen av termen ”medicinteknisk produkt” väldigt bred, och kan inkludera alla typer av medicintekniska produkter som kan användas direkt eller indirekt i den kliniska vården, så länge den inte utövar en direkt farmakologisk, metabolisk eller immunologisk effekt.&#xD;
+&#xD;
+Medicintekniska produkter kan vara allt från urinkatetrar, tungspatlar, kontaktlinser, konstgjorda ledimplantat, bröstimplantat och vanliga förband till medicintekniska produkter så som konstgjorda hjärtan, sprutpumpar, spirometrar, mobiltelefonapplikationer och även datoriserade utrustningar som fångar upp patientnära analyser.&#xD;
+&#xD;
+I komplexa situationer när implanterade medicintekniska produkter används för att ge behandlande medel så som cytostatika direkt in i kroppen, ska denna arketyp endast användas för att dokumentera detaljer om den medicinska produkten. Ordinationen för läkemedlet och dess administrering ska dokumenteras med specifika INSTRUCTION och ACTION arketyper relaterade till läkemedel.&#xD;
+&#xD;
+Den här arketypen är designad som ett ramverk för en strukturerad dokumentation av medicintekniska produkter. De dataelement som förekommer i arketypen är inte specifika för någon typ av medicinteknisk produkt. Medicintekniska produkter för engångsbruk kräver vanligtvis dataelement som LOT-nummer och utgångsdatum. Däremot är dessa vanligtvis inte relevanta för medicintekniska produkter med lång livslängd, vilka ofta har en uppsättning av identifierare, inklusive ett UID, serienummer, modell etcetera.&#xD;
+&#xD;
+Olika typer av medicintekniska produkter kommer kräva specifik information som är relevant för den specifika medicintekniska produktens syfte. Denna data kan registreras med specifika CLUSTER arketyper tillförda i SLOT 'Egenskaper'. Till exempel: användning av en urinkatet kan kräva ytterligare detaljer om kateterns diameter, längd, materialsammansättning och antal lumen.&#xD;
+&#xD;
+Om den medicintekniska produkten har ett antal komponenter som kräver registrering av detaljer, bör varje enskild komponent registreras explicit med hjälp av en extra CLUSTER.device arketyp tillförd i SLOT 'Komponenter'.&#xD;
+&#xD;
+Datafältet 'Mjukvaruversion' tillåter endast att en version blir registrerad. Detta gäller främst för utrustning som är en mjukvaruapplikation. Om utrustningen har flera mjukvaru- eller hårdvarukomponenter som behöver specificeras, ska varje komponent registreras i en egen CLUSTER.device tillagd i SLOT 'Komponenter'.&#xD;
+&#xD;
+För att dokumentera ytterligare detaljer för varaktiga medicintekniska produkter eller de med lång livslängd, som rör ägande, spårning av fysisk plats, underhållsscheman etcetera, ska CLUSTER.device_details arketypen användas tillagd i SLOT 'Tillgångshantering' i denna arketyp.&#xD;
+&#xD;
+Denna arketyp har designats för generisk användning inuti andra arketyper som ska beskriva en medicinteknisk produkt. Exempel: OBSERVATION.blood_pressure för blodtrycksmätaren; OBSERVATION.ecg för EKG-maskinen; OBSERVATION.urinanalys för reagensremsorna och anordningen som används för testning; ACTION.procedure; och CLUSTER.exam_tympanic_membrane för att specificera det använda otoskopet.</use>
+      <misuse>Ska inte användas för att registrera data om läkemedelsprodukter som har en direkt farmakologisk, metabolisk eller immunologisk effekt. Till exempel: ett läkemedel impregnerat förband som kräver en ordination bör registreras genom att använda INSTRUCTION.medication_order arketypen, med fokus på de aktiva ingredienserna, dosering etcetera.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>Registrar los detalles de un objeto físico, producto o dispositivo utilizado en el sentido mas amplio de la provisión de cuidados de la salud, pero no como medio terapéutico o metabólico.</purpose>
+      <keywords>dispositivo</keywords>
+      <keywords>máquina</keywords>
+      <keywords>implante</keywords>
+      <keywords>cateter</keywords>
+      <keywords>prótesis</keywords>
+      <keywords>auxiliar</keywords>
+      <keywords>biomédico</keywords>
+      <keywords>instrumento</keywords>
+      <keywords>equipamiento</keywords>
+      <keywords>medidor</keywords>
+      <keywords>monitor</keywords>
+      <keywords>físico</keywords>
+      <keywords>objeto</keywords>
+      <use>Utilizado para registrar los detalles de cualquier dispositivo genérico que puede ser utilizado directamente de un modo terapéutico o diagnóstico, o indirectamente como apoyo a la provisión de cuidados de la salud. El uso del término dispositivo varía dependiendo del contexto. En el mundo de los estándares, el término dispositivo tiende a referirse a dispositivos mecánicos o electrónicos que actuan como apoyo del cuidado de la salud y que requiren documentación rigurosa en cuanto a especificaciones, mantenimiento, etc. En el contexto de las terminologías, el uso de dispositivo es muy amplio, incluyendo a cualquier objeto físico que pueda ser utilizado directa o indirectamente en la provisión de cuidados clínicos. Los ejemplos incluyen ventiladores, medidores de flujo expiratorio máximo, espirómetros, lentes oculares y de contacto, catéteres endovasculares, implantes mamarios, prótesis, tubos de drenaje y anillos para callos. &#xD;
+Este arquetipo esta diseñado para proveer la base de una representación estructurada de cualquier dispositivo, desde el simple ejemplo de una marca de tira reactiva urinaria con una fecha de vencimiento hasta un oído biónico implantable que puede requerir documentación compleja, software, hardware, mantenimiento, calibración, etc.&#xD;
+Para los casos de uso habituales podría ser apropiada la especialización de este arquetipo para formas específicas (ej.: cateter endovascular o cateter urinario).</use>
+      <misuse>No debe ser utilizado para el registro de medicamentos, vacunas o similares, que se utizan como medios terapéuticos o metabólicos.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om medisinsk utstyr benyttet i utførelsen av helsetjenester.</purpose>
+      <keywords>medisinsk utstyr</keywords>
+      <keywords>maskin</keywords>
+      <keywords>implantat</keywords>
+      <keywords>apparat</keywords>
+      <keywords>kateter</keywords>
+      <keywords>protese</keywords>
+      <keywords>hjelpemiddel</keywords>
+      <keywords>instrument</keywords>
+      <keywords>utstyr</keywords>
+      <keywords>måler</keywords>
+      <keywords>monitor</keywords>
+      <keywords>software</keywords>
+      <keywords>programvare</keywords>
+      <keywords>MTU</keywords>
+      <keywords>medisinsk teknisk utstyr</keywords>
+      <keywords>MU</keywords>
+      <use>Benyttes for å registrere detaljer om medisinsk utstyr benyttet i utførelsen av helsetjenester.&#xD;
+&#xD;
+Termen "medisinsk utstyr" varierer med ulike kontekster. Innen standardisering refererer termen ofte til mekanisk eller elektronisk utstyr som støtter helsetjenesten og krever streng dokumentasjon rundt lokalisering, vedlikehold, kalibrering, programvareversjoner etc. I en terminologikontekst er bruken av "medisinsk utstyr" veldig bred, og inkluderer et hvilket som helst medisinsk utstyr som benyttes direkte eller indirekte i utførelsen av helsetjenester. Unntak er utstyr som har en direkte farmakologisk, metabolsk og immunologisk effekt. &#xD;
+&#xD;
+Eksempler på medisinsk utstyr strekker seg fra enkelt utstyr som urinkatetre, spatler, kontaktlinser, leddproteser, brystimplantater, bandasjer, hofteproteser, sprøytepumper og spirometre, til avansert utstyr som kunstige hjerter, mobiltelefonapplikasjoner og pasientnære datastyrte enheter for å fange opp medisinske målinger.&#xD;
+&#xD;
+I en kompleks setting hvor en kirurgisk implantert enhet skal brukes for å tilføre et legemiddel, for eksempel cellegift direkte i kroppen, vil denne arketypen kun registrere detaljer om det medisinske utstyret. Ordinasjonen og detaljer rundt den faktiske administrasjonen av legemidlet vil bli lagret i spesifikke medikasjonsrelaterte INSTRUCTION og ACTION-arketyper &#xD;
+&#xD;
+Denne arketypen er designet for å gi et rammeverk for strukturert representasjon av et hvilket som helst medisinsk utstyr, og dataelementene i arketypen er ikke spesifikke for en enkelt type utstyr. Engangsutstyr vil vanligvis kreve registrering av lot-nummer og utløpsdato, i motsetning til flergangsutstyr som vil kreve en rekke identifikatorer som UID, serienummer, modell etc.&#xD;
+&#xD;
+Ulikt utstyr vil kunne kreve spesifikk informasjon som er relevant for deres bruksområde. Data om dette kan lagres i spesifikke CLUSTER-arketyper lagt til i SLOTet "Spesifikke detaljer". For eksempel: Ved bruk av et urinkateter vil man kunne ønske å registrere tilleggsinformasjon som diameter og lengde på kateteret, hvilke materialer kateteret består av, antall lumen osv.&#xD;
+&#xD;
+Har det medisinske utstyret flere komponenter som krever registrering av detaljer må hver komponent registreres i egen CLUSTER.device arketype lagt til i SLOTet "Komponent".&#xD;
+&#xD;
+Datafeltet "Programvareversjon" tillater at kun en versjon registreres. Feltet benyttes i hovedsak for medisinsk utstyr som er en programvareapplikasjon. Har det medisinske utstyret flere programvare- eller maskinvarekomponenter som må spesifiseres, gjøres dette ved å legge til en ny CLUSTER.device i "Komponent"-SLOTet.&#xD;
+&#xD;
+For å registrere tilleggsinformasjon for varig eller permanent utstyr som omhandler eierskap, fysisk lokalisering, vedlikeholdsplaner etc, bruk CLUSTER.device_details-arketypen lagt til i SLOTet "Forvaltning av det medisinske utstyret" i denne arketypen.&#xD;
+&#xD;
+Arketypen er designet for generisk bruk i andre arketyper der man trenger å beskrive medisinsk utstyr. Eksempler: OBSERVATION.blood_pressure for sfygmomanometer, OBSERVATION.ecg for EKG-appararatet, OBSERVATION.urinalysis for urinstix og utstyr som brukes for testing, ACTION.procedure og CLUSTER.exam_tympanic_membrane for detaljer om otoskopet som er benyttet.</use>
+      <misuse>Brukes ikke for å registrere data om medisinske produkter som utøver en direkte farmakologisk, metabolsk eller immunologisk effekt. For eksempel: En bandasje som inneholder et medikament som krever resept registreres i arketypen INSTRUCTION.medication_order, med fokus på aktive ingredienser, dose etc.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para gravar os detalhes de um dispositivo médico usado na prestação de cuidados de saúde.</purpose>
+      <keywords>dispositivo</keywords>
+      <keywords>máquina</keywords>
+      <keywords>implante</keywords>
+      <keywords>catéter</keywords>
+      <keywords>prótese</keywords>
+      <keywords>cuidado</keywords>
+      <keywords>biomedical</keywords>
+      <keywords>instrumento</keywords>
+      <keywords>equipamento</keywords>
+      <keywords>monitor</keywords>
+      <keywords>software</keywords>
+      <keywords>utensílio</keywords>
+      <use>Use para gravar os detalhes de um dispositivo médico utilizado na prestação de cuidados de saúde .&#xD;
+&#xD;
+O uso do termo "dispositivo médico" varia dependendo do contexto. No mundo dos padrões, o termo dispositivo tende a referir-se a dispositivos mecânicos ou eletrônicos que apoiam cuidados de saúde e exigem documentação rigorosa sobre rastreamento de localização, manutenção, calibração, versões de software etc. Dentro do contexto da terminologia o uso de dispositivo é muito amplo , incluindo qualquer dispositivo médico que pode ser utilizado direta ou indiretamente em cuidados clínicos , desde que não atue de forma que exerça uma ação farmacológica direta , metabólica ou como efeito imunológico .&#xD;
+&#xD;
+Os dispositivos médicos variam de dispositivos simples, como catéteres urinários, abaixadores de língua, lentes de contato, próteses articulares, os implantes mamários e curativos simples, até dispositivos avançados, como corações artificiais, espirômetros, além de aplicativos para celulares e dispositivos computadorizados que capturam medidas médicas.&#xD;
+&#xD;
+Em situações complexas, onde um dispositivo implantado cirurgicamente é usado para administrar agentes terapêuticos, tais como a quimioterapia, este arquétipo irá ser utilizado para gravar apenas os detalhes sobre o próprio dispositivo médico e a prescrição da medicação e detalhes sobre o administração real do agente terapêutico serão registrados utilizando-se a arquétipos INSTRUCTION e ACTION sobre a medicação específica.&#xD;
+&#xD;
+Este arquétipo é projetado para fornecer a estrutura para representação estruturada de qualquer dispositivo médico e os elementos de dados que estão contidos aqui não são específicos para algum tipo de dispositivo. Dispositivos de uso único comumente vão exigir elementos de dados, tais como número de lote e data de validade. Em contrapartida estes geralmente não são relevantes para dispositivos duráveis que, muitas vezes, têm um conjunto de identificadores, incluindo uma UID, número de série, modelo, etc..&#xD;
+&#xD;
+Além disso, diferentes tipos de dispositivos exigirão informações específicas relevantes para a sua finalidade. Estes dados podem ser gravados utilizando-se arquétipos CLUSTER específico inseridos no SLOT das propriedades específicas. Por exemplo: utilização de um catéter urinário pode exigir detalhes adicionais sobre o diâmetro e o comprimento do catéter, composição do material, número de lúmens etc.&#xD;
+&#xD;
+Se o dispositivo médico tem um número de componentes que necessitem de gravação de dados, todos os componentes individuais deverão ser registrados explicitamente utilizando-se um arquétipo CLUSTER.device adicional introduzido nos campos dos componentes.&#xD;
+&#xD;
+O campo de dados versão do software permite apenas uma única versão a ser gravado. Isto é especialmente aplicável para um dispositivo que é uma aplicação de software. Se o dispositivo possui vários componentes de software ou hardware que precisam ser especificados, este deve ser feito por meio de um CLUSTER.device além de inserido no slot do 'Componentes'.&#xD;
+&#xD;
+Para gravar detalhes adicionais para dispositivos duráveis ou permanentes que se relacionam com a posse, rastreamento de localização física, programações de manutenção etc, o uso do arquétipo CLUSTER.device_details no slot "A gestão de ativos" desse arquétipo.&#xD;
+&#xD;
+Este arquétipo foi projetado para uso genérico com outros arquétipos que precisam descrever um dispositivo. Exemplos incluem: OBSERVATION.blood_pressure para o esfigmomanômetro; OBSERVATION.ecg para o equipamento de ECG; OBSERVATION.urinalysis para as tiras de reagente e o dispositivo usado para os testes; ACTION.procedure; e CLUSTER.exam_tympanic_membrane para detalhar o otoscópio usado.</use>
+      <misuse>Não deve ser utilizado para gravar dados sobre os medicamentos que exercem uma ação farmacológica direta , metabólica ou efeito imunológico. Por exemplo: um curativo impregnado que exige uma prescrição deve ser gravado utilizando-se o o arquétipo INSTRUCTION.medication_order, com foco em ingredientes ativos, dosagem, etc.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the details of a medical device used in the provision of healthcare.</purpose>
+      <keywords>device</keywords>
+      <keywords>machine</keywords>
+      <keywords>implant</keywords>
+      <keywords>appliance</keywords>
+      <keywords>catheter</keywords>
+      <keywords>prosthesis</keywords>
+      <keywords>aid</keywords>
+      <keywords>biomedical</keywords>
+      <keywords>instrument</keywords>
+      <keywords>equipment</keywords>
+      <keywords>meter</keywords>
+      <keywords>monitor</keywords>
+      <keywords>software</keywords>
+      <use>Use to record the details of a medical device used in the provision of healthcare.&#xD;
+&#xD;
+Use of the term 'medical device' varies depending on context. Within the Standards world, the term device tends to refer to mechanical or electronic devices that support healthcare and require rigorous documentation regarding location tracking, maintenance, calibration, software versions etc.  Within the terminology context the use of device is very broad, including any medical device that can be used in direct or indirect provision of clinical care, as long as it does not act in a way that exerts a direct pharmacological, metabolic or  immunological effect.&#xD;
+&#xD;
+Examples of medical devices range from simple devices such as urinary catheters, tongue depressors, contact lenses, artificial joint implants, breast implants and plain dressings through to advanced devices such as artificial hearts, syringe drivers, spirometers, mobile phone applications and computerised devices that capture point-of-care medical measurements. &#xD;
+&#xD;
+In the complex situation where a surgically implanted device is used as the means to deliver therapeutic agents such as chemotherapy directly into the body, this archetype will be used to record only the details about the medical device itself and the order for medication and details about the actual administration of the therapeutic agent will be recorded using specific medication-related INSTRUCTION and ACTION archetypes.&#xD;
+&#xD;
+This archetype is designed to provide the framework for structured representation of any medical device and the data elements that are contained here are not specific for any one type of device. Single use devices will commonly require data elements such as Lot Number and Date of Expiry. In contrast these are usually not relevant for durable devices which will often have a set of identifiers, including a UID, Serial Number, Model etc.&#xD;
+&#xD;
+Further, different types of devices will require specific information relevant to their purpose. This data can be recorded using specific CLUSTER archetypes inserted into the 'Specific properties' SLOT. For example: use of a urinary catheter may require additional details about the diameter and length of catheter, material composition, number of lumens etc.&#xD;
+&#xD;
+If the medical device has a number of components that require recording of details, each individual component should be recorded explicitly by using an additional CLUSTER.device archetype inserted into the 'Components' SLOT.&#xD;
+&#xD;
+The data field 'Software Version' allows for only a single version to be recorded. This is primarily applicable for a device which is a software application. If the device has multiple software or hardware components that need to be specified, this should be done by using an addition CLUSTER.device inserted into the 'Components' SLOT.&#xD;
+&#xD;
+To record additional details for durable or persistent devices that relate to ownership, physical location tracking, maintenance schedules etc, use CLUSTER.device_details archetype inserted into the 'Asset management' SLOT in this archetype.&#xD;
+&#xD;
+This archetype has been designed for generic use within other archetypes that need to describe a device. Examples include: OBSERVATION.blood_pressure for the sphygmomanometer; OBSERVATION.ecg for the ECG machine; OBSERVATION.urinalysis for the reactent strips and the device used for testing; ACTION.procedure; and CLUSTER.exam_tympanic_membrane to detail the otoscope used.</use>
+      <misuse>Not to be used to record data about medicinal products that exert a direct pharmacological, metabolic or immunologic effect. For example: a medicine impregnated dressing that requires a prescription should be recorded using the  INSTRUCTION.medication_order archetype, focused on the active ingredients, dosage etc.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>لتسجيل التفاصيل حول شيئ محسوس, مُنتَج أو جهيزة يتم استخدامها في أوسع وصف لتقديم الخدمة الصحية, و لكن دون طريقة أيضية أو علاجية مباشِرة.</purpose>
+      <keywords>الجهيزة</keywords>
+      <keywords>الآلة</keywords>
+      <keywords>الطُّعم</keywords>
+      <keywords>جهاز مساعد</keywords>
+      <keywords>القثطار</keywords>
+      <keywords>البِدْلة</keywords>
+      <keywords>مساعدة</keywords>
+      <keywords>طبي بيولوجي</keywords>
+      <keywords>أداة</keywords>
+      <keywords>المعدات</keywords>
+      <keywords>مقياس</keywords>
+      <keywords>مِرْقب</keywords>
+      <keywords>بدني/محسوس</keywords>
+      <keywords>شيئ</keywords>
+      <use>يستخدم لتسجيل التفاصيل حول أي جهيزة جنيسة (غير محدودة الملكية) و التي يمكن أن تستخدم إما مباشرةً بطريقة علاجية أو تشخيصية أو تستخدم بشكل غير مباشر لدعم تقديم الخدمة الصحية.&#xD;
+و يختلف استخدام اللفظ (جهيزة) على حسب السياق. &#xD;
+و في داخل عالم المعايير, فإن اللفظ (جهيزة) يميل إلى الإشارة إلى الجهائز الإلكترونية أو الميكانيكية/الحركية و التي تدعم الرعاية الصحية, و تتطلب توثيق مكثف فيما يتعلق بالمواصفات و الصيانة... إلى آخره.&#xD;
+و في سياق عالم المصطلحات فإن استخدام (جهيزة) واسع جدا, بما في ذلك أي شيئ محسوس يمكن استخدامه في تقديم الرعاية الصحية إما بشكل مباشر أو غير مباشر. &#xD;
+و تتضمن الأمثلة: دوائر أجهزة التنفس الصناعي, مقاييس الجريان القِمِّي, مقاييس التنفس, نظارات العين, العدسات اللاصقة, القثطار داخل الوريد, طُعوم الثدي, البِدْلات, أنابيب المَنْزَح, و الحلقات المسمارية.&#xD;
+&#xD;
+و تم تصميم هذا النموذج ليمثل الأساس لعرض مركب لأي جهيزة, من مثال بسيط لنوع من غميسة البول مع تاريخ الاستخدام, إلى طعم أذن من كائن حيّ و الذي يتطلب توثيق مركب مثل البرنامج الإلكتروني, و الأجزاء الصلبة, و الصيانة و التعيير, إلى آخره.&#xD;
+&#xD;
+و بالنسبة لحالات الاستخدام المعتادة, فقد يكون من المناسب تخصيص هذا النموذج خاصة في القثطار داخل الوريد أو القثطار البولي.</use>
+      <misuse>لا يستخدم لتسجيل المنتجات, مثل الأدوية أو التطعيمات أو ما شابه, و التي تستخدم لأغراض علاجية أو أيضية</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Enregistrer les détails d'un dispositif médical utilisé dans la prestation de soins de santé.</purpose>
+      <keywords>appareil</keywords>
+      <keywords>machine</keywords>
+      <keywords>implant</keywords>
+      <keywords>appareil</keywords>
+      <keywords>cathéter</keywords>
+      <keywords>prothèse</keywords>
+      <keywords>aide</keywords>
+      <keywords>biomédical</keywords>
+      <keywords>instrument</keywords>
+      <keywords>équipement</keywords>
+      <keywords>compteur</keywords>
+      <keywords>moniteur</keywords>
+      <keywords>logiciel</keywords>
+      <use>À utiliser pour enregistrer les détails d'un dispositif médical utilisé dans la prestation de soins de santé.&#xD;
+&#xD;
+L'utilisation du terme "dispositif médical" varie en fonction du contexte. Dans le monde de la normalisation, le terme "dispositif" fait généralement référence à des appareils mécaniques ou électroniques qui contribuent aux soins de santé et nécessitent une documentation rigoureuse concernant le suivi de l'emplacement, l'entretien, l'étalonnage, les versions logicielles, etc. Dans le contexte de la terminologie, l'utilisation du terme "dispositif" est très large, incluant tout dispositif médical pouvant être utilisé dans la fourniture directe ou indirecte de soins cliniques, tant qu'il n'agit pas d'une manière qui exerce un effet pharmacologique, métabolique ou immunologique direct.&#xD;
+&#xD;
+Les exemples de dispositifs médicaux vont de dispositifs simples tels que les sondes urinaires, les abaisse-langue, les lentilles de contact, les implants articulaires artificiels, les implants mammaires et les pansements simples à des dispositifs avancés tels que les cœurs artificiels, les pousse-seringues, les spiromètres, les applications de téléphonie mobile et les dispositifs informatisés qui enregistrent des mesures médicales au point de soins. &#xD;
+&#xD;
+Dans la situation complexe où un dispositif implanté chirurgicalement est utilisé comme moyen d'administrer des agents thérapeutiques tels que la chimiothérapie directement dans le corps, cet archétype sera utilisé pour enregistrer uniquement les détails concernant le dispositif médical lui-même et la commande de médicaments ainsi que les détails concernant l'administration effective de l'agent thérapeutique seront enregistrés à l'aide des archétypes INSTRUCTION et ACTION spécifiques liés à la médication.&#xD;
+&#xD;
+Cet archétype est conçu pour fournir le cadre d'une représentation structurée de tout dispositif médical et les éléments de données qu'il contient ne sont pas spécifiques à un type de dispositif. Les dispositifs à usage unique nécessitent généralement des éléments de données tels que le numéro de lot et la date d'expiration. En revanche, ces éléments ne sont généralement pas pertinents pour les dispositifs durables, qui disposent souvent d'un ensemble d'identifiants, notamment un numéro d'identification unique, un numéro de série, un modèle, etc.&#xD;
+&#xD;
+En outre, les différents types de dispositifs nécessiteront des informations spécifiques en fonction de leur utilisation. Ces données peuvent être enregistrées à l'aide d'archétypes CLUSTER spécifiques insérés dans le SLOT "Propriétés spécifiques". Par exemple, l'utilisation d'une sonde urinaire peut nécessiter des détails supplémentaires sur le diamètre et la longueur de la sonde, la composition du matériau, le nombre de lumières, etc.&#xD;
+&#xD;
+Si le dispositif médical comporte un certain nombre de composants nécessitant l'enregistrement de détails, chaque composant individuel doit être enregistré explicitement en utilisant un archétype CLUSTER.device supplémentaire inséré dans le SLOT "Composants".&#xD;
+&#xD;
+Le champ de données "Version du logiciel" ne permet d'enregistrer qu'une seule version. Cela s'applique principalement à un dispositif qui est une application logicielle. Si le dispositif comporte plusieurs composants logiciels ou matériels qui doivent être spécifiés, il convient d'utiliser un CLUSTER.device supplémentaire inséré dans le SLOT "Components".&#xD;
+&#xD;
+Pour enregistrer des détails supplémentaires sur les dispositifs durables ou persistants concernant la propriété, le suivi de l'emplacement physique, les programmes de maintenance, etc., utilisez l'archétype CLUSTER.device_details inséré dans le SLOT "Asset management" de cet archétype.&#xD;
+&#xD;
+Cet archétype a été conçu pour une utilisation générique dans d'autres archétypes qui ont besoin de décrire un dispositif. En voici quelques exemples : OBSERVATION.blood_pressure pour le sphygmomanomètre ; OBSERVATION.ecg pour l'appareil ECG ; OBSERVATION.urinalysis pour les bandelettes réactives et le dispositif utilisé pour le test ; ACTION.procedure ; et CLUSTER.exam_tympanic_membrane pour détailler l'otoscope utilisé.</use>
+      <misuse>Ne doit pas être utilisé pour enregistrer des données sur les médicaments qui exercent un effet pharmacologique, métabolique ou immunologique direct. Par exemple : un pansement imprégné de médicaments nécessitant une ordonnance devrait être enregistré en utilisant l'archétype INSTRUCTION.medication_order, axé sur les principes actifs, la posologie, etc.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nl</code_string>
+      </language>
+      <purpose>Om de gegevens vast te leggen van een medisch hulpmiddel dat wordt gebruikt bij het verlenen van gezondheidszorg.</purpose>
+      <keywords>apparaat</keywords>
+      <keywords>hulpmiddel</keywords>
+      <keywords>machine</keywords>
+      <keywords>implantaat</keywords>
+      <keywords>toestel</keywords>
+      <keywords>katheter</keywords>
+      <keywords>prothese</keywords>
+      <keywords>hulp</keywords>
+      <keywords>biomedisch</keywords>
+      <keywords>instrument</keywords>
+      <keywords>apparatuur</keywords>
+      <keywords>meter</keywords>
+      <keywords>monitor</keywords>
+      <keywords>software</keywords>
+      <use>Gebruiken om de details vast te leggen van een medisch hulpmiddel dat wordt gebruikt bij het verlenen van gezondheidszorg.&#xD;
+&#xD;
+Het gebruik van de term 'medisch hulpmiddel' varieert afhankelijk van de context. Binnen de normenwereld verwijst de term hulpmiddel meestal naar mechanische of elektronische hulpmiddel die de gezondheidszorg ondersteunen en die strikte documentatie vereisen met betrekking tot locatietracering, onderhoud, kalibratie, softwareversies enz. Binnen de terminologiecontext is het gebruik van hulpmiddel erg breed, inclusief elk medisch hulpmiddel dat direct of indirect kan worden gebruikt bij het verlenen van klinische zorg, zolang het niet werkt op een manier die een direct farmacologisch, metabolisch of immunologisch effect uitoefent.&#xD;
+&#xD;
+Voorbeelden van medische hulpmiddelen variëren van eenvoudige hulpmiddelen zoals urinekatheters, tongspatels, contactlenzen, kunstmatige gewrichtsimplantaten, borstimplantaten en gewone verbandmiddelen tot geavanceerde hulpmiddelen zoals kunstharten, spuitpompen, spirometers, apps voor mobiele telefoons en geautomatiseerde hulpmiddelen die medische metingen op het zorgpunt.&#xD;
+&#xD;
+In de complexe situatie waarin een chirurgisch geïmplanteerd hulpmiddel wordt gebruikt als middel om therapeutische middelen zoals chemotherapie rechtstreeks in het lichaam af te geven, zal dit archetype worden gebruikt om alleen de details vast te leggen over het medische hulpmiddel zelf en het voorschrijven van medicatie en details over de daadwerkelijke toediening van het therapeutische middel zal worden geregistreerd met behulp van specifieke medicatiegerelateerde INSTRUCTION- en ACTION-archetypen.&#xD;
+&#xD;
+Dit archetype is ontworpen om het raamwerk te bieden voor een gestructureerde beschrijving van elk medisch hulpmiddel en de gegevenselementen die hier zijn opgenomen, zijn niet specifiek voor een bepaald type hulpmiddel. Hulpmiddelen voor eenmalig gebruik vereisen gewoonlijk gegevenselementen zoals het partijnummer en de vervaldatum. Deze zijn daarentegen meestal niet relevant voor duurzame hulpmiddelen die vaak een reeks identificatiegegevens hebben, waaronder een UID, serienummer, model enz.&#xD;
+&#xD;
+Verder zullen verschillende soorten hulpmiddelen specifieke informatie nodig hebben die relevant is voor hun doel. Deze gegevens kunnen worden vastgelegd met behulp van specifieke CLUSTER-archetypen die zijn ingevoegd in het SLOT 'Eigenschappen'. Bijvoorbeeld: het gebruik van een urinekatheter kan aanvullende details vereisen over de diameter en lengte van de katheter, materiaalsamenstelling, aantal lumen etc.&#xD;
+&#xD;
+Als het medische hulpmiddel een aantal componenten heeft waarvoor details moeten worden vastgelegd, moet elk afzonderlijk component expliciet worden geregistreerd door een extra CLUSTER.device-archetype te gebruiken dat is ingevoegd in het 'Componenten'-slot.&#xD;
+&#xD;
+In het gegevensveld 'Softwareversie' kan slechts één versie worden vastgelegd. Dit is in de eerste plaats van toepassing op een hulpmiddel dat een softwareapplicatie is. Als het hulpmiddel meerdere software- of hardwarecomponenten heeft die moeten worden gespecificeerd, moet dit worden gedaan door een toevoeging CLUSTER.device te gebruiken die is ingevoegd in de 'Componenten'-slot.&#xD;
+&#xD;
+Gebruik het archetype CLUSTER.device_details ingevoegd in de slot 'Assetmanagement' in dit archetype om aanvullende details vast te leggen voor duurzame of blijvende hulpmiddelen die betrekking hebben op eigendom, het volgen van fysieke locaties, onderhoudsschema's, enzovoort.&#xD;
+&#xD;
+Dit archetype is ontworpen voor generiek gebruik binnen andere archetypen die een hulpmiddel moeten beschrijven. Voorbeelden zijn: OBSERVATION.blood_pressure voor de bloeddrukmeter; OBSERVATION.ecg voor het ECG-apparaat; OBSERVATION.urinalysis voor de reagensstrips en het apparaat waarmee getest wordt; ACTION.procedure; en CLUSTER.exam_tympanic_membrane om de gebruikte otoscoop te beschrijven.</use>
+      <misuse>Niet gebruiken voor het vastleggen van gegevens over geneesmiddelen die een directe farmacologische, metabolische of immunologische werking hebben. Bijvoorbeeld: een met medicijnen geïmpregneerd verband waarvoor een recept nodig is, moet worden geregistreerd met behulp van het archetype INSTRUCTION.medication_order, gericht op de actieve ingrediënten, dosering etc.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Registrar les dades d’un producte sanitari utilitzat per a proporcionar atenció sanitària.</purpose>
+      <keywords>producte</keywords>
+      <keywords>màquina</keywords>
+      <keywords>implant</keywords>
+      <keywords>aparell</keywords>
+      <keywords>catèter</keywords>
+      <keywords>pròtesi</keywords>
+      <keywords>ajuda</keywords>
+      <keywords>biomèdic</keywords>
+      <keywords>instrument</keywords>
+      <keywords>equip</keywords>
+      <keywords>metre</keywords>
+      <keywords>monitor</keywords>
+      <keywords>programari</keywords>
+      <use>Utilitzar per a registrar les dades d’un producte sanitari utilitzat per a proporcionar atenció sanitària.&#xD;
+&#xD;
+L’ús del terme «producte sanitari» varia depenent del context. Dins de l’àmbit Normatiu, el mot «producte» tendeix a referir-se a dispositius mecànics o electrònics que ajuden a l’atenció sanitària i que exigeixen documentació rigorosa pel que fa al rastreig de ubicació, manteniment, calibració, versions de programari, etc. Dins del context de la terminologia, l’ús de «producte» és molt general, incloent qualsevol producte sanitari que es pugui utilitzar per a proporcionar cuidats clínics directa o indirectament mentre no es comporti de forma que exerceixi un efecte farmacològic, metabòlic o immunològic directe.&#xD;
+&#xD;
+Exemples de productes sanitaris oscil·len entre productes simples, com ara catèters urinaris, depressors linguals, lents de contacte, implants d’articulacions artificials, implants de mama i apòsits simples i productes avançats, com ara cors artificials, bombes d’infusió, espiròmetres, aplicacions de telèfon mòbil i dispositius informatitzats que capturin les mesures mèdiques al punt d’assistència sanitària.&#xD;
+&#xD;
+Si es donés la situació complexa que un producte implantat quirúrgicament s’usés com a mitjà per a subministrar agents terapèutics com ara quimioteràpia directament al cos, aquest arquetip s’utilitzarà per a registrar només les dades sobre el producte sanitari en si, i l’encàrrec de medicació i les dades sobre l’administració real de l’agent terapèutic es registraran utilitzant arquetips específics relacionats amb la medicació de tipus INSTRUCTION i ACTION.&#xD;
+&#xD;
+Aquest arquetip està dissenyat per a proporcionar la infraestructura per a la representació estructurada de qualsevol producte sanitari, i els elements de dades que estan continguts ací no són específics per a cap tipus de producte. Productes d’un sol ús normalment exigiran elements de dades com Número de Lot i Data de Caducitat. Per contrast, aquests elements, per regla general, no seran rellevants per als productes duradors, els quals tindran sovint un conjunt d’identificadors, incloent un identificador d’usuari, Número de Sèrie, Model, etc.&#xD;
+&#xD;
+A més, diferents tipus de productes exigiran informació específica rellevant per a la seua finalitat. Aquestes dades es poden registrar utilitzant arquetips específics de tipus CLUSTER inserits dins del SLOT «Característiques específiques». Per exemple: l’ús d’un catèter urinari pot exigir dades addicionals sobre el diàmetre i la llargària del catèter, la composició del material, quantitat de lúmens, etc.&#xD;
+&#xD;
+Si el producte sanitari conté una quantitat de components que exigeixen que es registrin les seues dades, cada component concret s’haurà de registrar de forma explícita utilitzant un arquetip addicional CLUSTER.device inserit dins del SLOT «Components».&#xD;
+&#xD;
+El camp de dades «Versió del Programari» només permet que es registri una única versió. Això és aplicable principalment per a un producte que sigui una aplicació de programari. Si el producte té múltiples components de programari o de maquinari que s’han d’especificar, això s’haurà de fer utilitzant un CLUSTER.device addicional inserit dins del SLOT «Components».&#xD;
+&#xD;
+Per a registrar dades addicionals per a productes duradors o persistents relacionats amb la propietat, el rastreig de ubicació física, horaris de manteniment, etc., utilitzar un arquetip CLUSTER.device_details inserit dins del SLOT «Gestió d’actius» d’aquest arquetip.&#xD;
+&#xD;
+Aquest arquetip s’ha dissenyat per a l’ús genèric dins d’altres arquetips que han de descriure un producte. Exemples inclouen: OBSERVATION.blood_pressure per al tensiòmetre; OBSERVATION.ecg per a la màquina ECG; OBSERVATION.urinalysis per a les tires reactives i el producte utilitzat per a les proves; ACTION.procedure; i CLUSTER.exam_tympanic_membrane per a detallar l’otoscopi utilitzat.</use>
+      <misuse>No utilitzar per a registrar dades sobre medicaments que exerceixin un efecte farmacològic, metabòlic o immunològic directe. Per exemple: un apòsit impregnat de medicina que exigeixi una prescripció s’haurà de registrar utilitzant l’arquetip INSTRUCTION.medication_order, enfocat sobre les substàncies actives, dosificació, etc.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Registrar los datos de un dispositivo sanitario utilizado para proporcionar atención sanitaria.</purpose>
+      <keywords>dispositivo</keywords>
+      <keywords>máquina</keywords>
+      <keywords>implante</keywords>
+      <keywords>aparato</keywords>
+      <keywords>catéter</keywords>
+      <keywords>prótesis</keywords>
+      <keywords>ayuda</keywords>
+      <keywords>biomédico</keywords>
+      <keywords>instrumento</keywords>
+      <keywords>equipo</keywords>
+      <keywords>metro</keywords>
+      <keywords>monitor</keywords>
+      <keywords>software</keywords>
+      <use>Usar para registrar los datos de un dispositivo sanitario utilizado para proporcionar atención sanitaria.&#xD;
+&#xD;
+El uso del término "dispositivo sanitario" varía según el contexto.&#xD;
+En el ámbito normativo, el término "dispositivo" suele referirse a dispositivos mecánicos o electrónicos que ayudan en la atención sanitaria y que requieren una documentación rigurosa respecto al seguimiento de ubicación, mantenimiento, calibración, versiones de software, etc.&#xD;
+En el contexto terminológico, el uso de "dispositivo" es mucho más amplio e incluye cualquier dispositivo sanitario que pueda utilizarse para proporcionar cuidados clínicos directa o indirectamente, siempre que no ejerza un efecto farmacológico, metabólico o inmunológico, directo.&#xD;
+&#xD;
+Ejemplos de dispositivos sanitarios abarcan desde dispositivos simples como catéteres urinarios, depresores linguales, lentes de contacto, implantes de articulaciones artificiales, implantes mamarios y apósitos simples; hasta dispositivos avanzados como corazones artificiales, bombas de infusión, espirómetros, aplicaciones móviles y dispositivos informatizados que capturan mediciones médicas en el punto de atención.&#xD;
+&#xD;
+Si se diera una situación compleja, como que un dispositivo implantado quirúrgicamente se utilice como medio para administrar agentes terapéuticos (por ejemplo, quimioterapia directamente al cuerpo), este arquetipo se utilizará únicamente para registrar los datos del dispositivo sanitario en sí, mientras que la prescripción de la medicación y los datos sobre la administración del agente terapéutico se registrarán mediante arquetipos específicos relacionados con la medicación, como los de tipo INSTRUCTION y ACTION.&#xD;
+&#xD;
+Este arquetipo está diseñado para proporcionar la infraestructura para una representación estructurada de cualquier dispositivo sanitario, y los elementos de datos que contiene no son específicos de ningún tipo concreto de dispositivo.&#xD;
+Por ejemplo: dispositivos de un solo uso requerirán normalmente datos como número de lote y fecha de caducidad.&#xD;
+&#xD;
+En cambio, estos datos no suelen ser relevantes para dispositivos duraderos, los cuales suelen tener un conjunto diferente de identificadores, como número de serie, modelo, identificador de usuario, etc.&#xD;
+&#xD;
+Además, distintos tipos de dispositivos exigirán información específica relacionada con su finalidad clínica. Estos datos pueden registrarse utilizando arquetipos específicos de tipo CLUSTER, insertados dentro del SLOT «Características específicas». Por ejemplo: el uso de un catéter urinario puede requerir datos adicionales como el diámetro y longitud del catéter, material, cantidad de lúmenes, etc.&#xD;
+&#xD;
+Si el dispositivo sanitario contiene varios componentes que requieren un registro individualizado, cada componente debe registrarse explícitamente mediante un arquetipo adicional CLUSTER.device, insertado dentro del SLOT «Componentes».&#xD;
+&#xD;
+El campo de datos "Versión del software" solo permite registrar una única versión, lo cual es aplicable principalmente si el dispositivo es una aplicación de software. Si el dispositivo incluye múltiples componentes de software o hardware que necesitan especificarse por separado, esto debe hacerse usando un CLUSTER.device adicional en el SLOT «Componentes».&#xD;
+&#xD;
+Para registrar información adicional relacionada con dispositivos sanitarios duraderos o persistentes, como datos de propiedad, ubicación física, cronograma de mantenimiento, etc., se debe utilizar un arquetipo CLUSTER.device_details insertado en el SLOT «Gestión de activos» de este arquetipo.&#xD;
+&#xD;
+Este arquetipo está diseñado para ser utilizado de manera genérica dentro de otros arquetipos que necesitan describir un dispositivo.&#xD;
+Ejemplos incluyen: OBSERVATION.blood_pressure, para el tensiómetro; OBSERVATION.ecg, para el electrocardiógrafo; OBSERVATION.urinalysis, para tiras reactivas y otros dispositivos usados en análisis de orina; ACTION.procedure y CLUSTER.exam_tympanic_membrane, para detallar el otoscopio utilizado.</use>
+      <misuse>No utilizar para registrar los datos sobre productos médicos que ejerzan un efecto farmacológico, metabólico o inmunológico directo. Por ejemplo: un apósito impregnado de medicina que requiera una prescripción se tendrá que registrar utilizando el arquetipo INSTRUCTION.medication_order, enfocado sobre substancias activas, dosificación, etc.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Anneka Sargeant</author>
+    <author id="organisation">Institut für Medizinische Informatik - Universitätsmedizin Göttingen</author>
+    <author id="email">anneka.sargeant@med.uni-goettingen.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Sofia Lång Janstad</author>
+    <author id="organisation">Karolinska University hospital, Stockholm Region,</author>
+    <author id="email">sofia.lang-janstad@regionstockholm.se</author>
+    <other_details id="other_contributors">Sajjad Saffari Miandoab (Karolinska University hospital), Jörgen Kuylenstierna (openEHR Sverige), Josephine de Flon (Karolinska University hospital), Magnus Stridsman (Region Östergötland), Malin Larsson (Karolinska University hospital), Therese Högberg Mårder (Region Östergötland), Linda Rosen (Region Östergötland), Åsa Skagerhult (openEHR Sverige)</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Alan March</author>
+    <author id="organisation">Hospital Universitario Austral, Buenos Aires, Argentina</author>
+    <author id="email">amarch@cas.austral.edu.ar</author>
+    <accreditation>MD</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand</author>
+    <author id="organisation">Helse Bergen HF</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Osmeire Chamelette Sanzovo</author>
+    <author id="organisation">Hospital Sírio Libanês - SP</author>
+    <author id="email">osmeire.acsanzovo@hsl.org.br</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Vanessa Pereira</author>
+    <author id="organisation">Luxembourg Institute of Health (LIH)</author>
+    <author id="email">vanessapereira@protonmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nl</code_string>
+    </language>
+    <author id="name">Pieter Bos, Jelte Zeilstra</author>
+    <author id="organisation">Nedap</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez</author>
+    <author id="organisation">Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+    <other_details id="other_contributors">Tradcrea</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez</author>
+    <author id="organisation">Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+  </translations>
+  <uid>
+    <value>dbd6f4b3-a3e6-41b1-a21e-3530ac1ca212</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.device.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_IDENTIFIER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0020</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0023</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0024</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_IDENTIFIER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device_details(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.device_details(-[a-zA-Z0-9_]+)*\.v0/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.device_details(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.device_details(-[a-zA-Z0-9_]+)*\.v0</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0026</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0027</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">*Medical device(en)</items>
+        <items id="description">*An instrument, apparatus, implant, material or similar, used in the provision of healthcare. In this context, a medical device includes a broad range of devices which act through a variety of physical, mechanical, thermal or similar means but specifically excludes devices which act through medicinal means such as pharmacological, metabolic or immunological methods.  The scope is inclusive of disposable devices as well as durable or persisting devices that require tracking, maintenance activities or regular calibration, recognising that each type of device has specific data recording requirements.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Device name(en)</items>
+        <items id="description">*Identification of the medical device, preferably by a common name, a formal fully descriptive name or, if required, by class or category of device.(en)</items>
+        <items id="comment">*This data element will capture the term, phrase or category used in clinical practice. For example: &lt;brand name&gt;&lt;machine&gt; (XYZ Audiometer); &lt;size&gt; &lt;brand name&gt; &lt;intravenous catheter&gt; (14G Jelco IV catheter); or &lt;brand name/type&gt; &lt;implant&gt;. With specific examples.&#xD;
+&#xD;
+ Coding with a terminology is desirable, where possible, although this may be local and depending on local supplies available.&#xD;
+(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">الوصف</items>
+        <items id="description">وصف الجهيزة</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Type(en)</items>
+        <items id="description">*Type of medical device.(en)</items>
+        <items id="comment">*Not applicable if a category is already recorded in 'Device Name'.&#xD;
+Coding with a terminology is desirable, where possible, This may include use of GTIN or EAN numbers.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">المُصَنِّع</items>
+        <items id="description">اسم المُصَنِّع</items>
+      </items>
+      <items code="at0005">
+        <items id="text">تاريخ التصنيع</items>
+        <items id="description">تاريخ تصنيع الجهيزة</items>
+      </items>
+      <items code="at0006">
+        <items id="text">رقم التشغيلة</items>
+        <items id="description">رقم التشغيلة من المُصَنِّع</items>
+      </items>
+      <items code="at0007">
+        <items id="text">تاريخ انتهاء الصلاحية</items>
+        <items id="description">التاريخ الذي يكون عنجه الجهيزة/المنتج غير مناسبا للاستخدام</items>
+      </items>
+      <items code="at0008">
+        <items id="text">تعليق</items>
+        <items id="description">تعليق نصي إضافي حولالجهيزة, لم يتم التطرق لها في الحقول الأخرى</items>
+      </items>
+      <items code="at0009">
+        <items id="text">التفاصيل الإضافية</items>
+        <items id="description">المزيد من التفاصيل حول الجهيزة</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Components(en)</items>
+        <items id="description">*Additional structured informations about identified components of the device.(en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Other identifier(en)</items>
+        <items id="description">*Unspecified identifier, which can be further specified in a template or at run time.(en)</items>
+        <items id="comment">*Coding of the name of the identifier with a coding system is desirable, if available.(en)</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Software version(en)</items>
+        <items id="description">*Identification of the version of software being used in the medical device.(en)</items>
+        <items id="comment">*When the medical device is an actual software application, record the version of the software using this data element. When the medical device has multiple software applications embedded within it, record each software component in a separate CLUSTER archetype within the Components SLOT - either as a nested instance of another CLUSTER.device archetype or using a CLUSTER archetype designed specifically for recording software details (but not yet available at time of this archetype development).(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Multimedia(en)</items>
+        <items id="description">*Digital representation of the device.(en)</items>
+        <items id="comment">*For example: a technical diagram of a device, or a digital image.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Medical device</items>
+        <items id="description">An instrument, apparatus, implant, material or similar, used in the provision of healthcare. In this context, a medical device includes a broad range of devices which act through a variety of physical, mechanical, thermal or similar means but specifically excludes devices which act through medicinal means such as pharmacological, metabolic or immunological methods.  The scope is inclusive of disposable devices as well as durable or persisting devices that require tracking, maintenance activities or regular calibration, recognising that each type of device has specific data recording requirements.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Device name</items>
+        <items id="description">Identification of the medical device, preferably by a common name, a formal fully descriptive name or, if required, by class or category of device.</items>
+        <items id="comment">This data element will capture the term, phrase or category used in clinical practice. For example: &lt;brand name&gt;&lt;machine&gt; (XYZ Audiometer); &lt;size&gt; &lt;brand name&gt; &lt;intravenous catheter&gt; (14G Jelco IV catheter); or &lt;brand name/type&gt; &lt;implant&gt;. Coding with a terminology is desirable, where possible, although this may be local and depending on local supplies available.&#xD;
+</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Description</items>
+        <items id="description">Narrative description of the medical device.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Type</items>
+        <items id="description">The category or kind of device.</items>
+        <items id="comment">Not applicable if a category is already recorded in 'Device name'.&#xD;
+ Example: if the 'Device' is named as a 'urinary catheter'; the 'Type' may be recorded as 'indwelling' or 'condom'.Coding with a terminology is desirable, where possible. This may include use of GTIN or EAN numbers.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Manufacturer</items>
+        <items id="description">Name of manufacturer.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Date of manufacture</items>
+        <items id="description">Date the device was manufactured.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Batch/Lot number</items>
+        <items id="description">The number assigned by the manufacturer which identifies a group of items manufactured at the same time, usually found on the label or packaging material.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Date of expiry</items>
+        <items id="description">Date after which the device/product is no longer fit for use, usually found on the device itself or printed on the accompanying packaging.</items>
+        <items id="comment">This date usually applies only to single use or disposable devices.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the device not captured in other fields.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Properties</items>
+        <items id="description">Further details about specific properties about the medical device.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Components</items>
+        <items id="description">Additional structured informations about identified components of the device.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Asset management</items>
+        <items id="description">Further details about management and maintenance of the device.</items>
+        <items id="comment">For example: Owner, Contact details, Location, Network address, Date due for replacement, Calibration details etc.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Serial number</items>
+        <items id="description">Number assigned by the manufacturer which can be found on the device, and should be specific to each device., its label, or accompanying packaging.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Unique device identifier (UDI)</items>
+        <items id="description">A numeric or alphanumeric string that is associated with this device within a given system.</items>
+        <items id="comment">Often fixed to the device as a barcode.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Catalogue number</items>
+        <items id="description">The exact number assigned by the manufacturer, as it appears in the manufacturer's catalogue, device labeling, or accompanying packaging.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Model number</items>
+        <items id="description">The exact model number assigned by the manufacturer and found on the device label or accompanying packaging.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Other identifier</items>
+        <items id="description">Unspecified identifier, which can be further specified in a template or at run time.</items>
+        <items id="comment">Coding of the name of the identifier with a coding system is desirable, if available.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Software version</items>
+        <items id="description">Identification of the version of software being used in the medical device.</items>
+        <items id="comment">When the medical device is an actual software application, record the version of the software using this data element. When the medical device has multiple software applications embedded within it, record each software component in a separate CLUSTER archetype within the Components SLOT - either as a nested instance of another CLUSTER.device archetype or using a CLUSTER archetype designed specifically for recording software details (but not yet available at time of this archetype development).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local context or to align with other reference models/formalisms.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimedia</items>
+        <items id="description">Digital representation of the device.</items>
+        <items id="comment">For example: a technical diagram of a device, or a digital image.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">*Medical device(en)</items>
+        <items id="description">*An instrument, apparatus, implant, material or similar, used in the provision of healthcare. In this context, a medical device includes a broad range of devices which act through a variety of physical, mechanical, thermal or similar means but specifically excludes devices which act through medicinal means such as pharmacological, metabolic or immunological methods.  The scope is inclusive of disposable devices as well as durable or persisting devices that require tracking, maintenance activities or regular calibration, recognising that each type of device has specific data recording requirements.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Device name(en)</items>
+        <items id="description">*Identification of the medical device, preferably by a common name, a formal fully descriptive name or, if required, by class or category of device.(en)</items>
+        <items id="comment">*This data element will capture the term, phrase or category used in clinical practice. For example: &lt;brand name&gt;&lt;machine&gt; (XYZ Audiometer); &lt;size&gt; &lt;brand name&gt; &lt;intravenous catheter&gt; (14G Jelco IV catheter); or &lt;brand name/type&gt; &lt;implant&gt;. With specific examples.&#xD;
+&#xD;
+ Coding with a terminology is desirable, where possible, although this may be local and depending on local supplies available.&#xD;
+(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Descripción</items>
+        <items id="description">Descripción del dispositivo.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Type(en)</items>
+        <items id="description">*Type of medical device.(en)</items>
+        <items id="comment">*Not applicable if a category is already recorded in 'Device Name'.&#xD;
+Coding with a terminology is desirable, where possible, This may include use of GTIN or EAN numbers.(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabricante</items>
+        <items id="description">Fabricante del dispositivo.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Fecha de fabricación</items>
+        <items id="description">Fecha de fabricación del dispositivo.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Número de lote</items>
+        <items id="description">Número de lote del fabricante.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Fecha de vencimiento</items>
+        <items id="description">Fecha para la cual el dispositivo o producto deja de ser adecuado para su uso.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comentario</items>
+        <items id="description">Narrativa adicional sobre el dispositivo que no fué cubierta en los otros campos.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Detalles adicionales</items>
+        <items id="description">Detalles adicionales acerca del dispositivo.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">*Components(en)</items>
+        <items id="description">*Additional structured informations about identified components of the device.(en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0023">
+        <items id="text">*New element(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Other identifier(en)</items>
+        <items id="description">*Unspecified identifier, which can be further specified in a template or at run time.(en)</items>
+        <items id="comment">*Coding of the name of the identifier with a coding system is desirable, if available.(en)</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Software version(en)</items>
+        <items id="description">*Identification of the version of software being used in the medical device.(en)</items>
+        <items id="comment">*When the medical device is an actual software application, record the version of the software using this data element. When the medical device has multiple software applications embedded within it, record each software component in a separate CLUSTER archetype within the Components SLOT - either as a nested instance of another CLUSTER.device archetype or using a CLUSTER archetype designed specifically for recording software details (but not yet available at time of this archetype development).(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Cluster(en)</items>
+        <items id="description">**(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Multimedia(en)</items>
+        <items id="description">*Digital representation of the device.(en)</items>
+        <items id="comment">*For example: a technical diagram of a device, or a digital image.(en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Dispositivos médicos</items>
+        <items id="description">Um instrumento, aparelho, implante, material ou similares para a prestação de cuidados de saúde . Neste contexto, um dispositivo médico inclui uma ampla variedade de dispositivos que atuem através de uma variedade de meios físicos, mecânicos , térmicos ou semelhantes, mas exclui especificamente os dispositivos que atuem através de meios farmacológicos tais como medicamentos, metabólicos ou métodos imunológicos. O escopo é inclusive de dispositivos descartáveis​​, bem como dispositivos duráveis ​​ou permanentes que requerem seguimento, atividades de manutenção ou calibração regular, reconhecendo que cada tipo de dispositivo tem requisitos de registro de dados específicos.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Prótese/órtese</items>
+        <items id="description">Identificação do dispositivo médico, de preferência por um nome comum, um nome totalmente descritivo formal ou, se necessário, por classe ou categoria de dispositivo.</items>
+        <items id="comment">Este elemento de dados deve capturar o termo, frase ou categoria usados na prática clínica. Por exemplo: &lt;nome da marca&gt;&lt;equipamento&gt;(XYZ audiômetro); &lt;tamanho&gt; &lt;nome da marca&gt; ; ou &lt;nome da marca/tipo&gt; &lt;implante&gt;. Codificação com uma terminologia é desejável, sempre que possível, embora isso possa ser local e depender de fornecimentos locais disponíveis.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Descrição</items>
+        <items id="description">Descrição sobre o dispositivo médico.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tipo</items>
+        <items id="description">Categoria ou tipo do dispositivo.</items>
+        <items id="comment">*Not applicable if a category is already recorded in 'Device name'.&#xD;
+ Example: if the 'Device' is named as a 'urinary catheter'; the 'Type' may be recorded as 'indwelling' or 'condom'.Coding with a terminology is desirable, where possible. This may include use of GTIN or EAN numbers.(en)&#xD;
+Não se aplica se uma categoria já está registrado em "Nome do dispositivo". Exemplo: se o 'Dispositivo' é nomeado como um "catéter urinário ';o 'Tipo' pode ser registrado como "interno" ou "sonda de camisinha". Codificação com uma terminologia é desejável, sempre que possível. Isso pode incluir o uso de GTIN (Número Global de Item Comercial) ou números EAN.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabricante</items>
+        <items id="description">Nome do fabricante.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Data de fabricação</items>
+        <items id="description">Data da fabricação do dispositivo.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Número do Lote</items>
+        <items id="description">O número atribuído pelo fabricante, que identifica um grupo de artigos fabricados ao mesmo tempo, normalmente encontrado no material de etiqueta ou embalagem.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Data de validade</items>
+        <items id="description">Data após o qual o dispositivo/produto não está mais apto para uso, normalmente encontrado no próprio dispositivo ou impressa na embalagem que o acompanha.</items>
+        <items id="comment">*This date usually applies only to single use or disposable devices.(en)&#xD;
+Esta data geralmente se aplica apenas para dispositivos de uso único ou descartáveis.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comentários</items>
+        <items id="description">Comentários adicionais sobre o dispositivo não realizados em outros campos.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Propriedades</items>
+        <items id="description">Mais detalhes sobre as propriedades específicas do dispositivo médico.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Componentes</items>
+        <items id="description">Informações adicionais sobre componentes estruturados identificados do dispositivo.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Manutenção</items>
+        <items id="description">Mais detalhes sobre a gestão e manutenção do dispositivo.</items>
+        <items id="comment">Por exemplo: proprietário, detalhes de contato, localização, endereço de correiro eletrônico, data de vencimento para a substituição, detalhes de calibração, etc.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Número de Série</items>
+        <items id="description">Número atribuído pelo fabricante que deve ser específico para acompanhamento de cada dispositivo. Pode ser encontrado no dispositivo, no seu rótulo ou embalagem.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Identificador unívoco do dispositivo (UDI)</items>
+        <items id="description">Uma cadeia numérica ou alfanumérica, que está associado com esse dispositivo dentro de um determinado sistema.</items>
+        <items id="comment">Código de barras frequentemente utilizado para o dispositivo.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Número do catálogo</items>
+        <items id="description">O número exato atribuído pelo fabricante, tal como aparece no catálogo do fabricante, rotulagem do dispositivo ou embalagem que o acompanha.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Número do modelo</items>
+        <items id="description">O número exato do modelo atribuído pelo fabricante e encontrado no rótulo do dispositivo ou na embalagem que o acompanha.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Outros identificadores</items>
+        <items id="description">Identificador não especificado, que pode ainda ser especificado em um modelo ou em tempo de execução.</items>
+        <items id="comment">Utilização da codificação com nome do identificador por um sistema de codificação é desejável, se disponível.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Versão do software</items>
+        <items id="description">Identificação da versão do software a ser utilizado no dispositivo médico.</items>
+        <items id="comment">Quando o dispositivo médico é uma aplicação de software, gravar a versão do software usando estes elementos de dados. Quando o dispositivo médico tem múltiplas aplicações de software embutidas dentro dela, registre cada componente de software em um arquétipo CLUSTER separadamente dentro do SLOT Components - quer como uma instância aninhada de outro arquétipo CLUSTER.device ou usando um arquétipo CLUSTER projetado especificamente para a gravação de detalhes do software (mas ainda não disponível no momento do desenvolvimento desse arquétipo).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Extensão</items>
+        <items id="description">Informações adicionais requeridas para capturar contexto local ou para se alinhar com outros modelos/formalismos de referência.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimidia</items>
+        <items id="description">Representação digital do dispositivo.</items>
+        <items id="comment">Por exemplo: um diagrama técnico de um dispositivo, ou uma imagem digital.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Medisinsk utstyr</items>
+        <items id="description">Et instrument, apparat, implantat, materiale, programvare eller lignende som er benyttet i utførelsen av helsetjenester. I denne konteksten er medisinsk utstyr et bredt spekter utstyr med fysiske, mekaniske, termiske, programvaremessige eller tilsvarende virkemåter. Utstyr som har en farmakologisk, metabolsk eller immunologisk virkning ekskluderes spesifikt. &#xD;
+&#xD;
+Arketypen tar høyde for registrering av engangsutstyr samt varig utstyr som krever sporing, vedlikehold eller jevnlig kalibrering, og tar høyde for at hvert enkelt medisinsk utstyr har spesifikke behov for dataregistrering.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Navn på medisinsk utstyr</items>
+        <items id="description">Identifisering av det medisinske utstyret, fortrinnsvis ved et vanlig navn, et formelt og fullstendig navn, eller om nødvendig ved utstyrets klasse eller kategori.</items>
+        <items id="comment">Dette dataelementet vil fange termen, frasen eller kategorien i bruk i klinisk praksis. For eksempel: : [produsentnavn][maskin] (XYZ Audiometer); [størrelse][produsentnavn][intravenøst kateter] (14G Jelco IV-kateter), eller [produsentnavn/type][implantat].&#xD;
+&#xD;
+Koding med en terminologi er ønskelig om mulig, selv om denne kan være lokal og avhenger av hvilke produkter som er tilgjengelig.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse av det medisinske utstyret.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Type</items>
+        <items id="description">Kategori eller type medisinsk utstyr.</items>
+        <items id="comment">Brukes ikke om kategori som er dokumentert i "Navn på medisinsk utstyr".&#xD;
+&#xD;
+Eksempel: Hvis utstyret er navngitt som "urinkateter", kan typen registreres som "inneliggende kateter" eller "engangskateter". Koding med en terminologi er ønskelig om mulig, og dette kan inkludere GTIN/EAN-nummer.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Produsent</items>
+        <items id="description">Navnet til produsenten.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Produksjonsdato</items>
+        <items id="description">Produksjonsdato for utstyret.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Batch/lot-nummer</items>
+        <items id="description">Nummeret tildelt av produsenten som identifiserer en gruppe enheter som er produsert samtidig, normalt funnet på utstyrsmerkingen eller forpakningen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Utløpsdato</items>
+        <items id="description">Datoen det medisinske utstyret ikke lenger er egnet for bruk. Datoen finnes vanligvis på produktet eller på innpakning.</items>
+        <items id="comment">Denne datoen gjelder vanligvis for engangsutstyr eller utstyr som ikke skal gjenbrukes.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Kommentar</items>
+        <items id="description">Fritekstopplysninger om enheten som ikke er fanget opp i andre felter.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Egenskaper</items>
+        <items id="description">Ytterligere beskrivelse av egenskaper til det medisinske utstyret.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Komponenter</items>
+        <items id="description">Strukturert informasjon om komponenter i det medisinske utstyret.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Utstyrsforvaltning</items>
+        <items id="description">Detaljer om forvaltning og vedlikehold av det medisinske utstyret.</items>
+        <items id="comment">For eksempel: Eier, kontaktdetaljer, lokalisering, nettverksadresse, dato for utskiftning, kalibreringsdetaljer etc.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Serienummer</items>
+        <items id="description">Nummer tildelt produktet av en produsent og som finnes på det medisinske utstyret. Nummeret er spesifikt for hver enhet, etikett eller medfølgende innpakning.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Unique device identifier (UDI)</items>
+        <items id="description">Et globalt system for enhetlig produktgjenkjenning for medisinsk utstyr, utviklet i USA.</items>
+        <items id="comment">Ofte festet til det medisinske utstyret som en strekkode.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Katalognummer</items>
+        <items id="description">Det nøyaktige nummeret tildelt av produsenten, slik det framstår i produsentens katalog, utstyrsmerking eller medfølgende innpakning.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Modellnummer</items>
+        <items id="description">Det nøyaktige modellnummeret tildelt av produsenten, og funnet på utstyrsmerkingen eller medfølgende innpakning.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Øvrig identifikator</items>
+        <items id="description">Øvrig identifikator som kan defineres mer eksplisitt i en templat eller i en applikasjon.</items>
+        <items id="comment">Koding av navnet på identifikatoren er ønskelig om mulig.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Programvareversjon</items>
+        <items id="description">Identifikasjon av utstyrets programvareversjon.</items>
+        <items id="comment">Når det medisinske utstyret er en faktisk programvareapplikasjon brukes dette elementet til å registrere programvareversjonen. Når utstyret har flere applikasjoner integrert i seg registreres hver programvarekomponent i en separat CLUSTER-arketype i "Komponenter"-SLOTet, enten som en nøstet instans av en annen CLUSTER.device-arketype eller i en CLUSTER-arketype som er designet spesifikt for å registrere programvaredetaljer (som ikke er tilgjengelig enda når denne arketypen blir utviklet).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Informasjon man trenger for å fange lokal kontekst eller for å tilpasse til andre referansemodeller/formalismer.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimedia</items>
+        <items id="description">Digital fremstilling av det medisinske utstyret.</items>
+        <items id="comment">For eksempel: Et teknisk diagram av det medisinske utstyret eller et digitalt bilde.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Medizingerät</items>
+        <items id="description">Ein Instrument, ein Gerät, ein Implantat, ein Material oder ähnliches, das für die Bereitstellung von Gesundheitsleistungen verwendet wird. In diesem Zusammenhang umfasst ein medizinisches Gerät eine breite Palette von Geräten, die auf verschiedene physikalische, mechanische, thermische oder ähnliche Weise wirken, schließt jedoch insbesondere Geräte aus, die auf medizinischem Wege wirken, wie zum Beispiel pharmakologische, metabolische oder immunologische Methoden. Der Geltungsbereich umfasst&#xD;
+Einweggeräte sowie langlebige oder dauerhafte Geräte, die nachverfolgt,&#xD;
+gewartet oder regelmäßig kalibriert werden müssen, wobei zu berücksichtigen ist, dass für jeden Gerätetyp bestimmte Datenaufzeichnungsanforderungen gelten.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Gerätename</items>
+        <items id="description">Identifizierung des Medizingerätes, bevorzugt durch einen allgemein&#xD;
+gebräuchlichen Namen, einer formellen und vollständig beschreibenden Bezeichnung oder falls notwendig anhand einer Klasse oder Kategorie des Gerätes.</items>
+        <items id="comment">Dieses Datenelement erfasst den Begriff, die Phrase oder die Kategorie, die in der klinischen Praxis verwendet werden. Zum Beispiel: &lt;Markenname&gt; &lt;Maschine&gt; (XYZ-Audiometer); &lt;Markenname&gt; (14G Jelco IV-Katheter); oder &lt;Markenname / Typ&gt; &lt;Implantat&gt;. Die Codierung mit einer Terminologie ist nach Möglichkeit wünschenswert, auch wenn dies lokal sein kann und von den verfügbaren lokalen Lieferungen abhängt.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beschreibung</items>
+        <items id="description">Beschreibung des Medizingerätes.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Gerätetyp</items>
+        <items id="description">Die Kategorie des Medizingeräts.</items>
+        <items id="comment">Nicht zutreffend, wenn eine Kategorie bereits unter "Gerätename" dokumentiert ist. &#xD;
+Beispiel: Wenn das 'Gerät' als 'Harnkatheter' bezeichnet wird; der 'Typ' kann als 'Verweilkatheter' oder 'Kondom' aufgezeichnet werden. Die Codierung mit einer Terminologie ist wünschenswert, sofern dies möglich ist. Dies kann die Verwendung von GTIN- oder EAN-Nummern einschließen.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Hersteller</items>
+        <items id="description">Name des Herstellers.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Herstellungsdatum</items>
+        <items id="description">Herstellungsdatum des Gerätes.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Chargennummer</items>
+        <items id="description">Die vom Hersteller zugewiesene Nummer, die eine Gruppe von gleichzeitig hergestellten Artikeln kennzeichnet, die sich normalerweise auf dem Etikett oder dem Verpackungsmaterial befindet.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Ablaufdatum</items>
+        <items id="description">Das Datum, ab dem das Gerät/Produkt nicht mehr einsatzfähig ist. Wird normalerweise auf dem Gerät selbst oder auf der beiliegenden Verpackung aufgedruckt.</items>
+        <items id="comment">Dieses Datum gilt normalerweise nur für Einmalprodukte oder Einwegprodukte.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Kommentar</items>
+        <items id="description">Informationen, die hier nicht strukturiert erfasst wurden.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Eigenschaften</items>
+        <items id="description">Weitere Details zu bestimmten Eigenschaften des Medizingerätes.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Komponenten</items>
+        <items id="description">Zusätzliche strukturierte Informationen zu identifizierten Komponenten des Geräts.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Geräteverwaltung</items>
+        <items id="description">Weitere Details zur Verwaltung und Wartung des Geräts.</items>
+        <items id="comment">Zum Beispiel: Eigentümer, Kontaktdaten, Standort, Netzwerkadresse, Ersetzungsdatum, Kalibrierungsdetails usw.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Seriennummer</items>
+        <items id="description">Die vom Hersteller zugewiesene Nummer, die sich auf dem Gerät befindet, muss für jedes Gerät, sein Etikett oder die dazugehörige Verpackung spezifisch sein.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Eindeutige Identifikationsnummer (ID)</items>
+        <items id="description">Eine numerische oder alphanumerische Zeichenfolge, die diesem Gerät in einem bestimmten System zugeordnet ist.&#xD;
+&#xD;
+</items>
+        <items id="comment">Oft als Barcode am Gerät befestigt.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Katalognummer</items>
+        <items id="description">Die genaue vom Hersteller vergebene Nummer, wie sie im Herstellerkatalog, in der Gerätekennzeichnung oder in der Begleitverpackung angegeben ist.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Modellnummer</items>
+        <items id="description">Die Modellnummer des Herstellers, die sich auf dem Geräteetikett oder der zugehörigen Verpackung befindet.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Weitere ID</items>
+        <items id="description">Nicht spezifizierter Bezeichner, der in einer Vorlage oder zur Laufzeit weiter spezifiziert werden kann.</items>
+        <items id="comment">Sofern verfügbar, ist die Kodierung des Namens des Identifikators mit einem Kodierungssystem wünschenswert.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Softwareversion</items>
+        <items id="description">Identifizierung der im Medizingerät verwendeten Softwareversion.</items>
+        <items id="comment">Wenn das Medizinprodukt eine eigentliche Softwareanwendung ist, erfassen Sie die Version der Software mit diesem Datenelement. Wenn in dem Medizingerät mehrere Softwareanwendungen eingebettet sind, zeichnen Sie jede Softwarekomponente in einem separaten CLUSTER-Archetyp im &#xD;
+Komponenten-SLOT auf - entweder als verschachtelte Instanz eines&#xD;
+anderen CLUSTER.device-Archetyps oder unter Verwendung eines&#xD;
+CLUSTER-Archetyps, der speziell für die Aufzeichnung von&#xD;
+Softwaredetails entwickelt wurde (aber zum Zeitpunkt dieser&#xD;
+Archetypentwicklung noch nicht verfügbar war).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen, die zur Erfassung des lokalen Kontexts oder&#xD;
+zur Angleichung an andere Referenzmodelle/Formalismen erforderlich sind.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimedia</items>
+        <items id="description">Digitale Repräsentation des Gerätes.</items>
+        <items id="comment">Zum Beispiel: ein technisches Diagramm eines Geräts oder ein digitales Bild.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Medicinteknisk produkt</items>
+        <items id="description">Ett instrument, en apparat, ett implantat, ett material eller liknande, som används vid tillhandahållande av hälso- och sjukvård. &#xD;
+En medicinteknisk produkt i detta sammanhang inkluderar produkter som verkar ex. genom en mängd olika fysiska, mekaniska eller termiska sätt. I sammanhanget exkluderas specifikt produkter som verkar med medicinska medel såsom farmakologiska, metaboliska eller immunologiska metoder.&#xD;
+Arketypen tar höjd för engångsprodukter och produkter med tillfällig-, kort- och långvarig användning som kräver spårning, underhållsaktiviteter eller regelbunden kalibrering. Arketypen tar också höjd för att varje typ av medicinteknisk produkt har sina egna specifika krav på registrering av uppgifter.&#xD;
+</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Namn på medicinteknisk produkt</items>
+        <items id="description">Identifiering av den medicintekniska produkten, helst med ett vanligt namn, ett formellt fullständigt beskrivande namn eller om det är ett krav med klass eller kategori.</items>
+        <items id="comment">Detta dataelement kommer att fånga den term, fras eller kategori som används i klinisk praxis. Till exempel: &lt;maskin&gt; (XYZ Audiometer); &lt;storlek&gt; (14G Jelco IV kateter); eller &lt;implantat&gt;. Kodning med en terminologi är önskvärt, om möjligt, även om detta kan vara lokalt och beroende av tillgängliga lokala resurser.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beskrivning</items>
+        <items id="description">Beskrivning av den medicintekniska produkten.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Typ</items>
+        <items id="description">Kategorin eller typ av medicinteknisk produkt.</items>
+        <items id="comment">Ej tillämpligt om en kategori redan har dokumenterats i 'Namn på medicinteknisk produkt'.&#xD;
+Exempel: om 'Medicinteknisk produkt' är kallad 'urinkateter'; kan 'Typ' registreras som 'kvarliggande' eller 'uridom'. Kodning med en terminologi är önskvärt, om möjligt. Detta kan inkludera användning av GTIN eller EAN nummer.&#xD;
+</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Tillverkare</items>
+        <items id="description">Namn på tillverkaren</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Tillverkningsdatum</items>
+        <items id="description">Det datum då den medicintekniska produkten tillverkades.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Batch/LOT-nummer</items>
+        <items id="description">Det nummer som tilldelats av tillverkaren och som identifierar en grupp artiklar som tillverkas samtidigt. Finns vanligtvis på etiketten eller förpackningen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Utgångsdatum</items>
+        <items id="description">Datum från då den medicintekniska produkten inte längre är lämplig att användas, vanligtvis finns datumet på den medicintekniska produkten eller tryckt på den medföljande förpackningen.</items>
+        <items id="comment">Detta datum gäller vanligtvis engångsprodukter.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Kommentar</items>
+        <items id="description">Kommentarer avseende den medicintekniska produkten som inte beskrivs i övriga fält.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Egenskaper</items>
+        <items id="description">Ytterligare information om specifika egenskaper för den medicintekniska produkten.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Komponenter</items>
+        <items id="description">Ytterligare strukturerad information om identifierade komponenter i den medicintekniska produkten.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Tillgångshantering</items>
+        <items id="description">Mer information om underhåll och hantering av den medicintekniska produkten.</items>
+        <items id="comment">Till exempel: Ägare, kontaktuppgifter, plats, nätverksadress, datum för utbyte, kalibreringsinformation etcetera.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Serienummer</items>
+        <items id="description">Tilldelat nummer av tillverkaren av den medicintekniska produkten, bör vara specifik för varje medicinteknisk produkt, dess etikett eller medföljande förpackning.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Unik produktidentifierare (UDI)</items>
+        <items id="description">En numerisk eller alfanumerisk sträng som är associerad med den medicintekniska produkten i ett givet system.</items>
+        <items id="comment">Ofta fäst på den medicintekniska produkten som en streckkod.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Katalognummer</items>
+        <items id="description">Det exakta nummer som tilldelats av tillverkaren som visas i tillverkarens katalog, produktens märkning eller medföljande förpackning.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Modellnummer</items>
+        <items id="description">Det exakta modellnummer som tilldelats av tillverkaren och som finns på den medicintekniska produktens etikett eller medföljande förpackning.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Annan identifierare</items>
+        <items id="description">Ospecificerad identifierare, som kan specificeras ytterligare i en template eller kan genereras automatiskt av vissa IT-system.</items>
+        <items id="comment">Kodning av namnet på identifieraren med ett kodverk är önskvärt, om det finns för området.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Mjukvaruversion</items>
+        <items id="description">Identifiering av mjukvaruversionen som används i den medicintekniska produkten.</items>
+        <items id="comment">Registrera mjukvaruversionen med detta dataelement när den medicinsktekniska produkten är en mjukvara. När den medicintekniska produkten har flera inbyggda mjukvaruapplikationer, registrera varje mjukvarukomponent i en separat CLUSTER arketyp tillagd i SLOT ”komponenter” antingen som en kapslad instans av en annan CLUSTER.device arketyp eller med en CLUSTER arketyp som är designad speciellt för registrering av mjukvaruinformation (ännu inte utvecklad).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Tilläggsinformation</items>
+        <items id="description">Plats för tilläggsinformation som krävs för lokala anpassningar eller anpassning till andra referensmodeller eller formella krav.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimedia</items>
+        <items id="description">Digital representation av den medicintekniska produkten.</items>
+        <items id="comment">Till exempel: ett tekniskt diagram från en medicinteknisk produkt eller en digital bild.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nl">
+      <items code="at0000">
+        <items id="text">Medisch hulpmiddel</items>
+        <items id="description">Een instrument, apparaat, implantaat, materiaal of dergelijke dat wordt gebruikt bij het verlenen van gezondheidszorg. In deze context omvat een medisch hulpmiddel een breed scala aan hulpmiddelen die op verschillende fysische, mechanische, thermische of soortgelijke manieren werken, maar sluit specifiek hulpmiddelen uit die op medicinale wijze werken, zoals farmacologische, metabolische of immunologische methoden. De reikwijdte omvat zowel wegwerpapparaten als duurzame of blijvende hulpmiddelen waarvoor tracking, onderhoudsactiviteiten of regelmatige kalibratie nodig zijn, waarbij wordt erkend dat elk type apparaat specifieke vereisten voor gegevensregistratie heeft.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Naam hulpmiddel</items>
+        <items id="description">Identificatie van het medische hulpmiddel, bij voorkeur door middel van een algemene naam, een formeel volledig beschrijvende naam of, indien vereist, per klasse of categorie van het hulpmiddel.</items>
+        <items id="comment">Dit gegevenselement legt de term, woordgroep of categorie vast die in de klinische praktijk wordt gebruikt. Bijvoorbeeld: &lt;merknaam&gt;&lt;machine&gt; (XYZ audiometer); &lt;maat&gt; &lt;merknaam&gt; &lt;intraveneuze katheter&gt; (14G Jelco IV-katheter); of &lt;merknaam/type&gt; &lt;implantaat&gt;. Waar mogelijk is codering met een terminologie wenselijk, hoewel dit plaatselijk kan zijn en afhankelijk is van de beschikbare lokale voorraden.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Omschrijving</items>
+        <items id="description">Verhalende beschrijving van het medische hulpmiddel.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Type</items>
+        <items id="description">De categorie of het soort hulpmiddel.</items>
+        <items id="comment">Niet van toepassing als er al een categorie is vastgelegd in 'Naam hulpmiddel'.&#xD;
+ Voorbeeld: als het 'Hulpmiddel' de naam 'urinekatheter' heeft; het 'Type' kan worden geregistreerd als 'verblijfs' of 'condoom'. Codering met een terminologie is waar mogelijk wenselijk. Dit kan het gebruik van GTIN- of EAN-nummers omvatten.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabrikant</items>
+        <items id="description">Naam van de fabrikant.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Fabricagedatum</items>
+        <items id="description">Datum waarop het hulpmiddel is vervaardigd.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Batch/serie-nummer</items>
+        <items id="description">Het nummer dat door de fabrikant is toegekend en dat een groep artikelen identificeert die tegelijkertijd zijn vervaardigd, meestal te vinden op het etiket of het verpakkingsmateriaal.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Verloopdatum</items>
+        <items id="description">Datum waarna het hulpmiddel/product niet meer geschikt is voor gebruik, meestal te vinden op het hulpmiddel zelf of afgedrukt op de bijbehorende verpakking.</items>
+        <items id="comment">Deze datum is meestal alleen van toepassing op hulpmiddelen voor eenmalig gebruik of wegwerpartikelen.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Toelichting</items>
+        <items id="description">Aanvullend beschrijving over het hulpmiddel dat niet in andere velden is vastgelegd.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Eigenschappen</items>
+        <items id="description">Verdere details over specifieke eigenschappen van het medische hulpmiddel.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Componenten</items>
+        <items id="description">Aanvullende gestructureerde informatie over geïdentificeerde componenten van het hulpmiddel.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Assetmanagement</items>
+        <items id="description">Verdere details over beheer en onderhoud van het hulpmiddel.</items>
+        <items id="comment">Bijvoorbeeld: Eigenaar, Contactgegevens, Locatie, Netwerkadres, Datum voor vervanging, Kalibratiegegevens etc.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Serienummer</items>
+        <items id="description">Nummer toegewezen door de fabrikant dat op het hulpmiddel, het etiket of de bijbehorende verpakking kan worden gevonden en dat specifiek moet zijn voor elk hulpmiddel.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Unieke hulpmiddelenidentificatie (UDI)</items>
+        <items id="description">Een numerieke of alfanumerieke tekenreeks die binnen een bepaald systeem aan dit hulpmiddel is gekoppeld.</items>
+        <items id="comment">Vaak als streepjescode op het hulpmiddel aanwezig.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Catalogusnummer</items>
+        <items id="description">Het exacte nummer dat door de fabrikant is toegekend, zoals het wordt vermeld in de catalogus van de fabrikant, op de hulpmiddeletiketten of in de bijbehorende verpakking.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Modelnummer</items>
+        <items id="description">Het exacte modelnummer toegewezen door de fabrikant en te vinden op het hulpmiddeletiket of de bijbehorende verpakking.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Ander identificatie</items>
+        <items id="description">Niet-gespecificeerde identifier, die verder kan worden gespecificeerd in een sjabloon of tijdens runtime.</items>
+        <items id="comment">Codering van de naam van de identifier met een coderingssysteem is wenselijk, indien aanwezig.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Softwareversie</items>
+        <items id="description">Identificatie van de versie van de software die in het medische hulpmiddel wordt gebruikt.</items>
+        <items id="comment">Wanneer het medische hulpmiddel een daadwerkelijke softwaretoepassing is, noteer dan de versie van de software met behulp van dit gegevenselement. Als het medische hulpmiddel meerdere softwareapplicaties bevat, registreert u elke softwarecomponent in een apart CLUSTER-archetype binnen de Componenten slot - ofwel als een geneste instantie van een ander CLUSTER.device-archetype of met behulp van een CLUSTER-archetype dat speciaal is ontworpen voor het vastleggen van softwaredetails (maar nog niet beschikbaar ten tijde van de ontwikkeling van dit archetype).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Uitbreiding</items>
+        <items id="description">Aanvullende informatie die vereist is om de lokale context vast te leggen of in lijn te brengen met andere referentie-modellen/formalismen.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimedia</items>
+        <items id="description">Digitale afbeelding van het hulpmiddel.</items>
+        <items id="comment">Bijvoorbeeld: een technisch schema van een hulpmiddel, of een digitale afbeelding.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Dispositif médical</items>
+        <items id="description">Un instrument, un appareil, un implant, un matériau ou similaire, utilisé dans la prestation de soins de santé. Dans ce contexte, un dispositif médical comprend un large éventail de dispositifs qui agissent par divers moyens physiques, mécaniques, thermiques ou similaires, mais exclut spécifiquement les dispositifs qui agissent par des moyens médicinaux tels que les méthodes pharmacologiques, métaboliques ou immunologiques. Le champ d'application comprend les dispositifs jetables ainsi que les dispositifs durables ou persistants qui nécessitent un suivi, des activités de maintenance ou un étalonnage régulier, en reconnaissant que chaque type de dispositif a des exigences spécifiques en matière d'enregistrement des données.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Nom de l'appareil</items>
+        <items id="description">Identification du dispositif médical, de préférence par un nom commun, un nom formel entièrement descriptif ou, si nécessaire, par classe ou catégorie de dispositif.</items>
+        <items id="comment">Cet élément de données permet de saisir le terme, la phrase ou la catégorie utilisés dans la pratique clinique. Par exemple : &lt;brand name&gt;&lt;machine&gt; (Audiomètre XYZ) ; &lt;taille&gt; &lt;brand name&gt; (cathéter IV Jelco 14G) ; ou &lt;brand name/type&gt; &lt;implant&gt;. Il est souhaitable de coder avec une terminologie, dans la mesure du possible, bien que celle-ci puisse être locale et dépendre des fournitures locales disponibles.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Description</items>
+        <items id="description">Description narrative du dispositif médical.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Type</items>
+        <items id="description">La catégorie ou le type de dispositif.</items>
+        <items id="comment">Non applicable si une catégorie est déjà enregistrée dans "Nom du dispositif".&#xD;
+ Exemple : si le "dispositif" est nommé "sonde urinaire", le "type" peut être enregistré comme "à demeure" ou "préservatif". Il est souhaitable, dans la mesure du possible, de coder avec une terminologie. Cela peut inclure l'utilisation de numéros GTIN ou EAN.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabricant</items>
+        <items id="description">Nom du fabricant</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Date de fabrication</items>
+        <items id="description">Date de fabrication de l'appareil.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Numéro de lot</items>
+        <items id="description">Le numéro attribué par le fabricant qui identifie un groupe d'articles fabriqués en même temps, généralement sur l'étiquette ou le matériel d'emballage.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Date d'expiration</items>
+        <items id="description">Date après laquelle le dispositif/produit n'est plus apte à être utilisé, généralement indiquée sur le dispositif lui-même ou imprimée sur l'emballage qui l'accompagne.</items>
+        <items id="comment">Cette date ne s'applique généralement qu'aux dispositifs à usage unique ou jetables.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Commentaire</items>
+        <items id="description">Informations supplémentaires sur l'appareil qui n'ont pas été saisies dans d'autres champs.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Propriétés</items>
+        <items id="description">Détails supplémentaires sur les propriétés spécifiques du dispositif médical.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Composants</items>
+        <items id="description">Informations structurées supplémentaires sur les composants identifiés de l'appareil.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Gestion des actifs</items>
+        <items id="description">Plus de détails sur la gestion et l'entretien de l'appareil.</items>
+        <items id="comment">Par exemple : Propriétaire, coordonnées, emplacement, adresse réseau, date de remplacement, détails d'étalonnage, etc.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Numéro de série</items>
+        <items id="description">Numéro attribué par le fabricant qui se trouve sur le dispositif et qui doit être spécifique à chaque dispositif, à son étiquette ou à l'emballage qui l'accompagne.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Identifiant unique de l'appareil (UDI)</items>
+        <items id="description">Chaîne numérique ou alphanumérique associée à ce dispositif dans un système donné.</items>
+        <items id="comment">Souvent fixé à l'appareil sous la forme d'un code-barres.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Numéro de catalogue</items>
+        <items id="description">Le numéro exact attribué par le fabricant, tel qu'il apparaît dans le catalogue du fabricant, l'étiquetage de l'appareil ou l'emballage qui l'accompagne.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Numéro de modèle</items>
+        <items id="description">Le numéro de modèle exact attribué par le fabricant et figurant sur l'étiquette de l'appareil ou sur l'emballage qui l'accompagne.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Autre identificateur</items>
+        <items id="description">Identifiant non spécifié, qui peut être précisé dans un modèle ou au moment de l'exécution.</items>
+        <items id="comment">Il est souhaitable de coder le nom de l'identifiant à l'aide d'un système de codage, s'il est disponible.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Version du logiciel</items>
+        <items id="description">Identification de la version du logiciel utilisé dans le dispositif médical.</items>
+        <items id="comment">Lorsque le dispositif médical est une application logicielle, enregistrez la version du logiciel à l'aide de cet élément de données. Lorsque le dispositif médical comporte plusieurs applications logicielles, enregistrez chaque composant logiciel dans un archétype CLUSTER distinct dans le SLOT Composants - soit en tant qu'instance imbriquée d'un autre archétype CLUSTER.device, soit en utilisant un archétype CLUSTER conçu spécifiquement pour enregistrer les détails du logiciel (mais pas encore disponible au moment de la mise au point de cet archétype).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Extension</items>
+        <items id="description">Informations supplémentaires requises pour tenir compte du contexte local ou pour s'aligner sur d'autres modèles/formalismes de référence.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimédia</items>
+        <items id="description">Représentation digitale du dispositif.</items>
+        <items id="comment">Par exemple : un schéma technique d'un appareil ou une image digitale.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">Producte sanitari</items>
+        <items id="description">Un instrument, aparell, implant, material o semblant, utilitzat a l’hora de proporcionar atenció sanitària. Prenent en compte això, un producte sanitari inclou una àmplia gamma de productes, els quals funcionen mitjançant una varietat de mitjans físics, mecànics, tèrmics o semblants, però que exclou específicament productes que funcionen mitjançant mitjans medicinals, com ara mètodes farmacològics, metabòlics o immunològics. L’abast inclou tant els productes rebutjables com els productes duradors o persistents que exigeixen rastreig, activitats de manteniment o calibració regular, prenent en compte que cada producte té requisits específics de registre de dades.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Nom del producte</items>
+        <items id="description">Identificació del producte sanitari, preferiblement amb un nom comú, un nom oficial descriptiu detallat o, si fos necessari, amb el tipus o categoria del producte.</items>
+        <items id="comment">Aquest element de dades recollirà el terme, frase o categoria utilitzada a la pràctica clínica. Per exemple: &lt;marca&gt; (Audiòmetre XYZ); &lt;marca&gt;&lt;mida&gt; (Catèter Jelco IV 14G); o &lt;marca/tipus&gt;&lt;implant&gt;. Programar amb una terminologia si així es vol i on sigui possible, encara que això pot ser local i depenent de l’abastiment local disponible.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Descripció</items>
+        <items id="description">Informació descriptiva del producte sanitari.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tipus</items>
+        <items id="description">La categoria o classe del producte.</items>
+        <items id="comment">No es pot aplicar si una categoria ja s’ha registrat al «Nom del producte».&#xD;
+Exemple: Si el «Producte» s’anomena «catèter urinari»; el «Tipus» es pot registrar com a «permanent» o «de condom». Programar amb una terminologia si així es vol i on sigui possible. Aquesta acció podria incloure l’ús dels números GTIN i EAN.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabricant</items>
+        <items id="description">Nom del fabricant.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Data de fabricació</items>
+        <items id="description">La data en què es fabricà el producte.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Número de lot</items>
+        <items id="description">El número assignat pel fabricant, el qual identifica un grup d’unitats fabricades al mateix temps, i que es troba sovint a l’etiqueta o al material d’embalatge.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Data de caducitat</items>
+        <items id="description">Data després de la qual el producte deixa de ser apte per al seu ús, i que sovint es troba al producte mateix o imprès a l’embalatge corresponent.</items>
+        <items id="comment">Aquesta data normalment només és aplicable per als productes d’un sol ús o rebutjables.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Observacions</items>
+        <items id="description">Informació addicional sobre el producte, no recollida en altres caselles.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Característiques</items>
+        <items id="description">Dades addicionals sobre característiques específiques del producte sanitari.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Components</items>
+        <items id="description">Informació estructurada addicional sobre els components identificats del producte.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Gestió d’actius</items>
+        <items id="description">Dades addicionals sobre la gestió i el manteniment del producte.</items>
+        <items id="comment">Per exemple: Propietari, Dades de contacte, Ubicació, Adreçament de xarxa, Data prevista del reemplaçament, Dades de calibració, etc.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Número de sèrie</items>
+        <items id="description">Número assignat pel fabricant, el qual es pot trobar al producte, i haurà de ser particular per a cada producte, la seva etiqueta o el seu embalatge corresponent.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Identificador Únic del Producte (UDI, per les sigles en anglès)</items>
+        <items id="description">Una seqüència numèrica o alfanumèrica que està associada amb aquest producte dins d’un sistema determinat.</items>
+        <items id="comment">Sovint fixada al producte amb forma de codi de barres.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Número de catàleg</items>
+        <items id="description">El número exacte assignat pel fabricant, de la forma en què apareix al catàleg del fabricant, etiquetatge del producte o embalatge corresponent.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Número de model</items>
+        <items id="description">El número del model exacte assignat pel fabricant, i que es troba a l’etiqueta del producte o a l’embalatge corresponent.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Altre identificador</items>
+        <items id="description">Identificador no especificat, el qual es pot especificar amb més detall en una plantilla o en temps d’execució.</items>
+        <items id="comment">Programar el nom de l’identificador amb un sistema de codificació si així es vol i si és possible.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Versió de programari</items>
+        <items id="description">Identificació de la versió del programari que s’està utilitzant en el producte sanitari.</items>
+        <items id="comment">Quan el producte sanitari sigui una aplicació de programari, s’haurà de registrar la versió del programari utilitzant aquest element de dades. Quan el producte sanitari tingui múltiples aplicacions de programari integrades, s’haurà de registrar cada component de programari a un arquetip de tipus CLUSTER separat dins del SLOT Components – ja sigui com a instància situada d’un altre arquetip CLUSTER.device o utilitzant un arquetip de tipus CLUSTER dissenyat específicament per a registrar dades de programari (però encara no disponible al moment del desenvolupament d’aquest arquetip).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Extensió</items>
+        <items id="description">Informació addicional necessària per a recollir el context local o per alinear-se amb altres models/formalismes de referència.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimèdia</items>
+        <items id="description">Representació digital del producte.</items>
+        <items id="comment">Per exemple: un diagrama tècnic d’un producte o una imatge digital.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Producto sanitario</items>
+        <items id="description">Un instrumento, aparato, implante, material o similar, usado a la hora de proporcionar atención sanitaria. En este contexto, un producto sanitario incluye una amplia gama de productos, los cuales funcionan mediante una variedad de medios físicos, mecánicos, térmicos o similares, pero que excluye específicamente productos que funcionan mediante medios medicinales, como ahora métodos farmacológicos, metabólicos o inmunológicos. El alcance incluye tanto los productos desechables como los productos durables o persistentes que requieren traqueo, actividades de mantenimiento o calibración regular, teniendo en cuenta cada tipo de producto tiene requisitos específicos de registro de datos.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Nombre del dispositivo</items>
+        <items id="description">Identificación del dispositivo sanitario, preferiblemente con un nombre común, un nombre oficial descriptivo o detallado o, si fuera necesario, con el tipo o categoría de producto.</items>
+        <items id="comment">Este elemento de datos recogerá el término, frase o categoría usado en una práctica clínica. Por ejemplo: &lt;nombre de la marca&gt; (XYZ Audiómetro); &lt;talla&gt;&lt;nombre de la marca&gt; (14G Jelco IV catéter); o &lt;nombre de la marca/tipo&gt;&lt;implante&gt;. Se recomienda codificar con una terminología cuando sea posible, aunque esta pueda ser local y depende del alcance local disponible.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Descripción</items>
+        <items id="description">Información descriptiva del dispositivo sanitario.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tipo</items>
+        <items id="description">La categoría o tipo de dispositivo.</items>
+        <items id="comment">No aplicable si una categoría ya se ha registrado en "Nombre del dispositivo". &#xD;
+Ejemplo: Si el "dispositivo" se llama "catéter urinario", el "Tipo" se puede registrar como "permanente" o "de condón". Codificar con una terminología si así se quiere y donde sea posible. Esta acción podría incluir el uso de los números GTIN y EAN.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Fabricante</items>
+        <items id="description">Nombre del fabricante.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Fecha de fabricación</items>
+        <items id="description">Fecha en que se fabricó el producto.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Número de lote</items>
+        <items id="description">El número asignado por el fabricante, el cual identifica un grupo de unidades fabricadas al mismo tiempo, y que se encuentra a menudo en la etiqueta o el material del embalaje.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Fecha de caducidad</items>
+        <items id="description">Fecha después de la cual el dispositivo/producto no es apto para el uso, y que a menudo se encuentra en el mismo dispositivo o impreso en el embalaje correspondiente.</items>
+        <items id="comment">Esta fecha normalmente solo es aplicable a los dispositivos de un solo uso o desechables.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Comentario</items>
+        <items id="description">Información adicional sobre el dispositivo, no recogida en otros campos.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Propiedades</items>
+        <items id="description">Detalles adicionales sobre las propiedades o características específicas del dispositivo sanitario.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Componentes</items>
+        <items id="description">Información estructurada adicional sobre los componentes identificados del producto.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Gestión de activos</items>
+        <items id="description">Detalles adicionales sobre la gestión y mantenimiento del dispositivo.</items>
+        <items id="comment">Por ejemplo: propietario, detalles de contacto, ubicación, dirección de red, fecha prevista de reemplazo, detalles de calibración, etc.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Número de serie</items>
+        <items id="description">Número asignado por el fabricante, el cual se puede encontrar en el dispositivo, y debería ser específico a cada dispositivo, o su etiqueta, o el embalaje correspondiente.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Identificador único del dispositivo</items>
+        <items id="description">Secuencia numérica o alfanumérica que es asociada con ese dispositivo dentro de un sistema determinado.</items>
+        <items id="comment">A menudo fijada al dispositivo en forma de código de barras.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Número de catálogo</items>
+        <items id="description">El número exacto asignado por el fabricante, de la forma en que aparece en el catálogo del fabricante, etiquetaje del dispositivo o embalaje correspondiente.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Número de modelo</items>
+        <items id="description">El número de modelo exacto asignado por el fabricante, y que se encuentra en la etiqueta del dispositivo o en el embalaje correspondiente.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Otro identificador</items>
+        <items id="description">Identificador no especificado, el cual puede ser especificado con más detalle en una plantilla o en tiempo de ejecución.</items>
+        <items id="comment">Preferentemente, codificar el nombre del identificador con un sistema de codificación, cuando sea posible.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Versión de software</items>
+        <items id="description">Identificación de la versión de software que se ha usado en el dispositivo sanitario.</items>
+        <items id="comment">Cuando el dispositivo médico sea una aplicación de software, se tendrá que registrar la versión de software utilizando este elemento de datos. Cuando el dispositivo sanitario tenga múltiples aplicaciones de software integradas, se tendrá que registrar cada componente de software en un arquetipo tipo CLUSTER separado dentro del SLOT Componentes - ya sea como una instancia situada de otro arquetipo CLUSTER.device o utilizando un arquetipo de tipo CLUSTER diseñado específicamente para registrar datos de software (pero todavía no disponible al momento de desarrollar este arquetipo).</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Extensión</items>
+        <items id="description">Información adicional necesaria para recoger el contexto local o para alinearse con otros modelos/formalismos de referencia.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Multimedia</items>
+        <items id="description">Representación digital del dispositivo.</items>
+        <items id="comment">Por ejemplo: un diagrama técnico del dispositivo, o una imagen digital.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

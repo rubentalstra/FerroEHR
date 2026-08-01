@@ -1,0 +1,294 @@
+﻿archetype (adl_version=1.4; uid=a359f8f5-4b29-4185-9741-1cd6f8d4de28)
+	openEHR-EHR-OBSERVATION.cage.v0
+
+concept
+	[at0000]	-- CAGE questionnaire
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Dennis Forslund">
+				["organisation"] = <"Cambio Healthcare Systems">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Dennis Forslund">
+		["organisation"] = <"Cambio Healthcare Systems">
+		["email"] = <"models@cambiocds.com">
+		["date"] = <"2016-12-21">
+	>
+	details = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"Att identifiera alkoholmissbruk. ">
+			use = <"Använd för att identifiera alkoholmissbruk. Instrumentet är ett av de mest använda för upptäckt av alkoholmissbruk och potentiellt beroende.
+
+CAGE är en akronym baserad på dess fyra frågor;
+
+Cut down - Har du någon gång känt att du behöver minska din alkoholkonsumtion?
+Annoy - Har någon irriterat dig genom att kritisera dina alkoholvanor?
+Guilt - Har du någon gång haft dålig samvete eller skuldkänslor på grund av ditt drickande?
+Eye opener - Har du någon gång behövt starta dagen med alkohol för att stilla nerverna eller för att bli av med en bakfylla?
+
+En total poäng om 2p eller mer indikerar alkoholmissbruk, och bör resultera i vidare utredning.">
+			keywords = <"alkoholmissbruk", "missbruk", "beroende", "DSM", "psykiatri">
+			misuse = <"CAGE är avsedd för screening och är ej att betrakta som diagnostiskt.">
+			copyright = <"© Cambio Healthcare Systems, openEHR Foundation, openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results of the CAGE questionnaire.">
+			use = <"Use to record the results of the CAGE questionnaire.">
+			keywords = <"alcohol abuse", "alcohol use disorder", "DSM", "CAGE", "psychiatry">
+			misuse = <"Not to be used to record a summary of alcohol consumption - use the EVALUATION.alcohol_consumption_summary for this purpose.
+
+Not to be used to record actual alcohol consumption - use the OBSERVATION.alcohol_intake for this purpose.">
+			copyright = <"© Cambio Healthcare Systems, openEHR Foundation, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Ewing JA. Detecting alcoholism. The CAGE questionnaire. JAMA. 1984 Oct 12;252(14):1905-7. doi: 10.1001/jama.252.14.1905. PubMed PMID: 6471323.
+
+Dhalla S, Kopec JA. The CAGE questionnaire for alcohol misuse: a review of reliability and validity studies. Clin Invest Med. 2007;30(1):33-41. Review. PubMed PMID: 17716538.">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics. Australia">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"813FCCFE00D09DE57142C4600E708CCC">
+		["build_uid"] = <"760200b3-dfde-49a7-a156-29fdc429e645">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- CAGE questionnaire
+		data matches {
+			HISTORY[at0001] matches {    -- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Cut down?
+										value matches {
+											0|[local::at0009],
+											1|[local::at0010]
+										}
+									}
+									ELEMENT[at0005] occurrences matches {0..1} matches {    -- Annoyed?
+										value matches {
+											0|[local::at0011],
+											1|[local::at0012]
+										}
+									}
+									ELEMENT[at0006] occurrences matches {0..1} matches {    -- Guilty?
+										value matches {
+											0|[local::at0013],
+											1|[local::at0014]
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {    -- Eye opener?
+										value matches {
+											0|[local::at0015],
+											1|[local::at0016]
+										}
+									}
+									ELEMENT[at0008] occurrences matches {0..1} matches {    -- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..4|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0017] matches {    -- ItemTree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0018] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"CAGE questionnaire">
+					description = <"Questionnaire to screen for harmful alcohol use and potential alcohol dependency.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Cut down?">
+					description = <"Have you ever felt you needed to cut down on your drinking?">
+				>
+				["at0005"] = <
+					text = <"Annoyed?">
+					description = <"Have you ever felt you needed to cut down on your drinking?">
+				>
+				["at0006"] = <
+					text = <"Guilty?">
+					description = <"Have you ever felt guilty about drinking?">
+				>
+				["at0007"] = <
+					text = <"Eye opener?">
+					description = <"Have you ever felt you needed a drink first thing in the morning (eye-opener) to steady your nerves or to get rid of a hangover?">
+				>
+				["at0008"] = <
+					text = <"Total score">
+					description = <"Sum of the individual scores assigned for each of the contributing variables.">
+				>
+				["at0009"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0011"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0014"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"No">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Yes">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"ItemTree">
+					description = <"@ internal @">
+				>
+				["at0018"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0000"] = <
+					text = <"*CAGE questionnaire (en)">
+					description = <"CAGE är ett av de mest använda instrumenten för screening av alkoholmissbruk och potentiellt beroende. Det består av fyra frågor relaterade till alkoholkonsumtion. En poäng om 2p eller mer indikerar alkoholmissbruk, och bör resultera i vidare utredning.">
+				>
+				["at0001"] = <
+					text = <"*Event Series(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"*Any event(en)">
+					description = <"*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time. (en)">
+				>
+				["at0003"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0004"] = <
+					text = <"*Cut down? (en)">
+					description = <"*Have you ever felt you needed to cut down on your drinking? (en)">
+				>
+				["at0005"] = <
+					text = <"*Annoyed? (en)">
+					description = <"*Have you ever felt you needed to cut down on your drinking? (en)">
+				>
+				["at0006"] = <
+					text = <"*Guilty? (en)">
+					description = <"*Have you ever felt guilty about drinking? (en)">
+				>
+				["at0007"] = <
+					text = <"*Eye opener? (en)">
+					description = <"*Have you ever felt you needed a drink first thing in the morning (eye-opener) to steady your nerves or to get rid of a hangover? (en)">
+				>
+				["at0008"] = <
+					text = <"Total poäng">
+					description = <"*Sum of the individual scores assigned for each of the contributing variables. (en)">
+				>
+				["at0009"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0011"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0014"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Nej">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Ja">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"*ItemTree (en)">
+					description = <"@ internal @">
+				>
+				["at0018"] = <
+					text = <"*Extension (en)">
+					description = <"*">
+					comment = <"*For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents. (en)">
+				>
+			>
+		>
+	>

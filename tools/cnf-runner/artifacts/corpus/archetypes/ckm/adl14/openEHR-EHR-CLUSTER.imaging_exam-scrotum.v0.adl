@@ -1,0 +1,305 @@
+﻿archetype (adl_version=1.4; uid=4fea727f-be22-464d-a6a9-0a4cfb7ede5c)
+	openEHR-EHR-CLUSTER.imaging_exam-scrotum.v0
+specialise
+	openEHR-EHR-CLUSTER.imaging_exam.v1
+
+concept
+	[at0000.1]	-- Imaging examination of the scrotum
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Natalia Strauch">
+				["organisation"] = <"Medizinische Hochschule Hannover">
+				["email"] = <"Strauch.Natalia@mh-hannover.de">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Peter Fedorcsak, Vebjørn Arntzen">
+				["organisation"] = <"University of Oslo, Oslo University Hospital">
+				["email"] = <"peterfe@uio.no, varntzen@ous-hf.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2021-11-24">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Darstellung der Befunde einer radiologischen Untersuchung einer bestimmten Körperstruktur oder -region und deren Interpretation.">
+			use = <"*Use to record the findings on radiological examination of a specified body structure or region, and their interpretation.
+
+In practice, the design intent is for the CLUSTER.imaging_exam family of archetypes to be used to record all detailed findings on radiological examination. The family of specialised archetypes are derived from this generic parent archetype, CLUSTER.imaging_exam, designed as a universal pattern for recording any findings in any specified body structure or region and using any modality.
+
+Each structure- or region-specific specialisation of this parent archetype is intended to be inclusive of all reasonably anticipated and relevant findings. For example, the CLUSTER.imaging_exam-ovary will support recording of all findings that would be expected in reporting on imaging of the ovary using any radiological modality, including the size of the ovary, largest follicle size and the diameter and description of specific follicles. Similarly, CLUSTER.imaging_exam-lymph_node_group will contain data elements required to record specific findings of a lymph node group, including its precise or relative location in the body and the number of lymph nodes in the group. 
+
+If an appropriate specialisation is not available for a body structure or region, this archetype can be used to record all relevant findings related to the structure or region. 
+
+This archetype and its related family of specialisations are designed to be nested within the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. If this archetype of its specialisations need to be extended with further levels of detailed findings, additional instances of the CLUSTER.imaging_exam or its specialisations can be nested in the 'Additional details' SLOT. (en)">
+			keywords = <"Befund, Ergebnis, Bildgebung, Körper, Organ, System, Struktur, Region, Beobachtung, Diagnostik, Radiologie, Bild", ...>
+			misuse = <"Nicht zur Darstellung von Befunden verwenden, die außerhalb der identifizierten Körperstruktur oder -region beobachtet wurden. Verwenden Sie zu diesem Zweck eine separate Instanz eines oder mehrerer Archetypen aus der Familie CLUSTER.imaging_exam.
+
+Darf nicht verwendet werden, um Details in Bezug auf die Gesamtbefunde, den Kontext oder technische Details in Bezug auf ein vollständiges Testergebnis einer bildgebenden Untersuchung darzustellen. Verwenden Sie zu diesem Zweck das OBSERVATION.imaging_exam_result. Zum Beispiel Kommentare zur Studienqualität, zu Differenzialdiagnosen und zum Gesamteindruck.">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere en fritekstbeskrivelse, strukturerte detaljer og klinisk tolkning av funn eller observasjoner ved bildediagnostisk undersøkelse av skrotum.">
+			use = <"Brukes for å registrere en fritekstbeskrivelse, strukturerte detaljer og klinisk tolkning av funn eller observasjoner ved bildediagnostisk undersøkelse av skrotum. 
+
+Denne arketypen ble utviklet til bruk i SLOT'et \"Strukturerte funn\" i arketypen OBSERVATION.imaging_exam_result (Bildediagnostisk svar), men kan også brukes innen andre ENTRY- og CLUSTER-arketyper der det er klinisk passende.
+
+Brukes som et rammeverk hvor andre CLUSTER arketyper kan nøstes i SLOT'et \"Strukturerte detaljer\" for å registrere ytterligere strukturerte bildefunn for delstrukturer av skrotum eller andre relevante funn.">
+			misuse = <"Skal ikke brukes til å registrere funn utenfor det spesifiserte organ eller kroppsdel. Bruk andre arketyper fra gruppen av CLUSTER.imaging_exam-arketyper for dette.
+
+Skal ikke brukes til å registrere overordnede undersøkelsesfunn, kontekst eller tekniske detaljer relatert til bildeundersøkelsen. Bruk arketypen OBSERVATION.imaging_exam_result (Bildediagnostisk svar) for å registrere for eksempel kommentar om undersøkelseskvalitet, differensialdiagnose og overordnet konklusjon.">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a narrative description, structured details and clinical impression of the findings observed in an imaging examination targeting the scrotum.">
+			use = <"Use to record a narrative description, structured details and clinical impression of the findings observed in an imaging examination targeting the scrotum.
+
+This archetype has been designed to be used in the 'Structured imaging findings' SLOT within the OBSERVATION.imaging_exam_result archetype, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. 
+
+Use to provide a framework in which CLUSTER archetypes can be nested in the 'Additional details' SLOT within this archetype to record additional nested levels of structured imaging findings for related body substructures or site-specific findings.">
+			misuse = <"Not to be used to record findings outside the specified body structure or region. Use other archetypes from the CLUSTER.imaging_exam family for this purpose.
+
+Not to be used to record details related to the overall findings, context or technical details related to a complete imaging examination test result. Use the OBERSERVATION.imaging_exam_result for this purpose. For example, comments on the study quality, differential diagnoses, and overall impression.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Vebjørn Arntzen, Oslo University Hospital", "Liv Laugen, Oslo University Hospital", "Peter Fedorcsak, Oslo University Hospital">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"F8E4B33E8E378BC539AD7DEC75F4B983">
+		["build_uid"] = <"2ec4f8b3-9ce1-4fe8-8f96-1c4cbe475946">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {    -- Imaging examination of the scrotum
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001.1] matches {    -- Body structure
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0.1]    -- Scrotum
+						}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0003] occurrences matches {0..*} matches {    -- Structured body site
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-CLUSTER\.anatomical_location_circle(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {    -- Imaging findings
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Additional details
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.imaging_exam-lymph_node(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-testicle(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-lymph_node_group(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.imaging_exam-abnormality(-[a-zA-Z0-9_]+)*\.v0/}
+			}
+			ELEMENT[at0006] occurrences matches {0..*} matches {    -- Impression
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0005"] = <
+					text = <"Additional details">
+					description = <"Additional structured details about imaging findings for the identified body structure or region, or findings of related structures.">
+				>
+				["at0000.1"] = <
+					text = <"Imaging examination of the scrotum">
+					description = <"Findings observed in an imaging examination targeting the scrotum, using radiographic techniques.">
+				>
+				["at0001.1"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+				>
+				["at0.1"] = <
+					text = <"Scrotum">
+					description = <"The entire scrotum was examined.">
+				>
+				["at0000"] = <
+					text = <"Imaging examination of a body structure">
+					description = <"Findings on radiological examination of a specified body structure or region.">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the imaging findings of the body structure, not captured in other fields.">
+				>
+				["at0001"] = <
+					text = <"Body structure">
+					description = <"Identification of the body structure or region examined.">
+					comment = <"For example: 'Liver', 'Right ankle' or 'Lymph node group'. Coding of the body structure with an appropriate terminology, such as SNOMED CT, is recommended.">
+				>
+				["at0003"] = <
+					text = <"Structured body site">
+					description = <"Structured details about the area of the body under examination.">
+					comment = <"For example: details about a relative anatomical location, such as '2cm distal to the appendix'. If the body site has been fully identified in the 'Body structure' or 'Body site' data elements, then this SLOT becomes redundant.
+">
+				>
+				["at0006"] = <
+					text = <"Impression">
+					description = <"Single word, phrase or brief description that represents the clinical meaning and significance of all imaging findings for the identified body structure.">
+					comment = <"Also referred to as 'Interpretation' or 'Opinion'. For example: 'No abnormality detected' or 'Free fluid present'. Coding of the 'Impression' with a terminology is permitted, if useful. Multiple occurrences allow for more than one coded impression. A narrative description may include a comparison with previous studies of the identified body structure, if appropriate.">
+				>
+				["at0002"] = <
+					text = <"Body site">
+					description = <"Identification of the area of the body under examination.">
+					comment = <"For example: a lymph node group (body structure) which found in the 'Right axilla'. Coding of 'Body site' with a terminology, such as SNOMED CT, is desirable. If the body site has been fully identified in the 'Body structure' data element, this data element becomes redundant.">
+				>
+				["at0004"] = <
+					text = <"Imaging findings">
+					description = <"Narrative description of the imaging findings observed during this examination.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0.1"] = <
+					text = <"Skrotum">
+					description = <"Undersøkelse av skrotum.">
+				>
+				["at0000"] = <
+					text = <"Bildediagnostisk undersøkelse - kroppsstruktur">
+					description = <"Funn eller observasjoner ved radiologisk undersøkelse av et definert organ eller en kroppsdel.">
+				>
+				["at0000.1"] = <
+					text = <"Bildediagnostisk undersøkelse - skrotum">
+					description = <"Funn eller observasjoner ved bildediagnostisk undersøkelse av skrotum med bruk av radiologiske metoder.">
+				>
+				["at0001"] = <
+					text = <"Kroppsstruktur">
+					description = <"Identifisering av organet eller kroppsdelen som svaret gjelder.">
+					comment = <"For eksempel \"Lever\", \"Høyre ankel\" eller \"Lymfeknutegruppe\". Det er anbefalt å kode kroppsstruktur med en passende terminologi, som SNOMED CT.">
+				>
+				["at0001.1"] = <
+					text = <"Struktur">
+					description = <"Navn av undersøkt struktur eller område på eller i kroppen.">
+				>
+				["at0002"] = <
+					text = <"Anatomisk lokalisasjon">
+					description = <"Identifisering av organ eller kroppsdel.">
+					comment = <"For eksempel en lymfeknutegruppe (Kroppsstruktur) som er funnet i \"Høyre aksille\" (Anatomisk lokalisasjon). Det er ønskelig å kode \"Anatomisk lokalisasjon\" med en terminologi, som SNOMED CT. Dersom den anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Anatomisk lokalisasjon\".">
+				>
+				["at0003"] = <
+					text = <"Strukturert anatomisk lokalisasjon">
+					description = <"Strukturerte detaljer om organ eller kroppsdel.">
+					comment = <"For eksempel detaljert om en relativ anatomisk lokalisasjon, som \"2 cm distalt for appendix\". Dersom den nøyaktige eller relative anatomiske lokalisasjonen er fullt ut angitt i elementet \"Kroppsstruktur\" er det ikke nødvendig å bruke \"Strukturert anatomisk lokalisasjon\".">
+				>
+				["at0004"] = <
+					text = <"Funn">
+					description = <"Fritekstlig beskrivelse av funn eller observasjoner på bilder tatt under denne undersøkelsen.">
+				>
+				["at0005"] = <
+					text = <"Ytterligere detaljer">
+					description = <"Ytterligere strukturerte detaljer om funn eller observasjoner på bilder for det definerte organet eller kroppsdelen, eller om funn eller observasjoner hos tilhørende kroppsstrukturer.">
+				>
+				["at0006"] = <
+					text = <"Resymé">
+					description = <"Enkeltord, frase eller kortfattet beskrivelse som uttrykker den kliniske betydningen av alle funn og observasjoner for den definerte kroppsstrukturen.">
+					comment = <"Kan også kalles \"Tolkning\" eller \"Inntrykk\". For eksempel \"Uten anmerkning\" eller \"Fri væske\". Dersom det er nyttig, er det åpent for å kode \"Resymé\" med en terminologi. Flere svar kan kodes ved at elementet er åpent for å være gjentakende. En beskrivelse i fritektst kan også brukes og kan inneholde en sammenligning med tidligere undersøkelser av samme kroppsstruktur.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Ytterligere fritekst om funn eller observasjoner på bilder av kroppsstrukturen og som ikke er fanget i andre felt.">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0005"] = <
+					text = <"Zusätzliche Angaben">
+					description = <"Zusätzliche strukturierte Angaben zu bildgebenden Befunden für die identifizierte Körperstruktur oder -region oder befundbezogene Strukturen.">
+				>
+				["at0000.1"] = <
+					text = <"Bildgebende Untersuchung einer Körperstruktur">
+					description = <"Befunde zur radiologischen Untersuchung einer bestimmten Körperstruktur oder -region.">
+				>
+				["at0001.1"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"Zum Beispiel: „Leber“, „Rechtes Fußgelenk“ oder „Lymphknotengruppe“. Es wird empfohlen, die Körperstruktur mit einer geeigneten Terminologie, wie z. B. SNOMED CT, zu codieren.">
+				>
+				["at0.1"] = <
+					text = <"Scrotum">
+					description = <"The entire scrotum was examined.">
+				>
+				["at0000"] = <
+					text = <"Bildgebende Untersuchung einer Körperstruktur">
+					description = <"Befunde zur radiologischen Untersuchung einer bestimmten Körperstruktur oder -region.">
+				>
+				["at0007"] = <
+					text = <"Kommentar">
+					description = <"Zusätzlicher Text über die bildgebenden Befunde der Körperstruktur, der in anderen Bereichen nicht erfasst wurde.">
+				>
+				["at0001"] = <
+					text = <"Körperstruktur">
+					description = <"Identifizierung der untersuchten Körperstruktur oder Region.">
+					comment = <"Zum Beispiel: „Leber“, „Rechtes Fußgelenk“ oder „Lymphknotengruppe“. Es wird empfohlen, die Körperstruktur mit einer geeigneten Terminologie, wie z. B. SNOMED CT, zu codieren.">
+				>
+				["at0003"] = <
+					text = <"Körperstelle strukturiert">
+					description = <"Strukturierte Angaben zum untersuchten Körperbereich.">
+					comment = <"Zum Beispiel: Angaben zu einer relativen anatomischen Lokalisation, wie z. B. „2 cm distal zum Blinddarm“. Wenn die Körperstelle in den Datenelementen „Körperstruktur“ oder „Körperstelle“ vollständig identifiziert wurde, wird dieser SLOT überflüssig.">
+				>
+				["at0006"] = <
+					text = <"Interpretation">
+					description = <"Einzelnes Wort, Satz oder kurze Beschreibung, die die klinische Bedeutung und Signifikanz aller bildgebenden Befunde für die identifizierte Körperstruktur darstellt.">
+					comment = <"Auch als „Eindruck“ oder „Meinung“ bezeichnet. Zum Beispiel: „Keine Anomalie erkannt“ oder „Freie Flüssigkeit vorhanden“. Eine Kodierung des „Interpretation“ mit einer Terminologie ist zulässig, sofern sinnvoll. Mehrere Vorkommen ermöglichen mehr als eine codierte Interpretation. Eine einfache Beschreibung kann gegebenenfalls einen Vergleich mit früheren Studien der identifizierten Körperstruktur beinhalten.">
+				>
+				["at0002"] = <
+					text = <"Körperstelle">
+					description = <"Identifizierung des zu untersuchenden Bereichs des Körpers.">
+					comment = <"Zum Beispiel: eine Lymphknotengruppe (Körperstruktur), die sich in der „rechten Achselhöhle“ befindet. Eine Kodierung von „Körperstelle“ mit einer Terminologie, wie z. B. SNOMED CT, ist wünschenswert. Wenn die Körperstelle im Datenelement „Körperstruktur“ vollständig identifiziert wurde, wird dieses Datenelement überflüssig.">
+				>
+				["at0004"] = <
+					text = <"Bildgebende Befunde">
+					description = <"Beschreibung der bei dieser Untersuchung beobachteten bildgebenden Befunde.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0.1"] = <[SNOMED-CT::20233005]>
+			>
+		>
+	>

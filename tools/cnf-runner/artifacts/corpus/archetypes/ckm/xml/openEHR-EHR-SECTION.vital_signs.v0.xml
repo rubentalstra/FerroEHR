@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-10-28</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">19FEDB8EB9D83F76587DE9C7D7A30872</other_details>
+    <other_details id="build_uid">b282c3ad-df60-4d19-9602-505ab079b7b9</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Bereitstellung eines Frameworks für die konsistente Modellierung von Vitalparametern innerhalb eines Templates.</purpose>
+      <keywords>Blutdruck</keywords>
+      <keywords>Temperatur</keywords>
+      <keywords>Puls</keywords>
+      <keywords>Sauerstoffsättigung</keywords>
+      <keywords>Atmung</keywords>
+      <keywords>Observationen</keywords>
+      <keywords>Vital</keywords>
+      <keywords>Parameter</keywords>
+      <use>Verwenden Sie diesen Archetyp, um ein Framework und vorgeschlagene Design für die konsistente Modellierung von Vitalparametern innerhalb eines Templates bereitzustellen.&#xD;
+&#xD;
+Dieser Archetyp soll in einem Template verwendet werden, in dem der Inhalt klinisch angemessen ist und in einem entsprechenden COMPOSITION-Archetyp verschachtelt ist. Zum Beispiel: eine Konsultationsnotiz oder Beobachtungen in der Pflege.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>*To provide a framework for consistent modelling of Vital signs within a template. (en)</purpose>
+      <keywords>blodtryck</keywords>
+      <keywords>temperatur</keywords>
+      <keywords>puls</keywords>
+      <keywords>syremättnad</keywords>
+      <keywords>andning</keywords>
+      <keywords>observationer</keywords>
+      <keywords>vitala</keywords>
+      <keywords>tecken</keywords>
+      <use>*Use to provide a framework and suggested design guidance for consistent modelling of Vital signs within a template.&#xD;
+&#xD;
+This archetype is intended to be used within a template in which the content is clinically appropriate, nested within any relevant COMPOSITION archetype. For example: a consultation note or nursing observations. (en)</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ko</code_string>
+      </language>
+      <purpose>*To provide a framework for consistent modelling of Vital signs within a template. (en)</purpose>
+      <keywords>*혈압(ko)</keywords>
+      <keywords>*체온(ko)</keywords>
+      <keywords>*맥박(ko)</keywords>
+      <keywords>*산소 포화도(ko)</keywords>
+      <keywords>*호흡수(ko)</keywords>
+      <keywords>*관찰(ko)</keywords>
+      <keywords>*생체(ko)</keywords>
+      <keywords>*징후(ko)</keywords>
+      <use>*Use to provide a framework and suggested design guidance for consistent modelling of Vital signs within a template.&#xD;
+&#xD;
+This archetype is intended to be used within a template in which the content is clinically appropriate, nested within any relevant COMPOSITION archetype. For example: a consultation note or nursing observations. (en)</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To provide a framework for consistent modelling of Vital signs within a template.</purpose>
+      <keywords>blood pressure</keywords>
+      <keywords>temperature</keywords>
+      <keywords>pulse</keywords>
+      <keywords>oxygen saturation</keywords>
+      <keywords>respirations</keywords>
+      <keywords>observations</keywords>
+      <keywords>vital</keywords>
+      <keywords>signs</keywords>
+      <use>Use to provide a framework and suggested design guidance for consistent modelling of Vital signs within a template.&#xD;
+&#xD;
+This archetype is intended to be used within a template in which the content is clinically appropriate, nested within any relevant COMPOSITION archetype. For example: a consultation note or nursing observations.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>*To provide a framework for consistent modelling of Vital signs within a template. (en)</purpose>
+      <keywords>presión arterial</keywords>
+      <keywords>temperatura</keywords>
+      <keywords>frecuencia cardíaca</keywords>
+      <keywords>saturación de oxígeno</keywords>
+      <keywords>frecuencia respiratoria</keywords>
+      <keywords>observaciones</keywords>
+      <keywords>signos vitales</keywords>
+      <use>*Use to provide a framework and suggested design guidance for consistent modelling of Vital signs within a template.&#xD;
+&#xD;
+This archetype is intended to be used within a template in which the content is clinically appropriate, nested within any relevant COMPOSITION archetype. For example: a consultation note or nursing observations. (en)</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sebastian Garde, Natalia Strauch</author>
+    <author id="organisation">Ocean Informatics, Medizinische Hochschule Hannover</author>
+    <author id="email">sebastian.garde@oceaninformatics.com, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Kirsi Poikela</author>
+    <author id="organisation">Tieto Sweden AB</author>
+    <author id="email">ext.kirsi.poikela@tieto.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ko</code_string>
+    </language>
+    <author id="name">Seung-Jong Yu</author>
+    <author id="organisation">Yonsei FM Clinic</author>
+    <accreditation>Medical Doctor</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Pablo Pazos</author>
+    <author id="organisation">CaboLabs</author>
+    <accreditation>Computer Engineer</accreditation>
+  </translations>
+  <uid>
+    <value>546fd1ef-c520-4b30-a360-cc815fb2d641</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-SECTION.vital_signs.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>SECTION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>OBSERVATION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-OBSERVATION\.pulse_oximetry(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-OBSERVATION\.respiration(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-OBSERVATION\.pulse(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-OBSERVATION\.blood_pressure(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-OBSERVATION\.body_temperature(-[a-zA-Z0-9_]+)*\.v2/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-OBSERVATION\.pulse_oximetry(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-OBSERVATION\.respiration(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-OBSERVATION\.pulse(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-OBSERVATION\.blood_pressure(-[a-zA-Z0-9_]+)*\.v2|openEHR-EHR-OBSERVATION\.body_temperature(-[a-zA-Z0-9_]+)*\.v2</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Vital signs</items>
+        <items id="description">Framework for consistent modelling of observations and measurements about essential physiological functions.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Vital signs</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ko">
+      <items code="at0000">
+        <items id="text">생체 징후</items>
+        <items id="description">*Framework for consistent modelling of observations and measurements about essential physiological functions. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">생체 징후</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Vitalparameter</items>
+        <items id="description">Ein Framework für die konsistente Modellierung von Beobachtungen und Messungen über wesentliche physiologische Funktionen.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Vitalparameter</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Signos vitales</items>
+        <items id="description">*Framework for consistent modelling of observations and measurements about essential physiological functions. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Signos vitales</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Vitalparametrar</items>
+        <items id="description">*Framework for consistent modelling of observations and measurements about essential physiological functions. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Vitalparametrar</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

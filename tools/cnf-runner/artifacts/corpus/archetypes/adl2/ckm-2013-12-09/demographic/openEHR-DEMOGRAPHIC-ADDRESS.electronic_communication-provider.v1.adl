@@ -1,0 +1,332 @@
+﻿archetype (adl_version=1.4)
+	openEHR-DEMOGRAPHIC-ADDRESS.electronic_communication-provider.v1
+specialise
+	openEHR-DEMOGRAPHIC-ADDRESS.electronic_communication.v1
+
+concept
+	[at0000.1]	-- Meio de Comunicação eletrônica de um prestador de assistência à saúde
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"20/05/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To capture and store the electronic communication contact details of a healthcare provider.">
+			use = <"Used in demographic services to collect data about a healthcare provider electronic communications medium.">
+			keywords = <"Demographic service", "Electronic communication">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Capturar e registrar detalhes de contatos por meio de comunicação eletrônica de prestadores de assistência à saúde.">
+			use = <"Usado em serviços de demografia para registrar os detalhes de um endereço de comunicação eletrônica de prestadores de assistência à saúde.">
+			keywords = <"Serviço demográfico", "Comunicação eletrônica">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"draft">
+	other_contributors = <"Sebastian Garde, Ocean Informatics, Germany (Editor)", "Omer Hotomaroglu, Turkey (Editor)", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, UK (Editor)">
+	other_details = <
+		["references"] = <"ISO/DTS 27527:2007(E) - Provider Identification - Draft Technnical Specification - International Organization for Standardization.">
+	>
+
+definition
+	ADDRESS[at0000.1] matches {	-- Healthcare provider electronic communication medium
+		name matches {
+			DV_TEXT matches {*} 
+			DV_CODED_TEXT matches { 
+				defining_code matches {
+					[local::
+					at0020,
+					at0021,
+					at0022,
+					at0023,
+					at0024,
+					at0025]
+				}
+			}
+		}
+		details matches {
+			ITEM_TREE[at0001] occurrences matches {1..1} matches {	-- Components
+				items matches {
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Usage
+						value matches {
+							DV_TEXT matches {*}
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0030, 	-- Personal
+									at0031, 	-- Business
+									at0032, 	-- Personal/Business
+									at0033]	        -- Other use
+								}
+							}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Time preferences
+						value matches {
+							DV_TEXT matches {*}
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0040, 	-- Use during business hours
+									at0041, 	-- Use during day time
+									at0042, 	-- Use at weekend
+									at0043, 	-- Use at any time
+									at0044]	        -- Use during evening/night.
+								}
+							}
+						}
+					}
+					ELEMENT[at0007] occurrences matches {1..1} matches {	-- Details
+						value matches {
+							DV_TEXT[at0012] matches {*}
+							DV_URI[at0009] matches {*}
+						}
+					}
+					ELEMENT[at0.2] occurrences matches {0..1} matches {	-- Communication privacy
+						value matches {
+							DV_BOOLEAN matches {*}
+						}
+					}
+					ELEMENT[at0.3] matches {	-- Healthcare Provider Identifier
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0.2"] = <
+					text = <"Communication privacy">
+					description = <"Indicates that this communication mechanism is not to be openly displayed, except to specific providers.">
+				>
+				["at0.3"] = <
+					text = <"Healthcare Provider Identifier">
+					description = <"Identifier of a provider who may access this communication mechanism.">
+				>
+				["at0000"] = <
+					text = <"Electronic address">
+					description = <"The address of an electronic communication medium.">
+				>
+				["at0000.1"] = <
+					text = <"Healthcare provider electronic address">
+					description = <"The address of a healthcare provider electronic communication medium.">
+				>
+				["at0001"] = <
+					text = <"Components">
+					description = <"Electronic communication medium components.">
+				>
+				["at0003"] = <
+					text = <"Usage">
+					description = <"A code representing the manner of use that a person/organization applies to an electronic medium.">
+				>
+				["at0004"] = <
+					text = <"Time preferences">
+					description = <"An indication of the time of day preference for use of this electronic contact address.">
+				>
+				["at0007"] = <
+					text = <"Details">
+					description = <"A unique combination of characters used as input to electronic telecommunication equipment for the purpose of establishing contact.">
+				>
+				["at0009"] = <
+					text = <"Internet address">
+					description = <"Internet address.">
+				>
+				["at0012"] = <
+					text = <"Identification of the electronic communication medium">
+					description = <"Identification of telephone, fax, pager, e-mail, etc.">
+				>
+				["at0020"] = <
+					text = <"Telephone">
+					description = <"The medium is a telephone (not a mobile phone).">
+				>
+				["at0021"] = <
+					text = <"Mobile">
+					description = <"The medium is a mobile phone (not a landline).">
+				>
+				["at0022"] = <
+					text = <"Fax">
+					description = <"The medium is a faxsimile machine.">
+				>
+				["at0023"] = <
+					text = <"Pager">
+					description = <"The medium is a pager.">
+				>
+				["at0024"] = <
+					text = <"E-mail">
+					description = <"The medium is e-mail.">
+				>
+				["at0025"] = <
+					text = <"URL">
+					description = <"The medium is an internet address.">
+				>
+				["at0030"] = <
+					text = <"Personal">
+					description = <"The medium is for personal use.">
+				>
+				["at0031"] = <
+					text = <"Business">
+					description = <"The medium is for business use.">
+				>
+				["at0032"] = <
+					text = <"Personal/Business">
+					description = <"The medium is for both business and personal use.">
+				>
+				["at0033"] = <
+					text = <"Other use">
+					description = <"The medium is for another use, e.g., a telephone for contact, a relative's phone.">
+				>
+				["at0040"] = <
+					text = <"Use during business hours">
+					description = <"The medium is accessible during the business hours.">
+				>
+				["at0041"] = <
+					text = <"Use during day time">
+					description = <"The medium should be used during day time hours.">
+				>
+				["at0042"] = <
+					text = <"Use at weekend">
+					description = <"The medium should be used at the weekend.">
+				>
+				["at0043"] = <
+					text = <"Use at any time">
+					description = <"The medium can be used at all times.">
+				>
+				["at0044"] = <
+					text = <"Use during evening/night.">
+					description = <"The medium should be used during the evening or at night.">
+				>
+			>
+		>
+		["pt-br"] = <
+			items = <
+				["at0.2"] = <
+					text = <"Indicador de privacidade">
+					description = <"Indica quando um mecanismo de comunicação não é para ser exibido abertamente, exceto para organizações específicas.">
+				>
+				["at0.3"] = <
+					text = <"Identificador do prestador">
+					description = <"Identificador de um prestador que pode acessar este meio de comunicação.">
+				>
+				["at0000"] = <
+					text = <"Meio de Comunicação eletrônica">
+					description = <"Meio de comunicação eletrônica.">
+				>
+				["at0000.1"] = <
+					text = <"Meio de Comunicação eletrônica de um prestador de assistência à saúde">
+					description = <"Meio de comunicação eletrônica de um prestador de assistência à saúde.">
+				>
+				["at0001"] = <
+					text = <"Componentes">
+					description = <"Componentes de um meio de comunicação eletrônica.">
+				>
+				["at0003"] = <
+					text = <"Forma de utilização">
+					description = <"Um código que representa a forma de uso que uma pessoa/organização faz deste meio de comunicação.">
+				>
+				["at0004"] = <
+					text = <"Horário de Utilização">
+					description = <"Uma indicação das preferências de horário de uso para este tipo de contato.">
+				>
+				["at0007"] = <
+					text = <"Detalhes">
+					description = <"Uma combinação única de caracteres usada em um equipamento de comunicação eletrônica com o propósito de estabelecer contato.">
+				>
+				["at0009"] = <
+					text = <"Endereço na internet">
+					description = <"Endereço na internet.">
+				>
+				["at0012"] = <
+					text = <"Identificação do meio de comunicação">
+					description = <"Identificação do telefone, pager, correio eletrônico, etc.">
+				>
+				["at0020"] = <
+					text = <"Telefone">
+					description = <"Indica que se trata de um telefone.">
+				>
+				["at0021"] = <
+					text = <"Fax">
+					description = <"Indica que se trata de um fax.">
+				>
+				["at0022"] = <
+					text = <"Celular">
+					description = <"Indica que se trata de um telefone celular.">
+				>
+				["at0023"] = <
+					text = <"Pager">
+					description = <"Indica que se trata de um pager.">
+				>
+				["at0024"] = <
+					text = <"Correio eletrônico">
+					description = <"Indica que se trata de um correio eletrônico.">
+				>
+				["at0025"] = <
+					text = <"URL">
+					description = <"Indica que se trata de um endereço na internet.">
+				>
+				["at0030"] = <
+					text = <"Uso Pessoal">
+					description = <"Equipamento de uso pessoal.">
+				>
+				["at0031"] = <
+					text = <"Uso no Negócio">
+					description = <"Equipamento de uso profissional/negócio.">
+				>
+				["at0032"] = <
+					text = <"Uso Pessoal/Negócio">
+					description = <"Equipamento de uso pessoal e profissional/negócio.">
+				>
+				["at0033"] = <
+					text = <"Outro uso">
+					description = <"Equipamento para outro tipo de uso. Por exemplo, um telefone para contato, parente, etc.">
+				>
+				["at0040"] = <
+					text = <"Horário comercial">
+					description = <"Indica que este meio de comunicação deve ser utilizado durante o horário comercial.">
+				>
+				["at0041"] = <
+					text = <"Durante o dia">
+					description = <"Indica que este meio de comunicação deve ser utilizado durante o dia.">
+				>
+				["at0042"] = <
+					text = <"Final de semana">
+					description = <"Indica que este meio de comunicação deve ser utilizado aos finais de semana.">
+				>
+				["at0043"] = <
+					text = <"Qualquer hora">
+					description = <"Indica que este meio de comunicação pode ser utilizado a qualquer hora.">
+				>
+				["at0044"] = <
+					text = <"Durante a noite">
+					description = <"Indica que este meio de comunicação deve ser utilizado durante a noite.">
+				>
+			>
+		>
+	>

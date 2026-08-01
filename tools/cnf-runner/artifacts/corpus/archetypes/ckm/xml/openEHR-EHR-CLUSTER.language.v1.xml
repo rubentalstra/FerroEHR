@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2017-07-06</original_author>
+    <original_author id="name">Vebjørn Arntzen</original_author>
+    <original_author id="organisation">Oslo University Hospital</original_author>
+    <original_author id="email">varntzen@ous-hf.no</original_author>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heidi Aursand, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Birgitte Bjerkely, Senter for sjeldne diagnoser, OUS, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Valborg Ellingsen, Haraldsplass Diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, FSE, Helse Nord, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Jessica Hansen, Universitetet i Oslo, Norway</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Annette Hole Sjøborg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Roar Holm, Helse Vest IKT A/S, Norway</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Siren Kraakenes, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Panita Laksuktom, Haukeland universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Øygunn Leite Kallevik, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Rose Mari Eikås, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Jagan Mohan, Mahatma Gandhi Medical College and Research Institute, India</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Anine Ramberg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Gro-Hilde Severinsen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Laila Storesund, Haraldsplass diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Micaela Thierley, Helse Bergen/Haraldsplass sykehus, Norway</other_contributors>
+    <other_contributors>Susanne Trønnes, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">no.openEHR Norway</other_details>
+    <other_details id="original_publisher">openEHR Norway</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">F4F61553DC74420B59E63AC2A0AE0822</other_details>
+    <other_details id="build_uid">9ade9739-fc60-4197-b7bc-ec1dd337ba65</other_details>
+    <other_details id="revision">1.1.2</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Details über ein mündliches, schriftliches oder symbolisches Mitteilungsverfahren.</purpose>
+      <keywords>Unterzeichnung</keywords>
+      <keywords>Zeichensprache</keywords>
+      <keywords>Sprache</keywords>
+      <keywords>Signatur</keywords>
+      <keywords>Lautsprecher</keywords>
+      <keywords>mündlich</keywords>
+      <keywords>schriftlich</keywords>
+      <keywords>Kompetenz</keywords>
+      <keywords>Sprechen</keywords>
+      <keywords>Übersetzen</keywords>
+      <keywords>interpretieren</keywords>
+      <use>Der Archetyp wird verwendet, um Details über ein mündliches, schriftliches oder symbolisches Mitteilungsverfahren darzustellenn. Der Kontext der Angaben zur Sprache wird durch die übergeordneten Archetypen bereitgestellt, in denen dieser Archetyp verschachtelt ist. Zum Beispiel:&#xD;
+&#xD;
+    um die primäre oder bevorzugte Sprache eines Patienten zu erfassen, verwenden Sie diesen Archetyp im Kontext von CLUSTER.communication;&#xD;
+    um die bevorzugte oder erforderliche Sprache als Teil einer Dolmetscheranfrage zu erfassen, verwenden Sie CLUSTER.interpreter_requirements;&#xD;
+    &#xD;
+Verwenden Sie eine separate Instanz dieses Archetyps, um jede Sprache darzustellen, wenn mehrere Sprachen darzustellen werden müssen, z. B. Norwegisch und Suaheli.</use>
+      <misuse>Der Archetyp darf nicht zur Darstellung von Fähigkeiten und Mitteln zum Austausch von Informationen mit einer Einzelperson verwendet werden – verwenden Sie CLUSTER.communication für diesen Zweck.&#xD;
+&#xD;
+Darf nicht verwendet werden, um Details zu einer Anfrage für Dolmetscherdienste darzustellen – verwenden Sie CLUSTER.interpreter_requirements mit einem geeigneten INSTRUCTION-Archetyp, zum Beispiel INSTRUCTION.service_request.</misuse>
+      <copyright>© openEHR Norway, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-pt</code_string>
+      </language>
+      <purpose>Registar pormenores sobre um sistema de comunicação falado, escrito ou simbólico.</purpose>
+      <keywords>sinalizar</keywords>
+      <keywords>língua gestual</keywords>
+      <keywords>língua</keywords>
+      <keywords>sinais</keywords>
+      <keywords>falante</keywords>
+      <keywords>falado</keywords>
+      <keywords>falada</keywords>
+      <keywords>escrito</keywords>
+      <keywords>proficiência</keywords>
+      <keywords>discurso</keywords>
+      <keywords>traduzir</keywords>
+      <keywords>interpretar</keywords>
+      <use>*Use to record details about a spoken, written or symbolic system of communication. The context of the language details is provided by the parent archetypes within which this archetype is nested. For example:&#xD;
+- to record a patient's primary or preferred language, use this archetype within the context of EVALUATION.communication_capability;&#xD;
+- to record the preferred or required language as part of a request for an interpreter, use CLUSTER.interpreter_request;&#xD;
+&#xD;
+Use a separate instance of this archetype to record each language in the situation where multiple languages need to be recorded, for example Norwegian and Swahili. (en)</use>
+      <misuse>*Not to be used to record capability and means for exchanging information with an individual - use EVALUATION.communication_capability for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a request for interpreter services - use CLUSTER.interpreter_request with a suitable INSTRUCTION archetype, for example INSTRUCTION.service_request. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fi</code_string>
+      </language>
+      <purpose>Puhutun, kirjoitetun tai symbolisen viestintätavan yksityiskohtien tallentamiseen.</purpose>
+      <keywords>viittominen</keywords>
+      <keywords>viittomakieli</keywords>
+      <keywords>viitottu kieli</keywords>
+      <keywords>kieli</keywords>
+      <keywords>merkki</keywords>
+      <keywords>puhuja</keywords>
+      <keywords>puhuttu</keywords>
+      <keywords>kirjoitettu</keywords>
+      <keywords>taito</keywords>
+      <keywords>puhe</keywords>
+      <keywords>kääntää</keywords>
+      <keywords>tulkata</keywords>
+      <keywords>tulkkaus</keywords>
+      <use>*Use to record details about a spoken, written or symbolic system of communication. The context of the language details is provided by the parent archetypes within which this archetype is nested. For example:&#xD;
+- to record a patient's primary or preferred language, use this archetype within the context of EVALUATION.communication_capability;&#xD;
+- to record the preferred or required language as part of a request for an interpreter, use CLUSTER.interpreter_request;&#xD;
+&#xD;
+Use a separate instance of this archetype to record each language in the situation where multiple languages need to be recorded, for example Norwegian and Swahili. (en)</use>
+      <misuse>*Not to be used to record capability and means for exchanging information with an individual - use EVALUATION.communication_capability for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a request for interpreter services - use CLUSTER.interpreter_request with a suitable INSTRUCTION archetype, for example INSTRUCTION.service_request. (en)</misuse>
+      <copyright>© openEHR Norway, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om muntlig (tale, tegnspråk) eller skriftlig kommunikasjon.</purpose>
+      <keywords>tegn</keywords>
+      <keywords>tegnspråk</keywords>
+      <keywords>tale</keywords>
+      <keywords>morsmål</keywords>
+      <keywords>språk</keywords>
+      <keywords>språkbruk</keywords>
+      <keywords>dialekt</keywords>
+      <keywords>taktil</keywords>
+      <keywords>blindeskrift</keywords>
+      <keywords>skrift</keywords>
+      <keywords>målføre</keywords>
+      <keywords>målform</keywords>
+      <keywords>skriftspråk</keywords>
+      <keywords>skriftlig</keywords>
+      <use>For å registrere detaljer om muntlig (tale, tegnspråk) eller skriftlig kommunikasjon. Den overordnede arketypen som denne arketypen nøstes i bestemmer konteksten for registreringen av språket. For eksempel:&#xD;
+&#xD;
+- For å registrere et individs primære eller foretrukne språk, bruk denne arketypen i arketypen EVALUATION.communication_capability (Evne til kommunikasjon).&#xD;
+- For å registrere foretrukket eller påkrevd språk som en del av en forespørsel om tolk, bruk denne arketypen i arketypen CLUSTER.interpreter_request (Forespørsel om tolk).&#xD;
+&#xD;
+Dersom det er behov for å registrere flere språk - for eksempel norsk og swahili, må arketypen gjentas for hvert språk.</use>
+      <misuse>Brukes ikke for å registrere evne og metoder for utveksling av informasjon med et individ. Bruk arketypen EVALUATION.communication_capability (Evne til kommunikasjon) for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere en forespørsel om tolketjenester. Bruk arketypen CLUSTER.interpreter_request (Forespørsel om tolk) sammen med en passende INSTRUCTION-arketype, for eksempel INSTRUCTION.service_request (Helsetjenesteforespørsel).</misuse>
+      <copyright>© openEHR Norway, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about a spoken, written or symbolic system of communication.</purpose>
+      <keywords>signing</keywords>
+      <keywords>sign language</keywords>
+      <keywords>tongue</keywords>
+      <keywords>sign</keywords>
+      <keywords>speaker</keywords>
+      <keywords>spoken</keywords>
+      <keywords>written</keywords>
+      <keywords>proficiency</keywords>
+      <keywords>speech</keywords>
+      <keywords>translate</keywords>
+      <keywords>interpret</keywords>
+      <use>Use to record details about a spoken, written or symbolic system of communication. The context of the language details is provided by the parent archetypes within which this archetype is nested. For example:&#xD;
+- to record a patient's primary or preferred language, use this archetype within the context of EVALUATION.communication_capability;&#xD;
+- to record the preferred or required language as part of a request for an interpreter, use CLUSTER.interpreter_request;&#xD;
+&#xD;
+Use a separate instance of this archetype to record each language in the situation where multiple languages need to be recorded, for example Norwegian and Swahili.</use>
+      <misuse>Not to be used to record capability and means for exchanging information with an individual - use EVALUATION.communication_capability for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a request for interpreter services - use CLUSTER.interpreter_request with a suitable INSTRUCTION archetype, for example INSTRUCTION.service_request.</misuse>
+      <copyright>© openEHR Norway, openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>zh-cn</code_string>
+      </language>
+      <purpose>用于记录关于口头类、书面类或符号类（手势语类；手语类）沟通交流体系的详情。</purpose>
+      <keywords>手势语</keywords>
+      <keywords>使用手势语</keywords>
+      <keywords>打手势语</keywords>
+      <keywords>手语</keywords>
+      <keywords>使用手语</keywords>
+      <keywords>打手语</keywords>
+      <keywords>符号语言</keywords>
+      <keywords>使用符号语言</keywords>
+      <keywords>说话方式</keywords>
+      <keywords>语言</keywords>
+      <keywords>手势</keywords>
+      <keywords>符号</keywords>
+      <keywords>说话者</keywords>
+      <keywords>口语</keywords>
+      <keywords>口头</keywords>
+      <keywords>口头语</keywords>
+      <keywords>口头语言</keywords>
+      <keywords>书面</keywords>
+      <keywords>书面语</keywords>
+      <keywords>书面语言</keywords>
+      <keywords>精通</keywords>
+      <keywords>熟练程度</keywords>
+      <keywords>精通程度</keywords>
+      <keywords>讲话</keywords>
+      <keywords>说话能力</keywords>
+      <keywords>言语</keywords>
+      <keywords>翻译</keywords>
+      <keywords>书面翻译</keywords>
+      <keywords>口头翻译</keywords>
+      <keywords>口译</keywords>
+      <use>*Use to record details about a spoken, written or symbolic system of communication. The context of the language details is provided by the parent archetypes within which this archetype is nested. For example:&#xD;
+- to record a patient's primary or preferred language, use this archetype within the context of EVALUATION.communication_capability;&#xD;
+- to record the preferred or required language as part of a request for an interpreter, use CLUSTER.interpreter_request;&#xD;
+&#xD;
+Use a separate instance of this archetype to record each language in the situation where multiple languages need to be recorded, for example Norwegian and Swahili. (en)</use>
+      <misuse>*Not to be used to record capability and means for exchanging information with an individual - use EVALUATION.communication_capability for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a request for interpreter services - use CLUSTER.interpreter_request with a suitable INSTRUCTION archetype, for example INSTRUCTION.service_request. (en)</misuse>
+      <copyright>© openEHR Norway, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch, Alina Rehberg</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de, rehberg.alina@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-pt</code_string>
+    </language>
+    <author id="name">Hugo Silva, Vanessa Pereira, Alex Anguelov</author>
+    <author id="organisation">University of Minho, Luxembourg Institute of Health (LIH), Promptly</author>
+    <author id="email">pg50416@uminho.pt, vanessapereira@protonmail.com, alex.mario.ang@gmail.com</author>
+    <other_details id="other_contributors">Diogo Neto, Beatriz soares</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fi</code_string>
+    </language>
+    <author id="name">Riikka Lahtela, Heidi Koikkalainen</author>
+    <author id="organisation">Istekki, Finland</author>
+    <author id="email">riikka.lahtela@istekki.fi, heidi.koikkalainen@freshehr.com</author>
+    <other_details id="other_contributors">Henri Huttunen, UNA Oy, Finland&#xD;
+Anna-Leena Karvonen, Tietoevry</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjoern Arntzen, John Tore Valand, Marte Vassli Gullesen</author>
+    <author id="organisation">Oslo universitetssykehus HF, Helse Bergen HF, Helse Nord IKT, Helse Vest IKT</author>
+    <author id="email">marte.vassli.gullesen@hnikt.no, john.tore.valand@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>zh-cn</code_string>
+    </language>
+    <author id="name">Lin Zhang</author>
+    <author id="organisation">Taikang Insurance Group</author>
+    <author id="email">linforest@163.com</author>
+    <accreditation>?</accreditation>
+  </translations>
+  <uid>
+    <value>08dfb4fb-7589-41af-8aec-09868bd1ca3b</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.language.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0007</code_list>
+                <code_list>at0008</code_list>
+                <code_list>at0009</code_list>
+                <code_list>at0010</code_list>
+                <code_list>at0012</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Språk</items>
+        <items id="description">Språk er evnen til å produsere og forstå ytringer som formidler informasjon fra ett individ til et annet, ytringene kan være enten hørbare (tale) eller synlige (tegn, skrift).</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Navn på språket</items>
+        <items id="description">Navnet på språket.</items>
+        <items id="comment">For eksempel Mandarin, swahili, fransk eller norsk tegnspråk. Koding av "Språknavn" med en terminologi er ønskelig om mulig. For eksempel ISO 639-3 eller Glottolog. Kodene i ISO 639-3 inneholder både navn på språket men kan også representere navn og modalitet, for eksempel norsk tegnspråk. Verdisettet kan variere med modalitet.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Variant</items>
+        <items id="description">Navnet på dialekten eller sosiolekten.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekstbeskrivelse om språket og eller varianten som ikke er registrert i andre felt.</items>
+        <items id="comment">For eksempel: Braille brukes for taktil lesing/skriving eller munnavlesning brukes for å gi støtte ved nedsatt hørsel.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Modalitet</items>
+        <items id="description">Metoden for kommunikasjon av språket.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tale</items>
+        <items id="description">Språket som benyttes ved tale.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tegnspråk</items>
+        <items id="description">Fysiske handlinger eller bevegelser blir brukt. Denne verdien er ikke relevant om modalitet er definert i elementet "Navn på språket". For eksempel norsk tegnspråk.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Lesing</items>
+        <items id="description">Skriftlige eller trykte bokstaver, ord, bilder eller symboler brukes.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Skriving</items>
+        <items id="description">En sammensetning av bokstaver, ord, bilder eller symboler brukes.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Taktil lesing</items>
+        <items id="description">Tolkning av skriftlig materiale ved hjelp av berøring brukes.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Language</items>
+        <items id="description">A collection of words, their pronunciation and methods for combining them, understood by a specific community and used as a form of communication.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Language name</items>
+        <items id="description">The name of the language.</items>
+        <items id="comment">For example: Mandarin, Swahili, French or Norwegian sign language. Coding of 'Language' with a terminology is preferred, where possible. ISO 639-3 codes include the simple name of the language but can represent the name and modality combined - for example Norwegian sign language. The value set for codes that are appropriate may depend on the mode.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Variant</items>
+        <items id="description">The name of the dialect or sociolect, if appropriate.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the language not captured in other fields.</items>
+        <items id="comment">For example: Braille is used for tactile reading/writing or lip reading is used to supplement a hearing impairment.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Mode</items>
+        <items id="description">The method of communication for the specified language.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Speaking</items>
+        <items id="description">The voice is used.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Signing</items>
+        <items id="description">Physical actions or gestures are used. This value is redundant if identification of the mode is a component of the 'Language name', such as 'Norwegian sign language'.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Reading</items>
+        <items id="description">Written or printed letters, words, pictures or symbols is used.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Writing</items>
+        <items id="description">A composition of letters, words, pictures or symbols is used.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Tactile reading</items>
+        <items id="description">Interpretation of written material using touch is used.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="zh-cn">
+      <items code="at0000">
+        <items id="text">语言</items>
+        <items id="description">特定社区所能理解并将其作为沟通交流形式的一套词语及其发音和组合方法。</items>
+      </items>
+      <items code="at0001">
+        <items id="text">语言名称</items>
+        <items id="description">语言的名称</items>
+        <items id="comment">例如：汉语普通话、斯瓦希里语、法语或挪威手语。 在可能的情况下，应当首选采用标准术语集来编码“语言”。 ISO 639-3代码之中包括语言的简称，但可以表示名称与形态的组合，如挪威手语。 合适的代码取值集合可能会取决于相应的模式。</items>
+      </items>
+      <items code="at0002">
+        <items id="text">语言变体</items>
+        <items id="description">在合适的情况下，用于记录方言或社会方言（某社会阶层或群体使用的一种语言变体）的名称。</items>
+      </items>
+      <items code="at0004">
+        <items id="text">备注</items>
+        <items id="description">额外关于其他字段之中并未记录的有关相应语言的文本叙述。</items>
+        <items id="comment">例如：盲文用于触摸阅读/书写，或者说，唇读用于弥补听力障碍。</items>
+      </items>
+      <items code="at0006">
+        <items id="text">模式</items>
+        <items id="description">指定语言的沟通交流方法。</items>
+      </items>
+      <items code="at0007">
+        <items id="text">口头模式</items>
+        <items id="description">采用语音。</items>
+      </items>
+      <items code="at0008">
+        <items id="text">手势语模式</items>
+        <items id="description">采用的是身体动作或手势（姿势；示意动作）。 如果模式字段的标识已经是“语言名称”字段取值的组成部分，如“挪威手语”，则该取值就属于是多余的。</items>
+      </items>
+      <items code="at0009">
+        <items id="text">阅读模式</items>
+        <items id="description">采用的是书面的或印刷的字母、字词、图片或符号。</items>
+      </items>
+      <items code="at0010">
+        <items id="text">书面模式</items>
+        <items id="description">采用的是字母、字词、图片或符号的组合形式。</items>
+      </items>
+      <items code="at0012">
+        <items id="text">触摸阅读模式</items>
+        <items id="description">采用触摸的方式来解读书面材料。亦可称为“触觉阅读模式”。</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Sprache</items>
+        <items id="description">Eine Sammlung von Wörtern, ihrer Aussprache und Methoden zu ihrer Kombination, die von einer bestimmten Gemeinschaft verstanden und als Kommunikationsform verwendet werden.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Sprachenname</items>
+        <items id="description">Der Name der Sprache.</items>
+        <items id="comment">Zum Beispiel: Deutsch, Mandarin, Swahili, Französisch oder Norwegische Gebärdensprache. Die Kodierung von „Sprache“ mit einer Terminologie wird nach Möglichkeit bevorzugt. ISO 639-3-Codes enthalten den einfachen Namen der Sprache, können aber den Namen und die Modalität kombiniert darstellen - zum Beispiel die deutsche Gebärdensprache. Der für geeignete Codes festgelegte Wert kann vom Modus abhängen.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Variante</items>
+        <items id="description">Der Name des Dialekts oder Soziolekts, falls zutreffend.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzlicher Text über die Sprache, die in anderen Bereichen nicht erfasst wurde.</items>
+        <items id="comment">Zum Beispiel: Blindenschrift wird zum taktilen Lesen/Schreiben verwendet oder das Lippenlesen wird verwendet, um eine Hörbehinderung zu ergänzen.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Modus</items>
+        <items id="description">Die Kommunikationsmethode für die angegebene Sprache.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Sprechen</items>
+        <items id="description">Die Stimme wird verwendet.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Zeichen</items>
+        <items id="description">Körperliche Aktionen oder Gesten werden verwendet. Dieser Wert ist redundant, wenn die Identifizierung des Modus Bestandteil des "Sprachnamens" ist, wie z. B. 'Norwegische Gebärdensprache'.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Lesen</items>
+        <items id="description">Es werden geschriebene oder gedruckte Buchstaben, Wörter, Bilder oder Symbole verwendet.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Schreiben</items>
+        <items id="description">Es wird eine Zusammensetzung aus Buchstaben, Wörtern, Bildern oder Symbolen verwendet.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Taktiles Lesen</items>
+        <items id="description">Interpretation von schriftlichem Material durch Berührung wird verwendet.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fi">
+      <items code="at0000">
+        <items id="text">Kieli</items>
+        <items id="description">Kokoelma sanoja ja äänteitä sekä menetelmiä niiden yhdistämiseksi, mitä tietty yhteisö ymmärtää ja käyttää viestintämuotona.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Kielen nimi</items>
+        <items id="description">Kielen nimi</items>
+        <items id="comment">Esimerkiksi: kiina, swahili, ranska tai norjalainen viittomakieli. Kielen koodaus terminologialla on suositeltavaa, mikäli mahdollista.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Muunnos</items>
+        <items id="description">Murteen tai kielimuodon nimi, jos tarpeellista.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kommentti</items>
+        <items id="description">Sanallinen lisätieto kielestä, mikä ei tule esille muissa kentissä.</items>
+        <items id="comment">Esimerkiksi: Taktiiliseen lukemiseen käytetään pistekirjoitusta tai huulilta lukemista käytetään kuulovamman takia kommunikoinnin tukena.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Käytäntö</items>
+        <items id="description">Kommunikointitapa määritetylle kielelle</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Puhuminen</items>
+        <items id="description">Käytetään ääntä.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Viittominen</items>
+        <items id="description">Käytetään kehon liikkeitä ja ilmeitä (gesturaalisuus). Tieto on tarpeeton, jos käytäntö on tunnistettavissa kielen nimestä kuten ”norjalainen viittomakieli”.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Lukeminen</items>
+        <items id="description">Käytössä on kirjoitetut ja tulostetut kirjaimet, sanat, kuvat ja symbolit.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Kirjoittaminen</items>
+        <items id="description">Käytetään kirjainten, sanojen, kuvien ja symbolien yhdistelmää.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Taktiilinen lukeminen</items>
+        <items id="description">Käytetään tuntoaistia kirjoitetun materiaalin tulkitsemiseen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-pt">
+      <items code="at0000">
+        <items id="text">Idioma</items>
+        <items id="description">Uma coleção de palavras, a sua pronúncia e métodos de combinação, compreendidas por uma comunidade específica e utilizadas como forma de comunicação.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Nome do idioma</items>
+        <items id="description">O nome do idioma.</items>
+        <items id="comment">Por exemplo: mandarim, suaíli, francês ou norueguês. É preferível codificar 'Linguagem' com uma terminologia, sempre que possível. Os códigos ISO 639-3 incluem o nome simples da língua, mas podem representar o nome e a modalidade combinados - por exemplo, a língua gestual norueguesa. O valor definido para os códigos apropriados pode depender do modo.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Variante</items>
+        <items id="description">O nome do dialecto ou sociolecto, se apropriado.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Comentário</items>
+        <items id="description">Narrativa adicional sobre a linguagem/idioma não capturada noutros campos.</items>
+        <items id="comment">Por exemplo: O Braille é utilizado para leitura/escrita tátil ou a leitura labial é utilizada para complementar uma deficiência auditiva.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Modo</items>
+        <items id="description">O método de comunicação para o idioma especificado.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Fala</items>
+        <items id="description">A voz é utilizada.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Sinais</items>
+        <items id="description">Ações físicas ou gestos são utilizados. Este valor é redundante se a identificação do modo for um componente do 'Nome do idioma', como por exemplo 'Linguagem de sinais norueguesa'.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Leitura</items>
+        <items id="description">Letras escritas ou impressas, palavras, imagens ou símbolos são utilizados.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Escrita</items>
+        <items id="description">Composição de letras, palavras, imagens ou símbolos são utilizados.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Leitura tátil</items>
+        <items id="description">A interpretação de material escrito através do toque é utilizada.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

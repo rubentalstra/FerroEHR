@@ -1,0 +1,422 @@
+﻿archetype (adl_version=1.4; uid=b8552dfb-88cf-4020-adbe-e812632e0ecb)
+	openEHR-EHR-OBSERVATION.revised_cardiac_risk_index.v1
+
+concept
+	[at0000]	-- Revised cardiac risk index
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Olha Nikolaieva, Amanda Herbrand">
+				["organisation"] = <"University Hospital Basel, Switzerland">
+				["email"] = <"olha.nikolaieva@usb.ch, amanda.herbrand@usb.ch">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Olha Nikolaieva">
+		["organisation"] = <"University Hospital Basel">
+		["email"] = <"olha.nikolaieva@usb.ch">
+		["date"] = <"2024-02-28">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Aufzeichnung der einzelnen Parameter sowie der Gesamtsumme und der Risikoabschätzung für den Revsised cardiac risk index (RCRI).">
+			use = <"Verwendung zur Aufzeichnung des Revised cardiac risk index (RCRI).">
+			keywords = <"Revised cardiac risk index, RCRI, Überarbeiteter Herzrisikoindex, Lee Score, Lee Index, kardiales Ereignis, perioperatives Risiko, Myokardinfarkt, MI, Herzstillstand, Anästhesie, Risiko, Risikoabschätzung, präoperative Beurteilung.", ...>
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the result for each component parameter, and their total sum and estimated risk for the Revised Cardiac Risk Index (RCRI).">
+			use = <"Use to record the Revised cardiac risk index (RCRI).">
+			keywords = <"Revised cardiac risk index, RCRI, Lee score, Lee index, perioperative risk, myocardial infarction, MI, cardiac arrest, risk, anesthesia, preoperative assessment.", ...>
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"published">
+	other_contributors = <"Amanda Herbrand, University Hospital Basel, Switzerland", "Jannis Pesch, University Hospital Basel, Switzerland", "Jan Steiner, University Hospital Basel, Switzerland", "Markus Obreiter, University Hospital Basel, Switzerland">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Lee T, Marcantonio E, Mangione C, Thomas E, Polanczyk C, Cook F, Sugarbaker D, Donaldson M, Poss R, Ho K, Ludwig L , Pedan A, Goldman L. Derivation and prospective validation of a simple index for prediction of cardiac risk of major noncardiac surgery. Circulation, 1999 Sep 7;100(10):1043-9.
+
+Fleisher L, Beckman J, Brown K, Calkins H, Chaikof E, Fleischmann K, Freeman W, Froehlich J, Kasper E, Kersten J, Riegel B, Robb J. ACCF/AHA focused update on perioperative beta blockade incorporated into the ACC/AHA 2007 guidelines on perioperative cardiovascular evaluation and care for noncardiac surgery: a report of the American college of cardiology foundation/American heart association task force on practice guidelines. Circulation 2009 Nov 24;120(21):e169-276.">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"28D3E43E85E6FD48929C167FF821F6E6">
+		["build_uid"] = <"79019d0a-61ec-4108-b7f6-c1378317498a">
+		["ip_acknowledgements"] = <"This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact https://www.snomed.org/snomed-ct/get-snomed or info@snomed.org.">
+		["revision"] = <"1.0.0">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Revised cardiac risk index
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0007] occurrences matches {0..1} matches {    -- Ischemic heart disease
+										value matches {
+											0|[local::at0008],
+											1|[local::at0009]
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {    -- Congestive heart failure
+										value matches {
+											0|[local::at0011],
+											1|[local::at0012]
+										}
+									}
+									ELEMENT[at0013] occurrences matches {0..1} matches {    -- Cerebrovascular disease
+										value matches {
+											0|[local::at0014],
+											1|[local::at0015]
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {    -- Diabetes mellitus on insulin
+										value matches {
+											0|[local::at0017],
+											1|[local::at0018]
+										}
+									}
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Elevated serum creatinine
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006]
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {    -- High risk surgery
+										value matches {
+											0|[local::at0023],
+											1|[local::at0024]
+										}
+									}
+									ELEMENT[at0026] occurrences matches {0..1} matches {    -- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..6|}
+											}
+										}
+									}
+									ELEMENT[at0027] occurrences matches {0..1} matches {    -- Estimated risk
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0028,    -- Very low risk
+													at0029,    -- Low risk
+													at0030,    -- Moderate risk
+													at0031]    -- High risk
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0025] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0032] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	terminologies_available = <"SNOMED-CT", ...>
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Revised cardiac risk index">
+					description = <"The Revised Cardiac Risk Index (RCRI) is a preoperative prediction tool to estimate the perioperative risk of major cardiac complications during non-cardiac surgery.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Elevated serum creatinine">
+					description = <"Preoperative serum Creatinine ≥2 mg/dl or ≥177 μmol/L.">
+				>
+				["at0005"] = <
+					text = <"Preoperative serum creatinine  <2 mg/dl or <177 μmol/L.">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"Preoperative serum creatinine ≥2 mg/dl or ≥177 μmol/L.">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Ischemic heart disease">
+					description = <"History of probable or definite myocardial infarction (MI; ECG changes and/or enzyme changes); history of positive exercise test; current chest pain considered due to myocardial ischemia; use of nitrate therapy; ECG with pathological Q waves.">
+				>
+				["at0008"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Congestive heart failure">
+					description = <"History of congestive heart failure; pulmonary edema; paroxysmal nocturnal dyspnea; physical examination showing bilateral rales or S3 gallop; chest radiograph showing pulmonary vascular redistribution; has responded symptomatically (or on physical examination) to digitalis, diuretics, or afterload reducing agents.">
+				>
+				["at0011"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Cerebrovascular disease">
+					description = <"History of stroke, cerebrovascular accident (CVA) with minor or no residual or transient ischemic attacks (TIA).">
+				>
+				["at0014"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Diabetes mellitus on insulin">
+					description = <"Diabetes mellitus treated with insulin.">
+				>
+				["at0017"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"High risk surgery">
+					description = <"Surgical procedures that carry a significant risk of complications or adverse events e.g. intraperitoneal, intrathoracic, or suprainguinal vascular procedures.">
+				>
+				["at0023"] = <
+					text = <"Absent">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"Present">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0026"] = <
+					text = <"Total score">
+					description = <"The total sum of each component variable for the Revised cardiac risk index.">
+				>
+				["at0027"] = <
+					text = <"Estimated risk">
+					description = <"Estimated risk of major cardiac complications (myocardial infarction, pulmonary edema, ventricular fibrillation or primary cardiac arrest, and complete heart block) after non-cardiac surgery: 
+0 points = Very low risk; 
+1 point = Low risk; 
+2 points = Moderate risk; 
+≥3 points = High risk.">
+				>
+				["at0028"] = <
+					text = <"Very low risk">
+					description = <"According to Lee et al. equivalent to 0.4%.">
+				>
+				["at0029"] = <
+					text = <"Low risk">
+					description = <"According to Lee et al. equivalent to 0.9%.">
+				>
+				["at0030"] = <
+					text = <"Moderate risk">
+					description = <"According to Lee et al. equivalent to 6.6%.">
+				>
+				["at0031"] = <
+					text = <"High risk">
+					description = <"According to Lee et al. ≥11%.">
+				>
+				["at0032"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0000"] = <
+					text = <"Revised cardiac risk index">
+					description = <"Der Revised Cardiac Risk Index (RCRI) ist ein präoperatives Prognoseinstrument zur Abschätzung des perioperativen Risikos schwerer Herzkomplikationen bei nichtkardialen Eingriffen.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time. (en)">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Erhöhtes Serumkreatinin">
+					description = <"Präoperatives Serumkreatinin ≥2 mg/dl oder ≥177 μmol/L.">
+				>
+				["at0005"] = <
+					text = <"Präoperatives Serumkreatinin <2 mg/dl oder <177 μmol/L">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"Präoperatives Serumkreatinin ≥2 mg/dl oder ≥177 μmol/L">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Koronare Herzkrankheit">
+					description = <"Vorgeschichte eines wahrscheinlichen oder bestätigten Myokardinfarkts (EKG-Veränderungen oder Enzymveränderungen); positive Ergometrie; aktuelle Angina Pectoris Symptomatik, welche auf myokardiale Ischämie zurückgeführt werden kann; Einsatz von Nitraten; EKG mit pathologicher Q-Zacke.">
+				>
+				["at0008"] = <
+					text = <"Nicht vorhanden">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Vorhanden">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Dekompensierte Herzkrankheit">
+					description = <"Vorgeschichte einer dekompensierten Herzkrankheit; Lungenödem; paroxysmale nächtliche Dyspnoe; körperliche Untersuchung mit beidseitigen Rasselgeräuschen oder S3 Galopp; Röntgenthorax mit kardial bedingter pulmonalvenöser Umverteilung; Symptomatisches oder objektivierbares Ansprechen auf Digitalis, Diuretika oder Nachlast-reduzierende Medikamente.">
+				>
+				["at0011"] = <
+					text = <"Nicht vorhanden">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Vorhanden">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"Zerebrovaskuläre Verschlusskrankheit">
+					description = <"Vorgeschichte eines Schlaganfalls, zerebrovaskulären Insults (CVI) mit geringen oder ohne Residuen oder transitorischen ischämischen Attacken (TIA).">
+				>
+				["at0014"] = <
+					text = <"Nicht vorhanden">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Vorhanden">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Insulinabhängiger Diabetes mellitus">
+					description = <"Insulinabhängiger Diabetes mellitus.">
+				>
+				["at0017"] = <
+					text = <"Nicht vorhanden">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"Vorhanden">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Hoch-Risiko Chirurgie">
+					description = <"Chirurgische Eingriffe, die ein erhebliches Risiko für Komplikationen oder unerwünschte Ereignisse bergen, z. intraperitoneale, intrathorakale oder suprainguinale Gefäßeingriffe.">
+				>
+				["at0023"] = <
+					text = <"Nicht vorhanden">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"Vorhanden">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0026"] = <
+					text = <"Summe">
+					description = <"Die Gesamtsumme der im Score gewählten Variablen.">
+				>
+				["at0027"] = <
+					text = <"Risikoabschätzung">
+					description = <"Schätzung des Risikos für kardiale Ereignisse (Myokardinfarkt, Lungenödem, Kammerflimmern, Herzstillstand, AV-Block) nach nicht-kardiochirurgischen Eingriffen:
+- 0 Punkte= Sehr niedriges Risiko; 
+- 1 Punkt= Niedriges Risiko; 
+- 2 Punkte= Moderates Risiko; 
+- ≥3 Punkte= Hohes Risiko.">
+				>
+				["at0028"] = <
+					text = <"Sehr niedriges Risiko">
+					description = <"Gemäss Lee et al. äquivalent zu 0.4%">
+				>
+				["at0029"] = <
+					text = <"Niedriges Risiko">
+					description = <"Gemäss Lee et al. äquivalent zu 0.9%">
+				>
+				["at0030"] = <
+					text = <"Moderates Risiko">
+					description = <"Gemäss Lee et al. äquivalent zu 6.6%">
+				>
+				["at0031"] = <
+					text = <"Hohes Risiko">
+					description = <"Gemäss Lee et al. ≥11%">
+				>
+				["at0032"] = <
+					text = <"*Extension (en)">
+					description = <"Zusätzliche Informationen, die erforderlich sind, um das Modell um lokale Inhalte zu erweitern oder mit anderen Referenzmodellen oder Formalismen abzugleichen.">
+					comment = <"Zum Beispiel: lokale Informationsanforderungen; oder zusätzliche Metadaten zur Anpassung an FHIR.">
+				>
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			items = <
+				["at0000"] = <[SNOMED-CT::448236008]>
+				["at0008"] = <[SNOMED-CT::2667000]>
+				["at0009"] = <[SNOMED-CT::52101004]>
+				["at0011"] = <[SNOMED-CT::2667000]>
+				["at0012"] = <[SNOMED-CT::52101004]>
+				["at0014"] = <[SNOMED-CT::2667000]>
+				["at0015"] = <[SNOMED-CT::52101004]>
+				["at0017"] = <[SNOMED-CT::2667000]>
+				["at0018"] = <[SNOMED-CT::52101004]>
+				["at0023"] = <[SNOMED-CT::2667000]>
+				["at0024"] = <[SNOMED-CT::52101004]>
+			>
+		>
+	>
