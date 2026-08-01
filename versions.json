@@ -1,19 +1,25 @@
 {
-  "latest": "v3.15.3",
+  "latest": "v3.17.0",
   "versions": [
     {
       "id": "dev",
       "label": "dev (develop)",
-      "path": "/ferroehr/docs/dev/",
+      "path": "/docs/dev/",
       "released": null,
       "prerelease": true
     },
     {
       "id": "latest",
-      "label": "latest (v3.15.3)",
-      "path": "/ferroehr/docs/latest/",
-      "released": "2026-07-31",
-      "aliasOf": "v3.15.3"
+      "label": "latest (v3.17.0)",
+      "path": "/docs/latest/",
+      "released": "2026-08-01",
+      "aliasOf": "v3.17.0"
+    },
+    {
+      "id": "v3.17.0",
+      "label": "v3.17.0",
+      "path": "/docs/v3.17.0/",
+      "released": "2026-08-01"
     },
     {
       "id": "v3.15.3",
