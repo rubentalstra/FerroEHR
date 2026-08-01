@@ -564,6 +564,12 @@ pub fn is_structure_root(class: &str) -> bool {
     find(class).is_some_and(|c| c.is_structure_root)
 }
 
+/// Every class of the static model, in emission order — the whole-model
+/// iterator for exhaustive sweeps (generators, reach instrumentation).
+pub fn classes() -> impl Iterator<Item = &'static RmClass> {
+    data::CLASSES.iter()
+}
+
 /// Name → enumeration index, built once from the generated table.
 static ENUM_INDEX: LazyLock<HashMap<&'static str, &'static RmEnumeration>> =
     LazyLock::new(|| data::ENUMERATIONS.iter().map(|e| (e.name, e)).collect());
