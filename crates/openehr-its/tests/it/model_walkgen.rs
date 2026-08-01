@@ -305,3 +305,61 @@ fn dropped_mandatory_attributes_are_refused() {
         "mandatory-drop reach register drifted (the register file states each entry's adjudicated reason)"
     );
 }
+
+/// The model-driven mandatory-container lower bound (#1461): a CLUSTER whose
+/// RM-mandatory 1..* `items` is absent or empty is refused; a populated one is
+/// clean of that violation (RM `data_structures`
+/// `org.openehr.rm.data_structures.cluster.adoc` §Attributes).
+#[test]
+fn mandatory_container_lower_bound_is_enforced() {
+    use openehr_its::rm_validate::validate_rm_value;
+    let mk = |items: Option<Value>| {
+        let mut c = json!({
+            "_type": "CLUSTER",
+            "name": {"_type": "DV_TEXT", "value": "specimen"},
+            "archetype_node_id": "at0001",
+        });
+        if let Some(i) = items {
+            c["items"] = i;
+        }
+        c
+    };
+    let judge = |v: &Value| {
+        let mut out = Vec::new();
+        validate_rm_value(v, &mut out);
+        out.iter()
+            .any(|iv| iv.message.contains("mandatory container `items`"))
+    };
+    assert!(judge(&mk(None)), "absent items must be refused");
+    assert!(judge(&mk(Some(json!([])))), "empty items must be refused");
+    let element = json!([{
+        "_type": "ELEMENT",
+        "name": {"_type": "DV_TEXT", "value": "x"},
+        "archetype_node_id": "at0002",
+    }]);
+    assert!(
+        !judge(&mk(Some(element))),
+        "populated items must not raise the container violation"
+    );
+}
+
+/// The wire-reachable representative fixture of the family: the CKM
+/// lab-result example with the specimen CLUSTER's items deleted (the CNF
+/// `create_composition-cluster_no_items` case's payload) is refused by the
+/// full walk.
+#[test]
+fn cluster_no_items_fixture_is_refused() {
+    let text = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tools/cnf-runner/artifacts/corpus/fixtures/composition/lab_result.cluster_no_items.json"),
+    )
+    .expect("fixture exists");
+    let doc: Value = serde_json::from_str(&text).expect("fixture parses");
+    let violations = openehr_its::flat::validation::validate_rm_and_terminology(&doc);
+    assert!(
+        violations
+            .iter()
+            .any(|m| m.message.contains("mandatory container `items`")),
+        "the cluster-without-items fixture must be refused, got: {violations:?}"
+    );
+}

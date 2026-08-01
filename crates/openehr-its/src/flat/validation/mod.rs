@@ -62,7 +62,9 @@ mod leaf;
 mod subtype;
 mod terminology;
 
-use crate::rm_validate::{declared_concrete_type, validate_rm_invariants_as};
+use crate::rm_validate::{
+    check_mandatory_containers, declared_concrete_type, validate_rm_invariants_as,
+};
 use indexmap::IndexMap;
 use openehr_rm::paths::PathSegment;
 use serde_json::{Map, Value};
@@ -668,6 +670,10 @@ impl Validator {
             // core-only entry here avoids double-reporting them.
             let mut inv = Vec::new();
             validate_rm_invariants_as(effective, v, &mut inv);
+            // The orthogonal model-driven layer: mandatory-container lower
+            // bounds (kept outside the core pair so the fast-vs-typed
+            // equivalence property stays exact).
+            check_mandatory_containers(effective, v, &mut inv);
             for iv in inv {
                 let p = if iv.path.is_empty() {
                     norm_path(path)

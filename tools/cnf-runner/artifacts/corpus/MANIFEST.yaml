@@ -202,6 +202,16 @@ cnf.composition.minimal_event.setting_invalid.xml:
     spec_ref: "TERM SupportTerminology §Vocabularies (setting); RM ehr (EVENT_CONTEXT Setting_valid)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "codec-derived 2026-08-01 from cnf.composition.minimal_event.setting_invalid (fixtures/composition/minimal_event.setting_invalid.json) via crates/openehr-its/examples/canonical_convert.rs — the gate-proven FromJson + ToXml codec pair; carries the identical single defect so the refusal-symmetry case (#1435) can pin that both canonical formats get the same conformance answer"
+cnf.composition.lab_result.cluster_no_items:
+  source: fixtures/composition/lab_result.cluster_no_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the specimen CLUSTER carries no items — CLUSTER.items is List<ITEM> [1..*]"
+    spec_ref: "RM data_structures (CLUSTER.items 1..*, org.openehr.rm.data_structures.cluster.adoc §Attributes)"
+  template_id: "Generic lab test result example simple"
+  provenance: "derived 2026-08-01 from cnf.ckm.lab_result.example (the CKM cid 1013.26.408 template's committed example skeleton) by deleting the single CLUSTER node's items member — the wire-reachable representative of the mandatory 1..* container family (#1461)"
 cnf.composition.unknown_template:
   source: fixtures/composition/unknown_template.json
   format: canonical-json

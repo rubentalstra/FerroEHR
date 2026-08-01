@@ -117,10 +117,11 @@ fn invalid_fixture_verdicts_agree_across_canonical_formats() {
     for entry in std::fs::read_dir(&dir).expect("catalogue fixture dir") {
         let path = entry.expect("dir entry").path();
         if path.extension().and_then(|e| e.to_str()) != Some("json")
-            || !path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.contains("invalid") || n.contains("location_empty"))
+            || !path.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
+                n.contains("invalid")
+                    || n.contains("location_empty")
+                    || n.contains("cluster_no_items")
+            })
         {
             continue;
         }

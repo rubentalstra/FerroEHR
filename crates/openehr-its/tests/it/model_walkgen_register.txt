@@ -1,44 +1,25 @@
 # The mandatory-drop reach register (Lane 3): mandatory attributes whose
 # omission the per-node dispatcher does not surface as a STRUCTURAL violation.
 #
-# Emptied of every TYPE-REACH entry by #1458: the generated structural dispatch
-# (`openehr_its::json_codec::generated::structural::structural_check`, emitted by
-# `openehr-codegen -- emit-json`) decodes EVERY emitted class, so a class no
-# longer needs a class invariant to have its shape checked. What remains is not
-# a reach gap at all — the dispatch does reach these classes; the codec
-# deliberately ACCEPTS the omission, for exactly two reasons, both stated below.
-# SHRINK-only: a new entry needs an adjudicated, spec-cited reason written above
-# it.
+# Emptied of every TYPE-REACH entry by #1458 (the generated structural dispatch
+# `openehr_its::json_codec::generated::structural::structural_check` decodes
+# EVERY emitted class) and of every mandatory-CONTAINER entry by #1461 (the
+# model-driven lower-bound check `rm_validate::check_mandatory_containers`
+# judges every mandatory container — absent, or empty with a cardinality lower
+# bound >= 1 — uniformly from the static model).
+# SHRINK-only: a new entry needs an adjudicated, spec-cited reason written
+# above it.
 #
-# (1) Mandatory 1..* CONTAINER attributes. The codec reads an absent array as an
-# empty `Vec` (`runtime::container_field`; the deliberate tolerance rule the
-# emitter documents: "`Vec` attribute: absent -> empty"), so at the decode step
-# an omitted list and a present empty list are the same value — the omission is
-# not representable as a decode error. Enforcing the container's lower bound is a
-# distinct mechanism (cardinality, not type reach) and a wire-tolerance change
-# for every codec caller, so it is out of this register's scope.
-ADDRESSED_MESSAGE.addressees
-AGENT.identities
-CLUSTER.items
-CONTACT.addresses
-CONTRIBUTION.versions
-DV_PARAGRAPH.items
-EXTRACT_MANIFEST.entities
-GROUP.identities
-ORGANISATION.identities
-PERSON.identities
-REVISION_HISTORY.items
-REVISION_HISTORY_ITEM.audits
-ROLE.identities
-#
-# (2) The `Interval` inclusivity/boundedness flags. Mandatory in the BMM, but
-# the codec fills them from a literal default on read (the emitter's
-# `plan::overrides::FIELD_DEFAULTS` entries: "a bounded interval limit is
-# included by default", "an unstated interval limit is bounded by default" —
-# BASE foundation_types (Interval) for the semantics; no openEHR spec governs the
-# wire omission, it is the archie/EHRbase interop convention, our own design).
-# A defaulted field cannot fail to decode: the omission IS the documented wire
-# form, so refusing it here would contradict the codec's own contract.
+# What remains is NOT a reach gap: the `Interval` inclusivity/boundedness
+# flags are mandatory in the BMM, but the codec fills them from a literal
+# default on read (the emitter's `plan::overrides::FIELD_DEFAULTS` entries:
+# "a bounded interval limit is included by default", "an unstated interval
+# limit is bounded by default" — BASE foundation_types (Interval) for the
+# semantics; no openEHR spec governs the wire omission, it is the
+# archie/EHRbase interop convention, our own design). A defaulted field cannot
+# fail to decode: the omission IS the documented wire form, so refusing it
+# would contradict the codec's own contract. (They are also exempted from the
+# mandatory-container check by shape: they are scalars, not containers.)
 DV_INTERVAL.lower_included
 DV_INTERVAL.lower_unbounded
 DV_INTERVAL.upper_included
