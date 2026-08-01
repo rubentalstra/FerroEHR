@@ -10,11 +10,36 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege for every job; the two jobs that need more (coverage pushes
+# the badge branch) elevate themselves (job-level permissions override
+# workflow-level ones — docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions).
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  # CI builds are closer to from-scratch builds; incremental compilation only
+  # adds dependency-tracking overhead and bloats the caches — and sccache
+  # cannot cache incrementally-compiled crates at all
+  # (github.com/mozilla/sccache#known-caveats).
+  CARGO_INCREMENTAL: "0"
+  # No debuginfo in CI test builds: linking is the one cost no compile cache
+  # can remove (sccache never caches linker invocations), and debuginfo is
+  # most of the link weight and most of ./target's cache size. Backtraces
+  # keep symbol names, only source lines are lost (the bevy/polars pattern:
+  # bevy sets exactly these two vars; polars uses `-C debuginfo=0`).
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
   # The "phases need not compile" gate was retired: every job here is
   # REQUIRED. (The historical PORT_STRICT advisory switch is gone.)
+  #
+  # Cache policy (the ruff/polars `save-if` idiom): only develop writes the
+  # per-job rust-cache entries; PR branches restore develop's warm cache and
+  # never publish their own. PR-branch caches are read by nothing else (GHA
+  # cache scoping), so letting every PR save would only thrash the shared
+  # 10 GB repo quota and evict the caches that matter — including the ui-e2e
+  # exact-key binary caches below.
 
 jobs:
   # ── Change detection: cargo jobs run ONLY when build-relevant paths change ──
@@ -22,13 +47,14 @@ jobs:
   # jobs, workflow-only and docs-only PRs included): app/, crates/, tools/,
   # scripts/, .cargo/, .config/, Cargo.toml, Cargo.lock, rust-toolchain.toml,
   # rustfmt.toml, clippy.toml, deny.toml. Everything else (docs/, website/,
-  # .claude/, .github/, markdown, compose files, assets) skips the nine cargo
+  # .claude/, .github/, markdown, compose files, assets) skips the cargo
   # jobs. GitHub treats a skipped required check as satisfied, so branch
   # protection is unaffected; a workflow-gating bug surfaces on the next
   # code-touching PR, which is acceptable.
   changes:
     name: change detection
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
       admin_ui: ${{ steps.filter.outputs.admin_ui }}
@@ -103,17 +129,22 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt
+          # rustfmt compiles nothing — a restored target/registry cache is
+          # pure download time here.
+          cache: false
       - run: cargo fmt --all --check
 
   # ── Always required: no AI/Claude attribution in commit messages ────────────
   no-attribution:
     name: no attribution in commits
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
@@ -138,44 +169,43 @@ jobs:
           echo "OK: no attribution found."
 
   # ── Always required: supply-chain policy ────────────────────────────────────
+  # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as
+  # cargo-audit and additionally enforces yanked = "deny" (deny.toml
+  # [advisories]), licenses, bans, and sources — the former cargo-audit job was
+  # a strict subset run twice (embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html).
+  # Cargo.lock IS committed (workspace ships a binary); deny checks the real pins.
   deny:
     name: cargo-deny
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-deny
       - run: cargo deny check
-
-  audit:
-    name: cargo-audit
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-audit
-      # Cargo.lock IS committed (workspace ships a binary); audit the real pins.
-      - run: cargo audit
 
   clippy:
     name: clippy
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      # rust-cache (not sccache) is load-bearing here: sccache cannot cache
+      # clippy-driver invocations (mozilla/sccache#539), so the restored
+      # target dir is the only compile cache clippy gets.
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy
           target: wasm32-unknown-unknown
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       # The console's `hydrate`/`ssr` features are mutually exclusive (a
       # compile_error! guard per the Cargo book §Mutually exclusive features),
       # so the workspace lane excludes it and the crate gets its own two
@@ -195,13 +225,23 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       RUSTDOCFLAGS: -D warnings
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - run: cargo doc --locked --workspace --exclude ferroehr-admin-ui --all-features --no-deps
       - run: cargo doc --locked -p ferroehr-admin-ui --features ssr --no-deps
+      # Doc tests live HERE, not in the pg18 test job: nextest cannot run
+      # doctests, so `cargo test --doc` is its own compile (default features —
+      # doctests document what a default consumer gets), and this job is ~1/10
+      # the length of the test job, so the extra configuration rides the short
+      # lane instead of the critical path. No DB: doctests are examples, never
+      # integration tests.
+      - run: cargo test --locked --workspace --doc
 
   # ── MSRV verification: the declared rust-version must actually build ────────
   # The Cargo book names cargo-hack as the verification tool — a pinned stable
@@ -212,9 +252,12 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
@@ -226,46 +269,33 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - name: Regenerate and diff
         run: bash scripts/check-codegen-drift.sh
 
-  # ── CNF conformance: the enforced-coverage guard (fast, no DB) ───────────────
-  # The conformance instrument's own test suite: the ECC catalogue guard (every
-  # registered case has an allocated, never-reused ECC number), the
-  # derivation-square guard (every case carries a spec citation, a schedule
-  # trace or stated ECC-original reason, and an ITS-REST binding), the fixture
-  # manifest + adjudication-register validation, and the wire/edition/model
-  # unit tests. The e2e CNF run goes through the Docker compose stack
-  # (scripts/conformance.sh — the CNF 2.0 pipeline over tools/cnf-runner) at
-  # phase gates; this job is the fast always-on signal: the runner's own
-  # test suite (schema drift, artifact gates, interpreter laws, defect
-  # rejection, verification pack, comparison gate) plus the full artifact
-  # validation.
-  conformance:
-    name: cnf coverage guard
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
-      - run: cargo nextest run --locked -p cnf-runner
-      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr
-
-  # ── Build + tests against PostgreSQL 18.4 ────────────────────────────────────
+  # ── Build + tests against PostgreSQL 18.4 (+ the CNF artifact validation) ───
+  # The former standalone "cnf coverage guard" job lives here now: its
+  # `cargo nextest run -p cnf-runner` was a byte-for-byte subset of this job's
+  # `--workspace` nextest run (cnf-runner is a workspace member — its ECC
+  # catalogue guard, derivation-square guard, fixture-manifest and
+  # adjudication-register tests, and the wire/edition/model unit tests all run
+  # here), so the whole suite compiled and ran TWICE per push. Only the
+  # artifact `validate` step was unique, and it rides along at the end — the
+  # `cargo build` step below has already linked the cnf-runner binary, so the
+  # step is pure execution. The e2e CNF run stays where it was: the Docker
+  # compose stack (scripts/conformance.sh) at phase gates.
   test:
     name: build & test (pg18)
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:18.4
@@ -286,6 +316,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - name: Enable required extensions + non-durable test tuning
         # libxml2-utils provides xmllint — the C14N XML parity gate shells out
         # to it (serialization.md); the runner image does not ship it.
@@ -303,18 +335,41 @@ jobs:
           tool: cargo-nextest
       # The console is excluded from --all-features lanes (mutually exclusive
       # hydrate/ssr, compile_error!-guarded) and tested per-feature instead.
+      # The explicit `cargo build` is NOT redundant with nextest: nextest
+      # compiles test targets only, this is the one place every workspace BIN
+      # actually links (clippy type-checks but never links).
       - run: cargo build --locked --workspace --exclude ferroehr-admin-ui --all-features
       - run: cargo build --locked -p ferroehr-admin-ui --features ssr
       # --no-tests=pass: empty crates are expected until P17 (nextest exits 4 otherwise)
       - run: cargo nextest run --locked --workspace --exclude ferroehr-admin-ui --all-features --no-tests=pass --profile ci
       - run: cargo nextest run --locked -p ferroehr-admin-ui --features ssr --no-tests=pass --profile ci
-      - run: cargo test --locked --workspace --doc
+      # Doc tests moved to the rustdoc job: `cargo test --doc` is a third
+      # feature configuration (default features) and compiled the whole
+      # workspace again at the tail of THE critical-path job.
+      # The CNF artifact validation (catalogue/fixture/register gates over
+      # tools/cnf-runner/artifacts) — the binary is already linked by the
+      # build step above, so this is seconds of pure execution.
+      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr
 
+  # ── Coverage: develop pushes only ────────────────────────────────────────────
+  # An instrumented build can NEVER reuse the test job's artifacts —
+  # cargo-llvm-cov compiles into its own target dir (llvm-cov-target) because
+  # `-C instrument-coverage` artifacts are incompatible with normal ones — so
+  # on PRs this job was a guaranteed second full build+run of the entire suite
+  # whose lcov artifact nothing consumed. It runs post-merge instead (the
+  # backstop cadence this repo already merges on), publishes the lcov
+  # artifact, and refreshes the README coverage badge on the `badges` branch.
+  # PR-only breakage is impossible by construction: it runs the same tests the
+  # test job just ran, only instrumented.
   coverage:
     name: coverage
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: github.event_name == 'push' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      # Pushes the refreshed badge JSON to the `badges` ref below.
+      contents: write
     services:
       postgres:
         image: postgres:18.4
@@ -340,14 +395,44 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: llvm-tools-preview
+          # Only ever runs on develop pushes, so save unconditionally; the
+          # instrumented artifacts get their own key by construction (job id).
+          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov,cargo-nextest
-      - run: cargo llvm-cov nextest --locked --workspace --no-tests=pass --lcov --output-path lcov.info
+      # The same two lanes as the test job (the old single `--workspace` run
+      # measured the console under its bare default features — neither the ssr
+      # nor the hydrate shape anyone ships): everything-but-console with
+      # --all-features, console per-feature; --no-report accumulates both into
+      # one profile, `report` merges them into a single lcov.
+      - run: cargo llvm-cov --no-report nextest --locked --workspace --exclude ferroehr-admin-ui --all-features --no-tests=pass --profile ci
+      - run: cargo llvm-cov --no-report nextest --locked -p ferroehr-admin-ui --features ssr --no-tests=pass --profile ci
+      - run: cargo llvm-cov report --lcov --output-path lcov.info
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-lcov
           path: lcov.info
+      # README badge: line-coverage %, shields.io endpoint JSON, force-pushed
+      # as a single-file orphan commit to `badges` (plumbing — no checkout
+      # juggling, no history growth; the ref only ever holds one commit).
+      # `badges` is not in `on.push.branches`, so this can never retrigger CI.
+      - name: Refresh the coverage badge (badges branch)
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          set -euo pipefail
+          pct=$(cargo llvm-cov report --json --summary-only | jq '.data[0].totals.lines.percent')
+          printf 'line coverage: %s%%\n' "$pct"
+          rounded=$(printf '%.1f' "$pct")
+          color=$(awk -v p="$pct" 'BEGIN { print (p>=90) ? "brightgreen" : (p>=80) ? "green" : (p>=70) ? "yellowgreen" : (p>=60) ? "yellow" : "orange" }')
+          jq -n --arg msg "${rounded}%" --arg color "$color" \
+            '{schemaVersion: 1, label: "coverage", message: $msg, color: $color}' > coverage.json
+          blob=$(git hash-object -w coverage.json)
+          tree=$(printf '100644 blob %s\tcoverage.json\n' "$blob" | git mktree)
+          commit=$(GIT_AUTHOR_NAME=github-actions GIT_AUTHOR_EMAIL=actions@github.com \
+                   GIT_COMMITTER_NAME=github-actions GIT_COMMITTER_EMAIL=actions@github.com \
+                   git commit-tree "$tree" -m "coverage badge: ${rounded}% line coverage")
+          git push --force origin "$commit:refs/heads/badges"
 
   # ── Unused dependencies ──────────────────────────────────────────────────────
   unused-deps:
@@ -355,6 +440,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: taiki-e/install-action@v2
@@ -402,6 +488,10 @@ jobs:
     needs: changes
     if: needs.changes.outputs.admin_ui == 'true'
     runs-on: ubuntu-latest
+    # Generous: a binary-cache miss with a cold sccache is a full release
+    # build of the ~190 kLoC first-party graph (714 s measured cold, plus
+    # dependency compiles on a lockfile bump).
+    timeout-minutes: 60
     # Debian 13 (trixie) container so the binary targets glibc 2.41, matching
     # gcr.io/distroless/cc-debian13 exactly — the same pin and the same reason
     # as containers.yml's `binary` job. It must NOT be compiled on the bare
@@ -502,6 +592,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.admin_ui == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       # Cache 1 — the built outputs themselves, exact key, no restore-keys
@@ -591,13 +682,10 @@ jobs:
     needs: [changes, ui-e2e-binary, ui-e2e-console]
     if: needs.changes.outputs.admin_ui == 'true'
     runs-on: ubuntu-latest
-    # Least privilege, scoped to THIS job: the workflow declares no top-level
-    # `permissions`, so every other job keeps the repository default and only
-    # ui-e2e states its own (job-level settings override workflow-level ones —
-    # docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions).
-    # `contents: read` for the checkout is all it needs: nothing here writes to
-    # a registry any more (the GHCR buildx layer cache was removed, and the
-    # image is now packaged locally from a job artifact).
+    timeout-minutes: 30
+    # `contents: read` (now also the workflow-level default) is all it needs:
+    # nothing here writes to a registry any more (the GHCR buildx layer cache
+    # was removed, and the image is now packaged locally from a job artifact).
     permissions:
       contents: read
     steps:
@@ -688,6 +776,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.server_dockerfile == 'true'
     runs-on: ubuntu-latest
+    # A deliberate full cold in-image compile (no cache backend at all).
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
@@ -708,6 +798,7 @@ jobs:
     name: ui-screenshot-guard
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
@@ -740,6 +831,7 @@ jobs:
     name: changelog-guard
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
@@ -780,6 +872,7 @@ jobs:
   citation:
     name: citation-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: Validate CITATION.cff (CFF 1.2.0 schema)
@@ -798,3 +891,41 @@ jobs:
             exit 1
           fi
           echo "CITATION.cff version $cff_ver matches the workspace version."
+
+  # ── The one-check aggregate gate (the rust-analyzer/ruff pattern) ───────────
+  # A single job that needs everything and passes iff nothing failed — skipped
+  # jobs count as satisfied, exactly like branch protection treats them. Point
+  # branch protection / a future merge queue at THIS check alone, so adding,
+  # renaming, or path-gating jobs never requires touching repository settings.
+  conclusion:
+    name: conclusion
+    if: always()
+    needs:
+      - changes
+      - fmt
+      - no-attribution
+      - deny
+      - clippy
+      - doc
+      - msrv
+      - codegen-drift
+      - test
+      - coverage
+      - unused-deps
+      - ui-e2e-binary
+      - ui-e2e-console
+      - ui-e2e
+      - server-image-from-source
+      - ui-screenshot-guard
+      - changelog
+      - citation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every needed job succeeded or was skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[] | .result; . == "success" or . == "skipped")' >/dev/null
