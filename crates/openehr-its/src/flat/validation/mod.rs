@@ -15,8 +15,9 @@
 //! Validation runs three independent collecting passes over the instance:
 //!
 //! 1. **RM-invariant pass** — recurse the whole instance; for every node with a
-//!    `_type`, run its core RM class invariants ([`validate_rm_invariants`]).
-//!    This is
+//!    `_type` — or whose parent attribute declares a concrete RM type
+//!    ([`crate::rm_validate::declared_concrete_type`]) — run its core RM class
+//!    invariants ([`crate::rm_validate::validate_rm_invariants_as`]). This is
 //!    independent of the (compacted) `WebTemplate`, so class invariants on nodes
 //!    the `WebTemplate` folds away (ELEMENT / `ITEM_TREE` / HISTORY / EVENT) are
 //!    still checked. Paths are RM *instance* paths (`/content[0]/…`).
