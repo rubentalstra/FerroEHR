@@ -148,7 +148,14 @@ redundant_lifetimes = "warn"
 trivial_casts = "warn"
 trivial_numeric_casts = "warn"
 ambiguous_negative_literals = "deny"  # `-x.pow(2)` reads wrong — numeric clarity
-arithmetic_side_effects = "deny"  # `x + y` where x or y is a side-effecting call (e.g., `x() + y()`) is a silent bug
+# NOTE: clippy::arithmetic_side_effects (checked-math-everywhere) is NOT
+# enabled: it is a CLIPPY restriction lint (a bare entry in this rust table
+# is inert and only warns), enabling it for real is a ~600-site remediation
+# program, and silent-overflow safety is already guaranteed by
+# `overflow-checks = true` in [profile.release] — an overflow panics loudly
+# instead of wrapping into a wrong value
+# (https://doc.rust-lang.org/cargo/reference/profiles.html#overflow-checks).
+# The enable-or-not ruling is tracked on issue #1426.
 
 [workspace.lints.rustdoc]
 # Enforced by the CI doc job (RUSTDOCFLAGS=-D warnings, cargo doc --workspace)
