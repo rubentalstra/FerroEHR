@@ -4,13 +4,16 @@
 //! FHIR↔openEHR mapping — our own design/extension). **This submodule,
 //! however, builds RM-typed data**: the `FEEDER_AUDIT` /
 //! `FEEDER_AUDIT_DETAILS` provenance stamped on the imported COMPOSITION. That
-//! shape is governed by **RM common `feeder_audit`** (`FEEDER_AUDIT`,
+//! shape is governed by **RM common `FEEDER_AUDIT`** (`FEEDER_AUDIT`,
 //! `FEEDER_AUDIT_DETAILS.system_id`/`time`/`version_id`,
-//! `originating_system_item_ids: List<DV_IDENTIFIER>`) —
-//! `docs/specs/openehr/RM/docs/common/feeder_audit.adoc`; the `DV_IDENTIFIER`
-//! shape (with its `Id_valid` non-empty-id invariant) is RM `data_types`
-//! `DV_IDENTIFIER`. (master14's *integration* model is archetype-level and does
-//! not govern this builder; the RM `FEEDER_AUDIT` types do.)
+//! `originating_system_item_ids: List<DV_IDENTIFIER>`) — the class shape at
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.feeder_audit.adoc`
+//! and `…org.openehr.rm.common.feeder_audit_details.adoc`, the semantics at
+//! `docs/specs/openehr/RM/docs/common/master03-archetyped_package.adoc`
+//! §Feeder System Audit; the `DV_IDENTIFIER` shape (with its `Id_valid`
+//! non-empty-id invariant) is RM `data_types` `DV_IDENTIFIER`. (master14's
+//! *integration* model is archetype-level and does not govern this builder;
+//! the RM `FEEDER_AUDIT` types do.)
 //!
 //! Gate: the connector's inbound routes are config-gated in `ferroehr-rest`;
 //! this builder only runs on the ingest path.
