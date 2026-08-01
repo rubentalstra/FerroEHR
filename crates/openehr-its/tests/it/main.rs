@@ -31,6 +31,7 @@ mod rm_validation;
 mod spec_vectors;
 mod structured;
 mod tdd;
+mod untagged_nodes;
 mod validation;
 mod validation_checklist;
 mod validation_rules;
