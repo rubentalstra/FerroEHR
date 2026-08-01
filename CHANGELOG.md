@@ -25,6 +25,18 @@ workflow refuses a tag that has no matching section here.
   the preferred parenthesised spelling — the deprecation is enforced at
   exactly the strength the spec gives it, never silently absorbed.
 
+- **The largest OPT the official CKM publishes is now a conformance scale
+  probe.** The Congenital syphilis case investigation form (~5.2 MB of
+  OPT 1.4 XML, the biggest template openEHR publishes) joins the curated CKM
+  journey pack, and two new asserted CNF cases pin size-independence of the
+  released contracts — the template upload and a COMPOSITION commit of its
+  ~526 KB example must succeed and read back content-equal, because the
+  released ITS-REST text defines no payload-size condition, so an
+  implementation cap that refuses, truncates, or corrupts a large valid
+  payload is a conformance defect. The template also rides the measured
+  hospital simulation's case-investigation journey, so every future
+  performance record exercises the large-payload path.
+
 - **ADL 2 (AOM2) archetypes can arrive as XML, in both serializations openEHR
   publishes.** Only the AM 1.4 archetype XML was readable before; the generated
   canonical-XML codec now also covers the AOM2 **persistent** form

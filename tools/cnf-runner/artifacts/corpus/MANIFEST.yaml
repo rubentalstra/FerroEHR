@@ -2253,6 +2253,20 @@ cnf.ckm.medicines_list.example:
   validity: { verdict: valid }
   template_id: "Medicines list item R1"
   provenance: "example skeleton generated once from the SUT example endpoint (detail_level=medium) by scripts/generate-ckm-examples.sh 2026-07-22 and committed byte-identical — the deterministic payload ground every SUT receives at measurement time"
+cnf.ckm.syphilis_investigation:
+  source: templates/ckm/congenital-syphilis-case-investigation.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "Congenital syphilis case investigation form"
+  provenance: "openEHR CKM cid 1013.26.977 (Congenital syphilis case investigation form, status INITIAL, modified 2024-12-30T01:49:57+01:00) — CKM's own OPT 1.4 export vendored verbatim 2026-08-01 (byte-identical to the full-pack copy and to a fresh export); the LARGEST OPT the CKM publishes (5.2 MB) — the large-payload scale probe (#1462); journey role: case_investigation"
+cnf.ckm.syphilis_investigation.example:
+  source: templates/ckm/congenital-syphilis-case-investigation.example.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "Congenital syphilis case investigation form"
+  provenance: "example skeleton generated once from the SUT example endpoint (detail_level=medium) by scripts/generate-ckm-examples.sh 2026-08-01 and committed byte-identical — the deterministic payload ground every SUT receives at measurement time; at ~526 KB the largest committed composition payload (the #1462 large-payload scale probe)"
 cnf.ckm.poisoning_investigation:
   source: templates/ckm/poisoning-case-investigation.opt
   format: opt-xml

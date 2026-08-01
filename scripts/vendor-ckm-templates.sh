@@ -103,6 +103,8 @@ SET=(
   "1013.26.282|covid19-infection-report|public_health_notification (confirmed-case follow-up)"
   "1013.26.988|poisoning-case-investigation|case_investigation"
   "1013.26.980|diphtheria-case-investigation|case_investigation"
+  # ── scale probe: the largest OPT the CKM publishes (5.2 MB, #1462) ────
+  "1013.26.977|congenital-syphilis-case-investigation|case_investigation (largest published form — the large-payload scale probe)"
 )
 
 mkdir -p "$OUT"

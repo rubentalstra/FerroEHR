@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ferroehr 3.16.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.16.0 · verification pack: passed
+SUT: ferroehr 3.17.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.17.0 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 833 |
+| passed | 837 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 870 |
+| total | 874 |
 
 ## By chapter
 
@@ -20,16 +20,16 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 321 | 0 | 0 | 18 |
+| **EHR** | 324 | 0 | 0 | 18 |
 | — EHR resource | 24 | 0 | 0 | 2 |
 | — EHR_STATUS | 42 | 0 | 0 | 5 |
-| — COMPOSITION | 101 | 0 | 0 | 0 |
+| — COMPOSITION | 104 | 0 | 0 | 0 |
 | — DIRECTORY | 61 | 0 | 0 | 6 |
 | — CONTRIBUTION | 57 | 0 | 0 | 5 |
 | — Item tags | 30 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
-| **Definitions** | 91 | 0 | 0 | 10 |
-| — ADL 1.4 templates | 33 | 0 | 0 | 5 |
+| **Definitions** | 92 | 0 | 0 | 10 |
+| — ADL 1.4 templates | 34 | 0 | 0 | 5 |
 | — ADL 2 artefacts | 30 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
 | **Query** | 56 | 0 | 0 | 0 |
@@ -77,14 +77,14 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
 | Adl14ArchetypeProvisioning | pass | 11 | 0 | 0 | 0 |
-| Adl14OptProvisioning | pass | 19 | 0 | 0 | 5 |
+| Adl14OptProvisioning | pass | 20 | 0 | 0 | 5 |
 | Adl2ArchetypeProvisioning | pass | 9 | 0 | 0 | 0 |
 | Adl2OptProvisioning | pass | 27 | 0 | 0 | 2 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 21 | 0 | 0 | 2 |
 | EhrStatus | pass | 41 | 0 | 0 | 5 |
-| CompositionOps | pass | 35 | 0 | 0 | 0 |
+| CompositionOps | pass | 38 | 0 | 0 | 0 |
 | DirectoryOps | pass | 61 | 0 | 0 | 8 |
 | ChangeSets | pass | 50 | 0 | 0 | 5 |
 | Versioning | pass | 59 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 833 of 870 selected cases driven.
+Coverage: 837 of 874 selected cases driven.
 
 Not-executed verdicts (each cited):
 
