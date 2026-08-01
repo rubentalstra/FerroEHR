@@ -14,11 +14,11 @@
 //!   (duplicate class, missing ancestor, unresolved include, …). Those defects
 //!   are **above the ODIN layer**: the ODIN parse succeeds; only the P_BMM
 //!   semantic validator rejects them. This crate has no P_BMM semantic
-//!   validation layer yet, so those semantic assertions are marked `// TODO:`.
+//!   validation layer yet, so those semantic assertions are marked `// TODO(#1444):`.
 //!
 //! Accordingly every fixture here must parse as ODIN and yield a schema object;
 //! the semantic distinction (valid vs semantically-malformed BMM) is recorded
-//! in the per-fixture comments and left as a `// TODO:` for the future P_BMM
+//! in the per-fixture comments and left as a `// TODO(#1444):` for the future P_BMM
 //! validator.
 
 #![allow(
@@ -120,7 +120,7 @@ const BMM_FIXTURES: &[&str] = &[
 /// Every BMM fixture parses as an ODIN schema object carrying at least the
 /// `rm_publisher` + `schema_name` string headers of the BMM persistence format.
 /// (Semantically-malformed fixtures still parse at the ODIN layer — see the
-/// module docs; the BMM-semantic verdict is a `// TODO:`.)
+/// module docs; the BMM-semantic verdict is a `// TODO(#1444):`.)
 #[test]
 fn every_bmm_file_parses_as_odin_schema() {
     for rel in BMM_FIXTURES {
@@ -195,7 +195,7 @@ fn duplicate_class_parses_at_odin_layer() {
     let v = parse_ok("bmm/org/openehr/bmm/v2/persistence/validation/duplicate_class.bmm");
     assert_eq!(as_str(field(&v, "schema_name")), "duplicate_class");
     assert!(!keyed(field(&v, "packages")).is_empty());
-    // TODO: assert the EC_DUPLICATE_CLASS_IN_PACKAGES BMM-semantic error once a
+    // TODO(#1444): assert the EC_DUPLICATE_CLASS_IN_PACKAGES BMM-semantic error once a
     // P_BMM semantic validation layer exists in openehr-lang.
 }
 
@@ -206,7 +206,7 @@ fn include_not_found_parses_at_odin_layer() {
     // schema absent from the repository) — a BMM-semantic defect above ODIN.
     let v = parse_ok("bmm/org/openehr/bmm/v2/persistence/validation/include_not_found.bmm");
     assert!(!keyed(field(&v, "includes")).is_empty());
-    // TODO: assert the EC_INCLUDE_NOT_FOUND BMM-semantic error once a P_BMM
+    // TODO(#1444): assert the EC_INCLUDE_NOT_FOUND BMM-semantic error once a P_BMM
     // semantic validation layer exists in openehr-lang.
 }
 

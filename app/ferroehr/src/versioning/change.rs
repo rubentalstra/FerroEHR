@@ -459,7 +459,7 @@ fn stamp_version_uid(canonical: &mut Value, version_uid: &str) {
     reason = "the three change arms build one resolved write; splitting them \
               would hide that they are alternatives on the same transaction"
 )]
-// TODO: group the commit-scope parameters into one struct — the parameter list
+// TODO(#1447): group the commit-scope parameters into one struct — the parameter list
 // is the whole commit scope threaded through a single private helper.
 #[expect(
     clippy::too_many_arguments,

@@ -87,7 +87,7 @@ impl Builder<'_> {
             IrExpr::Exists(target) => Ok(self
                 .value_expr(target, ValueMode::Projection)?
                 .is_not_null()),
-            // TODO: unify `LIKE`/`matches` on anchored multi-valued paths
+            // TODO(#1448): unify `LIKE`/`matches` on anchored multi-valued paths
             // with the existential lowering above (`exists_compare`) — they
             // still take the scalar LIMIT-1 extraction, whose matched-node
             // choice is order-undefined when a path matches several nodes.

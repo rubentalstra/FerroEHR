@@ -47,7 +47,7 @@ impl FerroEhrService {
         let Some(template_id) = composition_template_id(composition) else {
             return Ok(());
         };
-        // TODO(perf): scans the EHR's live COMPOSITIONs and reassembles each to
+        // TODO(#1445, perf): scans the EHR's live COMPOSITIONs and reassembles each to
         // read its category + template (template_id is not promoted onto
         // vo_version). An EHR holds few persistent compositions.
         let vo_ids = crate::storage::version_repo::meta::current_vo_ids(
