@@ -2,3 +2,4 @@
 //! Canonical-JSON `ToJson` impls for the RM/BASE/AM/TERM/LANG spec types.
 
 mod impls;
+pub mod structural;

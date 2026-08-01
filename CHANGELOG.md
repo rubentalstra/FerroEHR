@@ -15,6 +15,26 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Structurally defective RM nodes are now refused for EVERY openEHR class,
+  not only the ones carrying a class invariant.** The per-node validation step
+  deserialized a wire node into its concrete RM type — the check that surfaces
+  a missing mandatory attribute or a wrong nested type — only for the classes
+  with an RM invariant to run, so a defective node of any other type passed
+  unnoticed: a `PARTICIPATION` with no `performer`, an `ISM_TRANSITION` with no
+  `current_state`, a `LINK` with no `target`, a `DV_BOOLEAN` with no `value`,
+  the demographic `ADDRESS`/`CONTACT`/`PARTY_IDENTITY` shapes, and more. The
+  class-to-type dispatch is now generated from the openEHR meta-model and
+  covers every emitted class, so such a commit is rejected with `422` naming
+  the offending path and field. Wires that were already valid are unaffected.
+- **A generated example COMPOSITION for a template that constrains
+  `other_participations` is committable again.** The example carried a
+  `PARTICIPATION` without its RM-mandatory `performer` (plus a stray `name`,
+  which `PARTICIPATION` does not have), so posting the generated example back
+  was rejected. The participation is now completed with an identity-free
+  `PARTY_SELF` performer — no fabricated person — and carries no `name`.
+
 ## [3.17.0] - 2026-08-01
 
 ### Changed

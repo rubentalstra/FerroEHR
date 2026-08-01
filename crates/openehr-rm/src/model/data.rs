@@ -7154,7 +7154,7 @@ pub(super) static CLASSES: &[RmClass] = &[
         attributes: &[
             RmAttribute {
                 name: "lower",
-                declared_type: "Ordered",
+                declared_type: "Integer",
                 container: Container::None,
                 is_mandatory: false,
                 type_params: &[],
@@ -7162,7 +7162,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             },
             RmAttribute {
                 name: "upper",
-                declared_type: "Ordered",
+                declared_type: "Integer",
                 container: Container::None,
                 is_mandatory: false,
                 type_params: &[],
@@ -9880,7 +9880,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 container: Container::List,
                 is_mandatory: false,
                 type_params: &[RmTypeRef {
-                    name: "Any",
+                    name: "COMPOSITION",
                     params: &[],
                 }],
                 cardinality: Some(Cardinality {
@@ -9952,7 +9952,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 container: Container::List,
                 is_mandatory: false,
                 type_params: &[RmTypeRef {
-                    name: "Any",
+                    name: "EHR_ACCESS",
                     params: &[],
                 }],
                 cardinality: Some(Cardinality {
@@ -10024,7 +10024,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 container: Container::List,
                 is_mandatory: false,
                 type_params: &[RmTypeRef {
-                    name: "Any",
+                    name: "EHR_STATUS",
                     params: &[],
                 }],
                 cardinality: Some(Cardinality {
@@ -10096,7 +10096,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 container: Container::List,
                 is_mandatory: false,
                 type_params: &[RmTypeRef {
-                    name: "Any",
+                    name: "FOLDER",
                     params: &[],
                 }],
                 cardinality: Some(Cardinality {
@@ -10250,7 +10250,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 container: Container::List,
                 is_mandatory: false,
                 type_params: &[RmTypeRef {
-                    name: "Any",
+                    name: "PARTY",
                     params: &[],
                 }],
                 cardinality: Some(Cardinality {

@@ -21,9 +21,10 @@
 //!    synthetic values and are not the property.
 //! 2. **Mutation refusal** — for every concrete class and every mandatory
 //!    attribute, dropping that attribute from the minimal instance must
-//!    surface a structural violation naming the missing field. A class where
-//!    the drop is NOT caught is a reach gap; the honest register of those is
-//!    pinned exactly, so it can only shrink deliberately.
+//!    surface a structural violation naming the missing field. The dispatcher
+//!    reaches every emitted class (the generated structural dispatch), so an
+//!    uncaught drop is now only ever a deliberate codec tolerance; the honest
+//!    register of those pins each one with its reason, and can only shrink.
 
 use std::collections::BTreeSet;
 
@@ -50,6 +51,22 @@ fn primitive(name: &str) -> Option<Value> {
         "Hash" => Value::Object(Map::new()),
         _ => return None,
     })
+}
+
+/// A deterministic value for an attribute whose *class* constrains the value
+/// space more tightly than the BMM primitive type it is declared with.
+///
+/// `UUID.value` is declared `String`, but the class is "Model of the DCE
+/// Universal Unique Identifier or UUID which takes the form of hexadecimal
+/// integers separated by hyphens, following the pattern 8-4-4-4-12"
+/// (`BASE docs/UML/classes/org.openehr.base.base_types.uuid.adoc §UUID Class`),
+/// so an arbitrary string is NOT an instance of the class — the generated Rust
+/// field is a real `uuid::Uuid` and the codec rightly refuses anything else.
+fn constrained_attribute(class: &str, attr: &str) -> Option<Value> {
+    match (class, attr) {
+        ("UUID", "value") => Some(json!("0191a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b")),
+        _ => None,
+    }
 }
 
 /// A generated instance of concrete class `class`, derived from the model:
@@ -92,16 +109,36 @@ fn generate(
             obj.insert(attr.name.to_owned(), json!("AA=="));
             continue;
         }
+        // An attribute the class constrains beyond its declared primitive type.
+        if let Some(v) = constrained_attribute(class, attr.name) {
+            obj.insert(attr.name.to_owned(), v);
+            continue;
+        }
         // Bare-generic-parameter substitution: an attribute whose declared
         // type equals a parameter's bound takes the caller's argument.
-        let (ty, ty_args): (&str, &[openehr_rm::model::RmTypeRef]) = generic_params
+        let substituted: Option<(&str, Vec<&openehr_rm::model::RmTypeRef>)> = generic_params
             .iter()
             .zip(args.iter())
             .find(|(p, _)| p.conforms_to.unwrap_or("Any") == attr.declared_type)
-            .map_or((attr.declared_type, attr.type_params), |(_, a)| {
-                (a.name, a.params)
-            });
-        let element = value_for(ty, ty_args, rich, depth, unknown);
+            .map(|(_, a)| (a.name, a.params.iter().collect()));
+        let (ty, ty_args) = substituted.unwrap_or_else(|| {
+            let mut ty_args: Vec<&openehr_rm::model::RmTypeRef> = attr.type_params.iter().collect();
+            // A BARE reference to a generic class (the BMM drops the argument:
+            // `IMPORTED_VERSION.item: ORIGINAL_VERSION`) is monomorphized by the
+            // emitter with the enclosing scope's type argument (`item:
+            // OriginalVersion<T>`), so thread the caller's argument the same way
+            // — the emitted type is what the codec enforces, and an unthreaded
+            // element is not an instance of it.
+            if ty_args.is_empty()
+                && !args.is_empty()
+                && openehr_rm::model::class(attr.declared_type)
+                    .is_some_and(|c| !c.generic_params.is_empty())
+            {
+                ty_args = args.to_vec();
+            }
+            (attr.declared_type, ty_args)
+        });
+        let element = value_for(ty, &ty_args, rich, depth, unknown);
         let Some(element) = element else { continue };
         let v = match attr.container {
             openehr_rm::model::Container::None => element,
@@ -120,7 +157,7 @@ fn generate(
 /// the table, anything else is recorded as unknown.
 fn value_for(
     ty: &str,
-    ty_args: &[openehr_rm::model::RmTypeRef],
+    ty_args: &[&openehr_rm::model::RmTypeRef],
     rich: bool,
     depth: usize,
     unknown: &mut BTreeSet<String>,
@@ -145,8 +182,7 @@ fn value_for(
         } else {
             class.name.to_owned()
         };
-        let args: Vec<&openehr_rm::model::RmTypeRef> = ty_args.iter().collect();
-        return Some(generate(&concrete, &args, rich, depth + 1, unknown));
+        return Some(generate(&concrete, ty_args, rich, depth + 1, unknown));
     }
     if let Some(e) = openehr_rm::model::enumeration(ty) {
         return e.literals.first().map(|l| match l.value {
@@ -250,13 +286,14 @@ fn dropped_mandatory_attributes_are_refused() {
         mutations > 300,
         "expected the full mandatory set, saw {mutations}"
     );
-    // The honest reach register: every entry is a class whose
-    // missing-mandatory defect the dispatcher does not yet surface (the
-    // per-node typed dispatch covers only invariant-bearing classes and the
-    // fast path vouches without rejecting — the generated structural
-    // dispatch that empties this register is #1458). It may only SHRINK (a
-    // fix) or grow with an adjudicated reason — never grow silently (the
-    // assert names each newcomer).
+    // The honest register: every entry is a mandatory attribute whose omission
+    // the dispatcher does not surface structurally, each with its adjudicated
+    // reason in the file itself. Type-reach entries are gone — the generated
+    // structural dispatch decodes every emitted class — so what remains is only
+    // where the codec deliberately ACCEPTS the omission (an absent 1..*
+    // container reads as an empty `Vec`; an `Interval` boundary flag reads from
+    // its literal default). It may only SHRINK (a fix) or grow with an
+    // adjudicated reason — never grow silently (the assert names each newcomer).
     let expected: BTreeSet<String> = include_str!("model_walkgen_register.txt")
         .lines()
         .map(str::trim)
@@ -265,6 +302,6 @@ fn dropped_mandatory_attributes_are_refused() {
         .collect();
     assert_eq!(
         unreached, expected,
-        "mandatory-drop reach register drifted (fix issue: #1458)"
+        "mandatory-drop reach register drifted (the register file states each entry's adjudicated reason)"
     );
 }
