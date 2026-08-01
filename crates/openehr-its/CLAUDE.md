@@ -6,7 +6,7 @@ Know which half you are touching before editing anything:
 | Part | Status | To change it |
 |---|---|---|
 | `src/xml/generated/` (`ToXml`/`FromXml`) | **GENERATED** (`emit-xml`, from the XSDs + BMM) | edit the emitter, regenerate |
-| `src/json_codec/generated/` (`ToJson`/`FromJson`) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
+| `src/json_codec/generated/` (`ToJson`/`FromJson` in `impls.rs`; the `_type` → decode `structural_check` dispatch in `structural.rs`) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
 | `src/rest/generated/` (ITS-REST DTOs, server traits, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
 | `xml/runtime.rs`, `json_codec/runtime.rs`, `rest/runtime.rs`, `json` + `rm_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
 | `src/flat/` — Simplified Formats (FLAT / STRUCTURED / Web Template / TDD) | hand-written (BMM has no simplified-format model) | edit normally, with spec citations |
@@ -27,7 +27,11 @@ The native canonical-JSON codec (`json_codec`) is THE canonical-JSON
 types carry NO serde derive (the `#[derive(OpenEhrType)]` proc-macro is deleted);
 `json::to_canonical_json`/`from_canonical_json`/`from_canonical_value` ARE the
 codec entry points, and `rm_validate::validate_rm_value` is the wire-boundary
-RM class-invariant dispatcher that drives the reader. Proven by
+RM class-invariant dispatcher that drives the reader — its hand-written table
+holds the invariant-bearing classes, and everything else falls through to the
+generated `structural_check` dispatch, so the codec is the structural-conformance
+authority for EVERY emitted class (a defective node of a class with no invariant
+is refused too). Proven by
 `tests/it/json_codec_parity.rs` (byte hazards + `FromJson` tolerance) +
 `tests/it/canonical_contract.rs` (the R0 determinism manifest).
 
