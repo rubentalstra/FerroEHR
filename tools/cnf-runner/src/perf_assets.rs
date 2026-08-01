@@ -125,7 +125,11 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
             .total_cmp(&b.class.arrival_floor_per_s())
     });
     for (row, case) in classes.iter().enumerate() {
-        #[expect(clippy::cast_precision_loss, reason = "row counts are tiny")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "row counts are tiny"
+        )]
         let y = top + row as f64 * row_h + 8.0;
         let floor = case.class.arrival_floor_per_s();
         let floor_x = log_pos(floor, min, max, x0, x1);
@@ -181,6 +185,11 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
 ///
 /// # Errors
 /// A message when a histogram fails to decode.
+#[expect(
+    clippy::as_conversions,
+    reason = "SVG geometry and latency scaling: row/bar indices and microsecond \
+              latencies are far below 2^52, so the widening is exact"
+)]
 pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, String> {
     const LABEL_W: f64 = 214.0;
     const BAR_H: f64 = 9.0;
@@ -359,7 +368,11 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
         let mut worst_ms: f64 = 0.0;
         for op in &step.operations {
             let histogram = op.decode_histogram()?;
-            #[expect(clippy::cast_precision_loss, reason = "latencies << 2^52 µs")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "latencies << 2^52 µs"
+            )]
             let ms = histogram.value_at_quantile(0.99) as f64 / 1_000.0;
             worst_ms = worst_ms.max(ms);
         }
@@ -521,7 +534,11 @@ pub fn stress_compare_svg(
             let mut worst_ms: f64 = 0.0;
             for op in &step.operations {
                 let histogram = op.decode_histogram()?;
-                #[expect(clippy::cast_precision_loss, reason = "latencies << 2^52 µs")]
+                #[expect(
+                    clippy::as_conversions,
+                    clippy::cast_precision_loss,
+                    reason = "latencies << 2^52 µs"
+                )]
                 let ms = histogram.value_at_quantile(0.99) as f64 / 1_000.0;
                 worst_ms = worst_ms.max(ms);
             }
@@ -687,7 +704,11 @@ fn value_series(
         .samples
         .iter()
         .map(|s| {
-            #[expect(clippy::cast_precision_loss, reason = "offsets << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "offsets << 2^52"
+            )]
             (s.offset_s as f64, value(s))
         })
         .collect()
@@ -709,7 +730,11 @@ fn rate_series(
             if span == 0 {
                 return None;
             }
-            #[expect(clippy::cast_precision_loss, reason = "counters/offsets << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "counters/offsets << 2^52"
+            )]
             Some((
                 b.offset_s as f64,
                 counter(b).saturating_sub(counter(a)) as f64 / span as f64,
@@ -778,7 +803,11 @@ pub fn resources_timeseries_svg(measurement: &Measurement) -> Option<String> {
         .flat_map(|c| c.samples.iter().map(|s| s.offset_s))
         .max()
         .unwrap_or(0);
-    #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "spans << 2^52"
+    )]
     let span_s = (measurement.warmup_s + measurement.duration_s).max(last_offset) as f64;
     let x_of = move |t: f64| x0 + (t / span_s).clamp(0.0, 1.0) * (x1 - x0);
 
@@ -839,7 +868,11 @@ pub fn resources_timeseries_svg(measurement: &Measurement) -> Option<String> {
         .find(|step| minutes / step <= 8.0)
         .unwrap_or(240.0);
 
-    #[expect(clippy::cast_precision_loss, reason = "window seconds << 2^52")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "window seconds << 2^52"
+    )]
     let warm_w = x_of(measurement.warmup_s as f64) - x0;
 
     // One panel or strip: warmup shade, gridlines, y-labels, series.
@@ -922,7 +955,11 @@ pub fn resources_timeseries_svg(measurement: &Measurement) -> Option<String> {
         panel_h,
         "Resident memory",
         &pair(&|s| {
-            #[expect(clippy::cast_precision_loss, reason = "bytes << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "bytes << 2^52"
+            )]
             {
                 s.rss_bytes as f64
             }
@@ -936,7 +973,11 @@ pub fn resources_timeseries_svg(measurement: &Measurement) -> Option<String> {
         ("Network transmit", &|s| s.net_tx_bytes),
     ];
     for (i, (title, counter)) in strips.iter().enumerate() {
-        #[expect(clippy::cast_precision_loss, reason = "four strips")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "four strips"
+        )]
         let top = strips_top + i as f64 * strip_step;
         panel(&mut out, top, strip_h, title, &rate_pair(counter), &|v| {
             format!("{}/s", format_bytes(v))
@@ -997,7 +1038,11 @@ pub fn disk_growth_svg(measurements: &[Measurement]) -> Option<String> {
         ("after ward seed", disk.after_ward_seed_bytes),
         ("after window", disk.after_window_bytes),
     ];
-    #[expect(clippy::cast_precision_loss, reason = "volume sizes << 2^52")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "volume sizes << 2^52"
+    )]
     let max_bytes = anchors
         .iter()
         .filter_map(|(_, v)| *v)
@@ -1027,7 +1072,11 @@ pub fn disk_growth_svg(measurements: &[Measurement]) -> Option<String> {
 
     let bar_w = 84.0;
     for (i, (label, value)) in anchors.iter().enumerate() {
-        #[expect(clippy::cast_precision_loss, reason = "four columns")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "four columns"
+        )]
         let cx = 120.0 + i as f64 * 140.0;
         let _ = writeln!(
             out,
@@ -1036,7 +1085,11 @@ pub fn disk_growth_svg(measurements: &[Measurement]) -> Option<String> {
         );
         match value {
             Some(bytes) => {
-                #[expect(clippy::cast_precision_loss, reason = "volume sizes << 2^52")]
+                #[expect(
+                    clippy::as_conversions,
+                    clippy::cast_precision_loss,
+                    reason = "volume sizes << 2^52"
+                )]
                 let bytes_f = *bytes as f64;
                 let h = (bytes_f / max_bytes) * (y_bottom - y_top);
                 let y = y_bottom - h.max(2.0);
@@ -1066,7 +1119,11 @@ pub fn disk_growth_svg(measurements: &[Measurement]) -> Option<String> {
         disk.seed_compositions,
     ) && n > 0
     {
-        #[expect(clippy::cast_precision_loss, reason = "sizes/counts << 2^52")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "sizes/counts << 2^52"
+        )]
         let per = after.saturating_sub(before) as f64 / n as f64;
         let _ = writeln!(
             out,
@@ -1172,7 +1229,11 @@ pub fn summary_markdown(
         let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- |");
         for op in &m.operations {
             let histogram = op.decode_histogram()?;
-            #[expect(clippy::cast_precision_loss, reason = "µs << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "µs << 2^52"
+            )]
             let ms = |q: f64| histogram.value_at_quantile(q) as f64 / 1_000.0;
             let _ = writeln!(
                 out,
@@ -1213,11 +1274,19 @@ fn resources_markdown(out: &mut String, resources: Option<&crate::perf::Resource
             let _ = writeln!(out, "| {role} `{}` | — | — | — |", c.name);
             continue;
         }
-        #[expect(clippy::cast_precision_loss, reason = "sample counts << 2^52")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "sample counts << 2^52"
+        )]
         let cpu_mean = set.iter().map(|s| s.cpu_pct).sum::<f64>() / set.len() as f64;
         let cpu_peak = set.iter().map(|s| s.cpu_pct).fold(0.0, f64::max);
         let rss_peak = set.iter().map(|s| s.rss_bytes).max().unwrap_or(0);
-        #[expect(clippy::cast_precision_loss, reason = "bytes << 2^52")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "bytes << 2^52"
+        )]
         let _ = writeln!(
             out,
             "| {role} `{}` | {cpu_mean:.1}% | {cpu_peak:.1}% | {} |",
@@ -1230,7 +1299,11 @@ fn resources_markdown(out: &mut String, resources: Option<&crate::perf::Resource
     let Some(disk) = r.disk else {
         return;
     };
-    #[expect(clippy::cast_precision_loss, reason = "volume sizes << 2^52")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "volume sizes << 2^52"
+    )]
     let anchor =
         |v: Option<u64>| v.map_or_else(|| "not probed".to_owned(), |b| format_bytes(b as f64));
     let per_composition = match (
@@ -1239,7 +1312,11 @@ fn resources_markdown(out: &mut String, resources: Option<&crate::perf::Resource
         disk.seed_compositions,
     ) {
         (Some(before), Some(after), Some(n)) if n > 0 => {
-            #[expect(clippy::cast_precision_loss, reason = "sizes/counts << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "sizes/counts << 2^52"
+            )]
             let per = after.saturating_sub(before) as f64 / n as f64;
             format!(
                 " (≈ {} / composition over {} committed)",

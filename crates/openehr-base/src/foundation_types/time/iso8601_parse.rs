@@ -485,6 +485,7 @@ fn parse_timezone(tz: &str) -> Option<i32> {
         return None;
     }
     #[expect(
+        clippy::as_conversions,
         clippy::cast_possible_wrap,
         reason = "hh <= 14 and mm <= 59 by the checks above — far inside i32"
     )]
@@ -620,6 +621,7 @@ impl ParsedDuration {
     /// (`Iso8601_duration.to_seconds`): non-definite years/months reduce via
     /// the `Time_definitions` average-length constants.
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         reason = "ISO 8601 duration counts are small integers; f64 represents them exactly"
     )]
@@ -730,6 +732,10 @@ pub(crate) fn date_time_completion_range(dt: &ParsedDateTime) -> CompletionRange
             )
         }
         (Some(m), Some(day)) => {
+            #[expect(
+                clippy::as_conversions,
+                reason = "the day count is bounded by the representable calendar; f64 represents it exactly"
+            )]
             let day_start = days_from_civil(d.year, m, day) as f64 * SECONDS_IN_DAY;
             match &dt.time {
                 None => (day_start, day_start + SECONDS_IN_DAY, true),
@@ -750,6 +756,7 @@ pub(crate) fn date_time_completion_range(dt: &ParsedDateTime) -> CompletionRange
 
 /// Absolute seconds at `year`-01-01 00:00:00.
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "the day count is bounded by the representable calendar; f64 represents it exactly"
 )]
@@ -759,6 +766,7 @@ fn year_start_seconds(year: u32) -> f64 {
 
 /// Absolute seconds at `year`-`month`-01 00:00:00.
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "the day count is bounded by the representable calendar; f64 represents it exactly"
 )]
@@ -850,6 +858,7 @@ impl ExactSeconds {
     /// The quantity as an `f64` total (for `multiply`/`divide`, whose factor is
     /// a spec `Real`).
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         reason = "second counts over the representable calendar stay far inside 2^53, where f64 is exact on integers"
     )]
@@ -868,6 +877,7 @@ impl ExactSeconds {
         }
         let floor = total.floor();
         #[expect(
+            clippy::as_conversions,
             clippy::cast_possible_truncation,
             reason = "guarded immediately above: |floor| < 2^53, which is inside i64::MAX"
         )]
@@ -1113,6 +1123,7 @@ fn fraction_lexeme_of(frac: f64) -> String {
         return String::new();
     }
     #[expect(
+        clippy::as_conversions,
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
         reason = "the value is a nanosecond count in 0..1e9 by construction — non-negative and inside u32"

@@ -143,6 +143,7 @@ fn percentile(sorted: &[f64], q: f64) -> f64 {
         return 0.0;
     }
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,

@@ -514,7 +514,11 @@ impl StructureScan<'_> {
                 if let Some(av) = i.assumed_value
                     && !i.constraint.is_empty()
                 {
-                    #[expect(clippy::cast_possible_truncation, reason = "guarded by fract()")]
+                    #[expect(
+                        clippy::as_conversions,
+                        clippy::cast_possible_truncation,
+                        reason = "guarded by fract()"
+                    )]
                     let inside =
                         av.fract() == 0.0 && i.constraint.iter().any(|iv| iv.has(&(av as i32)));
                     if !inside {

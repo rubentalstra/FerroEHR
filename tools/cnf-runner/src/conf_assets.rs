@@ -133,6 +133,7 @@ const MARGIN: f64 = 24.0;
 /// timestamps.
 #[must_use]
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "grid counts/cell coordinates are far below 2^52"
 )]
@@ -708,7 +709,11 @@ fn write_count_strip(out: &mut String, baseline: f64, counts: BandCounts, strong
         if value == 0 {
             continue;
         }
-        #[expect(clippy::cast_precision_loss, reason = "four slots")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "four slots"
+        )]
         let slot_end = COUNTS_X + (slot as f64 + 1.0) * SLOT_W - 6.0;
         let _ = write!(
             out,
@@ -738,6 +743,7 @@ fn cases_phrase(total: u64) -> String {
 /// Pure over its inputs: [`TAXONOMY`] order, no timestamps, no randomness.
 #[must_use]
 #[expect(
+    clippy::as_conversions,
     clippy::too_many_lines,
     clippy::cast_precision_loss,
     reason = "one linear chart emitter; counts/rows << 2^52"
@@ -1361,7 +1367,11 @@ mod tests {
         // The book + landing pages embed the SVG at this width; the two-level
         // layout is allowed to grow taller, never wider.
         let bands: usize = TAXONOMY.iter().map(|(_, b)| b.len()).sum();
-        #[expect(clippy::cast_precision_loss, reason = "taxonomy rows << 2^52")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "taxonomy rows << 2^52"
+        )]
         let height =
             BARS_HEAD_H + TAXONOMY.len() as f64 * (CHAP_H + CHAP_GAP) + bands as f64 * BAND_H + 8.0;
         assert!(

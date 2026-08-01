@@ -149,7 +149,11 @@ impl Serialize for WorkloadDuration {
 /// Microseconds → milliseconds (latency values are far below the f64
 /// mantissa bound; the histogram's value range is capped at recording).
 fn us_to_ms(us: u64) -> f64 {
-    #[expect(clippy::cast_precision_loss, reason = "latencies << 2^52 microseconds")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "latencies << 2^52 microseconds"
+    )]
     {
         us as f64 / 1_000.0
     }
@@ -973,7 +977,11 @@ impl JourneyCatalogue {
                 .ok_or_else(|| format!("workload names unknown journey {name:?}"))?;
             for stage in &journey.stages {
                 let op = PerfOp::parse(&stage.op)?;
-                #[expect(clippy::cast_precision_loss, reason = "stage arrival counts are tiny")]
+                #[expect(
+                    clippy::as_conversions,
+                    clippy::cast_precision_loss,
+                    reason = "stage arrival counts are tiny"
+                )]
                 let weight = share.0 / 100.0 * stage.at.arrivals() as f64;
                 arrivals_per_journey += weight;
                 if let Some((_, w)) = op_weight.iter_mut().find(|(o, _)| *o == op) {
@@ -1504,7 +1512,11 @@ pub fn class_verdict(
                 let rate = if requests == 0 {
                     1.0
                 } else {
-                    #[expect(clippy::cast_precision_loss, reason = "request counts << 2^52")]
+                    #[expect(
+                        clippy::as_conversions,
+                        clippy::cast_precision_loss,
+                        reason = "request counts << 2^52"
+                    )]
                     {
                         errors as f64 / requests as f64
                     }

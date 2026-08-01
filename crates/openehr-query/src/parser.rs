@@ -185,6 +185,7 @@ fn parse_number(kind: NumKind, s: &str) -> Option<Primitive> {
                 return None;
             }
             #[expect(
+                clippy::as_conversions,
                 clippy::cast_possible_truncation,
                 clippy::cast_precision_loss,
                 reason = "the guard on this very line proves r is integral and inside the i64 range; the i64::MIN/MAX casts are the bound check itself"

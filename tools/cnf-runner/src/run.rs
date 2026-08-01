@@ -59,7 +59,11 @@ impl RunReport {
         if self.considered == 0 {
             return 1.0;
         }
-        #[expect(clippy::cast_precision_loss, reason = "case counts << 2^52")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "case counts << 2^52"
+        )]
         {
             self.interpreter_run as f64 / self.considered as f64
         }
@@ -1049,6 +1053,7 @@ mod tests {
                 .filter(|(_, e)| matches!(e, Exception::Unrealized(_)))
                 .count();
         #[expect(
+            clippy::as_conversions,
             clippy::cast_precision_loss,
             reason = "case counts << 2^52, so the coverage ratio is exact enough"
         )]

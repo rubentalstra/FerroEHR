@@ -385,7 +385,7 @@ async fn scoped_pool_stamps_connections_opened_during_acquire() {
         // Hold one connection more than the pool currently has, without
         // releasing any: at least one acquire must open a NEW connection
         // inside this tenant scope.
-        let target = pool.size() as usize + 1;
+        let target = usize::try_from(pool.size()).expect("pool size should fit usize") + 1;
         let mut held = Vec::with_capacity(target);
         for _ in 0..target {
             held.push(pool.acquire().await.expect("acquire under scope"));

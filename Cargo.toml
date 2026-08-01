@@ -34,8 +34,8 @@ categories = ["database-implementations", "science", "web-programming::http-serv
 # clippy::lint_groups_priority (correctness). Restriction lints are CHERRY-
 # PICKED individually; the group is never enabled wholesale (official Clippy
 # guidance, https://doc.rust-lang.org/clippy/lints.html).
-all = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
 
 # ── the panic family — closed completely ────────────────────────────────────
 unwrap_used = "deny"
@@ -44,12 +44,14 @@ panic = "deny"                      # recoverable = Result; a panic is never a d
 unimplemented = "deny"
 todo = "deny"                       # owner rule 2026-07-12: no todo!() ever
 unreachable = "deny"                # unreachable!() is a panic; a "cannot happen" state gets a typed error
-panic_in_result_fn = "warn"         # a fn returning Result must not panic/assert instead
-missing_assert_message = "warn"     # production asserts carry a message (lint ignores test fns by design)
+panic_in_result_fn = "deny"         # a fn returning Result must not panic/assert instead
+missing_assert_message = "deny"     # production asserts carry a message (lint ignores test fns by design)
 dbg_macro = "deny"
 print_stdout = "deny"               # libraries speak tracing; binaries/tools relax per-crate
 print_stderr = "deny"
 incompatible_msrv = "deny"          # MSRV 1.96 is a hard pin
+unchecked_time_subtraction = "deny" # std::time::Duration::sub panics on negative durations; jiff is the safe alternative
+as_conversions = "deny"             # `as` silently truncates; use TryFrom/TryInto or explicit casts
 
 # ── no panicking indexing (reliability.md; request paths must not panic) ────
 indexing_slicing = "deny"
@@ -146,6 +148,7 @@ redundant_lifetimes = "warn"
 trivial_casts = "warn"
 trivial_numeric_casts = "warn"
 ambiguous_negative_literals = "deny"  # `-x.pow(2)` reads wrong — numeric clarity
+arithmetic_side_effects = "deny"  # `x + y` where x or y is a side-effecting call (e.g., `x() + y()`) is a silent bug
 
 [workspace.lints.rustdoc]
 # Enforced by the CI doc job (RUSTDOCFLAGS=-D warnings, cargo doc --workspace)
