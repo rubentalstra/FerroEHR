@@ -4,21 +4,36 @@
 //! The openEHR `BMM_PACKAGE` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::entity::bmm_class::BmmClass;
+use crate::bmm3::core::entity::bmm_module::BmmModule;
 
 /// Abstraction of a package as a tree structure whose nodes can contain other packages and classes.
+///
+/// The `_name_` may be qualified if it is a top-level package.
 #[doc(alias = "BMM_PACKAGE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmPackage {
     // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
+    /// Name of this model element.
+    pub name: String,
+    /// Optional documentation of this element, as a keyed list.
+    ///
+    /// It is strongly recommended to use the following key /type combinations for the relevant purposes:
+    ///
+    /// * `"purpose": String`
+    /// * `"keywords": List<String>`
+    /// * `"use": String`
+    /// * `"misuse": String`
+    /// * `"references": String`
+    ///
+    /// Other keys and value types may be freely added.
+    pub documentation: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    // NOTE: `scope` (BMM-mandatory back-reference) omitted — LANG BMM3 bmm_package_container (scope: BMM_PACKAGE_CONTAINER — redefinition of BMM_MODEL_ELEMENT.scope). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    /// Optional meta-data of this element, as a keyed list. May be used to extend the meta-model.
+    pub extensions: Option<std::collections::BTreeMap<String, serde_json::Value>>,
 
     // inherited: BMM_PACKAGE_CONTAINER
     /// Child packages; keys all in upper case for guaranteed matching.
     pub packages: Option<std::collections::BTreeMap<String, BmmPackage>>,
-    /// Name of this package. This name may be qualified if it is a top-level package.
-    pub name: String,
-    /// Classes listed as being in this package.
-    pub classes: Vec<BmmClass>,
+    /// Member modules in this package.
+    pub members: Vec<BmmModule>,
 }

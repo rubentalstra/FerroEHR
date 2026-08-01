@@ -4,9 +4,9 @@
 //! The openEHR `P_BMM_SCHEMA` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_include_spec::BmmIncludeSpec;
 use crate::bmm_persistence::p_bmm_class::PBmmClass;
 use crate::bmm_persistence::p_bmm_package::PBmmPackage;
-use crate::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
 
 /// Persisted form of `BMM_SCHEMA`.
 #[doc(alias = "P_BMM_SCHEMA")]

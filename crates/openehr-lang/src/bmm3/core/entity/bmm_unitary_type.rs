@@ -3,8 +3,10 @@
 //! The openEHR `BMM_UNITARY_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
 use crate::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
 use crate::bmm3::core::entity::bmm_signature::BmmSignature;
+use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 
@@ -14,10 +16,14 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 #[doc(alias = "BMM_UNITARY_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum BmmUnitaryType {
+    /// The `BMM_GENERIC_TYPE` subtype of `BMM_UNITARY_TYPE`.
+    BmmGenericType(BmmGenericType),
     /// The `BMM_PARAMETER_TYPE` subtype of `BMM_UNITARY_TYPE`.
-    BmmParameterType(BmmParameterType),
+    BmmParameterType(Box<BmmParameterType>),
     /// The `BMM_SIGNATURE` subtype of `BMM_UNITARY_TYPE`.
-    BmmSignature(BmmSignature),
+    BmmSignature(Box<BmmSignature>),
+    /// The `BMM_SIMPLE_TYPE` subtype of `BMM_UNITARY_TYPE`.
+    BmmSimpleType(BmmSimpleType),
     /// The `BMM_STATUS_TYPE` subtype of `BMM_UNITARY_TYPE`.
     BmmStatusType(BmmStatusType),
     /// The `BMM_TUPLE_TYPE` subtype of `BMM_UNITARY_TYPE`.

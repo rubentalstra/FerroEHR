@@ -4,4 +4,7 @@
 
 pub mod bmm_formal_element;
 pub mod bmm_model_element;
+pub mod entity;
 pub mod feature;
+pub mod literal_value;
+pub mod model;

@@ -28,16 +28,30 @@
 //!   `BMM_MODEL.class_definitions` — "All classes in this schema"
 //!   (`org.openehr.lang.bmm.bmm_model.adoc` §Attributes) — which is exactly the
 //!   source the model-level lookups
-//!   ([`crate::bmm3::core::model::bmm_model::BmmModel::property_definition`])
+//!   ([`crate::bmm::core::bmm_model::BmmModel::property_definition`])
 //!   already prefer over embedded copies.
-//! * **`value_constraint` has no destination.** `P_BMM_BASE_TYPE.value_constraint`
+//! * **`value_constraint` has no destination in the generation this
+//!   materialisation targets.** `P_BMM_BASE_TYPE.value_constraint`
 //!   (`master04-syntax.adoc` §Value-set Constraints) carries a value-set
-//!   reference such as `openEHR::languages`, but `BMM_SIMPLE_TYPE` declares only
-//!   `base_class` (`org.openehr.lang.bmm.bmm_simple_type.adoc` §Attributes) and
-//!   nothing in the v2 `BMM_*` type family references `BMM_VALUE_SET_SPEC` (which
-//!   is reachable only from the v3 `BMM_MODEL_TYPE`). The constraint is
-//!   therefore preserved in the P_BMM graph and NOT carried into the BMM model —
-//!   an honest boundary, not a shadow field.
+//!   reference such as `openEHR::languages`. This module materialises the **v2.x**
+//!   `BMM_MODEL` — P_BMM *is* the v2 generation's persistence form
+//!   (`LANG/docs/bmm/master06-persistence.adoc`; `LANG/docs/bmm/master01-preface.adoc`
+//!   §History calls the v2.x model "the normative, tool-implemented version",
+//!   and `master06-persistence.adoc` §Overview presents P_BMM as the serialised
+//!   form of that model) — and the v2 `BMM_SIMPLE_TYPE` declares only
+//!   `base_class` (`org.openehr.lang.bmm.bmm_simple_type.adoc` §Attributes),
+//!   with no v2 `BMM_*` class referencing `BMM_VALUE_SET_SPEC` at all. So in the
+//!   v2 generation the constraint is preserved in the P_BMM graph and NOT carried
+//!   further — a boundary of that generation's model, not of the openEHR specs.
+//!   The **v3** generation DOES declare the destination:
+//!   `org.openehr.lang.bmm3.bmm_model_type.adoc` §Attributes types
+//!   `value_constraint: BMM_VALUE_SET_SPEC` on every model type, and
+//!   `crate::bmm3` emits it.
+//!   TODO: materialise a v3 `BMM_MODEL` from P_BMM (or its v3 successor) so
+//!   `value_constraint`, class `functions`/`procedures`/`invariants` and generic
+//!   ancestor bindings reach a model; the v3 generation's own function surface is
+//!   a precondition (`crate::bmm3::core::entity::bmm_type_impl` has the naming
+//!   surface only).
 
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -47,8 +61,26 @@ use openehr_base::prelude::MultiplicityInterval;
 use openehr_base::prelude::PointInterval;
 use openehr_base::prelude::ProperInterval;
 
+use crate::bmm::core::bmm_class::BmmClass;
+use crate::bmm::core::bmm_class::BmmClassData;
+use crate::bmm::core::bmm_container_property::BmmContainerProperty;
+use crate::bmm::core::bmm_container_type::BmmContainerType;
+use crate::bmm::core::bmm_container_type::BmmContainerTypeData;
+use crate::bmm::core::bmm_enumeration::BmmEnumeration;
+use crate::bmm::core::bmm_enumeration::BmmEnumerationData;
+use crate::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger;
+use crate::bmm::core::bmm_enumeration_string::BmmEnumerationString;
+use crate::bmm::core::bmm_generic_class::BmmGenericClass;
 use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
+use crate::bmm::core::bmm_generic_type::BmmGenericType;
+use crate::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType;
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm::core::bmm_open_type::BmmOpenType;
+use crate::bmm::core::bmm_package::BmmPackage;
+use crate::bmm::core::bmm_property::BmmProperty;
+use crate::bmm::core::bmm_property::BmmPropertyData;
+use crate::bmm::core::bmm_simple_type::BmmSimpleType;
+use crate::bmm::core::bmm_type::BmmType;
 use crate::bmm_persistence::error::PBmmReadError;
 use crate::bmm_persistence::p_bmm_base_type::PBmmBaseType;
 use crate::bmm_persistence::p_bmm_class::PBmmClass;
@@ -60,26 +92,6 @@ use crate::bmm_persistence::p_bmm_package::PBmmPackage;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::p_bmm_type::PBmmType;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
-use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
-use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
-use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
-use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
-use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-use crate::bmm3::core::entity::bmm_type::BmmType;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString;
-use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
-use crate::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData;
-use crate::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty;
-use crate::bmm3::core::feature::bmm_property::BmmProperty;
-use crate::bmm3::core::feature::bmm_property::BmmPropertyData;
-use crate::bmm3::core::model::bmm_model::BmmModel;
-use crate::bmm3::core::model::bmm_package::BmmPackage;
 
 /// Materialise the in-memory `BMM_MODEL` of an inclusion-resolved
 /// `P_BMM_SCHEMA`.
@@ -299,11 +311,21 @@ impl<'a> Builder<'a> {
     /// listing and every property type reference naming an interface
     /// (`TERMINOLOGY_SERVICE.terminology: TERMINOLOGY_ACCESS` in the vendored
     /// RM 1.2.0 schema) resolvable, while `is_abstract` records that an
-    /// interface is not instantiable. Its FUNCTIONS have no destination, exactly
-    /// as class functions do not: `BMM_CLASS` declares `properties` but no
-    /// function map (class doc §Attributes), so `P_BMM_CLASS.functions` is
-    /// preserved in the P_BMM graph and carried no further — an honest boundary,
-    /// not a shadow field.
+    /// interface is not instantiable. Its FUNCTIONS have no destination in the
+    /// generation being materialised, exactly as class functions do not: the
+    /// **v2.x** `BMM_CLASS` declares `properties` and no function map
+    /// (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes), and this
+    /// materialisation targets the v2.x model because P_BMM is that generation's
+    /// persistence form (`LANG/docs/bmm/master06-persistence.adoc`). So
+    /// `P_BMM_CLASS.functions` is preserved in the P_BMM graph and carried no
+    /// further. That is a boundary of the v2 model, NOT of the openEHR specs: the
+    /// **v3** `BMM_CLASS` declares `features`, `functions`, `procedures`,
+    /// `static_properties`, `invariants`, `creators` and `converters`
+    /// (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes), all of which
+    /// `crate::bmm3` emits.
+    /// TODO: materialise a v3 `BMM_MODEL` so class functions/procedures/invariants
+    /// reach a model (see the module docs' `value_constraint` boundary — the same
+    /// follow-on).
     ///
     /// `BMM_CLASS.source_schema_id` is `1..1` ("Reference to original source
     /// schema defining this class", class doc §Attributes) while an interface
@@ -359,7 +381,7 @@ impl<'a> Builder<'a> {
                 generic_parameters: self.build_generic_parameters(persisted, depth)?,
             }));
         }
-        Ok(BmmClass::BmmSimpleClass(BmmSimpleClass {
+        Ok(BmmClass::BmmClass(BmmClassData {
             documentation: core.documentation,
             name: core.name,
             ancestors: core.ancestors,
@@ -556,19 +578,29 @@ impl<'a> Builder<'a> {
                     return Err(PBmmReadError::TypeDefinitionMissing { context });
                 };
                 let r#type = self.build_container_type(&context, type_def, owner)?;
-                Ok(BmmProperty::BmmContainerProperty(
-                    BmmContainerProperty::BmmContainerProperty(BmmContainerPropertyData {
-                        documentation: container.documentation.clone(),
-                        name: container.name.clone(),
-                        is_mandatory: container.is_mandatory,
-                        is_computed: container.is_computed,
-                        r#type,
-                        is_im_runtime: container.is_im_runtime,
-                        is_im_infrastructure: container.is_im_infrastructure,
-                        cardinality: container.cardinality.as_ref().map(multiplicity_of),
-                    }),
-                ))
+                Ok(BmmProperty::BmmContainerProperty(BmmContainerProperty {
+                    documentation: container.documentation.clone(),
+                    name: container.name.clone(),
+                    is_mandatory: container.is_mandatory,
+                    is_computed: container.is_computed,
+                    r#type,
+                    is_im_runtime: container.is_im_runtime,
+                    is_im_infrastructure: container.is_im_infrastructure,
+                    cardinality: container.cardinality.as_ref().map(multiplicity_of),
+                }))
             }
+            // NOTE (adjudicated): a persisted `P_BMM_INDEXED_CONTAINER_PROPERTY`
+            // materialises as a `BMM_CONTAINER_PROPERTY` whose `type` is a
+            // `BMM_INDEXED_CONTAINER_TYPE`. The v2 feature model has no indexed
+            // *property* meta-type — `BMM_CONTAINER_PROPERTY` is the only
+            // container-valued property and it redefines `type` to
+            // `BMM_CONTAINER_TYPE`
+            // (`org.openehr.lang.bmm.bmm_container_property.adoc` §Attributes) —
+            // while `BMM_INDEXED_CONTAINER_TYPE` IS a `BMM_CONTAINER_TYPE`
+            // ("Type reference that specifies an indexed container such as
+            // `Hash<K,V>`", `org.openehr.lang.bmm.bmm_indexed_container_type.adoc`
+            // §Description + §Inherit). So the index lives on the TYPE, exactly
+            // where the v2 model puts it; nothing is dropped.
             PBmmProperty::PBmmContainerProperty(
                 PBmmContainerProperty::PBmmIndexedContainerProperty(indexed),
             ) => {
@@ -576,21 +608,19 @@ impl<'a> Builder<'a> {
                 let Some(type_def) = indexed.type_def.as_ref() else {
                     return Err(PBmmReadError::TypeDefinitionMissing { context });
                 };
-                let r#type = self.build_indexed_container_type(&context, type_def, owner)?;
-                Ok(BmmProperty::BmmContainerProperty(
-                    BmmContainerProperty::BmmIndexedContainerProperty(
-                        BmmIndexedContainerProperty {
-                            documentation: indexed.documentation.clone(),
-                            name: indexed.name.clone(),
-                            is_mandatory: indexed.is_mandatory,
-                            is_computed: indexed.is_computed,
-                            r#type,
-                            is_im_runtime: indexed.is_im_runtime,
-                            is_im_infrastructure: indexed.is_im_infrastructure,
-                            cardinality: indexed.cardinality.as_ref().map(multiplicity_of),
-                        },
-                    ),
-                ))
+                let r#type = BmmContainerType::BmmIndexedContainerType(Box::new(
+                    self.build_indexed_container_type(&context, type_def, owner)?,
+                ));
+                Ok(BmmProperty::BmmContainerProperty(BmmContainerProperty {
+                    documentation: indexed.documentation.clone(),
+                    name: indexed.name.clone(),
+                    is_mandatory: indexed.is_mandatory,
+                    is_computed: indexed.is_computed,
+                    r#type,
+                    is_im_runtime: indexed.is_im_runtime,
+                    is_im_infrastructure: indexed.is_im_infrastructure,
+                    cardinality: indexed.cardinality.as_ref().map(multiplicity_of),
+                }))
             }
         }
     }
@@ -802,7 +832,7 @@ impl<'a> Builder<'a> {
     /// `BMM_INDEXED_CONTAINER_TYPE.index_type` is a `BMM_SIMPLE_TYPE` — "The key
     /// (index) type of the container, e.g. `String` in
     /// `Hash<String,EVENT_ACTION>`"
-    /// (`org.openehr.lang.bmm3.bmm_indexed_container_type.adoc` §Attributes).
+    /// (`org.openehr.lang.bmm.bmm_indexed_container_type.adoc` §Attributes).
     fn build_indexed_container_type(
         &self,
         context: &str,
@@ -1009,7 +1039,7 @@ fn qualify(prefix: &str, name: &str) -> String {
     } else {
         format!(
             "{prefix}{}{name}",
-            crate::bmm3::bmm_definitions::BmmDefinitionsData::PACKAGE_NAME_DELIMITER
+            crate::bmm::core::bmm_definitions::BmmDefinitionsData::PACKAGE_NAME_DELIMITER
         )
     }
 }
@@ -1017,13 +1047,21 @@ fn qualify(prefix: &str, name: &str) -> String {
 /// Every inheritance parent a persisted class names, from `ancestors` and from
 /// the `root_type` of each `ancestor_defs` entry.
 ///
-/// NOTE (honest boundary): `BMM_CLASS.ancestors` is a `Hash<String, BMM_CLASS>`
-/// (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes), i.e. a map of CLASSES,
-/// so the parameter substitution a generic ancestor states
-/// (`GENERIC_PARENT<T,SUPPLIER_B>`, `master04-syntax.adoc` §Inheritance) has no
-/// destination in the v2 BMM shape: only the root class is carried into the
-/// model, and the binding stays readable in the `P_BMM_CLASS.ancestor_defs` of
-/// the persisted schema.
+/// NOTE (a boundary of the generation being materialised, not of the specs): the
+/// **v2.x** `BMM_CLASS.ancestors` is a `Hash<String, BMM_CLASS>`
+/// (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes), i.e. a map of CLASSES, so
+/// the parameter substitution a generic ancestor states
+/// (`GENERIC_PARENT<T,SUPPLIER_B>`, `master04-syntax.adoc` §Inheritance) has
+/// nowhere to land in the v2 model: only the root class is carried in, and the
+/// binding stays readable in the `P_BMM_CLASS.ancestor_defs` of the persisted
+/// schema. The **v3** generation types the same attribute
+/// `ancestors: Hash<String, BMM_MODEL_TYPE>` and states in its §Description that
+/// it "contains a list of _types_ rather than classes"
+/// (`org.openehr.lang.bmm3.bmm_class.adoc`), which DOES carry the binding —
+/// `crate::bmm3` emits that shape.
+/// TODO: materialise a v3 `BMM_MODEL` so a generic ancestor's parameter binding
+/// reaches the model (see the module docs' `value_constraint` boundary — the same
+/// follow-on).
 fn ancestor_names(class: &PBmmClass) -> Vec<String> {
     let mut out: Vec<String> = class.ancestors().to_vec();
     out.extend(

@@ -4,8 +4,8 @@
 //! The openEHR `P_BMM_INDEXED_CONTAINER_PROPERTY` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_container_property::BmmContainerProperty;
 use crate::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType;
-use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use openehr_base::prelude::Interval;
 
 /// The openEHR `P_BMM_INDEXED_CONTAINER_PROPERTY` class (the vendored BMM carries no documentation for it).

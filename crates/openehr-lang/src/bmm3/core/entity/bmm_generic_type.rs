@@ -5,17 +5,18 @@
 //! meta-model.
 
 use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
-use crate::bmm3::core::entity::bmm_type::BmmType;
+use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
+use crate::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
 
-/// Type reference based on a generic class, e.g. 'HashTable \<List \<Packet\>, String\>'.
+/// Meta-type based on a non-container generic class, e.g. `Packet<Header>`.
 #[doc(alias = "BMM_GENERIC_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmGenericType {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
-    /// Generic parameters of the root_type in this type specifier. The order must match the order of the owning class's formal generic parameter declarations.
-    pub generic_parameters: Vec<BmmType>,
-    /// The base class of this type.
+    // inherited: BMM_MODEL_TYPE
+    /// The `value_constraint` attribute of openEHR `BMM_MODEL_TYPE` (the vendored BMM carries no documentation for it).
+    pub value_constraint: Option<BmmValueSetSpec>,
+    /// Defining generic class of this type.
     pub base_class: BmmGenericClass,
+    /// Generic parameters of the `_root_type_` in this type specifier. The order must match the order of the owning class's formal generic parameter declarations, and the types may be defined types or formal parameter types.
+    pub generic_parameters: Vec<BmmUnitaryType>,
 }

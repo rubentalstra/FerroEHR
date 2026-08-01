@@ -15,12 +15,12 @@
 
 use std::collections::BTreeMap;
 
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm_persistence::create_model::create_bmm_model;
 use crate::bmm_persistence::error::PBmmReadError;
 use crate::bmm_persistence::include_resolution::resolve_includes;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::reader::read_schema;
-use crate::bmm3::core::model::bmm_model::BmmModel;
 
 /// Load the `BMM_MODEL` of `root_src`, resolving its inclusions against
 /// `includes`.
@@ -58,13 +58,12 @@ mod tests {
     )]
     use std::collections::BTreeMap;
 
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_enumeration::BmmEnumeration;
+    use crate::bmm::core::bmm_model::BmmModel;
+    use crate::bmm::core::bmm_property::BmmProperty;
     use crate::bmm_persistence::error::PBmmReadError;
     use crate::bmm_persistence::loader::load_model;
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-    use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
-    use crate::bmm3::core::feature::bmm_property::BmmProperty;
-    use crate::bmm3::core::model::bmm_model::BmmModel;
 
     /// A two-file schema set: `primitive_types` defining `Any`/`Ordered`/`String`
     /// plus the generic `Interval`, and `rm` including it and defining
@@ -318,10 +317,7 @@ mod tests {
         assert_eq!(items.conformance_type_name(), "DV_QUANTITY");
         // `|>=1|` maps onto a lower-bounded, upper-unbounded
         // Multiplicity_interval (BMM_CONTAINER_PROPERTY.cardinality).
-        let BmmProperty::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(
-            container,
-        )) = items
-        else {
+        let BmmProperty::BmmContainerProperty(container) = items else {
             panic!("a (P_BMM_CONTAINER_PROPERTY) maps onto BMM_CONTAINER_PROPERTY");
         };
         let cardinality = container

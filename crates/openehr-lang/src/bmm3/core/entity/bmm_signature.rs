@@ -12,9 +12,6 @@ use crate::bmm3::core::entity::bmm_type::BmmType;
 #[doc(alias = "BMM_SIGNATURE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmSignatureData {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
     /// Result type of signature.
     pub result_type: Box<BmmType>,
 }

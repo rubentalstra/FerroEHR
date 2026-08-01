@@ -4,8 +4,8 @@
 //! The openEHR `P_BMM_GENERIC_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_generic_type::BmmGenericType;
 use crate::bmm_persistence::p_bmm_type::PBmmType;
-use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
 
 /// Persistent form of `BMM_GENERIC_TYPE`.
 #[doc(alias = "P_BMM_GENERIC_TYPE")]

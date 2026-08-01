@@ -4,7 +4,9 @@
 //! meta-model.
 
 use crate::am24::bmm3::core::feature::bmm_constant::BmmConstant;
+use crate::am24::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use crate::am24::bmm3::core::feature::bmm_singleton::BmmSingleton;
+use crate::am24::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty;
 
 /// Closed subtype set of `BMM_INSTANTIABLE_FEATURE`, dispatched on each payload's `_type`.
 ///
@@ -14,6 +16,10 @@ use crate::am24::bmm3::core::feature::bmm_singleton::BmmSingleton;
 pub enum BmmInstantiableFeature {
     /// The `BMM_CONSTANT` subtype of `BMM_INSTANTIABLE_FEATURE`.
     BmmConstant(BmmConstant),
+    /// The `BMM_CONTAINER_PROPERTY` subtype of `BMM_INSTANTIABLE_FEATURE`.
+    BmmContainerProperty(BmmContainerProperty),
     /// The `BMM_SINGLETON` subtype of `BMM_INSTANTIABLE_FEATURE`.
     BmmSingleton(BmmSingleton),
+    /// The `BMM_UNITARY_PROPERTY` subtype of `BMM_INSTANTIABLE_FEATURE`.
+    BmmUnitaryProperty(BmmUnitaryProperty),
 }

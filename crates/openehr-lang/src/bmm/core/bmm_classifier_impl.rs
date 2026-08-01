@@ -5,20 +5,20 @@
 //! Spec: `LANG/docs/bmm/master05-core.adoc` §Semantics §Basics (which defines
 //! the naming trio `type_name` / `type_signature` / `conformance_type_name`
 //! normatively — quoted in full on
-//! [`crate::bmm3::core::entity::bmm_type_impl`]) and
+//! [`crate::bmm::core::bmm_type_impl`]) and
 //! `LANG/docs/UML/classes/org.openehr.lang.bmm.bmm_classifier.adoc` §Functions
 //! (`type_name`, `type_category`, `type_signature`, `base_class`,
 //! `flattened_type_list`).
 //!
 //! Every function here is a pure dispatcher: the per-class behaviour lives with
 //! the class the class definitions declare it on
-//! ([`crate::bmm3::core::entity::bmm_class_impl`],
-//! [`crate::bmm3::core::entity::bmm_type_impl`],
+//! ([`crate::bmm::core::bmm_class_impl`],
+//! [`crate::bmm::core::bmm_type_impl`],
 //! [`crate::bmm::core::bmm_generic_parameter_impl`],
 //! [`crate::bmm::core::bmm_open_type_impl`]).
 
+use crate::bmm::core::bmm_class::BmmClass;
 use crate::bmm::core::bmm_classifier::BmmClassifier;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
 
 impl BmmClassifier {
     /// `BMM_CLASSIFIER.type_name`: "Formal string form of the type as per UML"
@@ -31,11 +31,7 @@ impl BmmClassifier {
             Self::BmmGenericParameter(parameter) => parameter.type_name().to_owned(),
             Self::BmmGenericType(generic) => generic.type_name(),
             Self::BmmOpenType(open) => open.type_name().to_owned(),
-            Self::BmmParameterType(parameter) => parameter.type_name().to_owned(),
-            Self::BmmSignature(signature) => signature.type_name(),
             Self::BmmSimpleType(simple) => simple.type_name(),
-            Self::BmmStatusType(status) => status.type_name(),
-            Self::BmmTupleType(tuple) => tuple.type_name(),
         }
     }
 
@@ -50,11 +46,7 @@ impl BmmClassifier {
             Self::BmmGenericParameter(parameter) => parameter.type_signature(),
             Self::BmmGenericType(generic) => generic.type_signature(),
             Self::BmmOpenType(open) => open.type_signature(),
-            Self::BmmParameterType(parameter) => parameter.type_signature(),
-            Self::BmmSignature(signature) => signature.type_name(),
             Self::BmmSimpleType(simple) => simple.type_signature(),
-            Self::BmmStatusType(status) => status.type_name(),
-            Self::BmmTupleType(tuple) => tuple.type_name(),
         }
     }
 
@@ -73,11 +65,7 @@ impl BmmClassifier {
             Self::BmmGenericParameter(parameter) => parameter.conformance_type_name(),
             Self::BmmGenericType(generic) => generic.conformance_type_name(),
             Self::BmmOpenType(open) => open.conformance_type_name(),
-            Self::BmmParameterType(parameter) => parameter.conformance_type_name(),
-            Self::BmmSignature(signature) => signature.conformance_type_name(),
             Self::BmmSimpleType(simple) => simple.conformance_type_name(),
-            Self::BmmStatusType(status) => status.conformance_type_name(),
-            Self::BmmTupleType(tuple) => tuple.conformance_type_name(),
         }
     }
 
@@ -91,11 +79,7 @@ impl BmmClassifier {
             Self::BmmGenericParameter(parameter) => parameter.flattened_type_list(),
             Self::BmmGenericType(generic) => generic.flattened_type_list(),
             Self::BmmOpenType(open) => open.flattened_type_list(),
-            Self::BmmParameterType(parameter) => parameter.flattened_type_list(),
-            Self::BmmSignature(signature) => signature.flattened_type_list(),
             Self::BmmSimpleType(simple) => simple.flattened_type_list(),
-            Self::BmmStatusType(status) => status.flattened_type_list(),
-            Self::BmmTupleType(tuple) => tuple.flattened_type_list(),
         }
     }
 
@@ -124,11 +108,7 @@ impl BmmClassifier {
             Self::BmmGenericParameter(parameter) => parameter.effective_conforms_to_type_name(),
             Self::BmmGenericType(generic) => generic.base_class.name.clone(),
             Self::BmmOpenType(open) => open.conformance_type_name(),
-            Self::BmmParameterType(parameter) => parameter.conformance_type_name(),
-            Self::BmmSignature(signature) => signature.type_name(),
             Self::BmmSimpleType(simple) => simple.base_class.name().to_owned(),
-            Self::BmmStatusType(status) => status.type_name(),
-            Self::BmmTupleType(tuple) => tuple.type_name(),
         }
     }
 
@@ -163,37 +143,34 @@ impl BmmClassifier {
             Self::BmmClass(BmmClass::BmmGenericClass(_)) | Self::BmmGenericType(_) => {
                 "Entity_metatype_generic"
             }
-            Self::BmmGenericParameter(_) | Self::BmmOpenType(_) | Self::BmmParameterType(_) => {
+            Self::BmmGenericParameter(_) | Self::BmmOpenType(_) => {
                 "Entity_metatype_generic_parameter"
             }
             Self::BmmContainerType(_) => "Entity_metatype_container",
-            Self::BmmClass(BmmClass::BmmSimpleClass(_) | BmmClass::BmmClass(_))
-            | Self::BmmSignature(_)
-            | Self::BmmSimpleType(_)
-            | Self::BmmStatusType(_)
-            | Self::BmmTupleType(_) => "Entity_metatype_simple",
+            Self::BmmClass(BmmClass::BmmClass(_)) | Self::BmmSimpleType(_) => {
+                "Entity_metatype_simple"
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_class::BmmClassData;
     use crate::bmm::core::bmm_classifier::BmmClassifier;
+    use crate::bmm::core::bmm_container_type::BmmContainerType;
+    use crate::bmm::core::bmm_container_type::BmmContainerTypeData;
+    use crate::bmm::core::bmm_enumeration::BmmEnumeration;
+    use crate::bmm::core::bmm_enumeration::BmmEnumerationData;
+    use crate::bmm::core::bmm_generic_class::BmmGenericClass;
     use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
+    use crate::bmm::core::bmm_generic_type::BmmGenericType;
     use crate::bmm::core::bmm_open_type::BmmOpenType;
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-    use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
+    use crate::bmm::core::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_simple_type::BmmSimpleType;
+    use crate::bmm::core::bmm_type::BmmType;
     use crate::bmm3::core::entity::bmm_entity_metatype::BmmEntityMetatype;
-    use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
-    use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
-    use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-    use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-    use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
-    use crate::bmm3::core::entity::bmm_type::BmmType;
-    use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-    use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData;
-    use crate::bmm3::core::model::bmm_package::BmmPackage;
 
     /// An empty package node.
     fn package() -> BmmPackage {
@@ -207,7 +184,7 @@ mod tests {
 
     /// A simple class named `name`.
     fn simple_class(name: &str) -> BmmClass {
-        BmmClass::BmmSimpleClass(BmmSimpleClass {
+        BmmClass::BmmClass(BmmClassData {
             documentation: None,
             name: name.to_owned(),
             ancestors: None,
@@ -331,20 +308,16 @@ mod tests {
         });
         assert_eq!(open.type_name(), "T");
         assert_eq!(open.conformance_type_name(), "Any");
-
-        let status = BmmClassifier::BmmStatusType(BmmStatusType {
-            documentation: None,
-        });
-        assert_eq!(status.type_name(), "Status");
-        assert_eq!(status.type_signature(), "Status");
     }
 
     #[test]
     fn type_category_matches_the_generated_metatype_vocabulary() {
         // The literals this function returns ARE the BMM_ENTITY_METATYPE wire
-        // strings (bmm3.bmm_entity_metatype.adoc §Constants); this pins the
+        // strings (bmm3.bmm_entity_metatype.adoc §Constants) — the v3
+        // generation's vocabulary, adopted because the v2 `Type_category_xx`
+        // set is dangling (see the NOTE on `type_category`); this pins the
         // agreement so the two cannot drift apart.
-        let cases: [(BmmClassifier, BmmEntityMetatype); 6] = [
+        let cases: [(BmmClassifier, BmmEntityMetatype); 5] = [
             (
                 BmmClassifier::BmmSimpleType(BmmSimpleType {
                     documentation: None,
@@ -376,12 +349,6 @@ mod tests {
                     },
                 )),
                 BmmEntityMetatype::EntityMetatypeContainer,
-            ),
-            (
-                BmmClassifier::BmmStatusType(BmmStatusType {
-                    documentation: None,
-                }),
-                BmmEntityMetatype::EntityMetatypeSimple,
             ),
         ];
         for (classifier, expected) in cases {

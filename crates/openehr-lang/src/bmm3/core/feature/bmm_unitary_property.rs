@@ -5,28 +5,51 @@
 //! meta-model.
 
 use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
+use crate::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
+use crate::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 
 /// Meta-type of for properties of unitary type.
 #[doc(alias = "BMM_UNITARY_PROPERTY")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmUnitaryProperty {
     // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
-
-    // inherited: BMM_PROPERTY
-    /// Name of this property in the model.
+    /// Name of this model element.
     pub name: String,
-    /// True if this property is mandatory in its class.
-    pub is_mandatory: Option<bool>,
-    /// True if this property is computed rather than stored in objects of this class.
-    pub is_computed: Option<bool>,
+    /// Optional documentation of this element, as a keyed list.
+    ///
+    /// It is strongly recommended to use the following key /type combinations for the relevant purposes:
+    ///
+    /// * `"purpose": String`
+    /// * `"keywords": List<String>`
+    /// * `"use": String`
+    /// * `"misuse": String`
+    /// * `"references": String`
+    ///
+    /// Other keys and value types may be freely added.
+    pub documentation: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    // NOTE: `scope` (BMM-mandatory back-reference) omitted — LANG BMM3 bmm_feature (scope: BMM_CLASS — redefinition of BMM_MODEL_ELEMENT.scope). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    /// Optional meta-data of this element, as a keyed list. May be used to extend the meta-model.
+    pub extensions: Option<std::collections::BTreeMap<String, serde_json::Value>>,
     /// Declared or inferred static type of the entity.
     pub r#type: BmmUnitaryType,
+
+    // inherited: BMM_FORMAL_ELEMENT
+    /// True if this element can be null (Void) at execution time. May be interpreted as optionality in subtypes..
+    pub is_nullable: Option<bool>,
+
+    // inherited: BMM_FEATURE
+    /// True if this feature was synthesised due to generic substitution in an inherited type, or further constraining of a formal generic parameter.
+    pub is_synthesised_generic: Option<bool>,
+    /// Extensions to feature-level meta-types.
+    pub feature_extensions: Vec<BmmFeatureExtension>,
+    /// Group containing this feature.
+    pub group: BmmFeatureGroup,
 
     // inherited: BMM_PROPERTY
     /// True if this property is marked with info model `_im_runtime_` property.
     pub is_im_runtime: Option<bool>,
     /// True if this property was marked with info model `_im_infrastructure_` flag.
     pub is_im_infrastructure: Option<bool>,
+    /// True if this property instance is a compositional sub-part of the owning class instance. Equivalent to 'composition' in UML associations (but missing from UML properties without associations) and also 'cascade-delete' semantics in ER schemas.
+    pub is_composition: Option<bool>,
 }

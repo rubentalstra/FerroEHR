@@ -4,8 +4,8 @@
 //! The openEHR `BMM_SCHEMA_CORE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
-use crate::bmm3::core::model::bmm_model::BmmModel;
 
 /// Core properties of BMM_SCHEMA.
 #[doc(alias = "BMM_SCHEMA_CORE")]

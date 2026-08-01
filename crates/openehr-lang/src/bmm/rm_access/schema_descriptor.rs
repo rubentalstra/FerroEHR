@@ -4,9 +4,9 @@
 //! The openEHR `SCHEMA_DESCRIPTOR` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor;
-use crate::bmm3::core::model::bmm_model::BmmModel;
 
 /// Descriptor for a BMM schema. Contains a meta-data table of attributes obtained from a mini-ODIN parse of the schema file.
 #[doc(alias = "SCHEMA_DESCRIPTOR")]

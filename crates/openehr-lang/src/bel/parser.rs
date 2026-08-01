@@ -219,8 +219,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
                 let close_span = self
                     .toks
                     .get(self.pos)
-                    .map(|s| s.span.clone())
-                    .unwrap_or_else(|| open_span.clone());
+                    .map_or_else(|| open_span.clone(), |s| s.span.clone());
                 self.pos += 1;
                 let text = self
                     .src

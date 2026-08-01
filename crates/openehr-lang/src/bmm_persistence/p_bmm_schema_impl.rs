@@ -20,7 +20,7 @@ use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 /// (`model_id`: "Identifier of this model, lower-case, formed from:
 /// `<rm_publisher>_<model_name>_<rm_release>`. E.g. `"openehr_ehr_1.0.4"`"),
 /// the same adjudication
-/// [`crate::bmm3::core::model::bmm_model::BmmModel::schema_id`] records.
+/// [`crate::bmm::core::bmm_model::BmmModel::schema_id`] records.
 pub(crate) fn compose_schema_id(rm_publisher: &str, schema_name: &str, rm_release: &str) -> String {
     format!("{rm_publisher}_{schema_name}_{rm_release}").to_lowercase()
 }

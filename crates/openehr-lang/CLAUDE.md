@@ -8,6 +8,36 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   loader can silently change what `openehr-codegen` emits across five
   crates — after ANY loader/model change, run `/regen-codegen` and inspect
   the diff; the `codegen-drift` CI job is the backstop.
+- **TWO BMM GENERATIONS, emitted side by side — never merge them.** openEHR
+  publishes the stable **v2.x** BMM (`LANG/docs/bmm/`, which
+  `master01-preface.adoc` §History calls "the normative, tool-implemented
+  version", plus its `master06-persistence.adoc` P_BMM form) and the **v3**
+  development line (`LANG/docs/bmm3/`, which adds the expression/statement
+  meta-model); SPECLANG-14 formalised the split
+  (`LANG/docs/bmm3/master00-amendment_record.adoc`). Both are vendored as
+  separate `*.bmm.json` files and BOTH are emitted COMPLETELY:
+  - v2.x → `src/bmm/core/`, `src/bmm/rm_access/`, `src/bmm_persistence/`,
+    `src/beom/`;
+  - v3 → `src/bmm3/**`.
+  18 class names occur in both files with materially different shapes
+  (`BMM_CLASS`, `BMM_TYPE`, `BMM_PROPERTY`, `BMM_MODEL`, …), so each name
+  yields TWO Rust types at two paths, each with its own intra-generation
+  cross-references. The crate **prelude carries one entry per Rust name** —
+  the v3 twin for a colliding name; the v2.x twin is reachable by its full
+  module path only, which is how the hand-written v2 surface below imports it.
+  Never "unify" the two, never reach across generations in a type position,
+  and never add a shadow/adapter type: a shape gap is a
+  `tools/openehr-codegen` fix + regeneration.
+- **The hand-written spec-function surface is the v2.x one** (`src/bmm/core/*_impl.rs`:
+  `BMM_CLASSIFIER`, `BMM_CLASS`, `BMM_TYPE`, `BMM_PROPERTY`, `BMM_MODEL`,
+  `BMM_PACKAGE`, `BMM_GENERIC_PARAMETER`, `BMM_OPEN_TYPE`), because P_BMM and
+  `rm_access` materialise the v2.x model. The v3 tree carries only its own
+  type-naming surface (`src/bmm3/core/entity/bmm_type_impl.rs`); the rest of the
+  v3 function surface, its invariants, and a v3 materialisation from P_BMM are
+  unimplemented and marked `TODO` at their sites. When a v2/v3 boundary is
+  recorded, name WHICH generation it belongs to — attributing a
+  generation-specific gap to "the openEHR specs" is a misattribution the
+  citation rule exists to prevent.
 - Codegen consumes the JSON BMM serialization only
   (`tools/openehr-codegen/vendor/bmm/`); the ODIN reader exists for
   ADL/ODIN instance text, not for loading meta-models.
@@ -47,8 +77,14 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   resolution is case-insensitive (`master04-syntax.adoc` §Non-primitive
   Classes: `name` — "any capitalisation can be used"); embedding depth and
   every other cycle/boundary decision is adjudicated in the module docs, with
-  the honest boundaries (`value_constraint` and P_BMM `functions` have no
-  `BMM_*` destination) written out. A persisted `P_BMM_INTERFACE` IS a class-list
+  the boundaries written out — and each one names the GENERATION it belongs to:
+  `value_constraint`, P_BMM `functions`/`invariants` and a generic ancestor's
+  parameter binding have no destination in the **v2.x** `BMM_*` model this
+  materialises (P_BMM is the v2.x persistence form,
+  `LANG/docs/bmm/master06-persistence.adoc`), while the **v3** classes DO
+  declare all three (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes,
+  `…bmm3.bmm_model_type.adoc` §Attributes), so a v3 materialisation is the
+  recorded `TODO`. A persisted `P_BMM_INTERFACE` IS a class-list
   member (`master02-overview.adoc` §Conceptual Approach + openEHR's own
   published BASE/RM schemas): the emitter re-opens the `P_BMM_CLASS` subtype set
   for it (`plan/overrides.rs` `SUBTYPE_EXTENSIONS`), the reader materialises its

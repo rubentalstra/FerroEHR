@@ -4,7 +4,7 @@
 //! The openEHR `P_BMM_SIMPLE_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
+use crate::bmm::core::bmm_simple_type::BmmSimpleType;
 
 /// Persistent form of `BMM_SIMPLE_TYPE`.
 #[doc(alias = "P_BMM_SIMPLE_TYPE")]

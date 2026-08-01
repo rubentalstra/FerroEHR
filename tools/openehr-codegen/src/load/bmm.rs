@@ -266,17 +266,30 @@ impl BmmSchema {
         }
     }
 
-    /// Combine another schema's classes and packages into this one (set union;
-    /// `self` wins on class-name collisions). openEHR ships some components
-    /// across several vendored BMM files — LANG's model spans a persisted-BMM
-    /// / `EXPR_*` file and a BMM-object-model / `EL_*` file — and a single crate
-    /// must emit the union of both.
+    /// Fold another schema into this one to form a crate's **dependency view**:
+    /// the union of every BMM generation composing the crate, resolving a
+    /// class-name collision **last-wins** (the later-declared generation's
+    /// definition survives).
+    ///
+    /// openEHR ships some components as several vendored BMM files describing
+    /// **two generations of the same meta-model** — LANG publishes the stable
+    /// v2.x BMM (`LANG/docs/bmm/master01-preface.adoc` §History: "This document
+    /// describes the stable v2.x form of BMM … the normative, tool-implemented
+    /// version") beside the v3 development line
+    /// (`LANG/docs/bmm3/master01-preface.adoc` §Previous Versions) — and both
+    /// generations are emitted COMPLETELY, each from its own schema at its own
+    /// source-package path.
+    ///
+    /// This view is therefore **never an emission input**: it exists only so a
+    /// downstream crate and the crate prelude see exactly one type per Rust
+    /// name (see [`crate::plan::composition::Composed::generations`] for the
+    /// per-generation schemas the emitter actually renders). Because every
+    /// generation is emitted in full, nothing a losing definition declares is
+    /// dropped — the collision is resolved for *naming*, never for *shape*.
     #[must_use]
-    pub(crate) fn combined(mut self, other: &BmmSchema) -> Self {
+    pub(crate) fn dependency_view(mut self, other: &BmmSchema) -> Self {
         for (name, class) in &other.classes {
-            self.classes
-                .entry(name.clone())
-                .or_insert_with(|| class.clone());
+            self.classes.insert(name.clone(), class.clone());
         }
         self.packages.extend(other.packages.iter().cloned());
         self

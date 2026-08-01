@@ -10,9 +10,6 @@ use crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType;
 #[doc(alias = "BMM_PARAMETER_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmParameterType {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
     /// Name of the parameter, e.g. 'T' etc. The name is limited to 1 character and upper-case.
     pub name: String,
     /// Optional conformance constraint that must be the name of a defined type.

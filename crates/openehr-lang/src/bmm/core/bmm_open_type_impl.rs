@@ -55,11 +55,11 @@ impl BmmOpenType {
 
 #[cfg(test)]
 mod tests {
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_class::BmmClassData;
     use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
     use crate::bmm::core::bmm_open_type::BmmOpenType;
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-    use crate::bmm3::core::model::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_package::BmmPackage;
 
     /// An open type over a parameter named `name`, optionally constrained.
     fn open_type(name: &str, conforms_to: Option<&str>) -> BmmOpenType {
@@ -69,7 +69,7 @@ mod tests {
                 documentation: None,
                 name: name.to_owned(),
                 conforms_to_type: conforms_to.map(|constraint| {
-                    BmmClass::BmmSimpleClass(BmmSimpleClass {
+                    BmmClass::BmmClass(BmmClassData {
                         documentation: None,
                         name: constraint.to_owned(),
                         ancestors: None,

@@ -3,7 +3,6 @@
 //! The openEHR `BMM_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm::core::bmm_open_type::BmmOpenType;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
 use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
 use crate::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
@@ -22,8 +21,6 @@ pub enum BmmType {
     BmmContainerType(Box<BmmContainerType>),
     /// The `BMM_GENERIC_TYPE` subtype of `BMM_TYPE`.
     BmmGenericType(BmmGenericType),
-    /// The `BMM_OPEN_TYPE` subtype of `BMM_TYPE`.
-    BmmOpenType(BmmOpenType),
     /// The `BMM_PARAMETER_TYPE` subtype of `BMM_TYPE`.
     BmmParameterType(Box<BmmParameterType>),
     /// The `BMM_SIGNATURE` subtype of `BMM_TYPE`.

@@ -4,9 +4,9 @@
 //! The openEHR `P_BMM_GENERIC_PROPERTY` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_property::BmmProperty;
+use crate::bmm::core::bmm_type::BmmType;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
-use crate::bmm3::core::entity::bmm_type::BmmType;
-use crate::bmm3::core::feature::bmm_property::BmmProperty;
 
 /// Persistent form of `BMM_GENERIC_PROPERTY`.
 #[doc(alias = "P_BMM_GENERIC_PROPERTY")]

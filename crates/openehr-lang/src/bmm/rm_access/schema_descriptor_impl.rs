@@ -30,6 +30,8 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::path::Path;
 
+use crate::bmm::core::bmm_definitions::BmmDefinitionsData;
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm::rm_access::error::RmAccessError;
 use crate::bmm::rm_access::schema_descriptor::SchemaDescriptor;
 use crate::bmm_persistence::create_model::create_bmm_model;
@@ -37,8 +39,6 @@ use crate::bmm_persistence::include_resolution::resolve_includes;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor;
 use crate::bmm_persistence::reader::read_schema;
-use crate::bmm3::bmm_definitions::BmmDefinitionsData;
-use crate::bmm3::core::model::bmm_model::BmmModel;
 
 /// The P_BMM generation this reader implements, as its major version.
 ///

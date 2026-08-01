@@ -7,13 +7,13 @@ use crate::am24::bmm3::expression::el_attached::ElAttached;
 use crate::am24::bmm3::expression::el_defined::ElDefined;
 use crate::am24::bmm3::expression::el_function_agent::ElFunctionAgent;
 use crate::am24::bmm3::expression::el_function_call::ElFunctionCall;
+use crate::am24::bmm3::expression::el_literal::ElLiteral;
 use crate::am24::bmm3::expression::el_procedure_agent::ElProcedureAgent;
 use crate::am24::bmm3::expression::el_property_ref::ElPropertyRef;
 use crate::am24::bmm3::expression::el_readonly_variable::ElReadonlyVariable;
 use crate::am24::bmm3::expression::el_static_ref::ElStaticRef;
+use crate::am24::bmm3::expression::el_type_ref::ElTypeRef;
 use crate::am24::bmm3::expression::el_writable_variable::ElWritableVariable;
-use openehr_lang::prelude::ElLiteral;
-use openehr_lang::prelude::ElTypeRef;
 
 /// Closed subtype set of `EL_SIMPLE`, dispatched on each payload's `_type`.
 ///

@@ -1,4 +1,4 @@
-//! openEHR LANG: the BMM / P_BMM object model, generated from the BMM meta-model. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); the runtime ODIN and EL parsers are future hand-written work (P8/P9).
+//! openEHR LANG: the BMM object model in BOTH its extant generations, generated from the BMM meta-model — the stable v2.x model (`bmm`, its `bmm_persistence` P_BMM form and the `beom` expression model) and the v3 development line (`bmm3`, with the `EL_*` expression and `BMM_STATEMENT*` families). Each generation is emitted completely at its own source-package path; the prelude exports one type per Rust name (the v3 twin where both declare a name). The generator's own BMM reader lives in openehr-codegen (tooling, not spec); the hand-written ODIN reader and BEL parser live beside this generated tree.
 //!
 //! @generated module tree by openehr-codegen. The type files
 //! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
@@ -16,6 +16,8 @@
     clippy::enum_variant_names,
     reason = "inherent to faithful openEHR spec generation: verbatim spec prose in doc comments, and spec-owned class/variant/field names (a field name IS the normative BMM attribute name)"
 )]
+// A vendored BMM model is a deep, mutually-recursive type graph (the LANG // BMM-3 expression/statement families reach several hundred levels), so // auto-trait inference — `Send`/`Sync`/`RefUnwindSafe`, which rustdoc // evaluates for every item — overflows the default limit of 128. Raising // the limit is exactly what rustc prescribes for that overflow // (<https://doc.rust-lang.org/reference/attributes/limits.html>); it // changes no emitted type.
+#![recursion_limit = "512"]
 
 pub mod beom;
 pub mod bmm;

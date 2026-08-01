@@ -30,13 +30,13 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::VecDeque;
 
+use crate::bmm::core::bmm_class::BmmClass;
+use crate::bmm::core::bmm_enumeration::BmmEnumeration;
 use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
-use crate::bmm3::core::entity::bmm_type::BmmType;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-use crate::bmm3::core::feature::bmm_property::BmmProperty;
-use crate::bmm3::core::model::bmm_model::BmmModel;
-use crate::bmm3::core::model::bmm_package::BmmPackage;
+use crate::bmm::core::bmm_model::BmmModel;
+use crate::bmm::core::bmm_package::BmmPackage;
+use crate::bmm::core::bmm_property::BmmProperty;
+use crate::bmm::core::bmm_type::BmmType;
 
 /// The `BMM_CLASS` attributes every generated variant carries, projected out of
 /// the variant's own struct so the computed features are written once.
@@ -80,7 +80,6 @@ impl BmmClass {
             Self::BmmEnumeration(BmmEnumeration::BmmEnumerationString(c)) => class_common!(c),
             Self::BmmEnumeration(BmmEnumeration::BmmEnumeration(c)) => class_common!(c),
             Self::BmmGenericClass(c) => class_common!(c),
-            Self::BmmSimpleClass(c) => class_common!(c),
             Self::BmmClass(c) => class_common!(c),
         }
     }
@@ -144,7 +143,7 @@ impl BmmClass {
     pub fn generic_parameters(&self) -> Option<&BTreeMap<String, BmmGenericParameter>> {
         match self {
             Self::BmmGenericClass(c) => Some(&c.generic_parameters),
-            Self::BmmEnumeration(_) | Self::BmmSimpleClass(_) | Self::BmmClass(_) => None,
+            Self::BmmEnumeration(_) | Self::BmmClass(_) => None,
         }
     }
 
@@ -403,16 +402,15 @@ impl BmmClass {
 mod tests {
     use std::collections::BTreeMap;
 
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_class::BmmClassData;
+    use crate::bmm::core::bmm_generic_class::BmmGenericClass;
     use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::bmm_class::BmmClassData;
-    use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
-    use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-    use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-    use crate::bmm3::core::entity::bmm_type::BmmType;
-    use crate::bmm3::core::feature::bmm_property::BmmProperty;
-    use crate::bmm3::core::feature::bmm_property::BmmPropertyData;
-    use crate::bmm3::core::model::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_property::BmmProperty;
+    use crate::bmm::core::bmm_property::BmmPropertyData;
+    use crate::bmm::core::bmm_simple_type::BmmSimpleType;
+    use crate::bmm::core::bmm_type::BmmType;
 
     /// A package node named `name` with no children.
     fn package(name: &str) -> BmmPackage {
@@ -430,7 +428,7 @@ mod tests {
         ancestors: &[BmmClass],
         properties: &[(&str, BmmType)],
     ) -> BmmClass {
-        BmmClass::BmmSimpleClass(BmmSimpleClass {
+        BmmClass::BmmClass(BmmClassData {
             documentation: None,
             name: name.to_owned(),
             ancestors: if ancestors.is_empty() {
@@ -640,7 +638,7 @@ mod tests {
         assert_eq!(class.package_path(), "org.openehr.rm.test");
         assert_eq!(class.class_path(), "org.openehr.rm.test.DV_QUANTITY");
 
-        let mixed = BmmClass::BmmSimpleClass(BmmSimpleClass {
+        let mixed = BmmClass::BmmClass(BmmClassData {
             documentation: None,
             name: "EHR_STATUS".to_owned(),
             ancestors: None,
