@@ -572,6 +572,17 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 ///   Compositions, only references to them" (master04 §Folders): a member must
 ///   carry `id` + `namespace` + `type`, and a LOCATABLE-by-value payload is
 ///   rejected;
+/// - `links`, when present, is non-empty (`LOCATABLE.Links_valid`:
+///   `links /= Void implies not links.is_empty`, RM common
+///   `org.openehr.rm.common.locatable.adoc` §Invariants);
+/// - a node carrying `archetype_details` is an archetype root, so its
+///   `archetype_node_id` is the stringified `archetype_details.archetype_id`
+///   (RM common `org.openehr.rm.common.locatable.adoc` §Attributes: "At an
+///   archetype root point, the value of this attribute is always the
+///   stringified form of the `archetype_id` found in the `archetype_details`
+///   object"; RM common `master03-archetyped_package.adoc` §The LOCATABLE
+///   Class). `archetype_details` itself stays OPTIONAL on a FOLDER — the RM
+///   types it 0..1 and FOLDER carries no `Is_archetype_root` invariant;
 /// - `folders` members recurse.
 ///
 /// # Errors
@@ -596,14 +607,35 @@ pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceE
                 "{path}: FOLDER.name is mandatory (LOCATABLE.name 1..1)"
             )));
         }
-        if obj
-            .get("archetype_node_id")
-            .and_then(Value::as_str)
-            .is_none_or(str::is_empty)
-        {
+        let node_id = obj.get("archetype_node_id").and_then(Value::as_str);
+        let Some(node_id) = node_id.filter(|s| !s.is_empty()) else {
             return Err(unproc(format!(
                 "{path}: FOLDER.archetype_node_id is mandatory and non-empty \
                  (LOCATABLE.Archetype_node_id_valid)"
+            )));
+        };
+        if obj
+            .get("links")
+            .and_then(Value::as_array)
+            .is_some_and(Vec::is_empty)
+        {
+            return Err(unproc(format!(
+                "{path}: FOLDER.links is present but empty — a present list must be \
+                 non-empty (LOCATABLE.Links_valid)"
+            )));
+        }
+        if let Some(archetype_id) = obj
+            .get("archetype_details")
+            .and_then(|d| d.get("archetype_id"))
+            .and_then(|a| a.get("value"))
+            .and_then(Value::as_str)
+            && archetype_id != node_id
+        {
+            return Err(unproc(format!(
+                "{path}: archetype root archetype_node_id {node_id:?} is not the \
+                 stringified archetype_details.archetype_id {archetype_id:?} — at an \
+                 archetype root the two are always the same value \
+                 (LOCATABLE.archetype_node_id)"
             )));
         }
         if let Some(items) = obj.get("items").and_then(Value::as_array) {
@@ -872,5 +904,73 @@ mod tests {
         bad["folders"][0].as_object_mut().unwrap().remove("name");
         let err = validate_folder(&bad).expect_err("nameless sub-folder rejected");
         assert!(err.to_string().contains("name"), "got {err}");
+    }
+
+    /// A minimal valid FOLDER tree the LOCATABLE-rule tests below perturb.
+    fn folder_fixture() -> Value {
+        json!({
+            "_type": "FOLDER",
+            "name": { "_type": "DV_TEXT", "value": "root" },
+            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                  "value": "openEHR-EHR-FOLDER.generic.v1" },
+                "rm_version": "1.2.0"
+            },
+            "folders": [{
+                "_type": "FOLDER",
+                "name": { "_type": "DV_TEXT", "value": "sub" },
+                "archetype_node_id": "at0001"
+            }]
+        })
+    }
+
+    /// `LOCATABLE.Links_valid` (`links /= Void implies not links.is_empty`,
+    /// RM common `org.openehr.rm.common.locatable.adoc` §Invariants): a
+    /// present-but-empty `links` list on any FOLDER node is refused; a
+    /// non-empty one is accepted.
+    #[test]
+    fn folder_links_present_must_be_non_empty() {
+        validate_folder(&folder_fixture()).expect("the baseline folder tree is valid");
+
+        let mut bad = folder_fixture();
+        bad["folders"][0]
+            .as_object_mut()
+            .unwrap()
+            .insert("links".into(), json!([]));
+        let err = validate_folder(&bad).expect_err("an empty links list must be rejected");
+        assert!(err.to_string().contains("Links_valid"), "got {err}");
+
+        let mut good = folder_fixture();
+        good["folders"][0].as_object_mut().unwrap().insert(
+            "links".into(),
+            json!([{
+                "_type": "LINK",
+                "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+                "type": { "_type": "DV_TEXT", "value": "issue" },
+                "target": { "_type": "DV_EHR_URI", "value": "ehr://example/x" }
+            }]),
+        );
+        validate_folder(&good).expect("a non-empty links list is valid");
+    }
+
+    /// RM common `org.openehr.rm.common.locatable.adoc` §Attributes
+    /// (`archetype_node_id`): at an archetype root the node id is the
+    /// stringified `archetype_details.archetype_id`. A FOLDER without
+    /// `archetype_details` stays valid — the attribute is 0..1.
+    #[test]
+    fn folder_archetype_root_node_id_must_match_details() {
+        let mut bad = folder_fixture();
+        bad["archetype_details"]["archetype_id"]["value"] = json!("openEHR-EHR-FOLDER.other.v1");
+        let err = validate_folder(&bad).expect_err("a contradicting root identity is rejected");
+        assert!(
+            err.to_string().contains("LOCATABLE.archetype_node_id"),
+            "got {err}"
+        );
+
+        let mut without = folder_fixture();
+        without.as_object_mut().unwrap().remove("archetype_details");
+        validate_folder(&without).expect("archetype_details stays optional on a FOLDER");
     }
 }

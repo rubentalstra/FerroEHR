@@ -7159,3 +7159,62 @@ AMB-175:
     the whole-set reading (created-then-amended: the creation predicate
     answers exactly the first version).
   disposition: fixed_handling
+AMB-176:
+  ambiguity: >-
+    The released RM PRESCRIBES A WIRE VALUE ON AN ATTRIBUTE ITS OWN CLASS MODEL
+    DOES NOT DEFINE. RM common master03-archetyped_package.adoc §Structural
+    Correspondence tells a converter how to mark a node it had to invent:
+    "To indicate synthesis of a data node, a `FEEDER_AUDIT` instance is
+    attached to the `LOCATABLE` in question, and its `_change_type_` set to
+    'synthesised'." The same chapter's §Meta-data lists "type of change, e.g.
+    initial creation, correction ..., logical deletion" among the medico-legal
+    meta-data the feeder-audit model is designed to carry. But RM 1.2.0's
+    class model defines NO `change_type` anywhere on the feeder-audit types:
+    FEEDER_AUDIT has exactly five attributes
+    (`originating_system_item_ids`, `feeder_system_item_ids`,
+    `original_content`, `originating_system_audit`, `feeder_system_audit`) and
+    FEEDER_AUDIT_DETAILS exactly seven (`system_id`, `location`, `subject`,
+    `provider`, `time`, `version_id`, `other_details`) — verified attribute by
+    attribute in the two class tables. The only `change_type` in RM common is
+    `AUDIT_DETAILS.change_type`, which lives on the VERSION commit audit and
+    is unreachable from a LOCATABLE's `feeder_audit`. So the sentence names an
+    attribute that does not exist on the object it names, and there is no
+    released way to express the synthesised marking the chapter mandates.
+    A second, smaller mismatch rides along: the prose spells the value
+    "synthesised" while the openEHR terminology group the only real
+    `change_type` is bound to spells the concept `252|synthesis|` — so even
+    reading the sentence as AUDIT_DETAILS.change_type does not yield a legal
+    rubric.
+  source: >-
+    RM common docs/common/master03-archetyped_package.adoc §Structural
+    Correspondence (the "change_type set to 'synthesised'" sentence) and
+    §Meta-data ("type of change ..."); RM common
+    docs/UML/classes/org.openehr.rm.common.feeder_audit.adoc §Attributes (the
+    five-attribute list, no change_type) and
+    docs/UML/classes/org.openehr.rm.common.feeder_audit_details.adoc
+    §Attributes (the seven-attribute list, no change_type); RM common
+    docs/UML/classes/org.openehr.rm.common.audit_details.adoc §Attributes
+    (`change_type: DV_CODED_TEXT`) + §Invariants (`Change_type_valid`, bound to
+    the openEHR `audit change type` group); TERM
+    docs/SupportTerminology/codesets/openehr_terminology-vocabularies.adoc
+    §Audit Change Type (`| *252* a| synthesis | active`) and
+    docs/SupportTerminology/master04-representation.adoc
+    (`<group openehr_id="audit_change_type" …>` / `<concept id="252"
+    rubric="synthesis"/>`) — contradiction CONFIRMED first-hand.
+  handling: >-
+    Report-only, no gate. The generated RM types mirror the vendored BMM
+    faithfully, so `FEEDER_AUDIT` has no `change_type` member to populate or
+    validate, and inventing one would fork the spec model — exactly what the
+    generated layer exists to prevent. The canonical-JSON reader ignores
+    unknown keys by design (an RM-version-skew tolerance), so a client that
+    follows §Structural Correspondence literally and sends
+    `feeder_audit.change_type` has that member silently dropped: it is not
+    refused, but it is not stored or served either, and no released sentence
+    makes either outcome wrong. No case can gate a behaviour with no
+    released model behind it; the feeder-audit round-trip cases therefore
+    exercise only the five modelled FEEDER_AUDIT attributes. Recording the
+    contradiction upstream is the only sound action — flips to a gating
+    expectation only if a future RM release adds the attribute (or reworks
+    the sentence onto an existing mechanism).
+  disposition: report_only
+  upstream_ref: "TBD"

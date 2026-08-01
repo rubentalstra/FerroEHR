@@ -140,7 +140,16 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 ///   (pk_fraction), precision: 1}`: invalid under RM `data_types`
 ///   `dv_proportion` `Fraction_validity` ("(type = `pk_fraction` or type =
 ///   `pk_integer_fraction`) implies `is_integral`", with `is_integral()` =
-///   "True ... if precision is 0").
+///   "True ... if precision is 0"). It ALSO violates the archetype-root
+///   node-id identity rule: its `/content[0]` ACTION carries an `ARCHETYPED`
+///   block copied from the COMPOSITION root, so `archetype_node_id` differs
+///   from `archetype_details.archetype_id.value` (RM
+///   `org.openehr.rm.common.locatable.adoc` §Attributes,
+///   `archetype_node_id`).
+/// - `informe_amb_1_arquetip_OBS.json` — the same root-copied `ARCHETYPED`
+///   defect on its `/content[0]` OBSERVATION (an
+///   `openEHR-EHR-COMPOSITION.*` `archetype_id` claimed by a non-COMPOSITION
+///   node), violating the same identity rule.
 const CLEAN_COMPOSITIONS: &[&str] = &[
     "choice_validation_test.json",
     "compo_corona.json",

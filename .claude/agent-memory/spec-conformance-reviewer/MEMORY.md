@@ -13,3 +13,4 @@
 - [LANG bmm3 two-schema chimera](lang-bmm3-two-schema-chimera.md) — VERIFIED DEFECT: src/bmm3/ carries RELEASED-v2 shapes at bmm3 paths (18 collisions, 2 classes never emitted); diff both LANG schemas before any BMM audit
 - [Codegen degrade + optionality conventions](codegen-degrade-and-optionality-conventions.md) — the two invisible emission conventions (serde_json::Value degrade, Vec-for-optional-container) and where each loses spec semantics
 - [BMM3 spec-internal inconsistencies](bmm3-spec-internal-inconsistencies.md) — ch.10-12 prose vs bmm3 class docs: the model governs; the nine slips + the EL-vs-BEL OR/XOR precedence conflict
+- [RM archetyped master03 §3.1](rm-archetyped-master03-overview.md) — root-LOCATABLE validation is asymmetric (COMPOSITION/FOLDER skip validate_root_locatable); FEEDER_AUDIT.change_type doesn't exist in RM 1.2.0; AMB-65 covers the uid form
