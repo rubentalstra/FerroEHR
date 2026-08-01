@@ -330,6 +330,32 @@ async fn extract_spec_flags_are_honoured() {
             .unwrap_or_else(|e| panic!("extract_type {named:?} must be accepted: {}", e.message));
     }
 
+    // TERM `SupportTerminology/master03-terminology.adoc` §Vocabularies binds
+    // the attribute to the `extract_content_type` group (803 "openEHR EHR" …
+    // 808 "other"), so every group member coded in the openEHR terminology
+    // must be accepted too.
+    for term_coded in ["803", "804", "805", "806", "807", "808"] {
+        spec["extract_type"]["defining_code"]["code_string"] = json!(term_coded);
+        svc.export_ehr_extracts(openehr_its::json::from_canonical_value(&spec).expect("spec"))
+            .await
+            .unwrap_or_else(|e| {
+                panic!(
+                    "TERM-coded extract_type {term_coded:?} must be accepted: {}",
+                    e.message
+                )
+            });
+    }
+
+    // A TERM group code under a FOREIGN terminology id is not a group member:
+    // the openEHR concept codes are meaningful only in the openehr
+    // terminology, and "803" is no RM-named token either.
+    spec["extract_type"]["defining_code"]["code_string"] = json!("803");
+    spec["extract_type"]["defining_code"]["terminology_id"]["value"] = json!("SNOMED-CT");
+    svc.export_ehr_extracts(openehr_its::json::from_canonical_value(&spec).expect("spec"))
+        .await
+        .expect_err("a foreign-terminology 803 must be rejected");
+    spec["extract_type"]["defining_code"]["terminology_id"]["value"] = json!("openehr");
+
     // Valid type + include_multimedia = false → exported bodies carry no
     // inline DV_MULTIMEDIA data.
     spec["extract_type"]["defining_code"]["code_string"] = json!("openehr-ehr");
