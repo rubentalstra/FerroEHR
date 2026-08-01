@@ -132,6 +132,46 @@ cnf.composition.minimal_event.invalid_structure:
     spec_ref: "RM ehr (EVALUATION.data is mandatory, 1..1)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-07-21 by removing the mandatory EVALUATION.data from the real v1 payload (RM ehr: EVALUATION.data 1..1)"
+cnf.composition.minimal_event.territory_invalid:
+  source: fixtures/composition/minimal_event.territory_invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "COMPOSITION.territory code_string ZZ is no member of the countries code set"
+    spec_ref: "TERM SupportTerminology §Code Sets (countries / ISO_3166-1); RM ehr (COMPOSITION.territory: a valid ISO 3166-1 country code)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by replacing COMPOSITION.territory.code_string UY with ZZ (a code outside the openEHR countries code set — TERM SupportTerminology §Code Sets); the TERM ch.3 §3.1 audit wire-refusal twin (#1417)"
+cnf.composition.minimal_event.language_invalid:
+  source: fixtures/composition/minimal_event.language_invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "COMPOSITION.language code_string zz is no member of the languages code set"
+    spec_ref: "TERM SupportTerminology §Code Sets (languages / ISO_639-1); RM ehr (COMPOSITION.language: a valid ISO 639-1 language code)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by replacing COMPOSITION.language.code_string en with zz (a code outside the openEHR languages code set — TERM SupportTerminology §Code Sets); the TERM ch.3 §3.1 audit wire-refusal twin (#1417)"
+cnf.composition.minimal_event.category_invalid:
+  source: fixtures/composition/minimal_event.category_invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "COMPOSITION.category defining_code 999 (terminology openehr) is no member of the composition_category group"
+    spec_ref: "TERM SupportTerminology §Vocabularies (composition category: 431|451|433|815); RM ehr (COMPOSITION Category_validity)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by replacing COMPOSITION.category.defining_code.code_string 433 with 999 (no member of the composition_category group — TERM SupportTerminology §Vocabularies); the TERM ch.3 §3.2 audit wire-refusal twin (#1418)"
+cnf.composition.minimal_event.setting_invalid:
+  source: fixtures/composition/minimal_event.setting_invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "EVENT_CONTEXT.setting defining_code 999 (terminology openehr) is no member of the setting group"
+    spec_ref: "TERM SupportTerminology §Vocabularies (setting); RM ehr (EVENT_CONTEXT Setting_valid)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by replacing EVENT_CONTEXT.setting.defining_code.code_string 228 with 999 (no member of the setting group — TERM SupportTerminology §Vocabularies); the TERM ch.3 §3.2 audit wire-refusal twin (#1418)"
 cnf.composition.unknown_template:
   source: fixtures/composition/unknown_template.json
   format: canonical-json
