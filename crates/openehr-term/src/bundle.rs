@@ -33,6 +33,7 @@ use crate::terminology::code_set::CodeSet;
 use crate::terminology::terminology::Terminology;
 use crate::terminology::terminology_concept::TerminologyConcept;
 use crate::terminology::terminology_group::TerminologyGroup;
+use crate::terminology::terminology_status::TerminologyStatus;
 
 // Vendored openEHR terminology assets, embedded at compile time (no runtime I/O).
 const EN_XML: &str = include_str!("../assets/en/openehr_terminology.xml");
@@ -600,7 +601,7 @@ fn parse_code_set(node: &roxmltree::Node) -> CodeSet {
         .map(|c| Code {
             value: attr(&c, "value").unwrap_or_default().to_owned(),
             description: attr(&c, "description").map(ToOwned::to_owned),
-            status: None,
+            status: status_attr(&c),
         })
         .collect();
     CodeSet {
@@ -609,7 +610,7 @@ fn parse_code_set(node: &roxmltree::Node) -> CodeSet {
         issuer: attr(node, "issuer").unwrap_or_default().to_owned(),
         codes,
         external_id: attr(node, "external_id").map(ToOwned::to_owned),
-        status: None,
+        status: status_attr(node),
     }
 }
 
@@ -621,15 +622,26 @@ fn parse_group(node: &roxmltree::Node) -> TerminologyGroup {
         .map(|c| TerminologyConcept {
             id: attr(&c, "id").unwrap_or_default().to_owned(),
             rubric: attr(&c, "rubric").unwrap_or_default().to_owned(),
-            status: None,
+            status: status_attr(&c),
         })
         .collect();
     TerminologyGroup {
         name: attr(node, "name").unwrap_or_default().to_owned(),
         concepts,
         openehr_id: attr(node, "openehr_id").unwrap_or_default().to_owned(),
-        status: None,
+        status: status_attr(node),
     }
+}
+
+/// The optional `status` attribute the terminology XSDs declare on
+/// `codeset`/`code`/`group`/`concept`, parsed with the total,
+/// tolerance-preserving [`TerminologyStatus::from_wire`] (an out-of-set token
+/// survives as [`TerminologyStatus::Other`]). The pinned 3.1.0 assets carry no
+/// `status` attributes, so this reads `None` there — the field exists so a
+/// future re-vendored asset that populates the XSD-declared attribute parses
+/// losslessly into the modelled `TERMINOLOGY_STATUS` fields.
+fn status_attr(node: &roxmltree::Node) -> Option<TerminologyStatus> {
+    attr(node, "status").map(TerminologyStatus::from_wire)
 }
 
 /// Parse `PropertyUnitData.xml` (a `<PropertyUnits>` root of `<Property>` and
@@ -885,6 +897,59 @@ mod tests {
     }
 
     // ── Fallible parser (corrupt-asset path) ──────────────────────────────────
+
+    #[test]
+    fn status_attributes_parse_when_present_and_none_when_absent() {
+        // The XSDs declare an optional `status` on codeset/code/group/concept
+        // (assets/schema/openehr_terminology.xsd); the pinned assets omit it.
+        let t = parse_terminology(
+            r#"<terminology name="openehr" language="en">
+                 <codeset issuer="x" openehr_id="cs" name="cs" status="active">
+                   <code value="A" status="retired"/>
+                   <code value="B"/>
+                 </codeset>
+                 <group name="g" openehr_id="g" status="trial">
+                   <concept id="1" rubric="one" status="experimental"/>
+                   <concept id="2" rubric="two"/>
+                 </group>
+               </terminology>"#,
+        )
+        .expect("synthetic terminology parses");
+        let cs = &t.code_sets[0];
+        assert_eq!(cs.status, Some(TerminologyStatus::Active));
+        assert_eq!(cs.codes[0].status, Some(TerminologyStatus::Retired));
+        assert_eq!(cs.codes[1].status, None);
+        let g = &t.vocabularies[0];
+        assert_eq!(g.status, Some(TerminologyStatus::Trial));
+        // An out-of-set token is preserved, never dropped (from_wire is total).
+        assert_eq!(
+            g.concepts[0].status,
+            Some(TerminologyStatus::Other("experimental".to_owned()))
+        );
+        assert_eq!(g.concepts[1].status, None);
+    }
+
+    #[test]
+    fn vendored_assets_carry_no_status_attributes() {
+        // Pins the current asset reality the doc comment on `status_attr`
+        // relies on: every parsed status is None at the 3.1.0 pin.
+        let t = openehr();
+        let no_status = |term: &Terminology| {
+            term.code_sets
+                .iter()
+                .all(|cs| cs.status.is_none() && cs.codes.iter().all(|c| c.status.is_none()))
+                && term
+                    .vocabularies
+                    .iter()
+                    .all(|g| g.status.is_none() && g.concepts.iter().all(|c| c.status.is_none()))
+        };
+        assert!(no_status(t.terminology()));
+        assert!(
+            t.external_code_sets()
+                .iter()
+                .all(|cs| cs.status.is_none() && cs.codes.iter().all(|c| c.status.is_none()))
+        );
+    }
 
     #[test]
     fn parser_rejects_wrong_root() {
