@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.1] - 2026-08-01
+
 ### Added
 
 - **Deprecated ADL 1.4 spellings are warned at ingest.** The paren-less
@@ -47,6 +49,14 @@ workflow refuses a tag that has no matching section here.
   different root types.
 
 ### Fixed
+
+- **`openehr-its` builds again for minimal consumers.** The `opt14` module
+  (OPT 1.4 model + XML codec) was declared without the `full` feature gate
+  its codec dependency carries, so any `default-features = false` consumer
+  of the crate — whose documented minimal surface is only the dependency-free
+  SMART scope grammar — failed to compile with 1,191 errors (first visible on
+  the admin console's WebAssembly lane). The module is now gated like its
+  siblings; default builds are unchanged.
 
 - **Empty inline dADL domain blocks parse (`C_DV_QUANTITY <>`).** The ADL 1.4
   reader refused an empty domain block outright; the dADL chapter's own
@@ -4105,7 +4115,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.0...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.1...HEAD
+[3.17.1]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.0...v3.17.1
 [3.17.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.16.0...v3.17.0
 [3.16.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.3...v3.16.0
 [3.15.3]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.2...v3.15.3
