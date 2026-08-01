@@ -24,9 +24,22 @@ invariants, PR #1410); read-only spec-conformance-reviewer agents in
 parallel worked well for bulk chapter audits (evidence-verified
 checklists pasted from their report files), and posting GH comment
 bodies MUST use heredocs (backticks in double-quoted `--body` get
-shell-executed and silently mangle the comment). Queue: v3.17.0 = TERM
-(5), v3.18.0 = RM (47), v3.19.0 = SM (20), then v4.0.0 = the admin-UI
-program.
+shell-executed and silently mangle the comment). v3.17.0 = TERM (5 chapters + 5 section
+children), **completed and released 2026-08-01** — asset fidelity was
+exact (all 7 code sets + 17 vocabulary groups x 5 languages, verified by
+scripted table<->XML diff; ch.5/ch.6 closed honestly as stubs master.adoc
+excludes); the real catches were extract_content_type unenforced on
+EXTRACT_SPEC.extract_type (#1416) and — flushed out by the program's four
+new envelope wire cases — the UNTAGGED-NODE ESCAPE CLASS (#1431): every
+validation pass dispatched on the wire _type tag while canonical JSON
+legally omits it on concretely-declared slots, so untagged nodes skipped
+ALL RM invariants (JSON committed what XML refused); fixed by
+effective-type resolution over the BMM-generated RM model + a corpus-wide
+tag-independence property. Lesson: adding SMALL spec-cited wire cases is
+what finds application escape classes — the in-crate suites were
+example-based and blind to whole input shapes; the property-test hardening
+program for openehr-its is #1434 (v3.17.1). Queue: v3.18.0 = RM (47),
+v3.19.0 = SM (20), then v4.0.0 = the admin-UI program.
 (CDS/GDL2 was briefly v3.13.0 but adjudicated OUT after a first-hand spec
 read: CDS is a separate application layer consuming the CDR, not a CDR
 component — #716 closed with the citation.) Per-chapter mechanics that
