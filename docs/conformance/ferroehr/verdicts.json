@@ -250,7 +250,7 @@
     [
       "CompositionOps",
       {
-        "passed": 29,
+        "passed": 35,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -403,7 +403,7 @@
     [
       "EhrExtract",
       {
-        "passed": 20,
+        "passed": 21,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 863,
-    "driven": 826,
-    "passed": 826,
+    "selected": 870,
+    "driven": 833,
+    "passed": 833,
     "failed": 0,
     "inconclusive": 0
   }
