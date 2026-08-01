@@ -31,6 +31,7 @@ impl<T> IntervalEvent<T> {
         let (days, secs, tz) = iso_date_time_parts(&self.time.value)?;
         let width_secs = self.width.magnitude()?;
         #[expect(
+            clippy::as_conversions,
             clippy::cast_precision_loss,
             reason = "day counts over the representable calendar are far below 2^52, where f64 is exact on integers"
         )]
@@ -38,6 +39,7 @@ impl<T> IntervalEvent<T> {
         let start_days = (total / SECONDS_IN_DAY).floor();
         let rem = total - start_days * SECONDS_IN_DAY;
         #[expect(
+            clippy::as_conversions,
             clippy::cast_possible_truncation,
             reason = "start_days is a floored day count over the representable calendar — far inside i64"
         )]

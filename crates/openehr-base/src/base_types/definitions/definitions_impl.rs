@@ -44,8 +44,8 @@ mod tests {
     #[test]
     fn constants_carry_the_spec_values() {
         // basic_definitions.adoc §Constants: octal '\015' / '\012'.
-        assert_eq!(CR as u32, 0o15);
-        assert_eq!(LF as u32, 0o12);
+        assert_eq!(u32::from(CR), 0o15);
+        assert_eq!(u32::from(LF), 0o12);
         assert_eq!(ANY_TYPE_NAME, "Any");
         assert_eq!(REGEX_ANY_PATTERN, ".*");
         assert_eq!(DEFAULT_ENCODING, "UTF-8");

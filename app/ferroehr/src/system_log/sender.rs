@@ -467,6 +467,11 @@ async fn drain(
                 {
                     Ok(()) => {
                         store_healthy.store(true, Ordering::Relaxed);
+                        #[expect(
+                            clippy::as_conversions,
+                            reason = "the batch record count widens exactly: usize is at \
+                                      most 64 bits on every supported target"
+                        )]
                         metrics::counter!(METRIC_SENT, "sink" => "store")
                             .increment(records.len() as u64);
                         if let Some(notify) = &sinks.feed_notify {
@@ -475,6 +480,11 @@ async fn drain(
                     }
                     Err(e) => {
                         store_healthy.store(false, Ordering::Relaxed);
+                        #[expect(
+                            clippy::as_conversions,
+                            reason = "the batch record count widens exactly: usize is at \
+                                      most 64 bits on every supported target"
+                        )]
                         metrics::counter!(METRIC_SEND_FAILED, "sink" => "store")
                             .increment(records.len() as u64);
                         tracing::warn!("ATNA audit store batch write failed: {e}");

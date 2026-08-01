@@ -123,6 +123,12 @@ fn basic(user: &str, pw: &str) -> String {
 /// Minimal standard base64 encoder (avoids adding a base64 dev-dep).
 fn b64(bytes: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    // The 6-bit group is masked to 0..=63, so both conversions are lossless
+    // (`u8::try_from` cannot fail, `usize::from(u8)` is total).
+    let sextet = |n: u32, shift: u32| -> char {
+        let group = u8::try_from((n >> shift) & 63).expect("a 6-bit group should fit u8");
+        char::from(T[usize::from(group)])
+    };
     let mut out = String::new();
     for chunk in bytes.chunks(3) {
         let b = [
@@ -131,18 +137,10 @@ fn b64(bytes: &[u8]) -> String {
             *chunk.get(2).unwrap_or(&0),
         ];
         let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
-        out.push(T[((n >> 18) & 63) as usize] as char);
-        out.push(T[((n >> 12) & 63) as usize] as char);
-        out.push(if chunk.len() > 1 {
-            T[((n >> 6) & 63) as usize] as char
-        } else {
-            '='
-        });
-        out.push(if chunk.len() > 2 {
-            T[(n & 63) as usize] as char
-        } else {
-            '='
-        });
+        out.push(sextet(n, 18));
+        out.push(sextet(n, 12));
+        out.push(if chunk.len() > 1 { sextet(n, 6) } else { '=' });
+        out.push(if chunk.len() > 2 { sextet(n, 0) } else { '=' });
     }
     out
 }

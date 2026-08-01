@@ -31,6 +31,11 @@ pub const SYSLOG_FACILITY: u8 = 10;
 /// Syslog severity 5 — Notice (RFC 5424 §6.2.1).
 pub const SYSLOG_SEVERITY: u8 = 5;
 /// Computed PRI value (`10*8 + 5 = 85`).
+#[expect(
+    clippy::as_conversions,
+    reason = "u8 → u16 widening is exact; `From` is not usable here because it is not \
+              yet stable as a const trait (https://doc.rust-lang.org/reference/const_eval.html)"
+)]
 pub const SYSLOG_PRI: u16 = (SYSLOG_FACILITY as u16) * 8 + SYSLOG_SEVERITY as u16;
 /// RFC 5424 SYSLOG version.
 pub const SYSLOG_VERSION: u8 = 1;

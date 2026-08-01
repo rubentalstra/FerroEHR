@@ -43,8 +43,9 @@
 static ESCAPE: [u8; 256] = build_escape_table();
 
 #[expect(
+    clippy::as_conversions,
     clippy::indexing_slicing,
-    reason = "a const table builder over a fixed [u8; 256]: every index is a literal or a `u8` widened to usize, so all are inside the array by construction — and `get_mut` is not usable in a const fn"
+    reason = "a const table builder over a fixed [u8; 256]: every index is a literal or a `u8` widened to usize, so all are inside the array by construction — and neither `get_mut` nor `usize::from` is usable in a const fn"
 )]
 const fn build_escape_table() -> [u8; 256] {
     let mut t = [0u8; 256];
@@ -243,7 +244,7 @@ impl JsonWriter {
         let bytes = s.as_bytes();
         let mut start = 0;
         for (i, &b) in bytes.iter().enumerate() {
-            let esc = ESCAPE[b as usize];
+            let esc = ESCAPE[usize::from(b)];
             if esc == 0 {
                 continue;
             }
@@ -261,8 +262,8 @@ impl JsonWriter {
                 // Any other C0 control: `\u00XX`, lowercase hex.
                 _ => {
                     self.buf.push_str("\\u00");
-                    self.buf.push(HEX[(b >> 4) as usize] as char);
-                    self.buf.push(HEX[(b & 0xF) as usize] as char);
+                    self.buf.push(char::from(HEX[usize::from(b >> 4)]));
+                    self.buf.push(char::from(HEX[usize::from(b & 0xF)]));
                 }
             }
             start = i + 1;
@@ -639,6 +640,7 @@ impl JsonNode for JsonTree<'_> {
         }
     }
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         reason = "wire-number widening to f64, exactly what serde_json::Value::as_f64 does"
     )]
@@ -1106,6 +1108,7 @@ impl FromJson for f64 {
 
 impl FromJson for f32 {
     #[expect(
+        clippy::as_conversions,
         clippy::cast_possible_truncation,
         reason = "REAL -> f32 field narrowing, exactly what serde does when a schema declares an f32 field"
     )]

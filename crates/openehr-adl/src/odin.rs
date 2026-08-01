@@ -527,6 +527,7 @@ fn is_numeric_leaf(v: &OdinValue) -> bool {
 /// The `f64` an ODIN numeric leaf denotes, or `None` when the value is not
 /// numeric or not exactly representable as one.
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "the 2^53 magnitude guard proves the i64 → f64 conversion is exact; a wider magnitude returns None and is refused"
 )]

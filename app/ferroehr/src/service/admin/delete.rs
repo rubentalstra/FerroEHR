@@ -280,7 +280,13 @@ impl FerroEhrService {
                     .await?;
             }
             tx.commit().await?;
-            deleted += removed.len() as u64;
+            #[expect(
+                clippy::as_conversions,
+                reason = "the removed-row count widens exactly: usize is at most 64 bits \
+                          on every supported target"
+            )]
+            let removed_rows = removed.len() as u64;
+            deleted += removed_rows;
             self.gc_unreferenced_blobs(candidate_blobs).await;
         }
         Ok(deleted)

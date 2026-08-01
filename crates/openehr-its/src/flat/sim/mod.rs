@@ -85,8 +85,9 @@ impl SimNode {
     /// placeholder occurrences) if absent, without touching the child's
     /// `indexed` marking.
     #[expect(
+        clippy::as_conversions,
         clippy::indexing_slicing,
-        reason = "the loop immediately below grows `occurrences` until `len() > i`, so the index is in bounds by construction; the fn returns `&mut SimNode`, not an Option"
+        reason = "the loop immediately below grows `occurrences` until `len() > i`, so the index is in bounds by construction (the u32 → usize widening is lossless on every supported target); the fn returns `&mut SimNode`, not an Option"
     )]
     pub fn place_mut(&mut self, name: &str, i: u32) -> &mut SimNode {
         let child = self.children.entry(name.to_owned()).or_default();

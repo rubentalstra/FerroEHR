@@ -160,6 +160,7 @@ fn status_class(status: StatusCode) -> &'static str {
 /// The `Content-Length` of a message, in bytes, if declared. Body sizes fit a
 /// histogram sample exactly (well under `2^53`), so the widening is lossless.
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "a Content-Length is observed into an f64 histogram; f64 is exact to \
               2^53 bytes, far past any request or response this server accepts"

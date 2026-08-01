@@ -71,6 +71,11 @@ struct Sample {
 }
 
 /// Read the pool + runtime gauges.
+#[expect(
+    clippy::as_conversions,
+    reason = "pool and runtime counts widen exactly: usize is at most 64 bits on \
+              every supported target"
+)]
 fn sample(pool: &PgPool) -> Sample {
     let size = u64::from(pool.size());
     let idle = pool.num_idle() as u64;
@@ -90,6 +95,7 @@ fn sample(pool: &PgPool) -> Sample {
 
 /// Publish the snapshot through the `metrics` facade (→ Prometheus).
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "the gauge values are small counts (pool size, worker count, \
               queue depth, alive tasks), so the u64 → f64 widening is exact \

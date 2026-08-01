@@ -131,7 +131,11 @@ fn step_breaches(
         // Re-derive from the decoded histogram — the same discipline as the
         // measured-run verdicts (the summary fields are never load-bearing).
         let histogram = op.decode_histogram()?;
-        #[expect(clippy::cast_precision_loss, reason = "latencies << 2^52 µs")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "latencies << 2^52 µs"
+        )]
         let p99_ms = histogram.value_at_quantile(0.99) as f64 / 1_000.0;
         if p99_ms > options.p99_budget_ms {
             breaches.push(format!(
@@ -140,7 +144,11 @@ fn step_breaches(
             ));
         }
     }
-    #[expect(clippy::cast_precision_loss, reason = "request counts << 2^52")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "request counts << 2^52"
+    )]
     let error_rate = if requests == 0 {
         1.0
     } else {

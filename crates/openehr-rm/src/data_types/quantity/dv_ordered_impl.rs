@@ -202,6 +202,7 @@ pub(crate) fn iso_date_time_magnitude_seconds(s: &str) -> Option<f64> {
         return None;
     }
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         reason = "day counts over the representable calendar are far below 2^52, where f64 is exact on integers"
     )]
@@ -377,6 +378,7 @@ ordered_limit!(
 
 // DV_COUNT: any two counts are comparable; ordered by `magnitude`.
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "DV_COUNT magnitudes are clinical counts, far below 2^52 where f64 is exact on integers"
 )]
@@ -418,6 +420,7 @@ ordered_limit!(
 
 // DV_DATE: any two dates are comparable; ordered by day-magnitude.
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "the day count over the representable calendar is far below 2^52, where f64 is exact on integers"
 )]
@@ -559,6 +562,7 @@ impl DvOrdered {
     /// for unavailable temporal magnitudes.
     #[must_use]
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         reason = "DV_COUNT magnitudes and day counts are far below 2^52, where f64 is exact on integers"
     )]
@@ -732,6 +736,7 @@ impl OrderedLimit for DvOrdered {
 /// Civil date from a day count relative to 1970-01-01 (Howard Hinnant's
 /// `civil_from_days` — the inverse of `days_from_civil`).
 #[expect(
+    clippy::as_conversions,
     clippy::cast_sign_loss,
     clippy::cast_possible_truncation,
     reason = "the algorithm's own bounds put d in [1, 31] and m in [1, 12] — both non-negative and inside u32"
@@ -765,6 +770,7 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 pub(crate) fn format_iso_date_time(days_since_origin: i64, secs_in_day: f64) -> String {
     let (y, m, d) = civil_from_days(days_since_origin + days_from_civil(1, 1, 1));
     #[expect(
+        clippy::as_conversions,
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
         reason = "a seconds-in-day value is non-negative and below 86_400, so its floor fits u64"
@@ -774,6 +780,7 @@ pub(crate) fn format_iso_date_time(days_since_origin: i64, secs_in_day: f64) -> 
     let (hh, mm, ss) = (whole / 3600, (whole % 3600) / 60, whole % 60);
     if frac > 1e-9 {
         #[expect(
+            clippy::as_conversions,
             clippy::cast_possible_truncation,
             clippy::cast_sign_loss,
             reason = "frac is in [0, 1), so frac * 1000 rounds into 0..=1000 — non-negative and inside u64"
