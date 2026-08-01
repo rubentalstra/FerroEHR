@@ -228,6 +228,7 @@ fn temporal_columns(
 /// `ORDER BY` in the query is the order on screen.
 fn row_order_axis(series: &[SeriesSpec], rows: &[Vec<Value>]) -> AxisSpec {
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         reason = "row ordinals of one page are tiny"
     )]
@@ -339,6 +340,7 @@ pub fn iso_epoch_seconds(text: &str) -> Option<f64> {
         return None;
     };
     #[expect(
+        clippy::as_conversions,
         clippy::cast_precision_loss,
         reason = "instants are inside f64's exact integer range"
     )]
@@ -358,6 +360,7 @@ pub fn time_tick_label(seconds: f64, span_seconds: f64) -> String {
         return "-".to_owned();
     }
     #[expect(
+        clippy::as_conversions,
         clippy::cast_possible_truncation,
         reason = "range-guarded immediately above"
     )]

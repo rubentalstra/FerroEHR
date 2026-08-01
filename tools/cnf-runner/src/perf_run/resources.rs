@@ -151,6 +151,7 @@ fn sample_loop(
                             // % of one core over the interval (100 = one
                             // full core) — both deltas are far below 2^52.
                             #[expect(
+                                clippy::as_conversions,
                                 clippy::cast_precision_loss,
                                 reason = "nanosecond counters within a sampling window are far below 2^52"
                             )]

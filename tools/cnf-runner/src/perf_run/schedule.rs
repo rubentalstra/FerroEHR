@@ -237,6 +237,7 @@ fn journey_instants(curve: ArrivalCurve, rate_peak: f64, span_s: f64) -> Vec<f64
             let interval = 1.0 / rate_peak;
             let count = (span_s * rate_peak).ceil().max(1.0);
             #[expect(
+                clippy::as_conversions,
                 clippy::cast_possible_truncation,
                 clippy::cast_sign_loss,
                 reason = "journey counts are far below the lossy range and non-negative by construction"
@@ -244,7 +245,11 @@ fn journey_instants(curve: ArrivalCurve, rate_peak: f64, span_s: f64) -> Vec<f64
             let count = count as u64;
             (0..count)
                 .map(|j| {
-                    #[expect(clippy::cast_precision_loss, reason = "counts << 2^52")]
+                    #[expect(
+                        clippy::as_conversions,
+                        clippy::cast_precision_loss,
+                        reason = "counts << 2^52"
+                    )]
                     {
                         j as f64 * interval
                     }
@@ -381,9 +386,17 @@ pub(crate) fn build_schedule(
     // tail.
     let journey_rate = rate * FLOOR_MARGIN / expansion.arrivals_per_journey;
     let span_s = warmup_s.saturating_add(duration_s);
-    #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "spans << 2^52"
+    )]
     let virtual_span_s = span_s as f64 + max_offset_s as f64;
     let mut sequencer = ShareSequencer::new(&shares);
+    #[expect(
+        clippy::as_conversions,
+        reason = "journey-kind count widens exactly: usize is at most 64 bits on every supported target"
+    )]
     let kinds = resolved.len() as u64;
     let mut kind_seq: Vec<u64> = vec![0; resolved.len()];
     let mut arrivals: Vec<PlannedArrival> = Vec::new();
@@ -404,7 +417,11 @@ pub(crate) fn build_schedule(
         let patient = if journey.fresh_ehr {
             None
         } else {
-            #[expect(clippy::cast_possible_truncation, reason = "ward indices are small")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_possible_truncation,
+                reason = "ward indices are small"
+            )]
             Some(((kind as u64 + kinds * seq) % ward_len.max(1) as u64) as usize)
         };
         // The journey's own clock starts max_offset before the window so
@@ -413,7 +430,11 @@ pub(crate) fn build_schedule(
         // a journey with NO seeded fallback (a fresh EHR, a delete of its
         // own commit) must start in-window — a pre-window start skips the
         // instance.
-        #[expect(clippy::cast_precision_loss, reason = "offsets << 2^52")]
+        #[expect(
+            clippy::as_conversions,
+            clippy::cast_precision_loss,
+            reason = "offsets << 2^52"
+        )]
         let start_s = instant - max_offset_s as f64;
         if journey.needs_full_window && start_s < 0.0 {
             continue;
@@ -422,14 +443,30 @@ pub(crate) fn build_schedule(
         for (stage_index, stage) in journey.stages.iter().enumerate() {
             let reps = stage.at.arrivals();
             for rep in 0..reps {
+                #[expect(
+                    clippy::as_conversions,
+                    reason = "stage index widens exactly: usize is at most 64 bits on every supported target"
+                )]
                 let offset = offset_s(stage.at, journey_index, stage_index as u64, rep);
-                #[expect(clippy::cast_precision_loss, reason = "offsets << 2^52")]
+                #[expect(
+                    clippy::as_conversions,
+                    clippy::cast_precision_loss,
+                    reason = "offsets << 2^52"
+                )]
                 let at_s = start_s + offset as f64;
-                #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
+                #[expect(
+                    clippy::as_conversions,
+                    clippy::cast_precision_loss,
+                    reason = "spans << 2^52"
+                )]
                 if at_s < 0.0 || at_s >= span_s as f64 {
                     continue;
                 }
-                #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
+                #[expect(
+                    clippy::as_conversions,
+                    clippy::cast_precision_loss,
+                    reason = "spans << 2^52"
+                )]
                 let recorded = at_s >= warmup_s as f64;
                 if recorded {
                     measured_count += 1;
@@ -476,7 +513,11 @@ pub(crate) fn build_schedule(
             .map(|a| a.at.as_secs_f64())
             .collect();
         if duration_s <= 3600 || workload.curve == ArrivalCurve::Uniform {
-            #[expect(clippy::cast_precision_loss, reason = "counts << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "counts << 2^52"
+            )]
             {
                 measured.len() as f64 / duration_s.max(1) as f64
             }
@@ -485,9 +526,17 @@ pub(crate) fn build_schedule(
             let mut best = 0.0_f64;
             let mut lo = 0usize;
             let mut hi = 0usize;
-            #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "spans << 2^52"
+            )]
             let end = (warmup_s + duration_s) as f64;
-            #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
+            #[expect(
+                clippy::as_conversions,
+                clippy::cast_precision_loss,
+                reason = "spans << 2^52"
+            )]
             let mut window_start = warmup_s as f64;
             while window_start + 3600.0 <= end + 1.0 {
                 while measured.get(lo).is_some_and(|at| *at < window_start) {
@@ -499,7 +548,11 @@ pub(crate) fn build_schedule(
                 {
                     hi += 1;
                 }
-                #[expect(clippy::cast_precision_loss, reason = "counts << 2^52")]
+                #[expect(
+                    clippy::as_conversions,
+                    clippy::cast_precision_loss,
+                    reason = "counts << 2^52"
+                )]
                 {
                     best = best.max((hi - lo) as f64 / 3600.0);
                 }
@@ -701,14 +754,13 @@ mod tests {
         let schedule = build_schedule(&workload, 20.0, 0, 30, 99).unwrap();
         // Patients used by vitals commits never collide with lab commits:
         // stripe residues (mod kind count) differ per kind.
-        let mut residue_by_op: std::collections::HashMap<PerfOp, std::collections::BTreeSet<u64>> =
-            std::collections::HashMap::new();
+        let mut residue_by_op: std::collections::HashMap<
+            PerfOp,
+            std::collections::BTreeSet<usize>,
+        > = std::collections::HashMap::new();
         for arrival in &schedule.arrivals {
             if let Some(p) = arrival.patient {
-                residue_by_op
-                    .entry(arrival.op)
-                    .or_default()
-                    .insert(p as u64 % 3);
+                residue_by_op.entry(arrival.op).or_default().insert(p % 3);
             }
         }
         let vitals = &residue_by_op[&PerfOp::CompositionCommit];
@@ -796,6 +848,7 @@ mod tests {
         // whole-window mean sits well below it.
         let schedule = build_schedule(&workload, 2.0, 0, 36_000, 50).unwrap();
         #[expect(
+            clippy::as_conversions,
             clippy::cast_precision_loss,
             reason = "planned journey counts in a 10 h window are far below 2^52"
         )]

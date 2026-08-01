@@ -913,6 +913,10 @@ impl<'a> HttpDriver<'a> {
                     .iter()
                     .enumerate()
                     .filter_map(|(k, uid)| {
+                        #[expect(
+                            clippy::as_conversions,
+                            reason = "committed-uid index widens exactly: usize is at most 64 bits on every supported target"
+                        )]
                         let systolic = 100 + 10 * (k as u64);
                         (systolic >= min).then(|| (uid.clone(), systolic))
                     })

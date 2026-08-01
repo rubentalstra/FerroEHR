@@ -94,6 +94,11 @@ impl FerroEhrService {
     /// [`ServiceError::ValidationFailed`] carrying every RM/terminology/
     /// template violation (→ 422); [`ServiceError`] from a failing template
     /// resolution.
+    #[expect(
+        clippy::as_conversions,
+        reason = "per-pass failure counts widen exactly for the metrics facade: usize \
+                  is at most 64 bits on every supported target"
+    )]
     pub(super) async fn validate_composition_for_commit(
         &self,
         composition: &Value,

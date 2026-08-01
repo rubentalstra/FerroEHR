@@ -333,6 +333,11 @@ async fn drain_batch(
     }
     tx.commit().await.map_err(DrainError::Db)?;
     if sent > 0 {
+        #[expect(
+            clippy::as_conversions,
+            reason = "the published-event count widens exactly: usize is at most 64 bits \
+                      on every supported target"
+        )]
         metrics::counter!(EVENTS_PUBLISHED).increment(sent as u64);
     }
     match publish_err {

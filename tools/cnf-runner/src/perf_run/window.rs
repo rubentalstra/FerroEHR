@@ -232,7 +232,11 @@ pub fn run_window(
     // rate scaled by dispatch fidelity — off-peak troughs are the design,
     // never a shortfall; a lagging generator still deflates it.
     let planned_span_s = warmup_s.saturating_add(duration_s);
-    #[expect(clippy::cast_precision_loss, reason = "spans/counts << 2^52")]
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "spans/counts << 2^52"
+    )]
     let (offered_load_sustained, generator_bound) = {
         let actual_span = dispatch_span.as_secs_f64().max(planned_span_s as f64);
         let measured_span = actual_span - warmup_s as f64;

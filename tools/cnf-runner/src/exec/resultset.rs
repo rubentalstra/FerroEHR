@@ -149,6 +149,10 @@ pub fn compare_contains(result_set: &Value, expected: &[Value]) -> Result<(), Re
 /// # Errors
 /// The count mismatch.
 pub fn compare_count(result_set: &Value, expected: u64) -> Result<(), ResultSetMismatch> {
+    #[expect(
+        clippy::as_conversions,
+        reason = "row count widens exactly: usize is at most 64 bits on every supported target"
+    )]
     let n = rows_of(result_set)?.len() as u64;
     if n == expected {
         Ok(())
