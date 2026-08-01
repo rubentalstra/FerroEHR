@@ -13,6 +13,7 @@ mod common;
 
 mod aom2_model_xml;
 mod aom2_xml;
+mod attested_version;
 mod canonical_contract;
 mod ckm_archetype_xml;
 mod ckm_full_pack;

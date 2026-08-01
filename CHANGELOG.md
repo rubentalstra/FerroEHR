@@ -76,6 +76,32 @@ workflow refuses a tag that has no matching section here.
   is refused (422) — placed on the interior ENTRY so the case also proves the
   rule is applied below the resource root.
 
+- **Conformance cases for the ATTESTATION wire family.** The catalogue now
+  drives the `666|attestation|` CONTRIBUTION member end to end: attesting an
+  existing COMPOSITION version is accepted, adds **no** new version, reports
+  the attestation-only aggregate change type, and surfaces the completed
+  `ATTESTATION` on both the version envelope and the revision history; the
+  pending-then-signed pattern leaves **both** attestation objects on the one
+  version; and three refusal twins pin the `ATTESTATION` invariants on the
+  wire (a missing `reason`, a coded `reason` whose code sits outside the
+  openEHR *attestation reason* group, and a present-but-empty `items` list).
+  An `ORIGINAL_VERSION` carrying attestations is also pinned as a
+  canonical-JSON/XML serialization vector.
+
+- **A canonical-JSON output mode for the corpus fixture generator.** The
+  `openehr-its` `canonical_convert` example now emits canonical JSON when the
+  output path ends in `.json` (and handles `ORIGINAL_VERSION` documents under
+  the published `<version>` root), so a committed JSON fixture can be the
+  codec's own output rather than a hand-typed approximation of it.
+
+- **The UML class diagrams the vendored specs reference are now vendored
+  too.** `scripts/vendor-spec-docs.sh` additionally fetches, from the same
+  pinned commits, exactly the 129 SVG diagrams the vendored chapters
+  reference (`docs/specs/openehr/<COMPONENT>/docs/UML/diagrams/`), so a spec
+  chapter's class and package diagrams are readable offline instead of being
+  dangling links. A referenced diagram missing at the pin now fails the
+  vendoring run.
+
 ### Fixed
 
 - **The FLAT `_link:i` builder now reports a missing mandatory suffix instead

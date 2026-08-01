@@ -410,4 +410,57 @@ mod tests {
             "got {err:?}"
         );
     }
+
+    /// A coded `reason` whose `defining_code` is outside the openEHR
+    /// `attestation reason` group is refused (`ATTESTATION.Reason_valid`,
+    /// `org.openehr.rm.common.attestation.adoc` §Invariants).
+    #[test]
+    fn out_of_group_coded_reason_is_refused() {
+        let err = complete_attestation(
+            &json!({
+                "reason": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "signed",
+                    "defining_code": {
+                        "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        // 249 is `creation` (audit change type), not an
+                        // `attestation reason` member ({240 signed, 648 witnessed}).
+                        "code_string": "249"
+                    }
+                },
+                "is_pending": false
+            }),
+            "ferroehr.local",
+            &committer(),
+            now(),
+        )
+        .expect_err("an out-of-group coded reason must be refused");
+        assert!(
+            matches!(&err, ServiceError::Unprocessable(m) if m.contains("Reason_valid")),
+            "got {err:?}"
+        );
+    }
+
+    /// A present-but-empty `items` list is refused (`ATTESTATION.Items_valid`:
+    /// `items /= Void implies not items.is_empty`,
+    /// `org.openehr.rm.common.attestation.adoc` §Invariants).
+    #[test]
+    fn present_but_empty_items_is_refused() {
+        let err = complete_attestation(
+            &json!({
+                "reason": { "_type": "DV_TEXT", "value": "witness" },
+                "is_pending": false,
+                "items": []
+            }),
+            "ferroehr.local",
+            &committer(),
+            now(),
+        )
+        .expect_err("a present-but-empty items list must be refused");
+        assert!(
+            matches!(&err, ServiceError::Unprocessable(m) if m.contains("Items_valid")),
+            "got {err:?}"
+        );
+    }
 }
