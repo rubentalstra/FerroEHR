@@ -7218,3 +7218,132 @@ AMB-176:
     the sentence onto an existing mechanism).
   disposition: report_only
   upstream_issue: 1610
+AMB-177:
+  ambiguity: >-
+    A RELEASED RM INVARIANT RESTS ON A FUNCTION THE SAME CHAPTER LEAVES
+    UNDEFINED. RM common
+    docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants states
+    `Archetyped_valid: is_archetype_root xor archetype_details = Void`. Its
+    left operand, `is_archetype_root ()`, is declared one section earlier
+    under §Functions with a Meaning sentence and nothing else — "True if this
+    node is the root of an archetyped structure" — no postcondition, no
+    derivation expression, no `_result_` definition, unlike e.g. the same
+    package's `PARTY_PROXY` / `LOCATABLE` attributes whose semantics the
+    prose fixes. Two readings survive the released text and they disagree
+    about what the invariant asserts:
+      (a) THE REFERENCE-OBJECT-MODEL READING — `is_archetype_root` IS the
+          presence of `archetype_details`. Then `Archetyped_valid` reduces to
+          `(archetype_details /= Void) xor (archetype_details = Void)`, which
+          is true of every instance: the invariant is a TAUTOLOGY and
+          constrains no wire shape at all.
+      (b) THE NODE-ID READING — `is_archetype_root` is decided from
+          `archetype_node_id`, which §Attributes says is "Always in the form
+          of an at-code, e.g. `at0005`" except that "At an archetype root
+          point, the value of this attribute is always the stringified form
+          of the `archetype_id` found in the `archetype_details` object"
+          (restated in docs/common/master03-archetyped_package.adoc §The
+          LOCATABLE Class: "The only exception is at archetype root points in
+          data, where `archetype_node_id` carries the archetype identifier in
+          string form rather than an interior node id from an archetype").
+          Then the invariant has real force in BOTH directions: an at/id
+          term-code node must NOT carry `archetype_details`, AND every node
+          whose `archetype_node_id` is an archetype HRID MUST carry
+          `archetype_details`.
+    Nothing in the released RM chooses between (a) and (b). The two arms of
+    (b) are not equally supported either: the negative arm follows from the
+    §Attributes sentence alone (a term code is by definition not an archetype
+    identifier, under either reading of the function), while the positive arm
+    exists ONLY under reading (b) and vanishes entirely under reading (a).
+  source: >-
+    RM common docs/UML/classes/org.openehr.rm.common.locatable.adoc
+    §Functions verbatim and complete for this function — "*is_archetype_root*
+    (): `Boolean` | True if this node is the root of an archetyped
+    structure." — with no further definition anywhere in the file;
+    §Invariants "__Archetyped_valid__: `is_archetype_root xor
+    archetype_details = Void`"; §Attributes (`archetype_node_id`) "Always in
+    the form of an at-code, e.g. `at0005`" and "At an archetype root point,
+    the value of this attribute is always the stringified form of the
+    `_archetype_id_` found in the `_archetype_details_` object"; RM common
+    docs/common/master03-archetyped_package.adoc §The LOCATABLE Class ("The
+    only exception is at archetype root points in data, where
+    `_archetype_node_id_` carries the archetype identifier in string form
+    rather than an interior node id from an archetype"; "`LOCATABLE` also
+    provides the attribute `_archetype_details_`, which is non-Void for
+    archetype root points in data") — read first-hand, undefinedness
+    CONFIRMED.
+  handling: >-
+    Split the invariant and gate only the arm both readings support. The
+    ENFORCEABLE NEGATIVE ARM gates: a node whose `archetype_node_id` is an
+    at/id term code must not carry `archetype_details`, refused as a semantic
+    error at the wire — it holds under reading (b) directly and under reading
+    (a) via the §Attributes sentence, so it needs no choice between the two.
+    The CONVERSE ARM ("an archetype-HRID node must carry
+    `archetype_details`") is NOT enforced: it exists only under reading (b),
+    and reading (a) makes the whole invariant a tautology, so a refusal there
+    would rest on a reading the released text does not pick. Separately and
+    independently of this ambiguity, the ROOT-IDENTITY rule IS enforced
+    wherever `archetype_details` is actually present — `archetype_node_id`
+    must equal the stringified `archetype_details.archetype_id` — because
+    that comes from the §Attributes sentence, not from `is_archetype_root`.
+    Corroboration only, never the ground for the above: the CNF valid data
+    sets and the canonical-JSON corpus systematically omit `archetype_details`
+    on nested archetype roots, so reading (b)'s converse arm would reject
+    released reference data. Flips to a gating expectation only if a future
+    RM release defines `is_archetype_root ()`.
+  disposition: report_only
+  upstream_issue: 1614
+AMB-178:
+  ambiguity: >-
+    A RELEASED RM ATTRIBUTE HAS NO SLOT IN THE ITS-XML LINEAGE THE CDR SERVES
+    BY DEFAULT. RM 1.2.0 declares `FEEDER_AUDIT_DETAILS.other_details:
+    ITEM_STRUCTURE` at 0..1 ("Optional attribute to carry any custom
+    meta-data. May be archetyped."). The vendored ITS-XML v1 bundle — tag
+    `Release-1.0.2v2`, target namespace `http://schemas.openehr.org/v1`, the
+    RELEASED-STABLE lineage and the CDR's default served namespace — does NOT
+    declare it: its `FEEDER_AUDIT_DETAILS` complexType is a six-element
+    sequence ending at `version_id`. The v2 bundle (tag `Release-2.0.0v2`) is
+    split by RM release and straddles the addition: its RM `Release-1.0.2`,
+    `Release-1.0.3` and `Release-1.0.4` `Common.xsd` end at `version_id` too,
+    while `Release-1.1.0` and `latest` DO carry
+    `<xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>`
+    as the trailing particle. So the attribute is expressible in canonical XML
+    only under the v2 lineage's newer RM schema sets, and the released RM
+    model has no v1-namespace serialization at all. The RM is silent on which
+    XSD generation a canonical-XML document must satisfy, and no ITS-XML
+    release withdraws the v1 bundle, so there is no released sentence making
+    either the emission or its non-validatability wrong.
+  source: >-
+    RM common docs/UML/classes/org.openehr.rm.common.feeder_audit_details.adoc
+    §Attributes ("*0..1* | *other_details*: `ITEM_STRUCTURE` | Optional
+    attribute to carry any custom meta-data. May be archetyped.");
+    crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/BaseTypes.xsd
+    `<xs:complexType name="FEEDER_AUDIT_DETAILS">` — sequence `system_id`,
+    `location`, `provider`, `subject`, `time`, `version_id`, then
+    `</xs:sequence>`; the same six-element sequence in
+    its-xml-2.0.0-nsv2/RM/Release-1.0.2/Common.xsd,
+    .../Release-1.0.3/Common.xsd and .../Release-1.0.4/Common.xsd; the
+    seven-element sequence with the trailing
+    `<xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>`
+    in its-xml-2.0.0-nsv2/RM/Release-1.1.0/Common.xsd and
+    its-xml-2.0.0-nsv2/RM/latest/Common.xsd — every complexType read
+    element-by-element, the split across the two lineages CONFIRMED.
+  handling: >-
+    Report-only, no gate. The generated XML codec follows the RM under the
+    completeness rule and emits `other_details` as the trailing element of
+    `FEEDER_AUDIT_DETAILS`, in the same position the v2 `Release-1.1.0`
+    schema puts it, so a document that carries the attribute is byte-identical
+    across the two lineages bar the root namespace and validates against the
+    v2 `Release-1.1.0`/`latest` schema set. Suppressing the element to make
+    the v1 XSD happy would silently drop released RM data on the XML wire —
+    a lossy serialization of a modelled attribute — and is refused. What
+    remains genuinely unassignable is only the v1-namespace validation
+    question, which no released document settles; a client that must
+    schema-validate against the STABLE v1 bundle and also carries
+    `other_details` has no released answer. The XML round-trip gate therefore
+    pins the emission and the parse-back (serialize -> parse -> equal, with
+    the element present in the emitted document); no case asserts v1 XSD
+    validity of such a document. Flips to a gating expectation if a future
+    ITS-XML release either back-ports the element to the v1 bundle or
+    withdraws that lineage.
+  disposition: report_only
+  upstream_issue: 1615

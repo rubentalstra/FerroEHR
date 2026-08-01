@@ -1221,7 +1221,7 @@ fn finish_identity(
     let is_root_arch = node
         .node_id
         .as_deref()
-        .is_some_and(|n| n.starts_with("openEHR-"));
+        .is_some_and(openehr_rm::paths::is_archetype_root_node_id);
     if is_root_arch {
         obj.entry("archetype_details".to_owned())
             .or_insert_with(|| {

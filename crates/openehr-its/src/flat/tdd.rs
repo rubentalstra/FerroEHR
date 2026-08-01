@@ -71,7 +71,7 @@
 use std::collections::HashSet;
 use std::sync::LazyLock;
 
-use openehr_rm::paths::PathSegment;
+use openehr_rm::paths::{PathSegment, is_archetype_root_node_id};
 use serde_json::{Map, Value, json};
 
 use crate::flat::error::FlatError;
@@ -528,7 +528,7 @@ fn build_node(
         && let Some(nid) = &node_id
     {
         obj.insert("archetype_node_id".into(), json!(nid));
-        if is_archetype_root(nid) {
+        if is_archetype_root_node_id(nid) {
             obj.insert("archetype_details".into(), archetyped(nid, None));
         }
     }
@@ -777,7 +777,7 @@ fn new_struct(seg: &PathSegment, next: Option<&PathSegment>, name: Option<&str>)
     o.insert("name".into(), json!({"_type": "DV_TEXT", "value": display}));
     if let Some(nid) = node_id {
         o.insert("archetype_node_id".into(), json!(nid));
-        if is_archetype_root(nid) {
+        if is_archetype_root_node_id(nid) {
             o.insert("archetype_details".into(), archetyped(nid, None));
         }
     }
@@ -984,10 +984,6 @@ fn last_node_id_str(path: &str) -> Option<&str> {
     let close = path.rfind(']')?;
     let open = path.get(..close)?.rfind('[')?;
     path.get(open + 1..close)
-}
-
-fn is_archetype_root(node_id: &str) -> bool {
-    node_id.starts_with("openEHR-") || node_id.starts_with("openEHR_")
 }
 
 #[cfg(test)]

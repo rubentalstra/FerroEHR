@@ -289,10 +289,17 @@ pub(super) fn build_rm_attr(
             .and_then(SimNode::bare)
             .and_then(Value::as_str)
             .map(|v| ("uid".to_owned(), uid_value(v))),
-        "link" => Some((
-            "links".to_owned(),
-            Value::Array(build_each(occurrences, build_link)),
-        )),
+        "link" => {
+            // Indexed by the raw occurrence position (holes included) so a
+            // reported key matches the client's own `_link:i` numbering.
+            let mut links = Vec::new();
+            for (i, occurrence) in occurrences.iter().enumerate() {
+                if !occurrence.is_empty() {
+                    links.push(build_link(occurrence, path, i)?);
+                }
+            }
+            Some(("links".to_owned(), Value::Array(links)))
+        }
         "feeder_audit" => first().map(|o| ("feeder_audit".to_owned(), build_feeder_audit(o))),
         "null_flavour" => first()
             .and_then(|o| data_values::build_leaf(o, "DV_CODED_TEXT", None))
@@ -421,14 +428,32 @@ fn uid_value(v: &str) -> Value {
 }
 
 /// LINK (master05 §LINK): `type`/`meaning` are DV_TEXT, `target` is DV_EHR_URI.
-fn build_link(node: &SimNode) -> Value {
-    let text = |s: &str| node.attrs.get(s).and_then(Value::as_str).unwrap_or("");
-    json!({
+///
+/// All three suffixes are `Required: yes` in the master05 §LINK mapping table,
+/// mirroring the RM's own 1..1 multiplicities
+/// (`RM/docs/UML/classes/org.openehr.rm.common.link.adoc` §Attributes), so an
+/// omitted one is reported as [`FlatError::MissingRequiredSuffix`] naming the
+/// exact key rather than defaulted to an empty value: a fabricated empty
+/// `meaning` would satisfy the RM's cardinality with data the client never
+/// sent.
+///
+/// `index` is the `:i` occurrence index of the `_link` family, so the reported
+/// key is the one the client can find in its own document.
+fn build_link(node: &SimNode, path: &str, index: usize) -> Result<Value, FlatError> {
+    let required = |suffix: &str| -> Result<&str, FlatError> {
+        node.attrs
+            .get(suffix)
+            .and_then(Value::as_str)
+            .ok_or_else(|| FlatError::MissingRequiredSuffix {
+                key: format!("{path}/_link:{index}|{suffix}"),
+            })
+    };
+    Ok(json!({
         "_type": "LINK",
-        "type": {"_type": "DV_TEXT", "value": text("type")},
-        "meaning": {"_type": "DV_TEXT", "value": text("meaning")},
-        "target": {"_type": "DV_EHR_URI", "value": text("target")},
-    })
+        "type": {"_type": "DV_TEXT", "value": required("type")?},
+        "meaning": {"_type": "DV_TEXT", "value": required("meaning")?},
+        "target": {"_type": "DV_EHR_URI", "value": required("target")?},
+    }))
 }
 
 /// FEEDER_AUDIT (master05 §FEEDER_AUDIT).
@@ -591,6 +616,76 @@ mod tests {
         assert_eq!(attr, "links");
         assert_eq!(v[0]["type"]["value"], json!("problem"));
         assert_eq!(v[0]["_type"], json!("LINK"));
+    }
+
+    /// A `_link:i` occurrence carrying exactly the listed suffixes.
+    fn link_occurrence(suffixes: &[(&str, &str)]) -> SimNode {
+        let mut node = SimNode::default();
+        for (suffix, value) in suffixes {
+            node.attrs.insert((*suffix).to_owned(), json!(*value));
+        }
+        node
+    }
+
+    // master05 §LINK marks `|type`, `|meaning` and `|target` all
+    // `Required: yes`, mirroring the RM's 1..1 multiplicities
+    // (`org.openehr.rm.common.link.adoc` §Attributes). A complete `_link:0`
+    // builds; each partial input names the one key the client omitted rather
+    // than silently defaulting it to an empty DV_TEXT/DV_EHR_URI.
+    #[test]
+    fn link_requires_all_three_suffixes() {
+        let complete = link_occurrence(&[
+            ("type", "problem"),
+            ("meaning", "related"),
+            ("target", "ehr://x"),
+        ]);
+        let (attr, v) = build_rm_attr(
+            "_link",
+            std::slice::from_ref(&complete),
+            "OBSERVATION",
+            "tpl/obs",
+        )
+        .expect("a complete LINK builds")
+        .expect("the `_link` family yields a value");
+        assert_eq!(attr, "links");
+        assert_eq!(v[0]["meaning"]["value"], json!("related"));
+        assert_eq!(v[0]["target"]["_type"], json!("DV_EHR_URI"));
+
+        for (missing, present) in [
+            ("meaning", vec![("type", "problem"), ("target", "ehr://x")]),
+            ("type", vec![("meaning", "related"), ("target", "ehr://x")]),
+            ("target", vec![("type", "problem"), ("meaning", "related")]),
+        ] {
+            let partial = link_occurrence(&present);
+            let err = build_rm_attr(
+                "_link",
+                std::slice::from_ref(&partial),
+                "OBSERVATION",
+                "tpl/obs",
+            )
+            .expect_err("a LINK missing a mandatory suffix must be refused");
+            assert_eq!(
+                err.to_string(),
+                format!("tpl/obs/_link:0|{missing} is required")
+            );
+        }
+    }
+
+    // The reported key carries the occurrence's own `:i` index, so a client
+    // reading the message finds the offending key in its own document.
+    #[test]
+    fn link_diagnostic_names_the_offending_occurrence() {
+        let occurrences = [
+            link_occurrence(&[
+                ("type", "problem"),
+                ("meaning", "related"),
+                ("target", "ehr://x"),
+            ]),
+            link_occurrence(&[("type", "problem"), ("meaning", "related")]),
+        ];
+        let err = build_rm_attr("_link", &occurrences, "OBSERVATION", "tpl/obs")
+            .expect_err("the second LINK is incomplete");
+        assert_eq!(err.to_string(), "tpl/obs/_link:1|target is required");
     }
 
     // master05 §ELEMENT: `_null_flavour` (DV_CODED_TEXT) + `_null_reason` (DV_TEXT).

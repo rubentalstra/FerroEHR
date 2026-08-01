@@ -30,7 +30,8 @@ workflow refuses a tag that has no matching section here.
 - **New conformance cases for the LOCATABLE root rules and the feeder-system
   audit.** The catalogue now pins the two refusals above from the wire side
   (a COMPOSITION root whose `archetype_node_id` contradicts its ARCHETYPED
-  block; a COMPOSITION carrying an empty `links` list), and four cases cover
+  block; a COMPOSITION carrying an empty `links` list; a COMPOSITION whose
+  inner `ITEM_TREE` carries an empty `archetype_node_id`), and four cases cover
   `FEEDER_AUDIT` end to end: a commit carrying audits at the COMPOSITION root
   *and* on an interior data node round-trips every modelled attribute
   (identifiers, inline `original_content`, both system audits, and the
@@ -39,7 +40,21 @@ workflow refuses a tag that has no matching section here.
   does not carry it forward, and an update whose content is identical to the
   preceding version still creates version 2.
 
+- **Conformance cases for populated LINKs on a COMPOSITION.** A commit
+  carrying a complete `LINK` at the COMPOSITION root *and* on an interior
+  ENTRY now round-trips with both links intact (the accepting twin of the
+  empty-`links` refusal), and a `LINK` whose `target` is not an `ehr://` URI
+  is refused (422) — placed on the interior ENTRY so the case also proves the
+  rule is applied below the resource root.
+
 ### Fixed
+
+- **The FLAT `_link:i` builder now reports a missing mandatory suffix instead
+  of inventing an empty value.** `|meaning`, `|type` and `|target` are all
+  required on a simplified-format `_link:i` datum; a submission omitting one
+  used to be silently completed with an empty `DV_TEXT`/`DV_EHR_URI`, storing
+  data the client never sent. The conversion is now refused with an error
+  naming the exact key (e.g. `.../_link:0|meaning is required`).
 
 - **Compositions and directories that contradict the RM's archetype-root rule
   are now refused (422) instead of stored.** At an archetype root the
@@ -49,11 +64,35 @@ workflow refuses a tag that has no matching section here.
   committed. Payloads that were accepted before and are affected by this must
   correct the mismatched root before they will commit.
 
+- **An empty `archetype_node_id` is now refused (422) on every node type.**
+  The RM requires a non-empty `archetype_node_id` on every archetypable node,
+  but the check only ran on the node types with a hand-written invariant
+  (ENTRY subtypes, CLUSTER, ELEMENT, SECTION, FOLDER, HISTORY and events). It
+  is now applied to every RM type that inherits it — notably `ITEM_TREE`,
+  `ITEM_LIST`, `ITEM_SINGLE`, `EHR_STATUS`, and the demographic and
+  EHR-extract locatables — so a payload carrying `"archetype_node_id": ""`
+  anywhere is rejected rather than stored. An *absent* `archetype_node_id` is
+  unchanged: it is still reported as a missing mandatory attribute.
+
 - **A present-but-empty `links` list is now refused (422).** `links` is
   optional, but the RM forbids it from being present and empty, so
   `"links": []` on any node of a committed COMPOSITION — or on any FOLDER of
   a committed directory — is now rejected rather than stored. Omit the
   attribute instead of sending an empty array.
+
+- **RM class invariants are now enforced on every commit kind, not only on
+  COMPOSITIONs.** The whole-instance RM + terminology pass previously ran only
+  for compositions, so anything *below* the root of an `EHR_STATUS`,
+  `EHR_ACCESS`, directory FOLDER, party or party-relationship body went
+  unchecked. Payloads that were accepted before and are now refused with a
+  `422` include: an empty `archetype_details.rm_version`; a `links` member
+  that is missing `meaning`, `type` or `target`, or whose `target` is not an
+  `ehr://` URI; a present-but-empty `links` list on a node nested inside
+  `EHR_STATUS.other_details` or a party body; and an empty
+  `feeder_audit` `system_id`. The same defects were already `422` inside a
+  COMPOSITION. `EHR_ACCESS.settings` is deliberately unaffected — the RM
+  leaves that slot's type to the implementation, so it carries no RM rules to
+  enforce.
 
 ## [3.17.1] - 2026-08-01
 

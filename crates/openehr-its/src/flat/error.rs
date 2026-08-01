@@ -70,6 +70,16 @@ pub enum FlatError {
     #[error("unknown context key ctx/{0}")]
     UnknownContext(String),
 
+    /// A `|suffix` the master05 mapping table marks `Required: yes` is absent
+    /// from the submitted FLAT document — e.g. all three of §LINK's `|type`,
+    /// `|meaning` and `|target`, which the RM types 1..1
+    /// (`RM/docs/UML/classes/org.openehr.rm.common.link.adoc` §Attributes).
+    #[error("{key} is required")]
+    MissingRequiredSuffix {
+        /// The full FLAT key the client omitted, e.g. `…/_link:0|meaning`.
+        key: String,
+    },
+
     /// A value has the wrong JSON type or an unparsable encoding for its
     /// slot (e.g. a non-numeric `|magnitude`, a malformed compact
     /// participation-identifier list).

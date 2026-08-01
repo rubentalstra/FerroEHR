@@ -37,3 +37,5 @@
 - [Rust hardening baseline is live](rust-hardening-baseline.md) — #1311 merged 2026-07-30: #[expect(reason)] only, missing_docs+rustdoc gates, one tests/it binary per crate, API bans, split CI lanes; write to this bar from the start
 - [Rust practices #1311](rust-practices-1311.md) — expect-with-reason, banned APIs, tests/it single binary, Book-ch11 shapes; full spec in rules files
 - [Admin UI deprioritized](admin-ui-deprioritized.md) — owner 2026-08-01: UI broken/accepted, server first; compose SUT stacks with explicit service names (`up -d --wait ferroehr`), never bare `up`
+- [Upstream reports are issues](upstream-reports-are-issues.md) — owner 2026-08-01: md ledger deleted; upstream-report label (red), unverified→v3.20.0, confirmed→upstream-confirmed (not blocked-upstream); ambiguities.yaml upstream_issue: N; issue bodies = plain summary + Acceptance criteria (Contract/Exit criteria retired)
+- [Verified commits hard rule](verified-commits-hard-rule.md) — owner 2026-08-01: all commits signed incl. CI — workflows create commits ONLY via the Git Data API (github-actions[bot] Verified), never local git commit+push

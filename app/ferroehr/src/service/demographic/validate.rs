@@ -193,7 +193,15 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
     {
         validate_party_ref(performer, "ROLE.performer")?;
     }
-    Ok(())
+
+    // The whole-instance RM class-invariant + terminology pass, rooted at the
+    // concrete party type. The checks above are root-scoped; the RM class
+    // invariants bind every node of the body (`ARCHETYPED.Rm_version_valid`,
+    // `LOCATABLE.Links_valid`, the `LINK` 1..1 attributes,
+    // `FEEDER_AUDIT_DETAILS.System_id_valid`, …), so an identity, contact or
+    // nested CLUSTER below the root is judged by the same rules a COMPOSITION's
+    // nodes are.
+    crate::service::ehr::validation::validate_rm_invariants_for_commit(data, rm_type)
 }
 
 /// Structurally validate a candidate `PARTY_RELATIONSHIP` body: deserialize into
@@ -235,7 +243,10 @@ fn relationship_check(data: &Value) -> Result<(), ServiceError> {
         // `party_ref.adoc` / `object_ref.adoc`).
         validate_party_ref(reference, &format!("PARTY_RELATIONSHIP.{field}"))?;
     }
-    Ok(())
+    // `PARTY_RELATIONSHIP` is a LOCATABLE too
+    // (`RM/docs/UML/classes/org.openehr.rm.demographic.party_relationship.adoc`),
+    // so the same whole-instance RM class-invariant pass applies.
+    crate::service::ehr::validation::validate_rm_invariants_for_commit(data, RELATIONSHIP_RM_TYPE)
 }
 
 /// Validate a party body for a create/update: its root `_type` must equal the
@@ -436,5 +447,36 @@ mod tests {
             Err(ServiceError::Unprocessable(m)) => assert!(m.contains("Type_validity"), "got {m}"),
             other => panic!("expected performer Type_validity 422, got {other:?}"),
         }
+    }
+
+    /// The whole-instance RM class-invariant pass reaches BELOW a party root:
+    /// `ARCHETYPED.Rm_version_valid` (RM common
+    /// `org.openehr.rm.common.archetyped.adoc` §Invariants) and
+    /// `LOCATABLE.Links_valid` (`…common.locatable.adoc` §Invariants) on a
+    /// nested identity are both 422s, and the valid twins are accepted.
+    #[test]
+    fn party_rm_invariants_below_the_root_are_enforced() {
+        party_check("PERSON", &person(&json!([identity()]))).expect("the baseline person is valid");
+
+        let mut empty_rm_version = person(&json!([identity()]));
+        empty_rm_version["archetype_details"]["rm_version"] = json!("");
+        let err = party_check("PERSON", &empty_rm_version)
+            .expect_err("an empty rm_version must be refused");
+        assert!(
+            format!("{err:?}").contains("Rm_version_valid"),
+            "the refusal should name the invariant, got {err:?}"
+        );
+
+        let mut nested_links = person(&json!([identity()]));
+        nested_links["identities"][0]
+            .as_object_mut()
+            .unwrap()
+            .insert("links".into(), json!([]));
+        let err =
+            party_check("PERSON", &nested_links).expect_err("an empty links list must be refused");
+        assert!(
+            format!("{err:?}").contains("Links_valid"),
+            "the refusal should name the invariant, got {err:?}"
+        );
     }
 }

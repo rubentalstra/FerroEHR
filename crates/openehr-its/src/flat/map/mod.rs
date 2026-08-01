@@ -142,7 +142,9 @@ pub(crate) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
 ///
 /// # Errors
 /// [`FlatError::UnknownSuffix`] — `seg` names no RM-attribute family known for
-/// this layer.
+/// this layer. [`FlatError::MissingRequiredSuffix`] — a datum in the family
+/// omits a `|suffix` master05 marks `Required: yes` (the three LINK
+/// attributes).
 pub(crate) fn build_rm_attr(
     seg: &str,
     occurrences: &[SimNode],
