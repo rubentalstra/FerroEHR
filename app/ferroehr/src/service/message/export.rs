@@ -770,23 +770,26 @@ fn link_target_uuids(items: &[Value]) -> Vec<VoId> {
     out
 }
 
-/// The extract-content-type codes `EXTRACT_SPEC.extract_type` may carry.
+/// The RM-named string tokens `EXTRACT_SPEC.extract_type` may carry, beside
+/// the TERM `extract_content_type` vocabulary codes.
 ///
 /// The first five are the ones the RM names outright — RM `ehr_extract`
 /// `master04-common_package.adoc` §Content Criteria Specification:
 /// "`_extract_type_`: what kind of Extract this is, e.g. `|openehr-ehr|`,
 /// `|openehr-demographic|`, `|openehr-synchronisation|`, `|openehr-generic|`,
-/// `|generic-emr|`, etc". No terminology group binds the attribute (it appears
-/// in no `openehr_terminology` group and in no external-terminology binding),
-/// so there is nothing to validate against but that sentence.
+/// `|generic-emr|`, etc". TERM `SupportTerminology/master03-terminology.adoc`
+/// §Vocabularies additionally binds the attribute to the
+/// `extract_content_type` group (concepts 803 "openEHR EHR" … 808 "other"),
+/// validated against the bundle in [`validate_extract_type`] — the two value
+/// spaces are never reconciled upstream, so both are accepted.
 ///
-/// NOTE (no openEHR spec closes this set — our own design/extension): the RM's
-/// "etc" makes the list illustrative, so a service could accept anything. This
-/// one validates, because an unrecognized type silently exporting an
-/// openEHR-EHR extract would misdescribe its own payload — but the accepted
-/// set is a superset of every code the RM names, plus the catch-all `other`
-/// for a caller that has no better label. Refusing a code the RM itself names
-/// would be refusing what must be accepted.
+/// NOTE (RM `ehr_extract` `master04-common_package.adoc` §Content Criteria
+/// Specification): the RM's "etc" makes its list illustrative, so a service
+/// could accept anything. This one validates, because an unrecognized type
+/// silently exporting an openEHR-EHR extract would misdescribe its own
+/// payload — but the accepted set is a superset of every code the RM names
+/// (plus the catch-all `other`) and of the whole TERM group. Refusing a code
+/// either spec names would be refusing what must be accepted.
 const EXTRACT_CONTENT_TYPES: [&str; 6] = [
     "openehr-ehr",
     "openehr-demographic",
@@ -796,19 +799,32 @@ const EXTRACT_CONTENT_TYPES: [&str; 6] = [
     "other",
 ];
 
-/// `EXTRACT_SPEC.extract_type` must be coded from [`EXTRACT_CONTENT_TYPES`].
+/// `EXTRACT_SPEC.extract_type` must be coded from the TERM
+/// `extract_content_type` vocabulary (openEHR terminology, concepts 803–808 —
+/// TERM `SupportTerminology/master03-terminology.adoc` §Vocabularies) or from
+/// the RM-named tokens in [`EXTRACT_CONTENT_TYPES`].
 fn validate_extract_type(spec: &ExtractSpec) -> Result<(), SmError> {
     let value = openehr_its::json::to_canonical_value(&spec.extract_type);
     let code = value
         .pointer("/defining_code/code_string")
         .and_then(Value::as_str)
         .unwrap_or_default();
+    let terminology = value
+        .pointer("/defining_code/terminology_id/value")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if terminology == "openehr"
+        && openehr_term::bundle::openehr().is_valid_code("extract_content_type", code)
+    {
+        return Ok(());
+    }
     if EXTRACT_CONTENT_TYPES.contains(&code) {
         return Ok(());
     }
     Err(SmError::precondition(format!(
-        "EXTRACT_SPEC.extract_type {code:?} is not an openEHR extract content \
-         type ({})",
+        "EXTRACT_SPEC.extract_type {code:?} is neither a member of the openEHR \
+         extract_content_type vocabulary nor an RM-named extract content type \
+         ({})",
         EXTRACT_CONTENT_TYPES.join(" | ")
     )))
 }

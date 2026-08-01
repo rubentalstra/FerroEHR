@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`EXTRACT_SPEC.extract_type` accepts the TERM `extract_content_type`
+  vocabulary.** The EHR-Extract export refused the codes TERM 3.1.0 binds to
+  the attribute (803 "openEHR EHR" … 808 "other", openEHR terminology —
+  `SupportTerminology` §Vocabularies) and accepted only the RM-named string
+  tokens (`openehr-ehr`, …). Both value spaces are now accepted; anything
+  outside their union is still refused with a 400-family precondition error.
+
 ## [3.16.0] - 2026-08-01
 
 ### Added
