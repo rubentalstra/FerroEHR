@@ -36,3 +36,4 @@
 - [Pause after #767 for rust-practices update](pause-after-767-for-rust-practices-update.md) — RESOLVED 2026-07-30 (#1311 merged); kept for the pointer to re-read the updated rules
 - [Rust hardening baseline is live](rust-hardening-baseline.md) — #1311 merged 2026-07-30: #[expect(reason)] only, missing_docs+rustdoc gates, one tests/it binary per crate, API bans, split CI lanes; write to this bar from the start
 - [Rust practices #1311](rust-practices-1311.md) — expect-with-reason, banned APIs, tests/it single binary, Book-ch11 shapes; full spec in rules files
+- [Admin UI deprioritized](admin-ui-deprioritized.md) — owner 2026-08-01: UI broken/accepted, server first; compose SUT stacks with explicit service names (`up -d --wait ferroehr`), never bare `up`
