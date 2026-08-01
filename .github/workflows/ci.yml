@@ -413,12 +413,19 @@ jobs:
         with:
           name: coverage-lcov
           path: lcov.info
-      # README badge: line-coverage %, shields.io endpoint JSON, force-pushed
-      # as a single-file orphan commit to `badges` (plumbing — no checkout
-      # juggling, no history growth; the ref only ever holds one commit).
+      # README badge: line-coverage %, shields.io endpoint JSON, written as a
+      # single-file orphan commit to `badges` (the ref only ever holds one
+      # commit). The commit is created through the Git Data REST API, never
+      # local plumbing: API commits made with the workflow token are signed by
+      # GitHub as github-actions[bot] and show Verified (owner hard rule
+      # 2026-08-01 — CI pushes only verified commits;
+      # docs.github.com/en/rest/git/commits — "Signature verification").
       # `badges` is not in `on.push.branches`, so this can never retrigger CI.
       - name: Refresh the coverage badge (badges branch)
         if: github.ref == 'refs/heads/develop'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           pct=$(cargo llvm-cov report --json --summary-only | jq '.data[0].totals.lines.percent')
@@ -427,12 +434,19 @@ jobs:
           color=$(awk -v p="$pct" 'BEGIN { print (p>=90) ? "brightgreen" : (p>=80) ? "green" : (p>=70) ? "yellowgreen" : (p>=60) ? "yellow" : "orange" }')
           jq -n --arg msg "${rounded}%" --arg color "$color" \
             '{schemaVersion: 1, label: "coverage", message: $msg, color: $color}' > coverage.json
-          blob=$(git hash-object -w coverage.json)
-          tree=$(printf '100644 blob %s\tcoverage.json\n' "$blob" | git mktree)
-          commit=$(GIT_AUTHOR_NAME=github-actions GIT_AUTHOR_EMAIL=actions@github.com \
-                   GIT_COMMITTER_NAME=github-actions GIT_COMMITTER_EMAIL=actions@github.com \
-                   git commit-tree "$tree" -m "coverage badge: ${rounded}% line coverage")
-          git push --force origin "$commit:refs/heads/badges"
+          blob=$(gh api "repos/$REPO/git/blobs" \
+                   -f content="$(base64 -w0 coverage.json)" -f encoding=base64 --jq .sha)
+          tree=$(gh api "repos/$REPO/git/trees" \
+                   -f 'tree[][path]=coverage.json' -f 'tree[][mode]=100644' \
+                   -f 'tree[][type]=blob' -f "tree[][sha]=$blob" --jq .sha)
+          commit=$(gh api "repos/$REPO/git/commits" \
+                   -f message="coverage badge: ${rounded}% line coverage" \
+                   -f tree="$tree" --jq .sha)
+          # Move (or create) the badges ref to the fresh orphan commit.
+          gh api -X PATCH "repos/$REPO/git/refs/heads/badges" \
+            -f sha="$commit" -F force=true \
+          || gh api "repos/$REPO/git/refs" \
+            -f ref="refs/heads/badges" -f sha="$commit"
 
   # ── Unused dependencies ──────────────────────────────────────────────────────
   unused-deps:
