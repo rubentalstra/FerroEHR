@@ -410,3 +410,34 @@ fn every_fixture_file_is_in_the_table() {
     listed.sort();
     assert_eq!(on_disk, listed, "the fixture table and the tree disagree");
 }
+
+/// W14DEP (#1470): the deprecated paren-less domain-block spelling is
+/// ACCEPTED but WARNED, per occurrence, at exactly the deprecation's spec
+/// strength (`master05-cadl` §Symbols `V_C_DOMAIN_TYPE`); the parenthesised
+/// spelling warns nothing. The `empty_domain_block` fixture carries exactly
+/// one of each spelling, so the warning count pins both directions.
+#[test]
+fn deprecated_paren_less_domain_spelling_warns_once() {
+    let src = std::fs::read_to_string(tree().join("openEHR-EHR-CLUSTER.empty_domain_block.v1.adl"))
+        .expect("fixture exists");
+    let issues = validate_source_integrity(&src, Dialect::Adl14, None).expect("the fixture parses");
+    let warnings: Vec<_> = issues
+        .iter()
+        .filter(|i| i.code == ValidationCode::W14dep)
+        .collect();
+    assert_eq!(
+        warnings.len(),
+        1,
+        "exactly the bare `C_DV_QUANTITY <` spelling warns (the parenthesised \
+         `(C_DV_ORDINAL) <` does not), got: {warnings:?}"
+    );
+    assert!(
+        warnings[0].severity == Severity::Warning,
+        "W14DEP is advisory, never an error"
+    );
+    assert!(
+        warnings[0].message.contains("(C_DV_QUANTITY) <"),
+        "the warning names the preferred spelling: {}",
+        warnings[0].message
+    );
+}

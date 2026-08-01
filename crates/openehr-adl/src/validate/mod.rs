@@ -200,6 +200,7 @@ fn run_integrity_checks(
         source_level::check_rule_paths(v, src, text, issues); // VRRLP (raw rules text)
         if dialect == Dialect::Adl14 {
             identification::check_concept_term_adl14(v, src, issues); // VARCN (terminology half)
+            source_level::check_deprecated_domain_spelling_adl14(text, issues); // W14DEP
         }
     }
 

@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Deprecated ADL 1.4 spellings are warned at ingest.** The paren-less
+  domain-block spelling (`C_DV_QUANTITY <…>`) is marked deprecated by the
+  ADL 1.4 text while its normative grammar defines only that form; it stays
+  accepted (refusing it would reject the whole published CKM library), and
+  every occurrence now raises the advisory `W14DEP` validation warning naming
+  the preferred parenthesised spelling — the deprecation is enforced at
+  exactly the strength the spec gives it, never silently absorbed.
+
 - **ADL 2 (AOM2) archetypes can arrive as XML, in both serializations openEHR
   publishes.** Only the AM 1.4 archetype XML was readable before; the generated
   canonical-XML codec now also covers the AOM2 **persistent** form
