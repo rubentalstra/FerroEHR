@@ -25,6 +25,7 @@ mod flat;
 mod format_parity;
 mod json_codec_parity;
 mod master05_tables;
+mod model_walkgen;
 mod opt14_am14_divergence;
 mod opt14_corpus;
 mod rest_contract;
