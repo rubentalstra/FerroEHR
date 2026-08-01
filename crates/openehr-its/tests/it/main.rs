@@ -22,6 +22,7 @@ mod example_rm_validity;
 mod example_stub;
 mod fidelity;
 mod flat;
+mod format_parity;
 mod json_codec_parity;
 mod master05_tables;
 mod opt14_am14_divergence;
