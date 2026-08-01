@@ -1,11 +1,23 @@
 //! Hand-written RM class invariant for `ATTESTATION`.
 //!
-//! `ATTESTATION` extends `AUDIT_DETAILS` and inherits `System_id_valid`.
+//! Spec: RM `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.attestation.adoc`
+//! §Invariants declares two, and `ATTESTATION` inherits the two of
+//! `…org.openehr.rm.common.audit_details.adoc` §Invariants. Each is realized,
+//! but only one of the four is realizable on a typed node:
 //!
-//! NOTE: archie's own `Attestation` invariants (`Items_valid`,
-//! `Reason_valid`) are both `ignored` (never checked), so only the inherited
-//! `System_id_valid` applies. The inherited `Change_type_valid` is
-//! terminology-bound (deferred).
+//! - inherited `System_id_valid` (`not system_id.is_empty`) — realized here.
+//! - inherited `Change_type_valid` (`change_type.defining_code` in the openEHR
+//!   `audit change type` group) — terminology-bound, so it needs a lookup this
+//!   pure-RM crate cannot perform; realized at the wire-boundary dispatcher
+//!   (`openehr-its` `rm_terminology`).
+//! - `Reason_valid` (a `DV_CODED_TEXT` `reason` must code to the openEHR
+//!   `attestation reason` group) — terminology-bound likewise, and realized at
+//!   the same dispatcher.
+//! - `Items_valid` (`items /= Void implies not items.is_empty`) — the BMM
+//!   `List` emits as a `Vec`, so absent and present-but-empty are one value
+//!   here and the rule has nothing to distinguish; it is realized where the
+//!   raw wire body still separates them, on the application's
+//!   attestation-completion path (a `422`).
 
 use crate::common::generic::attestation::Attestation;
 use crate::validate::{InvariantViolation, Validate};

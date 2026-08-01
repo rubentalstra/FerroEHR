@@ -83,16 +83,17 @@ impl FerroEhrService {
             })
             .collect();
 
+        let audit_details = audit_details(
+            &audit.system_id,
+            &audit.change_type,
+            audit.description.as_deref(),
+            &audit.committer,
+            &audit.time_committed,
+        )?;
         Ok(json!({
             "_type": "CONTRIBUTION",
             "uid": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() },
-            "audit": audit_details(
-                &audit.system_id,
-                &audit.change_type,
-                audit.description.as_deref(),
-                &audit.committer,
-                &audit.time_committed,
-            ),
+            "audit": audit_details,
             "versions": versions
         }))
     }

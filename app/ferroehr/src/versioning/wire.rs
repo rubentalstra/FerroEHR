@@ -10,13 +10,15 @@
 //! [`super::read`]; the residual SQL (first-version time, all-version metadata)
 //! is delegated to `crate::storage::version_repo`.
 
+use openehr_base::prelude::ObjectVersionId;
+use openehr_rm::prelude::{AuditDetails, RevisionHistory, RevisionHistoryItem};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::service::status::CallStatusType;
-use crate::versioning::audit::{AuditInput, OPENEHR, audit_details};
+use crate::versioning::audit::{AuditInput, OPENEHR, audit_details, audit_details_typed};
 use crate::versioning::integrity;
 use crate::versioning::lifecycle::lifecycle_rubric;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
@@ -29,15 +31,17 @@ use crate::versioning::signature::signer::Signer;
 /// "there will always be at least one commit audit … there may also be further
 /// attestations").
 ///
-/// NOTE (master04 §Revision History): the `REVISION_HISTORY` is
-/// assembled directly as canonical JSON rather than through a typed
-/// `openehr-rm` builder — a spec-silent serialization choice; the wire shape is
-/// spec-correct.
+/// The body is constructed as the generated [`RevisionHistory`] and serialized
+/// through the native codec, so it carries `_type` first and the BMM's own
+/// attribute order. Stored attestations are decoded back into `AUDIT_DETAILS`
+/// (the `ATTESTATION` subtype dispatches on `_type`) rather than spliced in as
+/// opaque fragments.
 ///
 /// # Errors
 /// [`ServiceError::NotFound`] when the object has no stored version or is not
 /// owned by `ehr_id`; the storage read errors of the metadata / attestation
-/// queries.
+/// queries; [`ServiceError::Unprocessable`] when a stored audit or attestation
+/// is not a canonical `AUDIT_DETAILS`.
 pub(crate) async fn revision_history(
     pool: &sqlx::PgPool,
     ehr_id: EhrId,
@@ -77,33 +81,50 @@ pub(crate) async fn revision_history(
 
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {
-        let mut audits = vec![audit_details(
+        // "there will always be at least one commit audit … there may also be
+        // further attestations" — the commit audit first, then the version's
+        // attestations in commit order (master04 §Revision History).
+        let mut audits = vec![AuditDetails::AuditDetails(audit_details_typed(
             &row.audit_system_id,
             &row.audit_change_type,
             row.audit_description.as_deref(),
             &row.audit_committer,
             &row.time_committed,
-        )];
-        if let Some(atts) = attestations.remove(&row.sys_version) {
-            audits.extend(atts);
+        )?)];
+        for stored in attestations.remove(&row.sys_version).unwrap_or_default() {
+            audits.push(stored_attestation(&stored)?);
         }
-        items.push(json!({
-            "_type": "REVISION_HISTORY_ITEM",
-            "version_id": {
-                "_type": "OBJECT_VERSION_ID",
-                "value": object_version_id(
+        items.push(RevisionHistoryItem {
+            version_id: ObjectVersionId {
+                value: object_version_id(
                     vo_id,
                     &row.creating_system_id,
-                    TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version)
-                )
+                    TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
+                ),
             },
-            "audits": audits
-        }));
+            audits,
+        });
     }
     Ok((
-        json!({ "_type": "REVISION_HISTORY", "items": items }),
+        openehr_its::json::to_canonical_value(&RevisionHistory { items }),
         last_modified,
     ))
+}
+
+/// Decode a stored `vo_attestation.data` fragment back into its RM type. The
+/// slot is `AUDIT_DETAILS` (`REVISION_HISTORY_ITEM.audits`), whose `ATTESTATION`
+/// subtype dispatches on `_type` — so a stored attestation returns as
+/// [`AuditDetails::Attestation`].
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the stored fragment is not a canonical
+/// `AUDIT_DETAILS` / `ATTESTATION`.
+fn stored_attestation(stored: &Value) -> Result<AuditDetails, ServiceError> {
+    openehr_its::json::from_canonical_value::<AuditDetails>(stored).map_err(|e| {
+        ServiceError::Unprocessable(format!(
+            "a stored attestation is not a canonical ATTESTATION: {e}"
+        ))
+    })
 }
 
 /// A versioned-object wire body for `vo_id` owned by `ehr_id`, carrying the
@@ -173,7 +194,9 @@ pub(crate) async fn versioned_object(
 /// # Errors
 /// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
 /// signature fails verification, or (in any non-`off` mode) when the served
-/// version's canonical form cannot be recomputed.
+/// version's canonical form cannot be recomputed; the
+/// [`build_original_version`] rejection of an uninterpretable stored commit
+/// audit.
 pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Value, ServiceError> {
     let mut ov = build_original_version(
         &read.creating_system_id,
@@ -187,7 +210,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
         &read.lifecycle_state,
         &read.canonical,
         read.signature.as_deref(),
-    );
+    )?;
     integrity::verify_on_read(
         signer,
         &ov,
@@ -218,6 +241,10 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
 /// Spec: `VERSION.commit_audit` 1..1; `VERSION.Preceding_version_uid_validity`;
 /// `ORIGINAL_VERSION.lifecycle_state` coded from `version_lifecycle_state`
 /// (RM common master06 §Version subtypes).
+///
+/// # Errors
+/// The [`audit_details`] rejection when `audit.committer` is not a canonical
+/// `PARTY_PROXY`.
 #[expect(
     clippy::too_many_arguments,
     reason = "the ORIGINAL_VERSION's own attributes; a parameter struct would \
@@ -235,7 +262,14 @@ pub(crate) fn build_original_version(
     lifecycle_state: &str,
     canonical_data: &Value,
     signature: Option<&str>,
-) -> Value {
+) -> Result<Value, ServiceError> {
+    let commit_audit = audit_details(
+        &audit.system_id,
+        &audit.change_type,
+        audit.description.as_deref(),
+        &audit.committer,
+        time_committed,
+    )?;
     let mut ov = json!({
         "_type": "ORIGINAL_VERSION",
         "uid": {
@@ -248,13 +282,7 @@ pub(crate) fn build_original_version(
             "type": "CONTRIBUTION",
             "id": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() }
         },
-        "commit_audit": audit_details(
-            &audit.system_id,
-            &audit.change_type,
-            audit.description.as_deref(),
-            &audit.committer,
-            time_committed,
-        ),
+        "commit_audit": commit_audit,
         "lifecycle_state": {
             "_type": "DV_CODED_TEXT",
             "value": lifecycle_rubric(lifecycle_state),
@@ -298,5 +326,5 @@ pub(crate) fn build_original_version(
             map.insert("signature".to_owned(), Value::String(sig.to_owned()));
         }
     }
-    ov
+    Ok(ov)
 }

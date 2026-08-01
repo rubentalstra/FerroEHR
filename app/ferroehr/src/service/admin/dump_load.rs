@@ -566,7 +566,8 @@ fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
 ///
 /// # Errors
 /// [`ServiceError::Internal`] when the archived audit carries a commit time
-/// that is not an RFC 3339 instant.
+/// that is not an RFC 3339 instant; the [`build_original_version`] rejection
+/// when its committer is not a canonical `PARTY_PROXY`.
 fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Value, ServiceError> {
     let time_committed: jiff::Timestamp = audit.time_committed.parse().map_err(|e| {
         ServiceError::Internal(format!(
@@ -579,7 +580,7 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         .as_ref()
         .and_then(|value| serde_json::from_value(value.clone()).ok())
         .unwrap_or_default();
-    Ok(build_original_version(
+    build_original_version(
         &v.creating_system_id,
         v.vo_id,
         TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version),
@@ -596,7 +597,7 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         &v.lifecycle_state,
         &v.body,
         v.signature.as_deref(),
-    ))
+    )
 }
 
 /// Serialize an `ORIGINAL_VERSION` envelope as a canonical-XML document under

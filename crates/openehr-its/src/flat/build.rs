@@ -1162,7 +1162,9 @@ fn finish_identity(
         return; // PATHABLE, not LOCATABLE; fields come from ctx/
     }
     // PARTY_PROXY subtypes are not LOCATABLE (RM common
-    // `master04-generic_package.adoc` §PARTY_PROXY): they carry NO locatable
+    // `UML/classes/org.openehr.rm.common.party_proxy.adoc` §Attributes — the
+    // class table declares no supertype row and `external_ref` as its only
+    // attribute): they carry NO locatable
     // `name`/`archetype_node_id`/`archetype_details`. `PARTY_IDENTIFIED.name` is
     // a plain `String` (RM common
     // `UML/classes/org.openehr.rm.common.party_identified.adoc` §name — "Optional

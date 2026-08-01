@@ -786,6 +786,7 @@ fn account<'a>(
                 overrides::InvariantVenue::Core => "Core",
                 overrides::InvariantVenue::Impl => "Impl",
                 overrides::InvariantVenue::Wire => "Wire",
+                overrides::InvariantVenue::App => "App",
                 overrides::InvariantVenue::Excluded => "Excluded",
                 overrides::InvariantVenue::Unrealized => "Unrealized",
             });
