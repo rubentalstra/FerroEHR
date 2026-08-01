@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.16.0] - 2026-08-01
+
 ### Added
 
 - **ODIN plug-in syntax blocks parse.** `attr = (syntax) <# … #>`
@@ -3975,7 +3977,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.3...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.16.0...HEAD
+[3.16.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.3...v3.16.0
 [3.15.3]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.2...v3.15.3
 [3.15.2]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.1...v3.15.2
 [3.15.1]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.15.0...v3.15.1
