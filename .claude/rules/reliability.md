@@ -24,7 +24,9 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
    both live here, so every pedantic lint is effectively a hard rule —
    including `missing_errors_doc`/`missing_panics_doc`, which are pedantic
    members, not explicit table entries).
-4. **CI job** — codegen drift, machete, cargo-audit/deny, changelog guard,
+4. **CI job** — codegen drift, machete, cargo-deny (which subsumes
+   cargo-audit: same RustSec DB, plus yanked/licenses/bans/sources),
+   changelog guard,
    attribution guard, rustfmt, the rustdoc job (`cargo doc` with
    `RUSTDOCFLAGS=-D warnings` — the `[workspace.lints.rustdoc]` table is
    inert without a doc run), the MSRV job (`cargo hack check
@@ -153,7 +155,9 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   no synchronous I/O on the runtime; `spawn_blocking` for the rare
   CPU-heavy transform.
 - **Dependencies are pinned, locked, and vetted** (tier 4): workspace-table
-  only, `cargo audit`/`deny` green at all times, no new dependency for what
+  only, `cargo deny check` green at all times (its advisories check reads
+  the same RustSec DB as cargo-audit and adds yanked/licenses/bans/sources,
+  so CI runs deny alone), no new dependency for what
   the pinned set already provides. CI builds run `--locked` (the Cargo FAQ's
   determinism rationale: CI fails on new commits, never on registry drift);
   the scheduled `latest-deps` workflow is the official strategy for

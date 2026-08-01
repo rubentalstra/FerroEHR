@@ -39,7 +39,7 @@ cargo nextest run --workspace          # unit + integration (real PostgreSQL 18)
 cargo test --workspace --doc
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt --all --check
-cargo deny check && cargo audit && cargo machete
+cargo deny check && cargo machete      # deny subsumes cargo-audit (same RustSec DB + yanked/licenses/bans/sources)
 bash scripts/check-codegen-drift.sh    # generated layer matches the vendored specs
 ```
 

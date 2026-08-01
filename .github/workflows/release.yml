@@ -30,19 +30,29 @@ permissions:
 jobs:
   publish-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
       - id: tag
         name: Resolve the release tag
+        # The dispatch input reaches the shell via env, never `${{ }}`-inline
+        # (workflow-injection hygiene), and must match a full semver tag shape
+        # before it is used as a checkout ref below — `case v*` accepted any
+        # string starting with "v".
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag="${{ inputs.tag }}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            tag="$INPUT_TAG"
           else
             tag="${GITHUB_REF_NAME}"
           fi
-          case "$tag" in v*) ;; *) echo "::error::'$tag' is not a vX.Y.Z tag" >&2; exit 1;; esac
+          if ! printf '%s\n' "$tag" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::'$tag' is not a vX.Y.Z tag" >&2
+            exit 1
+          fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
@@ -96,6 +106,8 @@ jobs:
   build-binaries:
     needs: publish-release
     runs-on: ${{ matrix.runner }}
+    # A deliberately cold release build (no cache) of the full workspace.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

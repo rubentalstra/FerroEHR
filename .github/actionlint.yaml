@@ -1,0 +1,8 @@
+# actionlint configuration (github.com/rhysd/actionlint/blob/main/docs/config.md).
+# actionlint's built-in runner-label list lags GitHub's actual roster; these
+# GitHub-hosted labels are in production use in this repo (containers.yml,
+# release.yml — native amd64/arm64 builds, no QEMU).
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
