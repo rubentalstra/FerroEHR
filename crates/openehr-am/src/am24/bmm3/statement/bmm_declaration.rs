@@ -4,8 +4,8 @@
 //! The openEHR `BMM_DECLARATION` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::am24::bmm3::core::entity::bmm_type::BmmType;
 use crate::am24::bmm3::expression::el_writable_variable::ElWritableVariable;
-use openehr_lang::prelude::BmmType;
 
 /// Declaration of a writable variable, associating a name with a type.
 #[doc(alias = "BMM_DECLARATION")]

@@ -2,13 +2,36 @@
 
 //! The openEHR spec package `bmm/core` — generated module tree.
 
+pub mod bmm_class;
 pub mod bmm_classifier;
+pub mod bmm_container_property;
+pub mod bmm_container_type;
+pub mod bmm_definitions;
+pub mod bmm_enumeration;
+pub mod bmm_enumeration_integer;
+pub mod bmm_enumeration_string;
+pub mod bmm_generic_class;
 pub mod bmm_generic_parameter;
+pub mod bmm_generic_type;
+pub mod bmm_include_spec;
+pub mod bmm_indexed_container_type;
+pub mod bmm_model;
+pub mod bmm_model_element;
 pub mod bmm_open_type;
+pub mod bmm_package;
+pub mod bmm_package_container;
+pub mod bmm_property;
 pub mod bmm_schema_core;
+pub mod bmm_simple_type;
+pub mod bmm_type;
 pub mod bmm_type_element;
 
 // hand-written modules (spec behaviour), auto-declared:
+pub mod bmm_class_impl;
 pub mod bmm_classifier_impl;
 pub mod bmm_generic_parameter_impl;
+pub mod bmm_model_impl;
 pub mod bmm_open_type_impl;
+pub mod bmm_package_impl;
+pub mod bmm_property_impl;
+pub mod bmm_type_impl;

@@ -7,11 +7,7 @@
 /// Built-in meta-type representing action status, e.g. result of a call invocation.
 #[doc(alias = "BMM_STATUS_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
-pub struct BmmStatusType {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
-}
+pub struct BmmStatusType {}
 
 impl BmmStatusType {
     /// Base name (built-in).

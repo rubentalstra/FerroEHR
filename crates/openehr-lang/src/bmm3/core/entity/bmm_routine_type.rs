@@ -13,10 +13,6 @@ use crate::bmm3::core::entity::bmm_type::BmmType;
 #[doc(alias = "BMM_ROUTINE_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmRoutineTypeData {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
-
     // inherited: BMM_SIGNATURE
     /// Result type of signature.
     pub result_type: BmmType,

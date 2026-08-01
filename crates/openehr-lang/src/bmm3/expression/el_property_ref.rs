@@ -4,7 +4,6 @@
 //! The openEHR `EL_PROPERTY_REF` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::expression::el_value_generator::ElValueGenerator;
 
@@ -23,5 +22,5 @@ pub struct ElPropertyRef {
     /// Scoping expression, which must be a `EL_VALUE_GENERATOR`.
     pub scoper: Option<Box<ElValueGenerator>>,
     /// Property definition (within class).
-    pub definition: BmmProperty<BmmType>,
+    pub definition: BmmProperty,
 }

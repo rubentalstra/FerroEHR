@@ -4,9 +4,11 @@
 //! meta-model.
 
 use crate::bmm3::core::feature::bmm_constant::BmmConstant;
+use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use crate::bmm3::core::feature::bmm_function::BmmFunction;
 use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
 use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
+use crate::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty;
 
 /// Closed subtype set of `BMM_FEATURE`, dispatched on each payload's `_type`.
 ///
@@ -16,10 +18,14 @@ use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
 pub enum BmmFeature {
     /// The `BMM_CONSTANT` subtype of `BMM_FEATURE`.
     BmmConstant(BmmConstant),
+    /// The `BMM_CONTAINER_PROPERTY` subtype of `BMM_FEATURE`.
+    BmmContainerProperty(BmmContainerProperty),
     /// The `BMM_FUNCTION` subtype of `BMM_FEATURE`.
     BmmFunction(BmmFunction),
     /// The `BMM_PROCEDURE` subtype of `BMM_FEATURE`.
     BmmProcedure(BmmProcedure),
     /// The `BMM_SINGLETON` subtype of `BMM_FEATURE`.
     BmmSingleton(BmmSingleton),
+    /// The `BMM_UNITARY_PROPERTY` subtype of `BMM_FEATURE`.
+    BmmUnitaryProperty(BmmUnitaryProperty),
 }

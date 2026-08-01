@@ -4,26 +4,35 @@
 //! The openEHR `BMM_RESULT` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::am24::bmm3::core::feature::bmm_routine::BmmRoutine;
-use openehr_lang::prelude::BmmType;
+use crate::am24::bmm3::core::entity::bmm_type::BmmType;
 
 /// Automatically declared variable representing result of a Function call (writable).
 #[doc(alias = "BMM_RESULT")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmResult {
+    /// Name of this model element.
+    pub name: String,
+
     // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
+    /// Optional documentation of this element, as a keyed list.
+    ///
+    /// It is strongly recommended to use the following key /type combinations for the relevant purposes:
+    ///
+    /// * `"purpose": String`
+    /// * `"keywords": List<String>`
+    /// * `"use": String`
+    /// * `"misuse": String`
+    /// * `"references": String`
+    ///
+    /// Other keys and value types may be freely added.
+    pub documentation: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    // NOTE: `scope` (BMM-mandatory back-reference) omitted — LANG BMM3 bmm_variable (scope: BMM_ROUTINE — redefinition of BMM_MODEL_ELEMENT.scope). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    /// Optional meta-data of this element, as a keyed list. May be used to extend the meta-model.
+    pub extensions: Option<std::collections::BTreeMap<String, serde_json::Value>>,
 
     // inherited: BMM_FORMAL_ELEMENT
     /// Declared or inferred static type of the entity.
-    pub r#type: BmmType,
+    pub r#type: Box<BmmType>,
     /// True if this element can be null (Void) at execution time. May be interpreted as optionality in subtypes..
     pub is_nullable: Option<bool>,
-
-    // inherited: BMM_VARIABLE
-    /// Routine within which variable is defined.
-    pub scope: Box<BmmRoutine>,
-    /// Name of this model element.
-    pub name: String,
 }

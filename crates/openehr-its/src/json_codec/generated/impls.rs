@@ -8658,195 +8658,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::Assignment 
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmActionDecisionTable {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_ACTION_DECISION_TABLE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_ACTION_DECISION_TABLE");
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmActionDecisionTable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_ACTION_DECISION_TABLE")?;
-        runtime::check_type(node, "BMM_ACTION_DECISION_TABLE")?;
-        ::core::result::Result::Ok(Self {})
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmActionTable {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_ACTION_TABLE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_ACTION_TABLE");
-        w.field("decision_table", &self.decision_table);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmActionTable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_ACTION_TABLE")?;
-        runtime::check_type(node, "BMM_ACTION_TABLE")?;
-        ::core::result::Result::Ok(Self {
-            decision_table: runtime::required_field(node, "decision_table", "BMM_ACTION_TABLE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmAssertion {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_ASSERTION"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_ASSERTION");
-        w.field("expression", &self.expression);
-        if let Some(v) = &self.tag {
-            w.field("tag", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmAssertion {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_ASSERTION")?;
-        runtime::check_type(node, "BMM_ASSERTION")?;
-        ::core::result::Result::Ok(Self {
-            expression: runtime::required_field(node, "expression", "BMM_ASSERTION")?,
-            tag: runtime::optional_field(node, "tag")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmAssignment {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_ASSIGNMENT"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_ASSIGNMENT");
-        w.field("target", &self.target);
-        w.field("source", &self.source);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmAssignment {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_ASSIGNMENT")?;
-        runtime::check_type(node, "BMM_ASSIGNMENT")?;
-        ::core::result::Result::Ok(Self {
-            target: runtime::required_field(node, "target", "BMM_ASSIGNMENT")?,
-            source: runtime::required_field(node, "source", "BMM_ASSIGNMENT")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmBooleanValue {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_BOOLEAN_VALUE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_BOOLEAN_VALUE");
-        w.field("value_literal", &self.value_literal);
-        w.field("value", &self.value);
-        if let Some(v) = &self.syntax {
-            w.field("syntax", v);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmBooleanValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_BOOLEAN_VALUE")?;
-        runtime::check_type(node, "BMM_BOOLEAN_VALUE")?;
-        ::core::result::Result::Ok(Self {
-            value_literal: runtime::required_field(node, "value_literal", "BMM_BOOLEAN_VALUE")?,
-            value: runtime::required_field(node, "value", "BMM_BOOLEAN_VALUE")?,
-            syntax: runtime::optional_field(node, "syntax")?,
-            r#type: runtime::required_field(node, "type", "BMM_BOOLEAN_VALUE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmBuiltinType {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmBuiltinType::BmmSignature(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmBuiltinType::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmBuiltinType::BmmTupleType(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmBuiltinType::BmmSignature(x) => x.write_json(w),
-            openehr_lang::prelude::BmmBuiltinType::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmBuiltinType::BmmTupleType(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmBuiltinType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_BUILTIN_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_BUILTIN_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClassData {
+impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_class::BmmClassData {
     fn json_type_name(&self) -> &'static str {
         "BMM_CLASS"
     }
@@ -8875,7 +8687,7 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClassData 
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClassData {
+impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_class::BmmClassData {
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -8896,26 +8708,24 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClassDat
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClass {
+impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_class::BmmClass {
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmClass::BmmEnumeration(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmClass::BmmGenericClass(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmClass::BmmSimpleClass(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmClass::BmmClass(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_class::BmmClass::BmmEnumeration(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_class::BmmClass::BmmGenericClass(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_class::BmmClass::BmmClass(x) => x.json_type_name(),
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmClass::BmmEnumeration(x) => x.write_json(w),
-            openehr_lang::prelude::BmmClass::BmmGenericClass(x) => x.write_json(w),
-            openehr_lang::prelude::BmmClass::BmmSimpleClass(x) => x.write_json(w),
-            openehr_lang::prelude::BmmClass::BmmClass(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_class::BmmClass::BmmEnumeration(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_class::BmmClass::BmmGenericClass(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_class::BmmClass::BmmClass(x) => x.write_json(w),
         }
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClass {
+impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_class::BmmClass {
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -8935,15 +8745,12 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClass {
             ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
                 Self::BmmGenericClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
-                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmClass(
                 crate::json_codec::runtime::FromJson::from_json(node)?,
             )),
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_CLASS: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)"
+                    "BMM_CLASS: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS)"
                 )),
             ),
         }
@@ -8958,11 +8765,7 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClassifier
             openehr_lang::prelude::BmmClassifier::BmmGenericParameter(x) => x.json_type_name(),
             openehr_lang::prelude::BmmClassifier::BmmGenericType(x) => x.json_type_name(),
             openehr_lang::prelude::BmmClassifier::BmmOpenType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmClassifier::BmmParameterType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmClassifier::BmmSignature(x) => x.json_type_name(),
             openehr_lang::prelude::BmmClassifier::BmmSimpleType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmClassifier::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmClassifier::BmmTupleType(x) => x.json_type_name(),
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
@@ -8972,11 +8775,7 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClassifier
             openehr_lang::prelude::BmmClassifier::BmmGenericParameter(x) => x.write_json(w),
             openehr_lang::prelude::BmmClassifier::BmmGenericType(x) => x.write_json(w),
             openehr_lang::prelude::BmmClassifier::BmmOpenType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmClassifier::BmmParameterType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmClassifier::BmmSignature(x) => x.write_json(w),
             openehr_lang::prelude::BmmClassifier::BmmSimpleType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmClassifier::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmClassifier::BmmTupleType(x) => x.write_json(w),
         }
     }
 }
@@ -9001,9 +8800,6 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClassifi
             ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
@@ -9021,94 +8817,26 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClassifi
             ::core::option::Option::Some("BMM_OPEN_TYPE") => ::core::result::Result::Ok(
                 Self::BmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
                 Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_CLASSIFIER: missing required `_type` on polymorphic slot (expected one of: BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                    "BMM_CLASSIFIER: missing required `_type` on polymorphic slot (expected one of: BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_CLASSIFIER: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                    "BMM_CLASSIFIER: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE)"
                 )),
             ),
         }
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmConstant {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_CONSTANT"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_CONSTANT");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        if let Some(v) = &self.is_synthesised_generic {
-            w.field("is_synthesised_generic", v);
-        }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
-        }
-        w.field("group", &self.group);
-        w.field("scope", &self.scope);
-        w.field("generator", &self.generator);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmConstant {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_CONSTANT")?;
-        runtime::check_type(node, "BMM_CONSTANT")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_CONSTANT")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
-            group: runtime::required_field(node, "group", "BMM_CONSTANT")?,
-            scope: runtime::required_field(node, "scope", "BMM_CONSTANT")?,
-            generator: runtime::required_field(node, "generator", "BMM_CONSTANT")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerPropertyData {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_container_property::BmmContainerProperty
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_CONTAINER_PROPERTY"
     }
@@ -9139,7 +8867,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerP
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerPropertyData {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_container_property::BmmContainerProperty
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9158,53 +8888,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContaine
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerProperty {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmContainerProperty::BmmIndexedContainerProperty(x) => {
-                x.json_type_name()
-            }
-            openehr_lang::prelude::BmmContainerProperty::BmmContainerProperty(x) => {
-                x.json_type_name()
-            }
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmContainerProperty::BmmIndexedContainerProperty(x) => {
-                x.write_json(w)
-            }
-            openehr_lang::prelude::BmmContainerProperty::BmmContainerProperty(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerProperty {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmIndexedContainerProperty(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmContainerProperty(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_CONTAINER_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerTypeData {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_container_type::BmmContainerTypeData
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_CONTAINER_TYPE"
     }
@@ -9220,7 +8906,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerT
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerTypeData {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_container_type::BmmContainerTypeData
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9234,24 +8922,26 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContaine
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerType {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_container_type::BmmContainerType
+{
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmContainerType::BmmIndexedContainerType(x) => {
-                x.json_type_name()
-            }
-            openehr_lang::prelude::BmmContainerType::BmmContainerType(x) => x.json_type_name(),
-        }
+openehr_lang::bmm::core::bmm_container_type::BmmContainerType::BmmIndexedContainerType(x) => x.json_type_name(),
+openehr_lang::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(x) => x.json_type_name(),
+}
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmContainerType::BmmIndexedContainerType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmContainerType::BmmContainerType(x) => x.write_json(w),
-        }
+openehr_lang::bmm::core::bmm_container_type::BmmContainerType::BmmIndexedContainerType(x) => x.write_json(w),
+openehr_lang::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(x) => x.write_json(w),
+}
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerType {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_container_type::BmmContainerType
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9276,69 +8966,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContaine
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerValue {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_CONTAINER_VALUE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_CONTAINER_VALUE");
-        w.field("value_literal", &self.value_literal);
-        if let Some(v) = &self.value {
-            w.field("value", v);
-        }
-        if let Some(v) = &self.syntax {
-            w.field("syntax", v);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_CONTAINER_VALUE")?;
-        runtime::check_type(node, "BMM_CONTAINER_VALUE")?;
-        ::core::result::Result::Ok(Self {
-            value_literal: runtime::required_field(node, "value_literal", "BMM_CONTAINER_VALUE")?,
-            value: runtime::optional_field(node, "value")?,
-            syntax: runtime::optional_field(node, "syntax")?,
-            r#type: runtime::required_field(node, "type", "BMM_CONTAINER_VALUE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmDeclaration {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_DECLARATION"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_DECLARATION");
-        w.field("name", &self.name);
-        w.field("result", &self.result);
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDeclaration {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_DECLARATION")?;
-        runtime::check_type(node, "BMM_DECLARATION")?;
-        ::core::result::Result::Ok(Self {
-            name: runtime::required_field(node, "name", "BMM_DECLARATION")?,
-            result: runtime::required_field(node, "result", "BMM_DECLARATION")?,
-            r#type: runtime::required_field(node, "type", "BMM_DECLARATION")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmDefinitionsData {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_definitions::BmmDefinitionsData
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_DEFINITIONS"
     }
@@ -9349,7 +8979,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmDefinition
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefinitionsData {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_definitions::BmmDefinitionsData
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9359,73 +8991,94 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefiniti
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmDefinitions {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_definitions::BmmDefinitions
+{
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmDefinitions::BmmClass(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmConstant(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmContainerType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmFunction(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmGenericParameter(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmGenericType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmLocal(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmOpenType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmPackageContainer(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmParameter(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmParameterType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmProcedure(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmProperty(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmResult(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmSelf(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmSignature(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmSimpleType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmSingleton(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmTupleType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::ReferenceModelAccess(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::SchemaDescriptor(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmDefinitions::BmmDefinitions(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmOpenType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmSimpleType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::ReferenceModelAccess(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(x) => {
+                x.json_type_name()
+            }
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmDefinitions::BmmClass(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmConstant(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmContainerType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmFunction(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmGenericParameter(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmGenericType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmLocal(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmOpenType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmPackageContainer(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmParameter(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmParameterType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmProcedure(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmProperty(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmResult(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmSelf(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmSignature(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmSimpleType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmSingleton(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmTupleType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::ReferenceModelAccess(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::SchemaDescriptor(x) => x.write_json(w),
-            openehr_lang::prelude::BmmDefinitions::BmmDefinitions(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericType(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmOpenType(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmSimpleType(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::ReferenceModelAccess(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(x) => {
+                x.write_json(w)
+            }
         }
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefinitions {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_definitions::BmmDefinitions
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         match runtime::slot_type(node) {
             ::core::option::Option::Some("BMM_CLASS") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
-                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
                 Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
@@ -9445,12 +9098,6 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefiniti
             ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
-                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
@@ -9460,19 +9107,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefiniti
             ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
                 Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmProperty(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
             ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
                 ::core::result::Result::Ok(Self::BmmContainerType(
                     crate::json_codec::runtime::FromJson::from_json(node)?,
                 ))
             }
-            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
-                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
                 Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
@@ -9485,53 +9124,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefiniti
             ::core::option::Option::Some("BMM_PACKAGE_CONTAINER") => ::core::result::Result::Ok(
                 Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
-                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
-                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_PROPERTY") => ::core::result::Result::Ok(
                 Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
-                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
                 Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
-                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("P_BMM_SCHEMA_DESCRIPTOR") => ::core::result::Result::Ok(
                 Self::SchemaDescriptor(crate::json_codec::runtime::FromJson::from_json(node)?),
@@ -9547,88 +9144,16 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefiniti
             )),
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_DEFINITIONS: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_DEFINITIONS, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_TYPE, BMM_LOCAL, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PARAMETER, BMM_PARAMETER_TYPE, BMM_PROCEDURE, BMM_PROCEDURE_TYPE, BMM_PROPERTY, BMM_PROPERTY_TYPE, BMM_RESULT, BMM_ROUTINE_TYPE, BMM_SELF, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_SINGLETON, BMM_STATUS_TYPE, BMM_TUPLE_TYPE, BMM_UNITARY_PROPERTY, P_BMM_SCHEMA_DESCRIPTOR, REFERENCE_MODEL_ACCESS, SCHEMA_DESCRIPTOR)"
+                    "BMM_DEFINITIONS: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_DEFINITIONS, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PROPERTY, BMM_SIMPLE_TYPE, P_BMM_SCHEMA_DESCRIPTOR, REFERENCE_MODEL_ACCESS, SCHEMA_DESCRIPTOR)"
                 )),
             ),
         }
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEffectiveType {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmEffectiveType::BmmSignature(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmEffectiveType::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmEffectiveType::BmmTupleType(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmEffectiveType::BmmSignature(x) => x.write_json(w),
-            openehr_lang::prelude::BmmEffectiveType::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmEffectiveType::BmmTupleType(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEffectiveType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_EFFECTIVE_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_EFFECTIVE_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEntityMetatype {
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.write_str(self.as_str());
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEntityMetatype {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        let __s = node.as_str().ok_or_else(|| {
-            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
-        })?;
-        ::core::result::Result::Ok(openehr_lang::prelude::BmmEntityMetatype::from_wire(__s))
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumerationData {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_enumeration::BmmEnumerationData
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_ENUMERATION"
     }
@@ -9664,7 +9189,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerationData {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_enumeration::BmmEnumerationData
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9696,24 +9223,40 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeration {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration
+{
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmEnumeration::BmmEnumerationInteger(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmEnumeration::BmmEnumerationString(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmEnumeration::BmmEnumeration(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationString(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(x) => {
+                x.json_type_name()
+            }
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmEnumeration::BmmEnumerationInteger(x) => x.write_json(w),
-            openehr_lang::prelude::BmmEnumeration::BmmEnumerationString(x) => x.write_json(w),
-            openehr_lang::prelude::BmmEnumeration::BmmEnumeration(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationString(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(x) => {
+                x.write_json(w)
+            }
         }
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumeration {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_enumeration::BmmEnumeration
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9739,7 +9282,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumerationInteger {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_ENUMERATION_INTEGER"
     }
@@ -9775,7 +9320,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerationInteger {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9811,7 +9358,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumerationString {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_enumeration_string::BmmEnumerationString
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_ENUMERATION_STRING"
     }
@@ -9847,7 +9396,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerationString {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_enumeration_string::BmmEnumerationString
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9883,308 +9434,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmExternalRoutine {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_EXTERNAL_ROUTINE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_EXTERNAL_ROUTINE");
-        w.field("meta_data", &self.meta_data);
-        if let Some(v) = &self.argument_mapping {
-            w.field("argument_mapping", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmExternalRoutine {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_EXTERNAL_ROUTINE")?;
-        runtime::check_type(node, "BMM_EXTERNAL_ROUTINE")?;
-        ::core::result::Result::Ok(Self {
-            meta_data: runtime::required_field(node, "meta_data", "BMM_EXTERNAL_ROUTINE")?,
-            argument_mapping: runtime::optional_field(node, "argument_mapping")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeature {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmFeature::BmmConstant(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFeature::BmmFunction(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFeature::BmmProcedure(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFeature::BmmSingleton(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmFeature::BmmConstant(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFeature::BmmFunction(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFeature::BmmProcedure(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFeature::BmmSingleton(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeature {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
-                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
-                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
-                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
-                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_PROCEDURE, BMM_SINGLETON)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_PROCEDURE, BMM_SINGLETON)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeatureExtension {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_FEATURE_EXTENSION"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_FEATURE_EXTENSION");
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeatureExtension {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_FEATURE_EXTENSION")?;
-        runtime::check_type(node, "BMM_FEATURE_EXTENSION")?;
-        ::core::result::Result::Ok(Self {})
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeatureGroup {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_FEATURE_GROUP"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_FEATURE_GROUP");
-        w.field("name", &self.name);
-        w.field("properties", &self.properties);
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
-        }
-        if let Some(v) = &self.visibility {
-            w.field("visibility", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeatureGroup {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_FEATURE_GROUP")?;
-        runtime::check_type(node, "BMM_FEATURE_GROUP")?;
-        ::core::result::Result::Ok(Self {
-            name: runtime::required_field(node, "name", "BMM_FEATURE_GROUP")?,
-            properties: runtime::required_field(node, "properties", "BMM_FEATURE_GROUP")?,
-            features: runtime::container_field(node, "features")?,
-            visibility: runtime::optional_field(node, "visibility")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFormalElement {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmFormalElement::BmmConstant(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFormalElement::BmmFunction(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFormalElement::BmmLocal(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFormalElement::BmmParameter(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFormalElement::BmmProcedure(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFormalElement::BmmResult(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFormalElement::BmmSelf(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmFormalElement::BmmSingleton(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmFormalElement::BmmConstant(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFormalElement::BmmFunction(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFormalElement::BmmLocal(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFormalElement::BmmParameter(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFormalElement::BmmProcedure(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFormalElement::BmmResult(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFormalElement::BmmSelf(x) => x.write_json(w),
-            openehr_lang::prelude::BmmFormalElement::BmmSingleton(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFormalElement {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
-                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
-                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
-                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
-                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
-                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
-                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
-                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_FORMAL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_FORMAL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFunction {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_FUNCTION"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_FUNCTION");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        if let Some(v) = &self.is_synthesised_generic {
-            w.field("is_synthesised_generic", v);
-        }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
-        }
-        w.field("group", &self.group);
-        w.field("scope", &self.scope);
-        if !self.parameters.is_empty() {
-            w.field("parameters", &self.parameters);
-        }
-        if !self.pre_conditions.is_empty() {
-            w.field("pre_conditions", &self.pre_conditions);
-        }
-        if !self.post_conditions.is_empty() {
-            w.field("post_conditions", &self.post_conditions);
-        }
-        if let Some(v) = &self.definition {
-            w.field("definition", v);
-        }
-        if let Some(v) = &self.operator_definition {
-            w.field("operator_definition", v);
-        }
-        w.field("result", &self.result);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFunction {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_FUNCTION")?;
-        runtime::check_type(node, "BMM_FUNCTION")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_FUNCTION")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
-            group: runtime::required_field(node, "group", "BMM_FUNCTION")?,
-            scope: runtime::required_field(node, "scope", "BMM_FUNCTION")?,
-            parameters: runtime::container_field(node, "parameters")?,
-            pre_conditions: runtime::container_field(node, "pre_conditions")?,
-            post_conditions: runtime::container_field(node, "post_conditions")?,
-            definition: runtime::optional_field(node, "definition")?,
-            operator_definition: runtime::optional_field(node, "operator_definition")?,
-            result: runtime::required_field(node, "result", "BMM_FUNCTION")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFunctionType {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_FUNCTION_TYPE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_FUNCTION_TYPE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("result_type", &self.result_type);
-        if let Some(v) = &self.argument_types {
-            w.field("argument_types", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFunctionType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_FUNCTION_TYPE")?;
-        runtime::check_type(node, "BMM_FUNCTION_TYPE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            result_type: runtime::required_field(node, "result_type", "BMM_FUNCTION_TYPE")?,
-            argument_types: runtime::optional_field(node, "argument_types")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericClass {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_generic_class::BmmGenericClass
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_GENERIC_CLASS"
     }
@@ -10214,7 +9466,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericCla
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericClass {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_generic_class::BmmGenericClass
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10284,7 +9538,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericP
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericType {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_generic_type::BmmGenericType
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_GENERIC_TYPE"
     }
@@ -10302,7 +9558,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericTyp
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericType {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_generic_type::BmmGenericType
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10316,7 +9574,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericT
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIncludeSpec {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_include_spec::BmmIncludeSpec
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_INCLUDE_SPEC"
     }
@@ -10328,7 +9588,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIncludeSpe
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIncludeSpec {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_include_spec::BmmIncludeSpec
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10340,57 +9602,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIncludeS
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedContainerProperty {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_INDEXED_CONTAINER_PROPERTY"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_INDEXED_CONTAINER_PROPERTY");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("name", &self.name);
-        if let Some(v) = &self.is_mandatory {
-            w.field("is_mandatory", v);
-        }
-        if let Some(v) = &self.is_computed {
-            w.field("is_computed", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_im_runtime {
-            w.field("is_im_runtime", v);
-        }
-        if let Some(v) = &self.is_im_infrastructure {
-            w.field("is_im_infrastructure", v);
-        }
-        if let Some(v) = &self.cardinality {
-            w.field("cardinality", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedContainerProperty {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
-        runtime::check_type(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            name: runtime::required_field(node, "name", "BMM_INDEXED_CONTAINER_PROPERTY")?,
-            is_mandatory: runtime::optional_field(node, "is_mandatory")?,
-            is_computed: runtime::optional_field(node, "is_computed")?,
-            r#type: runtime::required_field(node, "type", "BMM_INDEXED_CONTAINER_PROPERTY")?,
-            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
-            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
-            cardinality: runtime::optional_field(node, "cardinality")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedContainerType {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_INDEXED_CONTAINER_TYPE"
     }
@@ -10407,7 +9621,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedCon
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedContainerType {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10426,276 +9642,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedC
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedContainerValue {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_INDEXED_CONTAINER_VALUE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_INDEXED_CONTAINER_VALUE");
-        w.field("value_literal", &self.value_literal);
-        if let Some(v) = &self.value {
-            w.field("value", v);
-        }
-        if let Some(v) = &self.syntax {
-            w.field("syntax", v);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedContainerValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_INDEXED_CONTAINER_VALUE")?;
-        runtime::check_type(node, "BMM_INDEXED_CONTAINER_VALUE")?;
-        ::core::result::Result::Ok(Self {
-            value_literal: runtime::required_field(
-                node,
-                "value_literal",
-                "BMM_INDEXED_CONTAINER_VALUE",
-            )?,
-            value: runtime::optional_field(node, "value")?,
-            syntax: runtime::optional_field(node, "syntax")?,
-            r#type: runtime::required_field(node, "type", "BMM_INDEXED_CONTAINER_VALUE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmInstantiableFeature {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmInstantiableFeature::BmmConstant(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmInstantiableFeature::BmmSingleton(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmInstantiableFeature::BmmConstant(x) => x.write_json(w),
-            openehr_lang::prelude::BmmInstantiableFeature::BmmSingleton(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmInstantiableFeature {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
-                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
-                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_INSTANTIABLE_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_SINGLETON)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_INSTANTIABLE_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_SINGLETON)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIntegerValue {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_INTEGER_VALUE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_INTEGER_VALUE");
-        w.field("value_literal", &self.value_literal);
-        w.field("value", &self.value);
-        if let Some(v) = &self.syntax {
-            w.field("syntax", v);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIntegerValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_INTEGER_VALUE")?;
-        runtime::check_type(node, "BMM_INTEGER_VALUE")?;
-        ::core::result::Result::Ok(Self {
-            value_literal: runtime::required_field(node, "value_literal", "BMM_INTEGER_VALUE")?,
-            value: runtime::required_field(node, "value", "BMM_INTEGER_VALUE")?,
-            syntax: runtime::optional_field(node, "syntax")?,
-            r#type: runtime::required_field(node, "type", "BMM_INTEGER_VALUE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIntervalValue {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_INTERVAL_VALUE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_INTERVAL_VALUE");
-        w.field("value_literal", &self.value_literal);
-        if let Some(v) = &self.value {
-            w.field("value", v);
-        }
-        if let Some(v) = &self.syntax {
-            w.field("syntax", v);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIntervalValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_INTERVAL_VALUE")?;
-        runtime::check_type(node, "BMM_INTERVAL_VALUE")?;
-        ::core::result::Result::Ok(Self {
-            value_literal: runtime::required_field(node, "value_literal", "BMM_INTERVAL_VALUE")?,
-            value: runtime::optional_field(node, "value")?,
-            syntax: runtime::optional_field(node, "syntax")?,
-            r#type: runtime::required_field(node, "type", "BMM_INTERVAL_VALUE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLiteralValue {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmLiteralValue::BmmContainerValue(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmLiteralValue::BmmIndexedContainerValue(x) => {
-                x.json_type_name()
-            }
-            openehr_lang::prelude::BmmLiteralValue::BmmIntervalValue(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmLiteralValue::BmmPrimitiveValue(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmLiteralValue::BmmContainerValue(x) => x.write_json(w),
-            openehr_lang::prelude::BmmLiteralValue::BmmIndexedContainerValue(x) => x.write_json(w),
-            openehr_lang::prelude::BmmLiteralValue::BmmIntervalValue(x) => x.write_json(w),
-            openehr_lang::prelude::BmmLiteralValue::BmmPrimitiveValue(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLiteralValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_CONTAINER_VALUE") => ::core::result::Result::Ok(
-                Self::BmmContainerValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmIndexedContainerValue(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_INTERVAL_VALUE") => ::core::result::Result::Ok(
-                Self::BmmIntervalValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_LITERAL_VALUE: missing required `_type` on polymorphic slot (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_LITERAL_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLocal {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_LOCAL"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_LOCAL");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        w.field("scope", &self.scope);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLocal {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_LOCAL")?;
-        runtime::check_type(node, "BMM_LOCAL")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_LOCAL")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_LOCAL")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLocalRoutine {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_LOCAL_ROUTINE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_LOCAL_ROUTINE");
-        if !self.locals.is_empty() {
-            w.field("locals", &self.locals);
-        }
-        w.field("body", &self.body);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLocalRoutine {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_LOCAL_ROUTINE")?;
-        runtime::check_type(node, "BMM_LOCAL_ROUTINE")?;
-        ::core::result::Result::Ok(Self {
-            locals: runtime::container_field(node, "locals")?,
-            body: runtime::required_field(node, "body", "BMM_LOCAL_ROUTINE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModel {
+impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_model::BmmModel {
     fn json_type_name(&self) -> &'static str {
         "BMM_MODEL"
     }
@@ -10740,7 +9687,7 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModel {
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModel {
+impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_model::BmmModel {
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10779,105 +9726,76 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModel {
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelAccess {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_MODEL_ACCESS"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_MODEL_ACCESS");
-        if !self.schema_directories.is_empty() {
-            w.field("schema_directories", &self.schema_directories);
-        }
-        if let Some(v) = &self.all_schemas {
-            w.field("all_schemas", v);
-        }
-        if let Some(v) = &self.bmm_models {
-            w.field("bmm_models", v);
-        }
-        if let Some(v) = &self.matching_bmm_models {
-            w.field("matching_bmm_models", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelAccess {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_MODEL_ACCESS")?;
-        runtime::check_type(node, "BMM_MODEL_ACCESS")?;
-        ::core::result::Result::Ok(Self {
-            schema_directories: runtime::container_field(node, "schema_directories")?,
-            all_schemas: runtime::optional_field(node, "all_schemas")?,
-            bmm_models: runtime::optional_field(node, "bmm_models")?,
-            matching_bmm_models: runtime::optional_field(node, "matching_bmm_models")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelElement {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_model_element::BmmModelElement
+{
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmModelElement::BmmClass(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmConstant(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmContainerType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmFunction(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmGenericParameter(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmGenericType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmLocal(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmOpenType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmPackageContainer(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmParameter(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmParameterType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmProcedure(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmProperty(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmResult(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmSelf(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmSignature(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmSimpleType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmSingleton(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmModelElement::BmmTupleType(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmClass(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmGenericParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmGenericType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmOpenType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmSimpleType(x) => {
+                x.json_type_name()
+            }
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmModelElement::BmmClass(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmConstant(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmContainerType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmFunction(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmGenericParameter(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmGenericType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmLocal(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmOpenType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmPackageContainer(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmParameter(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmParameterType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmProcedure(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmProperty(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmResult(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmSelf(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmSignature(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmSimpleType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmSingleton(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmModelElement::BmmTupleType(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmClass(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmGenericParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmGenericType(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmOpenType(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_model_element::BmmModelElement::BmmSimpleType(x) => {
+                x.write_json(w)
+            }
         }
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelElement {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_model_element::BmmModelElement
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         match runtime::slot_type(node) {
             ::core::option::Option::Some("BMM_CLASS") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
-                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
                 Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
@@ -10894,12 +9812,6 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelEle
             ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
-                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
                 Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
@@ -10909,19 +9821,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelEle
             ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
                 Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmProperty(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
             ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
                 ::core::result::Result::Ok(Self::BmmContainerType(
                     crate::json_codec::runtime::FromJson::from_json(node)?,
                 ))
             }
-            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
-                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
                 Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
@@ -10934,91 +9838,23 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelEle
             ::core::option::Option::Some("BMM_PACKAGE_CONTAINER") => ::core::result::Result::Ok(
                 Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
-                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
-                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_PROPERTY") => ::core::result::Result::Ok(
                 Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
-                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
                 Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
-                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_MODEL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CLASS, BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_TYPE, BMM_LOCAL, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PARAMETER, BMM_PARAMETER_TYPE, BMM_PROCEDURE, BMM_PROCEDURE_TYPE, BMM_PROPERTY, BMM_PROPERTY_TYPE, BMM_RESULT, BMM_ROUTINE_TYPE, BMM_SELF, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_SINGLETON, BMM_STATUS_TYPE, BMM_TUPLE_TYPE, BMM_UNITARY_PROPERTY)",
+                    "BMM_MODEL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CLASS, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PROPERTY, BMM_SIMPLE_TYPE)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_MODEL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_TYPE, BMM_LOCAL, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PARAMETER, BMM_PARAMETER_TYPE, BMM_PROCEDURE, BMM_PROCEDURE_TYPE, BMM_PROPERTY, BMM_PROPERTY_TYPE, BMM_RESULT, BMM_ROUTINE_TYPE, BMM_SELF, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_SINGLETON, BMM_STATUS_TYPE, BMM_TUPLE_TYPE, BMM_UNITARY_PROPERTY)"
+                    "BMM_MODEL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PROPERTY, BMM_SIMPLE_TYPE)"
                 )),
             ),
         }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelMetadata {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_MODEL_METADATA"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_MODEL_METADATA");
-        w.field("rm_publisher", &self.rm_publisher);
-        w.field("rm_release", &self.rm_release);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelMetadata {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_MODEL_METADATA")?;
-        runtime::check_type(node, "BMM_MODEL_METADATA")?;
-        ::core::result::Result::Ok(Self {
-            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL_METADATA")?,
-            rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL_METADATA")?,
-        })
     }
 }
 
@@ -11054,54 +9890,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmOpenType
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmOperator {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_OPERATOR"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_OPERATOR");
-        w.field("position", &self.position);
-        if !self.symbols.is_empty() {
-            w.field("symbols", &self.symbols);
-        }
-        w.field("name", &self.name);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmOperator {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_OPERATOR")?;
-        runtime::check_type(node, "BMM_OPERATOR")?;
-        ::core::result::Result::Ok(Self {
-            position: runtime::required_field(node, "position", "BMM_OPERATOR")?,
-            symbols: runtime::container_field(node, "symbols")?,
-            name: runtime::required_field(node, "name", "BMM_OPERATOR")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmOperatorPosition {
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.write_str(self.as_str());
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmOperatorPosition {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        let __s = node.as_str().ok_or_else(|| {
-            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
-        })?;
-        ::core::result::Result::Ok(openehr_lang::prelude::BmmOperatorPosition::from_wire(__s))
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackage {
+impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_package::BmmPackage {
     fn json_type_name(&self) -> &'static str {
         "BMM_PACKAGE"
     }
@@ -11122,7 +9911,7 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackage {
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackage {
+impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_package::BmmPackage {
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11137,7 +9926,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackage 
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackageContainerData {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_package_container::BmmPackageContainerData
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_PACKAGE_CONTAINER"
     }
@@ -11154,7 +9945,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackageCon
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackageContainerData {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_package_container::BmmPackageContainerData
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11167,26 +9960,28 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackageC
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackageContainer {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer
+{
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmPackageContainer::BmmModel(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmPackageContainer::BmmPackage(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmPackageContainer::BmmPackageContainer(x) => {
-                x.json_type_name()
-            }
-        }
+openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer::BmmModel(x) => x.json_type_name(),
+openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackage(x) => x.json_type_name(),
+openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(x) => x.json_type_name(),
+}
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmPackageContainer::BmmModel(x) => x.write_json(w),
-            openehr_lang::prelude::BmmPackageContainer::BmmPackage(x) => x.write_json(w),
-            openehr_lang::prelude::BmmPackageContainer::BmmPackageContainer(x) => x.write_json(w),
-        }
+openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer::BmmModel(x) => x.write_json(w),
+openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackage(x) => x.write_json(w),
+openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(x) => x.write_json(w),
+}
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackageContainer {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_package_container::BmmPackageContainer
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11212,299 +10007,8 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackageC
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmParameter {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_PARAMETER"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_PARAMETER");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        w.field("scope", &self.scope);
-        if let Some(v) = &self.direction {
-            w.field("direction", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParameter {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_PARAMETER")?;
-        runtime::check_type(node, "BMM_PARAMETER")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_PARAMETER")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_PARAMETER")?,
-            direction: runtime::optional_field(node, "direction")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmParameterDirection {
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.write_str(self.as_str());
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParameterDirection {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        let __s = node.as_str().ok_or_else(|| {
-            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
-        })?;
-        ::core::result::Result::Ok(openehr_lang::prelude::BmmParameterDirection::from_wire(__s))
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmParameterType {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_PARAMETER_TYPE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_PARAMETER_TYPE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("name", &self.name);
-        if let Some(v) = &self.type_constraint {
-            w.field("type_constraint", v);
-        }
-        if let Some(v) = &self.inheritance_precursor {
-            w.field("inheritance_precursor", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParameterType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_PARAMETER_TYPE")?;
-        runtime::check_type(node, "BMM_PARAMETER_TYPE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            name: runtime::required_field(node, "name", "BMM_PARAMETER_TYPE")?,
-            type_constraint: runtime::optional_field(node, "type_constraint")?,
-            inheritance_precursor: runtime::optional_field(node, "inheritance_precursor")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPrimitiveValueData {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_PRIMITIVE_VALUE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_PRIMITIVE_VALUE");
-        w.field("value_literal", &self.value_literal);
-        if let Some(v) = &self.value {
-            w.field("value", v);
-        }
-        if let Some(v) = &self.syntax {
-            w.field("syntax", v);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPrimitiveValueData {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_PRIMITIVE_VALUE")?;
-        runtime::check_type(node, "BMM_PRIMITIVE_VALUE")?;
-        ::core::result::Result::Ok(Self {
-            value_literal: runtime::required_field(node, "value_literal", "BMM_PRIMITIVE_VALUE")?,
-            value: runtime::optional_field(node, "value")?,
-            syntax: runtime::optional_field(node, "syntax")?,
-            r#type: runtime::required_field(node, "type", "BMM_PRIMITIVE_VALUE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPrimitiveValue {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmPrimitiveValue::BmmBooleanValue(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmPrimitiveValue::BmmIntegerValue(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmPrimitiveValue::BmmStringValue(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmPrimitiveValue::BmmPrimitiveValue(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmPrimitiveValue::BmmBooleanValue(x) => x.write_json(w),
-            openehr_lang::prelude::BmmPrimitiveValue::BmmIntegerValue(x) => x.write_json(w),
-            openehr_lang::prelude::BmmPrimitiveValue::BmmStringValue(x) => x.write_json(w),
-            openehr_lang::prelude::BmmPrimitiveValue::BmmPrimitiveValue(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPrimitiveValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
-                Self::BmmBooleanValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
-                Self::BmmIntegerValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
-                Self::BmmStringValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmPrimitiveValue(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_PRIMITIVE_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProcedure {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_PROCEDURE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_PROCEDURE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        if let Some(v) = &self.is_synthesised_generic {
-            w.field("is_synthesised_generic", v);
-        }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
-        }
-        w.field("group", &self.group);
-        w.field("scope", &self.scope);
-        if !self.parameters.is_empty() {
-            w.field("parameters", &self.parameters);
-        }
-        if !self.pre_conditions.is_empty() {
-            w.field("pre_conditions", &self.pre_conditions);
-        }
-        if !self.post_conditions.is_empty() {
-            w.field("post_conditions", &self.post_conditions);
-        }
-        if let Some(v) = &self.definition {
-            w.field("definition", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedure {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_PROCEDURE")?;
-        runtime::check_type(node, "BMM_PROCEDURE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_PROCEDURE")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
-            group: runtime::required_field(node, "group", "BMM_PROCEDURE")?,
-            scope: runtime::required_field(node, "scope", "BMM_PROCEDURE")?,
-            parameters: runtime::container_field(node, "parameters")?,
-            pre_conditions: runtime::container_field(node, "pre_conditions")?,
-            post_conditions: runtime::container_field(node, "post_conditions")?,
-            definition: runtime::optional_field(node, "definition")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProcedureCall {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_PROCEDURE_CALL"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_PROCEDURE_CALL");
-        w.field("agent", &self.agent);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedureCall {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_PROCEDURE_CALL")?;
-        runtime::check_type(node, "BMM_PROCEDURE_CALL")?;
-        ::core::result::Result::Ok(Self {
-            agent: runtime::required_field(node, "agent", "BMM_PROCEDURE_CALL")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProcedureType {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_PROCEDURE_TYPE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_PROCEDURE_TYPE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        if let Some(v) = &self.result_type {
-            w.field("result_type", v);
-        }
-        if let Some(v) = &self.argument_types {
-            w.field("argument_types", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedureType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_PROCEDURE_TYPE")?;
-        runtime::check_type(node, "BMM_PROCEDURE_TYPE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            result_type: runtime::optional_field(node, "result_type")?,
-            argument_types: runtime::optional_field(node, "argument_types")?,
-        })
-    }
-}
-
 impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::BmmPropertyData<T>
+    for openehr_lang::bmm::core::bmm_property::BmmPropertyData<T>
 {
     fn json_type_name(&self) -> &'static str {
         "BMM_PROPERTY"
@@ -11534,7 +10038,7 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 }
 
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::BmmPropertyData<T>
+    for openehr_lang::bmm::core::bmm_property::BmmPropertyData<T>
 {
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
@@ -11554,26 +10058,30 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
 }
 
 impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::BmmProperty<T>
+    for openehr_lang::bmm::core::bmm_property::BmmProperty<T>
 {
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmProperty::BmmContainerProperty(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmProperty::BmmUnitaryProperty(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmProperty::BmmProperty(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_property::BmmProperty::BmmContainerProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::bmm::core::bmm_property::BmmProperty::BmmProperty(x) => {
+                x.json_type_name()
+            }
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmProperty::BmmContainerProperty(x) => x.write_json(w),
-            openehr_lang::prelude::BmmProperty::BmmUnitaryProperty(x) => x.write_json(w),
-            openehr_lang::prelude::BmmProperty::BmmProperty(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_property::BmmProperty::BmmContainerProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::bmm::core::bmm_property::BmmProperty::BmmProperty(x) => x.write_json(w),
         }
     }
 }
 
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::BmmProperty<T>
+    for openehr_lang::bmm::core::bmm_property::BmmProperty<T>
 {
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
@@ -11582,347 +10090,18 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
             ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
                 Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmContainerProperty(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
             ::core::option::Option::Some("BMM_PROPERTY") => ::core::result::Result::Ok(
                 Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmProperty(
                 crate::json_codec::runtime::FromJson::from_json(node)?,
             )),
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROPERTY, BMM_UNITARY_PROPERTY)"
+                    "BMM_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_PROPERTY)"
                 )),
             ),
         }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPropertyType {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_PROPERTY_TYPE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_PROPERTY_TYPE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("result_type", &self.result_type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPropertyType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_PROPERTY_TYPE")?;
-        runtime::check_type(node, "BMM_PROPERTY_TYPE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            result_type: runtime::required_field(node, "result_type", "BMM_PROPERTY_TYPE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmReadonlyVariable {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmReadonlyVariable::BmmParameter(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmReadonlyVariable::BmmSelf(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmReadonlyVariable::BmmParameter(x) => x.write_json(w),
-            openehr_lang::prelude::BmmReadonlyVariable::BmmSelf(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmReadonlyVariable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
-                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_READONLY_VARIABLE: missing required `_type` on polymorphic slot (expected one of: BMM_PARAMETER, BMM_SELF)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_READONLY_VARIABLE: unexpected `_type` {__other:?} (expected one of: BMM_PARAMETER, BMM_SELF)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmResult {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_RESULT"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_RESULT");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        w.field("scope", &self.scope);
-        w.field("name", &self.name);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmResult {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_RESULT")?;
-        runtime::check_type(node, "BMM_RESULT")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_RESULT")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_RESULT")?,
-            name: runtime::required_field(node, "name", "BMM_RESULT")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutine {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmRoutine::BmmFunction(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmRoutine::BmmProcedure(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmRoutine::BmmFunction(x) => x.write_json(w),
-            openehr_lang::prelude::BmmRoutine::BmmProcedure(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutine {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
-                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
-                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_ROUTINE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION, BMM_PROCEDURE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_ROUTINE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION, BMM_PROCEDURE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineDefinition {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmRoutineDefinition::BmmExternalRoutine(x) => {
-                x.json_type_name()
-            }
-            openehr_lang::prelude::BmmRoutineDefinition::BmmLocalRoutine(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmRoutineDefinition::BmmExternalRoutine(x) => x.write_json(w),
-            openehr_lang::prelude::BmmRoutineDefinition::BmmLocalRoutine(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineDefinition {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_EXTERNAL_ROUTINE") => ::core::result::Result::Ok(
-                Self::BmmExternalRoutine(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_LOCAL_ROUTINE") => ::core::result::Result::Ok(
-                Self::BmmLocalRoutine(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_ROUTINE_DEFINITION: missing required `_type` on polymorphic slot (expected one of: BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_ROUTINE_DEFINITION: unexpected `_type` {__other:?} (expected one of: BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineTypeData {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_ROUTINE_TYPE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_ROUTINE_TYPE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("result_type", &self.result_type);
-        if let Some(v) = &self.argument_types {
-            w.field("argument_types", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineTypeData {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_ROUTINE_TYPE")?;
-        runtime::check_type(node, "BMM_ROUTINE_TYPE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            result_type: runtime::required_field(node, "result_type", "BMM_ROUTINE_TYPE")?,
-            argument_types: runtime::optional_field(node, "argument_types")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineType {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmRoutineType::BmmFunctionType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmRoutineType::BmmProcedureType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmRoutineType::BmmRoutineType(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmRoutineType::BmmFunctionType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmRoutineType::BmmProcedureType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmRoutineType::BmmRoutineType(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmFunctionType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmProcedureType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmRoutineType(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_ROUTINE_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_ROUTINE_TYPE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchema {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_SCHEMA"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_SCHEMA");
-        w.field("rm_publisher", &self.rm_publisher);
-        w.field("rm_release", &self.rm_release);
-        w.field("bmm_version", &self.bmm_version);
-        if let Some(v) = &self.includes {
-            w.field("includes", v);
-        }
-        if let Some(v) = &self.bmm_model {
-            w.field("bmm_model", v);
-        }
-        w.field("state", &self.state);
-        if let Some(v) = &self.model_name {
-            w.field("model_name", v);
-        }
-        w.field("schema_name", &self.schema_name);
-        w.field("schema_revision", &self.schema_revision);
-        w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
-        w.field("schema_author", &self.schema_author);
-        w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchema {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_SCHEMA")?;
-        runtime::check_type(node, "BMM_SCHEMA")?;
-        ::core::result::Result::Ok(Self {
-            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA")?,
-            rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA")?,
-            bmm_version: runtime::required_field(node, "bmm_version", "BMM_SCHEMA")?,
-            includes: runtime::optional_field(node, "includes")?,
-            bmm_model: runtime::optional_field(node, "bmm_model")?,
-            state: runtime::required_field(node, "state", "BMM_SCHEMA")?,
-            model_name: runtime::optional_field(node, "model_name")?,
-            schema_name: runtime::required_field(node, "schema_name", "BMM_SCHEMA")?,
-            schema_revision: runtime::required_field(node, "schema_revision", "BMM_SCHEMA")?,
-            schema_lifecycle_state: runtime::required_field(
-                node,
-                "schema_lifecycle_state",
-                "BMM_SCHEMA",
-            )?,
-            schema_author: runtime::required_field(node, "schema_author", "BMM_SCHEMA")?,
-            schema_description: runtime::required_field(node, "schema_description", "BMM_SCHEMA")?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
-        })
     }
 }
 
@@ -12045,300 +10224,9 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaCo
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaDescriptor {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_SCHEMA_DESCRIPTOR"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_SCHEMA_DESCRIPTOR");
-        if let Some(v) = &self.bmm_schema {
-            w.field("bmm_schema", v);
-        }
-        if let Some(v) = &self.bmm_model {
-            w.field("bmm_model", v);
-        }
-        w.field("schema_id", &self.schema_id);
-        w.field("meta_data", &self.meta_data);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaDescriptor {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_SCHEMA_DESCRIPTOR")?;
-        runtime::check_type(node, "BMM_SCHEMA_DESCRIPTOR")?;
-        ::core::result::Result::Ok(Self {
-            bmm_schema: runtime::optional_field(node, "bmm_schema")?,
-            bmm_model: runtime::optional_field(node, "bmm_model")?,
-            schema_id: runtime::required_field(node, "schema_id", "BMM_SCHEMA_DESCRIPTOR")?,
-            meta_data: runtime::required_field(node, "meta_data", "BMM_SCHEMA_DESCRIPTOR")?,
-            includes: runtime::container_field(node, "includes")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaMetadataKey {
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.write_str(self.as_str());
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaMetadataKey {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        let __s = node.as_str().ok_or_else(|| {
-            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
-        })?;
-        ::core::result::Result::Ok(openehr_lang::prelude::BmmSchemaMetadataKey::from_wire(__s))
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaState {
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.write_str(self.as_str());
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaState {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        let __s = node.as_str().ok_or_else(|| {
-            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
-        })?;
-        ::core::result::Result::Ok(openehr_lang::prelude::BmmSchemaState::from_wire(__s))
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSelf {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_SELF"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_SELF");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        w.field("scope", &self.scope);
-        w.field("name", &self.name);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSelf {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_SELF")?;
-        runtime::check_type(node, "BMM_SELF")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_SELF")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_SELF")?,
-            name: runtime::required_field(node, "name", "BMM_SELF")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSignatureData {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_SIGNATURE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_SIGNATURE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("result_type", &self.result_type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSignatureData {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_SIGNATURE")?;
-        runtime::check_type(node, "BMM_SIGNATURE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            result_type: runtime::required_field(node, "result_type", "BMM_SIGNATURE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSignature {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmSignature::BmmPropertyType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmSignature::BmmRoutineType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmSignature::BmmSignature(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmSignature::BmmPropertyType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmSignature::BmmRoutineType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmSignature::BmmSignature(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSignature {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmPropertyType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmSignature(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_SIGNATURE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleClass {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_SIMPLE_CLASS"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_SIMPLE_CLASS");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("name", &self.name);
-        if let Some(v) = &self.ancestors {
-            w.field("ancestors", v);
-        }
-        w.field("package", &self.package);
-        if let Some(v) = &self.properties {
-            w.field("properties", v);
-        }
-        w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
-        }
-        w.field("is_abstract", &self.is_abstract);
-        w.field("is_primitive_type", &self.is_primitive_type);
-        w.field("is_override", &self.is_override);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleClass {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_SIMPLE_CLASS")?;
-        runtime::check_type(node, "BMM_SIMPLE_CLASS")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            name: runtime::required_field(node, "name", "BMM_SIMPLE_CLASS")?,
-            ancestors: runtime::optional_field(node, "ancestors")?,
-            package: runtime::required_field(node, "package", "BMM_SIMPLE_CLASS")?,
-            properties: runtime::optional_field(node, "properties")?,
-            source_schema_id: runtime::required_field(
-                node,
-                "source_schema_id",
-                "BMM_SIMPLE_CLASS",
-            )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
-            is_abstract: runtime::required_field(node, "is_abstract", "BMM_SIMPLE_CLASS")?,
-            is_primitive_type: runtime::required_field(
-                node,
-                "is_primitive_type",
-                "BMM_SIMPLE_CLASS",
-            )?,
-            is_override: runtime::required_field(node, "is_override", "BMM_SIMPLE_CLASS")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleStatement {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmSimpleStatement::BmmAssertion(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmSimpleStatement::BmmAssignment(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmSimpleStatement::BmmDeclaration(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmSimpleStatement::BmmProcedureCall(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmSimpleStatement::BmmAssertion(x) => x.write_json(w),
-            openehr_lang::prelude::BmmSimpleStatement::BmmAssignment(x) => x.write_json(w),
-            openehr_lang::prelude::BmmSimpleStatement::BmmDeclaration(x) => x.write_json(w),
-            openehr_lang::prelude::BmmSimpleStatement::BmmProcedureCall(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleStatement {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_ASSERTION") => ::core::result::Result::Ok(
-                Self::BmmAssertion(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ASSIGNMENT") => ::core::result::Result::Ok(
-                Self::BmmAssignment(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_DECLARATION") => ::core::result::Result::Ok(
-                Self::BmmDeclaration(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
-                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_SIMPLE_STATEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_SIMPLE_STATEMENT: unexpected `_type` {__other:?} (expected one of: BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleType {
+impl crate::json_codec::runtime::ToJson
+    for openehr_lang::bmm::core::bmm_simple_type::BmmSimpleType
+{
     fn json_type_name(&self) -> &'static str {
         "BMM_SIMPLE_TYPE"
     }
@@ -12353,7 +10241,9 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleType
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleType {
+impl crate::json_codec::runtime::FromJson
+    for openehr_lang::bmm::core::bmm_simple_type::BmmSimpleType
+{
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12366,356 +10256,32 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleTy
     }
 }
 
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSingleton {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_SINGLETON"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_SINGLETON");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_nullable {
-            w.field("is_nullable", v);
-        }
-        if let Some(v) = &self.is_synthesised_generic {
-            w.field("is_synthesised_generic", v);
-        }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
-        }
-        w.field("group", &self.group);
-        w.field("scope", &self.scope);
-        w.field("generator", &self.generator);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSingleton {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_SINGLETON")?;
-        runtime::check_type(node, "BMM_SINGLETON")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            r#type: runtime::required_field(node, "type", "BMM_SINGLETON")?,
-            is_nullable: runtime::optional_field(node, "is_nullable")?,
-            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
-            group: runtime::required_field(node, "group", "BMM_SINGLETON")?,
-            scope: runtime::required_field(node, "scope", "BMM_SINGLETON")?,
-            generator: runtime::required_field(node, "generator", "BMM_SINGLETON")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatement {
+impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_type::BmmType {
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_lang::prelude::BmmStatement::BmmActionTable(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatement::BmmAssertion(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatement::BmmAssignment(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatement::BmmDeclaration(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatement::BmmProcedureCall(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmContainerType(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmGenericType(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmOpenType(x) => x.json_type_name(),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmSimpleType(x) => x.json_type_name(),
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_lang::prelude::BmmStatement::BmmActionTable(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatement::BmmAssertion(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatement::BmmAssignment(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatement::BmmDeclaration(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatement::BmmProcedureCall(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmContainerType(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmGenericType(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmOpenType(x) => x.write_json(w),
+            openehr_lang::bmm::core::bmm_type::BmmType::BmmSimpleType(x) => x.write_json(w),
         }
     }
 }
 
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatement {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_ACTION_TABLE") => ::core::result::Result::Ok(
-                Self::BmmActionTable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ASSERTION") => ::core::result::Result::Ok(
-                Self::BmmAssertion(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ASSIGNMENT") => ::core::result::Result::Ok(
-                Self::BmmAssignment(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_DECLARATION") => ::core::result::Result::Ok(
-                Self::BmmDeclaration(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
-                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_STATEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_STATEMENT: unexpected `_type` {__other:?} (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatementBlock {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_STATEMENT_BLOCK"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_STATEMENT_BLOCK");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatementBlock {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_STATEMENT_BLOCK")?;
-        runtime::check_type(node, "BMM_STATEMENT_BLOCK")?;
-        ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatementItem {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmStatementItem::BmmActionTable(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatementItem::BmmAssertion(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatementItem::BmmAssignment(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatementItem::BmmDeclaration(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatementItem::BmmProcedureCall(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatementItem::BmmStatementBlock(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmStatementItem::BmmActionTable(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatementItem::BmmAssertion(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatementItem::BmmAssignment(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatementItem::BmmDeclaration(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatementItem::BmmProcedureCall(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatementItem::BmmStatementBlock(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatementItem {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_ACTION_TABLE") => ::core::result::Result::Ok(
-                Self::BmmActionTable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ASSERTION") => ::core::result::Result::Ok(
-                Self::BmmAssertion(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ASSIGNMENT") => ::core::result::Result::Ok(
-                Self::BmmAssignment(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_DECLARATION") => ::core::result::Result::Ok(
-                Self::BmmDeclaration(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
-                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STATEMENT_BLOCK") => ::core::result::Result::Ok(
-                Self::BmmStatementBlock(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_STATEMENT_ITEM: missing required `_type` on polymorphic slot (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL, BMM_STATEMENT_BLOCK)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_STATEMENT_ITEM: unexpected `_type` {__other:?} (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL, BMM_STATEMENT_BLOCK)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatic {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmStatic::BmmConstant(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmStatic::BmmSingleton(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmStatic::BmmConstant(x) => x.write_json(w),
-            openehr_lang::prelude::BmmStatic::BmmSingleton(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatic {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
-                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
-                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_STATIC: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_SINGLETON)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_STATIC: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_SINGLETON)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatusType {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_STATUS_TYPE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_STATUS_TYPE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatusType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_STATUS_TYPE")?;
-        runtime::check_type(node, "BMM_STATUS_TYPE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStringValue {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_STRING_VALUE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_STRING_VALUE");
-        w.field("value_literal", &self.value_literal);
-        w.field("value", &self.value);
-        if let Some(v) = &self.syntax {
-            w.field("syntax", v);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStringValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_STRING_VALUE")?;
-        runtime::check_type(node, "BMM_STRING_VALUE")?;
-        ::core::result::Result::Ok(Self {
-            value_literal: runtime::required_field(node, "value_literal", "BMM_STRING_VALUE")?,
-            value: runtime::required_field(node, "value", "BMM_STRING_VALUE")?,
-            syntax: runtime::optional_field(node, "syntax")?,
-            r#type: runtime::required_field(node, "type", "BMM_STRING_VALUE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmTupleType {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_TUPLE_TYPE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_TUPLE_TYPE");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("item_types", &self.item_types);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmTupleType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_TUPLE_TYPE")?;
-        runtime::check_type(node, "BMM_TUPLE_TYPE")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            item_types: runtime::required_field(node, "item_types", "BMM_TUPLE_TYPE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmType {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmType::BmmContainerType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmType::BmmGenericType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmType::BmmOpenType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmType::BmmParameterType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmType::BmmSignature(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmType::BmmSimpleType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmType::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmType::BmmTupleType(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmType::BmmContainerType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmType::BmmGenericType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmType::BmmOpenType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmType::BmmParameterType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmType::BmmSignature(x) => x.write_json(w),
-            openehr_lang::prelude::BmmType::BmmSimpleType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmType::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmType::BmmTupleType(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmType {
+impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_type::BmmType {
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         match runtime::slot_type(node) {
             ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
                 Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
                 Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
@@ -12728,38 +10294,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmType {
             ::core::option::Option::Some("BMM_OPEN_TYPE") => ::core::result::Result::Ok(
                 Self::BmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
                 Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                    "BMM_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                    "BMM_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE)"
                 )),
             ),
         }
@@ -12773,11 +10318,7 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmTypeElemen
             openehr_lang::prelude::BmmTypeElement::BmmGenericParameter(x) => x.json_type_name(),
             openehr_lang::prelude::BmmTypeElement::BmmGenericType(x) => x.json_type_name(),
             openehr_lang::prelude::BmmTypeElement::BmmOpenType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmTypeElement::BmmParameterType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmTypeElement::BmmSignature(x) => x.json_type_name(),
             openehr_lang::prelude::BmmTypeElement::BmmSimpleType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmTypeElement::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmTypeElement::BmmTupleType(x) => x.json_type_name(),
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
@@ -12786,11 +10327,7 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmTypeElemen
             openehr_lang::prelude::BmmTypeElement::BmmGenericParameter(x) => x.write_json(w),
             openehr_lang::prelude::BmmTypeElement::BmmGenericType(x) => x.write_json(w),
             openehr_lang::prelude::BmmTypeElement::BmmOpenType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmTypeElement::BmmParameterType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmTypeElement::BmmSignature(x) => x.write_json(w),
             openehr_lang::prelude::BmmTypeElement::BmmSimpleType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmTypeElement::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmTypeElement::BmmTupleType(x) => x.write_json(w),
         }
     }
 }
@@ -12802,9 +10339,6 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmTypeElem
         match runtime::slot_type(node) {
             ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
                 Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_GENERIC_PARAMETER") => ::core::result::Result::Ok(
                 Self::BmmGenericParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
@@ -12820,1697 +10354,20 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmTypeElem
             ::core::option::Option::Some("BMM_OPEN_TYPE") => ::core::result::Result::Ok(
                 Self::BmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
                 Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_TYPE_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                    "BMM_TYPE_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_TYPE, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_TYPE_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                    "BMM_TYPE_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE)"
                 )),
             ),
         }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryProperty {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_UNITARY_PROPERTY"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_UNITARY_PROPERTY");
-        if let Some(v) = &self.documentation {
-            w.field("documentation", v);
-        }
-        w.field("name", &self.name);
-        if let Some(v) = &self.is_mandatory {
-            w.field("is_mandatory", v);
-        }
-        if let Some(v) = &self.is_computed {
-            w.field("is_computed", v);
-        }
-        w.field("type", &self.r#type);
-        if let Some(v) = &self.is_im_runtime {
-            w.field("is_im_runtime", v);
-        }
-        if let Some(v) = &self.is_im_infrastructure {
-            w.field("is_im_infrastructure", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryProperty {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_UNITARY_PROPERTY")?;
-        runtime::check_type(node, "BMM_UNITARY_PROPERTY")?;
-        ::core::result::Result::Ok(Self {
-            documentation: runtime::optional_field(node, "documentation")?,
-            name: runtime::required_field(node, "name", "BMM_UNITARY_PROPERTY")?,
-            is_mandatory: runtime::optional_field(node, "is_mandatory")?,
-            is_computed: runtime::optional_field(node, "is_computed")?,
-            r#type: runtime::required_field(node, "type", "BMM_UNITARY_PROPERTY")?,
-            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
-            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryType {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmUnitaryType::BmmParameterType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmUnitaryType::BmmSignature(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmUnitaryType::BmmStatusType(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmUnitaryType::BmmTupleType(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmUnitaryType::BmmParameterType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmUnitaryType::BmmSignature(x) => x.write_json(w),
-            openehr_lang::prelude::BmmUnitaryType::BmmStatusType(x) => x.write_json(w),
-            openehr_lang::prelude::BmmUnitaryType::BmmTupleType(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryType {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_UNITARY_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_UNITARY_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryValue {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmUnitaryValue::BmmPrimitiveValue(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmUnitaryValue::BmmPrimitiveValue(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryValue {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
-                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_UNITARY_VALUE: missing required `_type` on polymorphic slot (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_UNITARY_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmValueSetSpec {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_VALUE_SET_SPEC"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_VALUE_SET_SPEC");
-        w.field("resource_id", &self.resource_id);
-        w.field("value_set_id", &self.value_set_id);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmValueSetSpec {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_VALUE_SET_SPEC")?;
-        runtime::check_type(node, "BMM_VALUE_SET_SPEC")?;
-        ::core::result::Result::Ok(Self {
-            resource_id: runtime::required_field(node, "resource_id", "BMM_VALUE_SET_SPEC")?,
-            value_set_id: runtime::required_field(node, "value_set_id", "BMM_VALUE_SET_SPEC")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmVariable {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmVariable::BmmLocal(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmVariable::BmmParameter(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmVariable::BmmResult(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmVariable::BmmSelf(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmVariable::BmmLocal(x) => x.write_json(w),
-            openehr_lang::prelude::BmmVariable::BmmParameter(x) => x.write_json(w),
-            openehr_lang::prelude::BmmVariable::BmmResult(x) => x.write_json(w),
-            openehr_lang::prelude::BmmVariable::BmmSelf(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmVariable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
-                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
-                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
-                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_VARIABLE: missing required `_type` on polymorphic slot (expected one of: BMM_LOCAL, BMM_PARAMETER, BMM_RESULT, BMM_SELF)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_VARIABLE: unexpected `_type` {__other:?} (expected one of: BMM_LOCAL, BMM_PARAMETER, BMM_RESULT, BMM_SELF)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmVisibility {
-    fn json_type_name(&self) -> &'static str {
-        "BMM_VISIBILITY"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "BMM_VISIBILITY");
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmVisibility {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "BMM_VISIBILITY")?;
-        runtime::check_type(node, "BMM_VISIBILITY")?;
-        ::core::result::Result::Ok(Self {})
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmWritableVariable {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::BmmWritableVariable::BmmLocal(x) => x.json_type_name(),
-            openehr_lang::prelude::BmmWritableVariable::BmmResult(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::BmmWritableVariable::BmmLocal(x) => x.write_json(w),
-            openehr_lang::prelude::BmmWritableVariable::BmmResult(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmWritableVariable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
-                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
-                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_WRITABLE_VARIABLE: missing required `_type` on polymorphic slot (expected one of: BMM_LOCAL, BMM_RESULT)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_WRITABLE_VARIABLE: unexpected `_type` {__other:?} (expected one of: BMM_LOCAL, BMM_RESULT)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAgent {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElAgent::ElFunctionAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElAgent::ElProcedureAgent(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElAgent::ElFunctionAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElAgent::ElProcedureAgent(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAgent {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
-                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
-                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_AGENT: missing required `_type` on polymorphic slot (expected one of: EL_FUNCTION_AGENT, EL_PROCEDURE_AGENT)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_AGENT: unexpected `_type` {__other:?} (expected one of: EL_FUNCTION_AGENT, EL_PROCEDURE_AGENT)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAgentCall {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElAgentCall::BmmProcedureCall(x) => x.json_type_name(),
-            openehr_lang::prelude::ElAgentCall::ElFunctionCall(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElAgentCall::BmmProcedureCall(x) => x.write_json(w),
-            openehr_lang::prelude::ElAgentCall::ElFunctionCall(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAgentCall {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
-                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
-                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_AGENT_CALL: missing required `_type` on polymorphic slot (expected one of: BMM_PROCEDURE_CALL, EL_FUNCTION_CALL)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_AGENT_CALL: unexpected `_type` {__other:?} (expected one of: BMM_PROCEDURE_CALL, EL_FUNCTION_CALL)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAttached {
-    fn json_type_name(&self) -> &'static str {
-        "EL_ATTACHED"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_ATTACHED");
-        w.field("operand", &self.operand);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAttached {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_ATTACHED")?;
-        runtime::check_type(node, "EL_ATTACHED")?;
-        ::core::result::Result::Ok(Self {
-            operand: runtime::required_field(node, "operand", "EL_ATTACHED")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElBinaryOperator {
-    fn json_type_name(&self) -> &'static str {
-        "EL_BINARY_OPERATOR"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_BINARY_OPERATOR");
-        if let Some(v) = &self.precedence_overridden {
-            w.field("precedence_overridden", v);
-        }
-        if let Some(v) = &self.symbol {
-            w.field("symbol", v);
-        }
-        w.field("call", &self.call);
-        w.field("left_operand", &self.left_operand);
-        w.field("right_operand", &self.right_operand);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElBinaryOperator {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_BINARY_OPERATOR")?;
-        runtime::check_type(node, "EL_BINARY_OPERATOR")?;
-        ::core::result::Result::Ok(Self {
-            precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
-            symbol: runtime::optional_field(node, "symbol")?,
-            call: runtime::required_field(node, "call", "EL_BINARY_OPERATOR")?,
-            left_operand: runtime::required_field(node, "left_operand", "EL_BINARY_OPERATOR")?,
-            right_operand: runtime::required_field(node, "right_operand", "EL_BINARY_OPERATOR")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElBooleanExpression {
-    fn json_type_name(&self) -> &'static str {
-        "EL_BOOLEAN_EXPRESSION"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_BOOLEAN_EXPRESSION");
-        w.field("base_expression", &self.base_expression);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElBooleanExpression {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_BOOLEAN_EXPRESSION")?;
-        runtime::check_type(node, "EL_BOOLEAN_EXPRESSION")?;
-        ::core::result::Result::Ok(Self {
-            base_expression: runtime::required_field(
-                node,
-                "base_expression",
-                "EL_BOOLEAN_EXPRESSION",
-            )?,
-        })
-    }
-}
-
-impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::ElCase<T>
-{
-    fn json_type_name(&self) -> &'static str {
-        "EL_CASE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_CASE");
-        w.field("result", &self.result);
-        w.field("value_constraint", &self.value_constraint);
-        w.end_object();
-    }
-}
-
-impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::ElCase<T>
-{
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_CASE")?;
-        runtime::check_type(node, "EL_CASE")?;
-        ::core::result::Result::Ok(Self {
-            result: runtime::required_field(node, "result", "EL_CASE")?,
-            value_constraint: runtime::required_field(node, "value_constraint", "EL_CASE")?,
-        })
-    }
-}
-
-impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::ElCaseTable<T>
-{
-    fn json_type_name(&self) -> &'static str {
-        "EL_CASE_TABLE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_CASE_TABLE");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
-        }
-        w.field("else", &self.r#else);
-        w.field("test_value", &self.test_value);
-        w.end_object();
-    }
-}
-
-impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::ElCaseTable<T>
-{
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_CASE_TABLE")?;
-        runtime::check_type(node, "EL_CASE_TABLE")?;
-        ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
-            r#else: runtime::required_field(node, "else", "EL_CASE_TABLE")?,
-            test_value: runtime::required_field(node, "test_value", "EL_CASE_TABLE")?,
-        })
-    }
-}
-
-impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::ElConditionalExpression<T>
-{
-    fn json_type_name(&self) -> &'static str {
-        "EL_CONDITIONAL_EXPRESSION"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_CONDITIONAL_EXPRESSION");
-        w.field("result", &self.result);
-        w.field("condition", &self.condition);
-        w.end_object();
-    }
-}
-
-impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::ElConditionalExpression<T>
-{
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_CONDITIONAL_EXPRESSION")?;
-        runtime::check_type(node, "EL_CONDITIONAL_EXPRESSION")?;
-        ::core::result::Result::Ok(Self {
-            result: runtime::required_field(node, "result", "EL_CONDITIONAL_EXPRESSION")?,
-            condition: runtime::required_field(node, "condition", "EL_CONDITIONAL_EXPRESSION")?,
-        })
-    }
-}
-
-impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::ElConditionChain<T>
-{
-    fn json_type_name(&self) -> &'static str {
-        "EL_CONDITION_CHAIN"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_CONDITION_CHAIN");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
-        }
-        w.field("else", &self.r#else);
-        w.end_object();
-    }
-}
-
-impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::ElConditionChain<T>
-{
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_CONDITION_CHAIN")?;
-        runtime::check_type(node, "EL_CONDITION_CHAIN")?;
-        ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
-            r#else: runtime::required_field(node, "else", "EL_CONDITION_CHAIN")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElConstrained {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElConstrained::ElBooleanExpression(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElConstrained::ElBooleanExpression(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElConstrained {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_BOOLEAN_EXPRESSION") => ::core::result::Result::Ok(
-                Self::ElBooleanExpression(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_CONSTRAINED: missing required `_type` on polymorphic slot (expected one of: EL_BOOLEAN_EXPRESSION)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_CONSTRAINED: unexpected `_type` {__other:?} (expected one of: EL_BOOLEAN_EXPRESSION)"
-                )),
-            ),
-        }
-    }
-}
-
-impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::ElDecisionBranch<T>
-{
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElDecisionBranch::ElCase(x) => x.json_type_name(),
-            openehr_lang::prelude::ElDecisionBranch::ElConditionalExpression(x) => {
-                x.json_type_name()
-            }
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElDecisionBranch::ElCase(x) => x.write_json(w),
-            openehr_lang::prelude::ElDecisionBranch::ElConditionalExpression(x) => x.write_json(w),
-        }
-    }
-}
-
-impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::ElDecisionBranch<T>
-{
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_CASE") => ::core::result::Result::Ok(Self::ElCase(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some("EL_CONDITIONAL_EXPRESSION") => {
-                ::core::result::Result::Ok(Self::ElConditionalExpression(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_DECISION_BRANCH: missing required `_type` on polymorphic slot (expected one of: EL_CASE, EL_CONDITIONAL_EXPRESSION)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_DECISION_BRANCH: unexpected `_type` {__other:?} (expected one of: EL_CASE, EL_CONDITIONAL_EXPRESSION)"
-                )),
-            ),
-        }
-    }
-}
-
-impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
-    for openehr_lang::prelude::ElDecisionTable<T>
-{
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElDecisionTable::ElCaseTable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElDecisionTable::ElConditionChain(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElDecisionTable::ElCaseTable(x) => x.write_json(w),
-            openehr_lang::prelude::ElDecisionTable::ElConditionChain(x) => x.write_json(w),
-        }
-    }
-}
-
-impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
-    for openehr_lang::prelude::ElDecisionTable<T>
-{
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_CASE_TABLE") => ::core::result::Result::Ok(
-                Self::ElCaseTable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_CONDITION_CHAIN") => ::core::result::Result::Ok(
-                Self::ElConditionChain(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_DECISION_TABLE: missing required `_type` on polymorphic slot (expected one of: EL_CASE_TABLE, EL_CONDITION_CHAIN)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_DECISION_TABLE: unexpected `_type` {__other:?} (expected one of: EL_CASE_TABLE, EL_CONDITION_CHAIN)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElDefined {
-    fn json_type_name(&self) -> &'static str {
-        "EL_DEFINED"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_DEFINED");
-        w.field("operand", &self.operand);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElDefined {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_DEFINED")?;
-        runtime::check_type(node, "EL_DEFINED")?;
-        ::core::result::Result::Ok(Self {
-            operand: runtime::required_field(node, "operand", "EL_DEFINED")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElExpression {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElExpression::ElAttached(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElBinaryOperator(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElBooleanExpression(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElCaseTable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElConditionChain(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElDefined(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElFunctionAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElFunctionCall(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElLiteral(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElProcedureAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElPropertyRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElReadonlyVariable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElStaticRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElTuple(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElTypeRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElUnaryOperator(x) => x.json_type_name(),
-            openehr_lang::prelude::ElExpression::ElWritableVariable(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElExpression::ElAttached(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElBinaryOperator(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElBooleanExpression(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElCaseTable(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElConditionChain(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElDefined(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElFunctionAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElFunctionCall(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElLiteral(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElProcedureAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElPropertyRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElReadonlyVariable(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElStaticRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElTuple(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElTypeRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElUnaryOperator(x) => x.write_json(w),
-            openehr_lang::prelude::ElExpression::ElWritableVariable(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElExpression {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
-                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_BINARY_OPERATOR") => ::core::result::Result::Ok(
-                Self::ElBinaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_BOOLEAN_EXPRESSION") => ::core::result::Result::Ok(
-                Self::ElBooleanExpression(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_CASE_TABLE") => ::core::result::Result::Ok(
-                Self::ElCaseTable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_CONDITION_CHAIN") => ::core::result::Result::Ok(
-                Self::ElConditionChain(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
-                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
-                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
-                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_LITERAL") => ::core::result::Result::Ok(
-                Self::ElLiteral(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
-                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
-                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
-                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_TUPLE") => ::core::result::Result::Ok(Self::ElTuple(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
-                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_UNARY_OPERATOR") => ::core::result::Result::Ok(
-                Self::ElUnaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_EXPRESSION: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_EXPRESSION: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFeatureRef {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElFeatureRef::ElFunctionAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElFeatureRef::ElFunctionCall(x) => x.json_type_name(),
-            openehr_lang::prelude::ElFeatureRef::ElProcedureAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElFeatureRef::ElPropertyRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElFeatureRef::ElStaticRef(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElFeatureRef::ElFunctionAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElFeatureRef::ElFunctionCall(x) => x.write_json(w),
-            openehr_lang::prelude::ElFeatureRef::ElProcedureAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElFeatureRef::ElPropertyRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElFeatureRef::ElStaticRef(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFeatureRef {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
-                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
-                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
-                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
-                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
-                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_FEATURE_REF: missing required `_type` on polymorphic slot (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_FEATURE_REF: unexpected `_type` {__other:?} (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFunctionAgent {
-    fn json_type_name(&self) -> &'static str {
-        "EL_FUNCTION_AGENT"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_FUNCTION_AGENT");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        if let Some(v) = &self.scoper {
-            w.field("scoper", v);
-        }
-        if let Some(v) = &self.closed_args {
-            w.field("closed_args", v);
-        }
-        if !self.open_args.is_empty() {
-            w.field("open_args", &self.open_args);
-        }
-        if let Some(v) = &self.definition {
-            w.field("definition", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFunctionAgent {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_FUNCTION_AGENT")?;
-        runtime::check_type(node, "EL_FUNCTION_AGENT")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_AGENT")?,
-            name: runtime::required_field(node, "name", "EL_FUNCTION_AGENT")?,
-            scoper: runtime::optional_field(node, "scoper")?,
-            closed_args: runtime::optional_field(node, "closed_args")?,
-            open_args: runtime::container_field(node, "open_args")?,
-            definition: runtime::optional_field(node, "definition")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFunctionCall {
-    fn json_type_name(&self) -> &'static str {
-        "EL_FUNCTION_CALL"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_FUNCTION_CALL");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        if let Some(v) = &self.scoper {
-            w.field("scoper", v);
-        }
-        w.field("agent", &self.agent);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFunctionCall {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_FUNCTION_CALL")?;
-        runtime::check_type(node, "EL_FUNCTION_CALL")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_CALL")?,
-            name: runtime::required_field(node, "name", "EL_FUNCTION_CALL")?,
-            scoper: runtime::optional_field(node, "scoper")?,
-            agent: runtime::required_field(node, "agent", "EL_FUNCTION_CALL")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElLiteral {
-    fn json_type_name(&self) -> &'static str {
-        "EL_LITERAL"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_LITERAL");
-        w.field("value", &self.value);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElLiteral {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_LITERAL")?;
-        runtime::check_type(node, "EL_LITERAL")?;
-        ::core::result::Result::Ok(Self {
-            value: runtime::required_field(node, "value", "EL_LITERAL")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElOperator {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElOperator::ElBinaryOperator(x) => x.json_type_name(),
-            openehr_lang::prelude::ElOperator::ElUnaryOperator(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElOperator::ElBinaryOperator(x) => x.write_json(w),
-            openehr_lang::prelude::ElOperator::ElUnaryOperator(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElOperator {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_BINARY_OPERATOR") => ::core::result::Result::Ok(
-                Self::ElBinaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_UNARY_OPERATOR") => ::core::result::Result::Ok(
-                Self::ElUnaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_OPERATOR: missing required `_type` on polymorphic slot (expected one of: EL_BINARY_OPERATOR, EL_UNARY_OPERATOR)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_OPERATOR: unexpected `_type` {__other:?} (expected one of: EL_BINARY_OPERATOR, EL_UNARY_OPERATOR)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElPredicate {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElPredicate::ElAttached(x) => x.json_type_name(),
-            openehr_lang::prelude::ElPredicate::ElDefined(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElPredicate::ElAttached(x) => x.write_json(w),
-            openehr_lang::prelude::ElPredicate::ElDefined(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElPredicate {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
-                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
-                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_PREDICATE: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_DEFINED)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_PREDICATE: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_DEFINED)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElProcedureAgent {
-    fn json_type_name(&self) -> &'static str {
-        "EL_PROCEDURE_AGENT"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_PROCEDURE_AGENT");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        if let Some(v) = &self.scoper {
-            w.field("scoper", v);
-        }
-        if let Some(v) = &self.closed_args {
-            w.field("closed_args", v);
-        }
-        if !self.open_args.is_empty() {
-            w.field("open_args", &self.open_args);
-        }
-        if let Some(v) = &self.definition {
-            w.field("definition", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElProcedureAgent {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_PROCEDURE_AGENT")?;
-        runtime::check_type(node, "EL_PROCEDURE_AGENT")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_PROCEDURE_AGENT")?,
-            name: runtime::required_field(node, "name", "EL_PROCEDURE_AGENT")?,
-            scoper: runtime::optional_field(node, "scoper")?,
-            closed_args: runtime::optional_field(node, "closed_args")?,
-            open_args: runtime::container_field(node, "open_args")?,
-            definition: runtime::optional_field(node, "definition")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElPropertyRef {
-    fn json_type_name(&self) -> &'static str {
-        "EL_PROPERTY_REF"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_PROPERTY_REF");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        if let Some(v) = &self.scoper {
-            w.field("scoper", v);
-        }
-        w.field("definition", &self.definition);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElPropertyRef {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_PROPERTY_REF")?;
-        runtime::check_type(node, "EL_PROPERTY_REF")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_PROPERTY_REF")?,
-            name: runtime::required_field(node, "name", "EL_PROPERTY_REF")?,
-            scoper: runtime::optional_field(node, "scoper")?,
-            definition: runtime::required_field(node, "definition", "EL_PROPERTY_REF")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElReadonlyVariable {
-    fn json_type_name(&self) -> &'static str {
-        "EL_READONLY_VARIABLE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_READONLY_VARIABLE");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        w.field("definition", &self.definition);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElReadonlyVariable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_READONLY_VARIABLE")?;
-        runtime::check_type(node, "EL_READONLY_VARIABLE")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_READONLY_VARIABLE")?,
-            name: runtime::required_field(node, "name", "EL_READONLY_VARIABLE")?,
-            definition: runtime::required_field(node, "definition", "EL_READONLY_VARIABLE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElSimple {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElSimple::ElAttached(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElDefined(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElFunctionAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElFunctionCall(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElLiteral(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElProcedureAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElPropertyRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElReadonlyVariable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElStaticRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElTypeRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElSimple::ElWritableVariable(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElSimple::ElAttached(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElDefined(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElFunctionAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElFunctionCall(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElLiteral(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElProcedureAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElPropertyRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElReadonlyVariable(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElStaticRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElTypeRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElSimple::ElWritableVariable(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElSimple {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
-                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
-                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
-                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
-                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_LITERAL") => ::core::result::Result::Ok(
-                Self::ElLiteral(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
-                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
-                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
-                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
-                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_SIMPLE: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_SIMPLE: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElStaticRef {
-    fn json_type_name(&self) -> &'static str {
-        "EL_STATIC_REF"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_STATIC_REF");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        if let Some(v) = &self.scoper {
-            w.field("scoper", v);
-        }
-        w.field("definition", &self.definition);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElStaticRef {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_STATIC_REF")?;
-        runtime::check_type(node, "EL_STATIC_REF")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_STATIC_REF")?,
-            name: runtime::required_field(node, "name", "EL_STATIC_REF")?,
-            scoper: runtime::optional_field(node, "scoper")?,
-            definition: runtime::required_field(node, "definition", "EL_STATIC_REF")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTerminal {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElTerminal::ElAttached(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElCaseTable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElConditionChain(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElDefined(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElFunctionAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElFunctionCall(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElLiteral(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElProcedureAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElPropertyRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElReadonlyVariable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElStaticRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElTypeRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElTerminal::ElWritableVariable(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElTerminal::ElAttached(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElCaseTable(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElConditionChain(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElDefined(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElFunctionAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElFunctionCall(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElLiteral(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElProcedureAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElPropertyRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElReadonlyVariable(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElStaticRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElTypeRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElTerminal::ElWritableVariable(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTerminal {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
-                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_CASE_TABLE") => ::core::result::Result::Ok(
-                Self::ElCaseTable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_CONDITION_CHAIN") => ::core::result::Result::Ok(
-                Self::ElConditionChain(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
-                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
-                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
-                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_LITERAL") => ::core::result::Result::Ok(
-                Self::ElLiteral(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
-                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
-                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
-                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
-                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_TERMINAL: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_TERMINAL: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTuple {
-    fn json_type_name(&self) -> &'static str {
-        "EL_TUPLE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_TUPLE");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
-        }
-        w.field("type", &self.r#type);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTuple {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_TUPLE")?;
-        runtime::check_type(node, "EL_TUPLE")?;
-        ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
-            r#type: runtime::required_field(node, "type", "EL_TUPLE")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTupleItem {
-    fn json_type_name(&self) -> &'static str {
-        "EL_TUPLE_ITEM"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_TUPLE_ITEM");
-        if let Some(v) = &self.item {
-            w.field("item", v);
-        }
-        if let Some(v) = &self.name {
-            w.field("name", v);
-        }
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTupleItem {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_TUPLE_ITEM")?;
-        runtime::check_type(node, "EL_TUPLE_ITEM")?;
-        ::core::result::Result::Ok(Self {
-            item: runtime::optional_field(node, "item")?,
-            name: runtime::optional_field(node, "name")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTypeRef {
-    fn json_type_name(&self) -> &'static str {
-        "EL_TYPE_REF"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_TYPE_REF");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        w.field("type", &self.r#type);
-        w.field("is_mutable", &self.is_mutable);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTypeRef {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_TYPE_REF")?;
-        runtime::check_type(node, "EL_TYPE_REF")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_TYPE_REF")?,
-            name: runtime::required_field(node, "name", "EL_TYPE_REF")?,
-            r#type: runtime::required_field(node, "type", "EL_TYPE_REF")?,
-            is_mutable: runtime::required_field(node, "is_mutable", "EL_TYPE_REF")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElUnaryOperator {
-    fn json_type_name(&self) -> &'static str {
-        "EL_UNARY_OPERATOR"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_UNARY_OPERATOR");
-        if let Some(v) = &self.precedence_overridden {
-            w.field("precedence_overridden", v);
-        }
-        if let Some(v) = &self.symbol {
-            w.field("symbol", v);
-        }
-        w.field("call", &self.call);
-        w.field("operand", &self.operand);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElUnaryOperator {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_UNARY_OPERATOR")?;
-        runtime::check_type(node, "EL_UNARY_OPERATOR")?;
-        ::core::result::Result::Ok(Self {
-            precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
-            symbol: runtime::optional_field(node, "symbol")?,
-            call: runtime::required_field(node, "call", "EL_UNARY_OPERATOR")?,
-            operand: runtime::required_field(node, "operand", "EL_UNARY_OPERATOR")?,
-        })
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElValueGenerator {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElValueGenerator::ElFunctionAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElValueGenerator::ElFunctionCall(x) => x.json_type_name(),
-            openehr_lang::prelude::ElValueGenerator::ElProcedureAgent(x) => x.json_type_name(),
-            openehr_lang::prelude::ElValueGenerator::ElPropertyRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElValueGenerator::ElReadonlyVariable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElValueGenerator::ElStaticRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElValueGenerator::ElTypeRef(x) => x.json_type_name(),
-            openehr_lang::prelude::ElValueGenerator::ElWritableVariable(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElValueGenerator::ElFunctionAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElValueGenerator::ElFunctionCall(x) => x.write_json(w),
-            openehr_lang::prelude::ElValueGenerator::ElProcedureAgent(x) => x.write_json(w),
-            openehr_lang::prelude::ElValueGenerator::ElPropertyRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElValueGenerator::ElReadonlyVariable(x) => x.write_json(w),
-            openehr_lang::prelude::ElValueGenerator::ElStaticRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElValueGenerator::ElTypeRef(x) => x.write_json(w),
-            openehr_lang::prelude::ElValueGenerator::ElWritableVariable(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElValueGenerator {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
-                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
-                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
-                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
-                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
-                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
-                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_VALUE_GENERATOR: missing required `_type` on polymorphic slot (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_VALUE_GENERATOR: unexpected `_type` {__other:?} (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElVariable {
-    fn json_type_name(&self) -> &'static str {
-        match self {
-            openehr_lang::prelude::ElVariable::ElReadonlyVariable(x) => x.json_type_name(),
-            openehr_lang::prelude::ElVariable::ElWritableVariable(x) => x.json_type_name(),
-        }
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        match self {
-            openehr_lang::prelude::ElVariable::ElReadonlyVariable(x) => x.write_json(w),
-            openehr_lang::prelude::ElVariable::ElWritableVariable(x) => x.write_json(w),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElVariable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        match runtime::slot_type(node) {
-            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
-                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "EL_VARIABLE: missing required `_type` on polymorphic slot (expected one of: EL_READONLY_VARIABLE, EL_WRITABLE_VARIABLE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
-                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "EL_VARIABLE: unexpected `_type` {__other:?} (expected one of: EL_READONLY_VARIABLE, EL_WRITABLE_VARIABLE)"
-                )),
-            ),
-        }
-    }
-}
-
-impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElWritableVariable {
-    fn json_type_name(&self) -> &'static str {
-        "EL_WRITABLE_VARIABLE"
-    }
-    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
-        w.begin_object();
-        w.field_str("_type", "EL_WRITABLE_VARIABLE");
-        w.field("is_writable", &self.is_writable);
-        w.field("name", &self.name);
-        w.field("definition", &self.definition);
-        w.end_object();
-    }
-}
-
-impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElWritableVariable {
-    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
-        node: &__N,
-    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
-        runtime::expect_object(node, "EL_WRITABLE_VARIABLE")?;
-        runtime::check_type(node, "EL_WRITABLE_VARIABLE")?;
-        ::core::result::Result::Ok(Self {
-            is_writable: runtime::required_field(node, "is_writable", "EL_WRITABLE_VARIABLE")?,
-            name: runtime::required_field(node, "name", "EL_WRITABLE_VARIABLE")?,
-            definition: runtime::required_field(node, "definition", "EL_WRITABLE_VARIABLE")?,
-        })
     }
 }
 
@@ -17507,6 +13364,5484 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::VariableDec
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmActionDecisionTable {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ACTION_DECISION_TABLE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ACTION_DECISION_TABLE");
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmActionDecisionTable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ACTION_DECISION_TABLE")?;
+        runtime::check_type(node, "BMM_ACTION_DECISION_TABLE")?;
+        ::core::result::Result::Ok(Self {})
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmActionTable {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ACTION_TABLE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ACTION_TABLE");
+        w.field("decision_table", &self.decision_table);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmActionTable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ACTION_TABLE")?;
+        runtime::check_type(node, "BMM_ACTION_TABLE")?;
+        ::core::result::Result::Ok(Self {
+            decision_table: runtime::required_field(node, "decision_table", "BMM_ACTION_TABLE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmAssertion {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ASSERTION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ASSERTION");
+        w.field("expression", &self.expression);
+        if let Some(v) = &self.tag {
+            w.field("tag", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmAssertion {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ASSERTION")?;
+        runtime::check_type(node, "BMM_ASSERTION")?;
+        ::core::result::Result::Ok(Self {
+            expression: runtime::required_field(node, "expression", "BMM_ASSERTION")?,
+            tag: runtime::optional_field(node, "tag")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmAssignment {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ASSIGNMENT"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ASSIGNMENT");
+        w.field("target", &self.target);
+        w.field("source", &self.source);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmAssignment {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ASSIGNMENT")?;
+        runtime::check_type(node, "BMM_ASSIGNMENT")?;
+        ::core::result::Result::Ok(Self {
+            target: runtime::required_field(node, "target", "BMM_ASSIGNMENT")?,
+            source: runtime::required_field(node, "source", "BMM_ASSIGNMENT")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmBooleanValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_BOOLEAN_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_BOOLEAN_VALUE");
+        w.field("value_literal", &self.value_literal);
+        w.field("value", &self.value);
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmBooleanValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_BOOLEAN_VALUE")?;
+        runtime::check_type(node, "BMM_BOOLEAN_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_BOOLEAN_VALUE")?,
+            value: runtime::required_field(node, "value", "BMM_BOOLEAN_VALUE")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_BOOLEAN_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmBuiltinType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmBuiltinType::BmmSignature(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmBuiltinType::BmmStatusType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmBuiltinType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmBuiltinType::BmmSignature(x) => x.write_json(w),
+            openehr_lang::prelude::BmmBuiltinType::BmmStatusType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmBuiltinType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmBuiltinType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_BUILTIN_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_BUILTIN_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClass {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmClass::BmmGenericClass(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmClass::BmmSimpleClass(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmClass::BmmGenericClass(x) => x.write_json(w),
+            openehr_lang::prelude::BmmClass::BmmSimpleClass(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClass {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
+                Self::BmmGenericClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_CLASS: missing required `_type` on polymorphic slot (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_CLASS: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmConstant {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_CONSTANT"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_CONSTANT");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        w.field("generator", &self.generator);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmConstant {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_CONSTANT")?;
+        runtime::check_type(node, "BMM_CONSTANT")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_CONSTANT")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_CONSTANT")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_CONSTANT")?,
+            generator: runtime::required_field(node, "generator", "BMM_CONSTANT")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerPropertyData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_CONTAINER_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_CONTAINER_PROPERTY");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_composition {
+            w.field("is_composition", v);
+        }
+        if let Some(v) = &self.cardinality {
+            w.field("cardinality", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerPropertyData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_CONTAINER_PROPERTY")?;
+        runtime::check_type(node, "BMM_CONTAINER_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_CONTAINER_PROPERTY")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_CONTAINER_PROPERTY")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_CONTAINER_PROPERTY")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_composition: runtime::optional_field(node, "is_composition")?,
+            cardinality: runtime::optional_field(node, "cardinality")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerProperty {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmContainerProperty::BmmIndexedContainerProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::prelude::BmmContainerProperty::BmmContainerProperty(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmContainerProperty::BmmIndexedContainerProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::prelude::BmmContainerProperty::BmmContainerProperty(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmIndexedContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmContainerProperty(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_CONTAINER_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerTypeData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_CONTAINER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_CONTAINER_TYPE");
+        w.field("container_class", &self.container_class);
+        w.field("item_type", &self.item_type);
+        if let Some(v) = &self.is_ordered {
+            w.field("is_ordered", v);
+        }
+        if let Some(v) = &self.is_unique {
+            w.field("is_unique", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerTypeData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_CONTAINER_TYPE")?;
+        runtime::check_type(node, "BMM_CONTAINER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            container_class: runtime::required_field(
+                node,
+                "container_class",
+                "BMM_CONTAINER_TYPE",
+            )?,
+            item_type: runtime::required_field(node, "item_type", "BMM_CONTAINER_TYPE")?,
+            is_ordered: runtime::optional_field(node, "is_ordered")?,
+            is_unique: runtime::optional_field(node, "is_unique")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmContainerType::BmmIndexedContainerType(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::prelude::BmmContainerType::BmmContainerType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmContainerType::BmmIndexedContainerType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmContainerType::BmmContainerType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::BmmIndexedContainerType(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmContainerType(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_CONTAINER_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_INDEXED_CONTAINER_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_CONTAINER_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_CONTAINER_VALUE");
+        w.field("value_literal", &self.value_literal);
+        if let Some(v) = &self.value {
+            w.field("value", v);
+        }
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_CONTAINER_VALUE")?;
+        runtime::check_type(node, "BMM_CONTAINER_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_CONTAINER_VALUE")?,
+            value: runtime::optional_field(node, "value")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_CONTAINER_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmDeclaration {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_DECLARATION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_DECLARATION");
+        w.field("name", &self.name);
+        w.field("result", &self.result);
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDeclaration {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_DECLARATION")?;
+        runtime::check_type(node, "BMM_DECLARATION")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_DECLARATION")?,
+            result: runtime::required_field(node, "result", "BMM_DECLARATION")?,
+            r#type: runtime::required_field(node, "type", "BMM_DECLARATION")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmDefinitions {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_DEFINITIONS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_DEFINITIONS");
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefinitions {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_DEFINITIONS")?;
+        runtime::check_type(node, "BMM_DEFINITIONS")?;
+        ::core::result::Result::Ok(Self {})
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEffectiveType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmEffectiveType::BmmGenericType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmEffectiveType::BmmSignature(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmEffectiveType::BmmSimpleType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmEffectiveType::BmmStatusType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmEffectiveType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmEffectiveType::BmmGenericType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmEffectiveType::BmmSignature(x) => x.write_json(w),
+            openehr_lang::prelude::BmmEffectiveType::BmmSimpleType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmEffectiveType::BmmStatusType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmEffectiveType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEffectiveType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_EFFECTIVE_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_EFFECTIVE_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEntityMetatype {
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.write_str(self.as_str());
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEntityMetatype {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        let __s = node.as_str().ok_or_else(|| {
+            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
+        })?;
+        ::core::result::Result::Ok(openehr_lang::prelude::BmmEntityMetatype::from_wire(__s))
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumerationData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ENUMERATION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ENUMERATION");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerationData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ENUMERATION")?;
+        runtime::check_type(node, "BMM_ENUMERATION")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_ENUMERATION")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_ENUMERATION")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(node, "source_schema_id", "BMM_ENUMERATION")?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeration {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmEnumeration::BmmEnumerationInteger(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmEnumeration::BmmEnumerationString(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmEnumeration::BmmEnumeration(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmEnumeration::BmmEnumerationInteger(x) => x.write_json(w),
+            openehr_lang::prelude::BmmEnumeration::BmmEnumerationString(x) => x.write_json(w),
+            openehr_lang::prelude::BmmEnumeration::BmmEnumeration(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumeration {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmEnumerationInteger(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmEnumerationString(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmEnumeration(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_ENUMERATION: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumerationInteger {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ENUMERATION_INTEGER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ENUMERATION_INTEGER");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerationInteger {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ENUMERATION_INTEGER")?;
+        runtime::check_type(node, "BMM_ENUMERATION_INTEGER")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_ENUMERATION_INTEGER")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_ENUMERATION_INTEGER")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_ENUMERATION_INTEGER",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_INTEGER")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumerationString {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ENUMERATION_STRING"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ENUMERATION_STRING");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerationString {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ENUMERATION_STRING")?;
+        runtime::check_type(node, "BMM_ENUMERATION_STRING")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_ENUMERATION_STRING")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_ENUMERATION_STRING")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_ENUMERATION_STRING",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_STRING")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmExternalRoutine {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_EXTERNAL_ROUTINE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_EXTERNAL_ROUTINE");
+        w.field("meta_data", &self.meta_data);
+        if let Some(v) = &self.argument_mapping {
+            w.field("argument_mapping", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmExternalRoutine {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_EXTERNAL_ROUTINE")?;
+        runtime::check_type(node, "BMM_EXTERNAL_ROUTINE")?;
+        ::core::result::Result::Ok(Self {
+            meta_data: runtime::required_field(node, "meta_data", "BMM_EXTERNAL_ROUTINE")?,
+            argument_mapping: runtime::optional_field(node, "argument_mapping")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeature {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmFeature::BmmConstant(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFeature::BmmContainerProperty(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFeature::BmmFunction(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFeature::BmmProcedure(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFeature::BmmSingleton(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFeature::BmmUnitaryProperty(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmFeature::BmmConstant(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFeature::BmmContainerProperty(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFeature::BmmFunction(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFeature::BmmProcedure(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFeature::BmmSingleton(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFeature::BmmUnitaryProperty(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeature {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
+                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
+                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
+                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
+                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROCEDURE, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROCEDURE, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeatureExtension {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_FEATURE_EXTENSION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_FEATURE_EXTENSION");
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeatureExtension {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_FEATURE_EXTENSION")?;
+        runtime::check_type(node, "BMM_FEATURE_EXTENSION")?;
+        ::core::result::Result::Ok(Self {})
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeatureGroup {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_FEATURE_GROUP"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_FEATURE_GROUP");
+        w.field("name", &self.name);
+        w.field("properties", &self.properties);
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.visibility {
+            w.field("visibility", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeatureGroup {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_FEATURE_GROUP")?;
+        runtime::check_type(node, "BMM_FEATURE_GROUP")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_FEATURE_GROUP")?,
+            properties: runtime::required_field(node, "properties", "BMM_FEATURE_GROUP")?,
+            features: runtime::container_field(node, "features")?,
+            visibility: runtime::optional_field(node, "visibility")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFormalElement {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmFormalElement::BmmConstant(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmContainerProperty(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmFunction(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmLocal(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmParameter(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmProcedure(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmResult(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmSelf(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmSingleton(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmFormalElement::BmmUnitaryProperty(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmFormalElement::BmmConstant(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmContainerProperty(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmFunction(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmLocal(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmParameter(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmProcedure(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmResult(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmSelf(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmSingleton(x) => x.write_json(w),
+            openehr_lang::prelude::BmmFormalElement::BmmUnitaryProperty(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFormalElement {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
+                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
+                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
+                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
+                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
+                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
+                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
+                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_FORMAL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_FORMAL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFunction {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_FUNCTION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_FUNCTION");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if !self.parameters.is_empty() {
+            w.field("parameters", &self.parameters);
+        }
+        if !self.pre_conditions.is_empty() {
+            w.field("pre_conditions", &self.pre_conditions);
+        }
+        if !self.post_conditions.is_empty() {
+            w.field("post_conditions", &self.post_conditions);
+        }
+        if let Some(v) = &self.definition {
+            w.field("definition", v);
+        }
+        if let Some(v) = &self.operator_definition {
+            w.field("operator_definition", v);
+        }
+        w.field("result", &self.result);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFunction {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_FUNCTION")?;
+        runtime::check_type(node, "BMM_FUNCTION")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_FUNCTION")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_FUNCTION")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_FUNCTION")?,
+            parameters: runtime::container_field(node, "parameters")?,
+            pre_conditions: runtime::container_field(node, "pre_conditions")?,
+            post_conditions: runtime::container_field(node, "post_conditions")?,
+            definition: runtime::optional_field(node, "definition")?,
+            operator_definition: runtime::optional_field(node, "operator_definition")?,
+            result: runtime::required_field(node, "result", "BMM_FUNCTION")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFunctionType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_FUNCTION_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_FUNCTION_TYPE");
+        w.field("result_type", &self.result_type);
+        if let Some(v) = &self.argument_types {
+            w.field("argument_types", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFunctionType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_FUNCTION_TYPE")?;
+        runtime::check_type(node, "BMM_FUNCTION_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_FUNCTION_TYPE")?,
+            argument_types: runtime::optional_field(node, "argument_types")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericClass {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_GENERIC_CLASS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_GENERIC_CLASS");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        w.field("generic_parameters", &self.generic_parameters);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericClass {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_GENERIC_CLASS")?;
+        runtime::check_type(node, "BMM_GENERIC_CLASS")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_GENERIC_CLASS")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_GENERIC_CLASS")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_GENERIC_CLASS",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_GENERIC_CLASS")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            generic_parameters: runtime::required_field(
+                node,
+                "generic_parameters",
+                "BMM_GENERIC_CLASS",
+            )?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_GENERIC_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_GENERIC_TYPE");
+        if let Some(v) = &self.value_constraint {
+            w.field("value_constraint", v);
+        }
+        w.field("base_class", &self.base_class);
+        if !self.generic_parameters.is_empty() {
+            w.field("generic_parameters", &self.generic_parameters);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_GENERIC_TYPE")?;
+        runtime::check_type(node, "BMM_GENERIC_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            value_constraint: runtime::optional_field(node, "value_constraint")?,
+            base_class: runtime::required_field(node, "base_class", "BMM_GENERIC_TYPE")?,
+            generic_parameters: runtime::container_field(node, "generic_parameters")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIncludeSpec {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INCLUDE_SPEC"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INCLUDE_SPEC");
+        w.field("id", &self.id);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIncludeSpec {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INCLUDE_SPEC")?;
+        runtime::check_type(node, "BMM_INCLUDE_SPEC")?;
+        ::core::result::Result::Ok(Self {
+            id: runtime::required_field(node, "id", "BMM_INCLUDE_SPEC")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedContainerProperty {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INDEXED_CONTAINER_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INDEXED_CONTAINER_PROPERTY");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_composition {
+            w.field("is_composition", v);
+        }
+        if let Some(v) = &self.cardinality {
+            w.field("cardinality", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedContainerProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
+        runtime::check_type(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_INDEXED_CONTAINER_PROPERTY")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_INDEXED_CONTAINER_PROPERTY")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_INDEXED_CONTAINER_PROPERTY")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_composition: runtime::optional_field(node, "is_composition")?,
+            cardinality: runtime::optional_field(node, "cardinality")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedContainerType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INDEXED_CONTAINER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INDEXED_CONTAINER_TYPE");
+        w.field("container_class", &self.container_class);
+        w.field("item_type", &self.item_type);
+        if let Some(v) = &self.is_ordered {
+            w.field("is_ordered", v);
+        }
+        if let Some(v) = &self.is_unique {
+            w.field("is_unique", v);
+        }
+        w.field("index_type", &self.index_type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedContainerType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::check_type(node, "BMM_INDEXED_CONTAINER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            container_class: runtime::required_field(
+                node,
+                "container_class",
+                "BMM_INDEXED_CONTAINER_TYPE",
+            )?,
+            item_type: runtime::required_field(node, "item_type", "BMM_INDEXED_CONTAINER_TYPE")?,
+            is_ordered: runtime::optional_field(node, "is_ordered")?,
+            is_unique: runtime::optional_field(node, "is_unique")?,
+            index_type: runtime::required_field(node, "index_type", "BMM_INDEXED_CONTAINER_TYPE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedContainerValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INDEXED_CONTAINER_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INDEXED_CONTAINER_VALUE");
+        w.field("value_literal", &self.value_literal);
+        if let Some(v) = &self.value {
+            w.field("value", v);
+        }
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedContainerValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INDEXED_CONTAINER_VALUE")?;
+        runtime::check_type(node, "BMM_INDEXED_CONTAINER_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(
+                node,
+                "value_literal",
+                "BMM_INDEXED_CONTAINER_VALUE",
+            )?,
+            value: runtime::optional_field(node, "value")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_INDEXED_CONTAINER_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmInstantiableFeature {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmInstantiableFeature::BmmConstant(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmInstantiableFeature::BmmContainerProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::prelude::BmmInstantiableFeature::BmmSingleton(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmInstantiableFeature::BmmUnitaryProperty(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmInstantiableFeature::BmmConstant(x) => x.write_json(w),
+            openehr_lang::prelude::BmmInstantiableFeature::BmmContainerProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_lang::prelude::BmmInstantiableFeature::BmmSingleton(x) => x.write_json(w),
+            openehr_lang::prelude::BmmInstantiableFeature::BmmUnitaryProperty(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmInstantiableFeature {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
+                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
+                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_INSTANTIABLE_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_INSTANTIABLE_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIntegerValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INTEGER_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INTEGER_VALUE");
+        w.field("value_literal", &self.value_literal);
+        w.field("value", &self.value);
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIntegerValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INTEGER_VALUE")?;
+        runtime::check_type(node, "BMM_INTEGER_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_INTEGER_VALUE")?,
+            value: runtime::required_field(node, "value", "BMM_INTEGER_VALUE")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_INTEGER_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIntervalValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INTERVAL_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INTERVAL_VALUE");
+        w.field("value_literal", &self.value_literal);
+        if let Some(v) = &self.value {
+            w.field("value", v);
+        }
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIntervalValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INTERVAL_VALUE")?;
+        runtime::check_type(node, "BMM_INTERVAL_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_INTERVAL_VALUE")?,
+            value: runtime::optional_field(node, "value")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_INTERVAL_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLiteralValue {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmLiteralValue::BmmContainerValue(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmLiteralValue::BmmIndexedContainerValue(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::prelude::BmmLiteralValue::BmmIntervalValue(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmLiteralValue::BmmPrimitiveValue(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmLiteralValue::BmmContainerValue(x) => x.write_json(w),
+            openehr_lang::prelude::BmmLiteralValue::BmmIndexedContainerValue(x) => x.write_json(w),
+            openehr_lang::prelude::BmmLiteralValue::BmmIntervalValue(x) => x.write_json(w),
+            openehr_lang::prelude::BmmLiteralValue::BmmPrimitiveValue(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLiteralValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_CONTAINER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmContainerValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_VALUE") => {
+                ::core::result::Result::Ok(Self::BmmIndexedContainerValue(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INTERVAL_VALUE") => ::core::result::Result::Ok(
+                Self::BmmIntervalValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_LITERAL_VALUE: missing required `_type` on polymorphic slot (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_LITERAL_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLocal {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_LOCAL"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_LOCAL");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLocal {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_LOCAL")?;
+        runtime::check_type(node, "BMM_LOCAL")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_LOCAL")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_LOCAL")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLocalRoutine {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_LOCAL_ROUTINE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_LOCAL_ROUTINE");
+        if !self.locals.is_empty() {
+            w.field("locals", &self.locals);
+        }
+        w.field("body", &self.body);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLocalRoutine {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_LOCAL_ROUTINE")?;
+        runtime::check_type(node, "BMM_LOCAL_ROUTINE")?;
+        ::core::result::Result::Ok(Self {
+            locals: runtime::container_field(node, "locals")?,
+            body: runtime::required_field(node, "body", "BMM_LOCAL_ROUTINE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModel {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_MODEL"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_MODEL");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if let Some(v) = &self.packages {
+            w.field("packages", v);
+        }
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        if let Some(v) = &self.class_definitions {
+            w.field("class_definitions", v);
+        }
+        if !self.used_models.is_empty() {
+            w.field("used_models", &self.used_models);
+        }
+        if let Some(v) = &self.modules {
+            w.field("modules", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModel {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_MODEL")?;
+        runtime::check_type(node, "BMM_MODEL")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_MODEL")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            packages: runtime::optional_field(node, "packages")?,
+            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL")?,
+            rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL")?,
+            class_definitions: runtime::optional_field(node, "class_definitions")?,
+            used_models: runtime::container_field(node, "used_models")?,
+            modules: runtime::optional_field(node, "modules")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelAccess {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_MODEL_ACCESS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_MODEL_ACCESS");
+        if !self.schema_directories.is_empty() {
+            w.field("schema_directories", &self.schema_directories);
+        }
+        if let Some(v) = &self.all_schemas {
+            w.field("all_schemas", v);
+        }
+        if let Some(v) = &self.bmm_models {
+            w.field("bmm_models", v);
+        }
+        if let Some(v) = &self.matching_bmm_models {
+            w.field("matching_bmm_models", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelAccess {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_MODEL_ACCESS")?;
+        runtime::check_type(node, "BMM_MODEL_ACCESS")?;
+        ::core::result::Result::Ok(Self {
+            schema_directories: runtime::container_field(node, "schema_directories")?,
+            all_schemas: runtime::optional_field(node, "all_schemas")?,
+            bmm_models: runtime::optional_field(node, "bmm_models")?,
+            matching_bmm_models: runtime::optional_field(node, "matching_bmm_models")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelElement {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmModelElement::BmmConstant(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmContainerProperty(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmFunction(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmGenericClass(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmLocal(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmModel(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmPackage(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmParameter(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmProcedure(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmResult(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmSelf(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmSimpleClass(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmSingleton(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelElement::BmmUnitaryProperty(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmModelElement::BmmConstant(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmContainerProperty(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmFunction(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmGenericClass(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmLocal(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmModel(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmPackage(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmParameter(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmProcedure(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmResult(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmSelf(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmSimpleClass(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmSingleton(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelElement::BmmUnitaryProperty(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelElement {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
+                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
+                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
+                Self::BmmGenericClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
+                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
+                Self::BmmModel(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PACKAGE") => ::core::result::Result::Ok(
+                Self::BmmPackage(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
+                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
+                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
+                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
+                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_MODEL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_GENERIC_CLASS, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_MODEL, BMM_PACKAGE, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SIMPLE_CLASS, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_MODEL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_GENERIC_CLASS, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_MODEL, BMM_PACKAGE, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SIMPLE_CLASS, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelMetadataData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_MODEL_METADATA"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_MODEL_METADATA");
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelMetadataData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_MODEL_METADATA")?;
+        runtime::check_type(node, "BMM_MODEL_METADATA")?;
+        ::core::result::Result::Ok(Self {
+            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL_METADATA")?,
+            rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL_METADATA")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelMetadata {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmModelMetadata::BmmModel(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelMetadata::BmmModelMetadata(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmModelMetadata::BmmModel(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelMetadata::BmmModelMetadata(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelMetadata {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
+                Self::BmmModel(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_MODEL_METADATA") => ::core::result::Result::Ok(
+                Self::BmmModelMetadata(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmModelMetadata(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_MODEL_METADATA: unexpected `_type` {__other:?} (expected one of: BMM_MODEL, BMM_MODEL_METADATA)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmModelType::BmmGenericType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModelType::BmmSimpleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmModelType::BmmGenericType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModelType::BmmSimpleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_MODEL_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_GENERIC_TYPE, BMM_SIMPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_MODEL_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_GENERIC_TYPE, BMM_SIMPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModule {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmModule::BmmGenericClass(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmModule::BmmSimpleClass(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmModule::BmmGenericClass(x) => x.write_json(w),
+            openehr_lang::prelude::BmmModule::BmmSimpleClass(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModule {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
+                Self::BmmGenericClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_MODULE: missing required `_type` on polymorphic slot (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_MODULE: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmOperator {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_OPERATOR"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_OPERATOR");
+        w.field("position", &self.position);
+        if !self.symbols.is_empty() {
+            w.field("symbols", &self.symbols);
+        }
+        w.field("name", &self.name);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmOperator {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_OPERATOR")?;
+        runtime::check_type(node, "BMM_OPERATOR")?;
+        ::core::result::Result::Ok(Self {
+            position: runtime::required_field(node, "position", "BMM_OPERATOR")?,
+            symbols: runtime::container_field(node, "symbols")?,
+            name: runtime::required_field(node, "name", "BMM_OPERATOR")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmOperatorPosition {
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.write_str(self.as_str());
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmOperatorPosition {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        let __s = node.as_str().ok_or_else(|| {
+            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
+        })?;
+        ::core::result::Result::Ok(openehr_lang::prelude::BmmOperatorPosition::from_wire(__s))
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackage {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PACKAGE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PACKAGE");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if let Some(v) = &self.packages {
+            w.field("packages", v);
+        }
+        if !self.members.is_empty() {
+            w.field("members", &self.members);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackage {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PACKAGE")?;
+        runtime::check_type(node, "BMM_PACKAGE")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PACKAGE")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            packages: runtime::optional_field(node, "packages")?,
+            members: runtime::container_field(node, "members")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackageContainer {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmPackageContainer::BmmModel(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmPackageContainer::BmmPackage(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmPackageContainer::BmmModel(x) => x.write_json(w),
+            openehr_lang::prelude::BmmPackageContainer::BmmPackage(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackageContainer {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
+                Self::BmmModel(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PACKAGE") => ::core::result::Result::Ok(
+                Self::BmmPackage(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_PACKAGE_CONTAINER: missing required `_type` on polymorphic slot (expected one of: BMM_MODEL, BMM_PACKAGE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_PACKAGE_CONTAINER: unexpected `_type` {__other:?} (expected one of: BMM_MODEL, BMM_PACKAGE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmParameter {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PARAMETER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PARAMETER");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.direction {
+            w.field("direction", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParameter {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PARAMETER")?;
+        runtime::check_type(node, "BMM_PARAMETER")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PARAMETER")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_PARAMETER")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            direction: runtime::optional_field(node, "direction")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmParameterDirection {
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.write_str(self.as_str());
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParameterDirection {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        let __s = node.as_str().ok_or_else(|| {
+            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
+        })?;
+        ::core::result::Result::Ok(openehr_lang::prelude::BmmParameterDirection::from_wire(__s))
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmParameterType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PARAMETER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PARAMETER_TYPE");
+        w.field("name", &self.name);
+        if let Some(v) = &self.type_constraint {
+            w.field("type_constraint", v);
+        }
+        if let Some(v) = &self.inheritance_precursor {
+            w.field("inheritance_precursor", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParameterType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PARAMETER_TYPE")?;
+        runtime::check_type(node, "BMM_PARAMETER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PARAMETER_TYPE")?,
+            type_constraint: runtime::optional_field(node, "type_constraint")?,
+            inheritance_precursor: runtime::optional_field(node, "inheritance_precursor")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPrimitiveValueData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PRIMITIVE_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PRIMITIVE_VALUE");
+        w.field("value_literal", &self.value_literal);
+        if let Some(v) = &self.value {
+            w.field("value", v);
+        }
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPrimitiveValueData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PRIMITIVE_VALUE")?;
+        runtime::check_type(node, "BMM_PRIMITIVE_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_PRIMITIVE_VALUE")?,
+            value: runtime::optional_field(node, "value")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_PRIMITIVE_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPrimitiveValue {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmPrimitiveValue::BmmBooleanValue(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmPrimitiveValue::BmmIntegerValue(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmPrimitiveValue::BmmStringValue(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmPrimitiveValue::BmmPrimitiveValue(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmPrimitiveValue::BmmBooleanValue(x) => x.write_json(w),
+            openehr_lang::prelude::BmmPrimitiveValue::BmmIntegerValue(x) => x.write_json(w),
+            openehr_lang::prelude::BmmPrimitiveValue::BmmStringValue(x) => x.write_json(w),
+            openehr_lang::prelude::BmmPrimitiveValue::BmmPrimitiveValue(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPrimitiveValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
+                Self::BmmBooleanValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmIntegerValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
+                Self::BmmStringValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmPrimitiveValue(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_PRIMITIVE_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProcedure {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PROCEDURE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PROCEDURE");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if !self.parameters.is_empty() {
+            w.field("parameters", &self.parameters);
+        }
+        if !self.pre_conditions.is_empty() {
+            w.field("pre_conditions", &self.pre_conditions);
+        }
+        if !self.post_conditions.is_empty() {
+            w.field("post_conditions", &self.post_conditions);
+        }
+        if let Some(v) = &self.definition {
+            w.field("definition", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedure {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PROCEDURE")?;
+        runtime::check_type(node, "BMM_PROCEDURE")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PROCEDURE")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_PROCEDURE")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_PROCEDURE")?,
+            parameters: runtime::container_field(node, "parameters")?,
+            pre_conditions: runtime::container_field(node, "pre_conditions")?,
+            post_conditions: runtime::container_field(node, "post_conditions")?,
+            definition: runtime::optional_field(node, "definition")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProcedureCall {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PROCEDURE_CALL"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PROCEDURE_CALL");
+        w.field("agent", &self.agent);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedureCall {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PROCEDURE_CALL")?;
+        runtime::check_type(node, "BMM_PROCEDURE_CALL")?;
+        ::core::result::Result::Ok(Self {
+            agent: runtime::required_field(node, "agent", "BMM_PROCEDURE_CALL")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProcedureType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PROCEDURE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PROCEDURE_TYPE");
+        if let Some(v) = &self.result_type {
+            w.field("result_type", v);
+        }
+        if let Some(v) = &self.argument_types {
+            w.field("argument_types", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedureType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PROCEDURE_TYPE")?;
+        runtime::check_type(node, "BMM_PROCEDURE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::optional_field(node, "result_type")?,
+            argument_types: runtime::optional_field(node, "argument_types")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProperty {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmProperty::BmmContainerProperty(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmProperty::BmmUnitaryProperty(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmProperty::BmmContainerProperty(x) => x.write_json(w),
+            openehr_lang::prelude::BmmProperty::BmmUnitaryProperty(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_PROPERTY: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_UNITARY_PROPERTY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPropertyType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PROPERTY_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PROPERTY_TYPE");
+        w.field("result_type", &self.result_type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPropertyType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PROPERTY_TYPE")?;
+        runtime::check_type(node, "BMM_PROPERTY_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_PROPERTY_TYPE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmReadonlyVariable {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmReadonlyVariable::BmmParameter(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmReadonlyVariable::BmmSelf(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmReadonlyVariable::BmmParameter(x) => x.write_json(w),
+            openehr_lang::prelude::BmmReadonlyVariable::BmmSelf(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmReadonlyVariable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
+                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_READONLY_VARIABLE: missing required `_type` on polymorphic slot (expected one of: BMM_PARAMETER, BMM_SELF)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_READONLY_VARIABLE: unexpected `_type` {__other:?} (expected one of: BMM_PARAMETER, BMM_SELF)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmResult {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_RESULT"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_RESULT");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmResult {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_RESULT")?;
+        runtime::check_type(node, "BMM_RESULT")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_RESULT")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_RESULT")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutine {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmRoutine::BmmFunction(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmRoutine::BmmProcedure(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmRoutine::BmmFunction(x) => x.write_json(w),
+            openehr_lang::prelude::BmmRoutine::BmmProcedure(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutine {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
+                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
+                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_ROUTINE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION, BMM_PROCEDURE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_ROUTINE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION, BMM_PROCEDURE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineDefinition {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmRoutineDefinition::BmmExternalRoutine(x) => {
+                x.json_type_name()
+            }
+            openehr_lang::prelude::BmmRoutineDefinition::BmmLocalRoutine(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmRoutineDefinition::BmmExternalRoutine(x) => x.write_json(w),
+            openehr_lang::prelude::BmmRoutineDefinition::BmmLocalRoutine(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineDefinition {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_EXTERNAL_ROUTINE") => ::core::result::Result::Ok(
+                Self::BmmExternalRoutine(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_LOCAL_ROUTINE") => ::core::result::Result::Ok(
+                Self::BmmLocalRoutine(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_ROUTINE_DEFINITION: missing required `_type` on polymorphic slot (expected one of: BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_ROUTINE_DEFINITION: unexpected `_type` {__other:?} (expected one of: BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineTypeData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ROUTINE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ROUTINE_TYPE");
+        w.field("result_type", &self.result_type);
+        if let Some(v) = &self.argument_types {
+            w.field("argument_types", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineTypeData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ROUTINE_TYPE")?;
+        runtime::check_type(node, "BMM_ROUTINE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_ROUTINE_TYPE")?,
+            argument_types: runtime::optional_field(node, "argument_types")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmRoutineType::BmmFunctionType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmRoutineType::BmmProcedureType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmRoutineType::BmmRoutineType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmRoutineType::BmmFunctionType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmRoutineType::BmmProcedureType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmRoutineType::BmmRoutineType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmFunctionType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmProcedureType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmRoutineType(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_ROUTINE_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_ROUTINE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchema {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SCHEMA"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SCHEMA");
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        w.field("bmm_version", &self.bmm_version);
+        if let Some(v) = &self.includes {
+            w.field("includes", v);
+        }
+        if let Some(v) = &self.bmm_model {
+            w.field("bmm_model", v);
+        }
+        w.field("state", &self.state);
+        if let Some(v) = &self.model_name {
+            w.field("model_name", v);
+        }
+        w.field("schema_name", &self.schema_name);
+        w.field("schema_revision", &self.schema_revision);
+        w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
+        w.field("schema_author", &self.schema_author);
+        w.field("schema_description", &self.schema_description);
+        if !self.schema_contributors.is_empty() {
+            w.field("schema_contributors", &self.schema_contributors);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchema {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SCHEMA")?;
+        runtime::check_type(node, "BMM_SCHEMA")?;
+        ::core::result::Result::Ok(Self {
+            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA")?,
+            rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA")?,
+            bmm_version: runtime::required_field(node, "bmm_version", "BMM_SCHEMA")?,
+            includes: runtime::optional_field(node, "includes")?,
+            bmm_model: runtime::optional_field(node, "bmm_model")?,
+            state: runtime::required_field(node, "state", "BMM_SCHEMA")?,
+            model_name: runtime::optional_field(node, "model_name")?,
+            schema_name: runtime::required_field(node, "schema_name", "BMM_SCHEMA")?,
+            schema_revision: runtime::required_field(node, "schema_revision", "BMM_SCHEMA")?,
+            schema_lifecycle_state: runtime::required_field(
+                node,
+                "schema_lifecycle_state",
+                "BMM_SCHEMA",
+            )?,
+            schema_author: runtime::required_field(node, "schema_author", "BMM_SCHEMA")?,
+            schema_description: runtime::required_field(node, "schema_description", "BMM_SCHEMA")?,
+            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaDescriptor {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SCHEMA_DESCRIPTOR"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SCHEMA_DESCRIPTOR");
+        if let Some(v) = &self.bmm_schema {
+            w.field("bmm_schema", v);
+        }
+        if let Some(v) = &self.bmm_model {
+            w.field("bmm_model", v);
+        }
+        w.field("schema_id", &self.schema_id);
+        w.field("meta_data", &self.meta_data);
+        if !self.includes.is_empty() {
+            w.field("includes", &self.includes);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaDescriptor {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SCHEMA_DESCRIPTOR")?;
+        runtime::check_type(node, "BMM_SCHEMA_DESCRIPTOR")?;
+        ::core::result::Result::Ok(Self {
+            bmm_schema: runtime::optional_field(node, "bmm_schema")?,
+            bmm_model: runtime::optional_field(node, "bmm_model")?,
+            schema_id: runtime::required_field(node, "schema_id", "BMM_SCHEMA_DESCRIPTOR")?,
+            meta_data: runtime::required_field(node, "meta_data", "BMM_SCHEMA_DESCRIPTOR")?,
+            includes: runtime::container_field(node, "includes")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaMetadataKey {
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.write_str(self.as_str());
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaMetadataKey {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        let __s = node.as_str().ok_or_else(|| {
+            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
+        })?;
+        ::core::result::Result::Ok(openehr_lang::prelude::BmmSchemaMetadataKey::from_wire(__s))
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaState {
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.write_str(self.as_str());
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaState {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        let __s = node.as_str().ok_or_else(|| {
+            crate::json_codec::runtime::JsonParseError::type_error("a string", node.kind())
+        })?;
+        ::core::result::Result::Ok(openehr_lang::prelude::BmmSchemaState::from_wire(__s))
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSelf {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SELF"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SELF");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSelf {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SELF")?;
+        runtime::check_type(node, "BMM_SELF")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_SELF")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_SELF")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSignatureData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SIGNATURE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SIGNATURE");
+        w.field("result_type", &self.result_type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSignatureData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SIGNATURE")?;
+        runtime::check_type(node, "BMM_SIGNATURE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_SIGNATURE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSignature {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmSignature::BmmPropertyType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmSignature::BmmRoutineType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmSignature::BmmSignature(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmSignature::BmmPropertyType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmSignature::BmmRoutineType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmSignature::BmmSignature(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSignature {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmPropertyType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmSignature(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_SIGNATURE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleClassData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SIMPLE_CLASS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SIMPLE_CLASS");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleClassData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SIMPLE_CLASS")?;
+        runtime::check_type(node, "BMM_SIMPLE_CLASS")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_SIMPLE_CLASS")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_SIMPLE_CLASS")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_SIMPLE_CLASS",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_SIMPLE_CLASS")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleClass {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmSimpleClass::BmmEnumeration(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmSimpleClass::BmmSimpleClass(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmSimpleClass::BmmEnumeration(x) => x.write_json(w),
+            openehr_lang::prelude::BmmSimpleClass::BmmSimpleClass(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleClass {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmSimpleClass(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_SIMPLE_CLASS: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_SIMPLE_CLASS)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleStatement {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmSimpleStatement::BmmAssertion(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmSimpleStatement::BmmAssignment(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmSimpleStatement::BmmDeclaration(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmSimpleStatement::BmmProcedureCall(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmSimpleStatement::BmmAssertion(x) => x.write_json(w),
+            openehr_lang::prelude::BmmSimpleStatement::BmmAssignment(x) => x.write_json(w),
+            openehr_lang::prelude::BmmSimpleStatement::BmmDeclaration(x) => x.write_json(w),
+            openehr_lang::prelude::BmmSimpleStatement::BmmProcedureCall(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleStatement {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ASSERTION") => ::core::result::Result::Ok(
+                Self::BmmAssertion(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ASSIGNMENT") => ::core::result::Result::Ok(
+                Self::BmmAssignment(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_DECLARATION") => ::core::result::Result::Ok(
+                Self::BmmDeclaration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
+                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_SIMPLE_STATEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_SIMPLE_STATEMENT: unexpected `_type` {__other:?} (expected one of: BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SIMPLE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SIMPLE_TYPE");
+        if let Some(v) = &self.value_constraint {
+            w.field("value_constraint", v);
+        }
+        w.field("base_class", &self.base_class);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SIMPLE_TYPE")?;
+        runtime::check_type(node, "BMM_SIMPLE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            value_constraint: runtime::optional_field(node, "value_constraint")?,
+            base_class: runtime::required_field(node, "base_class", "BMM_SIMPLE_TYPE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSingleton {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SINGLETON"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SINGLETON");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        w.field("generator", &self.generator);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSingleton {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SINGLETON")?;
+        runtime::check_type(node, "BMM_SINGLETON")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_SINGLETON")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_SINGLETON")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_SINGLETON")?,
+            generator: runtime::required_field(node, "generator", "BMM_SINGLETON")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatement {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmStatement::BmmActionTable(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatement::BmmAssertion(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatement::BmmAssignment(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatement::BmmDeclaration(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatement::BmmProcedureCall(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmStatement::BmmActionTable(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatement::BmmAssertion(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatement::BmmAssignment(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatement::BmmDeclaration(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatement::BmmProcedureCall(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatement {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ACTION_TABLE") => ::core::result::Result::Ok(
+                Self::BmmActionTable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ASSERTION") => ::core::result::Result::Ok(
+                Self::BmmAssertion(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ASSIGNMENT") => ::core::result::Result::Ok(
+                Self::BmmAssignment(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_DECLARATION") => ::core::result::Result::Ok(
+                Self::BmmDeclaration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
+                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_STATEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_STATEMENT: unexpected `_type` {__other:?} (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatementBlock {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_STATEMENT_BLOCK"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_STATEMENT_BLOCK");
+        if !self.items.is_empty() {
+            w.field("items", &self.items);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatementBlock {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_STATEMENT_BLOCK")?;
+        runtime::check_type(node, "BMM_STATEMENT_BLOCK")?;
+        ::core::result::Result::Ok(Self {
+            items: runtime::container_field(node, "items")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatementItem {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmStatementItem::BmmActionTable(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatementItem::BmmAssertion(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatementItem::BmmAssignment(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatementItem::BmmDeclaration(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatementItem::BmmProcedureCall(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatementItem::BmmStatementBlock(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmStatementItem::BmmActionTable(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatementItem::BmmAssertion(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatementItem::BmmAssignment(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatementItem::BmmDeclaration(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatementItem::BmmProcedureCall(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatementItem::BmmStatementBlock(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatementItem {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ACTION_TABLE") => ::core::result::Result::Ok(
+                Self::BmmActionTable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ASSERTION") => ::core::result::Result::Ok(
+                Self::BmmAssertion(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ASSIGNMENT") => ::core::result::Result::Ok(
+                Self::BmmAssignment(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_DECLARATION") => ::core::result::Result::Ok(
+                Self::BmmDeclaration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
+                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATEMENT_BLOCK") => ::core::result::Result::Ok(
+                Self::BmmStatementBlock(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_STATEMENT_ITEM: missing required `_type` on polymorphic slot (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL, BMM_STATEMENT_BLOCK)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_STATEMENT_ITEM: unexpected `_type` {__other:?} (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL, BMM_STATEMENT_BLOCK)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatic {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmStatic::BmmConstant(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmStatic::BmmSingleton(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmStatic::BmmConstant(x) => x.write_json(w),
+            openehr_lang::prelude::BmmStatic::BmmSingleton(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatic {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
+                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
+                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_STATIC: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_SINGLETON)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_STATIC: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_SINGLETON)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatusType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_STATUS_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_STATUS_TYPE");
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatusType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_STATUS_TYPE")?;
+        runtime::check_type(node, "BMM_STATUS_TYPE")?;
+        ::core::result::Result::Ok(Self {})
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStringValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_STRING_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_STRING_VALUE");
+        w.field("value_literal", &self.value_literal);
+        w.field("value", &self.value);
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStringValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_STRING_VALUE")?;
+        runtime::check_type(node, "BMM_STRING_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_STRING_VALUE")?,
+            value: runtime::required_field(node, "value", "BMM_STRING_VALUE")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_STRING_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmTupleType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_TUPLE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_TUPLE_TYPE");
+        w.field("item_types", &self.item_types);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmTupleType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_TUPLE_TYPE")?;
+        runtime::check_type(node, "BMM_TUPLE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            item_types: runtime::required_field(node, "item_types", "BMM_TUPLE_TYPE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmType::BmmContainerType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmType::BmmGenericType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmType::BmmParameterType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmType::BmmSignature(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmType::BmmSimpleType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmType::BmmStatusType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmType::BmmContainerType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmType::BmmGenericType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmType::BmmParameterType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmType::BmmSignature(x) => x.write_json(w),
+            openehr_lang::prelude::BmmType::BmmSimpleType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmType::BmmStatusType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::BmmContainerType(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryProperty {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_UNITARY_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_UNITARY_PROPERTY");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_composition {
+            w.field("is_composition", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_UNITARY_PROPERTY")?;
+        runtime::check_type(node, "BMM_UNITARY_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_UNITARY_PROPERTY")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_UNITARY_PROPERTY")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_UNITARY_PROPERTY")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_composition: runtime::optional_field(node, "is_composition")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmUnitaryType::BmmGenericType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmUnitaryType::BmmParameterType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmUnitaryType::BmmSignature(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmUnitaryType::BmmSimpleType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmUnitaryType::BmmStatusType(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmUnitaryType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmUnitaryType::BmmGenericType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmUnitaryType::BmmParameterType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmUnitaryType::BmmSignature(x) => x.write_json(w),
+            openehr_lang::prelude::BmmUnitaryType::BmmSimpleType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmUnitaryType::BmmStatusType(x) => x.write_json(w),
+            openehr_lang::prelude::BmmUnitaryType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_UNITARY_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_UNITARY_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryValue {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmUnitaryValue::BmmPrimitiveValue(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmUnitaryValue::BmmPrimitiveValue(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_UNITARY_VALUE: missing required `_type` on polymorphic slot (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_UNITARY_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmValueSetSpec {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_VALUE_SET_SPEC"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_VALUE_SET_SPEC");
+        w.field("resource_id", &self.resource_id);
+        w.field("value_set_id", &self.value_set_id);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmValueSetSpec {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_VALUE_SET_SPEC")?;
+        runtime::check_type(node, "BMM_VALUE_SET_SPEC")?;
+        ::core::result::Result::Ok(Self {
+            resource_id: runtime::required_field(node, "resource_id", "BMM_VALUE_SET_SPEC")?,
+            value_set_id: runtime::required_field(node, "value_set_id", "BMM_VALUE_SET_SPEC")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmVariable {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmVariable::BmmLocal(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmVariable::BmmParameter(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmVariable::BmmResult(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmVariable::BmmSelf(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmVariable::BmmLocal(x) => x.write_json(w),
+            openehr_lang::prelude::BmmVariable::BmmParameter(x) => x.write_json(w),
+            openehr_lang::prelude::BmmVariable::BmmResult(x) => x.write_json(w),
+            openehr_lang::prelude::BmmVariable::BmmSelf(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmVariable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
+                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
+                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
+                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_VARIABLE: missing required `_type` on polymorphic slot (expected one of: BMM_LOCAL, BMM_PARAMETER, BMM_RESULT, BMM_SELF)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_VARIABLE: unexpected `_type` {__other:?} (expected one of: BMM_LOCAL, BMM_PARAMETER, BMM_RESULT, BMM_SELF)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmVisibility {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_VISIBILITY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_VISIBILITY");
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmVisibility {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_VISIBILITY")?;
+        runtime::check_type(node, "BMM_VISIBILITY")?;
+        ::core::result::Result::Ok(Self {})
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmWritableVariable {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::BmmWritableVariable::BmmLocal(x) => x.json_type_name(),
+            openehr_lang::prelude::BmmWritableVariable::BmmResult(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::BmmWritableVariable::BmmLocal(x) => x.write_json(w),
+            openehr_lang::prelude::BmmWritableVariable::BmmResult(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmWritableVariable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
+                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
+                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_WRITABLE_VARIABLE: missing required `_type` on polymorphic slot (expected one of: BMM_LOCAL, BMM_RESULT)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_WRITABLE_VARIABLE: unexpected `_type` {__other:?} (expected one of: BMM_LOCAL, BMM_RESULT)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAgent {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElAgent::ElFunctionAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElAgent::ElProcedureAgent(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElAgent::ElFunctionAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElAgent::ElProcedureAgent(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAgent {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
+                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
+                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_AGENT: missing required `_type` on polymorphic slot (expected one of: EL_FUNCTION_AGENT, EL_PROCEDURE_AGENT)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_AGENT: unexpected `_type` {__other:?} (expected one of: EL_FUNCTION_AGENT, EL_PROCEDURE_AGENT)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAgentCall {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElAgentCall::BmmProcedureCall(x) => x.json_type_name(),
+            openehr_lang::prelude::ElAgentCall::ElFunctionCall(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElAgentCall::BmmProcedureCall(x) => x.write_json(w),
+            openehr_lang::prelude::ElAgentCall::ElFunctionCall(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAgentCall {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => ::core::result::Result::Ok(
+                Self::BmmProcedureCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
+                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_AGENT_CALL: missing required `_type` on polymorphic slot (expected one of: BMM_PROCEDURE_CALL, EL_FUNCTION_CALL)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_AGENT_CALL: unexpected `_type` {__other:?} (expected one of: BMM_PROCEDURE_CALL, EL_FUNCTION_CALL)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAttached {
+    fn json_type_name(&self) -> &'static str {
+        "EL_ATTACHED"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_ATTACHED");
+        w.field("operand", &self.operand);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAttached {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_ATTACHED")?;
+        runtime::check_type(node, "EL_ATTACHED")?;
+        ::core::result::Result::Ok(Self {
+            operand: runtime::required_field(node, "operand", "EL_ATTACHED")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElBinaryOperator {
+    fn json_type_name(&self) -> &'static str {
+        "EL_BINARY_OPERATOR"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_BINARY_OPERATOR");
+        if let Some(v) = &self.precedence_overridden {
+            w.field("precedence_overridden", v);
+        }
+        if let Some(v) = &self.symbol {
+            w.field("symbol", v);
+        }
+        w.field("call", &self.call);
+        w.field("left_operand", &self.left_operand);
+        w.field("right_operand", &self.right_operand);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElBinaryOperator {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_BINARY_OPERATOR")?;
+        runtime::check_type(node, "EL_BINARY_OPERATOR")?;
+        ::core::result::Result::Ok(Self {
+            precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
+            symbol: runtime::optional_field(node, "symbol")?,
+            call: runtime::required_field(node, "call", "EL_BINARY_OPERATOR")?,
+            left_operand: runtime::required_field(node, "left_operand", "EL_BINARY_OPERATOR")?,
+            right_operand: runtime::required_field(node, "right_operand", "EL_BINARY_OPERATOR")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElBooleanExpression {
+    fn json_type_name(&self) -> &'static str {
+        "EL_BOOLEAN_EXPRESSION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_BOOLEAN_EXPRESSION");
+        w.field("base_expression", &self.base_expression);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElBooleanExpression {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_BOOLEAN_EXPRESSION")?;
+        runtime::check_type(node, "EL_BOOLEAN_EXPRESSION")?;
+        ::core::result::Result::Ok(Self {
+            base_expression: runtime::required_field(
+                node,
+                "base_expression",
+                "EL_BOOLEAN_EXPRESSION",
+            )?,
+        })
+    }
+}
+
+impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
+    for openehr_lang::prelude::ElCase<T>
+{
+    fn json_type_name(&self) -> &'static str {
+        "EL_CASE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_CASE");
+        w.field("result", &self.result);
+        w.field("value_constraint", &self.value_constraint);
+        w.end_object();
+    }
+}
+
+impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
+    for openehr_lang::prelude::ElCase<T>
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_CASE")?;
+        runtime::check_type(node, "EL_CASE")?;
+        ::core::result::Result::Ok(Self {
+            result: runtime::required_field(node, "result", "EL_CASE")?,
+            value_constraint: runtime::required_field(node, "value_constraint", "EL_CASE")?,
+        })
+    }
+}
+
+impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
+    for openehr_lang::prelude::ElCaseTable<T>
+{
+    fn json_type_name(&self) -> &'static str {
+        "EL_CASE_TABLE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_CASE_TABLE");
+        if !self.items.is_empty() {
+            w.field("items", &self.items);
+        }
+        w.field("else", &self.r#else);
+        w.field("test_value", &self.test_value);
+        w.end_object();
+    }
+}
+
+impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
+    for openehr_lang::prelude::ElCaseTable<T>
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_CASE_TABLE")?;
+        runtime::check_type(node, "EL_CASE_TABLE")?;
+        ::core::result::Result::Ok(Self {
+            items: runtime::container_field(node, "items")?,
+            r#else: runtime::required_field(node, "else", "EL_CASE_TABLE")?,
+            test_value: runtime::required_field(node, "test_value", "EL_CASE_TABLE")?,
+        })
+    }
+}
+
+impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
+    for openehr_lang::prelude::ElConditionalExpression<T>
+{
+    fn json_type_name(&self) -> &'static str {
+        "EL_CONDITIONAL_EXPRESSION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_CONDITIONAL_EXPRESSION");
+        w.field("result", &self.result);
+        w.field("condition", &self.condition);
+        w.end_object();
+    }
+}
+
+impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
+    for openehr_lang::prelude::ElConditionalExpression<T>
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_CONDITIONAL_EXPRESSION")?;
+        runtime::check_type(node, "EL_CONDITIONAL_EXPRESSION")?;
+        ::core::result::Result::Ok(Self {
+            result: runtime::required_field(node, "result", "EL_CONDITIONAL_EXPRESSION")?,
+            condition: runtime::required_field(node, "condition", "EL_CONDITIONAL_EXPRESSION")?,
+        })
+    }
+}
+
+impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
+    for openehr_lang::prelude::ElConditionChain<T>
+{
+    fn json_type_name(&self) -> &'static str {
+        "EL_CONDITION_CHAIN"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_CONDITION_CHAIN");
+        if !self.items.is_empty() {
+            w.field("items", &self.items);
+        }
+        w.field("else", &self.r#else);
+        w.end_object();
+    }
+}
+
+impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
+    for openehr_lang::prelude::ElConditionChain<T>
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_CONDITION_CHAIN")?;
+        runtime::check_type(node, "EL_CONDITION_CHAIN")?;
+        ::core::result::Result::Ok(Self {
+            items: runtime::container_field(node, "items")?,
+            r#else: runtime::required_field(node, "else", "EL_CONDITION_CHAIN")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElConstrained {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElConstrained::ElBooleanExpression(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElConstrained::ElBooleanExpression(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElConstrained {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_BOOLEAN_EXPRESSION") => ::core::result::Result::Ok(
+                Self::ElBooleanExpression(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_CONSTRAINED: missing required `_type` on polymorphic slot (expected one of: EL_BOOLEAN_EXPRESSION)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_CONSTRAINED: unexpected `_type` {__other:?} (expected one of: EL_BOOLEAN_EXPRESSION)"
+                )),
+            ),
+        }
+    }
+}
+
+impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
+    for openehr_lang::prelude::ElDecisionBranch<T>
+{
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElDecisionBranch::ElCase(x) => x.json_type_name(),
+            openehr_lang::prelude::ElDecisionBranch::ElConditionalExpression(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElDecisionBranch::ElCase(x) => x.write_json(w),
+            openehr_lang::prelude::ElDecisionBranch::ElConditionalExpression(x) => x.write_json(w),
+        }
+    }
+}
+
+impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
+    for openehr_lang::prelude::ElDecisionBranch<T>
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_CASE") => ::core::result::Result::Ok(Self::ElCase(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some("EL_CONDITIONAL_EXPRESSION") => {
+                ::core::result::Result::Ok(Self::ElConditionalExpression(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_DECISION_BRANCH: missing required `_type` on polymorphic slot (expected one of: EL_CASE, EL_CONDITIONAL_EXPRESSION)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_DECISION_BRANCH: unexpected `_type` {__other:?} (expected one of: EL_CASE, EL_CONDITIONAL_EXPRESSION)"
+                )),
+            ),
+        }
+    }
+}
+
+impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
+    for openehr_lang::prelude::ElDecisionTable<T>
+{
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElDecisionTable::ElCaseTable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElDecisionTable::ElConditionChain(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElDecisionTable::ElCaseTable(x) => x.write_json(w),
+            openehr_lang::prelude::ElDecisionTable::ElConditionChain(x) => x.write_json(w),
+        }
+    }
+}
+
+impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
+    for openehr_lang::prelude::ElDecisionTable<T>
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_CASE_TABLE") => ::core::result::Result::Ok(
+                Self::ElCaseTable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_CONDITION_CHAIN") => ::core::result::Result::Ok(
+                Self::ElConditionChain(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_DECISION_TABLE: missing required `_type` on polymorphic slot (expected one of: EL_CASE_TABLE, EL_CONDITION_CHAIN)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_DECISION_TABLE: unexpected `_type` {__other:?} (expected one of: EL_CASE_TABLE, EL_CONDITION_CHAIN)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElDefined {
+    fn json_type_name(&self) -> &'static str {
+        "EL_DEFINED"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_DEFINED");
+        w.field("operand", &self.operand);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElDefined {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_DEFINED")?;
+        runtime::check_type(node, "EL_DEFINED")?;
+        ::core::result::Result::Ok(Self {
+            operand: runtime::required_field(node, "operand", "EL_DEFINED")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElExpression {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElExpression::ElAttached(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElBinaryOperator(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElBooleanExpression(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElCaseTable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElConditionChain(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElDefined(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElFunctionAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElFunctionCall(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElLiteral(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElProcedureAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElPropertyRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElReadonlyVariable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElStaticRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElTuple(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElTypeRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElUnaryOperator(x) => x.json_type_name(),
+            openehr_lang::prelude::ElExpression::ElWritableVariable(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElExpression::ElAttached(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElBinaryOperator(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElBooleanExpression(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElCaseTable(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElConditionChain(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElDefined(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElFunctionAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElFunctionCall(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElLiteral(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElProcedureAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElPropertyRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElReadonlyVariable(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElStaticRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElTuple(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElTypeRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElUnaryOperator(x) => x.write_json(w),
+            openehr_lang::prelude::ElExpression::ElWritableVariable(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElExpression {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
+                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_BINARY_OPERATOR") => ::core::result::Result::Ok(
+                Self::ElBinaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_BOOLEAN_EXPRESSION") => ::core::result::Result::Ok(
+                Self::ElBooleanExpression(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_CASE_TABLE") => ::core::result::Result::Ok(
+                Self::ElCaseTable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_CONDITION_CHAIN") => ::core::result::Result::Ok(
+                Self::ElConditionChain(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
+                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
+                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
+                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_LITERAL") => ::core::result::Result::Ok(
+                Self::ElLiteral(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
+                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
+                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
+                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_TUPLE") => ::core::result::Result::Ok(Self::ElTuple(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
+                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_UNARY_OPERATOR") => ::core::result::Result::Ok(
+                Self::ElUnaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_EXPRESSION: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_EXPRESSION: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFeatureRef {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElFeatureRef::ElFunctionAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElFeatureRef::ElFunctionCall(x) => x.json_type_name(),
+            openehr_lang::prelude::ElFeatureRef::ElProcedureAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElFeatureRef::ElPropertyRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElFeatureRef::ElStaticRef(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElFeatureRef::ElFunctionAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElFeatureRef::ElFunctionCall(x) => x.write_json(w),
+            openehr_lang::prelude::ElFeatureRef::ElProcedureAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElFeatureRef::ElPropertyRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElFeatureRef::ElStaticRef(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFeatureRef {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
+                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
+                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
+                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
+                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
+                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_FEATURE_REF: missing required `_type` on polymorphic slot (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_FEATURE_REF: unexpected `_type` {__other:?} (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFunctionAgent {
+    fn json_type_name(&self) -> &'static str {
+        "EL_FUNCTION_AGENT"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_FUNCTION_AGENT");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        if let Some(v) = &self.scoper {
+            w.field("scoper", v);
+        }
+        if let Some(v) = &self.closed_args {
+            w.field("closed_args", v);
+        }
+        if !self.open_args.is_empty() {
+            w.field("open_args", &self.open_args);
+        }
+        if let Some(v) = &self.definition {
+            w.field("definition", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFunctionAgent {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_FUNCTION_AGENT")?;
+        runtime::check_type(node, "EL_FUNCTION_AGENT")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_AGENT")?,
+            name: runtime::required_field(node, "name", "EL_FUNCTION_AGENT")?,
+            scoper: runtime::optional_field(node, "scoper")?,
+            closed_args: runtime::optional_field(node, "closed_args")?,
+            open_args: runtime::container_field(node, "open_args")?,
+            definition: runtime::optional_field(node, "definition")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFunctionCall {
+    fn json_type_name(&self) -> &'static str {
+        "EL_FUNCTION_CALL"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_FUNCTION_CALL");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        if let Some(v) = &self.scoper {
+            w.field("scoper", v);
+        }
+        w.field("agent", &self.agent);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFunctionCall {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_FUNCTION_CALL")?;
+        runtime::check_type(node, "EL_FUNCTION_CALL")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_CALL")?,
+            name: runtime::required_field(node, "name", "EL_FUNCTION_CALL")?,
+            scoper: runtime::optional_field(node, "scoper")?,
+            agent: runtime::required_field(node, "agent", "EL_FUNCTION_CALL")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElLiteral {
+    fn json_type_name(&self) -> &'static str {
+        "EL_LITERAL"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_LITERAL");
+        w.field("value", &self.value);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElLiteral {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_LITERAL")?;
+        runtime::check_type(node, "EL_LITERAL")?;
+        ::core::result::Result::Ok(Self {
+            value: runtime::required_field(node, "value", "EL_LITERAL")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElOperator {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElOperator::ElBinaryOperator(x) => x.json_type_name(),
+            openehr_lang::prelude::ElOperator::ElUnaryOperator(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElOperator::ElBinaryOperator(x) => x.write_json(w),
+            openehr_lang::prelude::ElOperator::ElUnaryOperator(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElOperator {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_BINARY_OPERATOR") => ::core::result::Result::Ok(
+                Self::ElBinaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_UNARY_OPERATOR") => ::core::result::Result::Ok(
+                Self::ElUnaryOperator(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_OPERATOR: missing required `_type` on polymorphic slot (expected one of: EL_BINARY_OPERATOR, EL_UNARY_OPERATOR)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_OPERATOR: unexpected `_type` {__other:?} (expected one of: EL_BINARY_OPERATOR, EL_UNARY_OPERATOR)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElPredicate {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElPredicate::ElAttached(x) => x.json_type_name(),
+            openehr_lang::prelude::ElPredicate::ElDefined(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElPredicate::ElAttached(x) => x.write_json(w),
+            openehr_lang::prelude::ElPredicate::ElDefined(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElPredicate {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
+                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
+                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_PREDICATE: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_DEFINED)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_PREDICATE: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_DEFINED)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElProcedureAgent {
+    fn json_type_name(&self) -> &'static str {
+        "EL_PROCEDURE_AGENT"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_PROCEDURE_AGENT");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        if let Some(v) = &self.scoper {
+            w.field("scoper", v);
+        }
+        if let Some(v) = &self.closed_args {
+            w.field("closed_args", v);
+        }
+        if !self.open_args.is_empty() {
+            w.field("open_args", &self.open_args);
+        }
+        if let Some(v) = &self.definition {
+            w.field("definition", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElProcedureAgent {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_PROCEDURE_AGENT")?;
+        runtime::check_type(node, "EL_PROCEDURE_AGENT")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_PROCEDURE_AGENT")?,
+            name: runtime::required_field(node, "name", "EL_PROCEDURE_AGENT")?,
+            scoper: runtime::optional_field(node, "scoper")?,
+            closed_args: runtime::optional_field(node, "closed_args")?,
+            open_args: runtime::container_field(node, "open_args")?,
+            definition: runtime::optional_field(node, "definition")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElPropertyRef {
+    fn json_type_name(&self) -> &'static str {
+        "EL_PROPERTY_REF"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_PROPERTY_REF");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        if let Some(v) = &self.scoper {
+            w.field("scoper", v);
+        }
+        w.field("definition", &self.definition);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElPropertyRef {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_PROPERTY_REF")?;
+        runtime::check_type(node, "EL_PROPERTY_REF")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_PROPERTY_REF")?,
+            name: runtime::required_field(node, "name", "EL_PROPERTY_REF")?,
+            scoper: runtime::optional_field(node, "scoper")?,
+            definition: runtime::required_field(node, "definition", "EL_PROPERTY_REF")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElReadonlyVariable {
+    fn json_type_name(&self) -> &'static str {
+        "EL_READONLY_VARIABLE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_READONLY_VARIABLE");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        w.field("definition", &self.definition);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElReadonlyVariable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_READONLY_VARIABLE")?;
+        runtime::check_type(node, "EL_READONLY_VARIABLE")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_READONLY_VARIABLE")?,
+            name: runtime::required_field(node, "name", "EL_READONLY_VARIABLE")?,
+            definition: runtime::required_field(node, "definition", "EL_READONLY_VARIABLE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElSimple {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElSimple::ElAttached(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElDefined(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElFunctionAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElFunctionCall(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElLiteral(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElProcedureAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElPropertyRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElReadonlyVariable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElStaticRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElTypeRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElSimple::ElWritableVariable(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElSimple::ElAttached(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElDefined(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElFunctionAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElFunctionCall(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElLiteral(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElProcedureAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElPropertyRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElReadonlyVariable(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElStaticRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElTypeRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElSimple::ElWritableVariable(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElSimple {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
+                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
+                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
+                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
+                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_LITERAL") => ::core::result::Result::Ok(
+                Self::ElLiteral(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
+                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
+                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
+                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
+                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_SIMPLE: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_SIMPLE: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElStaticRef {
+    fn json_type_name(&self) -> &'static str {
+        "EL_STATIC_REF"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_STATIC_REF");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        if let Some(v) = &self.scoper {
+            w.field("scoper", v);
+        }
+        w.field("definition", &self.definition);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElStaticRef {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_STATIC_REF")?;
+        runtime::check_type(node, "EL_STATIC_REF")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_STATIC_REF")?,
+            name: runtime::required_field(node, "name", "EL_STATIC_REF")?,
+            scoper: runtime::optional_field(node, "scoper")?,
+            definition: runtime::required_field(node, "definition", "EL_STATIC_REF")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTerminal {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElTerminal::ElAttached(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElCaseTable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElConditionChain(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElDefined(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElFunctionAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElFunctionCall(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElLiteral(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElProcedureAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElPropertyRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElReadonlyVariable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElStaticRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElTypeRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElTerminal::ElWritableVariable(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElTerminal::ElAttached(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElCaseTable(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElConditionChain(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElDefined(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElFunctionAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElFunctionCall(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElLiteral(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElProcedureAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElPropertyRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElReadonlyVariable(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElStaticRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElTypeRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElTerminal::ElWritableVariable(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTerminal {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_ATTACHED") => ::core::result::Result::Ok(
+                Self::ElAttached(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_CASE_TABLE") => ::core::result::Result::Ok(
+                Self::ElCaseTable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_CONDITION_CHAIN") => ::core::result::Result::Ok(
+                Self::ElConditionChain(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_DEFINED") => ::core::result::Result::Ok(
+                Self::ElDefined(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
+                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
+                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_LITERAL") => ::core::result::Result::Ok(
+                Self::ElLiteral(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
+                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
+                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
+                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
+                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_TERMINAL: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_TERMINAL: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTuple {
+    fn json_type_name(&self) -> &'static str {
+        "EL_TUPLE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_TUPLE");
+        if !self.items.is_empty() {
+            w.field("items", &self.items);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTuple {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_TUPLE")?;
+        runtime::check_type(node, "EL_TUPLE")?;
+        ::core::result::Result::Ok(Self {
+            items: runtime::container_field(node, "items")?,
+            r#type: runtime::required_field(node, "type", "EL_TUPLE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTupleItem {
+    fn json_type_name(&self) -> &'static str {
+        "EL_TUPLE_ITEM"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_TUPLE_ITEM");
+        if let Some(v) = &self.item {
+            w.field("item", v);
+        }
+        if let Some(v) = &self.name {
+            w.field("name", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTupleItem {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_TUPLE_ITEM")?;
+        runtime::check_type(node, "EL_TUPLE_ITEM")?;
+        ::core::result::Result::Ok(Self {
+            item: runtime::optional_field(node, "item")?,
+            name: runtime::optional_field(node, "name")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTypeRef {
+    fn json_type_name(&self) -> &'static str {
+        "EL_TYPE_REF"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_TYPE_REF");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        w.field("type", &self.r#type);
+        w.field("is_mutable", &self.is_mutable);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTypeRef {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_TYPE_REF")?;
+        runtime::check_type(node, "EL_TYPE_REF")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_TYPE_REF")?,
+            name: runtime::required_field(node, "name", "EL_TYPE_REF")?,
+            r#type: runtime::required_field(node, "type", "EL_TYPE_REF")?,
+            is_mutable: runtime::required_field(node, "is_mutable", "EL_TYPE_REF")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElUnaryOperator {
+    fn json_type_name(&self) -> &'static str {
+        "EL_UNARY_OPERATOR"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_UNARY_OPERATOR");
+        if let Some(v) = &self.precedence_overridden {
+            w.field("precedence_overridden", v);
+        }
+        if let Some(v) = &self.symbol {
+            w.field("symbol", v);
+        }
+        w.field("call", &self.call);
+        w.field("operand", &self.operand);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElUnaryOperator {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_UNARY_OPERATOR")?;
+        runtime::check_type(node, "EL_UNARY_OPERATOR")?;
+        ::core::result::Result::Ok(Self {
+            precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
+            symbol: runtime::optional_field(node, "symbol")?,
+            call: runtime::required_field(node, "call", "EL_UNARY_OPERATOR")?,
+            operand: runtime::required_field(node, "operand", "EL_UNARY_OPERATOR")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElValueGenerator {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElValueGenerator::ElFunctionAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElValueGenerator::ElFunctionCall(x) => x.json_type_name(),
+            openehr_lang::prelude::ElValueGenerator::ElProcedureAgent(x) => x.json_type_name(),
+            openehr_lang::prelude::ElValueGenerator::ElPropertyRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElValueGenerator::ElReadonlyVariable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElValueGenerator::ElStaticRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElValueGenerator::ElTypeRef(x) => x.json_type_name(),
+            openehr_lang::prelude::ElValueGenerator::ElWritableVariable(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElValueGenerator::ElFunctionAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElValueGenerator::ElFunctionCall(x) => x.write_json(w),
+            openehr_lang::prelude::ElValueGenerator::ElProcedureAgent(x) => x.write_json(w),
+            openehr_lang::prelude::ElValueGenerator::ElPropertyRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElValueGenerator::ElReadonlyVariable(x) => x.write_json(w),
+            openehr_lang::prelude::ElValueGenerator::ElStaticRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElValueGenerator::ElTypeRef(x) => x.write_json(w),
+            openehr_lang::prelude::ElValueGenerator::ElWritableVariable(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElValueGenerator {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_FUNCTION_AGENT") => ::core::result::Result::Ok(
+                Self::ElFunctionAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_FUNCTION_CALL") => ::core::result::Result::Ok(
+                Self::ElFunctionCall(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => ::core::result::Result::Ok(
+                Self::ElProcedureAgent(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_PROPERTY_REF") => ::core::result::Result::Ok(
+                Self::ElPropertyRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_STATIC_REF") => ::core::result::Result::Ok(
+                Self::ElStaticRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_TYPE_REF") => ::core::result::Result::Ok(
+                Self::ElTypeRef(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_VALUE_GENERATOR: missing required `_type` on polymorphic slot (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_VALUE_GENERATOR: unexpected `_type` {__other:?} (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElVariable {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_lang::prelude::ElVariable::ElReadonlyVariable(x) => x.json_type_name(),
+            openehr_lang::prelude::ElVariable::ElWritableVariable(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_lang::prelude::ElVariable::ElReadonlyVariable(x) => x.write_json(w),
+            openehr_lang::prelude::ElVariable::ElWritableVariable(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElVariable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("EL_READONLY_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElReadonlyVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => ::core::result::Result::Ok(
+                Self::ElWritableVariable(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "EL_VARIABLE: missing required `_type` on polymorphic slot (expected one of: EL_READONLY_VARIABLE, EL_WRITABLE_VARIABLE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "EL_VARIABLE: unexpected `_type` {__other:?} (expected one of: EL_READONLY_VARIABLE, EL_WRITABLE_VARIABLE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElWritableVariable {
+    fn json_type_name(&self) -> &'static str {
+        "EL_WRITABLE_VARIABLE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_WRITABLE_VARIABLE");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        w.field("definition", &self.definition);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElWritableVariable {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_WRITABLE_VARIABLE")?;
+        runtime::check_type(node, "EL_WRITABLE_VARIABLE")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_WRITABLE_VARIABLE")?,
+            name: runtime::required_field(node, "name", "EL_WRITABLE_VARIABLE")?,
+            definition: runtime::required_field(node, "definition", "EL_WRITABLE_VARIABLE")?,
+        })
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::Archetype {
     fn json_type_name(&self) -> &'static str {
         "ARCHETYPE"
@@ -20019,6 +21354,179 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmAssi
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmBooleanValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_BOOLEAN_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_BOOLEAN_VALUE");
+        w.field("value_literal", &self.value_literal);
+        w.field("value", &self.value);
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmBooleanValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_BOOLEAN_VALUE")?;
+        runtime::check_type(node, "BMM_BOOLEAN_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_BOOLEAN_VALUE")?,
+            value: runtime::required_field(node, "value", "BMM_BOOLEAN_VALUE")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_BOOLEAN_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmBuiltinType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmBuiltinType::BmmSignature(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmBuiltinType::BmmStatusType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmBuiltinType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmBuiltinType::BmmSignature(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmBuiltinType::BmmStatusType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmBuiltinType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmBuiltinType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_BUILTIN_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_BUILTIN_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmClass {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmClass::BmmGenericClass(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmClass::BmmSimpleClass(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmClass::BmmGenericClass(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmClass::BmmSimpleClass(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmClass {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
+                Self::BmmGenericClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_CLASS: missing required `_type` on polymorphic slot (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_CLASS: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmClassifier {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmClassifier::BmmGenericParameter(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmClassifier::BmmGenericParameter(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmClassifier {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_GENERIC_PARAMETER") => ::core::result::Result::Ok(
+                Self::BmmGenericParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_CLASSIFIER: missing required `_type` on polymorphic slot (expected one of: BMM_GENERIC_PARAMETER)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_CLASSIFIER: unexpected `_type` {__other:?} (expected one of: BMM_GENERIC_PARAMETER)"
+                )),
+            ),
+        }
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmConstant {
     fn json_type_name(&self) -> &'static str {
         "BMM_CONSTANT"
@@ -20026,8 +21534,12 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmConsta
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_CONSTANT");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
@@ -20040,7 +21552,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmConsta
             w.field("feature_extensions", &self.feature_extensions);
         }
         w.field("group", &self.group);
-        w.field("scope", &self.scope);
         w.field("generator", &self.generator);
         w.end_object();
     }
@@ -20053,15 +21564,210 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmCons
         runtime::expect_object(node, "BMM_CONSTANT")?;
         runtime::check_type(node, "BMM_CONSTANT")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_CONSTANT")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_CONSTANT")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
             feature_extensions: runtime::container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_CONSTANT")?,
-            scope: runtime::required_field(node, "scope", "BMM_CONSTANT")?,
             generator: runtime::required_field(node, "generator", "BMM_CONSTANT")?,
         })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmContainerPropertyData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_CONTAINER_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_CONTAINER_PROPERTY");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_composition {
+            w.field("is_composition", v);
+        }
+        if let Some(v) = &self.cardinality {
+            w.field("cardinality", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmContainerPropertyData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_CONTAINER_PROPERTY")?;
+        runtime::check_type(node, "BMM_CONTAINER_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_CONTAINER_PROPERTY")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_CONTAINER_PROPERTY")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_CONTAINER_PROPERTY")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_composition: runtime::optional_field(node, "is_composition")?,
+            cardinality: runtime::optional_field(node, "cardinality")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmContainerProperty {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmContainerProperty::BmmIndexedContainerProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::BmmContainerProperty::BmmContainerProperty(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmContainerProperty::BmmIndexedContainerProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::BmmContainerProperty::BmmContainerProperty(x) => {
+                x.write_json(w)
+            }
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmContainerProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmIndexedContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmContainerProperty(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_CONTAINER_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmContainerTypeData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_CONTAINER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_CONTAINER_TYPE");
+        w.field("container_class", &self.container_class);
+        w.field("item_type", &self.item_type);
+        if let Some(v) = &self.is_ordered {
+            w.field("is_ordered", v);
+        }
+        if let Some(v) = &self.is_unique {
+            w.field("is_unique", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmContainerTypeData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_CONTAINER_TYPE")?;
+        runtime::check_type(node, "BMM_CONTAINER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            container_class: runtime::required_field(
+                node,
+                "container_class",
+                "BMM_CONTAINER_TYPE",
+            )?,
+            item_type: runtime::required_field(node, "item_type", "BMM_CONTAINER_TYPE")?,
+            is_ordered: runtime::optional_field(node, "is_ordered")?,
+            is_unique: runtime::optional_field(node, "is_unique")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmContainerType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmContainerType::BmmIndexedContainerType(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::BmmContainerType::BmmContainerType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmContainerType::BmmIndexedContainerType(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::BmmContainerType::BmmContainerType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmContainerType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::BmmIndexedContainerType(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmContainerType(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_CONTAINER_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_INDEXED_CONTAINER_TYPE)"
+                )),
+            ),
+        }
     }
 }
 
@@ -20117,26 +21823,6 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmDefi
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmDefinitions {
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_am::am24::prelude::BmmDefinitions::BmmClass(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmConstant(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmContainerType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmFunction(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmGenericParameter(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmGenericType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmLocal(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmOpenType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmPackageContainer(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmParameter(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmParameterType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmProcedure(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmProperty(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmResult(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSelf(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSignature(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSimpleType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSingleton(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmStatusType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmDefinitions::BmmTupleType(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmDefinitions::ReferenceModelAccess(x) => {
                 x.json_type_name()
             }
@@ -20146,26 +21832,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmDefini
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_am::am24::prelude::BmmDefinitions::BmmClass(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmConstant(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmContainerType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmFunction(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmGenericParameter(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmGenericType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmLocal(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmOpenType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmPackageContainer(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmParameter(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmParameterType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmProcedure(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmProperty(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmResult(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSelf(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSignature(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSimpleType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmSingleton(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmStatusType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmDefinitions::BmmTupleType(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmDefinitions::ReferenceModelAccess(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmDefinitions::SchemaDescriptor(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmDefinitions::BmmDefinitions(x) => x.write_json(w),
@@ -20178,117 +21844,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmDefi
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
-                Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_DEFINITIONS") => ::core::result::Result::Ok(
                 Self::BmmDefinitions(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
-                Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_GENERIC_PARAMETER") => ::core::result::Result::Ok(
-                Self::BmmGenericParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
-                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmProperty(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmContainerType(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
-                Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
-                Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_OPEN_TYPE") => ::core::result::Result::Ok(
-                Self::BmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PACKAGE") => ::core::result::Result::Ok(
-                Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PACKAGE_CONTAINER") => ::core::result::Result::Ok(
-                Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
-                Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
-                Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
-                Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
-                crate::json_codec::runtime::FromJson::from_json(node)?,
-            )),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
-                Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("P_BMM_SCHEMA_DESCRIPTOR") => ::core::result::Result::Ok(
                 Self::SchemaDescriptor(crate::json_codec::runtime::FromJson::from_json(node)?),
@@ -20304,10 +21861,426 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmDefi
             )),
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_DEFINITIONS: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_DEFINITIONS, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_TYPE, BMM_LOCAL, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PARAMETER, BMM_PARAMETER_TYPE, BMM_PROCEDURE, BMM_PROCEDURE_TYPE, BMM_PROPERTY, BMM_PROPERTY_TYPE, BMM_RESULT, BMM_ROUTINE_TYPE, BMM_SELF, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_SINGLETON, BMM_STATUS_TYPE, BMM_TUPLE_TYPE, BMM_UNITARY_PROPERTY, P_BMM_SCHEMA_DESCRIPTOR, REFERENCE_MODEL_ACCESS, SCHEMA_DESCRIPTOR)"
+                    "BMM_DEFINITIONS: unexpected `_type` {__other:?} (expected one of: BMM_DEFINITIONS, P_BMM_SCHEMA_DESCRIPTOR, REFERENCE_MODEL_ACCESS, SCHEMA_DESCRIPTOR)"
                 )),
             ),
         }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEffectiveType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmEffectiveType::BmmGenericType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmSignature(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmSimpleType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmStatusType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmEffectiveType::BmmGenericType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmSignature(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmSimpleType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmStatusType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmEffectiveType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEffectiveType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_EFFECTIVE_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_EFFECTIVE_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumerationData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ENUMERATION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ENUMERATION");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnumerationData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ENUMERATION")?;
+        runtime::check_type(node, "BMM_ENUMERATION")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_ENUMERATION")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_ENUMERATION")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(node, "source_schema_id", "BMM_ENUMERATION")?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumeration {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmEnumeration::BmmEnumerationInteger(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::BmmEnumeration::BmmEnumerationString(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::BmmEnumeration::BmmEnumeration(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmEnumeration::BmmEnumerationInteger(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmEnumeration::BmmEnumerationString(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmEnumeration::BmmEnumeration(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnumeration {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmEnumerationInteger(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmEnumerationString(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmEnumeration(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_ENUMERATION: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumerationInteger {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ENUMERATION_INTEGER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ENUMERATION_INTEGER");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnumerationInteger {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ENUMERATION_INTEGER")?;
+        runtime::check_type(node, "BMM_ENUMERATION_INTEGER")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_ENUMERATION_INTEGER")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_ENUMERATION_INTEGER")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_ENUMERATION_INTEGER",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_INTEGER")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumerationString {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ENUMERATION_STRING"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ENUMERATION_STRING");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnumerationString {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ENUMERATION_STRING")?;
+        runtime::check_type(node, "BMM_ENUMERATION_STRING")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_ENUMERATION_STRING")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_ENUMERATION_STRING")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_ENUMERATION_STRING",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_STRING")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+        })
     }
 }
 
@@ -20315,17 +22288,21 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFeatur
     fn json_type_name(&self) -> &'static str {
         match self {
             openehr_am::am24::prelude::BmmFeature::BmmConstant(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmFeature::BmmContainerProperty(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmFeature::BmmFunction(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmFeature::BmmProcedure(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmFeature::BmmSingleton(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmFeature::BmmUnitaryProperty(x) => x.json_type_name(),
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
             openehr_am::am24::prelude::BmmFeature::BmmConstant(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmFeature::BmmContainerProperty(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFeature::BmmFunction(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFeature::BmmProcedure(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFeature::BmmSingleton(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmFeature::BmmUnitaryProperty(x) => x.write_json(w),
         }
     }
 }
@@ -20338,23 +22315,34 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFeat
             ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
                 Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
             ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
                 Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
             ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
                 Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
                 Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_PROCEDURE, BMM_SINGLETON)",
+                    "BMM_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROCEDURE, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_PROCEDURE, BMM_SINGLETON)"
+                    "BMM_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROCEDURE, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
                 )),
             ),
         }
@@ -20399,6 +22387,9 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFormal
     fn json_type_name(&self) -> &'static str {
         match self {
             openehr_am::am24::prelude::BmmFormalElement::BmmConstant(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmFormalElement::BmmContainerProperty(x) => {
+                x.json_type_name()
+            }
             openehr_am::am24::prelude::BmmFormalElement::BmmFunction(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmFormalElement::BmmLocal(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmFormalElement::BmmParameter(x) => x.json_type_name(),
@@ -20406,11 +22397,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFormal
             openehr_am::am24::prelude::BmmFormalElement::BmmResult(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmFormalElement::BmmSelf(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmFormalElement::BmmSingleton(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmFormalElement::BmmUnitaryProperty(x) => {
+                x.json_type_name()
+            }
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
             openehr_am::am24::prelude::BmmFormalElement::BmmConstant(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmFormalElement::BmmContainerProperty(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFormalElement::BmmFunction(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFormalElement::BmmLocal(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFormalElement::BmmParameter(x) => x.write_json(w),
@@ -20418,6 +22413,7 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFormal
             openehr_am::am24::prelude::BmmFormalElement::BmmResult(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFormalElement::BmmSelf(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmFormalElement::BmmSingleton(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmFormalElement::BmmUnitaryProperty(x) => x.write_json(w),
         }
     }
 }
@@ -20430,9 +22426,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmForm
             ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
                 Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
             ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
                 Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
             ::core::option::Option::Some("BMM_LOCAL") => ::core::result::Result::Ok(
                 Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
@@ -20451,14 +22455,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmForm
             ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
                 Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_FORMAL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON)",
+                    "BMM_FORMAL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_FORMAL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_FUNCTION, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON)"
+                    "BMM_FORMAL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
                 )),
             ),
         }
@@ -20472,8 +22479,12 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFuncti
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_FUNCTION");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
@@ -20486,7 +22497,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFuncti
             w.field("feature_extensions", &self.feature_extensions);
         }
         w.field("group", &self.group);
-        w.field("scope", &self.scope);
         if !self.parameters.is_empty() {
             w.field("parameters", &self.parameters);
         }
@@ -20514,13 +22524,14 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFunc
         runtime::expect_object(node, "BMM_FUNCTION")?;
         runtime::check_type(node, "BMM_FUNCTION")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_FUNCTION")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_FUNCTION")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
             feature_extensions: runtime::container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_FUNCTION")?,
-            scope: runtime::required_field(node, "scope", "BMM_FUNCTION")?,
             parameters: runtime::container_field(node, "parameters")?,
             pre_conditions: runtime::container_field(node, "pre_conditions")?,
             post_conditions: runtime::container_field(node, "post_conditions")?,
@@ -20531,11 +22542,323 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFunc
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFunctionType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_FUNCTION_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_FUNCTION_TYPE");
+        w.field("result_type", &self.result_type);
+        if let Some(v) = &self.argument_types {
+            w.field("argument_types", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFunctionType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_FUNCTION_TYPE")?;
+        runtime::check_type(node, "BMM_FUNCTION_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_FUNCTION_TYPE")?,
+            argument_types: runtime::optional_field(node, "argument_types")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmGenericClass {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_GENERIC_CLASS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_GENERIC_CLASS");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        w.field("generic_parameters", &self.generic_parameters);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGenericClass {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_GENERIC_CLASS")?;
+        runtime::check_type(node, "BMM_GENERIC_CLASS")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_GENERIC_CLASS")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_GENERIC_CLASS")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_GENERIC_CLASS",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_GENERIC_CLASS")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+            generic_parameters: runtime::required_field(
+                node,
+                "generic_parameters",
+                "BMM_GENERIC_CLASS",
+            )?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmGenericParameter {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_GENERIC_PARAMETER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_GENERIC_PARAMETER");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if let Some(v) = &self.conforms_to_type {
+            w.field("conforms_to_type", v);
+        }
+        if let Some(v) = &self.inheritance_precursor {
+            w.field("inheritance_precursor", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGenericParameter {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_GENERIC_PARAMETER")?;
+        runtime::check_type(node, "BMM_GENERIC_PARAMETER")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_GENERIC_PARAMETER")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            conforms_to_type: runtime::optional_field(node, "conforms_to_type")?,
+            inheritance_precursor: runtime::optional_field(node, "inheritance_precursor")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmGenericType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_GENERIC_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_GENERIC_TYPE");
+        if let Some(v) = &self.value_constraint {
+            w.field("value_constraint", v);
+        }
+        w.field("base_class", &self.base_class);
+        if !self.generic_parameters.is_empty() {
+            w.field("generic_parameters", &self.generic_parameters);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGenericType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_GENERIC_TYPE")?;
+        runtime::check_type(node, "BMM_GENERIC_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            value_constraint: runtime::optional_field(node, "value_constraint")?,
+            base_class: runtime::required_field(node, "base_class", "BMM_GENERIC_TYPE")?,
+            generic_parameters: runtime::container_field(node, "generic_parameters")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmIndexedContainerProperty {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INDEXED_CONTAINER_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INDEXED_CONTAINER_PROPERTY");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_composition {
+            w.field("is_composition", v);
+        }
+        if let Some(v) = &self.cardinality {
+            w.field("cardinality", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson
+    for openehr_am::am24::prelude::BmmIndexedContainerProperty
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
+        runtime::check_type(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_INDEXED_CONTAINER_PROPERTY")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_INDEXED_CONTAINER_PROPERTY")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_INDEXED_CONTAINER_PROPERTY")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_composition: runtime::optional_field(node, "is_composition")?,
+            cardinality: runtime::optional_field(node, "cardinality")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmIndexedContainerType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INDEXED_CONTAINER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INDEXED_CONTAINER_TYPE");
+        w.field("container_class", &self.container_class);
+        w.field("item_type", &self.item_type);
+        if let Some(v) = &self.is_ordered {
+            w.field("is_ordered", v);
+        }
+        if let Some(v) = &self.is_unique {
+            w.field("is_unique", v);
+        }
+        w.field("index_type", &self.index_type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmIndexedContainerType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::check_type(node, "BMM_INDEXED_CONTAINER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            container_class: runtime::required_field(
+                node,
+                "container_class",
+                "BMM_INDEXED_CONTAINER_TYPE",
+            )?,
+            item_type: runtime::required_field(node, "item_type", "BMM_INDEXED_CONTAINER_TYPE")?,
+            is_ordered: runtime::optional_field(node, "is_ordered")?,
+            is_unique: runtime::optional_field(node, "is_unique")?,
+            index_type: runtime::required_field(node, "index_type", "BMM_INDEXED_CONTAINER_TYPE")?,
+        })
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmInstantiableFeature {
     fn json_type_name(&self) -> &'static str {
         match self {
             openehr_am::am24::prelude::BmmInstantiableFeature::BmmConstant(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmInstantiableFeature::BmmContainerProperty(x) => {
+                x.json_type_name()
+            }
             openehr_am::am24::prelude::BmmInstantiableFeature::BmmSingleton(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::BmmInstantiableFeature::BmmUnitaryProperty(x) => {
                 x.json_type_name()
             }
         }
@@ -20543,7 +22866,13 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmInstan
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
             openehr_am::am24::prelude::BmmInstantiableFeature::BmmConstant(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmInstantiableFeature::BmmContainerProperty(x) => {
+                x.write_json(w)
+            }
             openehr_am::am24::prelude::BmmInstantiableFeature::BmmSingleton(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmInstantiableFeature::BmmUnitaryProperty(x) => {
+                x.write_json(w)
+            }
         }
     }
 }
@@ -20556,17 +22885,125 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmInst
             ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
                 Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
             ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
                 Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_INSTANTIABLE_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_SINGLETON)",
+                    "BMM_INSTANTIABLE_FEATURE: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_INSTANTIABLE_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_SINGLETON)"
+                    "BMM_INSTANTIABLE_FEATURE: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmIntegerValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_INTEGER_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_INTEGER_VALUE");
+        w.field("value_literal", &self.value_literal);
+        w.field("value", &self.value);
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmIntegerValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_INTEGER_VALUE")?;
+        runtime::check_type(node, "BMM_INTEGER_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_INTEGER_VALUE")?,
+            value: runtime::required_field(node, "value", "BMM_INTEGER_VALUE")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_INTEGER_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmLiteralValue {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmLiteralValue::BmmContainerValue(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmLiteralValue::BmmIndexedContainerValue(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::BmmLiteralValue::BmmIntervalValue(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmLiteralValue::BmmPrimitiveValue(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmLiteralValue::BmmContainerValue(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmLiteralValue::BmmIndexedContainerValue(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::BmmLiteralValue::BmmIntervalValue(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmLiteralValue::BmmPrimitiveValue(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmLiteralValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_CONTAINER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmContainerValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_VALUE") => {
+                ::core::result::Result::Ok(Self::BmmIndexedContainerValue(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INTERVAL_VALUE") => ::core::result::Result::Ok(
+                Self::BmmIntervalValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_LITERAL_VALUE: missing required `_type` on polymorphic slot (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_LITERAL_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
                 )),
             ),
         }
@@ -20580,14 +23017,17 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmLocal 
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_LOCAL");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
             w.field("is_nullable", v);
         }
-        w.field("scope", &self.scope);
         w.end_object();
     }
 }
@@ -20599,10 +23039,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmLoca
         runtime::expect_object(node, "BMM_LOCAL")?;
         runtime::check_type(node, "BMM_LOCAL")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_LOCAL")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_LOCAL")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_LOCAL")?,
         })
     }
 }
@@ -20635,57 +23076,137 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmLoca
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModel {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_MODEL"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_MODEL");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if let Some(v) = &self.packages {
+            w.field("packages", v);
+        }
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        if let Some(v) = &self.class_definitions {
+            w.field("class_definitions", v);
+        }
+        if !self.used_models.is_empty() {
+            w.field("used_models", &self.used_models);
+        }
+        if let Some(v) = &self.modules {
+            w.field("modules", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmModel {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_MODEL")?;
+        runtime::check_type(node, "BMM_MODEL")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_MODEL")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            packages: runtime::optional_field(node, "packages")?,
+            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL")?,
+            rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL")?,
+            class_definitions: runtime::optional_field(node, "class_definitions")?,
+            used_models: runtime::container_field(node, "used_models")?,
+            modules: runtime::optional_field(node, "modules")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModelAccess {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_MODEL_ACCESS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_MODEL_ACCESS");
+        if !self.schema_directories.is_empty() {
+            w.field("schema_directories", &self.schema_directories);
+        }
+        if let Some(v) = &self.all_schemas {
+            w.field("all_schemas", v);
+        }
+        if let Some(v) = &self.bmm_models {
+            w.field("bmm_models", v);
+        }
+        if let Some(v) = &self.matching_bmm_models {
+            w.field("matching_bmm_models", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmModelAccess {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_MODEL_ACCESS")?;
+        runtime::check_type(node, "BMM_MODEL_ACCESS")?;
+        ::core::result::Result::Ok(Self {
+            schema_directories: runtime::container_field(node, "schema_directories")?,
+            all_schemas: runtime::optional_field(node, "all_schemas")?,
+            bmm_models: runtime::optional_field(node, "bmm_models")?,
+            matching_bmm_models: runtime::optional_field(node, "matching_bmm_models")?,
+        })
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModelElement {
     fn json_type_name(&self) -> &'static str {
         match self {
-            openehr_am::am24::prelude::BmmModelElement::BmmClass(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmConstant(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmContainerType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModelElement::BmmContainerProperty(x) => {
+                x.json_type_name()
+            }
             openehr_am::am24::prelude::BmmModelElement::BmmFunction(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModelElement::BmmGenericClass(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmGenericParameter(x) => {
                 x.json_type_name()
             }
-            openehr_am::am24::prelude::BmmModelElement::BmmGenericType(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmLocal(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmOpenType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmPackageContainer(x) => {
-                x.json_type_name()
-            }
+            openehr_am::am24::prelude::BmmModelElement::BmmModel(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModelElement::BmmPackage(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmParameter(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmParameterType(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmProcedure(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmProperty(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmResult(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmSelf(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmSignature(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmSimpleType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModelElement::BmmSimpleClass(x) => x.json_type_name(),
             openehr_am::am24::prelude::BmmModelElement::BmmSingleton(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmStatusType(x) => x.json_type_name(),
-            openehr_am::am24::prelude::BmmModelElement::BmmTupleType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModelElement::BmmUnitaryProperty(x) => x.json_type_name(),
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
-            openehr_am::am24::prelude::BmmModelElement::BmmClass(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmConstant(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmContainerType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelElement::BmmContainerProperty(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmFunction(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelElement::BmmGenericClass(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmGenericParameter(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmGenericType(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmLocal(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmOpenType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmPackageContainer(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelElement::BmmModel(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelElement::BmmPackage(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmParameter(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmParameterType(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmProcedure(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmProperty(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmResult(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmSelf(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmSignature(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmSimpleType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelElement::BmmSimpleClass(x) => x.write_json(w),
             openehr_am::am24::prelude::BmmModelElement::BmmSingleton(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmStatusType(x) => x.write_json(w),
-            openehr_am::am24::prelude::BmmModelElement::BmmTupleType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelElement::BmmUnitaryProperty(x) => x.write_json(w),
         }
     }
 }
@@ -20695,49 +23216,32 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmMode
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         match runtime::slot_type(node) {
-            ::core::option::Option::Some("BMM_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_CONSTANT") => ::core::result::Result::Ok(
                 Self::BmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_FUNCTION") => ::core::result::Result::Ok(
                 Self::BmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmGenericClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_GENERIC_PARAMETER") => ::core::result::Result::Ok(
                 Self::BmmGenericParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
-                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmProperty(
-                    crate::json_codec::runtime::FromJson::from_json(node)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmContainerType(
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
                     crate::json_codec::runtime::FromJson::from_json(node)?,
                 ))
             }
@@ -20745,73 +23249,301 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmMode
                 Self::BmmLocal(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
-                Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_OPEN_TYPE") => ::core::result::Result::Ok(
-                Self::BmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmModel(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_PACKAGE") => ::core::result::Result::Ok(
-                Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PACKAGE_CONTAINER") => ::core::result::Result::Ok(
-                Self::BmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmPackage(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_PARAMETER") => ::core::result::Result::Ok(
                 Self::BmmParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
-                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_PROCEDURE") => ::core::result::Result::Ok(
                 Self::BmmProcedure(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_RESULT") => ::core::result::Result::Ok(
                 Self::BmmResult(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
                 crate::json_codec::runtime::FromJson::from_json(node)?,
             )),
-            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
-                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
-                Self::BmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("BMM_SINGLETON") => ::core::result::Result::Ok(
                 Self::BmmSingleton(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
-                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
-                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
-            ),
             ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
-                Self::BmmProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::None => {
                 ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
-                    "BMM_MODEL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CLASS, BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_TYPE, BMM_LOCAL, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PARAMETER, BMM_PARAMETER_TYPE, BMM_PROCEDURE, BMM_PROCEDURE_TYPE, BMM_PROPERTY, BMM_PROPERTY_TYPE, BMM_RESULT, BMM_ROUTINE_TYPE, BMM_SELF, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_SINGLETON, BMM_STATUS_TYPE, BMM_TUPLE_TYPE, BMM_UNITARY_PROPERTY)",
+                    "BMM_MODEL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_MODEL, BMM_PACKAGE, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SIMPLE_CLASS, BMM_SINGLETON, BMM_UNITARY_PROPERTY)",
                 ))
             }
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "BMM_MODEL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_TYPE, BMM_LOCAL, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PARAMETER, BMM_PARAMETER_TYPE, BMM_PROCEDURE, BMM_PROCEDURE_TYPE, BMM_PROPERTY, BMM_PROPERTY_TYPE, BMM_RESULT, BMM_ROUTINE_TYPE, BMM_SELF, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_SINGLETON, BMM_STATUS_TYPE, BMM_TUPLE_TYPE, BMM_UNITARY_PROPERTY)"
+                    "BMM_MODEL_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_MODEL, BMM_PACKAGE, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SIMPLE_CLASS, BMM_SINGLETON, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModelMetadataData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_MODEL_METADATA"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_MODEL_METADATA");
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmModelMetadataData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_MODEL_METADATA")?;
+        runtime::check_type(node, "BMM_MODEL_METADATA")?;
+        ::core::result::Result::Ok(Self {
+            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL_METADATA")?,
+            rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL_METADATA")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModelMetadata {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmModelMetadata::BmmModel(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModelMetadata::BmmModelMetadata(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmModelMetadata::BmmModel(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelMetadata::BmmModelMetadata(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmModelMetadata {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
+                Self::BmmModel(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_MODEL_METADATA") => ::core::result::Result::Ok(
+                Self::BmmModelMetadata(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmModelMetadata(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_MODEL_METADATA: unexpected `_type` {__other:?} (expected one of: BMM_MODEL, BMM_MODEL_METADATA)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModelType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmModelType::BmmGenericType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModelType::BmmSimpleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmModelType::BmmGenericType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModelType::BmmSimpleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmModelType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_MODEL_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_GENERIC_TYPE, BMM_SIMPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_MODEL_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_GENERIC_TYPE, BMM_SIMPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModule {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmModule::BmmGenericClass(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmModule::BmmSimpleClass(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmModule::BmmGenericClass(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmModule::BmmSimpleClass(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmModule {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_CLASS") => ::core::result::Result::Ok(
+                Self::BmmGenericClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_MODULE: missing required `_type` on polymorphic slot (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_MODULE: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmOpenType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_OPEN_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_OPEN_TYPE");
+        w.field("generic_constraint", &self.generic_constraint);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmOpenType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_OPEN_TYPE")?;
+        runtime::check_type(node, "BMM_OPEN_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            generic_constraint: runtime::required_field(
+                node,
+                "generic_constraint",
+                "BMM_OPEN_TYPE",
+            )?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmPackage {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PACKAGE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PACKAGE");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if let Some(v) = &self.packages {
+            w.field("packages", v);
+        }
+        if !self.members.is_empty() {
+            w.field("members", &self.members);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPackage {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PACKAGE")?;
+        runtime::check_type(node, "BMM_PACKAGE")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PACKAGE")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            packages: runtime::optional_field(node, "packages")?,
+            members: runtime::container_field(node, "members")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmPackageContainer {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmPackageContainer::BmmModel(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmPackageContainer::BmmPackage(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmPackageContainer::BmmModel(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmPackageContainer::BmmPackage(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPackageContainer {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_MODEL") => ::core::result::Result::Ok(
+                Self::BmmModel(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PACKAGE") => ::core::result::Result::Ok(
+                Self::BmmPackage(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_PACKAGE_CONTAINER: missing required `_type` on polymorphic slot (expected one of: BMM_MODEL, BMM_PACKAGE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_PACKAGE_CONTAINER: unexpected `_type` {__other:?} (expected one of: BMM_MODEL, BMM_PACKAGE)"
                 )),
             ),
         }
@@ -20825,14 +23557,17 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmParame
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_PARAMETER");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
             w.field("is_nullable", v);
         }
-        w.field("scope", &self.scope);
         if let Some(v) = &self.direction {
             w.field("direction", v);
         }
@@ -20847,12 +23582,129 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPara
         runtime::expect_object(node, "BMM_PARAMETER")?;
         runtime::check_type(node, "BMM_PARAMETER")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PARAMETER")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_PARAMETER")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_PARAMETER")?,
             direction: runtime::optional_field(node, "direction")?,
         })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmParameterType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PARAMETER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PARAMETER_TYPE");
+        w.field("name", &self.name);
+        if let Some(v) = &self.type_constraint {
+            w.field("type_constraint", v);
+        }
+        if let Some(v) = &self.inheritance_precursor {
+            w.field("inheritance_precursor", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmParameterType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PARAMETER_TYPE")?;
+        runtime::check_type(node, "BMM_PARAMETER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PARAMETER_TYPE")?,
+            type_constraint: runtime::optional_field(node, "type_constraint")?,
+            inheritance_precursor: runtime::optional_field(node, "inheritance_precursor")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmPrimitiveValueData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PRIMITIVE_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PRIMITIVE_VALUE");
+        w.field("value_literal", &self.value_literal);
+        if let Some(v) = &self.value {
+            w.field("value", v);
+        }
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPrimitiveValueData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PRIMITIVE_VALUE")?;
+        runtime::check_type(node, "BMM_PRIMITIVE_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_PRIMITIVE_VALUE")?,
+            value: runtime::optional_field(node, "value")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_PRIMITIVE_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmPrimitiveValue {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmBooleanValue(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmIntegerValue(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmStringValue(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmPrimitiveValue(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmBooleanValue(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmIntegerValue(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmStringValue(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmPrimitiveValue::BmmPrimitiveValue(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPrimitiveValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
+                Self::BmmBooleanValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmIntegerValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
+                Self::BmmStringValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmPrimitiveValue(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_PRIMITIVE_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
+                )),
+            ),
+        }
     }
 }
 
@@ -20863,8 +23715,12 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmProced
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_PROCEDURE");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
@@ -20877,7 +23733,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmProced
             w.field("feature_extensions", &self.feature_extensions);
         }
         w.field("group", &self.group);
-        w.field("scope", &self.scope);
         if !self.parameters.is_empty() {
             w.field("parameters", &self.parameters);
         }
@@ -20901,13 +23756,14 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProc
         runtime::expect_object(node, "BMM_PROCEDURE")?;
         runtime::check_type(node, "BMM_PROCEDURE")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_PROCEDURE")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_PROCEDURE")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
             feature_extensions: runtime::container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_PROCEDURE")?,
-            scope: runtime::required_field(node, "scope", "BMM_PROCEDURE")?,
             parameters: runtime::container_field(node, "parameters")?,
             pre_conditions: runtime::container_field(node, "pre_conditions")?,
             post_conditions: runtime::container_field(node, "post_conditions")?,
@@ -20936,6 +23792,105 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProc
         runtime::check_type(node, "BMM_PROCEDURE_CALL")?;
         ::core::result::Result::Ok(Self {
             agent: runtime::required_field(node, "agent", "BMM_PROCEDURE_CALL")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmProcedureType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PROCEDURE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PROCEDURE_TYPE");
+        if let Some(v) = &self.result_type {
+            w.field("result_type", v);
+        }
+        if let Some(v) = &self.argument_types {
+            w.field("argument_types", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProcedureType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PROCEDURE_TYPE")?;
+        runtime::check_type(node, "BMM_PROCEDURE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::optional_field(node, "result_type")?,
+            argument_types: runtime::optional_field(node, "argument_types")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmProperty {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmProperty::BmmContainerProperty(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmProperty::BmmUnitaryProperty(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmProperty::BmmContainerProperty(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmProperty::BmmUnitaryProperty(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::BmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => ::core::result::Result::Ok(
+                Self::BmmUnitaryProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_PROPERTY: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_UNITARY_PROPERTY)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_UNITARY_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmPropertyType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_PROPERTY_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_PROPERTY_TYPE");
+        w.field("result_type", &self.result_type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPropertyType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_PROPERTY_TYPE")?;
+        runtime::check_type(node, "BMM_PROPERTY_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_PROPERTY_TYPE")?,
         })
     }
 }
@@ -20987,15 +23942,17 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmResult
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_RESULT");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
             w.field("is_nullable", v);
         }
-        w.field("scope", &self.scope);
-        w.field("name", &self.name);
         w.end_object();
     }
 }
@@ -21007,11 +23964,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmResu
         runtime::expect_object(node, "BMM_RESULT")?;
         runtime::check_type(node, "BMM_RESULT")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_RESULT")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_RESULT")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_RESULT")?,
-            name: runtime::required_field(node, "name", "BMM_RESULT")?,
         })
     }
 }
@@ -21102,6 +24059,289 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmRout
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmRoutineTypeData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_ROUTINE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_ROUTINE_TYPE");
+        w.field("result_type", &self.result_type);
+        if let Some(v) = &self.argument_types {
+            w.field("argument_types", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmRoutineTypeData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_ROUTINE_TYPE")?;
+        runtime::check_type(node, "BMM_ROUTINE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_ROUTINE_TYPE")?,
+            argument_types: runtime::optional_field(node, "argument_types")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmRoutineType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmRoutineType::BmmFunctionType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmRoutineType::BmmProcedureType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmRoutineType::BmmRoutineType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmRoutineType::BmmFunctionType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmRoutineType::BmmProcedureType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmRoutineType::BmmRoutineType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmRoutineType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmFunctionType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmProcedureType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmRoutineType(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_ROUTINE_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_ROUTINE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchema {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SCHEMA"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SCHEMA");
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        w.field("bmm_version", &self.bmm_version);
+        if let Some(v) = &self.includes {
+            w.field("includes", v);
+        }
+        if let Some(v) = &self.bmm_model {
+            w.field("bmm_model", v);
+        }
+        w.field("state", &self.state);
+        if let Some(v) = &self.model_name {
+            w.field("model_name", v);
+        }
+        w.field("schema_name", &self.schema_name);
+        w.field("schema_revision", &self.schema_revision);
+        w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
+        w.field("schema_author", &self.schema_author);
+        w.field("schema_description", &self.schema_description);
+        if !self.schema_contributors.is_empty() {
+            w.field("schema_contributors", &self.schema_contributors);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSchema {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SCHEMA")?;
+        runtime::check_type(node, "BMM_SCHEMA")?;
+        ::core::result::Result::Ok(Self {
+            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA")?,
+            rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA")?,
+            bmm_version: runtime::required_field(node, "bmm_version", "BMM_SCHEMA")?,
+            includes: runtime::optional_field(node, "includes")?,
+            bmm_model: runtime::optional_field(node, "bmm_model")?,
+            state: runtime::required_field(node, "state", "BMM_SCHEMA")?,
+            model_name: runtime::optional_field(node, "model_name")?,
+            schema_name: runtime::required_field(node, "schema_name", "BMM_SCHEMA")?,
+            schema_revision: runtime::required_field(node, "schema_revision", "BMM_SCHEMA")?,
+            schema_lifecycle_state: runtime::required_field(
+                node,
+                "schema_lifecycle_state",
+                "BMM_SCHEMA",
+            )?,
+            schema_author: runtime::required_field(node, "schema_author", "BMM_SCHEMA")?,
+            schema_description: runtime::required_field(node, "schema_description", "BMM_SCHEMA")?,
+            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchemaCoreData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SCHEMA_CORE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SCHEMA_CORE");
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        w.field("schema_name", &self.schema_name);
+        w.field("schema_revision", &self.schema_revision);
+        w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
+        w.field("schema_author", &self.schema_author);
+        w.field("schema_description", &self.schema_description);
+        if !self.schema_contributors.is_empty() {
+            w.field("schema_contributors", &self.schema_contributors);
+        }
+        if let Some(v) = &self.archetype_parent_class {
+            w.field("archetype_parent_class", v);
+        }
+        if let Some(v) = &self.archetype_data_value_parent_class {
+            w.field("archetype_data_value_parent_class", v);
+        }
+        if !self.archetype_rm_closure_packages.is_empty() {
+            w.field(
+                "archetype_rm_closure_packages",
+                &self.archetype_rm_closure_packages,
+            );
+        }
+        if let Some(v) = &self.archetype_visualise_descendants_of {
+            w.field("archetype_visualise_descendants_of", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSchemaCoreData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SCHEMA_CORE")?;
+        runtime::check_type(node, "BMM_SCHEMA_CORE")?;
+        ::core::result::Result::Ok(Self {
+            rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA_CORE")?,
+            rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA_CORE")?,
+            schema_name: runtime::required_field(node, "schema_name", "BMM_SCHEMA_CORE")?,
+            schema_revision: runtime::required_field(node, "schema_revision", "BMM_SCHEMA_CORE")?,
+            schema_lifecycle_state: runtime::required_field(
+                node,
+                "schema_lifecycle_state",
+                "BMM_SCHEMA_CORE",
+            )?,
+            schema_author: runtime::required_field(node, "schema_author", "BMM_SCHEMA_CORE")?,
+            schema_description: runtime::required_field(
+                node,
+                "schema_description",
+                "BMM_SCHEMA_CORE",
+            )?,
+            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
+            archetype_data_value_parent_class: runtime::optional_field(
+                node,
+                "archetype_data_value_parent_class",
+            )?,
+            archetype_rm_closure_packages: runtime::container_field(
+                node,
+                "archetype_rm_closure_packages",
+            )?,
+            archetype_visualise_descendants_of: runtime::optional_field(
+                node,
+                "archetype_visualise_descendants_of",
+            )?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchemaCore {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmSchemaCore::PBmmSchema(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmSchemaCore::BmmSchemaCore(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmSchemaCore::PBmmSchema(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmSchemaCore::BmmSchemaCore(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSchemaCore {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_SCHEMA_CORE") => ::core::result::Result::Ok(
+                Self::BmmSchemaCore(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_SCHEMA") => ::core::result::Result::Ok(
+                Self::PBmmSchema(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmSchemaCore(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_SCHEMA_CORE: unexpected `_type` {__other:?} (expected one of: BMM_SCHEMA_CORE, P_BMM_SCHEMA)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchemaDescriptor {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SCHEMA_DESCRIPTOR"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SCHEMA_DESCRIPTOR");
+        if let Some(v) = &self.bmm_schema {
+            w.field("bmm_schema", v);
+        }
+        if let Some(v) = &self.bmm_model {
+            w.field("bmm_model", v);
+        }
+        w.field("schema_id", &self.schema_id);
+        w.field("meta_data", &self.meta_data);
+        if !self.includes.is_empty() {
+            w.field("includes", &self.includes);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSchemaDescriptor {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SCHEMA_DESCRIPTOR")?;
+        runtime::check_type(node, "BMM_SCHEMA_DESCRIPTOR")?;
+        ::core::result::Result::Ok(Self {
+            bmm_schema: runtime::optional_field(node, "bmm_schema")?,
+            bmm_model: runtime::optional_field(node, "bmm_model")?,
+            schema_id: runtime::required_field(node, "schema_id", "BMM_SCHEMA_DESCRIPTOR")?,
+            meta_data: runtime::required_field(node, "meta_data", "BMM_SCHEMA_DESCRIPTOR")?,
+            includes: runtime::container_field(node, "includes")?,
+        })
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSelf {
     fn json_type_name(&self) -> &'static str {
         "BMM_SELF"
@@ -21109,15 +24349,17 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSelf {
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_SELF");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
             w.field("is_nullable", v);
         }
-        w.field("scope", &self.scope);
-        w.field("name", &self.name);
         w.end_object();
     }
 }
@@ -21129,12 +24371,223 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSelf
         runtime::expect_object(node, "BMM_SELF")?;
         runtime::check_type(node, "BMM_SELF")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_SELF")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_SELF")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
-            scope: runtime::required_field(node, "scope", "BMM_SELF")?,
-            name: runtime::required_field(node, "name", "BMM_SELF")?,
         })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSignatureData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SIGNATURE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SIGNATURE");
+        w.field("result_type", &self.result_type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSignatureData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SIGNATURE")?;
+        runtime::check_type(node, "BMM_SIGNATURE")?;
+        ::core::result::Result::Ok(Self {
+            result_type: runtime::required_field(node, "result_type", "BMM_SIGNATURE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSignature {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmSignature::BmmPropertyType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmSignature::BmmRoutineType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmSignature::BmmSignature(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmSignature::BmmPropertyType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmSignature::BmmRoutineType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmSignature::BmmSignature(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSignature {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmPropertyType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmRoutineType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmSignature(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_SIGNATURE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSimpleClassData {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SIMPLE_CLASS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SIMPLE_CLASS");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        if !self.feature_groups.is_empty() {
+            w.field("feature_groups", &self.feature_groups);
+        }
+        if !self.features.is_empty() {
+            w.field("features", &self.features);
+        }
+        if let Some(v) = &self.ancestors {
+            w.field("ancestors", v);
+        }
+        w.field("package", &self.package);
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if !self.immediate_descendants.is_empty() {
+            w.field("immediate_descendants", &self.immediate_descendants);
+        }
+        w.field("is_override", &self.is_override);
+        if let Some(v) = &self.static_properties {
+            w.field("static_properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.procedures {
+            w.field("procedures", v);
+        }
+        if let Some(v) = &self.is_primitive {
+            w.field("is_primitive", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if !self.invariants.is_empty() {
+            w.field("invariants", &self.invariants);
+        }
+        if let Some(v) = &self.creators {
+            w.field("creators", v);
+        }
+        if let Some(v) = &self.converters {
+            w.field("converters", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimpleClassData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SIMPLE_CLASS")?;
+        runtime::check_type(node, "BMM_SIMPLE_CLASS")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_SIMPLE_CLASS")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            feature_groups: runtime::container_field(node, "feature_groups")?,
+            features: runtime::container_field(node, "features")?,
+            ancestors: runtime::optional_field(node, "ancestors")?,
+            package: runtime::required_field(node, "package", "BMM_SIMPLE_CLASS")?,
+            properties: runtime::optional_field(node, "properties")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "BMM_SIMPLE_CLASS",
+            )?,
+            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            is_override: runtime::required_field(node, "is_override", "BMM_SIMPLE_CLASS")?,
+            static_properties: runtime::optional_field(node, "static_properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            procedures: runtime::optional_field(node, "procedures")?,
+            is_primitive: runtime::optional_field(node, "is_primitive")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            invariants: runtime::container_field(node, "invariants")?,
+            creators: runtime::optional_field(node, "creators")?,
+            converters: runtime::optional_field(node, "converters")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSimpleClass {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmSimpleClass::BmmEnumeration(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmSimpleClass::BmmSimpleClass(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmSimpleClass::BmmEnumeration(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmSimpleClass::BmmSimpleClass(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimpleClass {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::BmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => ::core::result::Result::Ok(
+                Self::BmmSimpleClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmSimpleClass(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_SIMPLE_CLASS: unexpected `_type` {__other:?} (expected one of: BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_SIMPLE_CLASS)"
+                )),
+            ),
+        }
     }
 }
 
@@ -21190,6 +24643,34 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimp
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSimpleType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_SIMPLE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_SIMPLE_TYPE");
+        if let Some(v) = &self.value_constraint {
+            w.field("value_constraint", v);
+        }
+        w.field("base_class", &self.base_class);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimpleType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_SIMPLE_TYPE")?;
+        runtime::check_type(node, "BMM_SIMPLE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            value_constraint: runtime::optional_field(node, "value_constraint")?,
+            base_class: runtime::required_field(node, "base_class", "BMM_SIMPLE_TYPE")?,
+        })
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSingleton {
     fn json_type_name(&self) -> &'static str {
         "BMM_SINGLETON"
@@ -21197,8 +24678,12 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSingle
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_SINGLETON");
+        w.field("name", &self.name);
         if let Some(v) = &self.documentation {
             w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
         }
         w.field("type", &self.r#type);
         if let Some(v) = &self.is_nullable {
@@ -21211,7 +24696,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSingle
             w.field("feature_extensions", &self.feature_extensions);
         }
         w.field("group", &self.group);
-        w.field("scope", &self.scope);
         w.field("generator", &self.generator);
         w.end_object();
     }
@@ -21224,13 +24708,14 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSing
         runtime::expect_object(node, "BMM_SINGLETON")?;
         runtime::check_type(node, "BMM_SINGLETON")?;
         ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_SINGLETON")?,
             documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
             r#type: runtime::required_field(node, "type", "BMM_SINGLETON")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
             feature_extensions: runtime::container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_SINGLETON")?,
-            scope: runtime::required_field(node, "scope", "BMM_SINGLETON")?,
             generator: runtime::required_field(node, "generator", "BMM_SINGLETON")?,
         })
     }
@@ -21411,6 +24896,360 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStat
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
                     "BMM_STATIC: unexpected `_type` {__other:?} (expected one of: BMM_CONSTANT, BMM_SINGLETON)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmStringValue {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_STRING_VALUE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_STRING_VALUE");
+        w.field("value_literal", &self.value_literal);
+        w.field("value", &self.value);
+        if let Some(v) = &self.syntax {
+            w.field("syntax", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStringValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_STRING_VALUE")?;
+        runtime::check_type(node, "BMM_STRING_VALUE")?;
+        ::core::result::Result::Ok(Self {
+            value_literal: runtime::required_field(node, "value_literal", "BMM_STRING_VALUE")?,
+            value: runtime::required_field(node, "value", "BMM_STRING_VALUE")?,
+            syntax: runtime::optional_field(node, "syntax")?,
+            r#type: runtime::required_field(node, "type", "BMM_STRING_VALUE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmTupleType {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_TUPLE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_TUPLE_TYPE");
+        w.field("item_types", &self.item_types);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmTupleType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_TUPLE_TYPE")?;
+        runtime::check_type(node, "BMM_TUPLE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            item_types: runtime::required_field(node, "item_types", "BMM_TUPLE_TYPE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmType::BmmContainerType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmType::BmmGenericType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmType::BmmOpenType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmType::BmmParameterType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmType::BmmSignature(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmType::BmmSimpleType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmType::BmmStatusType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmType::BmmContainerType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmType::BmmGenericType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmType::BmmOpenType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmType::BmmParameterType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmType::BmmSignature(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmType::BmmSimpleType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmType::BmmStatusType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::BmmContainerType(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("BMM_OPEN_TYPE") => ::core::result::Result::Ok(
+                Self::BmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_TYPE, BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmTypeElement {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmTypeElement::BmmGenericParameter(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmTypeElement::BmmGenericParameter(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmTypeElement {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_GENERIC_PARAMETER") => ::core::result::Result::Ok(
+                Self::BmmGenericParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_TYPE_ELEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_GENERIC_PARAMETER)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_TYPE_ELEMENT: unexpected `_type` {__other:?} (expected one of: BMM_GENERIC_PARAMETER)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmUnitaryProperty {
+    fn json_type_name(&self) -> &'static str {
+        "BMM_UNITARY_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "BMM_UNITARY_PROPERTY");
+        w.field("name", &self.name);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        if let Some(v) = &self.extensions {
+            w.field("extensions", v);
+        }
+        w.field("type", &self.r#type);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        if let Some(v) = &self.is_synthesised_generic {
+            w.field("is_synthesised_generic", v);
+        }
+        if !self.feature_extensions.is_empty() {
+            w.field("feature_extensions", &self.feature_extensions);
+        }
+        w.field("group", &self.group);
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_composition {
+            w.field("is_composition", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmUnitaryProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "BMM_UNITARY_PROPERTY")?;
+        runtime::check_type(node, "BMM_UNITARY_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            name: runtime::required_field(node, "name", "BMM_UNITARY_PROPERTY")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            extensions: runtime::optional_field(node, "extensions")?,
+            r#type: runtime::required_field(node, "type", "BMM_UNITARY_PROPERTY")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
+            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            group: runtime::required_field(node, "group", "BMM_UNITARY_PROPERTY")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_composition: runtime::optional_field(node, "is_composition")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmUnitaryType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmUnitaryType::BmmGenericType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmParameterType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmSignature(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmSimpleType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmStatusType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmTupleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmUnitaryType::BmmGenericType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmParameterType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmSignature(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmSimpleType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmStatusType(x) => x.write_json(w),
+            openehr_am::am24::prelude::BmmUnitaryType::BmmTupleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmUnitaryType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::BmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => ::core::result::Result::Ok(
+                Self::BmmParameterType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIGNATURE") => ::core::result::Result::Ok(
+                Self::BmmSignature(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STATUS_TYPE") => ::core::result::Result::Ok(
+                Self::BmmStatusType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_TUPLE_TYPE") => ::core::result::Result::Ok(
+                Self::BmmTupleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_UNITARY_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_UNITARY_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmUnitaryValue {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::BmmUnitaryValue::BmmPrimitiveValue(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::BmmUnitaryValue::BmmPrimitiveValue(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmUnitaryValue {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_INTEGER_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("BMM_STRING_VALUE") => ::core::result::Result::Ok(
+                Self::BmmPrimitiveValue(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "BMM_UNITARY_VALUE: missing required `_type` on polymorphic slot (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "BMM_UNITARY_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
                 )),
             ),
         }
@@ -23661,6 +27500,30 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElFunct
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElLiteral {
+    fn json_type_name(&self) -> &'static str {
+        "EL_LITERAL"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_LITERAL");
+        w.field("value", &self.value);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElLiteral {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_LITERAL")?;
+        runtime::check_type(node, "EL_LITERAL")?;
+        ::core::result::Result::Ok(Self {
+            value: runtime::required_field(node, "value", "EL_LITERAL")?,
+        })
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElOperator {
     fn json_type_name(&self) -> &'static str {
         match self {
@@ -24109,6 +27972,36 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElTuple
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
             name: runtime::optional_field(node, "name")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElTypeRef {
+    fn json_type_name(&self) -> &'static str {
+        "EL_TYPE_REF"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "EL_TYPE_REF");
+        w.field("is_writable", &self.is_writable);
+        w.field("name", &self.name);
+        w.field("type", &self.r#type);
+        w.field("is_mutable", &self.is_mutable);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElTypeRef {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "EL_TYPE_REF")?;
+        runtime::check_type(node, "EL_TYPE_REF")?;
+        ::core::result::Result::Ok(Self {
+            is_writable: runtime::required_field(node, "is_writable", "EL_TYPE_REF")?,
+            name: runtime::required_field(node, "name", "EL_TYPE_REF")?,
+            r#type: runtime::required_field(node, "type", "EL_TYPE_REF")?,
+            is_mutable: runtime::required_field(node, "is_mutable", "EL_TYPE_REF")?,
         })
     }
 }
@@ -25401,6 +29294,1858 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PAuthor
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmBaseType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmBaseType::PBmmGenericType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmBaseType::PBmmOpenType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmBaseType::PBmmSimpleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmBaseType::PBmmGenericType(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmBaseType::PBmmOpenType(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmBaseType::PBmmSimpleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmBaseType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_OPEN_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "P_BMM_BASE_TYPE: missing required `_type` on polymorphic slot (expected one of: P_BMM_GENERIC_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_BASE_TYPE: unexpected `_type` {__other:?} (expected one of: P_BMM_GENERIC_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmClassData {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_CLASS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_CLASS");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if !self.ancestors.is_empty() {
+            w.field("ancestors", &self.ancestors);
+        }
+        if let Some(v) = &self.constants {
+            w.field("constants", v);
+        }
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.invariants {
+            w.field("invariants", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if let Some(v) = &self.is_override {
+            w.field("is_override", v);
+        }
+        if let Some(v) = &self.generic_parameter_defs {
+            w.field("generic_parameter_defs", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if let Some(v) = &self.bmm_class {
+            w.field("bmm_class", v);
+        }
+        w.field("uid", &self.uid);
+        if !self.ancestor_defs.is_empty() {
+            w.field("ancestor_defs", &self.ancestor_defs);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmClassData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_CLASS")?;
+        runtime::check_type(node, "P_BMM_CLASS")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_CLASS")?,
+            ancestors: runtime::container_field(node, "ancestors")?,
+            constants: runtime::optional_field(node, "constants")?,
+            properties: runtime::optional_field(node, "properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            invariants: runtime::optional_field(node, "invariants")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            is_override: runtime::optional_field(node, "is_override")?,
+            generic_parameter_defs: runtime::optional_field(node, "generic_parameter_defs")?,
+            source_schema_id: runtime::required_field(node, "source_schema_id", "P_BMM_CLASS")?,
+            bmm_class: runtime::optional_field(node, "bmm_class")?,
+            uid: runtime::required_field(node, "uid", "P_BMM_CLASS")?,
+            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmClass {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmClass::PBmmEnumeration(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmClass::PBmmInterface(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmClass::PBmmClass(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmClass::PBmmEnumeration(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmClass::PBmmInterface(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmClass::PBmmClass(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmClass {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_CLASS") => ::core::result::Result::Ok(
+                Self::PBmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::PBmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_ENUMERATION_INTEGER") => {
+                ::core::result::Result::Ok(Self::PBmmEnumeration(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::PBmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_INTERFACE") => ::core::result::Result::Ok(
+                Self::PBmmInterface(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::PBmmClass(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_CLASS: unexpected `_type` {__other:?} (expected one of: P_BMM_CLASS, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_INTERFACE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson
+    for openehr_am::am24::prelude::PBmmContainerFunctionParameter
+{
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_CONTAINER_FUNCTION_PARAMETER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_CONTAINER_FUNCTION_PARAMETER");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        w.field("type_def", &self.type_def);
+        if let Some(v) = &self.cardinality {
+            w.field("cardinality", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson
+    for openehr_am::am24::prelude::PBmmContainerFunctionParameter
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_CONTAINER_FUNCTION_PARAMETER")?;
+        runtime::check_type(node, "P_BMM_CONTAINER_FUNCTION_PARAMETER")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_CONTAINER_FUNCTION_PARAMETER")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            type_def: runtime::required_field(
+                node,
+                "type_def",
+                "P_BMM_CONTAINER_FUNCTION_PARAMETER",
+            )?,
+            cardinality: runtime::optional_field(node, "cardinality")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmContainerPropertyData {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_CONTAINER_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_CONTAINER_PROPERTY");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.is_mandatory {
+            w.field("is_mandatory", v);
+        }
+        if let Some(v) = &self.is_computed {
+            w.field("is_computed", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.type_def {
+            w.field("type_def", v);
+        }
+        if let Some(v) = &self.bmm_property {
+            w.field("bmm_property", v);
+        }
+        if let Some(v) = &self.cardinality {
+            w.field("cardinality", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmContainerPropertyData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_CONTAINER_PROPERTY")?;
+        runtime::check_type(node, "P_BMM_CONTAINER_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_CONTAINER_PROPERTY")?,
+            is_mandatory: runtime::optional_field(node, "is_mandatory")?,
+            is_computed: runtime::optional_field(node, "is_computed")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            type_def: runtime::optional_field(node, "type_def")?,
+            bmm_property: runtime::optional_field(node, "bmm_property")?,
+            cardinality: runtime::optional_field(node, "cardinality")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmContainerProperty {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmContainerProperty::PBmmIndexedContainerProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmContainerProperty::PBmmContainerProperty(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmContainerProperty::PBmmIndexedContainerProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmContainerProperty::PBmmContainerProperty(x) => {
+                x.write_json(w)
+            }
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmContainerProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::PBmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::PBmmIndexedContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(
+                Self::PBmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_CONTAINER_PROPERTY: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmContainerTypeData {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_CONTAINER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_CONTAINER_TYPE");
+        if let Some(v) = &self.bmm_type {
+            w.field("bmm_type", v);
+        }
+        w.field("container_type", &self.container_type);
+        if let Some(v) = &self.type_def {
+            w.field("type_def", v);
+        }
+        if let Some(v) = &self.r#type {
+            w.field("type", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmContainerTypeData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_CONTAINER_TYPE")?;
+        runtime::check_type(node, "P_BMM_CONTAINER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            bmm_type: runtime::optional_field(node, "bmm_type")?,
+            container_type: runtime::required_field(
+                node,
+                "container_type",
+                "P_BMM_CONTAINER_TYPE",
+            )?,
+            type_def: runtime::optional_field(node, "type_def")?,
+            r#type: runtime::optional_field(node, "type")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmContainerType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmContainerType::PBmmIndexedContainerType(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmContainerType::PBmmContainerType(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmContainerType::PBmmIndexedContainerType(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmContainerType::PBmmContainerType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmContainerType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::PBmmIndexedContainerType(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::PBmmContainerType(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_CONTAINER_TYPE: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_TYPE, P_BMM_INDEXED_CONTAINER_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnumerationData {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_ENUMERATION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_ENUMERATION");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if !self.ancestors.is_empty() {
+            w.field("ancestors", &self.ancestors);
+        }
+        if let Some(v) = &self.constants {
+            w.field("constants", v);
+        }
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.invariants {
+            w.field("invariants", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if let Some(v) = &self.is_override {
+            w.field("is_override", v);
+        }
+        if let Some(v) = &self.generic_parameter_defs {
+            w.field("generic_parameter_defs", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if let Some(v) = &self.bmm_class {
+            w.field("bmm_class", v);
+        }
+        w.field("uid", &self.uid);
+        if !self.ancestor_defs.is_empty() {
+            w.field("ancestor_defs", &self.ancestor_defs);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        if !self.item_documentations.is_empty() {
+            w.field("item_documentations", &self.item_documentations);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnumerationData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_ENUMERATION")?;
+        runtime::check_type(node, "P_BMM_ENUMERATION")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_ENUMERATION")?,
+            ancestors: runtime::container_field(node, "ancestors")?,
+            constants: runtime::optional_field(node, "constants")?,
+            properties: runtime::optional_field(node, "properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            invariants: runtime::optional_field(node, "invariants")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            is_override: runtime::optional_field(node, "is_override")?,
+            generic_parameter_defs: runtime::optional_field(node, "generic_parameter_defs")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "P_BMM_ENUMERATION",
+            )?,
+            bmm_class: runtime::optional_field(node, "bmm_class")?,
+            uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION")?,
+            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+            item_documentations: runtime::container_field(node, "item_documentations")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnumeration {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmEnumeration::PBmmEnumerationInteger(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmEnumeration::PBmmEnumerationString(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmEnumeration::PBmmEnumeration(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmEnumeration::PBmmEnumerationInteger(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmEnumeration::PBmmEnumerationString(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmEnumeration::PBmmEnumeration(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnumeration {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::PBmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_ENUMERATION_INTEGER") => {
+                ::core::result::Result::Ok(Self::PBmmEnumerationInteger(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::PBmmEnumerationString(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::PBmmEnumeration(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_ENUMERATION: unexpected `_type` {__other:?} (expected one of: P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnumerationInteger {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_ENUMERATION_INTEGER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_ENUMERATION_INTEGER");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if !self.ancestors.is_empty() {
+            w.field("ancestors", &self.ancestors);
+        }
+        if let Some(v) = &self.constants {
+            w.field("constants", v);
+        }
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.invariants {
+            w.field("invariants", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if let Some(v) = &self.is_override {
+            w.field("is_override", v);
+        }
+        if let Some(v) = &self.generic_parameter_defs {
+            w.field("generic_parameter_defs", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if let Some(v) = &self.bmm_class {
+            w.field("bmm_class", v);
+        }
+        w.field("uid", &self.uid);
+        if !self.ancestor_defs.is_empty() {
+            w.field("ancestor_defs", &self.ancestor_defs);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        if !self.item_documentations.is_empty() {
+            w.field("item_documentations", &self.item_documentations);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnumerationInteger {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_ENUMERATION_INTEGER")?;
+        runtime::check_type(node, "P_BMM_ENUMERATION_INTEGER")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_INTEGER")?,
+            ancestors: runtime::container_field(node, "ancestors")?,
+            constants: runtime::optional_field(node, "constants")?,
+            properties: runtime::optional_field(node, "properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            invariants: runtime::optional_field(node, "invariants")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            is_override: runtime::optional_field(node, "is_override")?,
+            generic_parameter_defs: runtime::optional_field(node, "generic_parameter_defs")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "P_BMM_ENUMERATION_INTEGER",
+            )?,
+            bmm_class: runtime::optional_field(node, "bmm_class")?,
+            uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION_INTEGER")?,
+            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+            item_documentations: runtime::container_field(node, "item_documentations")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnumerationString {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_ENUMERATION_STRING"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_ENUMERATION_STRING");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if !self.ancestors.is_empty() {
+            w.field("ancestors", &self.ancestors);
+        }
+        if let Some(v) = &self.constants {
+            w.field("constants", v);
+        }
+        if let Some(v) = &self.properties {
+            w.field("properties", v);
+        }
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        if let Some(v) = &self.invariants {
+            w.field("invariants", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if let Some(v) = &self.is_override {
+            w.field("is_override", v);
+        }
+        if let Some(v) = &self.generic_parameter_defs {
+            w.field("generic_parameter_defs", v);
+        }
+        w.field("source_schema_id", &self.source_schema_id);
+        if let Some(v) = &self.bmm_class {
+            w.field("bmm_class", v);
+        }
+        w.field("uid", &self.uid);
+        if !self.ancestor_defs.is_empty() {
+            w.field("ancestor_defs", &self.ancestor_defs);
+        }
+        if !self.item_names.is_empty() {
+            w.field("item_names", &self.item_names);
+        }
+        if !self.item_values.is_empty() {
+            w.field("item_values", &self.item_values);
+        }
+        if !self.item_documentations.is_empty() {
+            w.field("item_documentations", &self.item_documentations);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnumerationString {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_ENUMERATION_STRING")?;
+        runtime::check_type(node, "P_BMM_ENUMERATION_STRING")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_STRING")?,
+            ancestors: runtime::container_field(node, "ancestors")?,
+            constants: runtime::optional_field(node, "constants")?,
+            properties: runtime::optional_field(node, "properties")?,
+            functions: runtime::optional_field(node, "functions")?,
+            invariants: runtime::optional_field(node, "invariants")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            is_override: runtime::optional_field(node, "is_override")?,
+            generic_parameter_defs: runtime::optional_field(node, "generic_parameter_defs")?,
+            source_schema_id: runtime::required_field(
+                node,
+                "source_schema_id",
+                "P_BMM_ENUMERATION_STRING",
+            )?,
+            bmm_class: runtime::optional_field(node, "bmm_class")?,
+            uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION_STRING")?,
+            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
+            item_names: runtime::container_field(node, "item_names")?,
+            item_values: runtime::container_field(node, "item_values")?,
+            item_documentations: runtime::container_field(node, "item_documentations")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmFunction {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_FUNCTION"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_FUNCTION");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.aliases {
+            w.field("aliases", v);
+        }
+        if let Some(v) = &self.is_abstract {
+            w.field("is_abstract", v);
+        }
+        if let Some(v) = &self.parameters {
+            w.field("parameters", v);
+        }
+        if let Some(v) = &self.pre_conditions {
+            w.field("pre_conditions", v);
+        }
+        if let Some(v) = &self.post_conditions {
+            w.field("post_conditions", v);
+        }
+        if let Some(v) = &self.result {
+            w.field("result", v);
+        }
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmFunction {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_FUNCTION")?;
+        runtime::check_type(node, "P_BMM_FUNCTION")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_FUNCTION")?,
+            aliases: runtime::optional_field(node, "aliases")?,
+            is_abstract: runtime::optional_field(node, "is_abstract")?,
+            parameters: runtime::optional_field(node, "parameters")?,
+            pre_conditions: runtime::optional_field(node, "pre_conditions")?,
+            post_conditions: runtime::optional_field(node, "post_conditions")?,
+            result: runtime::optional_field(node, "result")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmFunctionParameter {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmContainerFunctionParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmGenericFunctionParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameterOpen(
+                x,
+            ) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmContainerFunctionParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmGenericFunctionParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameterOpen(
+                x,
+            ) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmFunctionParameter {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_CONTAINER_FUNCTION_PARAMETER") => {
+                ::core::result::Result::Ok(Self::PBmmContainerFunctionParameter(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_GENERIC_FUNCTION_PARAMETER") => {
+                ::core::result::Result::Ok(Self::PBmmGenericFunctionParameter(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SINGLE_FUNCTION_PARAMETER") => {
+                ::core::result::Result::Ok(Self::PBmmSingleFunctionParameter(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN") => {
+                ::core::result::Result::Ok(Self::PBmmSingleFunctionParameterOpen(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "P_BMM_FUNCTION_PARAMETER: missing required `_type` on polymorphic slot (expected one of: P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_FUNCTION_PARAMETER: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson
+    for openehr_am::am24::prelude::PBmmGenericFunctionParameter
+{
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_GENERIC_FUNCTION_PARAMETER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_GENERIC_FUNCTION_PARAMETER");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.is_nullable {
+            w.field("is_nullable", v);
+        }
+        w.field("type_def", &self.type_def);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson
+    for openehr_am::am24::prelude::PBmmGenericFunctionParameter
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_GENERIC_FUNCTION_PARAMETER")?;
+        runtime::check_type(node, "P_BMM_GENERIC_FUNCTION_PARAMETER")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_GENERIC_FUNCTION_PARAMETER")?,
+            is_nullable: runtime::optional_field(node, "is_nullable")?,
+            type_def: runtime::required_field(
+                node,
+                "type_def",
+                "P_BMM_GENERIC_FUNCTION_PARAMETER",
+            )?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmGenericParameter {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_GENERIC_PARAMETER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_GENERIC_PARAMETER");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.conforms_to_type {
+            w.field("conforms_to_type", v);
+        }
+        if let Some(v) = &self.bmm_generic_parameter {
+            w.field("bmm_generic_parameter", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmGenericParameter {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_GENERIC_PARAMETER")?;
+        runtime::check_type(node, "P_BMM_GENERIC_PARAMETER")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_GENERIC_PARAMETER")?,
+            conforms_to_type: runtime::optional_field(node, "conforms_to_type")?,
+            bmm_generic_parameter: runtime::optional_field(node, "bmm_generic_parameter")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmGenericProperty {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_GENERIC_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_GENERIC_PROPERTY");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.is_mandatory {
+            w.field("is_mandatory", v);
+        }
+        if let Some(v) = &self.is_computed {
+            w.field("is_computed", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.type_def {
+            w.field("type_def", v);
+        }
+        if let Some(v) = &self.bmm_property {
+            w.field("bmm_property", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmGenericProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_GENERIC_PROPERTY")?;
+        runtime::check_type(node, "P_BMM_GENERIC_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_GENERIC_PROPERTY")?,
+            is_mandatory: runtime::optional_field(node, "is_mandatory")?,
+            is_computed: runtime::optional_field(node, "is_computed")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            type_def: runtime::optional_field(node, "type_def")?,
+            bmm_property: runtime::optional_field(node, "bmm_property")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmGenericType {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_GENERIC_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_GENERIC_TYPE");
+        if let Some(v) = &self.bmm_type {
+            w.field("bmm_type", v);
+        }
+        if let Some(v) = &self.value_constraint {
+            w.field("value_constraint", v);
+        }
+        w.field("root_type", &self.root_type);
+        if !self.generic_parameter_defs.is_empty() {
+            w.field("generic_parameter_defs", &self.generic_parameter_defs);
+        }
+        if !self.generic_parameters.is_empty() {
+            w.field("generic_parameters", &self.generic_parameters);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmGenericType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_GENERIC_TYPE")?;
+        runtime::check_type(node, "P_BMM_GENERIC_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            bmm_type: runtime::optional_field(node, "bmm_type")?,
+            value_constraint: runtime::optional_field(node, "value_constraint")?,
+            root_type: runtime::required_field(node, "root_type", "P_BMM_GENERIC_TYPE")?,
+            generic_parameter_defs: runtime::container_field(node, "generic_parameter_defs")?,
+            generic_parameters: runtime::container_field(node, "generic_parameters")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson
+    for openehr_am::am24::prelude::PBmmIndexedContainerProperty
+{
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_INDEXED_CONTAINER_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_INDEXED_CONTAINER_PROPERTY");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.is_mandatory {
+            w.field("is_mandatory", v);
+        }
+        if let Some(v) = &self.is_computed {
+            w.field("is_computed", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.type_def {
+            w.field("type_def", v);
+        }
+        if let Some(v) = &self.bmm_property {
+            w.field("bmm_property", v);
+        }
+        if let Some(v) = &self.cardinality {
+            w.field("cardinality", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson
+    for openehr_am::am24::prelude::PBmmIndexedContainerProperty
+{
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_INDEXED_CONTAINER_PROPERTY")?;
+        runtime::check_type(node, "P_BMM_INDEXED_CONTAINER_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_INDEXED_CONTAINER_PROPERTY")?,
+            is_mandatory: runtime::optional_field(node, "is_mandatory")?,
+            is_computed: runtime::optional_field(node, "is_computed")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            type_def: runtime::optional_field(node, "type_def")?,
+            bmm_property: runtime::optional_field(node, "bmm_property")?,
+            cardinality: runtime::optional_field(node, "cardinality")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmIndexedContainerType {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_INDEXED_CONTAINER_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_INDEXED_CONTAINER_TYPE");
+        if let Some(v) = &self.bmm_type {
+            w.field("bmm_type", v);
+        }
+        w.field("container_type", &self.container_type);
+        if let Some(v) = &self.type_def {
+            w.field("type_def", v);
+        }
+        if let Some(v) = &self.r#type {
+            w.field("type", v);
+        }
+        w.field("index_type", &self.index_type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmIndexedContainerType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::check_type(node, "P_BMM_INDEXED_CONTAINER_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            bmm_type: runtime::optional_field(node, "bmm_type")?,
+            container_type: runtime::required_field(
+                node,
+                "container_type",
+                "P_BMM_INDEXED_CONTAINER_TYPE",
+            )?,
+            type_def: runtime::optional_field(node, "type_def")?,
+            r#type: runtime::optional_field(node, "type")?,
+            index_type: runtime::required_field(
+                node,
+                "index_type",
+                "P_BMM_INDEXED_CONTAINER_TYPE",
+            )?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmInterface {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_INTERFACE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_INTERFACE");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.functions {
+            w.field("functions", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmInterface {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_INTERFACE")?;
+        runtime::check_type(node, "P_BMM_INTERFACE")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_INTERFACE")?,
+            functions: runtime::optional_field(node, "functions")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmModelElement {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmModelElement::PBmmClass(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmConstant(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmContainerFunctionParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmContainerProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmFunction(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmGenericFunctionParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmGenericParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmGenericProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmPackage(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSingleFunctionParameter(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSingleFunctionParameterOpen(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSingleProperty(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSinglePropertyOpen(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmModelElement::PBmmClass(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmConstant(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmContainerFunctionParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmContainerProperty(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmFunction(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmGenericFunctionParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmGenericParameter(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmGenericProperty(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmPackage(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSingleFunctionParameter(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSingleFunctionParameterOpen(x) => {
+                x.write_json(w)
+            }
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSingleProperty(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmModelElement::PBmmSinglePropertyOpen(x) => {
+                x.write_json(w)
+            }
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmModelElement {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_CLASS") => ::core::result::Result::Ok(
+                Self::PBmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_CONSTANT") => ::core::result::Result::Ok(
+                Self::PBmmConstant(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_CONTAINER_FUNCTION_PARAMETER") => {
+                ::core::result::Result::Ok(Self::PBmmContainerFunctionParameter(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::PBmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_ENUMERATION") => ::core::result::Result::Ok(
+                Self::PBmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_ENUMERATION_INTEGER") => {
+                ::core::result::Result::Ok(Self::PBmmClass(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
+                Self::PBmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_FUNCTION") => ::core::result::Result::Ok(
+                Self::PBmmFunction(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_GENERIC_FUNCTION_PARAMETER") => {
+                ::core::result::Result::Ok(Self::PBmmGenericFunctionParameter(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_GENERIC_PARAMETER") => ::core::result::Result::Ok(
+                Self::PBmmGenericParameter(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_GENERIC_PROPERTY") => ::core::result::Result::Ok(
+                Self::PBmmGenericProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::PBmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_INTERFACE") => ::core::result::Result::Ok(
+                Self::PBmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_PACKAGE") => ::core::result::Result::Ok(
+                Self::PBmmPackage(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_SINGLE_FUNCTION_PARAMETER") => {
+                ::core::result::Result::Ok(Self::PBmmSingleFunctionParameter(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN") => {
+                ::core::result::Result::Ok(Self::PBmmSingleFunctionParameterOpen(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY") => ::core::result::Result::Ok(
+                Self::PBmmSingleProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY_OPEN") => {
+                ::core::result::Result::Ok(Self::PBmmSinglePropertyOpen(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "P_BMM_MODEL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: P_BMM_CLASS, P_BMM_CONSTANT, P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_CONTAINER_PROPERTY, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_FUNCTION, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_GENERIC_PARAMETER, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_INTERFACE, P_BMM_PACKAGE, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_MODEL_ELEMENT: unexpected `_type` {__other:?} (expected one of: P_BMM_CLASS, P_BMM_CONSTANT, P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_CONTAINER_PROPERTY, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_FUNCTION, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_GENERIC_PARAMETER, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_INTERFACE, P_BMM_PACKAGE, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmOpenType {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_OPEN_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_OPEN_TYPE");
+        if let Some(v) = &self.bmm_type {
+            w.field("bmm_type", v);
+        }
+        if let Some(v) = &self.value_constraint {
+            w.field("value_constraint", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmOpenType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_OPEN_TYPE")?;
+        runtime::check_type(node, "P_BMM_OPEN_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            bmm_type: runtime::optional_field(node, "bmm_type")?,
+            value_constraint: runtime::optional_field(node, "value_constraint")?,
+            r#type: runtime::required_field(node, "type", "P_BMM_OPEN_TYPE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmPackage {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_PACKAGE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_PACKAGE");
+        w.field("packages", &self.packages);
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if !self.classes.is_empty() {
+            w.field("classes", &self.classes);
+        }
+        if let Some(v) = &self.bmm_package_definition {
+            w.field("bmm_package_definition", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmPackage {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_PACKAGE")?;
+        runtime::check_type(node, "P_BMM_PACKAGE")?;
+        ::core::result::Result::Ok(Self {
+            packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE")?,
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_PACKAGE")?,
+            classes: runtime::container_field(node, "classes")?,
+            bmm_package_definition: runtime::optional_field(node, "bmm_package_definition")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmPackageContainerData {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_PACKAGE_CONTAINER"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_PACKAGE_CONTAINER");
+        w.field("packages", &self.packages);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmPackageContainerData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_PACKAGE_CONTAINER")?;
+        runtime::check_type(node, "P_BMM_PACKAGE_CONTAINER")?;
+        ::core::result::Result::Ok(Self {
+            packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE_CONTAINER")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmPackageContainer {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmPackageContainer::PBmmPackage(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmPackageContainer::PBmmSchema(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmPackageContainer::PBmmPackageContainer(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmPackageContainer::PBmmPackage(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmPackageContainer::PBmmSchema(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmPackageContainer::PBmmPackageContainer(x) => {
+                x.write_json(w)
+            }
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmPackageContainer {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_PACKAGE") => ::core::result::Result::Ok(
+                Self::PBmmPackage(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_PACKAGE_CONTAINER") => ::core::result::Result::Ok(
+                Self::PBmmPackageContainer(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_SCHEMA") => ::core::result::Result::Ok(
+                Self::PBmmSchema(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::PBmmPackageContainer(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_PACKAGE_CONTAINER: unexpected `_type` {__other:?} (expected one of: P_BMM_PACKAGE, P_BMM_PACKAGE_CONTAINER, P_BMM_SCHEMA)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmProperty {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmProperty::PBmmContainerProperty(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmProperty::PBmmGenericProperty(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmProperty::PBmmSingleProperty(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmProperty::PBmmSinglePropertyOpen(x) => {
+                x.json_type_name()
+            }
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmProperty::PBmmContainerProperty(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmProperty::PBmmGenericProperty(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmProperty::PBmmSingleProperty(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmProperty::PBmmSinglePropertyOpen(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_CONTAINER_PROPERTY") => ::core::result::Result::Ok(
+                Self::PBmmContainerProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_GENERIC_PROPERTY") => ::core::result::Result::Ok(
+                Self::PBmmGenericProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_PROPERTY") => {
+                ::core::result::Result::Ok(Self::PBmmContainerProperty(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY") => ::core::result::Result::Ok(
+                Self::PBmmSingleProperty(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY_OPEN") => {
+                ::core::result::Result::Ok(Self::PBmmSinglePropertyOpen(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "P_BMM_PROPERTY: missing required `_type` on polymorphic slot (expected one of: P_BMM_CONTAINER_PROPERTY, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_PROPERTY: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_PROPERTY, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)"
+                )),
+            ),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSchema {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_SCHEMA"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_SCHEMA");
+        w.field("packages", &self.packages);
+        w.field("rm_publisher", &self.rm_publisher);
+        w.field("rm_release", &self.rm_release);
+        w.field("schema_name", &self.schema_name);
+        w.field("schema_revision", &self.schema_revision);
+        w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
+        w.field("schema_author", &self.schema_author);
+        w.field("schema_description", &self.schema_description);
+        if !self.schema_contributors.is_empty() {
+            w.field("schema_contributors", &self.schema_contributors);
+        }
+        if let Some(v) = &self.archetype_parent_class {
+            w.field("archetype_parent_class", v);
+        }
+        if let Some(v) = &self.archetype_data_value_parent_class {
+            w.field("archetype_data_value_parent_class", v);
+        }
+        if !self.archetype_rm_closure_packages.is_empty() {
+            w.field(
+                "archetype_rm_closure_packages",
+                &self.archetype_rm_closure_packages,
+            );
+        }
+        if let Some(v) = &self.archetype_visualise_descendants_of {
+            w.field("archetype_visualise_descendants_of", v);
+        }
+        w.field("bmm_version", &self.bmm_version);
+        if let Some(v) = &self.includes {
+            w.field("includes", v);
+        }
+        if !self.primitive_types.is_empty() {
+            w.field("primitive_types", &self.primitive_types);
+        }
+        if !self.class_definitions.is_empty() {
+            w.field("class_definitions", &self.class_definitions);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSchema {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_SCHEMA")?;
+        runtime::check_type(node, "P_BMM_SCHEMA")?;
+        ::core::result::Result::Ok(Self {
+            packages: runtime::required_field(node, "packages", "P_BMM_SCHEMA")?,
+            rm_publisher: runtime::required_field(node, "rm_publisher", "P_BMM_SCHEMA")?,
+            rm_release: runtime::required_field(node, "rm_release", "P_BMM_SCHEMA")?,
+            schema_name: runtime::required_field(node, "schema_name", "P_BMM_SCHEMA")?,
+            schema_revision: runtime::required_field(node, "schema_revision", "P_BMM_SCHEMA")?,
+            schema_lifecycle_state: runtime::required_field(
+                node,
+                "schema_lifecycle_state",
+                "P_BMM_SCHEMA",
+            )?,
+            schema_author: runtime::required_field(node, "schema_author", "P_BMM_SCHEMA")?,
+            schema_description: runtime::required_field(
+                node,
+                "schema_description",
+                "P_BMM_SCHEMA",
+            )?,
+            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
+            archetype_data_value_parent_class: runtime::optional_field(
+                node,
+                "archetype_data_value_parent_class",
+            )?,
+            archetype_rm_closure_packages: runtime::container_field(
+                node,
+                "archetype_rm_closure_packages",
+            )?,
+            archetype_visualise_descendants_of: runtime::optional_field(
+                node,
+                "archetype_visualise_descendants_of",
+            )?,
+            bmm_version: runtime::required_field(node, "bmm_version", "P_BMM_SCHEMA")?,
+            includes: runtime::optional_field(node, "includes")?,
+            primitive_types: runtime::container_field(node, "primitive_types")?,
+            class_definitions: runtime::container_field(node, "class_definitions")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSchemaDescriptor {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_SCHEMA_DESCRIPTOR"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_SCHEMA_DESCRIPTOR");
+        if let Some(v) = &self.p_schema {
+            w.field("p_schema", v);
+        }
+        if let Some(v) = &self.schema {
+            w.field("schema", v);
+        }
+        w.field("schema_id", &self.schema_id);
+        w.field("meta_data", &self.meta_data);
+        if !self.includes.is_empty() {
+            w.field("includes", &self.includes);
+        }
+        if let Some(v) = &self.bmm_schema {
+            w.field("bmm_schema", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSchemaDescriptor {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_SCHEMA_DESCRIPTOR")?;
+        runtime::check_type(node, "P_BMM_SCHEMA_DESCRIPTOR")?;
+        ::core::result::Result::Ok(Self {
+            p_schema: runtime::optional_field(node, "p_schema")?,
+            schema: runtime::optional_field(node, "schema")?,
+            schema_id: runtime::required_field(node, "schema_id", "P_BMM_SCHEMA_DESCRIPTOR")?,
+            meta_data: runtime::required_field(node, "meta_data", "P_BMM_SCHEMA_DESCRIPTOR")?,
+            includes: runtime::container_field(node, "includes")?,
+            bmm_schema: runtime::optional_field(node, "bmm_schema")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSimpleType {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_SIMPLE_TYPE"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_SIMPLE_TYPE");
+        if let Some(v) = &self.bmm_type {
+            w.field("bmm_type", v);
+        }
+        if let Some(v) = &self.value_constraint {
+            w.field("value_constraint", v);
+        }
+        w.field("type", &self.r#type);
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSimpleType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_SIMPLE_TYPE")?;
+        runtime::check_type(node, "P_BMM_SIMPLE_TYPE")?;
+        ::core::result::Result::Ok(Self {
+            bmm_type: runtime::optional_field(node, "bmm_type")?,
+            value_constraint: runtime::optional_field(node, "value_constraint")?,
+            r#type: runtime::required_field(node, "type", "P_BMM_SIMPLE_TYPE")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSingleProperty {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_SINGLE_PROPERTY"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_SINGLE_PROPERTY");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.is_mandatory {
+            w.field("is_mandatory", v);
+        }
+        if let Some(v) = &self.is_computed {
+            w.field("is_computed", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.type_def {
+            w.field("type_def", v);
+        }
+        if let Some(v) = &self.bmm_property {
+            w.field("bmm_property", v);
+        }
+        if let Some(v) = &self.r#type {
+            w.field("type", v);
+        }
+        if let Some(v) = &self.type_ref {
+            w.field("type_ref", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSingleProperty {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_SINGLE_PROPERTY")?;
+        runtime::check_type(node, "P_BMM_SINGLE_PROPERTY")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_SINGLE_PROPERTY")?,
+            is_mandatory: runtime::optional_field(node, "is_mandatory")?,
+            is_computed: runtime::optional_field(node, "is_computed")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            type_def: runtime::optional_field(node, "type_def")?,
+            bmm_property: runtime::optional_field(node, "bmm_property")?,
+            r#type: runtime::optional_field(node, "type")?,
+            type_ref: runtime::optional_field(node, "type_ref")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSinglePropertyOpen {
+    fn json_type_name(&self) -> &'static str {
+        "P_BMM_SINGLE_PROPERTY_OPEN"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "P_BMM_SINGLE_PROPERTY_OPEN");
+        if let Some(v) = &self.documentation {
+            w.field("documentation", v);
+        }
+        w.field("name", &self.name);
+        if let Some(v) = &self.is_mandatory {
+            w.field("is_mandatory", v);
+        }
+        if let Some(v) = &self.is_computed {
+            w.field("is_computed", v);
+        }
+        if let Some(v) = &self.is_im_infrastructure {
+            w.field("is_im_infrastructure", v);
+        }
+        if let Some(v) = &self.is_im_runtime {
+            w.field("is_im_runtime", v);
+        }
+        if let Some(v) = &self.type_def {
+            w.field("type_def", v);
+        }
+        if let Some(v) = &self.bmm_property {
+            w.field("bmm_property", v);
+        }
+        if let Some(v) = &self.type_ref {
+            w.field("type_ref", v);
+        }
+        if let Some(v) = &self.r#type {
+            w.field("type", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSinglePropertyOpen {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "P_BMM_SINGLE_PROPERTY_OPEN")?;
+        runtime::check_type(node, "P_BMM_SINGLE_PROPERTY_OPEN")?;
+        ::core::result::Result::Ok(Self {
+            documentation: runtime::optional_field(node, "documentation")?,
+            name: runtime::required_field(node, "name", "P_BMM_SINGLE_PROPERTY_OPEN")?,
+            is_mandatory: runtime::optional_field(node, "is_mandatory")?,
+            is_computed: runtime::optional_field(node, "is_computed")?,
+            is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
+            is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
+            type_def: runtime::optional_field(node, "type_def")?,
+            bmm_property: runtime::optional_field(node, "bmm_property")?,
+            type_ref: runtime::optional_field(node, "type_ref")?,
+            r#type: runtime::optional_field(node, "type")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmType {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::PBmmType::PBmmContainerType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmType::PBmmGenericType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmType::PBmmOpenType(x) => x.json_type_name(),
+            openehr_am::am24::prelude::PBmmType::PBmmSimpleType(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::PBmmType::PBmmContainerType(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmType::PBmmGenericType(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmType::PBmmOpenType(x) => x.write_json(w),
+            openehr_am::am24::prelude::PBmmType::PBmmSimpleType(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmType {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_CONTAINER_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmContainerType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_GENERIC_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmGenericType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_TYPE") => {
+                ::core::result::Result::Ok(Self::PBmmContainerType(
+                    crate::json_codec::runtime::FromJson::from_json(node)?,
+                ))
+            }
+            ::core::option::Option::Some("P_BMM_OPEN_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmOpenType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("P_BMM_SIMPLE_TYPE") => ::core::result::Result::Ok(
+                Self::PBmmSimpleType(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => {
+                ::core::result::Result::Err(crate::json_codec::runtime::JsonParseError::custom(
+                    "P_BMM_TYPE: missing required `_type` on polymorphic slot (expected one of: P_BMM_CONTAINER_TYPE, P_BMM_GENERIC_TYPE, P_BMM_INDEXED_CONTAINER_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE)",
+                ))
+            }
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "P_BMM_TYPE: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_TYPE, P_BMM_GENERIC_TYPE, P_BMM_INDEXED_CONTAINER_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE)"
+                )),
+            ),
+        }
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCArchetypeRoot {
     fn json_type_name(&self) -> &'static str {
         "P_C_ARCHETYPE_ROOT"
@@ -26261,6 +32006,40 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PTempla
     }
 }
 
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ReferenceModelAccess {
+    fn json_type_name(&self) -> &'static str {
+        "REFERENCE_MODEL_ACCESS"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "REFERENCE_MODEL_ACCESS");
+        if !self.schema_directories.is_empty() {
+            w.field("schema_directories", &self.schema_directories);
+        }
+        if let Some(v) = &self.all_schemas {
+            w.field("all_schemas", v);
+        }
+        if let Some(v) = &self.valid_models {
+            w.field("valid_models", v);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ReferenceModelAccess {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "REFERENCE_MODEL_ACCESS")?;
+        runtime::check_type(node, "REFERENCE_MODEL_ACCESS")?;
+        ::core::result::Result::Ok(Self {
+            schema_directories: runtime::container_field(node, "schema_directories")?,
+            all_schemas: runtime::optional_field(node, "all_schemas")?,
+            valid_models: runtime::optional_field(node, "valid_models")?,
+        })
+    }
+}
+
 impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ResourceDescription {
     fn json_type_name(&self) -> &'static str {
         "RESOURCE_DESCRIPTION"
@@ -26404,6 +32183,84 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::RmOverl
         ::core::result::Result::Ok(Self {
             rm_visibility: runtime::optional_field(node, "rm_visibility")?,
         })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::SchemaDescriptorData {
+    fn json_type_name(&self) -> &'static str {
+        "SCHEMA_DESCRIPTOR"
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        w.begin_object();
+        w.field_str("_type", "SCHEMA_DESCRIPTOR");
+        if let Some(v) = &self.p_schema {
+            w.field("p_schema", v);
+        }
+        if let Some(v) = &self.schema {
+            w.field("schema", v);
+        }
+        w.field("schema_id", &self.schema_id);
+        w.field("meta_data", &self.meta_data);
+        if !self.includes.is_empty() {
+            w.field("includes", &self.includes);
+        }
+        w.end_object();
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::SchemaDescriptorData {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        runtime::expect_object(node, "SCHEMA_DESCRIPTOR")?;
+        runtime::check_type(node, "SCHEMA_DESCRIPTOR")?;
+        ::core::result::Result::Ok(Self {
+            p_schema: runtime::optional_field(node, "p_schema")?,
+            schema: runtime::optional_field(node, "schema")?,
+            schema_id: runtime::required_field(node, "schema_id", "SCHEMA_DESCRIPTOR")?,
+            meta_data: runtime::required_field(node, "meta_data", "SCHEMA_DESCRIPTOR")?,
+            includes: runtime::container_field(node, "includes")?,
+        })
+    }
+}
+
+impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::SchemaDescriptor {
+    fn json_type_name(&self) -> &'static str {
+        match self {
+            openehr_am::am24::prelude::SchemaDescriptor::PBmmSchemaDescriptor(x) => {
+                x.json_type_name()
+            }
+            openehr_am::am24::prelude::SchemaDescriptor::SchemaDescriptor(x) => x.json_type_name(),
+        }
+    }
+    fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
+        match self {
+            openehr_am::am24::prelude::SchemaDescriptor::PBmmSchemaDescriptor(x) => x.write_json(w),
+            openehr_am::am24::prelude::SchemaDescriptor::SchemaDescriptor(x) => x.write_json(w),
+        }
+    }
+}
+
+impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::SchemaDescriptor {
+    fn from_json<__N: crate::json_codec::runtime::JsonNode>(
+        node: &__N,
+    ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
+        match runtime::slot_type(node) {
+            ::core::option::Option::Some("P_BMM_SCHEMA_DESCRIPTOR") => ::core::result::Result::Ok(
+                Self::PBmmSchemaDescriptor(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::Some("SCHEMA_DESCRIPTOR") => ::core::result::Result::Ok(
+                Self::SchemaDescriptor(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
+            ::core::option::Option::None => ::core::result::Result::Ok(Self::SchemaDescriptor(
+                crate::json_codec::runtime::FromJson::from_json(node)?,
+            )),
+            ::core::option::Option::Some(__other) => ::core::result::Result::Err(
+                crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                    "SCHEMA_DESCRIPTOR: unexpected `_type` {__other:?} (expected one of: P_BMM_SCHEMA_DESCRIPTOR, SCHEMA_DESCRIPTOR)"
+                )),
+            ),
+        }
     }
 }
 

@@ -618,6 +618,58 @@ pub(crate) const BACK_REFERENCES: &[BackReference] = &[
                  (docs/specs/openehr/AM/docs/UML/classes/\
                  org.openehr.am.aom14.archetype_ontology.adoc)",
     },
+    // ── LANG BMM v3 `scope`: the declaring-context back-reference ──────────────
+    // The v3 generation makes every model element name its declaring context,
+    // and the root's context is ITSELF (`is_root_scope(): Result = (scope =
+    // self)`), so an owning field would make every BMM_MODEL_ELEMENT an infinite
+    // value. Four subtypes redefine the attribute more narrowly; each
+    // redefinition is the same owner/parent edge and needs its own entry,
+    // because the flattened property is attributed to its declaring class.
+    BackReference {
+        class: "BMM_MODEL_ELEMENT",
+        field: "scope",
+        citation: "LANG BMM3 bmm_model_element (scope: Model element within which an element is declared; Post_result of is_root_scope: Result = (scope = self))",
+        reason: "The declaring-context back-reference of the BMM v3 generation, self-referential \
+                 at the root of a model hierarchy. \
+                 (docs/specs/openehr/LANG/docs/UML/classes/\
+                 org.openehr.lang.bmm3.bmm_model_element.adoc)",
+    },
+    BackReference {
+        class: "BMM_MODULE",
+        field: "scope",
+        citation: "LANG BMM3 bmm_module (scope: BMM_MODEL — redefinition of BMM_MODEL_ELEMENT.scope)",
+        reason: "The same declaring-context back-reference, narrowed to the owning model; forms \
+                 the BMM_MODEL ↔ BMM_CLASS cycle. \
+                 (docs/specs/openehr/LANG/docs/UML/classes/\
+                 org.openehr.lang.bmm3.bmm_module.adoc)",
+    },
+    BackReference {
+        class: "BMM_PACKAGE_CONTAINER",
+        field: "scope",
+        citation: "LANG BMM3 bmm_package_container (scope: BMM_PACKAGE_CONTAINER — redefinition of BMM_MODEL_ELEMENT.scope)",
+        reason: "The same declaring-context back-reference, narrowed to the enclosing package \
+                 container; forms the BMM_PACKAGE ↔ BMM_PACKAGE_CONTAINER cycle. \
+                 (docs/specs/openehr/LANG/docs/UML/classes/\
+                 org.openehr.lang.bmm3.bmm_package_container.adoc)",
+    },
+    BackReference {
+        class: "BMM_FEATURE",
+        field: "scope",
+        citation: "LANG BMM3 bmm_feature (scope: BMM_CLASS — redefinition of BMM_MODEL_ELEMENT.scope)",
+        reason: "The same declaring-context back-reference, narrowed to the owning class; forms \
+                 the BMM_CLASS ↔ BMM_FEATURE cycle. \
+                 (docs/specs/openehr/LANG/docs/UML/classes/\
+                 org.openehr.lang.bmm3.bmm_feature.adoc)",
+    },
+    BackReference {
+        class: "BMM_VARIABLE",
+        field: "scope",
+        citation: "LANG BMM3 bmm_variable (scope: BMM_ROUTINE — redefinition of BMM_MODEL_ELEMENT.scope)",
+        reason: "The same declaring-context back-reference, narrowed to the owning routine; forms \
+                 the BMM_ROUTINE ↔ BMM_VARIABLE cycle. \
+                 (docs/specs/openehr/LANG/docs/UML/classes/\
+                 org.openehr.lang.bmm3.bmm_variable.adoc)",
+    },
 ];
 
 /// The spec citation if `(class, field)` is a designated owner/parent

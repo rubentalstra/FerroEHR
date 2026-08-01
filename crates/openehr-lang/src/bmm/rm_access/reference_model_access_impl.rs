@@ -22,12 +22,12 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
+use crate::bmm::core::bmm_definitions::BmmDefinitionsData;
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm::rm_access::error::RmAccessError;
 use crate::bmm::rm_access::reference_model_access::ReferenceModelAccess;
 use crate::bmm::rm_access::schema_descriptor::SchemaDescriptor;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
-use crate::bmm3::bmm_definitions::BmmDefinitionsData;
-use crate::bmm3::core::model::bmm_model::BmmModel;
 
 impl ReferenceModelAccess {
     /// A schema repository over `schema_directories`, with nothing loaded yet.

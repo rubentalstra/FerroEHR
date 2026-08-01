@@ -49,6 +49,7 @@ use openehr_base::prelude::Interval;
 use openehr_base::prelude::ProperInterval;
 use openehr_base::prelude::ProperIntervalData;
 
+use crate::bmm::core::bmm_include_spec::BmmIncludeSpec;
 use crate::bmm_persistence::error::PBmmReadError;
 use crate::bmm_persistence::p_bmm_base_type::PBmmBaseType;
 use crate::bmm_persistence::p_bmm_class::PBmmClass;
@@ -83,7 +84,6 @@ use crate::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunc
 use crate::bmm_persistence::p_bmm_single_property::PBmmSingleProperty;
 use crate::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen;
 use crate::bmm_persistence::p_bmm_type::PBmmType;
-use crate::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
 use crate::odin::OdinInterval;
 use crate::odin::OdinKey;
 use crate::odin::OdinValue;

@@ -4,12 +4,12 @@
 //! The openEHR `P_BMM_ENUMERATION_STRING` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_enumeration_string::BmmEnumerationString;
 use crate::bmm_persistence::p_bmm_constant::PBmmConstant;
 use crate::bmm_persistence::p_bmm_function::PBmmFunction;
 use crate::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString;
 
 /// Persistent form of `BMM_ENUMERATION_STRING`.
 #[doc(alias = "P_BMM_ENUMERATION_STRING")]

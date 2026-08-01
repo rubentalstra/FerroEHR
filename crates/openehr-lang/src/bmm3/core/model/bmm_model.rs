@@ -5,45 +5,45 @@
 //! meta-model.
 
 use crate::bmm3::core::entity::bmm_class::BmmClass;
+use crate::bmm3::core::entity::bmm_module::BmmModule;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
 
-/// Model of a BMM schema (along with what is inherited from BMM_SCHEMA_CORE).
+/// Definition of the root of a BMM model (along with what is inherited from `BMM_SCHEMA_CORE`).
 #[doc(alias = "BMM_MODEL")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmModel {
-    // inherited: BMM_SCHEMA_CORE
-    /// Publisher of model expressed in the schema. Persisted attribute.
-    pub rm_publisher: String,
-    /// Release of model expressed in the schema as a 3-part numeric, e.g. "3.1.0". Persisted attribute.
-    pub rm_release: String,
-    /// Name of model expressed in schema; a 'schema' usually contains all of the packages of one 'model' of a publisher. A publisher with more than one model can have multiple schemas. Persisted attribute.
-    pub schema_name: String,
-    /// Revision of schema. Persisted attribute.
-    pub schema_revision: String,
-    /// Persisted attribute.
-    pub schema_lifecycle_state: String,
-    /// Primary author of schema. Persisted attribute.
-    pub schema_author: String,
-    /// Description of schema. Persisted attribute.
-    pub schema_description: String,
-    /// Contributing authors of schema. Persisted attribute.
-    pub schema_contributors: Vec<String>,
-    /// Name of a parent class used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
-    pub archetype_parent_class: Option<String>,
-    /// Name of a parent class of logical 'data types' used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
-    pub archetype_data_value_parent_class: Option<String>,
-    /// List of top-level package paths that provide the RM 'model' part in archetype identifiers, e.g. the path "org.openehr.ehr" gives "EHR" in "openEHR-EHR". Within this namespace, archetypes can be based on any class reachable from classes defined directly in these packages. Persisted attribute.
-    pub archetype_rm_closure_packages: Vec<String>,
-    /// If archetype_parent_class is not set, designate a class whose descendants should be made visible in tree and grid renderings of the archetype definition. Persisted attribute.
-    pub archetype_visualise_descendants_of: Option<String>,
-
     // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
+    /// Name of this model element.
+    pub name: String,
+    /// Optional documentation of this element, as a keyed list.
+    ///
+    /// It is strongly recommended to use the following key /type combinations for the relevant purposes:
+    ///
+    /// * `"purpose": String`
+    /// * `"keywords": List<String>`
+    /// * `"use": String`
+    /// * `"misuse": String`
+    /// * `"references": String`
+    ///
+    /// Other keys and value types may be freely added.
+    pub documentation: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    // NOTE: `scope` (BMM-mandatory back-reference) omitted — LANG BMM3 bmm_package_container (scope: BMM_PACKAGE_CONTAINER — redefinition of BMM_MODEL_ELEMENT.scope). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    /// Optional meta-data of this element, as a keyed list. May be used to extend the meta-model.
+    pub extensions: Option<std::collections::BTreeMap<String, serde_json::Value>>,
 
     // inherited: BMM_PACKAGE_CONTAINER
     /// Child packages; keys all in upper case for guaranteed matching.
     pub packages: Option<std::collections::BTreeMap<String, BmmPackage>>,
-    /// All classes in this schema.
+
+    // inherited: BMM_MODEL_METADATA
+    /// Publisher of model expressed in the schema.
+    pub rm_publisher: String,
+    /// Release of model expressed in the schema as a 3-part numeric, e.g. "3.1.0" .
+    pub rm_release: String,
+    /// All classes in this model, keyed by type name.
     pub class_definitions: Option<std::collections::BTreeMap<String, BmmClass>>,
+    /// List of other models 'used' (i.e. 'imported' by this model). Classes in the current model may refer to classes in a used model by specifying the other class's `_scope_` meta-attribute.
+    pub used_models: Vec<BmmModel>,
+    /// All classes in this model, keyed by type name.
+    pub modules: Option<std::collections::BTreeMap<String, BmmModule>>,
 }

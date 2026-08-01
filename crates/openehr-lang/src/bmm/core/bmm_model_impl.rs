@@ -10,7 +10,7 @@
 //! `…bmm.bmm_schema_core.adoc` §Functions (`schema_id`) and
 //! `…bmm.bmm_package_container.adoc` §Functions (the three package-container
 //! functions, implemented once in
-//! [`crate::bmm3::core::model::bmm_package_impl`]), read against
+//! [`crate::bmm::core::bmm_package_impl`]), read against
 //! `LANG/docs/bmm/master05-core.adoc` §Semantics — §Classes and Types (the
 //! class/type distinction the lookups turn on) and §Inheritance (the acyclic
 //! ancestor graph `all_ancestor_classes` walks).
@@ -23,15 +23,15 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::VecDeque;
 
-use crate::bmm3::core::entity::bmm_class::BmmClass;
-use crate::bmm3::core::entity::bmm_type::BmmType;
-use crate::bmm3::core::entity::bmm_type_impl::ANY_TYPE_NAME;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-use crate::bmm3::core::feature::bmm_property::BmmProperty;
-use crate::bmm3::core::model::bmm_model::BmmModel;
-use crate::bmm3::core::model::bmm_package::BmmPackage;
-use crate::bmm3::core::model::bmm_package_impl::do_recursive_packages_in;
-use crate::bmm3::core::model::bmm_package_impl::package_at_path_in;
+use crate::bmm::core::bmm_class::BmmClass;
+use crate::bmm::core::bmm_enumeration::BmmEnumeration;
+use crate::bmm::core::bmm_model::BmmModel;
+use crate::bmm::core::bmm_package::BmmPackage;
+use crate::bmm::core::bmm_package_impl::do_recursive_packages_in;
+use crate::bmm::core::bmm_package_impl::package_at_path_in;
+use crate::bmm::core::bmm_property::BmmProperty;
+use crate::bmm::core::bmm_type::BmmType;
+use crate::bmm::core::bmm_type_impl::ANY_TYPE_NAME;
 
 /// The delimiter separating the segments of the property path
 /// `BMM_MODEL.property_definition_at_path` navigates.
@@ -273,7 +273,7 @@ impl BmmModel {
         if let Some(own) = self.class_definition(ANY_TYPE_NAME) {
             return own.clone();
         }
-        BmmClass::BmmClass(crate::bmm3::core::entity::bmm_class::BmmClassData {
+        BmmClass::BmmClass(crate::bmm::core::bmm_class::BmmClassData {
             documentation: Some(
                 "Standard default Any class (LANG/docs/bmm3/master05-core-model.adoc §The Any \
                      Class and Type)"
@@ -464,8 +464,10 @@ impl BmmModel {
         self.class_definition(a_class_name)
             .and_then(BmmClass::generic_parameters)
             .and_then(|parameters| parameters.values().nth(position))
-            .map(crate::bmm::core::bmm_generic_parameter::BmmGenericParameter::effective_conforms_to_type_name)
-            .unwrap_or_else(|| ANY_TYPE_NAME.to_owned())
+            .map_or_else(
+                || ANY_TYPE_NAME.to_owned(),
+                crate::bmm::core::bmm_generic_parameter::BmmGenericParameter::effective_conforms_to_type_name,
+            )
     }
 
     /// The "base class test" of `BMM_MODEL.type_conforms_to`: identical names,
@@ -519,7 +521,7 @@ impl BmmModel {
     ///
     /// Keys are matched case-insensitively and the longest matching key prefix
     /// wins at each level, per
-    /// [`crate::bmm3::core::model::bmm_package_impl`].
+    /// [`crate::bmm::core::bmm_package_impl`].
     #[must_use]
     pub fn package_at_path(&self, a_path: &str) -> Option<&BmmPackage> {
         package_at_path_in(self.packages.as_ref(), a_path)
@@ -556,20 +558,20 @@ fn substitute_open_parameter(a_type_name: &str) -> &str {
 mod tests {
     use std::collections::BTreeMap;
 
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_class::BmmClassData;
+    use crate::bmm::core::bmm_container_type::BmmContainerType;
+    use crate::bmm::core::bmm_container_type::BmmContainerTypeData;
+    use crate::bmm::core::bmm_enumeration::BmmEnumeration;
+    use crate::bmm::core::bmm_enumeration::BmmEnumerationData;
+    use crate::bmm::core::bmm_generic_class::BmmGenericClass;
     use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-    use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
-    use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
-    use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-    use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-    use crate::bmm3::core::entity::bmm_type::BmmType;
-    use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-    use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData;
-    use crate::bmm3::core::feature::bmm_property::BmmProperty;
-    use crate::bmm3::core::feature::bmm_property::BmmPropertyData;
-    use crate::bmm3::core::model::bmm_model::BmmModel;
-    use crate::bmm3::core::model::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_model::BmmModel;
+    use crate::bmm::core::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_property::BmmProperty;
+    use crate::bmm::core::bmm_property::BmmPropertyData;
+    use crate::bmm::core::bmm_simple_type::BmmSimpleType;
+    use crate::bmm::core::bmm_type::BmmType;
 
     /// An empty package node named `name`.
     fn package(name: &str) -> BmmPackage {
@@ -627,7 +629,7 @@ mod tests {
         properties: &[BmmProperty<BmmType>],
         is_primitive_type: bool,
     ) -> BmmClass {
-        BmmClass::BmmSimpleClass(BmmSimpleClass {
+        BmmClass::BmmClass(BmmClassData {
             documentation: None,
             name: name.to_owned(),
             ancestors: if ancestors.is_empty() {

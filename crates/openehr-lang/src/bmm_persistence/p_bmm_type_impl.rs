@@ -16,7 +16,7 @@
 //! Generic delimiters `'<'`, `','`, `'>'` per
 //! `org.openehr.lang.bmm3.bmm_definitions.adoc` §Constants
 //! (`Generic_left_delimiter`, `Generic_separator`, `Generic_right_delimiter`) —
-//! the same literals [`crate::bmm3::core::entity::bmm_type_impl`] renders with,
+//! the same literals [`crate::bmm::core::bmm_type_impl`] renders with,
 //! because the generated `BMM_DEFINITIONS` carries no constant for them.
 
 use crate::bmm_persistence::p_bmm_base_type::PBmmBaseType;

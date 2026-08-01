@@ -4,6 +4,7 @@
 //! The openEHR `P_BMM_CLASS` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_class::BmmClass;
 use crate::bmm_persistence::p_bmm_constant::PBmmConstant;
 use crate::bmm_persistence::p_bmm_enumeration::PBmmEnumeration;
 use crate::bmm_persistence::p_bmm_function::PBmmFunction;
@@ -11,7 +12,6 @@ use crate::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::bmm_persistence::p_bmm_interface::PBmmInterface;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
 
 /// Definition of persistent form of `BMM_CLASS` for serialisation to ODIN, JSON, XML etc.
 #[doc(alias = "P_BMM_CLASS")]

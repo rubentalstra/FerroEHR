@@ -12,9 +12,8 @@
 
 use openehr_base::prelude::MultiplicityInterval;
 
-use crate::bmm3::core::entity::bmm_type::BmmType;
-use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
-use crate::bmm3::core::feature::bmm_property::BmmProperty;
+use crate::bmm::core::bmm_property::BmmProperty;
+use crate::bmm::core::bmm_type::BmmType;
 
 impl<T> BmmProperty<T> {
     /// `BMM_PROPERTY.name`: "Name of this property in the model" (class doc
@@ -22,13 +21,7 @@ impl<T> BmmProperty<T> {
     #[must_use]
     pub fn name(&self) -> &str {
         match self {
-            Self::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
-                indexed,
-            )) => indexed.name.as_str(),
-            Self::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(container)) => {
-                container.name.as_str()
-            }
-            Self::BmmUnitaryProperty(unitary) => unitary.name.as_str(),
+            Self::BmmContainerProperty(container) => container.name.as_str(),
             Self::BmmProperty(property) => property.name.as_str(),
         }
     }
@@ -43,13 +36,7 @@ impl<T> BmmProperty<T> {
     #[must_use]
     pub fn is_mandatory(&self) -> bool {
         let flag = match self {
-            Self::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
-                indexed,
-            )) => indexed.is_mandatory,
-            Self::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(container)) => {
-                container.is_mandatory
-            }
-            Self::BmmUnitaryProperty(unitary) => unitary.is_mandatory,
+            Self::BmmContainerProperty(container) => container.is_mandatory,
             Self::BmmProperty(property) => property.is_mandatory,
         };
         flag == Some(true)
@@ -61,13 +48,7 @@ impl<T> BmmProperty<T> {
     #[must_use]
     pub fn is_computed(&self) -> bool {
         let flag = match self {
-            Self::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
-                indexed,
-            )) => indexed.is_computed,
-            Self::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(container)) => {
-                container.is_computed
-            }
-            Self::BmmUnitaryProperty(unitary) => unitary.is_computed,
+            Self::BmmContainerProperty(container) => container.is_computed,
             Self::BmmProperty(property) => property.is_computed,
         };
         flag == Some(true)
@@ -108,13 +89,7 @@ impl BmmProperty<BmmType> {
     #[must_use]
     pub fn type_name(&self) -> String {
         match self {
-            Self::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
-                indexed,
-            )) => indexed.r#type.type_name(),
-            Self::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(container)) => {
-                container.r#type.type_name()
-            }
-            Self::BmmUnitaryProperty(unitary) => unitary.r#type.type_name(),
+            Self::BmmContainerProperty(container) => container.r#type.type_name(),
             Self::BmmProperty(property) => property.r#type.type_name(),
         }
     }
@@ -128,30 +103,18 @@ impl BmmProperty<BmmType> {
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         match self {
-            Self::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
-                indexed,
-            )) => indexed.r#type.conformance_type_name(),
-            Self::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(container)) => {
-                container.r#type.conformance_type_name()
-            }
-            Self::BmmUnitaryProperty(unitary) => unitary.r#type.conformance_type_name(),
+            Self::BmmContainerProperty(container) => container.r#type.conformance_type_name(),
             Self::BmmProperty(property) => property.r#type.conformance_type_name(),
         }
     }
 
     /// `BMM_CLASSIFIER.flattened_type_list` of this property's type — the
     /// supplier names this property contributes to
-    /// [`BmmClass::suppliers`](crate::bmm3::core::entity::bmm_class::BmmClass::suppliers).
+    /// [`BmmClass::suppliers`](crate::bmm::core::bmm_class::BmmClass::suppliers).
     #[must_use]
     pub fn flattened_type_list(&self) -> Vec<String> {
         match self {
-            Self::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
-                indexed,
-            )) => indexed.r#type.flattened_type_list(),
-            Self::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(container)) => {
-                container.r#type.flattened_type_list()
-            }
-            Self::BmmUnitaryProperty(unitary) => unitary.r#type.flattened_type_list(),
+            Self::BmmContainerProperty(container) => container.r#type.flattened_type_list(),
             Self::BmmProperty(property) => property.r#type.flattened_type_list(),
         }
     }
@@ -161,21 +124,20 @@ impl BmmProperty<BmmType> {
 mod tests {
     use openehr_base::prelude::MultiplicityInterval;
 
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-    use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
-    use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-    use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-    use crate::bmm3::core::entity::bmm_type::BmmType;
-    use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
-    use crate::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData;
-    use crate::bmm3::core::feature::bmm_property::BmmProperty;
-    use crate::bmm3::core::feature::bmm_property::BmmPropertyData;
-    use crate::bmm3::core::model::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_class::BmmClassData;
+    use crate::bmm::core::bmm_container_property::BmmContainerProperty;
+    use crate::bmm::core::bmm_container_type::BmmContainerType;
+    use crate::bmm::core::bmm_container_type::BmmContainerTypeData;
+    use crate::bmm::core::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_property::BmmProperty;
+    use crate::bmm::core::bmm_property::BmmPropertyData;
+    use crate::bmm::core::bmm_simple_type::BmmSimpleType;
+    use crate::bmm::core::bmm_type::BmmType;
 
     /// A simple class named `name`.
     fn simple_class(name: &str) -> BmmClass {
-        BmmClass::BmmSimpleClass(BmmSimpleClass {
+        BmmClass::BmmClass(BmmClassData {
             documentation: None,
             name: name.to_owned(),
             ancestors: None,
@@ -212,25 +174,23 @@ mod tests {
 
     /// A `List<item>` container property.
     fn container_property(name: &str, item: &str) -> BmmProperty<BmmType> {
-        BmmProperty::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(
-            BmmContainerPropertyData {
+        BmmProperty::BmmContainerProperty(BmmContainerProperty {
+            documentation: None,
+            name: name.to_owned(),
+            is_mandatory: Some(true),
+            is_computed: None,
+            r#type: BmmContainerType::BmmContainerType(BmmContainerTypeData {
                 documentation: None,
-                name: name.to_owned(),
-                is_mandatory: Some(true),
-                is_computed: None,
-                r#type: BmmContainerType::BmmContainerType(BmmContainerTypeData {
+                container_type: simple_class("List"),
+                base_type: Box::new(BmmType::BmmSimpleType(BmmSimpleType {
                     documentation: None,
-                    container_type: simple_class("List"),
-                    base_type: Box::new(BmmType::BmmSimpleType(BmmSimpleType {
-                        documentation: None,
-                        base_class: simple_class(item),
-                    })),
-                }),
-                is_im_runtime: None,
-                is_im_infrastructure: None,
-                cardinality: None,
-            },
-        ))
+                    base_class: simple_class(item),
+                })),
+            }),
+            is_im_runtime: None,
+            is_im_infrastructure: None,
+            cardinality: None,
+        })
     }
 
     #[test]

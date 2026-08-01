@@ -4,7 +4,7 @@
 //! The openEHR `BMM_GENERIC_PARAMETER` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::entity::bmm_class::BmmClass;
+use crate::bmm::core::bmm_class::BmmClass;
 
 /// Definition of a generic parameter in a class definition of a generic type.
 #[doc(alias = "BMM_GENERIC_PARAMETER")]

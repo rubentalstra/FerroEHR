@@ -4,23 +4,37 @@
 //! The openEHR `BMM_SINGLETON` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::am24::bmm3::core::entity::bmm_type::BmmType;
 use crate::am24::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::am24::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
-use openehr_lang::prelude::BmmClass;
 use openehr_lang::prelude::BmmFeatureExtension;
-use openehr_lang::prelude::BmmType;
 
 /// Meta-type for static value properties computed once by a function invocation.
 #[doc(alias = "BMM_SINGLETON")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmSingleton {
     // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
+    /// Name of this model element.
+    pub name: String,
+    /// Optional documentation of this element, as a keyed list.
+    ///
+    /// It is strongly recommended to use the following key /type combinations for the relevant purposes:
+    ///
+    /// * `"purpose": String`
+    /// * `"keywords": List<String>`
+    /// * `"use": String`
+    /// * `"misuse": String`
+    /// * `"references": String`
+    ///
+    /// Other keys and value types may be freely added.
+    pub documentation: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    // NOTE: `scope` (BMM-mandatory back-reference) omitted — LANG BMM3 bmm_feature (scope: BMM_CLASS — redefinition of BMM_MODEL_ELEMENT.scope). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    /// Optional meta-data of this element, as a keyed list. May be used to extend the meta-model.
+    pub extensions: Option<std::collections::BTreeMap<String, serde_json::Value>>,
 
     // inherited: BMM_FORMAL_ELEMENT
     /// Declared or inferred static type of the entity.
-    pub r#type: BmmType,
+    pub r#type: Box<BmmType>,
     /// True if this element can be null (Void) at execution time. May be interpreted as optionality in subtypes..
     pub is_nullable: Option<bool>,
 
@@ -31,8 +45,6 @@ pub struct BmmSingleton {
     pub feature_extensions: Vec<BmmFeatureExtension>,
     /// Group containing this feature.
     pub group: BmmFeatureGroup,
-    /// Model element within which an element is declared.
-    pub scope: BmmClass,
     /// Generator of the value of this static property.
     pub generator: BmmRoutineDefinition,
 }
