@@ -72,6 +72,21 @@ pub(crate) fn decide<'a>(
             // in this schema (e.g. `AUTHORED_RESOURCE` in BASE — its concretes
             // live in AM). Emit its own fields as a struct so the reference
             // resolves; a cross-schema pass can promote it to an enum later.
+            //
+            // NOTE (adjudicated boundary): when such a class also declares NO
+            // attributes, the emission is an instantiable EMPTY struct, so the
+            // class's abstractness is not encoded. LANG BMM3's `BMM_VISIBILITY`
+            // and `BMM_FEATURE_EXTENSION` are the live instances
+            // (`…bmm3.bmm_visibility.adoc`, `…bmm3.bmm_feature_extension.adoc`:
+            // abstract, zero attributes, zero declared descendants — upstream
+            // states the visibility meta-model is unfinished,
+            // `LANG/docs/bmm3/master08-core-features.adoc` §Feature Groups and
+            // Visibility "TBD: define visibility meta-model"). No better shape
+            // exists: an enum needs variants, and inventing them would fork the
+            // vendored model. A future declared subtype set turns each into an
+            // untagged enum through this same branch, and a hand-written
+            // extender would be a `plan::overrides::SUBTYPE_EXTENSIONS` entry
+            // rather than a Rust `impl`.
             Emission::Struct
         } else {
             Emission::Skip

@@ -16,5 +16,6 @@ pub struct BmmIntervalValue {
     /// Optional specification of formalism of the `_value_literal_` attribute for complex values. Value may be any of `json | json5 | yawl | xml | odin | rdf` or another value agreed by the user community. If not set, `json` is assumed.
     pub syntax: Option<String>,
     /// Concrete type of this literal.
+    // NOTE: free-form JSON is adjudicated here, not accidental — LANG bmm3 master09-core-values.adoc §Container Literals narrows the container literals only; `…bmm3.bmm_interval_value.adoc` declares no attributes at all, so `BMM_LITERAL_VALUE<T>.type` stays open — no openEHR spec text narrows T for an interval literal. Spec silence: unlike BMM_CONTAINER_VALUE/BMM_INDEXED_CONTAINER_VALUE, no chapter or class definition states the interval literal's concrete type meta-class, so binding T here would be a guess.
     pub r#type: serde_json::Value,
 }

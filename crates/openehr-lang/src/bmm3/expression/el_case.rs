@@ -12,5 +12,6 @@ pub struct ElCase<T> {
     /// Result expression of conditional, if its `_condition_` evaluates to True.
     pub result: T,
     /// Constraint on
+    // NOTE: free-form JSON is adjudicated here, not accidental — LANG `…bmm3.el_case.adoc` §Attributes types `value_constraint: C_OBJECT` (1..1), but C_OBJECT is an AM class (`AM aom2 …c_object.adoc`) and AM depends on LANG — an upstream→downstream dependency inversion in the vendored model. openehr-lang cannot name an openehr-am type; the AM24 downstream re-emission of the same class DOES carry `value_constraint: CObject`, so the typed form exists exactly where C_OBJECT does.
     pub value_constraint: serde_json::Value,
 }

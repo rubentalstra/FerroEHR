@@ -347,6 +347,36 @@ fn decision_map_integrity_entries_are_cited_and_reference_real_classes() {
     }
 }
 
+/// Every adjudicated free-form field is a REAL degrade whose adjudication is
+/// written at the site: some generated file renders the field as
+/// `serde_json::Value` and carries the `// NOTE:` with the entry's citation.
+///
+/// This is the non-vacuity half of the decision-map integrity test — an entry
+/// for a field that turned out to be typeable would otherwise sit unnoticed,
+/// which is exactly the "silence over an untyped slot" this map exists to end.
+#[test]
+fn untyped_field_adjudications_land_on_a_real_free_form_field() {
+    let files = testsupport::render_all_to_memory().unwrap();
+    for (class, field, citation) in testsupport::untyped_fields() {
+        let ident = if field == "type" {
+            "r#type".to_string()
+        } else {
+            field.clone()
+        };
+        let hit = files.values().any(|body| {
+            body.contains(&citation)
+                && body.contains(&format!("pub {ident}: serde_json::Value"))
+                && body.contains(&format!("(`{class}`)"))
+        });
+        assert!(
+            hit,
+            "{class}.{field}: no generated file carries the adjudication NOTE above a free-form \
+             `{ident}: serde_json::Value` field — the entry is stale (the field is typed now) or \
+             the NOTE is not being emitted",
+        );
+    }
+}
+
 /// Every declared additional subtype member actually widens its parent's
 /// polymorphic slot: in every composition whose model defines both classes, the
 /// parent's variant set contains the subtype (and at least one composition does

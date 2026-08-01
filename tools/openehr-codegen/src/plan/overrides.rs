@@ -289,6 +289,20 @@ pub(crate) const CLASS_BINDINGS: &[ClassBinding] = &[
         reason: "openEHR files it under primitive_types without carrying the Interval<Integer> binding.",
     },
     ClassBinding {
+        class: "BMM_CONTAINER_VALUE",
+        param: "T",
+        concrete: "BMM_CONTAINER_TYPE",
+        citation: "LANG bmm3 master09-core-values.adoc §Container Literals — a container literal's \"`_type_` will be `BMM_CONTAINER_TYPE`\"",
+        reason: "BMM_LITERAL_VALUE<T>.type is inherited open; the chapter states the narrowing the bmm3 class definition omits (openEHR's own LANG 1.0.0 BMM declares `type: BMM_CONTAINER_TYPE` here).",
+    },
+    ClassBinding {
+        class: "BMM_INDEXED_CONTAINER_VALUE",
+        param: "T",
+        concrete: "BMM_INDEXED_CONTAINER_TYPE",
+        citation: "LANG bmm3 master09-core-values.adoc §Container Literals — a `Hash<K,V>` literal \"has as its meta-type `BMM_INDEXED_CONTAINER_VALUE`\", the indexed analogue of the container-literal narrowing",
+        reason: "BMM_LITERAL_VALUE<T>.type is inherited open; openEHR's own LANG 1.0.0 BMM declares `type: BMM_INDEXED_CONTAINER_TYPE` here.",
+    },
+    ClassBinding {
         class: "X_VERSIONED_COMPOSITION",
         param: "T",
         concrete: "COMPOSITION",
@@ -482,6 +496,65 @@ pub(crate) fn type_override(class: &str, field: &str) -> Option<&'static str> {
         .iter()
         .find(|o| o.class == class && o.field == field)
         .map(|o| o.rust_type)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Adjudicated free-form (`serde_json::Value`) fields
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One adjudicated free-form field: `(class, field)` renders as
+/// `serde_json::Value` and that degrade is a recorded decision, not an
+/// oversight. The emitter writes the citation + reason as a `// NOTE:` directly
+/// above the generated field, so the adjudication is readable where the untyped
+/// slot is.
+pub(crate) struct UntypedField {
+    /// The BMM class owning (or inheriting) the field.
+    pub class: &'static str,
+    /// The BMM property name.
+    pub field: &'static str,
+    /// Spec citation, or the explicit our-own-design flag.
+    pub citation: &'static str,
+    /// One-line reason the field cannot be narrowed here.
+    pub reason: &'static str,
+}
+
+/// Fields whose free-form JSON rendering is adjudicated rather than accidental.
+///
+/// Two distinct causes, both real and both recorded at the site:
+/// * an inherited OPEN generic parameter no vendored declaration narrows
+///   (`BMM_LITERAL_VALUE<T>.type` on `BMM_INTERVAL_VALUE`) — genuine spec
+///   silence, so no [`CLASS_BINDINGS`] entry can be justified;
+/// * an upstream→downstream layering inversion (a LANG class referencing an AM
+///   class), where the typed field DOES appear in the downstream re-emission.
+pub(crate) const UNTYPED_FIELDS: &[UntypedField] = &[
+    UntypedField {
+        class: "BMM_INTERVAL_VALUE",
+        field: "type",
+        citation: "LANG bmm3 master09-core-values.adoc §Container Literals narrows the container \
+                   literals only; `…bmm3.bmm_interval_value.adoc` declares no attributes at all, \
+                   so `BMM_LITERAL_VALUE<T>.type` stays open — no openEHR spec text narrows T for \
+                   an interval literal",
+        reason: "Spec silence: unlike BMM_CONTAINER_VALUE/BMM_INDEXED_CONTAINER_VALUE, no chapter \
+                 or class definition states the interval literal's concrete type meta-class, so \
+                 binding T here would be a guess.",
+    },
+    UntypedField {
+        class: "EL_CASE",
+        field: "value_constraint",
+        citation: "LANG `…bmm3.el_case.adoc` §Attributes types `value_constraint: C_OBJECT` (1..1), \
+                   but C_OBJECT is an AM class (`AM aom2 …c_object.adoc`) and AM depends on LANG — \
+                   an upstream→downstream dependency inversion in the vendored model",
+        reason: "openehr-lang cannot name an openehr-am type; the AM24 downstream re-emission of \
+                 the same class DOES carry `value_constraint: CObject`, so the typed form exists \
+                 exactly where C_OBJECT does.",
+    },
+];
+
+/// The free-form-field adjudication for `(class, field)`, or `None`.
+pub(crate) fn untyped_field(class: &str, field: &str) -> Option<&'static UntypedField> {
+    UNTYPED_FIELDS
+        .iter()
+        .find(|u| u.class == class && u.field == field)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

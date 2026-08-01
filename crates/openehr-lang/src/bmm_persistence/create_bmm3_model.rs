@@ -1,0 +1,1641 @@
+//! The `P_BMM_SCHEMA` → **v3** (`org.openehr.lang.bmm3`) `BMM_MODEL` transform.
+//!
+//! The sibling of [`crate::bmm_persistence::create_model`] against the other BMM
+//! generation's shapes. It lives in its own module because the two generations
+//! give the same Rust NAMES to structurally different types (`BmmModel`,
+//! `BmmClass`, `BmmSimpleType`, …) and this workspace forbids import renaming, so
+//! each transform imports exactly one generation.
+//!
+//! Why a v3 transform at all: three things the v2.x materialisation must leave in
+//! the P_BMM graph have a declared destination in v3, so they reach a model here.
+//!
+//! * **A generic ancestor's parameter binding.** v3 states inheritance as a map
+//!   of TYPES — "the `_ancestors_` attribute … contains a list of _types_ rather
+//!   than classes" (`org.openehr.lang.bmm3.bmm_class.adoc` §Description), typed
+//!   `Hash<String, BMM_MODEL_TYPE>` (same §Attributes) — so
+//!   `P_BMM_CLASS.ancestor_defs`' `GENERIC_PARENT<T,SUPPLIER_B>`
+//!   (`LANG/docs/bmm_persistence/master04-syntax.adoc` §Inheritance) materialises
+//!   as a `BMM_GENERIC_TYPE` ancestor carrying its substitutions.
+//! * **A class's routines and constants.** v3 `BMM_CLASS` declares `features`,
+//!   `functions`, `procedures` and `static_properties` (same §Attributes), the
+//!   destination `P_BMM_CLASS.functions`/`constants` has in no v2 class.
+//! * **`value_constraint`.** v3 puts it on the TYPE
+//!   (`BMM_MODEL_TYPE.value_constraint: BMM_VALUE_SET_SPEC`,
+//!   `…bmm3.bmm_model_type.adoc` §Attributes), which is where
+//!   `P_BMM_BASE_TYPE.value_constraint` ("openEHR::languages",
+//!   `master04-syntax.adoc` §Value-set Constraints) belongs — the `::`-split of
+//!   `master07-core-classes.adoc` §Value-set Types.
+//!
+//! Three boundaries are load-bearing and stated here rather than left implicit:
+//!
+//! TODO: synthesise generic-substituted properties and stamp
+//! `is_synthesised_generic`. `master13-model_semantics.adoc` §Generic Inheritance
+//! requires that where an ancestor's formal parameter is substituted, the
+//! properties whose type was that parameter "are synthesised within
+//! `DV_INTERVAL<T>` with their new concrete types. Their BMM meta-type objects
+//! (type `BMM_UNITARY_PROPERTY`) will both have the meta-attribute
+//! `_is_synthesised_generic_` set to `True`". Every materialised property
+//! therefore leaves the flag unset today. The substitution machinery this needs is
+//! now all present — the ancestor type carries its bindings (above), and
+//! `BmmClass::flat_features` walks the lineage — but doing it correctly means
+//! deciding how a synthesised property interacts with a redefinition of the same
+//! name, and how far a partially-closed chain propagates, which is a design step
+//! rather than plumbing.
+//!
+//! TODO: land class INVARIANTS and routine pre-/post-conditions. v3 requires them
+//! as `BMM_ASSERTION` ("Expressions as used in BMM models to express class
+//! invariants and routine pre- and post-conditions are always in the form of an
+//! `BMM_ASSERTION`", `LANG/docs/bmm3/master10-expressions.adoc` §Usage in BMM
+//! Models) and `BMM_ASSERTION.expression: EL_BOOLEAN_EXPRESSION` is `1..1`
+//! (`…bmm3.bmm_assertion.adoc` §Attributes), while P_BMM persists each assertion
+//! as an opaque expression STRING keyed by tag (`P_BMM_CLASS.invariants`:
+//! "Invariants defined on this class, as a Hash of assertion expressions keyed by
+//! tag", `…bmm_persistence.p_bmm_class.adoc` §Attributes). Turning that string
+//! into an `EL_BOOLEAN_EXPRESSION` needs an Expression Language parser: EL is
+//! DEVELOPMENT status and its grammar is not vendored
+//! (`LANG/docs/EL/masterAppA-syntax.adoc` points at an external ANTLR
+//! repository), so this transform SKIPS invariants and pre/post-conditions rather
+//! than inventing an expression tree. They stay readable in the P_BMM graph.
+//!
+//! NOTE (embedding depth, the same adjudication as the v2.x transform): a v3
+//! `BMM_CLASS.ancestors` entry is a type whose `base_class` is a `BMM_CLASS`, so
+//! full embedding would not terminate. An ancestor type's base class is therefore
+//! a name-bearing STUB (name, package, flags — no features, no ancestors, no
+//! generic parameters), and the complete definition of every class is always
+//! `BMM_MODEL.class_definitions` ("All classes in this model, keyed by type
+//! name", `…bmm3.bmm_model.adoc` §Attributes).
+
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+
+use crate::bmm_persistence::create_model::Builder;
+use crate::bmm_persistence::create_model::ClassEntry;
+use crate::bmm_persistence::create_model::check_enumeration_validity;
+use crate::bmm_persistence::create_model::multiplicity_of;
+use crate::bmm_persistence::create_model::property_context;
+use crate::bmm_persistence::create_model::qualify;
+use crate::bmm_persistence::error::PBmmReadError;
+use crate::bmm_persistence::p_bmm_base_type::PBmmBaseType;
+use crate::bmm_persistence::p_bmm_class::PBmmClass;
+use crate::bmm_persistence::p_bmm_constant::PBmmConstant;
+use crate::bmm_persistence::p_bmm_container_property::PBmmContainerProperty;
+use crate::bmm_persistence::p_bmm_container_type::PBmmContainerType;
+use crate::bmm_persistence::p_bmm_enumeration::PBmmEnumeration;
+use crate::bmm_persistence::p_bmm_function::PBmmFunction;
+use crate::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter;
+use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
+use crate::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType;
+use crate::bmm_persistence::p_bmm_package::PBmmPackage;
+use crate::bmm_persistence::p_bmm_property::PBmmProperty;
+use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
+use crate::bmm_persistence::p_bmm_type::PBmmType;
+use crate::bmm3::core::entity::bmm_class::BmmClass;
+use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
+use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
+use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
+use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
+use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
+use crate::bmm3::core::entity::bmm_model_type::BmmModelType;
+use crate::bmm3::core::entity::bmm_module::BmmModule;
+use crate::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
+use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
+use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData;
+use crate::bmm3::core::entity::bmm_type::BmmType;
+use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
+use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
+use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData;
+use crate::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger;
+use crate::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString;
+use crate::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
+use crate::bmm3::core::feature::bmm_constant::BmmConstant;
+use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
+use crate::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData;
+use crate::bmm3::core::feature::bmm_feature::BmmFeature;
+use crate::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
+use crate::bmm3::core::feature::bmm_function::BmmFunction;
+use crate::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty;
+use crate::bmm3::core::feature::bmm_parameter::BmmParameter;
+use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
+use crate::bmm3::core::feature::bmm_property::BmmProperty;
+use crate::bmm3::core::feature::bmm_result::BmmResult;
+use crate::bmm3::core::feature::bmm_static::BmmStatic;
+use crate::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue;
+use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
+use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData;
+use crate::bmm3::core::model::bmm_model::BmmModel;
+use crate::bmm3::core::model::bmm_package::BmmPackage;
+
+/// The default feature-group name every feature is placed in: "Name of this
+/// feature group; defaults to 'feature'"
+/// (`org.openehr.lang.bmm3.bmm_feature_group.adoc` §Attributes;
+/// `LANG/docs/bmm3/master08-core-features.adoc` §Feature Groups and Visibility).
+pub const DEFAULT_FEATURE_GROUP_NAME: &str = "feature";
+
+/// The `::` separator a persisted `value_constraint` is split on: "The
+/// construction within the `<<>>` is parsed into two pieces around the `::`
+/// separator, which are then used to populate the `BMM_VALUE_SET_SPEC` for a
+/// type" (`LANG/docs/bmm3/master07-core-classes.adoc` §Value-set Types).
+const VALUE_SET_SEPARATOR: &str = "::";
+
+/// Materialise the in-memory **v3** `BMM_MODEL` of an inclusion-resolved
+/// `P_BMM_SCHEMA` (see the module docs for what this generation carries that the
+/// v2.x one cannot, and for the two recorded boundaries).
+///
+/// # Errors
+/// The same failures as [`crate::bmm_persistence::create_model::create_bmm_model`]:
+/// [`PBmmReadError::UnknownAncestor`], [`PBmmReadError::UnknownType`],
+/// [`PBmmReadError::ClassNotInAnyPackage`], [`PBmmReadError::ClassNotDefined`],
+/// [`PBmmReadError::ContainerTargetTypeMissing`],
+/// [`PBmmReadError::TypeDefinitionMissing`],
+/// [`PBmmReadError::UndeclaredGenericParameter`],
+/// [`PBmmReadError::NotAGenericClass`],
+/// [`PBmmReadError::EnumerationAncestorCount`] and
+/// [`PBmmReadError::EnumerationItemListsNotOneToOne`] — the two transforms share
+/// one enumeration-validity check, so they refuse the same schemas.
+pub fn create_bmm3_model(schema: &PBmmSchema) -> Result<BmmModel, PBmmReadError> {
+    let builder = Builder::new(schema)?;
+    let mut class_definitions: BTreeMap<String, BmmClass> = BTreeMap::new();
+    for entry in builder.classes.values() {
+        class_definitions.insert(
+            entry.class.name().to_owned(),
+            build_class(&builder, entry, Depth::Full, &mut BTreeSet::new())?,
+        );
+    }
+    let modules: BTreeMap<String, BmmModule> = class_definitions
+        .iter()
+        .map(|(name, class)| (name.clone(), as_module(class)))
+        .collect();
+    let packages = build_packages(&builder, &schema.packages, "")?;
+    Ok(BmmModel {
+        // `BMM_MODEL_ELEMENT.name` of the model is the schema's own name —
+        // `P_BMM_SCHEMA.schema_name` (`…bmm_persistence.p_bmm_schema.adoc`
+        // §Attributes).
+        name: schema.schema_name.clone(),
+        // P_BMM_SCHEMA declares neither a keyed `documentation` nor `extensions`
+        // (same §Attributes), so both inherited `BMM_MODEL_ELEMENT` attributes
+        // have no persisted source.
+        documentation: None,
+        extensions: None,
+        packages: (!packages.is_empty()).then_some(packages),
+        rm_publisher: schema.rm_publisher.clone(),
+        rm_release: schema.rm_release.clone(),
+        class_definitions: (!class_definitions.is_empty()).then_some(class_definitions),
+        // `BMM_MODEL.used_models` is v3's model-import list
+        // (`org.openehr.lang.bmm3.bmm_model.adoc` §Attributes). P_BMM composes
+        // models by INCLUSION instead, and inclusion is already resolved into
+        // this schema before the transform runs
+        // (`LANG/docs/bmm_persistence/master02-overview.adoc` §Conceptual
+        // Approach), so a materialised schema uses no separate model.
+        used_models: Vec::new(),
+        // `BMM_MODEL.modules` — "All classes in this model, keyed by type name"
+        // (same §Attributes): the same population as `class_definitions`, viewed
+        // under the module meta-type every v3 class is one of
+        // (`…bmm3.bmm_class.adoc` §Inherit — `BMM_CLASS : BMM_MODULE`).
+        modules: (!modules.is_empty()).then_some(modules),
+    })
+}
+
+/// One class under the `BMM_MODULE` meta-type it inherits
+/// (`org.openehr.lang.bmm3.bmm_class.adoc` §Inherit).
+fn as_module(class: &BmmClass) -> BmmModule {
+    match class {
+        BmmClass::BmmGenericClass(generic) => BmmModule::BmmGenericClass(generic.clone()),
+        BmmClass::BmmSimpleClass(simple) => BmmModule::BmmSimpleClass(simple.clone()),
+    }
+}
+
+/// How much of a referenced class is embedded (see the module docs' depth
+/// adjudication).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Depth {
+    /// A class definition: features, properties, routines and the ancestor chain
+    /// built. Used for a `BMM_MODEL.class_definitions` entry and for every
+    /// ancestor of one, so the class-level walks
+    /// ([`crate::bmm3::core::entity::bmm_class::BmmClass::all_ancestors`],
+    /// `has_ancestor_class`, `flat_features`) see the whole lineage.
+    Full,
+    /// A name-bearing stub: no features, no generic parameters, ancestors as
+    /// stubs. Used for the base class of a TYPE, which is where full embedding
+    /// would stop terminating (a property's type resolves to a class whose own
+    /// properties have types …).
+    Stub,
+}
+
+/// The `BMM_CLASS` attributes built once for every class form.
+struct ClassCore {
+    /// `BMM_CLASS.name`.
+    name: String,
+    /// `BMM_CLASS.documentation` — the persisted scalar text under the
+    /// recommended `"purpose"` key (see [`documentation_of`]).
+    documentation: Option<BTreeMap<String, serde_json::Value>>,
+    /// `BMM_CLASS.feature_groups`.
+    feature_groups: Vec<BmmFeatureGroup>,
+    /// `BMM_CLASS.features`.
+    features: Vec<BmmFeature>,
+    /// `BMM_CLASS.ancestors` — as TYPES.
+    ancestors: Option<BTreeMap<String, BmmModelType>>,
+    /// `BMM_CLASS.package`.
+    package: BmmPackage,
+    /// `BMM_CLASS.properties`.
+    properties: Option<BTreeMap<String, BmmProperty>>,
+    /// `BMM_CLASS.static_properties`.
+    static_properties: Option<BTreeMap<String, BmmStatic>>,
+    /// `BMM_CLASS.functions`.
+    functions: Option<BTreeMap<String, BmmFunction>>,
+    /// `BMM_CLASS.procedures`.
+    procedures: Option<BTreeMap<String, BmmProcedure>>,
+    /// `BMM_CLASS.source_schema_id`.
+    source_schema_id: String,
+    /// `BMM_CLASS.is_abstract`.
+    is_abstract: Option<bool>,
+    /// `BMM_CLASS.is_primitive`.
+    is_primitive: Option<bool>,
+    /// `BMM_CLASS.is_override`.
+    is_override: bool,
+}
+
+/// The v3 keyed `documentation` form of a persisted scalar documentation string.
+///
+/// `BMM_MODEL_ELEMENT.documentation` is a `Hash<String, Any>` whose recommended
+/// keys include `"purpose": String` and where "Other keys and value types may be
+/// freely added" (`org.openehr.lang.bmm3.bmm_model_element.adoc` §Attributes),
+/// while P_BMM persists a single `documentation: String`
+/// (`…bmm_persistence.p_bmm_model_element.adoc` §Attributes). The scalar
+/// therefore lands under `"purpose"`, the key the spec names for exactly that
+/// content.
+fn documentation_of(text: Option<&str>) -> Option<BTreeMap<String, serde_json::Value>> {
+    text.map(|text| {
+        let mut out = BTreeMap::new();
+        out.insert(
+            "purpose".to_owned(),
+            serde_json::Value::String(text.to_owned()),
+        );
+        out
+    })
+}
+
+/// The feature group a materialised feature belongs to: the default group, whose
+/// own `features` list is left empty because `BMM_FEATURE.group` and
+/// `BMM_FEATURE_GROUP.features` are the two directions of one relation
+/// (`org.openehr.lang.bmm3.bmm_feature.adoc` /
+/// `…bmm3.bmm_feature_group.adoc` §Attributes) — the group the CLASS carries
+/// (`BMM_CLASS.feature_groups`) is the populated one.
+fn default_group() -> BmmFeatureGroup {
+    BmmFeatureGroup {
+        name: DEFAULT_FEATURE_GROUP_NAME.to_owned(),
+        properties: BTreeMap::new(),
+        features: Vec::new(),
+        visibility: None,
+    }
+}
+
+/// The `BMM_VALUE_SET_SPEC` of a persisted `value_constraint`, split on `::`
+/// (`LANG/docs/bmm3/master07-core-classes.adoc` §Value-set Types). A constraint
+/// with no separator is taken as a value-set id in an unnamed resource: BMM "does
+/// not impose any particular format or resolution algorithm on these identifiers"
+/// (same §Value-set Types), so neither half is refused.
+fn value_set_spec(constraint: Option<&str>) -> Option<BmmValueSetSpec> {
+    constraint.map(
+        |constraint| match constraint.split_once(VALUE_SET_SEPARATOR) {
+            Some((resource_id, value_set_id)) => BmmValueSetSpec {
+                resource_id: resource_id.to_owned(),
+                value_set_id: value_set_id.to_owned(),
+            },
+            None => BmmValueSetSpec {
+                resource_id: String::new(),
+                value_set_id: constraint.to_owned(),
+            },
+        },
+    )
+}
+
+/// Builds one v3 `BMM_CLASS` at the given embedding depth.
+fn build_class(
+    builder: &Builder<'_>,
+    entry: &ClassEntry<'_>,
+    depth: Depth,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmClass, PBmmReadError> {
+    let persisted = entry.class;
+    let core = build_core(builder, entry, depth, visiting)?;
+    if let PBmmClass::PBmmEnumeration(enumeration) = persisted {
+        check_enumeration_validity(core.name.as_str(), enumeration)?;
+        return Ok(BmmClass::BmmSimpleClass(BmmSimpleClass::BmmEnumeration(
+            build_enumeration(builder, core, enumeration, visiting)?,
+        )));
+    }
+    if persisted.is_generic() {
+        return Ok(BmmClass::BmmGenericClass(BmmGenericClass {
+            name: core.name,
+            documentation: core.documentation,
+            extensions: None,
+            feature_groups: core.feature_groups,
+            features: core.features,
+            ancestors: core.ancestors,
+            package: core.package,
+            properties: core.properties,
+            source_schema_id: core.source_schema_id,
+            // `BMM_CLASS.immediate_descendants` is `List<BMM_CLASS>` in v3
+            // (`…bmm3.bmm_class.adoc` §Attributes) — a downward reference the
+            // emitter cannot own without making the type non-constructible, so
+            // the inverted graph stays a model-level query.
+            immediate_descendants: Vec::new(),
+            is_override: core.is_override,
+            static_properties: core.static_properties,
+            functions: core.functions,
+            procedures: core.procedures,
+            is_primitive: core.is_primitive,
+            is_abstract: core.is_abstract,
+            // See the module docs' invariants TODO.
+            invariants: Vec::new(),
+            // `creators`/`converters` are subsets of `procedures` a schema
+            // designates (`…bmm3.bmm_class.adoc` §Attributes); P_BMM has no
+            // attribute designating them, so no subset can be computed.
+            creators: None,
+            converters: None,
+            generic_parameters: build_generic_parameters(builder, persisted, depth, visiting)?,
+        }));
+    }
+    Ok(BmmClass::BmmSimpleClass(BmmSimpleClass::BmmSimpleClass(
+        BmmSimpleClassData {
+            name: core.name,
+            documentation: core.documentation,
+            extensions: None,
+            feature_groups: core.feature_groups,
+            features: core.features,
+            ancestors: core.ancestors,
+            package: core.package,
+            properties: core.properties,
+            source_schema_id: core.source_schema_id,
+            immediate_descendants: Vec::new(),
+            is_override: core.is_override,
+            static_properties: core.static_properties,
+            functions: core.functions,
+            procedures: core.procedures,
+            is_primitive: core.is_primitive,
+            is_abstract: core.is_abstract,
+            invariants: Vec::new(),
+            creators: None,
+            converters: None,
+        },
+    )))
+}
+
+/// Builds the shared `BMM_CLASS` attributes.
+fn build_core(
+    builder: &Builder<'_>,
+    entry: &ClassEntry<'_>,
+    depth: Depth,
+    visiting: &mut BTreeSet<String>,
+) -> Result<ClassCore, PBmmReadError> {
+    let persisted = entry.class;
+    let name = persisted.name();
+    let (properties, statics, functions, procedures) = match depth {
+        Depth::Stub => (None, None, None, None),
+        Depth::Full => (
+            build_properties(builder, persisted, visiting)?,
+            build_constants(builder, persisted, visiting)?,
+            build_functions(builder, persisted, visiting)?,
+            build_procedures(builder, persisted, visiting)?,
+        ),
+    };
+    let features = collect_features(
+        properties.as_ref(),
+        statics.as_ref(),
+        functions.as_ref(),
+        procedures.as_ref(),
+    );
+    Ok(ClassCore {
+        name: name.to_owned(),
+        documentation: documentation_of(persisted.documentation()),
+        // `BMM_MODULE.feature_groups` is "List of feature groups in this class"
+        // (`org.openehr.lang.bmm3.bmm_module.adoc` §Attributes). P_BMM declares no
+        // grouping, so every feature is in the one default group
+        // ([`DEFAULT_FEATURE_GROUP_NAME`]), which the class carries populated.
+        feature_groups: if features.is_empty() {
+            Vec::new()
+        } else {
+            vec![BmmFeatureGroup {
+                name: DEFAULT_FEATURE_GROUP_NAME.to_owned(),
+                properties: BTreeMap::new(),
+                features: features.clone(),
+                visibility: None,
+            }]
+        },
+        features,
+        ancestors: build_ancestors(builder, persisted, depth, visiting)?,
+        package: package_of(builder, name)?,
+        properties,
+        static_properties: statics,
+        functions,
+        procedures,
+        source_schema_id: persisted
+            .source_schema_id()
+            .unwrap_or(builder.schema_id.as_str())
+            .to_owned(),
+        is_abstract: Some(persisted.is_abstract()),
+        is_primitive: Some(entry.is_primitive_type),
+        is_override: persisted.is_override(),
+    })
+}
+
+/// The owning-package stub of the class named `name` — the v3 `BMM_PACKAGE`
+/// counterpart of the v2.x one (`BMM_CLASS.package` is `1..1`,
+/// `org.openehr.lang.bmm3.bmm_class.adoc` §Attributes).
+fn package_of(builder: &Builder<'_>, name: &str) -> Result<BmmPackage, PBmmReadError> {
+    let path = builder
+        .owning_package
+        .get(&name.to_uppercase())
+        .ok_or_else(|| PBmmReadError::ClassNotInAnyPackage {
+            class: name.to_owned(),
+        })?;
+    Ok(BmmPackage {
+        name: path.clone(),
+        documentation: None,
+        extensions: None,
+        packages: None,
+        members: Vec::new(),
+    })
+}
+
+/// Every feature of the class, as the union of the specific maps — "all features
+/// are contained in the `_features_` attribute … features of each specific type
+/// being referenced in a dedicated map"
+/// (`LANG/docs/bmm3/master07-core-classes.adoc` §Overview).
+fn collect_features(
+    properties: Option<&BTreeMap<String, BmmProperty>>,
+    statics: Option<&BTreeMap<String, BmmStatic>>,
+    functions: Option<&BTreeMap<String, BmmFunction>>,
+    procedures: Option<&BTreeMap<String, BmmProcedure>>,
+) -> Vec<BmmFeature> {
+    let mut out: Vec<BmmFeature> = Vec::new();
+    for property in properties.into_iter().flatten().map(|(_, p)| p) {
+        out.push(match property {
+            BmmProperty::BmmContainerProperty(container) => {
+                BmmFeature::BmmContainerProperty(container.clone())
+            }
+            BmmProperty::BmmUnitaryProperty(unitary) => {
+                BmmFeature::BmmUnitaryProperty(unitary.clone())
+            }
+        });
+    }
+    for value in statics.into_iter().flatten().map(|(_, s)| s) {
+        out.push(match value {
+            BmmStatic::BmmConstant(constant) => BmmFeature::BmmConstant(constant.clone()),
+            BmmStatic::BmmSingleton(singleton) => BmmFeature::BmmSingleton(singleton.clone()),
+        });
+    }
+    for function in functions.into_iter().flatten().map(|(_, f)| f) {
+        out.push(BmmFeature::BmmFunction(function.clone()));
+    }
+    for procedure in procedures.into_iter().flatten().map(|(_, p)| p) {
+        out.push(BmmFeature::BmmProcedure(procedure.clone()));
+    }
+    out
+}
+
+/// Builds `BMM_CLASS.ancestors` as a map of TYPES, carrying a generic ancestor's
+/// parameter substitutions (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes +
+/// §Description; `LANG/docs/bmm_persistence/master04-syntax.adoc` §Inheritance).
+fn build_ancestors(
+    builder: &Builder<'_>,
+    persisted: &PBmmClass,
+    depth: Depth,
+    visiting: &mut BTreeSet<String>,
+) -> Result<Option<BTreeMap<String, BmmModelType>>, PBmmReadError> {
+    // The chain is only followed once per lineage: re-entering a class already on
+    // the stack would not terminate on a schema whose inheritance is cyclic,
+    // which the spec forbids ("results in an acyclic graph",
+    // `LANG/docs/bmm3/master13-model_semantics.adoc` §Simple Inheritance) but
+    // nothing in the persisted form enforces.
+    if !visiting.insert(persisted.name().to_uppercase()) {
+        return Ok(None);
+    }
+    let mut out: BTreeMap<String, BmmModelType> = BTreeMap::new();
+    // The structured generic ancestors first: each carries the substitution the
+    // plain name list cannot express.
+    for def in persisted.ancestor_defs() {
+        let context = format!("class `{}` ancestor `{}`", persisted.name(), def.root_type);
+        let entry = builder.entry(&context, &def.root_type)?;
+        out.insert(
+            entry.class.name().to_owned(),
+            BmmModelType::BmmGenericType(build_generic_type(
+                builder, &context, def, persisted, visiting,
+            )?),
+        );
+    }
+    for parent in persisted.ancestors() {
+        let entry = builder.classes.get(&parent.to_uppercase()).ok_or_else(|| {
+            PBmmReadError::UnknownAncestor {
+                class: persisted.name().to_owned(),
+                ancestor: parent.clone(),
+            }
+        })?;
+        // Keyed by the ancestor's OWN name, so a name read back out of the map
+        // looks up in `BMM_MODEL.class_definitions`.
+        let key = entry.class.name().to_owned();
+        if out.contains_key(&key) {
+            continue;
+        }
+        // An ancestor is embedded at the SAME depth as the class being built, so
+        // a class definition carries its whole lineage and the class-level walks
+        // are transitive; a stub's ancestors stay stubs.
+        let ancestor = build_class(builder, entry, depth, visiting)?;
+        out.insert(key, class_as_type(ancestor));
+    }
+    visiting.remove(&persisted.name().to_uppercase());
+    Ok((!out.is_empty()).then_some(out))
+}
+
+/// The type a class generates — `BMM_CLASS.type` ("Generate a type object that
+/// represents the type for which this class is the definer",
+/// `org.openehr.lang.bmm3.bmm_class.adoc` §Functions), applied to a stub class.
+fn class_as_type(class: BmmClass) -> BmmModelType {
+    match class {
+        BmmClass::BmmGenericClass(generic) => BmmModelType::BmmGenericType(generic.r#type()),
+        BmmClass::BmmSimpleClass(simple) => BmmModelType::BmmSimpleType(simple.r#type()),
+    }
+}
+
+/// Builds a generic class's formal parameter declarations as
+/// `BMM_PARAMETER_TYPE`s (`org.openehr.lang.bmm3.bmm_generic_class.adoc`
+/// §Attributes — "List of formal generic parameters, keyed by name").
+fn build_generic_parameters(
+    builder: &Builder<'_>,
+    persisted: &PBmmClass,
+    depth: Depth,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BTreeMap<String, BmmParameterType>, PBmmReadError> {
+    if depth == Depth::Stub {
+        return Ok(BTreeMap::new());
+    }
+    let mut out = BTreeMap::new();
+    for (key, parameter) in persisted.generic_parameter_defs().into_iter().flatten() {
+        out.insert(
+            key.clone(),
+            build_parameter_type(
+                builder,
+                persisted.name(),
+                &parameter.name,
+                parameter.conforms_to_type.as_deref(),
+                visiting,
+            )?,
+        );
+    }
+    Ok(out)
+}
+
+/// Builds one `BMM_PARAMETER_TYPE`: the formal parameter `name` with its optional
+/// conformance constraint (`org.openehr.lang.bmm3.bmm_parameter_type.adoc`
+/// §Attributes — `type_constraint` is an "Optional conformance constraint that
+/// must be the name of a defined type").
+fn build_parameter_type(
+    builder: &Builder<'_>,
+    owner: &str,
+    name: &str,
+    constraint: Option<&str>,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmParameterType, PBmmReadError> {
+    let type_constraint = match constraint {
+        None => None,
+        Some(constrainer) => {
+            let context = format!("class `{owner}` generic parameter `{name}`");
+            let stub = build_class(
+                builder,
+                builder.entry(&context, constrainer)?,
+                Depth::Stub,
+                visiting,
+            )?;
+            Some(Box::new(
+                crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::from(
+                    class_as_type(stub),
+                ),
+            ))
+        }
+    };
+    Ok(BmmParameterType {
+        name: name.to_owned(),
+        type_constraint,
+        // `inheritance_precursor` is "the corresponding generic parameter
+        // definition in an ancestor class" (same §Attributes) — P_BMM declares no
+        // such link, and computing one would guess which same-named ancestor
+        // parameter is meant.
+        inheritance_precursor: None,
+    })
+}
+
+/// Builds a class's `BMM_CLASS.properties` map.
+fn build_properties(
+    builder: &Builder<'_>,
+    persisted: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<Option<BTreeMap<String, BmmProperty>>, PBmmReadError> {
+    let Some(properties) = persisted.properties() else {
+        return Ok(None);
+    };
+    let mut out = BTreeMap::new();
+    for (key, property) in properties {
+        out.insert(
+            key.clone(),
+            build_property(builder, persisted, property, visiting)?,
+        );
+    }
+    Ok((!out.is_empty()).then_some(out))
+}
+
+/// Builds one v3 `BMM_PROPERTY`.
+///
+/// A single/open/generic property is a `BMM_UNITARY_PROPERTY` whose type is
+/// narrowed to `BMM_UNITARY_TYPE`
+/// (`org.openehr.lang.bmm3.bmm_unitary_property.adoc` §Attributes) — in v3 that
+/// enum DOES contain the model types, so an ordinary class-typed property is a
+/// unitary property. `is_nullable` is the v3 spelling of optionality ("True if
+/// this element can be null (Void) at execution time",
+/// `…bmm3.bmm_formal_element.adoc` §Attributes), which is the negation of P_BMM's
+/// `is_mandatory` (`…bmm_persistence.p_bmm_property.adoc` §Attributes).
+#[expect(
+    clippy::too_many_lines,
+    reason = "one arm per P_BMM_PROPERTY subtype; splitting the dispatch would hide the five-way persisted-property → v3 BMM_PROPERTY mapping"
+)]
+fn build_property(
+    builder: &Builder<'_>,
+    owner: &PBmmClass,
+    property: &PBmmProperty,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmProperty, PBmmReadError> {
+    let class_name = owner.name();
+    match property {
+        PBmmProperty::PBmmSingleProperty(single) => {
+            let context = property_context(class_name, &single.name);
+            let (r#type, constraint) = match (
+                single.type_def.as_ref(),
+                single.type_ref.as_ref(),
+                single.r#type.as_deref(),
+            ) {
+                (Some(type_def), _, _) => (
+                    build_unitary_type(builder, &context, type_def, owner, visiting)?,
+                    None,
+                ),
+                (None, Some(type_ref), _) => (
+                    build_named_unitary_type(builder, &context, &type_ref.r#type, owner, visiting)?,
+                    type_ref.value_constraint.as_deref(),
+                ),
+                (None, None, Some(name)) => (
+                    build_named_unitary_type(builder, &context, name, owner, visiting)?,
+                    None,
+                ),
+                (None, None, None) => {
+                    return Err(PBmmReadError::TypeDefinitionMissing { context });
+                }
+            };
+            Ok(BmmProperty::BmmUnitaryProperty(unitary_property(
+                &single.name,
+                single.documentation.as_deref(),
+                with_value_constraint(r#type, constraint),
+                single.is_mandatory,
+                single.is_im_runtime,
+                single.is_im_infrastructure,
+            )))
+        }
+        PBmmProperty::PBmmSinglePropertyOpen(open) => {
+            let context = property_context(class_name, &open.name);
+            let parameter = match (open.type_ref.as_ref(), open.r#type.as_deref()) {
+                (Some(type_ref), _) => type_ref.r#type.as_str(),
+                (None, Some(name)) => name,
+                (None, None) => {
+                    return Err(PBmmReadError::TypeDefinitionMissing { context });
+                }
+            };
+            let r#type = BmmUnitaryType::BmmParameterType(Box::new(open_parameter_type(
+                builder, owner, &open.name, parameter, visiting,
+            )?));
+            Ok(BmmProperty::BmmUnitaryProperty(unitary_property(
+                &open.name,
+                open.documentation.as_deref(),
+                r#type,
+                open.is_mandatory,
+                open.is_im_runtime,
+                open.is_im_infrastructure,
+            )))
+        }
+        PBmmProperty::PBmmGenericProperty(generic) => {
+            let context = property_context(class_name, &generic.name);
+            let Some(type_def) = generic.type_def.as_ref() else {
+                return Err(PBmmReadError::TypeDefinitionMissing { context });
+            };
+            let r#type = BmmUnitaryType::BmmGenericType(build_generic_type(
+                builder, &context, type_def, owner, visiting,
+            )?);
+            Ok(BmmProperty::BmmUnitaryProperty(unitary_property(
+                &generic.name,
+                generic.documentation.as_deref(),
+                r#type,
+                generic.is_mandatory,
+                generic.is_im_runtime,
+                generic.is_im_infrastructure,
+            )))
+        }
+        PBmmProperty::PBmmContainerProperty(PBmmContainerProperty::PBmmContainerProperty(
+            container,
+        )) => {
+            let context = property_context(class_name, &container.name);
+            let Some(type_def) = container.type_def.as_ref() else {
+                return Err(PBmmReadError::TypeDefinitionMissing { context });
+            };
+            let r#type = build_container_type(builder, &context, type_def, owner, visiting)?;
+            Ok(BmmProperty::BmmContainerProperty(
+                BmmContainerProperty::BmmContainerProperty(BmmContainerPropertyData {
+                    name: container.name.clone(),
+                    documentation: documentation_of(container.documentation.as_deref()),
+                    extensions: None,
+                    r#type,
+                    is_nullable: is_nullable(container.is_mandatory),
+                    is_synthesised_generic: None,
+                    feature_extensions: Vec::new(),
+                    group: default_group(),
+                    is_im_runtime: container.is_im_runtime,
+                    is_im_infrastructure: container.is_im_infrastructure,
+                    // P_BMM declares no composition flag
+                    // (`…bmm_persistence.p_bmm_property.adoc` §Attributes), so
+                    // v3's `is_composition` ("True if this property instance is a
+                    // compositional sub-part of the owning class instance",
+                    // `…bmm3.bmm_property.adoc` §Attributes) has no source.
+                    is_composition: None,
+                    cardinality: container.cardinality.as_ref().map(multiplicity_of),
+                }),
+            ))
+        }
+        PBmmProperty::PBmmContainerProperty(
+            PBmmContainerProperty::PBmmIndexedContainerProperty(indexed),
+        ) => {
+            let context = property_context(class_name, &indexed.name);
+            let Some(type_def) = indexed.type_def.as_ref() else {
+                return Err(PBmmReadError::TypeDefinitionMissing { context });
+            };
+            let r#type =
+                build_indexed_container_type(builder, &context, type_def, owner, visiting)?;
+            Ok(BmmProperty::BmmContainerProperty(
+                BmmContainerProperty::BmmIndexedContainerProperty(BmmIndexedContainerProperty {
+                    name: indexed.name.clone(),
+                    documentation: documentation_of(indexed.documentation.as_deref()),
+                    extensions: None,
+                    r#type,
+                    is_nullable: is_nullable(indexed.is_mandatory),
+                    is_synthesised_generic: None,
+                    feature_extensions: Vec::new(),
+                    group: default_group(),
+                    is_im_runtime: indexed.is_im_runtime,
+                    is_im_infrastructure: indexed.is_im_infrastructure,
+                    is_composition: None,
+                    cardinality: indexed.cardinality.as_ref().map(multiplicity_of),
+                }),
+            ))
+        }
+    }
+}
+
+/// The v3 `is_nullable` of a persisted `is_mandatory`: an element that must be
+/// present cannot be null, and vice versa
+/// (`org.openehr.lang.bmm3.bmm_formal_element.adoc` §Attributes vs
+/// `…bmm_persistence.p_bmm_property.adoc` §Attributes). An unstated
+/// `is_mandatory` leaves `is_nullable` unstated too, so its `{default = false}`
+/// applies rather than a guess.
+fn is_nullable(is_mandatory: Option<bool>) -> Option<bool> {
+    is_mandatory.map(|mandatory| !mandatory)
+}
+
+/// Assembles one `BMM_UNITARY_PROPERTY`.
+fn unitary_property(
+    name: &str,
+    documentation: Option<&str>,
+    r#type: BmmUnitaryType,
+    is_mandatory: Option<bool>,
+    is_im_runtime: Option<bool>,
+    is_im_infrastructure: Option<bool>,
+) -> crate::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty {
+    crate::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty {
+        name: name.to_owned(),
+        documentation: documentation_of(documentation),
+        extensions: None,
+        r#type,
+        is_nullable: is_nullable(is_mandatory),
+        is_synthesised_generic: None,
+        feature_extensions: Vec::new(),
+        group: default_group(),
+        is_im_runtime,
+        is_im_infrastructure,
+        is_composition: None,
+    }
+}
+
+/// Attaches a value-set constraint to a model type
+/// (`BMM_MODEL_TYPE.value_constraint`,
+/// `org.openehr.lang.bmm3.bmm_model_type.adoc` §Attributes). A constraint on a
+/// non-model type (a formal parameter, a built-in) has nowhere to attach — only
+/// `BMM_MODEL_TYPE` declares the attribute — and P_BMM only ever states one on a
+/// `type_ref` naming a class, so the other forms pass through unchanged.
+fn with_value_constraint(r#type: BmmUnitaryType, constraint: Option<&str>) -> BmmUnitaryType {
+    let Some(spec) = value_set_spec(constraint) else {
+        return r#type;
+    };
+    match r#type {
+        BmmUnitaryType::BmmSimpleType(mut simple) => {
+            simple.value_constraint = Some(spec);
+            BmmUnitaryType::BmmSimpleType(simple)
+        }
+        BmmUnitaryType::BmmGenericType(mut generic) => {
+            generic.value_constraint = Some(spec);
+            BmmUnitaryType::BmmGenericType(generic)
+        }
+        other => other,
+    }
+}
+
+/// Builds a `BMM_UNITARY_TYPE` from a persisted `P_BMM_TYPE`.
+///
+/// A container type is not unitary (`org.openehr.lang.bmm3.bmm_unitary_type.adoc`
+/// §Description — "the type of any instantiated object that is **not** a
+/// container object"), so a persisted container in a single-property slot is
+/// reduced to its item type, which is what `unitary_type()` returns for it
+/// (`…bmm3.bmm_container_type.adoc` §Functions).
+fn build_unitary_type(
+    builder: &Builder<'_>,
+    context: &str,
+    r#type: &PBmmType,
+    owner: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmUnitaryType, PBmmReadError> {
+    match r#type {
+        PBmmType::PBmmSimpleType(simple) => {
+            let built =
+                build_named_unitary_type(builder, context, &simple.r#type, owner, visiting)?;
+            Ok(with_value_constraint(
+                built,
+                simple.value_constraint.as_deref(),
+            ))
+        }
+        PBmmType::PBmmOpenType(open) => Ok(BmmUnitaryType::BmmParameterType(Box::new(
+            open_parameter_type(builder, owner, context, &open.r#type, visiting)?,
+        ))),
+        PBmmType::PBmmGenericType(generic) => Ok(BmmUnitaryType::BmmGenericType(
+            build_generic_type(builder, context, generic, owner, visiting)?,
+        )),
+        PBmmType::PBmmContainerType(container) => {
+            Ok(build_container_type(builder, context, container, owner, visiting)?.unitary_type())
+        }
+    }
+}
+
+/// Builds a `BMM_UNITARY_TYPE` from a persisted `P_BMM_BASE_TYPE`.
+fn build_base_unitary_type(
+    builder: &Builder<'_>,
+    context: &str,
+    r#type: &PBmmBaseType,
+    owner: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmUnitaryType, PBmmReadError> {
+    match r#type {
+        PBmmBaseType::PBmmSimpleType(simple) => {
+            let built =
+                build_named_unitary_type(builder, context, &simple.r#type, owner, visiting)?;
+            Ok(with_value_constraint(
+                built,
+                simple.value_constraint.as_deref(),
+            ))
+        }
+        PBmmBaseType::PBmmOpenType(open) => Ok(BmmUnitaryType::BmmParameterType(Box::new(
+            open_parameter_type(builder, owner, context, &open.r#type, visiting)?,
+        ))),
+        PBmmBaseType::PBmmGenericType(generic) => Ok(BmmUnitaryType::BmmGenericType(
+            build_generic_type(builder, context, generic, owner, visiting)?,
+        )),
+    }
+}
+
+/// Builds the `BMM_UNITARY_TYPE` a bare type NAME denotes: a formal generic
+/// parameter of the owning class if it declares one, else the simple type of the
+/// named class.
+fn build_named_unitary_type(
+    builder: &Builder<'_>,
+    context: &str,
+    name: &str,
+    owner: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmUnitaryType, PBmmReadError> {
+    if builder.find_generic_parameter(owner, name).is_some() {
+        return Ok(BmmUnitaryType::BmmParameterType(Box::new(
+            open_parameter_type(builder, owner, context, name, visiting)?,
+        )));
+    }
+    let stub = build_class(
+        builder,
+        builder.entry(context, name)?,
+        Depth::Stub,
+        visiting,
+    )?;
+    Ok(match class_as_type(stub) {
+        BmmModelType::BmmGenericType(generic) => BmmUnitaryType::BmmGenericType(generic),
+        BmmModelType::BmmSimpleType(simple) => BmmUnitaryType::BmmSimpleType(simple),
+    })
+}
+
+/// Builds the `BMM_PARAMETER_TYPE` of the formal parameter `parameter`, refusing
+/// a parameter the owning class does not declare — "The parameter must be in the
+/// type declaration of the owning `BMM_CLASS`"
+/// (`org.openehr.lang.bmm.bmm_open_type.adoc` §Description, the persisted form's
+/// own rule).
+fn open_parameter_type(
+    builder: &Builder<'_>,
+    owner: &PBmmClass,
+    property: &str,
+    parameter: &str,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmParameterType, PBmmReadError> {
+    let declared = builder
+        .find_generic_parameter(owner, parameter)
+        .ok_or_else(|| PBmmReadError::UndeclaredGenericParameter {
+            class: owner.name().to_owned(),
+            property: property.to_owned(),
+            parameter: parameter.to_owned(),
+        })?;
+    build_parameter_type(
+        builder,
+        owner.name(),
+        &declared.name,
+        declared.conforms_to_type.as_deref(),
+        visiting,
+    )
+}
+
+/// Builds a `BMM_GENERIC_TYPE`, carrying its actual parameters — "the string
+/// types … then the complex type references"
+/// (`LANG/docs/bmm_persistence/master04-syntax.adoc` §Generic Classes), each of
+/// which is a `BMM_UNITARY_TYPE` (`org.openehr.lang.bmm3.bmm_generic_type.adoc`
+/// §Attributes).
+fn build_generic_type(
+    builder: &Builder<'_>,
+    context: &str,
+    generic: &PBmmGenericType,
+    owner: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmGenericType, PBmmReadError> {
+    let entry = builder.entry(context, &generic.root_type)?;
+    let BmmClass::BmmGenericClass(base_class) = build_class(builder, entry, Depth::Stub, visiting)?
+    else {
+        return Err(PBmmReadError::NotAGenericClass {
+            context: context.to_owned(),
+            type_name: generic.root_type.clone(),
+        });
+    };
+    let mut generic_parameters: Vec<BmmUnitaryType> = Vec::new();
+    for name in &generic.generic_parameters {
+        generic_parameters.push(build_named_unitary_type(
+            builder, context, name, owner, visiting,
+        )?);
+    }
+    for parameter in &generic.generic_parameter_defs {
+        generic_parameters.push(build_unitary_type(
+            builder, context, parameter, owner, visiting,
+        )?);
+    }
+    Ok(BmmGenericType {
+        value_constraint: value_set_spec(generic.value_constraint.as_deref()),
+        base_class,
+        generic_parameters,
+    })
+}
+
+/// Builds a `BMM_CONTAINER_TYPE`.
+///
+/// `is_ordered`/`is_unique` carry the List/Set/Bag semantics
+/// (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Attributes); P_BMM states
+/// only the container CLASS name (`master04-syntax.adoc` §Container Properties),
+/// so both are left unstated and their declared defaults (`is_ordered = true`,
+/// `is_unique = false`) apply — the container class name is the discriminator the
+/// persisted form actually carries.
+fn build_container_type(
+    builder: &Builder<'_>,
+    context: &str,
+    container: &PBmmContainerType,
+    owner: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmContainerType, PBmmReadError> {
+    match container {
+        PBmmContainerType::PBmmIndexedContainerType(indexed) => {
+            Ok(BmmContainerType::BmmIndexedContainerType(Box::new(
+                build_indexed_container_type(builder, context, indexed, owner, visiting)?,
+            )))
+        }
+        PBmmContainerType::PBmmContainerType(data) => {
+            Ok(BmmContainerType::BmmContainerType(BmmContainerTypeData {
+                container_class: generic_container_class(
+                    builder,
+                    context,
+                    &data.container_type,
+                    visiting,
+                )?,
+                item_type: Box::new(build_container_target(
+                    builder,
+                    context,
+                    data.r#type.as_deref(),
+                    data.type_def.as_ref(),
+                    owner,
+                    visiting,
+                )?),
+                is_ordered: None,
+                is_unique: None,
+            }))
+        }
+    }
+}
+
+/// Builds a `BMM_INDEXED_CONTAINER_TYPE` (`index_type` is a `BMM_SIMPLE_TYPE`,
+/// `org.openehr.lang.bmm3.bmm_indexed_container_type.adoc` §Attributes).
+fn build_indexed_container_type(
+    builder: &Builder<'_>,
+    context: &str,
+    indexed: &PBmmIndexedContainerType,
+    owner: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmIndexedContainerType, PBmmReadError> {
+    let index_stub = build_class(
+        builder,
+        builder.entry(context, &indexed.index_type)?,
+        Depth::Stub,
+        visiting,
+    )?;
+    let BmmModelType::BmmSimpleType(index_type) = class_as_type(index_stub) else {
+        return Err(PBmmReadError::NotAGenericClass {
+            context: context.to_owned(),
+            type_name: indexed.index_type.clone(),
+        });
+    };
+    Ok(BmmIndexedContainerType {
+        container_class: generic_container_class(
+            builder,
+            context,
+            &indexed.container_type,
+            visiting,
+        )?,
+        item_type: build_container_target(
+            builder,
+            context,
+            indexed.r#type.as_deref(),
+            indexed.type_def.as_ref(),
+            owner,
+            visiting,
+        )?,
+        is_ordered: None,
+        is_unique: None,
+        index_type,
+    })
+}
+
+/// The container's own class, which v3 requires to be a `BMM_GENERIC_CLASS`
+/// ("The type of the container. This converts to the `_root_type_` in
+/// `BMM_GENERIC_TYPE`", `org.openehr.lang.bmm3.bmm_container_type.adoc`
+/// §Attributes) — `List<T>`, `Hash<K,V>` etc.
+fn generic_container_class(
+    builder: &Builder<'_>,
+    context: &str,
+    name: &str,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmGenericClass, PBmmReadError> {
+    let stub = build_class(
+        builder,
+        builder.entry(context, name)?,
+        Depth::Stub,
+        visiting,
+    )?;
+    match stub {
+        BmmClass::BmmGenericClass(generic) => Ok(generic),
+        BmmClass::BmmSimpleClass(_) => Err(PBmmReadError::NotAGenericClass {
+            context: context.to_owned(),
+            type_name: name.to_owned(),
+        }),
+    }
+}
+
+/// Builds a container's item type from its `type` name or nested `type_def`.
+fn build_container_target(
+    builder: &Builder<'_>,
+    context: &str,
+    name: Option<&str>,
+    type_def: Option<&PBmmBaseType>,
+    owner: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmUnitaryType, PBmmReadError> {
+    match (type_def, name) {
+        (Some(nested), _) => build_base_unitary_type(builder, context, nested, owner, visiting),
+        (None, Some(name)) => build_named_unitary_type(builder, context, name, owner, visiting),
+        (None, None) => Err(PBmmReadError::ContainerTargetTypeMissing {
+            context: context.to_owned(),
+        }),
+    }
+}
+
+/// Builds a class's `BMM_CLASS.functions` map — the persisted functions that
+/// state a result ("Type definition of the function result, if any (absent for
+/// procedures)", `…bmm_persistence.p_bmm_function.adoc` §Attributes).
+fn build_functions(
+    builder: &Builder<'_>,
+    persisted: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<Option<BTreeMap<String, BmmFunction>>, PBmmReadError> {
+    let Some(functions) = persisted.functions() else {
+        return Ok(None);
+    };
+    let mut out = BTreeMap::new();
+    for (key, function) in functions {
+        if function.result.is_none() {
+            continue;
+        }
+        out.insert(
+            key.clone(),
+            build_function(builder, persisted, function, visiting)?,
+        );
+    }
+    Ok((!out.is_empty()).then_some(out))
+}
+
+/// Builds a class's `BMM_CLASS.procedures` map — the persisted functions with no
+/// result (same §Attributes: a result is "absent for procedures").
+fn build_procedures(
+    builder: &Builder<'_>,
+    persisted: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<Option<BTreeMap<String, BmmProcedure>>, PBmmReadError> {
+    let Some(functions) = persisted.functions() else {
+        return Ok(None);
+    };
+    let mut out = BTreeMap::new();
+    for (key, function) in functions {
+        if function.result.is_some() {
+            continue;
+        }
+        out.insert(
+            key.clone(),
+            build_procedure(builder, persisted, function, visiting)?,
+        );
+    }
+    Ok((!out.is_empty()).then_some(out))
+}
+
+/// Builds one `BMM_FUNCTION`.
+///
+/// `BMM_FUNCTION.result` is `1..1` — the "Automatically created Result variable"
+/// (`org.openehr.lang.bmm3.bmm_function.adoc` §Attributes) — and
+/// `Inv_result_type` states `type = Result.type`, so both carry the persisted
+/// result type. `pre_conditions`/`post_conditions` stay empty per the module
+/// docs' invariants TODO. `operator_definition` has no persisted source (P_BMM
+/// declares no operator meta-data).
+fn build_function(
+    builder: &Builder<'_>,
+    owner: &PBmmClass,
+    function: &PBmmFunction,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmFunction, PBmmReadError> {
+    let context = format!("class `{}` function `{}`", owner.name(), function.name);
+    let result = function
+        .result
+        .as_ref()
+        .ok_or_else(|| PBmmReadError::TypeDefinitionMissing {
+            context: context.clone(),
+        })?;
+    let result_type = BmmType::from(build_unitary_type(
+        builder, &context, result, owner, visiting,
+    )?);
+    Ok(BmmFunction {
+        name: function.name.clone(),
+        documentation: documentation_of(function.documentation.as_deref()),
+        extensions: None,
+        r#type: result_type.clone(),
+        is_nullable: function.is_nullable,
+        is_synthesised_generic: None,
+        feature_extensions: Vec::new(),
+        group: default_group(),
+        parameters: build_parameters(builder, owner, function, visiting)?,
+        pre_conditions: Vec::new(),
+        post_conditions: Vec::new(),
+        // `BMM_ROUTINE.definition` is the routine BODY
+        // (`org.openehr.lang.bmm3.bmm_routine.adoc` §Attributes); P_BMM persists
+        // no bodies, only signatures.
+        definition: None,
+        operator_definition: None,
+        result: Box::new(BmmResult {
+            // `BMM_RESULT` "redefines" its name to the pre-defined `Result`
+            // variable (`…bmm3.bmm_result.adoc` §Description — "Automatically
+            // declared variable representing result of a Function call").
+            name: RESULT_VARIABLE_NAME.to_owned(),
+            documentation: None,
+            extensions: None,
+            r#type: result_type,
+            is_nullable: function.is_nullable,
+        }),
+    })
+}
+
+/// The name of a function's automatically declared result variable
+/// (`org.openehr.lang.bmm3.bmm_result.adoc` §Description; the `Result` keyword of
+/// `LANG/docs/bmm3/master08-core-features.adoc` §Variables — "the pre-defined
+/// `Result`").
+pub const RESULT_VARIABLE_NAME: &str = "Result";
+
+/// Builds one `BMM_PROCEDURE` — a routine whose result meta-type is the built-in
+/// Status type (`org.openehr.lang.bmm3.bmm_procedure.adoc` §Attributes: `type` is
+/// redefined to `BMM_STATUS_TYPE`).
+fn build_procedure(
+    builder: &Builder<'_>,
+    owner: &PBmmClass,
+    function: &PBmmFunction,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmProcedure, PBmmReadError> {
+    Ok(BmmProcedure {
+        name: function.name.clone(),
+        documentation: documentation_of(function.documentation.as_deref()),
+        extensions: None,
+        r#type: crate::bmm3::core::entity::bmm_status_type::BmmStatusType {},
+        is_nullable: function.is_nullable,
+        is_synthesised_generic: None,
+        feature_extensions: Vec::new(),
+        group: default_group(),
+        parameters: build_parameters(builder, owner, function, visiting)?,
+        pre_conditions: Vec::new(),
+        post_conditions: Vec::new(),
+        definition: None,
+    })
+}
+
+/// Builds a routine's ordered parameter list — "Formal parameters of the routine"
+/// (`org.openehr.lang.bmm3.bmm_routine.adoc` §Attributes) from the persisted map
+/// keyed by parameter name (`…bmm_persistence.p_bmm_function.adoc` §Attributes).
+///
+/// NOTE (recorded deviation, the same one the v2.x transform records for generic
+/// parameters): `BMM_ROUTINE.parameters` is an ORDERED list while P_BMM keys them
+/// by name, so declaration order is not preserved and sorted-key order is used.
+fn build_parameters(
+    builder: &Builder<'_>,
+    owner: &PBmmClass,
+    function: &PBmmFunction,
+    visiting: &mut BTreeSet<String>,
+) -> Result<Vec<BmmParameter>, PBmmReadError> {
+    let mut out: Vec<BmmParameter> = Vec::new();
+    for parameter in function.parameters.iter().flatten().map(|(_, p)| p) {
+        let (name, documentation, r#type, is_nullable) = match parameter {
+            PBmmFunctionParameter::PBmmSingleFunctionParameter(single) => {
+                let context = parameter_context(owner.name(), &function.name, &single.name);
+                let r#type = build_named_unitary_type(
+                    builder,
+                    &context,
+                    single.r#type.as_str(),
+                    owner,
+                    visiting,
+                )?;
+                (
+                    single.name.clone(),
+                    single.documentation.clone(),
+                    r#type,
+                    single.is_nullable,
+                )
+            }
+            PBmmFunctionParameter::PBmmSingleFunctionParameterOpen(open) => {
+                let context = parameter_context(owner.name(), &function.name, &open.name);
+                let r#type = BmmUnitaryType::BmmParameterType(Box::new(open_parameter_type(
+                    builder,
+                    owner,
+                    &context,
+                    open.r#type.as_str(),
+                    visiting,
+                )?));
+                (
+                    open.name.clone(),
+                    open.documentation.clone(),
+                    r#type,
+                    open.is_nullable,
+                )
+            }
+            PBmmFunctionParameter::PBmmGenericFunctionParameter(generic) => {
+                let context = parameter_context(owner.name(), &function.name, &generic.name);
+                (
+                    generic.name.clone(),
+                    generic.documentation.clone(),
+                    BmmUnitaryType::BmmGenericType(build_generic_type(
+                        builder,
+                        &context,
+                        &generic.type_def,
+                        owner,
+                        visiting,
+                    )?),
+                    generic.is_nullable,
+                )
+            }
+            PBmmFunctionParameter::PBmmContainerFunctionParameter(container) => {
+                let context = parameter_context(owner.name(), &function.name, &container.name);
+                (
+                    container.name.clone(),
+                    container.documentation.clone(),
+                    build_container_type(builder, &context, &container.type_def, owner, visiting)?
+                        .unitary_type(),
+                    container.is_nullable,
+                )
+            }
+        };
+        out.push(BmmParameter {
+            name,
+            documentation: documentation_of(documentation.as_deref()),
+            extensions: None,
+            r#type: BmmType::from(r#type),
+            is_nullable,
+            // `BMM_PARAMETER.direction` — "If none-supplied, the parameter is
+            // treated as `in`" (`org.openehr.lang.bmm3.bmm_parameter.adoc`
+            // §Attributes); P_BMM states no direction.
+            direction: None,
+        });
+    }
+    Ok(out)
+}
+
+/// The error context naming one routine parameter.
+fn parameter_context(class: &str, routine: &str, parameter: &str) -> String {
+    format!("class `{class}` routine `{routine}` parameter `{parameter}`")
+}
+
+/// Builds a class's `BMM_CLASS.static_properties` map from its persisted
+/// constants — "Static properties defined in this class"
+/// (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes), of which `BMM_CONSTANT`
+/// is the literal-valued form (`…bmm3.bmm_static.adoc`).
+fn build_constants(
+    builder: &Builder<'_>,
+    persisted: &PBmmClass,
+    visiting: &mut BTreeSet<String>,
+) -> Result<Option<BTreeMap<String, BmmStatic>>, PBmmReadError> {
+    let Some(constants) = persisted.constants() else {
+        return Ok(None);
+    };
+    let mut out = BTreeMap::new();
+    for (key, constant) in constants {
+        out.insert(
+            key.clone(),
+            BmmStatic::BmmConstant(build_constant(builder, persisted, constant, visiting)?),
+        );
+    }
+    Ok((!out.is_empty()).then_some(out))
+}
+
+/// Builds one `BMM_CONSTANT`.
+///
+/// `BMM_CONSTANT.generator` is `1..1` — "Literal value of the constant"
+/// (`org.openehr.lang.bmm3.bmm_constant.adoc` §Attributes) — and P_BMM persists
+/// the value as a serialised string (`…bmm_persistence.p_bmm_constant.adoc`
+/// §Attributes), which is exactly `BMM_LITERAL_VALUE.value_literal` ("A serial
+/// representation of the value", `…bmm3.bmm_literal_value.adoc` §Attributes). The
+/// native `value` is left unset, per the literal-evaluation boundary recorded in
+/// [`crate::bmm3::core::literal_value::bmm_literal_value_impl`]. `Inv_not_nullable`
+/// makes a constant non-nullable (`…bmm3.bmm_constant.adoc` §Invariants).
+fn build_constant(
+    builder: &Builder<'_>,
+    owner: &PBmmClass,
+    constant: &PBmmConstant,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmConstant, PBmmReadError> {
+    let context = format!("class `{}` constant `{}`", owner.name(), constant.name);
+    let unitary = build_named_unitary_type(builder, &context, &constant.r#type, owner, visiting)?;
+    // `BMM_PRIMITIVE_VALUE.type` is a `BMM_SIMPLE_TYPE`
+    // (`org.openehr.lang.bmm3.bmm_primitive_value.adoc` §Attributes), so a
+    // constant of a non-simple type carries its literal under the least-rich
+    // literal form's simple type; only a simple type can be stated there.
+    let BmmUnitaryType::BmmSimpleType(simple) = unitary.clone() else {
+        return Err(PBmmReadError::UnknownType {
+            context,
+            type_name: constant.r#type.clone(),
+        });
+    };
+    Ok(BmmConstant {
+        name: constant.name.clone(),
+        documentation: documentation_of(constant.documentation.as_deref()),
+        extensions: None,
+        r#type: BmmType::from(unitary),
+        is_nullable: Some(false),
+        is_synthesised_generic: None,
+        feature_extensions: Vec::new(),
+        group: default_group(),
+        generator: BmmLiteralValue::BmmPrimitiveValue(BmmPrimitiveValue::BmmPrimitiveValue(
+            BmmPrimitiveValueData {
+                value_literal: constant.value.clone().unwrap_or_default(),
+                value: None,
+                // `_syntax_` unset means the `json` default applies
+                // (`…bmm3.bmm_literal_value.adoc` §Attributes); P_BMM states no
+                // syntax for a constant value.
+                syntax: None,
+                r#type: simple,
+            },
+        )),
+    })
+}
+
+/// Builds one `BMM_ENUMERATION` form, with `item_values` as typed literal values.
+///
+/// v3 types `item_values` as `List<BMM_PRIMITIVE_VALUE>` and its two degenerate
+/// subtypes redefine it to `List<BMM_INTEGER_VALUE>` / `List<BMM_STRING_VALUE>`
+/// (`org.openehr.lang.bmm3.bmm_enumeration.adoc`,
+/// `…bmm3.bmm_enumeration_integer.adoc`, `…bmm3.bmm_enumeration_string.adoc`
+/// §Attributes), where P_BMM persists them as `List<Any>` (JSON scalars). Each
+/// persisted scalar therefore becomes the matching literal-value object over the
+/// enumeration's underlying simple type, with `value_literal` carrying its serial
+/// form.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one arm per BMM_ENUMERATION form, each assembling the same 20-attribute class shape with its own redefined item_values type"
+)]
+fn build_enumeration(
+    builder: &Builder<'_>,
+    core: ClassCore,
+    persisted: &PBmmEnumeration,
+    visiting: &mut BTreeSet<String>,
+) -> Result<BmmEnumeration, PBmmReadError> {
+    let context = format!("enumeration class `{}`", core.name);
+    let underlying = build_named_unitary_type(
+        builder,
+        &context,
+        persisted.underlying_type_name(),
+        &PBmmClass::PBmmEnumeration(persisted.clone()),
+        visiting,
+    )?;
+    let BmmUnitaryType::BmmSimpleType(underlying) = underlying else {
+        return Err(PBmmReadError::UnknownType {
+            context,
+            type_name: persisted.underlying_type_name().to_owned(),
+        });
+    };
+    let item_names = persisted.item_names().to_vec();
+    match persisted {
+        PBmmEnumeration::PBmmEnumerationInteger(_) => Ok(BmmEnumeration::BmmEnumerationInteger(
+            BmmEnumerationInteger {
+                name: core.name,
+                documentation: core.documentation,
+                extensions: None,
+                feature_groups: core.feature_groups,
+                features: core.features,
+                ancestors: core.ancestors,
+                package: core.package,
+                properties: core.properties,
+                source_schema_id: core.source_schema_id,
+                immediate_descendants: Vec::new(),
+                is_override: core.is_override,
+                static_properties: core.static_properties,
+                functions: core.functions,
+                procedures: core.procedures,
+                is_primitive: core.is_primitive,
+                is_abstract: core.is_abstract,
+                invariants: Vec::new(),
+                creators: None,
+                converters: None,
+                item_names,
+                item_values: persisted
+                    .item_values()
+                    .iter()
+                    .map(|value| {
+                        crate::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue {
+                            value_literal: literal_form(value),
+                            value: value
+                                .as_i64()
+                                .and_then(|v| i32::try_from(v).ok())
+                                .unwrap_or_default(),
+                            syntax: None,
+                            r#type: underlying.clone(),
+                        }
+                    })
+                    .collect(),
+            },
+        )),
+        PBmmEnumeration::PBmmEnumerationString(_) => {
+            Ok(BmmEnumeration::BmmEnumerationString(BmmEnumerationString {
+                name: core.name,
+                documentation: core.documentation,
+                extensions: None,
+                feature_groups: core.feature_groups,
+                features: core.features,
+                ancestors: core.ancestors,
+                package: core.package,
+                properties: core.properties,
+                source_schema_id: core.source_schema_id,
+                immediate_descendants: Vec::new(),
+                is_override: core.is_override,
+                static_properties: core.static_properties,
+                functions: core.functions,
+                procedures: core.procedures,
+                is_primitive: core.is_primitive,
+                is_abstract: core.is_abstract,
+                invariants: Vec::new(),
+                creators: None,
+                converters: None,
+                item_names,
+                item_values: persisted
+                    .item_values()
+                    .iter()
+                    .map(|value| {
+                        crate::bmm3::core::literal_value::bmm_string_value::BmmStringValue {
+                            value_literal: literal_form(value),
+                            value: value
+                                .as_str()
+                                .map_or_else(|| literal_form(value), str::to_owned),
+                            syntax: None,
+                            r#type: underlying.clone(),
+                        }
+                    })
+                    .collect(),
+            }))
+        }
+        PBmmEnumeration::PBmmEnumeration(_) => {
+            Ok(BmmEnumeration::BmmEnumeration(BmmEnumerationData {
+                name: core.name,
+                documentation: core.documentation,
+                extensions: None,
+                feature_groups: core.feature_groups,
+                features: core.features,
+                ancestors: core.ancestors,
+                package: core.package,
+                properties: core.properties,
+                source_schema_id: core.source_schema_id,
+                immediate_descendants: Vec::new(),
+                is_override: core.is_override,
+                static_properties: core.static_properties,
+                functions: core.functions,
+                procedures: core.procedures,
+                is_primitive: core.is_primitive,
+                is_abstract: core.is_abstract,
+                invariants: Vec::new(),
+                creators: None,
+                converters: None,
+                item_names,
+                item_values: persisted
+                    .item_values()
+                    .iter()
+                    .map(|value| {
+                        BmmPrimitiveValue::BmmPrimitiveValue(BmmPrimitiveValueData {
+                            value_literal: literal_form(value),
+                            value: Some(value.clone()),
+                            syntax: None,
+                            r#type: underlying.clone(),
+                        })
+                    })
+                    .collect(),
+            }))
+        }
+    }
+}
+
+/// The serial form of a persisted enumeration value — `BMM_LITERAL_VALUE.value_literal`,
+/// "A serial representation of the value"
+/// (`org.openehr.lang.bmm3.bmm_literal_value.adoc` §Attributes). A JSON string
+/// contributes its text (a quoted literal would double-quote it); every other
+/// scalar contributes its JSON rendering.
+fn literal_form(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::String(text) => text.clone(),
+        other => other.to_string(),
+    }
+}
+
+/// Builds the v3 `BMM_PACKAGE` tree, keyed in upper case
+/// (`BMM_PACKAGE_CONTAINER.packages` — "Child packages; keys all in upper case
+/// for guaranteed matching", `org.openehr.lang.bmm3.bmm_package_container.adoc`
+/// §Attributes). A package's `members` are the modules (classes) it lists
+/// (`…bmm3.bmm_package.adoc` §Attributes).
+fn build_packages(
+    builder: &Builder<'_>,
+    packages: &BTreeMap<String, PBmmPackage>,
+    prefix: &str,
+) -> Result<BTreeMap<String, BmmPackage>, PBmmReadError> {
+    let mut out = BTreeMap::new();
+    for package in packages.values() {
+        let path = qualify(prefix, &package.name);
+        let mut members: Vec<BmmModule> = Vec::new();
+        for class in &package.classes {
+            let entry = builder.classes.get(&class.to_uppercase()).ok_or_else(|| {
+                PBmmReadError::ClassNotDefined {
+                    package: package.name.clone(),
+                    class: class.clone(),
+                }
+            })?;
+            members.push(as_module(&build_class(
+                builder,
+                entry,
+                Depth::Stub,
+                &mut BTreeSet::new(),
+            )?));
+        }
+        let children = build_packages(builder, &package.packages, &path)?;
+        out.insert(
+            package.name.to_uppercase(),
+            BmmPackage {
+                name: path,
+                documentation: None,
+                extensions: None,
+                packages: (!children.is_empty()).then_some(children),
+                members,
+            },
+        );
+    }
+    Ok(out)
+}

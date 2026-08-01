@@ -244,6 +244,52 @@ pub enum PBmmReadError {
         parameter: String,
     },
 
+    /// An enumeration class states more than one inheritance ancestor.
+    ///
+    /// "the `BMM_ENUMERATION` meta-type is defined as a descendant of
+    /// `BMM_SIMPLE_CLASS`, and may have only one ancestor"
+    /// (`LANG/docs/bmm3/master07-core-classes.adoc` §Range-Constrained Classes);
+    /// the class definition repeats it — "Only one inheritance ancestor is
+    /// allowed in order to provide the base type to which the range constraint
+    /// is applied" (`org.openehr.lang.bmm3.bmm_enumeration.adoc` §Description).
+    /// The single ancestor IS the enumeration's underlying type
+    /// (`BMM_ENUMERATION.underlying_type_name` is "the name of type bound to 'T'",
+    /// `org.openehr.lang.bmm.bmm_enumeration.adoc` §Attributes), so a second
+    /// ancestor leaves the underlying type ambiguous.
+    #[error(
+        "enumeration class `{class}` states {} ancestors ({}); an enumeration may have only one",
+        ancestors.len(),
+        ancestors.join(", ")
+    )]
+    EnumerationAncestorCount {
+        /// The enumeration class's name.
+        class: String,
+        /// The ancestors as stated, in schema order.
+        ancestors: Vec<String>,
+    },
+
+    /// An enumeration states `item_values` that are not 1:1 with `item_names`.
+    ///
+    /// `BMM_ENUMERATION.item_values` is an "Optional list of specific values.
+    /// Must be 1:1 with `item_names` list"
+    /// (`org.openehr.lang.bmm.bmm_enumeration.adoc` §Attributes, identically in
+    /// `org.openehr.lang.bmm3.bmm_enumeration.adoc`). Omitting the values
+    /// entirely stays legal — "If no values are supplied, the integer values 0,
+    /// 1, 2, ... are assumed" (same §Attributes) — so only a non-empty list of
+    /// the wrong length is a violation.
+    #[error(
+        "enumeration class `{class}` states {values} item value(s) for {names} item name(s); \
+         `item_values` must be 1:1 with `item_names`"
+    )]
+    EnumerationItemListsNotOneToOne {
+        /// The enumeration class's name.
+        class: String,
+        /// The number of `item_names` stated.
+        names: usize,
+        /// The number of `item_values` stated.
+        values: usize,
+    },
+
     /// A generic type's root class is not generic — `BMM_GENERIC_TYPE.base_class`
     /// is a `BMM_GENERIC_CLASS` (`org.openehr.lang.bmm.bmm_generic_type.adoc`
     /// §Attributes).

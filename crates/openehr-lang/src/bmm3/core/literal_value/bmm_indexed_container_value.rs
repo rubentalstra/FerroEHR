@@ -4,6 +4,8 @@
 //! The openEHR `BMM_INDEXED_CONTAINER_VALUE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
+
 /// Meta-type for literals whose concrete type is an indexed container, i.e. Hash table, Map etc.
 #[doc(alias = "BMM_INDEXED_CONTAINER_VALUE")]
 #[derive(Debug, Clone, PartialEq)]
@@ -16,5 +18,5 @@ pub struct BmmIndexedContainerValue {
     /// Optional specification of formalism of the `_value_literal_` attribute for complex values. Value may be any of `json | json5 | yawl | xml | odin | rdf` or another value agreed by the user community. If not set, `json` is assumed.
     pub syntax: Option<String>,
     /// Concrete type of this literal.
-    pub r#type: serde_json::Value,
+    pub r#type: BmmIndexedContainerType,
 }

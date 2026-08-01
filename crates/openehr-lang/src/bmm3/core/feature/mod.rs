@@ -30,3 +30,6 @@ pub mod bmm_unitary_property;
 pub mod bmm_variable;
 pub mod bmm_visibility;
 pub mod bmm_writable_variable;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod bmm_feature_impl;
