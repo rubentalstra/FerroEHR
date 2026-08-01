@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Mandatory `1..*` container attributes are enforced.** The canonical-JSON
+  reader deliberately treats an absent list and an empty list as the same
+  value (wire tolerance), so a committed `CLUSTER` with no `items`, a
+  demographic `PERSON` with no `identities`, or a `REVISION_HISTORY` with no
+  `items` was accepted although the RM declares those containers `1..*`. The
+  validation walk now checks every model-declared mandatory container —
+  absent, or empty where the lower bound is 1 — uniformly from the generated
+  RM model, and such commits are refused 422.
 - **Structurally defective RM nodes are now refused for EVERY openEHR class,
   not only the ones carrying a class invariant.** The per-node validation step
   deserialized a wire node into its concrete RM type — the check that surfaces
