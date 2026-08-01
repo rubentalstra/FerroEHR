@@ -1171,6 +1171,20 @@ fn finish_identity(
     // (same class) requires at least one of `name`/`identifiers`/`external_ref`,
     // and `Name_valid` requires a present `name` to be non-empty — so synthesise a
     // plain-String `name` when the built party carries none of the three.
+    // PARTICIPATION is not LOCATABLE either (RM common
+    // `UML/classes/org.openehr.rm.common.participation.adoc` §PARTICIPATION Class
+    // declares exactly `function`/`mode`/`performer`/`time`), so it carries no
+    // locatable `name`; and `performer: PARTY_PROXY [1..1]` is MANDATORY there, so
+    // a template that constrains only `function` (the common shape — an
+    // `other_participations` C_MULTIPLE_ATTRIBUTE with a bare PARTICIPATION child)
+    // still needs one, or the built composition is not committable. `PARTY_SELF` is
+    // the identity-free PARTY_PROXY — the same non-fabricating choice the unset
+    // `subject` default below makes — so no fictitious person is invented.
+    if rm_type == "PARTICIPATION" {
+        obj.entry("performer".to_owned())
+            .or_insert_with(|| json!({"_type": "PARTY_SELF"}));
+        return;
+    }
     if matches!(rm_type, "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED") {
         if rm_type != "PARTY_SELF"
             && !obj.contains_key("name")

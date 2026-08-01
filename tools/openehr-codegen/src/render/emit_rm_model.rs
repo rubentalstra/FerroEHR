@@ -13,6 +13,7 @@
 
 use crate::analyze::Model;
 use crate::load::bmm::{BmmClass, BmmEnumValue, BmmPropKind, BmmType};
+use crate::plan::overrides::class_binding;
 use crate::render::emit::GenFile;
 use std::collections::BTreeSet;
 
@@ -321,9 +322,22 @@ fn type_ref(model: &Model, concrete: &str, t: &BmmType) -> TypeRefModel {
 /// parameter (`T`) to its bound in the concrete class's scope (the same
 /// bound-fill `emit` applies), and reducing generic instantiations to their root
 /// (`DV_INTERVAL<T>` → `DV_INTERVAL`; the container column carries multiplicity).
+///
+/// A **monomorphizing** class (`X_VERSIONED_COMPOSITION :
+/// X_VERSIONED_OBJECT<COMPOSITION>`, `Multiplicity_interval : Interval<Integer>`)
+/// binds the parameter its generic ancestor leaves open; that binding
+/// ([`class_binding`], each entry spec-cited) is what `emit` substitutes into the
+/// struct field, so the static model records it too. Without it the model would
+/// contradict the emitted type — reporting the parameter's BOUND (`Any`) where
+/// the struct says `Vec<OriginalVersion<Composition>>` — and any consumer
+/// deriving instances from the model would produce values the codec rightly
+/// refuses.
 fn declared_type(model: &Model, concrete: &str, t: &BmmType) -> String {
     let root = t.root_name();
     if model.is_generic_param(concrete, root) {
+        if let Some(bound) = class_binding(concrete).get(root) {
+            return bound.clone();
+        }
         model
             .resolved_param_bound(concrete, root)
             .unwrap_or_else(|| "Any".to_string())

@@ -22,6 +22,7 @@ use serde_json::Value;
 
 use openehr_base::validate::{InvariantViolation, Validate};
 
+use crate::json_codec::generated::structural::structural_check;
 use crate::json_codec::runtime::{FromJson, JsonParseError, from_json_value};
 
 /// Record a typed-deserialize failure as a validation violation.
@@ -205,9 +206,16 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// every node (the fast path may only *skip* it when its result is provably
 /// identical); also the oracle the fast-path equivalence tests compare against.
 ///
-/// Coverage is the set of concrete `openehr-rm` / `openehr-base` types that
-/// carry a non-terminology class invariant (the ones with a `*_impl.rs`
-/// sibling). `DV_INTERVAL` is dispatched with a `DvOrdered` element type so
+/// The hand-written table below covers the concrete `openehr-rm` /
+/// `openehr-base` types that carry a non-terminology class invariant (the ones
+/// with a `*_impl.rs` sibling) — those need a typed value to run the invariant
+/// on. **Every other class falls through to the GENERATED structural dispatch**
+/// ([`structural_check`], emitted by `openehr-codegen -- emit-json`), which
+/// decodes the node into that class's own Rust type and discards it: the codec
+/// is the structural-conformance authority for the whole emitted model, so a
+/// class with no invariant is still refused when it is structurally defective
+/// (a missing mandatory attribute, a wrong JSON kind, an unresolvable nested
+/// slot `_type`). `DV_INTERVAL` is dispatched with a `DvOrdered` element type so
 /// the `Limits_consistent` ordering invariant is reached, falling
 /// back to `serde_json::Value` (own boundary-flag invariants only) when the
 /// limits do not deserialize as typed `DV_ORDERED` values. The other generic
@@ -352,6 +360,26 @@ pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantV
         "ARCHETYPE_ID" => run::<ArchetypeId>(ty, value, out),
         "TERMINOLOGY_ID" => run::<TerminologyId>(ty, value, out),
         "INTERNET_ID" => run::<InternetId>(ty, value, out),
-        _ => {}
+        // Every other class: the GENERATED structural dispatch decodes the node
+        // into that class's own Rust type and discards it, so the codec is the
+        // structural-conformance authority for the whole emitted model instead of
+        // only the invariant-bearing classes above.
+        other => run_structural(other, value, out),
+    }
+}
+
+/// The generated-dispatch fallthrough of [`validate_rm_value_typed`]: decode the
+/// node as the class its `_type` names and record a structural violation when it
+/// does not conform.
+///
+/// The classes handled by the hand-written dispatch above already decode (their
+/// arm calls [`run`] / [`run_shallow`], which reports the same
+/// `does not conform to RM type …` on failure), so they never reach here — no
+/// node is decoded twice. A `_type` naming no emitted class
+/// ([`structural_check`] returns `None`) runs no check, unchanged: an
+/// unrecognised type is not a structural claim this layer can adjudicate.
+fn run_structural(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    if let Some(Err(e)) = structural_check(ty, value) {
+        record_type_mismatch(ty, &e, out);
     }
 }
