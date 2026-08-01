@@ -61,6 +61,7 @@ pub mod flat;
 pub mod json;
 #[cfg(feature = "full")]
 pub mod json_codec;
+#[cfg(feature = "full")]
 pub mod opt14;
 pub mod rest;
 #[cfg(feature = "full")]
