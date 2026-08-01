@@ -4,9 +4,9 @@
 //! The openEHR `P_BMM_CONTAINER_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_container_type::BmmContainerType;
 use crate::bmm_persistence::p_bmm_base_type::PBmmBaseType;
 use crate::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType;
-use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
 
 /// Persistent form of `BMM_CONTAINER_TYPE`.
 #[doc(alias = "P_BMM_CONTAINER_TYPE")]

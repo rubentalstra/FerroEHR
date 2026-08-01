@@ -4,15 +4,16 @@
 //! The openEHR `BMM_SIMPLE_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::entity::bmm_class::BmmClass;
+use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
+use crate::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
 
 /// Type reference to a single type i.e. not generic or container type.
 #[doc(alias = "BMM_SIMPLE_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmSimpleType {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
-    /// The target type; this converts to the first parameter in generic_parameters in BMM_GENERIC_TYPE.
-    pub base_class: BmmClass,
+    // inherited: BMM_MODEL_TYPE
+    /// The `value_constraint` attribute of openEHR `BMM_MODEL_TYPE` (the vendored BMM carries no documentation for it).
+    pub value_constraint: Option<BmmValueSetSpec>,
+    /// Defining class of this type.
+    pub base_class: BmmSimpleClass,
 }

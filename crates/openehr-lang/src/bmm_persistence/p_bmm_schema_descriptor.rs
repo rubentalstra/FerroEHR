@@ -4,8 +4,8 @@
 //! The openEHR `P_BMM_SCHEMA_DESCRIPTOR` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
-use crate::bmm3::core::model::bmm_model::BmmModel;
 
 /// Concrete descendant of `BMM_SCHEMA_DESCRIPTOR` that provides a way to read an ODIN or other similarly encoded P_BMM schema file.
 #[doc(alias = "P_BMM_SCHEMA_DESCRIPTOR")]

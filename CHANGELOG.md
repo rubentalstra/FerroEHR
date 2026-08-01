@@ -40,6 +40,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The generated LANG model carries both extant BMM generations in full.**
+  `openehr-lang` was generated from the two vendored LANG schemas name-merged
+  into one class map, so 18 class names both declare emitted the stable v2.x
+  shape at the v3 (`bmm3`) module paths and the v3 attribute sets were
+  discarded — a `BMM_CONTAINER_TYPE` had no `is_ordered`/`is_unique`, a
+  `BMM_CLASS` none of its feature/invariant maps, and `BMM_MODEL_TYPE` +
+  `BMM_MODULE` were never emitted at all (185 of 187 declared classes). Both
+  generations are now emitted completely, each at its own source-package path
+  (v2.x under `bmm/`, `bmm_persistence/`, `beom/`; v3 under `bmm3/`), and the
+  canonical-JSON codec covers both.
 - **ODIN leaf lists are type-homogeneous and admit interval lists.** Mixed-kind
   lists (`<1, "x">`) are refused per the per-type list productions of the
   ODIN syntax specification, and interval lists (`<|0..5|, |8..9|>`,

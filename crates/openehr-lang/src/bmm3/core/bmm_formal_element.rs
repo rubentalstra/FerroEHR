@@ -4,6 +4,7 @@
 //! meta-model.
 
 use crate::bmm3::core::feature::bmm_constant::BmmConstant;
+use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use crate::bmm3::core::feature::bmm_function::BmmFunction;
 use crate::bmm3::core::feature::bmm_local::BmmLocal;
 use crate::bmm3::core::feature::bmm_parameter::BmmParameter;
@@ -11,6 +12,7 @@ use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
 use crate::bmm3::core::feature::bmm_result::BmmResult;
 use crate::bmm3::core::feature::bmm_self::BmmSelf;
 use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
+use crate::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty;
 
 /// Closed subtype set of `BMM_FORMAL_ELEMENT`, dispatched on each payload's `_type`.
 ///
@@ -20,6 +22,8 @@ use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
 pub enum BmmFormalElement {
     /// The `BMM_CONSTANT` subtype of `BMM_FORMAL_ELEMENT`.
     BmmConstant(BmmConstant),
+    /// The `BMM_CONTAINER_PROPERTY` subtype of `BMM_FORMAL_ELEMENT`.
+    BmmContainerProperty(BmmContainerProperty),
     /// The `BMM_FUNCTION` subtype of `BMM_FORMAL_ELEMENT`.
     BmmFunction(BmmFunction),
     /// The `BMM_LOCAL` subtype of `BMM_FORMAL_ELEMENT`.
@@ -34,4 +38,6 @@ pub enum BmmFormalElement {
     BmmSelf(BmmSelf),
     /// The `BMM_SINGLETON` subtype of `BMM_FORMAL_ELEMENT`.
     BmmSingleton(BmmSingleton),
+    /// The `BMM_UNITARY_PROPERTY` subtype of `BMM_FORMAL_ELEMENT`.
+    BmmUnitaryProperty(BmmUnitaryProperty),
 }

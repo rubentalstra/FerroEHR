@@ -30,6 +30,33 @@ pub(crate) struct JsonSchema<'a> {
     pub schema: &'a BmmSchema,
     /// e.g. `openehr_rm::prelude` / `openehr_base::prelude`.
     pub prelude: &'a str,
+    /// Module path (`openehr_lang::bmm::core::bmm_class`) for each spec class the
+    /// crate prelude does NOT export, keyed by spec class name.
+    ///
+    /// A crate composed of several BMM generations exports one type per Rust NAME
+    /// from its prelude, so for a class name both generations declare only one
+    /// twin is reachable as `<crate>::prelude::<Ident>`; the other is named here
+    /// by its full module path. Both twins are covered: they are distinct Rust
+    /// types, so their `ToJson`/`FromJson` impls do not conflict, and the whole
+    /// emitted model stays codec-complete.
+    ///
+    /// NOTE (adjudicated): the two twins share a canonical `_type` string (the
+    /// BMM class name is the same in both generations), and that is not an
+    /// ambiguity: `FromJson` is always invoked at a statically known Rust type,
+    /// and `_type`-keyed dispatch only ever chooses among the variants of ONE
+    /// enum — never across generations. No openEHR spec governs a BMM-model
+    /// canonical-JSON wire at all (this codec is our own extension), so there is
+    /// no cross-generation wire contract to break.
+    pub unexported: &'a std::collections::BTreeMap<String, String>,
+}
+
+impl JsonSchema<'_> {
+    /// The Rust path prefix a spec class's type is named by.
+    fn path_of(&self, spec: &str) -> &str {
+        self.unexported
+            .get(spec)
+            .map_or(self.prelude, String::as_str)
+    }
 }
 
 /// The `ToJson` trait path in the target crate.
@@ -76,11 +103,22 @@ pub(crate) fn emit_file(schemas: &[JsonSchema<'_>]) -> String {
     );
     for s in schemas {
         for ty in s.model.json_types(s.schema) {
-            emit_to_json(&mut b, &ty, s.prelude);
-            emit_from_json(&mut b, &ty, s.prelude);
+            let prelude = s.path_of(json_type_spec(&ty));
+            emit_to_json(&mut b, &ty, prelude);
+            emit_from_json(&mut b, &ty, prelude);
         }
     }
     b
+}
+
+/// The spec class a [`JsonType`] realizes — the key its Rust path is resolved by
+/// ([`JsonSchema::path_of`]). A newtype/literal-enum carries only its Rust name,
+/// which for those shapes is the `type_name` of the spec class itself.
+fn json_type_spec(ty: &JsonType) -> &str {
+    match ty {
+        JsonType::Struct { spec, .. } | JsonType::Enum { spec, .. } => spec,
+        JsonType::Newtype { rust } | JsonType::EnumLiterals { rust, .. } => rust,
+    }
 }
 
 /// `(impl<…: Bound> , <…>)` — the impl-generics header and the type-args suffix.
@@ -207,6 +245,7 @@ fn emit_from_json(b: &mut String, ty: &JsonType, prelude: &str) {
             fields,
         } => emit_struct_from_json(b, spec, rust, generics, fields, prelude),
         JsonType::Enum {
+            spec: _,
             rust,
             generics,
             variant_idents,

@@ -4,7 +4,7 @@
 //! The openEHR `P_BMM_PACKAGE` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::model::bmm_package::BmmPackage;
+use crate::bmm::core::bmm_package::BmmPackage;
 
 /// Persisted form of a package as a tree structure whose nodes can contain more packages and/or classes.
 #[doc(alias = "P_BMM_PACKAGE")]

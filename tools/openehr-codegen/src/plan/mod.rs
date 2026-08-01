@@ -219,6 +219,7 @@ pub(crate) enum JsonType {
     /// forwards to the active variant's payload (`_type` comes from the payload);
     /// deserialize dispatches per [`JsonEnumDispatch`].
     Enum {
+        spec: String,
         rust: String,
         generics: Vec<String>,
         /// The Rust variant identifiers, in the same order the struct/enum
@@ -296,6 +297,7 @@ impl Model {
 
     /// The instantiable canonical-JSON types of a schema, in class order (the
     /// same decisions [`Model::xml_types`] makes, projected to the JSON view).
+    ///
     #[must_use]
     pub(crate) fn json_types(&self, schema: &BmmSchema) -> Vec<JsonType> {
         let used = self.used_as_type();
@@ -329,6 +331,7 @@ impl Model {
                     idents.push(rust.clone());
                     let dispatch = self.json_enum_dispatch(name, &variants, &idents);
                     out.push(JsonType::Enum {
+                        spec: name.clone(),
                         rust,
                         generics,
                         variant_idents: idents,
@@ -340,6 +343,7 @@ impl Model {
                         variants.iter().map(|v| naming::type_name(v)).collect();
                     let dispatch = self.json_enum_dispatch(name, &variants, &idents);
                     out.push(JsonType::Enum {
+                        spec: name.clone(),
                         rust,
                         generics,
                         variant_idents: idents,

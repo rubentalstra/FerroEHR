@@ -13,9 +13,9 @@
 //! state the same three functions with sharper post-conditions and are cited
 //! where they settle the v2 wording.
 
+use crate::bmm::core::bmm_class::BmmClass;
 use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
-use crate::bmm3::core::entity::bmm_type_impl::ANY_TYPE_NAME;
+use crate::bmm::core::bmm_type_impl::ANY_TYPE_NAME;
 
 impl BmmGenericParameter {
     /// `BMM_GENERIC_PARAMETER.flattened_conforms_to_type`: "Get any ultimate
@@ -126,14 +126,14 @@ impl BmmGenericParameter {
 
 #[cfg(test)]
 mod tests {
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_class::BmmClassData;
     use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-    use crate::bmm3::core::model::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_package::BmmPackage;
 
     /// A simple class named `name`.
     fn simple_class(name: &str) -> BmmClass {
-        BmmClass::BmmSimpleClass(BmmSimpleClass {
+        BmmClass::BmmClass(BmmClassData {
             documentation: None,
             name: name.to_owned(),
             ancestors: None,

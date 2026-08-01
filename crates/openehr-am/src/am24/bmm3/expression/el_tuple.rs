@@ -4,8 +4,8 @@
 //! The openEHR `EL_TUPLE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::am24::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use crate::am24::bmm3::expression::el_tuple_item::ElTupleItem;
-use openehr_lang::prelude::BmmTupleType;
 
 /// Defines an array of optionally named items each of any type.
 #[doc(alias = "EL_TUPLE")]

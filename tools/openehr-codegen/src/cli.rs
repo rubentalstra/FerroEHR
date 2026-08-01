@@ -6,7 +6,9 @@ use crate::analyze::{augment_with_reemit, cross_schema_reemit, emittable_specs};
 use crate::load::bmm::BmmSchema;
 use crate::load::{oas, xsd};
 use crate::plan::composition::{self, compose};
-use crate::render::emit::{GenFile, emit_crate, emit_multi_crate};
+use crate::render::emit::{
+    GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate, type_module_path,
+};
 use crate::render::{
     emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, naming,
 };
@@ -218,38 +220,84 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     let am24_dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
     let am24_aug = augment_with_reemit(&am24.own_schema, &am24.model, &reemit24, &am24_dep_refs);
 
-    let schemas = [
+    // The codec is keyed by the crate PRELUDE path, and `_type` dispatch admits
+    // exactly one impl per Rust type — so a crate composed of several BMM
+    // generations contributes one codec per prelude-OWNED class, per generation.
+    // For LANG that means the v3 (bmm3) shape for the 18 names both generations
+    // declare and the v2 shape for everything only the v2 file declares; the v2
+    // twins of the colliding names get NO wire codec, because they are not in
+    // the prelude and no wire route serves them (they are the in-process
+    // reflection surface the P_BMM pipeline materialises —
+    // `LANG/docs/bmm/master06-persistence.adoc`).
+    let no_unexported = std::collections::BTreeMap::new();
+    // A crate composed of several BMM generations exports one type per Rust NAME
+    // from its prelude, so for a class name both generations declare, the losing
+    // twin has to be named by its full module path. Both twins keep a codec: they
+    // are distinct Rust types, so the impls do not conflict and the emitted model
+    // stays codec-complete (see `emit_json::JsonSchema::unexported`).
+    let lang_unexported: Vec<std::collections::BTreeMap<String, String>> = lang
+        .generations
+        .iter()
+        .map(|g| {
+            g.schema
+                .classes
+                .keys()
+                .filter(|name| !g.owned.contains(*name))
+                .map(|name| {
+                    (
+                        name.clone(),
+                        format!("openehr_lang::{}", type_module_path(&g.schema, name)),
+                    )
+                })
+                .collect()
+        })
+        .collect();
+
+    let mut schemas = vec![
         emit_json::JsonSchema {
             model: &base.model,
             schema: &base.own_schema,
             prelude: "openehr_base::prelude",
+            unexported: &no_unexported,
         },
         emit_json::JsonSchema {
             model: &rm.model,
             schema: &rm.own_schema,
             prelude: "openehr_rm::prelude",
+            unexported: &no_unexported,
         },
-        emit_json::JsonSchema {
-            model: &lang.model,
-            schema: &lang.own_schema,
-            prelude: "openehr_lang::prelude",
-        },
+    ];
+    schemas.extend(
+        lang.generations
+            .iter()
+            .zip(&lang_unexported)
+            .map(|(g, unexported)| emit_json::JsonSchema {
+                model: &g.model,
+                schema: &g.schema,
+                prelude: "openehr_lang::prelude",
+                unexported,
+            }),
+    );
+    schemas.extend([
         emit_json::JsonSchema {
             model: &am14.model,
             schema: &am14.own_schema,
             prelude: "openehr_am::am14::prelude",
+            unexported: &no_unexported,
         },
         emit_json::JsonSchema {
             model: &am24.model,
             schema: &am24_aug,
             prelude: "openehr_am::am24::prelude",
+            unexported: &no_unexported,
         },
         emit_json::JsonSchema {
             model: &term.model,
             schema: &term.own_schema,
             prelude: "openehr_term::prelude",
+            unexported: &no_unexported,
         },
-    ];
+    ]);
 
     let gen_dir = Path::new(ITS_ROOT).join("src/json_codec/generated");
     std::fs::create_dir_all(&gen_dir)?;
@@ -470,10 +518,13 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     // Emitted before AM because AM's rule model references LANG types
     // (`ARCHETYPE.rules : List<STATEMENT_SET>`, `ARCHETYPE_SLOT.includes :
     // List<ASSERTION>`), so AM resolves them against `openehr_lang::prelude`.
+    // LANG is composed of TWO BMM generations (the stable v2.x BMM + P_BMM +
+    // beom, and the v3 development line), each emitted completely at its own
+    // source-package path — see `plan::composition`'s LANG entry.
     let lang = compose("lang")?;
     write_crate(
         "openehr-lang",
-        &emit_crate(&lang.model, &lang.own_schema, &lang.external, lang.doc),
+        &emit_generations(&crate_generations(&lang), &lang.external, lang.doc),
     )?;
 
     // openehr-am: two versions in one crate, each depending on openehr-base and

@@ -4,7 +4,6 @@
 //! The openEHR `BMM_PROCEDURE` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
 use crate::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
@@ -17,8 +16,23 @@ use crate::bmm3::statement::bmm_assertion::BmmAssertion;
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmProcedure {
     // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
+    /// Name of this model element.
+    pub name: String,
+    /// Optional documentation of this element, as a keyed list.
+    ///
+    /// It is strongly recommended to use the following key /type combinations for the relevant purposes:
+    ///
+    /// * `"purpose": String`
+    /// * `"keywords": List<String>`
+    /// * `"use": String`
+    /// * `"misuse": String`
+    /// * `"references": String`
+    ///
+    /// Other keys and value types may be freely added.
+    pub documentation: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    // NOTE: `scope` (BMM-mandatory back-reference) omitted — LANG BMM3 bmm_feature (scope: BMM_CLASS — redefinition of BMM_MODEL_ELEMENT.scope). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
+    /// Optional meta-data of this element, as a keyed list. May be used to extend the meta-model.
+    pub extensions: Option<std::collections::BTreeMap<String, serde_json::Value>>,
     /// Declared or inferred static type of the entity.
     pub r#type: BmmStatusType,
 
@@ -33,8 +47,6 @@ pub struct BmmProcedure {
     pub feature_extensions: Vec<BmmFeatureExtension>,
     /// Group containing this feature.
     pub group: BmmFeatureGroup,
-    /// Model element within which an element is declared.
-    pub scope: BmmClass,
 
     // inherited: BMM_ROUTINE
     /// Formal parameters of the routine.

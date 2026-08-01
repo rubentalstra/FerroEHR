@@ -3,72 +3,53 @@
 //! The openEHR `BMM_MODEL_ELEMENT` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-use crate::bmm::core::bmm_open_type::BmmOpenType;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
-use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
-use crate::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
-use crate::bmm3::core::entity::bmm_signature::BmmSignature;
-use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
-use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use crate::bmm3::core::entity::bmm_type::BmmType;
+use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
+use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
 use crate::bmm3::core::feature::bmm_constant::BmmConstant;
+use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use crate::bmm3::core::feature::bmm_function::BmmFunction;
 use crate::bmm3::core::feature::bmm_local::BmmLocal;
 use crate::bmm3::core::feature::bmm_parameter::BmmParameter;
 use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
-use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::core::feature::bmm_result::BmmResult;
 use crate::bmm3::core::feature::bmm_self::BmmSelf;
 use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
-use crate::bmm3::core::model::bmm_package_container::BmmPackageContainer;
+use crate::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty;
+use crate::bmm3::core::model::bmm_model::BmmModel;
+use crate::bmm3::core::model::bmm_package::BmmPackage;
 
 /// Closed subtype set of `BMM_MODEL_ELEMENT`, dispatched on each payload's `_type`.
 ///
-/// Ancestor class of most BMM model elements.
+/// Abstract meta-type of BMM declared model elements. A _declaration_ is a an element of a model within a context, which defines the _scope_ of the element. Thus, a class definition and its property and routine definitions are model elements, but Types are not, since they are derived from model elements.
 #[doc(alias = "BMM_MODEL_ELEMENT")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum BmmModelElement {
-    /// The `BMM_CLASS` subtype of `BMM_MODEL_ELEMENT`.
-    BmmClass(BmmClass),
     /// The `BMM_CONSTANT` subtype of `BMM_MODEL_ELEMENT`.
     BmmConstant(BmmConstant),
-    /// The `BMM_CONTAINER_TYPE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmContainerType(BmmContainerType),
+    /// The `BMM_CONTAINER_PROPERTY` subtype of `BMM_MODEL_ELEMENT`.
+    BmmContainerProperty(BmmContainerProperty),
     /// The `BMM_FUNCTION` subtype of `BMM_MODEL_ELEMENT`.
     BmmFunction(BmmFunction),
-    /// The `BMM_GENERIC_PARAMETER` subtype of `BMM_MODEL_ELEMENT`.
-    BmmGenericParameter(BmmGenericParameter),
-    /// The `BMM_GENERIC_TYPE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmGenericType(BmmGenericType),
+    /// The `BMM_GENERIC_CLASS` subtype of `BMM_MODEL_ELEMENT`.
+    BmmGenericClass(BmmGenericClass),
     /// The `BMM_LOCAL` subtype of `BMM_MODEL_ELEMENT`.
     BmmLocal(BmmLocal),
-    /// The `BMM_OPEN_TYPE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmOpenType(BmmOpenType),
-    /// The `BMM_PACKAGE_CONTAINER` subtype of `BMM_MODEL_ELEMENT`.
-    BmmPackageContainer(BmmPackageContainer),
+    /// The `BMM_MODEL` subtype of `BMM_MODEL_ELEMENT`.
+    BmmModel(BmmModel),
+    /// The `BMM_PACKAGE` subtype of `BMM_MODEL_ELEMENT`.
+    BmmPackage(BmmPackage),
     /// The `BMM_PARAMETER` subtype of `BMM_MODEL_ELEMENT`.
     BmmParameter(BmmParameter),
-    /// The `BMM_PARAMETER_TYPE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmParameterType(BmmParameterType),
     /// The `BMM_PROCEDURE` subtype of `BMM_MODEL_ELEMENT`.
     BmmProcedure(BmmProcedure),
-    /// The `BMM_PROPERTY` subtype of `BMM_MODEL_ELEMENT`.
-    BmmProperty(BmmProperty<BmmType>),
     /// The `BMM_RESULT` subtype of `BMM_MODEL_ELEMENT`.
     BmmResult(BmmResult),
     /// The `BMM_SELF` subtype of `BMM_MODEL_ELEMENT`.
     BmmSelf(BmmSelf),
-    /// The `BMM_SIGNATURE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmSignature(BmmSignature),
-    /// The `BMM_SIMPLE_TYPE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmSimpleType(BmmSimpleType),
+    /// The `BMM_SIMPLE_CLASS` subtype of `BMM_MODEL_ELEMENT`.
+    BmmSimpleClass(BmmSimpleClass),
     /// The `BMM_SINGLETON` subtype of `BMM_MODEL_ELEMENT`.
     BmmSingleton(BmmSingleton),
-    /// The `BMM_STATUS_TYPE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmStatusType(BmmStatusType),
-    /// The `BMM_TUPLE_TYPE` subtype of `BMM_MODEL_ELEMENT`.
-    BmmTupleType(BmmTupleType),
+    /// The `BMM_UNITARY_PROPERTY` subtype of `BMM_MODEL_ELEMENT`.
+    BmmUnitaryProperty(BmmUnitaryProperty),
 }

@@ -4,23 +4,23 @@
 //! The openEHR `BMM_INDEXED_CONTAINER_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm3::core::entity::bmm_class::BmmClass;
+use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
 use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-use crate::bmm3::core::entity::bmm_type::BmmType;
+use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
 
-/// Type reference that specifies an indexed container such as `Hash<K,V>`, i.e. a container whose members are accessed via a key (index) type.
+/// Meta-type of linear container type that indexes the contained items in the manner of a standard Hash table, map or dictionary.
 #[doc(alias = "BMM_INDEXED_CONTAINER_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmIndexedContainerType {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
-
     // inherited: BMM_CONTAINER_TYPE
-    /// The type of the container. This converts to the root_type in BMM_GENERIC_TYPE.
-    pub container_type: BmmClass,
-    /// The target type; this converts to the first parameter in generic_parameters in BMM_GENERIC_TYPE.
-    pub base_type: BmmType,
-    /// The key (index) type of the container, e.g. `String` in `Hash<String,EVENT_ACTION>`.
+    /// The type of the container. This converts to the `_root_type_` in `BMM_GENERIC_TYPE`.
+    pub container_class: BmmGenericClass,
+    /// The container item type.
+    pub item_type: BmmUnitaryType,
+    /// True indicates that order of the items in the container attribute is considered significant and must be preserved, e.g. across sessions, serialisation, deserialisation etc. Otherwise known as 'list' semantics.
+    pub is_ordered: Option<bool>,
+    /// True indicates that only unique instances of items in the container are allowed. Otherwise known as 'set' semantics.
+    pub is_unique: Option<bool>,
+    /// Type of the element index, typically `String` or `Integer`, but may be a numeric type or indeed any type from which a hash value can be derived.
     pub index_type: BmmSimpleType,
 }

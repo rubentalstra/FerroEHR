@@ -33,6 +33,7 @@ use crate::analyze::{External, Model, class_paths};
 use crate::load::bmm::{
     BmmClass, BmmConstant, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType,
 };
+use crate::plan::composition::Composed;
 use crate::plan::overrides::{back_reference, class_binding, type_override};
 use crate::plan::{Emission, decide};
 use crate::render::naming;
@@ -52,6 +53,9 @@ struct Emitted {
     chain: Vec<String>,
     /// Rust type identifier, e.g. `Uid`.
     ident: String,
+    /// The openEHR spec class the type realizes (`UID`) — the key the crate
+    /// prelude's one-entry-per-name ownership is decided on.
+    spec: String,
 }
 
 /// The generated files for one schema version plus its top-level module names.
@@ -59,6 +63,28 @@ struct Version {
     files: Vec<GenFile>,
     /// Top-level module names of this version (under its prefix, if any).
     top: BTreeSet<String>,
+    /// The types this version emitted, for crate-prelude assembly (empty for a
+    /// prefixed version, which emits its own prelude in-tree).
+    emitted: Vec<Emitted>,
+}
+
+/// One BMM generation of a crate as the emitter consumes it.
+///
+/// A crate composed of several generations (LANG's stable v2.x BMM beside the
+/// v3 development line — `LANG/docs/bmm3/master00-amendment_record.adoc`
+/// SPECLANG-14) emits each one COMPLETELY from its own schema and its own
+/// resolution model, so a class name declared by both yields two Rust types at
+/// two source-package paths, each with its own shape and its own
+/// intra-generation cross-references.
+pub(crate) struct CrateGeneration<'a> {
+    /// The resolution model this generation's classes resolve against.
+    pub model: &'a Model,
+    /// This generation's own schema (one vendored BMM file, verbatim).
+    pub schema: &'a BmmSchema,
+    /// The spec class names this generation contributes to the crate prelude,
+    /// or `None` when it is the crate's sole generation (it then owns
+    /// everything it emits).
+    pub prelude_owned: Option<&'a BTreeSet<String>>,
 }
 
 /// The emission shapes that produce a file: [`Emission`] minus its `Skip`
@@ -122,6 +148,7 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
 
     let mut planned = Vec::new();
     let mut index: BTreeMap<String, Vec<String>> = BTreeMap::new(); // ident → chain
+    let mut emitted: Vec<Emitted> = Vec::new();
     for (name, class) in &schema.classes {
         let Some(shape) = Shape::new(decide(model, class, &used)) else {
             continue;
@@ -134,11 +161,21 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
         chain.extend(pkg.split('/').filter(|s| !s.is_empty()).map(str::to_string));
         chain.push(naming::field_ident(&to_snake(name)));
         index.insert(naming::type_name(name), chain.clone());
+        emitted.push(Emitted {
+            chain: chain.clone(),
+            ident: naming::type_name(name),
+            spec: name.clone(),
+        });
         // A polymorphic-concrete class emits a sibling `{Name}Data` struct in the
         // same file (the enum owns `{Name}`); export it from the prelude too so
         // downstream code (e.g. the generated XML impls) can name it.
         if matches!(shape, Shape::PolyEnum(_)) {
             index.insert(format!("{}Data", naming::type_name(name)), chain.clone());
+            emitted.push(Emitted {
+                chain: chain.clone(),
+                ident: format!("{}Data", naming::type_name(name)),
+                spec: name.clone(),
+            });
         }
         planned.push(Planned {
             class,
@@ -167,25 +204,24 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
     }
 
     let type_chains: Vec<Vec<String>> = planned.iter().map(|p| p.chain.clone()).collect();
-    let emitted: Vec<Emitted> = index
-        .into_iter()
-        .map(|(ident, chain)| Emitted { chain, ident })
-        .collect();
 
     // Module tree. For a prefixed version, also register `<prefix>/prelude` so
     // the prefix `mod.rs` declares it.
     let mut tree_chains = type_chains.clone();
-    let prelude_path = if prefix.is_empty() {
-        "prelude.rs".to_string()
-    } else {
+    if !prefix.is_empty() {
         tree_chains.push(vec![prefix.to_string(), "prelude".to_string()]);
-        format!("{prefix}/prelude.rs")
-    };
+    }
     files.extend(emit_module_tree(&tree_chains));
     // A prefixed version module carries its own spec-version constant, sourced
     // from the vendored BMM schema's `rm_release` (the crate-level constant in
     // `lib.rs` covers only the crate's primary generation).
-    if !prefix.is_empty() {
+    // A prefixed version module carries its own prelude + spec-version constant;
+    // an unprefixed generation contributes to the crate-level prelude the caller
+    // assembles (a crate may be composed of several BMM generations, and the
+    // prelude carries exactly one entry per Rust type name).
+    let emitted = if prefix.is_empty() {
+        emitted
+    } else {
         let mod_path = format!("{prefix}/mod.rs");
         for f in &mut files {
             if f.path == mod_path {
@@ -197,8 +233,9 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
                 ));
             }
         }
-    }
-    files.push(emit_prelude(&emitted, &prelude_path));
+        files.push(emit_prelude(&emitted, &format!("{prefix}/prelude.rs")));
+        Vec::new()
+    };
 
     // Top modules: the prefix itself if prefixed, else the type roots.
     let top = if prefix.is_empty() {
@@ -206,11 +243,16 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
     } else {
         std::iter::once(prefix.to_string()).collect()
     };
-    Version { files, top }
+    Version {
+        files,
+        top,
+        emitted,
+    }
 }
 
-/// Emit a single-version crate (`openehr-base`): one schema, top-level modules,
-/// crate `prelude`, and `lib.rs`. `external` resolves dependency-crate types.
+/// Emit a single-generation crate (`openehr-base`): one schema, top-level
+/// modules, crate `prelude`, and `lib.rs`. `external` resolves dependency-crate
+/// types.
 #[must_use]
 pub(crate) fn emit_crate(
     model: &Model,
@@ -218,9 +260,101 @@ pub(crate) fn emit_crate(
     external: &External,
     crate_doc: &str,
 ) -> Vec<GenFile> {
-    let v = emit_version(model, schema, "", external);
-    let mut files = v.files;
-    files.push(emit_lib(&v.top, true, crate_doc));
+    emit_generations(
+        &[CrateGeneration {
+            model,
+            schema,
+            prelude_owned: None,
+        }],
+        external,
+        crate_doc,
+    )
+}
+
+/// The crate-relative module path a class's emitted type lives at, e.g.
+/// `bmm::core::bmm_class` — the same chain [`emit_version`] builds, so a
+/// downstream emitter (`emit-json`) can name a type the crate prelude does not
+/// export.
+#[must_use]
+pub(crate) fn type_module_path(schema: &BmmSchema, class: &str) -> String {
+    let pkg = class_paths(schema).get(class).cloned().unwrap_or_default();
+    let mut chain: Vec<String> = pkg
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .collect();
+    chain.push(naming::field_ident(&to_snake(class)));
+    chain.join("::")
+}
+
+/// The per-generation render inputs of a resolved composition, in declaration
+/// order — the bridge from [`crate::plan::composition::compose`] to
+/// [`emit_generations`].
+#[must_use]
+pub(crate) fn crate_generations(composed: &Composed) -> Vec<CrateGeneration<'_>> {
+    composed
+        .generations
+        .iter()
+        .map(|g| CrateGeneration {
+            model: &g.model,
+            schema: &g.schema,
+            prelude_owned: Some(&g.owned),
+        })
+        .collect()
+}
+
+/// Emit a crate composed of one or more BMM **generations** (`openehr-lang`):
+/// every generation is rendered completely at its own source-package paths, and
+/// the crate carries ONE prelude with one entry per Rust type name.
+///
+/// # Panics
+/// Panics if two generations would write the same file (a silent shape pick —
+/// one generation's output overwriting the other's), or if two generations both
+/// claim the same prelude identifier. Both are emitter/table bugs: the
+/// generations' source packages must be disjoint, and prelude ownership is
+/// decided once in [`crate::plan::composition::Generation::owned`].
+#[must_use]
+pub(crate) fn emit_generations(
+    generations: &[CrateGeneration<'_>],
+    external: &External,
+    crate_doc: &str,
+) -> Vec<GenFile> {
+    let mut files: Vec<GenFile> = Vec::new();
+    let mut top: BTreeSet<String> = BTreeSet::new();
+    let mut emitted: Vec<Emitted> = Vec::new();
+    let mut paths: BTreeSet<String> = BTreeSet::new();
+    let mut idents: BTreeSet<String> = BTreeSet::new();
+    for g in generations {
+        let v = emit_version(g.model, g.schema, "", external);
+        for f in &v.files {
+            assert!(
+                paths.insert(f.path.clone()),
+                "openehr-codegen: two BMM generations of one crate both emit {:?} — their \
+                 source packages must be disjoint so each generation lands at its own path. \
+                 Emitting one over the other would silently pick a single shape for a \
+                 colliding class.",
+                f.path,
+            );
+        }
+        files.extend(v.files);
+        top.extend(v.top);
+        for e in v.emitted {
+            if g.prelude_owned
+                .is_some_and(|owned| !owned.contains(&e.spec))
+            {
+                continue;
+            }
+            assert!(
+                idents.insert(e.ident.clone()),
+                "openehr-codegen: two BMM generations both export {:?} from the crate prelude \
+                 — prelude ownership must name exactly one generation per Rust type name.",
+                e.ident,
+            );
+            emitted.push(e);
+        }
+    }
+    files.push(emit_prelude(&emitted, "prelude.rs"));
+    files.push(emit_lib(&top, true, crate_doc));
     files
 }
 
@@ -322,7 +456,15 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
          reason = \"inherent to faithful openEHR spec generation: verbatim spec \
          prose in doc comments, and spec-owned class/variant/field names (a field \
          name IS the normative BMM attribute name)\"\n\
-         )]\n\n",
+         )]\n\
+         // A vendored BMM model is a deep, mutually-recursive type graph (the LANG \
+         // BMM-3 expression/statement families reach several hundred levels), so \
+         // auto-trait inference — `Send`/`Sync`/`RefUnwindSafe`, which rustdoc \
+         // evaluates for every item — overflows the default limit of 128. Raising \
+         // the limit is exactly what rustc prescribes for that overflow \
+         // (<https://doc.rust-lang.org/reference/attributes/limits.html>); it \
+         // changes no emitted type.\n\
+         #![recursion_limit = \"512\"]\n\n",
     );
     for m in top {
         b.push_str(&format!("pub mod {m};\n"));
@@ -344,10 +486,26 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
 }
 
 fn emit_prelude(emitted: &[Emitted], path: &str) -> GenFile {
+    // The prelude carries ONE entry per Rust type name. A crate composed of two
+    // BMM generations (openEHR publishes the stable v2.x BMM,
+    // `LANG/docs/bmm/master01-preface.adoc` §History, beside the v3 development
+    // line, `LANG/docs/bmm3/master01-preface.adoc` §Previous Versions) emits both
+    // generations completely at their own source-package paths; where a class
+    // name exists in both, the prelude exports the LAST-declared generation's
+    // type and the other twin is reachable by its full module path only.
     let mut b = String::from(
         "//! Prelude: re-exports every generated spec type of this version.\n\
          //!\n//! @generated by openehr-codegen. Per-file imports are precise;\n\
-         //! downstream crates and hand-written code may `use <path>::*`.\n\n",
+         //! downstream crates and hand-written code may `use <path>::*`.\n\
+         //!\n\
+         //! ONE ENTRY PER RUST TYPE NAME. Where a crate is composed of several BMM\n\
+         //! generations (openEHR publishes the stable v2.x BMM —\n\
+         //! `LANG/docs/bmm/master01-preface.adoc` §History — beside the v3\n\
+         //! development line — `LANG/docs/bmm3/master01-preface.adoc` §Previous\n\
+         //! Versions), EVERY generation is emitted completely at its own\n\
+         //! source-package path, and a class name declared by more than one is\n\
+         //! exported here from the LAST-declared generation; the other\n\
+         //! generation's twin is reachable by its full module path only.\n\n",
     );
     let mut lines: Vec<String> = emitted
         .iter()

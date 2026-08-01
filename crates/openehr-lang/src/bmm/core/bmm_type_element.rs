@@ -3,15 +3,11 @@
 //! The openEHR `BMM_TYPE_ELEMENT` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_container_type::BmmContainerType;
 use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
+use crate::bmm::core::bmm_generic_type::BmmGenericType;
 use crate::bmm::core::bmm_open_type::BmmOpenType;
-use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
-use crate::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
-use crate::bmm3::core::entity::bmm_signature::BmmSignature;
-use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
-use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
+use crate::bmm::core::bmm_simple_type::BmmSimpleType;
 
 /// Closed subtype set of `BMM_TYPE_ELEMENT`, dispatched on each payload's `_type`.
 #[doc(alias = "BMM_TYPE_ELEMENT")]
@@ -25,14 +21,6 @@ pub enum BmmTypeElement {
     BmmGenericType(BmmGenericType),
     /// The `BMM_OPEN_TYPE` subtype of `BMM_TYPE_ELEMENT`.
     BmmOpenType(BmmOpenType),
-    /// The `BMM_PARAMETER_TYPE` subtype of `BMM_TYPE_ELEMENT`.
-    BmmParameterType(BmmParameterType),
-    /// The `BMM_SIGNATURE` subtype of `BMM_TYPE_ELEMENT`.
-    BmmSignature(BmmSignature),
     /// The `BMM_SIMPLE_TYPE` subtype of `BMM_TYPE_ELEMENT`.
     BmmSimpleType(BmmSimpleType),
-    /// The `BMM_STATUS_TYPE` subtype of `BMM_TYPE_ELEMENT`.
-    BmmStatusType(BmmStatusType),
-    /// The `BMM_TUPLE_TYPE` subtype of `BMM_TYPE_ELEMENT`.
-    BmmTupleType(BmmTupleType),
 }

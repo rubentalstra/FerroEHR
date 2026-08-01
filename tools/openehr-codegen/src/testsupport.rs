@@ -12,8 +12,10 @@ use crate::load::bmm::BmmSchema;
 use crate::plan::composition::{self, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
-use crate::render::emit::{GenFile, emit_crate, emit_multi_crate};
-use crate::render::{emit_rm_model, emit_validate};
+use crate::render::emit::{
+    CrateGeneration, GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate,
+};
+use crate::render::{emit_rm_model, emit_validate, naming};
 use std::collections::{BTreeMap, BTreeSet};
 
 type Error = Box<dyn std::error::Error>;
@@ -66,12 +68,20 @@ pub fn composition_infos() -> Vec<CompositionInfo> {
 
 // ── completeness ────────────────────────────────────────────────────────────
 
-/// Per-crate class-count breakdown for the completeness invariant.
+/// Per-**generation** class-count breakdown for the completeness invariant.
+///
+/// One row per vendored BMM file composing the crate. Counting per generation
+/// (not over a merged class map) is load-bearing: a merged map hides a
+/// cross-generation name collision entirely — every name is still present, so a
+/// name-level count over the merge passes while one generation's shape and
+/// attributes have been discarded.
 #[derive(Debug, Clone)]
 pub struct Completeness {
     /// The composition key.
     pub key: String,
-    /// Total classes in the crate's own schema.
+    /// The vendored BMM file this generation loads.
+    pub file: String,
+    /// Total classes this generation declares.
     pub total: usize,
     /// Classes planned (emitted, `decide` ≠ `Skip`).
     pub planned: usize,
@@ -87,43 +97,198 @@ pub struct Completeness {
     pub silently_dropped: Vec<String>,
 }
 
-/// Compute the completeness breakdown for one crate's own schema.
+/// Compute the completeness breakdown of every BMM generation composing one
+/// crate, in declaration order.
 ///
 /// # Errors
 /// Returns an error if the crate's BMM files cannot be loaded.
-pub fn completeness(key: &str) -> Result<Completeness, Error> {
+pub fn completeness(key: &str) -> Result<Vec<Completeness>, Error> {
     let c = compose(key)?;
-    let used = c.model.used_as_type();
-    let mut planned = 0;
-    let mut skipped_mapped = 0;
-    let mut skipped_abstract_unused = 0;
-    let mut silently_dropped = Vec::new();
-    for (name, class) in &c.own_schema.classes {
-        match decide(&c.model, class, &used) {
-            Emission::Skip => {
-                if Model::is_mapped(name) {
-                    skipped_mapped += 1;
-                } else if class.is_abstract
-                    && c.model.enum_variants(name).is_empty()
-                    && !used.contains(name)
-                {
-                    skipped_abstract_unused += 1;
-                } else {
-                    silently_dropped.push(name.clone());
+    let mut out = Vec::with_capacity(c.generations.len());
+    for g in &c.generations {
+        let used = g.model.used_as_type();
+        let mut planned = 0;
+        let mut skipped_mapped = 0;
+        let mut skipped_abstract_unused = 0;
+        let mut silently_dropped = Vec::new();
+        for (name, class) in &g.schema.classes {
+            match decide(&g.model, class, &used) {
+                Emission::Skip => {
+                    if Model::is_mapped(name) {
+                        skipped_mapped += 1;
+                    } else if class.is_abstract
+                        && g.model.enum_variants(name).is_empty()
+                        && !used.contains(name)
+                    {
+                        skipped_abstract_unused += 1;
+                    } else {
+                        silently_dropped.push(name.clone());
+                    }
+                }
+                _ => planned += 1,
+            }
+        }
+        silently_dropped.sort();
+        out.push(Completeness {
+            key: key.to_string(),
+            file: g.file.to_string(),
+            total: g.schema.classes.len(),
+            planned,
+            skipped_mapped,
+            skipped_abstract_unused,
+            silently_dropped,
+        });
+    }
+    Ok(out)
+}
+
+/// One BMM-declared attribute that reaches no emitted Rust field — the
+/// attribute-level half of the completeness invariant.
+#[derive(Debug, Clone)]
+pub struct AttributeGap {
+    /// The vendored BMM file declaring it.
+    pub file: String,
+    /// The declaring class.
+    pub class: String,
+    /// The declared attribute (BMM property name).
+    pub attribute: String,
+    /// Why it is a gap (which emitted type was expected to carry it).
+    pub detail: String,
+}
+
+/// Every BMM-declared attribute of a crate's generations that reaches no
+/// emitted struct field.
+///
+/// A class emitted as a struct (or a polymorphic slot's `{Name}Data`) must carry
+/// every attribute its OWN generation declares on it; a class emitted as a
+/// closed subtype set carries its attributes through each concrete variant's
+/// flattened struct. A designated owner/parent back-reference is deliberately
+/// omitted from the struct
+/// (the `back_reference` decision map) and is not a gap.
+///
+/// This is the check the class-NAME-level count cannot make: a merged
+/// two-generation class map keeps every name while silently dropping one
+/// generation's attribute set.
+///
+/// The `usize` beside the gap list is how many `(class, attribute)` pairs were
+/// actually checked, so the invariant can assert the check is not vacuous.
+///
+/// # Errors
+/// Returns an error if the crate's BMM files cannot be loaded.
+pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
+    let c = compose(key)?;
+    let mut gaps = Vec::new();
+    let mut checked = 0_usize;
+    for g in &c.generations {
+        let used = g.model.used_as_type();
+        // Emitted field names per class (flattened, back-references omitted —
+        // exactly what `render_struct_def` writes).
+        let fields = |class_name: &str| -> BTreeSet<String> {
+            g.model.get(class_name).map_or_else(BTreeSet::new, |cls| {
+                g.model
+                    .flattened_props(cls)
+                    .iter()
+                    .filter(|rp| overrides::back_reference(&rp.owner, &rp.prop.name).is_none())
+                    .map(|rp| rp.prop.name.clone())
+                    .collect()
+            })
+        };
+        for (name, class) in &g.schema.classes {
+            let carriers: Vec<String> = match decide(&g.model, class, &used) {
+                Emission::Struct | Emission::PolyEnum(_) => vec![name.clone()],
+                Emission::Enum(variants) => variants,
+                // A literal enumeration and a transparent newtype are scalars on
+                // the wire and declare no attributes of their own; a mapped or
+                // unused-abstract class emits nothing (the name-level
+                // completeness check accounts for it).
+                Emission::EnumLiterals(_) | Emission::Newtype(_) | Emission::Skip => Vec::new(),
+            };
+            for p in &class.properties {
+                if overrides::back_reference(name, &p.name).is_some() {
+                    continue;
+                }
+                for carrier in &carriers {
+                    checked += 1;
+                    if !fields(carrier).contains(&p.name) {
+                        gaps.push(AttributeGap {
+                            file: g.file.to_string(),
+                            class: name.clone(),
+                            attribute: p.name.clone(),
+                            detail: format!("missing from the emitted `{carrier}` fields"),
+                        });
+                    }
                 }
             }
-            _ => planned += 1,
         }
     }
-    silently_dropped.sort();
-    Ok(Completeness {
-        key: key.to_string(),
-        total: c.own_schema.classes.len(),
-        planned,
-        skipped_mapped,
-        skipped_abstract_unused,
-        silently_dropped,
-    })
+    Ok((gaps, checked))
+}
+
+/// A file path or prelude identifier claimed by more than one BMM generation of
+/// the same crate — the silent-shape-pick hazard, which must never occur.
+#[derive(Debug, Clone)]
+pub struct GenerationConflict {
+    /// The composition key.
+    pub key: String,
+    /// The conflicting artifact (an emitted `src/` path, or a prelude ident).
+    pub what: String,
+    /// The vendored BMM files that both claim it.
+    pub files: Vec<String>,
+}
+
+/// Emitted-path and prelude-identifier conflicts between the BMM generations
+/// composing each crate. Both must be empty: two generations sharing an emitted
+/// path means one overwrites the other (a silently picked shape), and two
+/// generations exporting one prelude name means the crate's one-type-per-name
+/// contract is broken.
+///
+/// # Errors
+/// Returns an error if any composition's BMM files cannot be loaded.
+pub fn generation_conflicts() -> Result<Vec<GenerationConflict>, Error> {
+    let mut out = Vec::new();
+    for key in crate_keys() {
+        let c = compose(key)?;
+        let mut paths: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        let mut idents: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        for g in &c.generations {
+            let gen_view = [CrateGeneration {
+                model: &g.model,
+                schema: &g.schema,
+                prelude_owned: Some(&g.owned),
+            }];
+            for f in emit_generations(&gen_view, &c.external, c.doc) {
+                paths.entry(f.path).or_default().push(g.file.to_string());
+            }
+            for spec in &g.owned {
+                idents
+                    .entry(naming::type_name(spec))
+                    .or_default()
+                    .push(g.file.to_string());
+            }
+        }
+        // `prelude.rs` and `lib.rs` are crate-level artifacts assembled ONCE
+        // from all generations, so a per-generation render naming them twice is
+        // expected; every spec type file must be claimed exactly once.
+        for (what, files) in paths {
+            if files.len() > 1 && !matches!(what.as_str(), "prelude.rs" | "lib.rs") {
+                out.push(GenerationConflict {
+                    key: key.to_string(),
+                    what,
+                    files,
+                });
+            }
+        }
+        for (what, files) in idents {
+            if files.len() > 1 {
+                out.push(GenerationConflict {
+                    key: key.to_string(),
+                    what,
+                    files,
+                });
+            }
+        }
+    }
+    Ok(out)
 }
 
 // ── invariant classification (assertion-dialect analyzer) ────────────────────
@@ -154,7 +319,7 @@ pub struct ClassifiedInvariant {
 pub fn classify_invariants(key: &str) -> Result<Vec<ClassifiedInvariant>, Error> {
     let c = compose(key)?;
     let mut out = Vec::new();
-    for (class, def) in &c.own_schema.classes {
+    for (class, def) in c.generations.iter().flat_map(|g| &g.schema.classes) {
         for (name, expr) in &def.invariants {
             let (bucket, reason) = match invariants::classify(expr) {
                 Bucket::Emitted => ("emitted", String::new()),
@@ -176,33 +341,45 @@ pub fn classify_invariants(key: &str) -> Result<Vec<ClassifiedInvariant>, Error>
 
 // ── constructibility ────────────────────────────────────────────────────────
 
-/// The non-constructible concrete classes of a crate's own schema (an unbroken
-/// mandatory single-valued construction cycle). The invariant requires empty.
+/// The non-constructible concrete classes of every BMM generation composing a
+/// crate (an unbroken mandatory single-valued construction cycle). The invariant
+/// requires empty.
 ///
 /// # Errors
 /// Returns an error if the crate's BMM files cannot be loaded.
 pub fn constructibility_offenders(key: &str) -> Result<Vec<String>, Error> {
     let c = compose(key)?;
-    Ok(c.model.constructibility_violations(&c.own_schema))
+    let mut out: Vec<String> = c
+        .generations
+        .iter()
+        .flat_map(|g| g.model.constructibility_violations(&g.schema))
+        .collect();
+    out.sort_unstable();
+    out.dedup();
+    Ok(out)
 }
 
 // ── determinism ─────────────────────────────────────────────────────────────
 
 /// The decided Rust shape (`Struct` / `Enum` / `PolyEnum` / `EnumLiterals` /
-/// `Newtype` / `Skip`) of every class in a crate's own schema, keyed by class
-/// name — the stage-3 plan, as comparable data.
+/// `Newtype` / `Skip`) of every class of every BMM generation composing a
+/// crate, keyed `"<bmm file>::<CLASS>"` — the stage-3 plan, as comparable data.
+/// The key carries the generation because a class name may be declared by more
+/// than one, with a different decided shape in each.
 ///
 /// # Errors
 /// Returns an error if the crate's BMM files cannot be loaded.
 pub fn plan_shapes(key: &str) -> Result<BTreeMap<String, String>, Error> {
     let c = compose(key)?;
-    let used = c.model.used_as_type();
     let mut out = BTreeMap::new();
-    for (name, class) in &c.own_schema.classes {
-        out.insert(
-            name.clone(),
-            shape_name(&decide(&c.model, class, &used)).to_string(),
-        );
+    for g in &c.generations {
+        let used = g.model.used_as_type();
+        for (name, class) in &g.schema.classes {
+            out.insert(
+                format!("{}::{name}", g.file),
+                shape_name(&decide(&g.model, class, &used)).to_string(),
+            );
+        }
     }
     Ok(out)
 }
@@ -251,7 +428,7 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
     let lang = compose("lang")?;
     add(
         "openehr-lang",
-        &emit_crate(&lang.model, &lang.own_schema, &lang.external, lang.doc),
+        &emit_generations(&crate_generations(&lang), &lang.external, lang.doc),
     );
 
     let am14 = compose("am14")?;
@@ -358,7 +535,7 @@ pub fn am24_reemit_closure() -> Result<BTreeSet<String>, Error> {
 /// Returns an error if the crate's BMM files cannot be loaded.
 pub fn rendered_files(key: &str) -> Result<Vec<String>, Error> {
     let c = compose(key)?;
-    let files = emit_crate(&c.model, &c.own_schema, &c.external, c.doc);
+    let files = emit_generations(&crate_generations(&c), &c.external, c.doc);
     Ok(files.into_iter().map(|f| f.path).collect())
 }
 
@@ -573,7 +750,11 @@ pub fn runtime_predicates() -> Vec<String> {
 /// Returns an error if any composition's BMM files cannot be loaded.
 pub fn class_exists(class: &str) -> Result<bool, Error> {
     for key in crate_keys() {
-        if compose(key)?.model.get(class).is_some() {
+        if compose(key)?
+            .generations
+            .iter()
+            .any(|g| g.model.get(class).is_some())
+        {
             return Ok(true);
         }
     }
@@ -587,14 +768,15 @@ pub fn class_exists(class: &str) -> Result<bool, Error> {
 /// Returns an error if any composition's BMM files cannot be loaded.
 pub fn field_exists(class: &str, field: &str) -> Result<bool, Error> {
     for key in crate_keys() {
-        let c = compose(key)?;
-        if let Some(cls) = c.model.get(class)
-            && c.model
-                .flattened_props(cls)
-                .iter()
-                .any(|rp| rp.prop.name == field)
-        {
-            return Ok(true);
+        for g in &compose(key)?.generations {
+            if let Some(cls) = g.model.get(class)
+                && g.model
+                    .flattened_props(cls)
+                    .iter()
+                    .any(|rp| rp.prop.name == field)
+            {
+                return Ok(true);
+            }
         }
     }
     Ok(false)

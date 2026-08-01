@@ -10,30 +10,138 @@ use openehr_codegen::testsupport;
 
 // ── completeness ────────────────────────────────────────────────────────────
 
-/// Every class in every loaded schema is accounted for in the emission plan:
-/// nothing is silently dropped, and the only skips are the two sanctioned
+/// Every class of **every BMM generation** is accounted for in the emission
+/// plan: nothing is silently dropped, and the only skips are the two sanctioned
 /// reasons (mapped-to-Rust, or abstract-with-no-descendants-and-unused). The
-/// counts add up to the full schema.
+/// counts add up to the generation's full class list.
+///
+/// Counting per generation rather than over a merged class map is the point: a
+/// merge keeps every NAME, so a name-level count over it passes while one
+/// generation's classes have been replaced wholesale by the other's.
 #[test]
 fn completeness_every_class_is_planned_or_sanctioned_skip() {
     for key in testsupport::crate_keys() {
-        let c = testsupport::completeness(key).unwrap();
+        let rows = testsupport::completeness(key).unwrap();
+        assert!(!rows.is_empty(), "{key}: no BMM generation resolved");
+        for c in rows {
+            let file = &c.file;
+            assert!(
+                c.silently_dropped.is_empty(),
+                "{key} [{file}]: {} class(es) silently dropped from the emission plan: {:?}",
+                c.silently_dropped.len(),
+                c.silently_dropped,
+            );
+            assert_eq!(
+                c.planned + c.skipped_mapped + c.skipped_abstract_unused,
+                c.total,
+                "{key} [{file}]: plan ({}) + mapped ({}) + abstract-unused ({}) != total ({})",
+                c.planned,
+                c.skipped_mapped,
+                c.skipped_abstract_unused,
+                c.total,
+            );
+            assert!(c.planned > 0, "{key} [{file}]: emitted zero types");
+        }
+    }
+}
+
+/// Every attribute every loaded BMM generation declares reaches an emitted Rust
+/// field — the attribute-level half of completeness, which the class-NAME count
+/// above cannot see.
+///
+/// This is the gate the LANG two-schema merge defeated: merging the stable v2.x
+/// BMM and the v3 development line into one class map left every class NAME
+/// present while discarding one generation's attribute set for each of the 18
+/// names both declare (`LANG/docs/bmm3/master00-amendment_record.adoc`
+/// SPECLANG-14 formalises the v2/v3 split).
+#[test]
+fn completeness_every_declared_attribute_reaches_an_emitted_field() {
+    for key in testsupport::crate_keys() {
+        let (gaps, checked) = testsupport::attribute_gaps(key).unwrap();
         assert!(
-            c.silently_dropped.is_empty(),
-            "{key}: {} class(es) silently dropped from the emission plan: {:?}",
-            c.silently_dropped.len(),
-            c.silently_dropped,
+            gaps.is_empty(),
+            "{key}: {} BMM-declared attribute(s) reach no emitted field: {:?}",
+            gaps.len(),
+            gaps.iter()
+                .map(|g| format!("[{}] {}.{} — {}", g.file, g.class, g.attribute, g.detail))
+                .collect::<Vec<_>>(),
         );
-        assert_eq!(
-            c.planned + c.skipped_mapped + c.skipped_abstract_unused,
-            c.total,
-            "{key}: plan ({}) + mapped ({}) + abstract-unused ({}) != total ({})",
-            c.planned,
-            c.skipped_mapped,
-            c.skipped_abstract_unused,
-            c.total,
+        // Non-vacuity: a broken traversal that checked nothing would also report
+        // zero gaps, so pin that real work happened. LANG is the composition this
+        // gate exists for (two generations, 205 declared classes between them), so
+        // it carries the substantial bar.
+        assert!(
+            checked > 0,
+            "{key}: no (class, attribute) pair checked — the traversal is vacuous",
         );
-        assert!(c.planned > 0, "{key}: emitted zero types");
+        if key == "lang" {
+            assert!(
+                checked > 500,
+                "lang: only {checked} (class, attribute) pair(s) checked across both BMM \
+                 generations — the traversal no longer covers the model",
+            );
+        }
+    }
+}
+
+/// No two BMM generations of one crate claim the same emitted file path or the
+/// same crate-prelude identifier.
+///
+/// A shared path means one generation's output overwrites the other's — a
+/// silently picked shape, which is exactly the defect the per-generation
+/// emission exists to prevent. A shared prelude identifier means the crate's
+/// one-type-per-Rust-name contract is broken.
+#[test]
+fn generations_never_silently_pick_a_shape() {
+    let conflicts = testsupport::generation_conflicts().unwrap();
+    assert!(
+        conflicts.is_empty(),
+        "BMM generations of one crate collide: {:?}",
+        conflicts
+            .iter()
+            .map(|c| format!("{}: {:?} claimed by {:?}", c.key, c.what, c.files))
+            .collect::<Vec<_>>(),
+    );
+}
+
+/// LANG emits BOTH extant BMM generations completely, each at its own
+/// source-package path: the stable v2.x model under `bmm/`, `bmm_persistence/`
+/// and `beom/` (`LANG/docs/bmm/master01-preface.adoc` §History — "the normative,
+/// tool-implemented version"), and the v3 development line under `bmm3/`
+/// (`LANG/docs/bmm3/master01-preface.adoc` §Previous Versions). A name declared
+/// by both — `BMM_CLASS`, `BMM_TYPE`, … — yields two Rust types.
+#[test]
+fn lang_emits_both_bmm_generations_at_their_own_paths() {
+    let files = testsupport::rendered_files("lang").unwrap();
+    let has = |p: &str| files.iter().any(|f| f == p);
+    // Both generations of a colliding name (18 of them; these are the shapes the
+    // ch.6–ch.8 chapter audits pinned as materially different).
+    for (v2, bmm3) in [
+        ("bmm/core/bmm_class.rs", "bmm3/core/entity/bmm_class.rs"),
+        ("bmm/core/bmm_type.rs", "bmm3/core/entity/bmm_type.rs"),
+        (
+            "bmm/core/bmm_container_type.rs",
+            "bmm3/core/entity/bmm_container_type.rs",
+        ),
+        (
+            "bmm/core/bmm_property.rs",
+            "bmm3/core/feature/bmm_property.rs",
+        ),
+        ("bmm/core/bmm_model.rs", "bmm3/core/model/bmm_model.rs"),
+        (
+            "bmm/core/bmm_model_element.rs",
+            "bmm3/core/bmm_model_element.rs",
+        ),
+    ] {
+        assert!(has(v2), "LANG did not emit the v2 generation's {v2}");
+        assert!(has(bmm3), "LANG did not emit the v3 generation's {bmm3}");
+    }
+    // The two classes the merge left descendant-less and therefore unemitted.
+    for bmm3_only in [
+        "bmm3/core/entity/bmm_model_type.rs",
+        "bmm3/core/entity/bmm_module.rs",
+    ] {
+        assert!(has(bmm3_only), "LANG did not emit {bmm3_only}");
     }
 }
 
@@ -315,10 +423,12 @@ fn composition_table_integrity() {
                 info.key,
             );
         }
-        // Resolving the composition loads every member/dependency BMM file.
+        // Resolving the composition loads every member/dependency BMM file, one
+        // completeness row per generation.
+        let rows = testsupport::completeness(&info.key);
         assert!(
-            testsupport::completeness(&info.key).is_ok(),
-            "composition {:?} failed to resolve its member/dependency BMM files",
+            rows.as_ref().is_ok_and(|r| r.len() == info.own.len()),
+            "composition {:?} failed to resolve one generation per own BMM file",
             info.key,
         );
     }

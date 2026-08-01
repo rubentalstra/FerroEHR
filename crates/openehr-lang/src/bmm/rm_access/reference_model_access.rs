@@ -4,8 +4,8 @@
 //! The openEHR `REFERENCE_MODEL_ACCESS` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm::rm_access::schema_descriptor::SchemaDescriptor;
-use crate::bmm3::core::model::bmm_model::BmmModel;
 
 /// Access to service interface to BMM object model.
 #[doc(alias = "REFERENCE_MODEL_ACCESS")]

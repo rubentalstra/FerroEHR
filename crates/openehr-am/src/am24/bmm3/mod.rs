@@ -5,4 +5,5 @@
 pub mod bmm_definitions;
 pub mod core;
 pub mod expression;
+pub mod model_access;
 pub mod statement;

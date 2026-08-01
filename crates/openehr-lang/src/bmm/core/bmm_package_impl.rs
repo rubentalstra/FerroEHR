@@ -13,15 +13,15 @@
 //! The three container functions are implemented once here, as `pub(crate)`
 //! free functions over a `packages` map, and called from both
 //! [`BmmPackage`] and
-//! [`BmmModel`](crate::bmm3::core::model::bmm_model::BmmModel) — the two
+//! [`BmmModel`](crate::bmm::core::bmm_model::BmmModel) — the two
 //! `BMM_PACKAGE_CONTAINER` descendants
 //! (`…bmm.bmm_model.adoc` §Inherit lists `BMM_PACKAGE_CONTAINER`).
 
 use std::collections::BTreeMap;
 
-use crate::bmm3::bmm_definitions::BmmDefinitionsData;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
-use crate::bmm3::core::model::bmm_package::BmmPackage;
+use crate::bmm::core::bmm_class::BmmClass;
+use crate::bmm::core::bmm_definitions::BmmDefinitionsData;
+use crate::bmm::core::bmm_package::BmmPackage;
 
 /// Splits a package path into its non-empty segments, delimited by
 /// `BMM_DEFINITIONS.Package_name_delimiter`
@@ -163,9 +163,9 @@ impl BmmPackage {
 mod tests {
     use std::collections::BTreeMap;
 
-    use crate::bmm3::core::entity::bmm_class::BmmClass;
-    use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-    use crate::bmm3::core::model::bmm_package::BmmPackage;
+    use crate::bmm::core::bmm_class::BmmClass;
+    use crate::bmm::core::bmm_class::BmmClassData;
+    use crate::bmm::core::bmm_package::BmmPackage;
 
     /// A package with the given name, child packages and class names.
     fn package(name: &str, children: Vec<BmmPackage>, classes: &[&str]) -> BmmPackage {
@@ -187,7 +187,7 @@ mod tests {
 
     /// A simple class named `name`.
     fn simple_class(name: &str) -> BmmClass {
-        BmmClass::BmmSimpleClass(BmmSimpleClass {
+        BmmClass::BmmClass(BmmClassData {
             documentation: None,
             name: name.to_owned(),
             ancestors: None,

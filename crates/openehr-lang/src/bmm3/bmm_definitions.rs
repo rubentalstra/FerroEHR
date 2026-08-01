@@ -4,36 +4,12 @@
 //! The openEHR `BMM_DEFINITIONS` spec class, generated from the vendored BMM
 //! meta-model.
 
-use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-use crate::bmm::core::bmm_open_type::BmmOpenType;
-use crate::bmm::rm_access::reference_model_access::ReferenceModelAccess;
-use crate::bmm::rm_access::schema_descriptor::SchemaDescriptor;
-use crate::bmm3::core::entity::bmm_class::BmmClass;
-use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
-use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
-use crate::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
-use crate::bmm3::core::entity::bmm_signature::BmmSignature;
-use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
-use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use crate::bmm3::core::entity::bmm_type::BmmType;
-use crate::bmm3::core::feature::bmm_constant::BmmConstant;
-use crate::bmm3::core::feature::bmm_function::BmmFunction;
-use crate::bmm3::core::feature::bmm_local::BmmLocal;
-use crate::bmm3::core::feature::bmm_parameter::BmmParameter;
-use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
-use crate::bmm3::core::feature::bmm_property::BmmProperty;
-use crate::bmm3::core::feature::bmm_result::BmmResult;
-use crate::bmm3::core::feature::bmm_self::BmmSelf;
-use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
-use crate::bmm3::core::model::bmm_package_container::BmmPackageContainer;
-
 /// Definitions used by all BMM packages.
 #[doc(alias = "BMM_DEFINITIONS")]
 #[derive(Debug, Clone, PartialEq)]
-pub struct BmmDefinitionsData {}
+pub struct BmmDefinitions {}
 
-impl BmmDefinitionsData {
+impl BmmDefinitions {
     /// Current internal version of BMM meta-model, used to determine if a given schema can be processed by a given implementation of the model.
     /// BMM constant `Bmm_internal_version`.
     pub const BMM_INTERNAL_VERSION: &'static str = "";
@@ -49,58 +25,79 @@ impl BmmDefinitionsData {
     /// Extension used for BMM files.
     /// BMM constant `Bmm_schema_file_extension`.
     pub const BMM_SCHEMA_FILE_EXTENSION: &'static str = ".bmm";
-}
 
-/// Polymorphic slot of `BMM_DEFINITIONS`, dispatched on each payload's `_type`.
-///
-/// Definitions used by all BMM packages.
-#[doc(alias = "BMM_DEFINITIONS")]
-#[derive(Debug, Clone, PartialEq)]
-pub enum BmmDefinitions {
-    /// The `BMM_CLASS` subtype of `BMM_DEFINITIONS`.
-    BmmClass(BmmClass),
-    /// The `BMM_CONSTANT` subtype of `BMM_DEFINITIONS`.
-    BmmConstant(BmmConstant),
-    /// The `BMM_CONTAINER_TYPE` subtype of `BMM_DEFINITIONS`.
-    BmmContainerType(BmmContainerType),
-    /// The `BMM_FUNCTION` subtype of `BMM_DEFINITIONS`.
-    BmmFunction(BmmFunction),
-    /// The `BMM_GENERIC_PARAMETER` subtype of `BMM_DEFINITIONS`.
-    BmmGenericParameter(BmmGenericParameter),
-    /// The `BMM_GENERIC_TYPE` subtype of `BMM_DEFINITIONS`.
-    BmmGenericType(BmmGenericType),
-    /// The `BMM_LOCAL` subtype of `BMM_DEFINITIONS`.
-    BmmLocal(BmmLocal),
-    /// The `BMM_OPEN_TYPE` subtype of `BMM_DEFINITIONS`.
-    BmmOpenType(BmmOpenType),
-    /// The `BMM_PACKAGE_CONTAINER` subtype of `BMM_DEFINITIONS`.
-    BmmPackageContainer(BmmPackageContainer),
-    /// The `BMM_PARAMETER` subtype of `BMM_DEFINITIONS`.
-    BmmParameter(BmmParameter),
-    /// The `BMM_PARAMETER_TYPE` subtype of `BMM_DEFINITIONS`.
-    BmmParameterType(BmmParameterType),
-    /// The `BMM_PROCEDURE` subtype of `BMM_DEFINITIONS`.
-    BmmProcedure(BmmProcedure),
-    /// The `BMM_PROPERTY` subtype of `BMM_DEFINITIONS`.
-    BmmProperty(BmmProperty<BmmType>),
-    /// The `BMM_RESULT` subtype of `BMM_DEFINITIONS`.
-    BmmResult(BmmResult),
-    /// The `BMM_SELF` subtype of `BMM_DEFINITIONS`.
-    BmmSelf(BmmSelf),
-    /// The `BMM_SIGNATURE` subtype of `BMM_DEFINITIONS`.
-    BmmSignature(BmmSignature),
-    /// The `BMM_SIMPLE_TYPE` subtype of `BMM_DEFINITIONS`.
-    BmmSimpleType(BmmSimpleType),
-    /// The `BMM_SINGLETON` subtype of `BMM_DEFINITIONS`.
-    BmmSingleton(BmmSingleton),
-    /// The `BMM_STATUS_TYPE` subtype of `BMM_DEFINITIONS`.
-    BmmStatusType(BmmStatusType),
-    /// The `BMM_TUPLE_TYPE` subtype of `BMM_DEFINITIONS`.
-    BmmTupleType(BmmTupleType),
-    /// The `REFERENCE_MODEL_ACCESS` subtype of `BMM_DEFINITIONS`.
-    ReferenceModelAccess(ReferenceModelAccess),
-    /// The `SCHEMA_DESCRIPTOR` subtype of `BMM_DEFINITIONS`.
-    SchemaDescriptor(SchemaDescriptor),
-    /// An instance of `BMM_DEFINITIONS` itself (its own, least-rich form).
-    BmmDefinitions(BmmDefinitionsData),
+    /// Appears between a name and a type in a declaration or type signature.
+    /// BMM constant `Type_delimiter`.
+    pub const TYPE_DELIMITER: char = ':';
+
+    /// Left delimiter for generic class and generic type names, as used in `List<T>`.
+    /// BMM constant `Generic_left_delimiter`.
+    pub const GENERIC_LEFT_DELIMITER: char = '<';
+
+    /// Right delimiter for generic class and generic type names, as used in `List<T>`.
+    /// BMM constant `Generic_right_delimiter`.
+    pub const GENERIC_RIGHT_DELIMITER: char = '>';
+
+    /// Separator used in Generic types.
+    /// BMM constant `Generic_separator`.
+    pub const GENERIC_SEPARATOR: char = ',';
+
+    /// Delimiter between formal type parameter and constraint type, as used in `Sortable<T: Ordered>`.
+    /// BMM constant `Generic_constraint_delimiter`.
+    pub const GENERIC_CONSTRAINT_DELIMITER: char = ':';
+
+    /// Left delimiter of a Tuple type and also instance. Example:
+    ///
+    /// * `[Integer, String]` - a tuple type;
+    /// * `[3, "Quixote"]` - a tuple.
+    /// BMM constant `Tuple_left_delim`.
+    pub const TUPLE_LEFT_DELIM: char = '[';
+
+    /// Right delimiter of a Tuple type and also instance.
+    /// BMM constant `Tuple_right_delim`.
+    pub const TUPLE_RIGHT_DELIM: char = ']';
+
+    /// Separator used in Tuple types and instances.
+    /// BMM constant `Tuple_separator`.
+    pub const TUPLE_SEPARATOR: char = ',';
+
+    /// Left delimiter used in serial form of instance constrained enumeration.
+    /// BMM constant `Constraint_left_delim`.
+    pub const CONSTRAINT_LEFT_DELIM: char = '«';
+
+    /// Right delimiter used in serial form of instance constrained enumeration.
+    /// BMM constant `Constraint_right_delim`.
+    pub const CONSTRAINT_RIGHT_DELIM: char = '»';
+
+    /// Attribute name of logical attribute 'bmm_version' in .bmm schema file.
+    /// BMM constant `Metadata_bmm_version`.
+    pub const METADATA_BMM_VERSION: &'static str = "bmm_version";
+
+    /// Attribute name of logical attribute 'schema_name' in .bmm schema file.
+    /// BMM constant `Metadata_schema_name`.
+    pub const METADATA_SCHEMA_NAME: &'static str = "schema_name";
+
+    /// Attribute name of logical attribute 'rm_publisher' in .bmm schema file.
+    /// BMM constant `Metadata_rm_publisher`.
+    pub const METADATA_RM_PUBLISHER: &'static str = "rm_publisher";
+
+    /// Attribute name of logical attribute 'rm_release' in .bmm schema file.
+    /// BMM constant `Metadata_rm_release`.
+    pub const METADATA_RM_RELEASE: &'static str = "rm_release";
+
+    /// Attribute name of logical attribute 'schema_revision' in .bmm schema file.
+    /// BMM constant `Metadata_schema_revision`.
+    pub const METADATA_SCHEMA_REVISION: &'static str = "schema_revision";
+
+    /// Attribute name of logical attribute 'schema_lifecycle_state' in .bmm schema file.
+    /// BMM constant `Metadata_schema_lifecycle_state`.
+    pub const METADATA_SCHEMA_LIFECYCLE_STATE: &'static str = "schema_lifecycle_state";
+
+    /// Attribute name of logical attribute 'schema_description' in .bmm schema file.
+    /// BMM constant `Metadata_schema_description`.
+    pub const METADATA_SCHEMA_DESCRIPTION: &'static str = "schema_description";
+
+    /// Path of schema file.
+    /// BMM constant `Metadata_schema_path`.
+    pub const METADATA_SCHEMA_PATH: &'static str = "schema_path";
 }

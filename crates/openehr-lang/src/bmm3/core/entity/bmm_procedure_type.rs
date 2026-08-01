@@ -11,9 +11,6 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 #[doc(alias = "BMM_PROCEDURE_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmProcedureType {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
     /// Result type of a procedure.
     pub result_type: Option<BmmStatusType>,
 

@@ -12,9 +12,6 @@ use crate::bmm3::core::entity::bmm_type::BmmType;
 #[doc(alias = "BMM_TUPLE_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmTupleType {
-    // inherited: BMM_MODEL_ELEMENT
-    /// Optional documentation of this element.
-    pub documentation: Option<String>,
     /// List of types of the items of the tuple, keyed by purpose in the tuple.
     pub item_types: std::collections::BTreeMap<String, BmmType>,
 }

@@ -151,7 +151,7 @@ fn lex_error_is_typed_and_located() {
 }
 
 /// `LANG/docs/BEL/master03-language.adoc` §Typing/§Statements (#1402):
-/// generic type_ids in declarations (`base_expressions.g4` `type_id`'s
+/// generic `type_id`s in declarations (`base_expressions.g4` `type_id`'s
 /// recursive form) and the chapter's own declaration examples.
 #[test]
 fn generic_type_ids_in_declarations() {

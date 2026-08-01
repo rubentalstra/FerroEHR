@@ -11,6 +11,8 @@ pub mod bmm_function_type;
 pub mod bmm_generic_class;
 pub mod bmm_generic_type;
 pub mod bmm_indexed_container_type;
+pub mod bmm_model_type;
+pub mod bmm_module;
 pub mod bmm_parameter_type;
 pub mod bmm_procedure_type;
 pub mod bmm_property_type;
@@ -25,5 +27,4 @@ pub mod bmm_unitary_type;
 pub mod range_constrained;
 
 // hand-written modules (spec behaviour), auto-declared:
-pub mod bmm_class_impl;
 pub mod bmm_type_impl;

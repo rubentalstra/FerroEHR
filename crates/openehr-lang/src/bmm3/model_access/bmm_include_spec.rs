@@ -8,6 +8,6 @@
 #[doc(alias = "BMM_INCLUDE_SPEC")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmIncludeSpec {
-    /// Full identifier of the included schema, e.g. "openehr_primitive_types_1.0.2".
+    /// Full identifier of the included schema, e.g. `"openehr_primitive_types_1.0.2"`.
     pub id: String,
 }

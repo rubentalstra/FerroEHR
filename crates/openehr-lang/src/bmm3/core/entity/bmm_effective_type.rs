@@ -3,7 +3,9 @@
 //! The openEHR `BMM_EFFECTIVE_TYPE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
 use crate::bmm3::core::entity::bmm_signature::BmmSignature;
+use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 
@@ -13,8 +15,12 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 #[doc(alias = "BMM_EFFECTIVE_TYPE")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum BmmEffectiveType {
+    /// The `BMM_GENERIC_TYPE` subtype of `BMM_EFFECTIVE_TYPE`.
+    BmmGenericType(BmmGenericType),
     /// The `BMM_SIGNATURE` subtype of `BMM_EFFECTIVE_TYPE`.
     BmmSignature(Box<BmmSignature>),
+    /// The `BMM_SIMPLE_TYPE` subtype of `BMM_EFFECTIVE_TYPE`.
+    BmmSimpleType(BmmSimpleType),
     /// The `BMM_STATUS_TYPE` subtype of `BMM_EFFECTIVE_TYPE`.
     BmmStatusType(BmmStatusType),
     /// The `BMM_TUPLE_TYPE` subtype of `BMM_EFFECTIVE_TYPE`.
