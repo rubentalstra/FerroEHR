@@ -667,6 +667,7 @@ fn odin_range_bounds<T>(
 }
 
 #[expect(
+    clippy::as_conversions,
     clippy::cast_precision_loss,
     reason = "archetype domain-constraint magnitudes are small integers; f64 represents them exactly"
 )]
@@ -679,6 +680,7 @@ fn odin_as_real(v: &OdinValue) -> Option<f64> {
 }
 
 #[expect(
+    clippy::as_conversions,
     clippy::cast_possible_truncation,
     reason = "the value is clamped to the i32 range on the very next line, so the cast cannot truncate"
 )]
