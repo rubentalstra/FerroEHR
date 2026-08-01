@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ferroehr 3.15.3 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.15.3 · verification pack: passed
+SUT: ferroehr 3.16.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.16.0 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 826 |
+| passed | 833 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 863 |
+| total | 870 |
 
 ## By chapter
 
@@ -20,10 +20,10 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 315 | 0 | 0 | 18 |
+| **EHR** | 321 | 0 | 0 | 18 |
 | — EHR resource | 24 | 0 | 0 | 2 |
 | — EHR_STATUS | 42 | 0 | 0 | 5 |
-| — COMPOSITION | 95 | 0 | 0 | 0 |
+| — COMPOSITION | 101 | 0 | 0 | 0 |
 | — DIRECTORY | 61 | 0 | 0 | 6 |
 | — CONTRIBUTION | 57 | 0 | 0 | 5 |
 | — Item tags | 30 | 0 | 0 | 0 |
@@ -39,8 +39,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Parties | 45 | 0 | 0 | 3 |
 | — Party relationships | 17 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
-| **Messaging** | 36 | 0 | 0 | 0 |
-| — EHR Extract | 20 | 0 | 0 | 0 |
+| **Messaging** | 37 | 0 | 0 | 0 |
+| — EHR Extract | 21 | 0 | 0 | 0 |
 | — TDD | 16 | 0 | 0 | 0 |
 | **Admin** | 54 | 0 | 0 | 2 |
 | — Admin service | 24 | 0 | 0 | 2 |
@@ -84,7 +84,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 21 | 0 | 0 | 2 |
 | EhrStatus | pass | 41 | 0 | 0 | 5 |
-| CompositionOps | pass | 29 | 0 | 0 | 0 |
+| CompositionOps | pass | 35 | 0 | 0 | 0 |
 | DirectoryOps | pass | 61 | 0 | 0 | 8 |
 | ChangeSets | pass | 50 | 0 | 0 | 5 |
 | Versioning | pass | 59 | 0 | 0 | 0 |
@@ -101,7 +101,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
 | EhrArchive | pass | 7 | 0 | 0 | 0 |
 | DemographicArchive | pass | 8 | 0 | 0 | 0 |
-| EhrExtract | pass | 20 | 0 | 0 | 0 |
+| EhrExtract | pass | 21 | 0 | 0 | 0 |
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 826 of 863 selected cases driven.
+Coverage: 833 of 870 selected cases driven.
 
 Not-executed verdicts (each cited):
 

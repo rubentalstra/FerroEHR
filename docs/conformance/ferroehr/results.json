@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.15.3"
+    "version": "3.16.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.15.3",
+    "version": "3.16.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -397,6 +397,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-category_invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-context_location_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-datetime_comma_fraction",
       "status": "passed",
       "rows_driven": 1,
@@ -451,7 +463,19 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-language_invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-null_empty_absent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-participation_mode_invalid",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -489,6 +513,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-setting_invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_member",
       "status": "passed",
       "rows_driven": 1,
@@ -508,6 +538,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_open",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-territory_invalid",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4257,6 +4293,12 @@
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-spec_named_extract_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-term_coded_extract_type",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
