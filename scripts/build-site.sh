@@ -12,7 +12,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
 OUT="$ROOT/_site"
-SITE_BASE="${SITE_BASE:-/ferroehr}"
+# The site is served from the ferroehr.eu apex (GitHub Pages custom domain),
+# so it lives at the domain ROOT: SITE_BASE is empty. Both stay overridable so
+# a sub-path build (e.g. a fork's project-pages URL) is still one env var away.
+SITE_ORIGIN="${SITE_ORIGIN:-https://ferroehr.eu}"
+SITE_BASE="${SITE_BASE:-}"
 MODE="${1:---dev-only}"
 
 log() { printf '\033[1;33m[build-site]\033[0m %s\n' "$*"; }
@@ -55,7 +59,27 @@ VERSIONS_SRC="$ROOT/website/versions.json"
 if [[ "$MODE" == "--full" && -f "$ROOT/docs-dist/versions.json" ]]; then
   VERSIONS_SRC="$ROOT/docs-dist/versions.json"
 fi
-cp "$VERSIONS_SRC" "$OUT/versions.json"
+#    Entries in docs-dist were written under whatever base the site used at the
+#    time — `/ehrbase-rs` before the rename, `/ferroehr` before the ferroehr.eu
+#    cutover — so their `path` values go stale on every move. Re-anchor each one
+#    to the CURRENT SITE_BASE by keeping only the `/docs/<id>/` tail, which is
+#    invariant. The frozen trees themselves are NOT rebuilt ("generate once"):
+#    their internal links are relative, so only this manifest needs re-anchoring.
+python3 - "$VERSIONS_SRC" "$OUT/versions.json" "$SITE_BASE" <<'PY'
+import json, sys
+
+src, dest, base = sys.argv[1], sys.argv[2], sys.argv[3]
+manifest = json.load(open(src))
+for entry in manifest.get("versions", []):
+    path = entry.get("path")
+    if isinstance(path, str):
+        marker = path.find("/docs/")
+        if marker != -1:
+            entry["path"] = base + path[marker:]
+with open(dest, "w") as fh:
+    json.dump(manifest, fh, indent=2)
+    fh.write("\n")
+PY
 
 if [[ "$MODE" != "--full" ]]; then
   # The landing page links to /docs/latest/; alias it to the dev book so the
@@ -72,6 +96,28 @@ fi
 if [[ -d "$ROOT/docs-dist/docs" ]]; then
   log "copying frozen versions from docs-dist"
   cp -R "$ROOT/docs-dist/docs/." "$OUT/docs/"
+  # Each frozen tree carries mdBook's generated 404.html, whose asset and home
+  # links are absolute and were baked with the base path in force when that
+  # version was cut (`/ehrbase-rs/...`, then `/ferroehr/...`). Re-anchor those
+  # to the CURRENT base in the ASSEMBLED OUTPUT only — docs-dist is untouched,
+  # so "generate once, never rebuilt" still holds for the frozen trees.
+  log "re-anchoring absolute links in frozen trees"
+  python3 - "$OUT/docs" "$SITE_BASE" <<'PY'
+import pathlib, re, sys
+
+root, base = pathlib.Path(sys.argv[1]), sys.argv[2]
+# A legacy base is exactly one path segment before /docs/; a already-correct
+# "/docs/..." has no such segment and is left alone (so this is idempotent).
+LEGACY = re.compile(r'(?<=["\'])/[A-Za-z0-9._-]+/docs/')
+patched = 0
+for html in root.rglob("*.html"):
+    text = html.read_text(encoding="utf-8", errors="surrogateescape")
+    fixed, n = LEGACY.subn(f"{base}/docs/", text)
+    if n:
+        html.write_text(fixed, encoding="utf-8", errors="surrogateescape")
+        patched += 1
+print(f"  re-anchored {patched} file(s)")
+PY
 else
   log "no docs-dist worktree — skipping frozen versions (dev-only content only)"
 fi
@@ -105,7 +151,7 @@ log "generating sitemap.xml"
 {
   echo '<?xml version="1.0" encoding="UTF-8"?>'
   echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-  host="https://rubentalstra.github.io${SITE_BASE}"
+  host="${SITE_ORIGIN}${SITE_BASE}"
   echo "  <url><loc>${host}/</loc></url>"
   echo "  <url><loc>${host}/api/</loc></url>"
   if [[ -d "$OUT/docs/latest" ]]; then
@@ -139,7 +185,7 @@ for v in m.get("versions", []):
     print(f"Disallow: {base}/docs/{vid}/")
 PY
   echo ""
-  echo "Sitemap: https://rubentalstra.github.io${SITE_BASE}/sitemap.xml"
+  echo "Sitemap: ${SITE_ORIGIN}${SITE_BASE}/sitemap.xml"
 } > "$OUT/robots.txt"
 
 log "full site assembled at $OUT"

@@ -1,9 +1,9 @@
-# FerroEHR documentation site — crawl policy (docs/plans/w1-docs-website.md §2d).
+# FerroEHR documentation site — crawl policy.
 # Canonical documentation is /docs/latest/. Development docs and archived
 # non-latest versions are disallowed so search engines index the latest docs.
 # The deploy job appends a Disallow per archived non-latest version from versions.json.
 User-agent: *
 Allow: /
-Disallow: /ferroehr/docs/dev/
+Disallow: /docs/dev/
 
-Sitemap: https://rubentalstra.github.io/ferroehr/sitemap.xml
+Sitemap: https://ferroehr.eu/sitemap.xml

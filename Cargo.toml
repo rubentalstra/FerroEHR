@@ -20,7 +20,7 @@ repository = "https://github.com/rubentalstra/FerroEHR"
 authors = ["Ruben Talstra <14235001+rubentalstra@users.noreply.github.com>"]
 # C-METADATA (https://rust-lang.github.io/api-guidelines/documentation.html#c-metadata):
 # members inherit via `<key>.workspace = true`; `readme` resolves from this root.
-documentation = "https://rubentalstra.github.io/FerroEHR/"
+documentation = "https://ferroehr.eu/"
 readme = "README.md"
 keywords = ["openehr", "cdr", "healthcare", "ehr", "aql"]
 categories = ["database-implementations", "science", "web-programming::http-server"]

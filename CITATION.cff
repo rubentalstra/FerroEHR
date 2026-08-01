@@ -19,7 +19,7 @@ authors:
     given-names: Ruben
     orcid: "https://orcid.org/0009-0009-2758-0141"
 repository-code: "https://github.com/rubentalstra/FerroEHR"
-url: "https://rubentalstra.github.io/FerroEHR/"
+url: "https://ferroehr.eu/"
 license: MIT
 keywords:
   - openEHR

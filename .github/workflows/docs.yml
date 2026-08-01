@@ -19,7 +19,10 @@ env:
   MDBOOK_LINT_VERSION: "0.14.4"
   LYCHEE_VERSION: "0.24.2"
   SWAGGER_UI_VERSION: "5.32.8"
-  SITE_BASE: "/ferroehr"
+  # Custom domain (ferroehr.eu): the site is served at the apex root, so the
+  # base path is empty. Set explicitly so CI and scripts/build-site.sh agree.
+  SITE_ORIGIN: "https://ferroehr.eu"
+  SITE_BASE: ""
 
 concurrency:
   group: docs-${{ github.ref }}
@@ -60,16 +63,14 @@ jobs:
       - name: Assemble _site (landing + api + /docs/dev/)
         run: bash scripts/build-site.sh --dev-only       # writes ./_site
       - name: Link-check gate (built HTML + external links)
-        # The deployed site lives under the /ferroehr/ project base path, so
-        # absolute /ferroehr/... links must resolve against a prefixed check
-        # tree (spec §2b). The site's own public origin is excluded: those URLs
-        # are the very tree being checked locally (circular before first deploy).
+        # The deployed site is served at the ferroehr.eu apex ROOT, so absolute
+        # /docs/... links resolve against _site itself — no prefixed check tree
+        # is needed. The site's own public origin is excluded: those URLs are
+        # the very tree being checked locally (circular before first deploy).
         run: |
-          mkdir -p _check
-          ln -sfn "$PWD/_site" _check/ferroehr
           lychee --no-progress --max-retries 2 --timeout 20 --exclude-loopback \
-            --root-dir "$PWD/_check" \
-            --exclude '^https://rubentalstra\.github\.io/ferroehr' \
+            --root-dir "$PWD/_site" \
+            --exclude '^https://ferroehr\.eu' \
             './_site/**/*.html'
       - uses: actions/upload-artifact@v7
         with:
