@@ -149,13 +149,14 @@ trivial_casts = "warn"
 trivial_numeric_casts = "warn"
 ambiguous_negative_literals = "deny"  # `-x.pow(2)` reads wrong — numeric clarity
 # NOTE: clippy::arithmetic_side_effects (checked-math-everywhere) is NOT
-# enabled: it is a CLIPPY restriction lint (a bare entry in this rust table
-# is inert and only warns), enabling it for real is a ~600-site remediation
-# program, and silent-overflow safety is already guaranteed by
-# `overflow-checks = true` in [profile.release] — an overflow panics loudly
-# instead of wrapping into a wrong value
-# (https://doc.rust-lang.org/cargo/reference/profiles.html#overflow-checks).
-# The enable-or-not ruling is tracked on issue #1426.
+# enabled (owner ruling 2026-08-01, issue #1426): silent-overflow safety is
+# already guaranteed by `overflow-checks = true` in [profile.release] — an
+# overflow panics loudly instead of wrapping into a wrong clinical value
+# (https://doc.rust-lang.org/cargo/reference/profiles.html#overflow-checks) —
+# and a blanket checked-math mandate would invite the silent saturating/
+# default dodges this table exists to prevent. Do not re-add it here: it is
+# a CLIPPY restriction lint, so a bare entry in this rust table is inert and
+# only emits a deprecated-lint-name warning on every crate.
 
 [workspace.lints.rustdoc]
 # Enforced by the CI doc job (RUSTDOCFLAGS=-D warnings, cargo doc --workspace)
