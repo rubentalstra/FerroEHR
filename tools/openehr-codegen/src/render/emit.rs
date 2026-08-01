@@ -842,7 +842,7 @@ fn field_type(
             // convention is settled (root `CLAUDE.md` §Conventions), and it is
             // lossless everywhere the Void state carries no meaning.
             //
-            // TODO: `EL_AGENT.open_args` is the one known site where it IS
+            // TODO(#1450): `EL_AGENT.open_args` is the one known site where it IS
             // lossy — the attribute is `0..1` and its Void state is normatively
             // load-bearing twice: "If not provided, and the `_name_` refers to
             // a routine with more arguments than supplied in `_closed_args_`,

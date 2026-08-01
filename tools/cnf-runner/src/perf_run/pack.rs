@@ -8,7 +8,7 @@
 //! bytes; stamping mutates only the event-context times and the composer
 //! name, deterministically from the arrival's planned instant — variation
 //! never introduces a validation error a conformant server would reject.
-// TODO: port the benchmark lab's constraint-aware FLAT-leaf value jitter
+// TODO(#1451): port the benchmark lab's constraint-aware FLAT-leaf value jitter
 // (the retired benchmark lab's renderer, in git history) as a richer stamping mode once the
 // benchmark crate migrates into the runner; time/composer stamping is the
 // committed baseline until then.

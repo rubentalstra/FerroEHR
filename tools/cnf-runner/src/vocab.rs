@@ -140,10 +140,12 @@ outcome_kinds! {
 /// Which optional case-core blocks are meaningful.
 ///
 /// The schedule defines three kinds (`functional | content | performance`);
-/// the performance case-core schema is a separate artifact revision (this
-/// crate's W7 scope), so the assertion-machinery model closes over the two
-/// kinds it validates. // TODO: add `performance` with the §8.14 workload
-/// blocks when the performance schedule lands (W7, #202).
+/// the performance case-core schema is a separate artifact revision with its
+/// own model (`perf.rs` — the shipped measured-performance schedule), so the
+/// assertion-machinery model deliberately closes over the two kinds it
+/// validates. NOTE: no openEHR spec governs the runner's internal schema
+/// split — our own design; the once-planned `performance` variant here was
+/// superseded by the separate perf case-core model.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum CaseKind {
