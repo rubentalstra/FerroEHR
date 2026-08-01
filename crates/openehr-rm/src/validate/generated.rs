@@ -40,6 +40,119 @@
 //! after `history_basic_core`), and DV_ORDERED
 //! `Normal_range_and_status_consistency` (`dv_ordered_impl`).
 //!
+//! # Emittable-invariant realization register
+//!
+//! Every RM class invariant the assertion-dialect classifier judges
+//! mechanically evaluable, with the venue that actually realizes it. A
+//! `Core` row is realized by a core below; the other venues are realized
+//! (or adjudicated) outside this file, and are listed so the emitted
+//! bucket is accounted for in full rather than assumed.
+//!
+//! ## Realized by a generated core in this file
+//!
+//! - `ACTIVITY.Action_archetype_id_valid` — `activity_core`: the ACTIVITY core, called by `activity_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.activity.adoc §Invariants).
+//! - `ARCHETYPED.Rm_version_valid` — `archetyped_core`: the ARCHETYPED core, called by `archetyped_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc §Invariants).
+//! - `CODE_PHRASE.Code_string_valid` — `code_phrase_core`: the CODE_PHRASE core, called by `code_phrase_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.code_phrase.adoc §Invariants).
+//! - `COMPOSITION.Is_archetype_root` — `composition_core`: `is_archetype_root` is `archetype_details /= Void` (locatable.adoc §Functions). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
+//! - `DV_AMOUNT.Accuracy_is_percent_validity` — `dv_amount_core`: shared by every concrete DV_AMOUNT descendant. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_amount.adoc §Invariants).
+//! - `DV_AMOUNT.Accuracy_validity` — `dv_amount_core`: shared by every concrete DV_AMOUNT descendant. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_amount.adoc §Invariants).
+//! - `DV_DATE.Value_valid` — `temporal_value_core`: the ISO-8601 date validator supplies the verdict. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_date.adoc §Invariants).
+//! - `DV_DATE_TIME.Value_valid` — `temporal_value_core`: the ISO-8601 date-time validator supplies the verdict. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_date_time.adoc §Invariants).
+//! - `DV_DURATION.Value_valid` — `temporal_value_core`: the ISO-8601 duration validator supplies the verdict. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_duration.adoc §Invariants).
+//! - `DV_IDENTIFIER.Id_valid` — `dv_identifier_core`: called by `dv_identifier_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_identifier.adoc §Invariants).
+//! - `DV_PARSABLE.Formalism_valid` — `dv_parsable_core`: called by `dv_parsable_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_parsable.adoc §Invariants).
+//! - `DV_PROPORTION.Fraction_validity` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
+//! - `DV_PROPORTION.Percent_validity` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
+//! - `DV_PROPORTION.Precision_validity` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
+//! - `DV_PROPORTION.Type_validity` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
+//! - `DV_PROPORTION.Unitary_validity` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
+//! - `DV_PROPORTION.Valid_denominator` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
+//! - `DV_QUANTIFIED.Magnitude_status_valid` — `magnitude_status_core`: shared by every concrete DV_QUANTIFIED descendant. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_quantified.adoc §Invariants).
+//! - `DV_TEXT.Formatting_valid` — `dv_text_core`: shared by DV_TEXT and DV_CODED_TEXT. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
+//! - `DV_TEXT.Valid_value` — `dv_text_core`: shared by DV_TEXT and DV_CODED_TEXT. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
+//! - `DV_TIME.Value_valid` — `temporal_value_core`: the ISO-8601 time validator supplies the verdict. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_time.adoc §Invariants).
+//! - `DV_URI.Value_valid` — `dv_uri_core`: extended by `dv_ehr_uri_impl.rs` for the DV_EHR_URI scheme rule. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_uri.adoc §Invariants).
+//! - `ENTRY.Is_archetype_root` — `entry_root_core`: shared by every concrete ENTRY subtype. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
+//! - `EVENT_CONTEXT.location_valid` — `event_context_core`: called by `event_context_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
+//! - `HISTORY.Events_valid` — `history_basic_core`: called by `history_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants).
+//! - `LOCATABLE.Archetype_node_id_valid` — `archetype_node_id_core`: inherited by every concrete LOCATABLE descendant; the typed dispatcher closes out the classes with no typed impl from the generated concrete-descendant closure. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
+//! - `PARTY_IDENTIFIED.Basic_validity` — `party_identified_core`: shared by PARTY_IDENTIFIED and PARTY_RELATED. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
+//! - `PARTY_IDENTIFIED.Name_valid` — `party_identified_core`: shared by PARTY_IDENTIFIED and PARTY_RELATED. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
+//! - `TERM_MAPPING.Match_valid` — `term_mapping_core`: the match code is one of `< = > ?`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.term_mapping.adoc §Invariants).
+//!
+//! ## Realized in a hand-written `*_impl.rs`
+//!
+//! - `AUDIT_DETAILS.System_id_valid` — `crates/openehr-rm/src/common/generic/audit_details_impl.rs`: re-stated on the ATTESTATION subtype impl for its own RM type name. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.audit_details.adoc §Invariants).
+//! - `DV_MULTIMEDIA.Integrity_check_validity` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: an integrity check requires its algorithm. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
+//! - `DV_MULTIMEDIA.Not_empty` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: inline data or an external URI must be present. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
+//! - `DV_MULTIMEDIA.Size_valid` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: a negative encapsulated size is refused. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
+//! - `FEEDER_AUDIT_DETAILS.System_id_valid` — `crates/openehr-rm/src/common/archetyped/feeder_audit_details_impl.rs`: the FEEDER_AUDIT_DETAILS system id is checked on its own type. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.feeder_audit_details.adoc §Invariants).
+//! - `INSTRUCTION_DETAILS.Activity_path_valid` — `crates/openehr-rm/src/composition/content/entry/instruction_details_impl.rs`: the activity id must be non-empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction_details.adoc §Invariants).
+//! - `ITEM_TAG.Inv_value_valid` — `crates/openehr-rm/src/common/tags/item_tag_impl.rs`: a present tag value must be non-empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants).
+//! - `REFERENCE_RANGE.Range_is_simple` — `crates/openehr-rm/src/data_types/quantity/reference_range_impl.rs`: each present interval limit must itself be simple (no nested reference ranges). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.reference_range.adoc §Invariants).
+//!
+//! ## Realized at the wire boundary (`openehr-its`)
+//!
+//! - `COMPOSITION.Content_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
+//! - `DV_ORDERED.Other_reference_ranges_validity` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
+//! - `DV_TEXT.Mappings_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
+//! - `ENTRY.Other_participations_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: enforced per concrete ENTRY subtype at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
+//! - `EVENT_CONTEXT.Participations_validity` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
+//! - `INSTRUCTION.Activities_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction.adoc §Invariants).
+//! - `LOCATABLE.Archetyped_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the archetype-root XOR needs the node's archetype-root context, which the wire walker holds. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
+//! - `LOCATABLE.Links_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: inherited by every LOCATABLE; keyed on the `links` attribute rather than the RM type. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
+//! - `SECTION.Items_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.section.adoc §Invariants).
+//!
+//! ## Adjudicated out of the per-node invariant layer
+//!
+//! - `DV_ORDERED.Is_simple_validity`: vacuous on stored data: `is_simple ()` is defined as `True if this quantity has no reference ranges` (§Functions), i.e. exactly the antecedent. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
+//! - `EHR.Directory_valid`: a cross-object reference resolved by the EHR service against the store, not a property of the value being validated. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `EHR.Ehr_access_valid`: a cross-object reference resolved by the EHR service against the store, not a property of the value being validated. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `EHR.Ehr_status_valid`: a cross-object reference resolved by the EHR service against the store, not a property of the value being validated. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `HISTORY.Periodic_validity`: vacuous on stored data: `is_periodic ()` is a derived function (§Functions) with no wire representation; the stored node carries only `period`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants).
+//! - `REVISION_HISTORY_ITEM.Audit_valid`: the revision-history audit chain, owned by the versioning layer's commit path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history_item.adoc §Invariants).
+//! - `VERSION.Preceding_version_uid_validity`: the version chain, owned by the versioning layer's commit path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.version.adoc §Invariants).
+//! - `VERSIONED_OBJECT.Uid_validity`: the versioning aggregate, owned by the versioning layer's commit path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc §Invariants).
+//!
+//! ## Classified emittable, realized nowhere yet
+//!
+//! - `ACTOR.Roles_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.actor.adoc §Invariants).
+//! - `ADDRESS.Type_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.address.adoc §Invariants).
+//! - `ATTESTATION.Items_valid`: the reference implementation marks this invariant `ignored` (never checked), so realizing it would over-reject. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.attestation.adoc §Invariants).
+//! - `AUTHORED_RESOURCE.Current_revision_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
+//! - `AUTHORED_RESOURCE.Revision_history_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
+//! - `CONTACT.Purpose_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.contact.adoc §Invariants).
+//! - `DV_PARAGRAPH.Items_valid`: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_paragraph.adoc §Invariants).
+//! - `DV_PARSABLE.Size_valid`: no invariant realization in `openehr-rm` or `openehr-its` (the sibling DV_MULTIMEDIA rule is realized). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_parsable.adoc §Invariants).
+//! - `EHR_ACCESS.Is_archetype_root`: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc §Invariants).
+//! - `EHR_ACCESS.Scheme_valid`: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc §Invariants).
+//! - `EHR_STATUS.Is_archetype_root`: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Invariants).
+//! - `EXTRACT.Sequence_nr_valid`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract.adoc §Invariants).
+//! - `EXTRACT_CONTENT_ITEM.Item_validity`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_content_item.adoc §Invariants).
+//! - `EXTRACT_UPDATE_SPEC.Overall_validity`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
+//! - `EXTRACT_UPDATE_SPEC.Send_changes_only_validity`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
+//! - `EXTRACT_UPDATE_SPEC.Trigger_events_validity`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
+//! - `EXTRACT_VERSION_SPEC.Includes_revision_history_valid`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_version_spec.adoc §Invariants).
+//! - `ORIGINAL_VERSION.Attestations_valid`: versioning layer: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
+//! - `ORIGINAL_VERSION.Is_merged_validity`: versioning layer: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
+//! - `ORIGINAL_VERSION.Other_input_version_uids_valid`: versioning layer: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
+//! - `PARTY.Contacts_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY.Identities_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY.Is_archetype_root`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY.Type_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY.Uid_mandatory`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
+//! - `PARTY_IDENTIFIED.Identifiers_valid`: the present-but-empty list rule is not extended to `identifiers` at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
+//! - `PARTY_IDENTITY.Purpose_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party_identity.adoc §Invariants).
+//! - `PARTY_RELATIONSHIP.Type_validity`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party_relationship.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Details_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Lifecycle_state_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Original_author_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.Purpose_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.Use_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.copyright_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.misuse_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
+//! - `ROLE.Capabilities_valid`: demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.role.adoc §Invariants).
+//!
 //! # Terminology-backed invariants (enforced at the dispatcher, openEHR-its)
 //!
 //! These BMM class invariants bind a coded value to an openEHR terminology
@@ -95,27 +208,6 @@
 //! - `VERSIONED_OBJECT.All_versions_valid` — versioned-object aggregate model.
 //! - `VERSIONED_OBJECT.Latest_version_valid` — versioned-object aggregate model.
 //! - `VERSIONED_OBJECT.Version_count_valid` — versioned-object aggregate model.
-//!
-//! # Explicitly excluded (adjudicated — realized outside the core layer)
-//!
-//! These RM invariants are not emitted even as pending-register entries: each is
-//! an aggregate, cross-object, or structural constraint that no single stored
-//! value node can honestly evaluate, so it is realized elsewhere (the EHR /
-//! versioning service layer, or structural typing):
-//!
-//! - `EHR.Ehr_status_valid`, `EHR.Ehr_access_valid`, `EHR.Directory_valid`
-//!   (RM `ehr ehr.adoc` §Invariants) — each asserts a cross-object reference
-//!   (`ehr_status`/`ehr_access`/`directory` resolve to the right versioned
-//!   object); resolved by the EHR service against the store, not present on the
-//!   value being validated.
-//! - `VERSIONED_OBJECT.Uid_validity` (RM `common versioned_object.adoc`),
-//!   `VERSION.Preceding_version_uid_validity` (RM `common version.adoc`),
-//!   `REVISION_HISTORY_ITEM.Audit_valid` (RM `common revision_history_item.adoc`)
-//!   — the versioning aggregate / audit chain, owned by the versioning layer's
-//!   commit path, not by a per-node RM invariant.
-//! - `REFERENCE_RANGE.Range_is_simple` (RM `data_types reference_range.adoc`) — a
-//!   structural interval-shape constraint the typed `DV_INTERVAL` model already
-//!   enforces at deserialize, so no runtime check is needed.
 
 use super::{
     InvariantViolation, invariant_failed, is_integral, valid_magnitude_status, valid_percentage,

@@ -550,10 +550,16 @@ fn invariant_classification_spot_checks() {
 // ── invariant-core emission (emit-validate) ──────────────────────────────────
 
 /// The generated invariant-core file (`emit-validate`) honestly accounts for
-/// every RM class invariant the emitter claims to cover: each **emitted-core**
-/// invariant appears as a violation-message literal, and each **inert**
-/// (runtime-hook-missing) invariant appears in the pending-adjudication doc
-/// register — so nothing the classifier flagged is silently dropped.
+/// every RM class invariant the classifier bucketed, in both directions:
+/// every **emittable** invariant resolves to a realization venue and is named
+/// in the realization register, and every **inert** (runtime-hook-missing)
+/// invariant is named in the pending-adjudication register — so nothing the
+/// classifier flagged is silently dropped.
+///
+/// The accounted set is DERIVED from the classifier (no hardcoded invariant
+/// list): an invariant added by a spec bump, or one that changes bucket, enters
+/// this accounting automatically and fails the test until it is adjudicated
+/// into the register.
 #[test]
 fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
     let files = testsupport::render_all_to_memory().unwrap();
@@ -561,37 +567,32 @@ fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
         .get("openehr-rm/validate/generated.rs")
         .expect("emit-validate did not produce validate/generated.rs");
 
-    // The invariants the emitted cores realize (their violation messages carry
-    // the BMM invariant name verbatim).
-    for name in [
-        "Code_string_valid",
-        "Valid_value",
-        "Formatting_valid",
-        "Value_valid",
-        "Id_valid",
-        "Match_valid",
-        "Formalism_valid",
-        "Accuracy_is_percent_validity",
-        "Accuracy_validity",
-        "Magnitude_status_valid",
-        "Type_validity",
-        "Valid_denominator",
-        "Precision_validity",
-        "Fraction_validity",
-        "Unitary_validity",
-        "Percent_validity",
-        "Archetype_node_id_valid",
-        "Events_valid",
-        "Is_archetype_root",
-        "Action_archetype_id_valid",
-        "location_valid",
-        "Rm_version_valid",
-        "Basic_validity",
-        "Name_valid",
-    ] {
+    // Every emittable invariant is accounted for, and named in the register the
+    // emitter renders into the generated file.
+    let accounted = testsupport::accounted_emitted_invariants("rm").unwrap();
+    assert!(!accounted.is_empty(), "no emittable RM invariants found");
+    let unaccounted: Vec<_> = accounted
+        .iter()
+        .filter(|a| a.venue == "UNACCOUNTED")
+        .map(|a| format!("{}.{}", a.class, a.name))
+        .collect();
+    assert!(
+        unaccounted.is_empty(),
+        "assertion-dialect-emittable invariants with no realization-register row \
+         (adjudicate each into `plan::overrides::INVARIANT_REALIZATIONS`): {unaccounted:?}",
+    );
+    for a in &accounted {
         assert!(
-            gen_file.contains(name),
-            "emitted-core invariant {name:?} is not named in validate/generated.rs",
+            gen_file.contains(&format!("`{}.{}`", a.class, a.name)),
+            "emittable invariant {}.{} is not named in the realization register",
+            a.class,
+            a.name,
+        );
+        assert!(
+            !a.reason.trim().is_empty() && !a.citation.trim().is_empty(),
+            "register row {}.{} has no reason/citation",
+            a.class,
+            a.name,
         );
     }
 
@@ -611,6 +612,102 @@ fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
             r.name,
         );
     }
+}
+
+/// Each realization-register venue claim is checked against reality: a `Core`
+/// row's invariant name is a violation-message literal in the generated core
+/// file and its core function exists there; an `Impl` / `Wire` row's cited
+/// realizing file exists and names the invariant. A venue claim that stops
+/// being true therefore fails here rather than reading as enforcement that
+/// silently is not.
+#[test]
+fn realization_register_venues_are_real() {
+    let files = testsupport::render_all_to_memory().unwrap();
+    let gen_file = files
+        .get("openehr-rm/validate/generated.rs")
+        .expect("emit-validate did not produce validate/generated.rs");
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+
+    for a in testsupport::accounted_emitted_invariants("rm").unwrap() {
+        let where_ = format!("{}.{}", a.class, a.name);
+        // The cited spec file is a real vendored spec document.
+        assert!(
+            repo.join(&a.citation).is_file(),
+            "{where_}: citation {} is not a vendored spec file",
+            a.citation,
+        );
+        match a.venue {
+            "Core" => {
+                assert!(
+                    gen_file.contains(&format!("fn {}(", a.site)),
+                    "{where_}: core {} is not defined in validate/generated.rs",
+                    a.site,
+                );
+                assert!(
+                    gen_file.contains(&format!("Invariant {} failed", a.name))
+                        || gen_file.contains(&format!("invariant_failed(\"{}\"", a.name)),
+                    "{where_}: no violation message for it in validate/generated.rs",
+                );
+            }
+            "Impl" | "Wire" => {
+                let path = repo.join(&a.site);
+                assert!(
+                    path.is_file(),
+                    "{where_}: realizing file {} is missing",
+                    a.site
+                );
+                let text = std::fs::read_to_string(&path).unwrap();
+                assert!(
+                    text.contains(&a.name),
+                    "{where_}: realizing file {} does not name the invariant",
+                    a.site,
+                );
+            }
+            "Excluded" | "Unrealized" => assert!(
+                a.site.is_empty(),
+                "{where_}: a non-realizing venue must name no site, got {}",
+                a.site,
+            ),
+            other => panic!("{where_}: unexpected venue {other}"),
+        }
+    }
+}
+
+/// The negative case of the accounting invariant: an invariant the classifier
+/// buckets **emitted** with no realization-register row accounts as
+/// `UNACCOUNTED` — the failure mode this accounting exists to catch (an
+/// emittable invariant that no venue realizes used to be indistinguishable
+/// from one a core enforces).
+#[test]
+fn a_seeded_unrealized_emit_is_unaccounted() {
+    let seeded = testsupport::account_invariants(&[
+        // Emittable (a plain emptiness check) but registered nowhere.
+        ("SEEDED_CLASS", "Seeded_valid", "not seeded_field.is_empty"),
+        // Complex / hook-missing verdicts are not part of this accounting.
+        (
+            "SEEDED_CLASS",
+            "Seeded_complex",
+            "items.for_all (i: ITEM | i.is_valid)",
+        ),
+        // A real, registered invariant stays accounted.
+        (
+            "LOCATABLE",
+            "Archetype_node_id_valid",
+            "not archetype_node_id.is_empty",
+        ),
+    ]);
+    let venues: Vec<(String, &str)> = seeded
+        .iter()
+        .map(|a| (format!("{}.{}", a.class, a.name), a.venue))
+        .collect();
+    assert_eq!(
+        venues,
+        vec![
+            ("LOCATABLE.Archetype_node_id_valid".to_owned(), "Core"),
+            ("SEEDED_CLASS.Seeded_valid".to_owned(), "UNACCOUNTED"),
+        ],
+        "a seeded unrealized emit must account as UNACCOUNTED",
+    );
 }
 
 /// The assertion-dialect predicate → runtime-function table

@@ -266,11 +266,43 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// containers (`HISTORY`, `POINT_EVENT`, `INTERVAL_EVENT`) are checked with
 /// `serde_json::Value` as the element type — enough for their own (non-child)
 /// invariants.
+///
+/// # The inherited LOCATABLE invariant
+///
+/// After the table runs, the inherited `LOCATABLE.Archetype_node_id_valid`
+/// (`not archetype_node_id.is_empty`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants) is closed out for **every** concrete LOCATABLE descendant via
+/// [`openehr_rm::validate::locatable_node_id_violation`], whose applicable-type
+/// set is the generated RM model's transitive concrete-descendant closure of
+/// LOCATABLE — not a hand-maintained list. The arms above realize it themselves
+/// through their typed `Validate` impls, so the violation is appended only when
+/// this node's own pass did not already report it (reported exactly once per
+/// node). The classes with no arm — `ITEM_TREE`, `ITEM_LIST`, `ITEM_SINGLE`,
+/// `EHR_STATUS`, and the demographic / EHR_EXTRACT LOCATABLEs — reach the
+/// generated structural fallthrough, which decodes but runs no invariant, so
+/// this is where the inherited invariant becomes theirs too.
+///
+/// Placing the closeout in the typed tier (rather than above both tiers) keeps
+/// the fast-vs-typed equivalence property exact: the fast path vouches only for
+/// classes whose evaluator already calls the same core, so both tiers report
+/// the same single violation.
+pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    let before = out.len();
+    dispatch_typed(ty, value, out);
+    if let Some(v) = openehr_rm::validate::locatable_node_id_violation(ty, value)
+        && !out.get(before..).is_some_and(|added| added.contains(&v))
+    {
+        out.push(v);
+    }
+}
+
+/// The `_type` → `run::<T>` table of [`validate_rm_value_typed`].
 #[expect(
     clippy::too_many_lines,
     reason = "a flat `_type` -> `run::<T>` dispatch table; the length is the size of the RM type set, not logic"
 )]
-pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+fn dispatch_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     use openehr_base::base_types::identification::archetype_id::ArchetypeId;
     use openehr_base::base_types::identification::internet_id::InternetId;
     use openehr_base::base_types::identification::iso_oid::IsoOid;

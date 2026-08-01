@@ -152,6 +152,16 @@ cnf.composition.minimal_event.links_empty:
     spec_ref: "RM common locatable.adoc §Invariants (Links_valid: links /= Void implies not links.is_empty)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by adding an explicit empty links list at the root; everything else valid, so the refusal isolates Links_valid"
+cnf.composition.minimal_event.item_node_id_empty:
+  source: fixtures/composition/minimal_event.item_node_id_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the content ITEM_TREE carries an empty archetype_node_id"
+    spec_ref: "RM common locatable.adoc §Invariants (Archetype_node_id_valid: not archetype_node_id.is_empty), inherited by every concrete LOCATABLE descendant"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by emptying the EVALUATION.data ITEM_TREE archetype_node_id (at0001 -> \"\"); everything else valid, so the refusal isolates the inherited Archetype_node_id_valid on a node type outside the ENTRY/CLUSTER/ELEMENT set"
 cnf.composition.minimal_event.feeder_audit.v1:
   source: fixtures/composition/minimal_event.feeder_audit.v1.json
   format: canonical-json

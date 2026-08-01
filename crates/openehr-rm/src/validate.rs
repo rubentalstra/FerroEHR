@@ -72,6 +72,44 @@ pub fn try_fast_validate(ty: &str, value: &Value, out: &mut Vec<InvariantViolati
     fast::try_validate(ty, value, out)
 }
 
+/// The inherited LOCATABLE `Archetype_node_id_valid` violation for a
+/// canonical-JSON node whose RM type is `ty`, or `None` when the node does not
+/// violate it.
+///
+/// `LOCATABLE.Archetype_node_id_valid` (`not archetype_node_id.is_empty`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants) is inherited by **every** concrete LOCATABLE descendant, so the
+/// set of RM types it applies to is read from the generated static RM model
+/// ([`crate::model::descendants`] of `LOCATABLE` — the transitive *concrete*
+/// descendant closure of the BMM), never from a hand-maintained list: a class
+/// the spec adds to the hierarchy is covered the moment the model is
+/// regenerated. The violation itself is built by the generated core
+/// (`generated::archetype_node_id_core`), so its text has one source.
+///
+/// Only a **present and empty** `archetype_node_id` violates the invariant. An
+/// absent (or non-string) one is a structural defect of a mandatory attribute,
+/// reported by the decode/mandatory-attribute layer instead — reporting it here
+/// too would double-report the same defect.
+///
+/// The wire-boundary dispatcher (`openehr_its::rm_validate`) runs this for
+/// every node after its class-invariant tier, appending only what that tier did
+/// not already report (the concrete LOCATABLEs with a typed `Validate` impl
+/// realize the inherited invariant themselves).
+#[must_use]
+pub fn locatable_node_id_violation(ty: &str, value: &Value) -> Option<InvariantViolation> {
+    // Cheap first: the overwhelming majority of nodes carry a non-empty id, so
+    // the model lookup is paid only on an actual violation candidate.
+    if value.get("archetype_node_id").and_then(Value::as_str) != Some("") {
+        return None;
+    }
+    if !crate::model::descendants("LOCATABLE").contains(&ty) {
+        return None;
+    }
+    let mut out = Vec::with_capacity(1);
+    generated::archetype_node_id_core(ty, "", &mut out);
+    out.pop()
+}
+
 /// Build an archie-style class-invariant violation:
 /// `"Invariant <name> failed on type <RM_TYPE>"` — the exact message the
 /// reference implementation's `RMObjectValidator` emits for every invariant

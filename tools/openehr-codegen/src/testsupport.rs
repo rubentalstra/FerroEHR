@@ -719,6 +719,93 @@ pub fn dialect_predicates() -> Vec<(String, String)> {
         .collect()
 }
 
+/// One accounted assertion-dialect-**emittable** class invariant: which venue
+/// the realization register (`plan::overrides::INVARIANT_REALIZATIONS`) says
+/// realizes it, flattened for the accounting invariant.
+#[derive(Debug, Clone)]
+pub struct AccountedInvariant {
+    /// The owning BMM class name.
+    pub class: String,
+    /// The BMM invariant name.
+    pub name: String,
+    /// The venue name (`"Core"`, `"Impl"`, `"Wire"`, `"Excluded"`,
+    /// `"Unrealized"`), or `"UNACCOUNTED"` when the register has no row —
+    /// an emittable invariant no venue claims.
+    pub venue: &'static str,
+    /// The realizing site (core function name, or repo-relative file); empty
+    /// for the non-realizing venues and for an unaccounted invariant.
+    pub site: String,
+    /// The class's vendored spec file, repo-relative; empty when unaccounted.
+    pub citation: String,
+    /// The one-line reason; empty when unaccounted.
+    pub reason: String,
+}
+
+/// Account a crate's own emittable class invariants against the realization
+/// register: one row per invariant the classifier buckets `emitted`, sorted by
+/// `(class, name)`.
+///
+/// # Errors
+/// Returns an error if the crate's BMM files cannot be loaded.
+pub fn accounted_emitted_invariants(key: &str) -> Result<Vec<AccountedInvariant>, Error> {
+    let c = compose(key)?;
+    let triples: Vec<(String, String, String)> = c
+        .generations
+        .iter()
+        .flat_map(|g| &g.schema.classes)
+        .flat_map(|(class, def)| {
+            def.invariants
+                .iter()
+                .map(move |(name, expr)| (class.clone(), name.clone(), expr.clone()))
+        })
+        .collect();
+    Ok(account(
+        triples
+            .iter()
+            .map(|(c, n, e)| (c.as_str(), n.as_str(), e.as_str())),
+    ))
+}
+
+/// Account an explicit `(class, invariant, assertion-expression)` set against
+/// the realization register — the seam the accounting invariant's negative case
+/// uses to prove an unrealized emit is caught (a synthetic emittable invariant
+/// has no register row, so it accounts as `"UNACCOUNTED"`).
+#[must_use]
+pub fn account_invariants(triples: &[(&str, &str, &str)]) -> Vec<AccountedInvariant> {
+    account(triples.iter().copied())
+}
+
+/// Shared body of [`accounted_emitted_invariants`] and [`account_invariants`].
+fn account<'a>(
+    triples: impl Iterator<Item = (&'a str, &'a str, &'a str)>,
+) -> Vec<AccountedInvariant> {
+    overrides::account_emitted(triples)
+        .into_iter()
+        .map(|a| {
+            let venue = a.realization.map_or("UNACCOUNTED", |r| match r.venue {
+                overrides::InvariantVenue::Core => "Core",
+                overrides::InvariantVenue::Impl => "Impl",
+                overrides::InvariantVenue::Wire => "Wire",
+                overrides::InvariantVenue::Excluded => "Excluded",
+                overrides::InvariantVenue::Unrealized => "Unrealized",
+            });
+            AccountedInvariant {
+                class: a.class,
+                name: a.name,
+                venue,
+                site: a.realization.map(|r| r.site.to_owned()).unwrap_or_default(),
+                citation: a.realization.map_or_else(String::new, |r| {
+                    format!("{}/{}", overrides::RM_CLASS_DOCS, r.spec_file)
+                }),
+                reason: a
+                    .realization
+                    .map(|r| r.reason.to_owned())
+                    .unwrap_or_default(),
+            }
+        })
+        .collect()
+}
+
 /// The declared additional polymorphic subtype members
 /// (`analyze`-level inheritance edges the vendored BMM under-declares), as
 /// `(parent, subtype)` pairs.

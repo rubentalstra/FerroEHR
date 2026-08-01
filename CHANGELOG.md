@@ -30,7 +30,8 @@ workflow refuses a tag that has no matching section here.
 - **New conformance cases for the LOCATABLE root rules and the feeder-system
   audit.** The catalogue now pins the two refusals above from the wire side
   (a COMPOSITION root whose `archetype_node_id` contradicts its ARCHETYPED
-  block; a COMPOSITION carrying an empty `links` list), and four cases cover
+  block; a COMPOSITION carrying an empty `links` list; a COMPOSITION whose
+  inner `ITEM_TREE` carries an empty `archetype_node_id`), and four cases cover
   `FEEDER_AUDIT` end to end: a commit carrying audits at the COMPOSITION root
   *and* on an interior data node round-trips every modelled attribute
   (identifiers, inline `original_content`, both system audits, and the
@@ -48,6 +49,16 @@ workflow refuses a tag that has no matching section here.
   archetype declares two conflicting identities and can no longer be
   committed. Payloads that were accepted before and are affected by this must
   correct the mismatched root before they will commit.
+
+- **An empty `archetype_node_id` is now refused (422) on every node type.**
+  The RM requires a non-empty `archetype_node_id` on every archetypable node,
+  but the check only ran on the node types with a hand-written invariant
+  (ENTRY subtypes, CLUSTER, ELEMENT, SECTION, FOLDER, HISTORY and events). It
+  is now applied to every RM type that inherits it — notably `ITEM_TREE`,
+  `ITEM_LIST`, `ITEM_SINGLE`, `EHR_STATUS`, and the demographic and
+  EHR-extract locatables — so a payload carrying `"archetype_node_id": ""`
+  anywhere is rejected rather than stored. An *absent* `archetype_node_id` is
+  unchanged: it is still reported as a missing mandatory attribute.
 
 - **A present-but-empty `links` list is now refused (422).** `links` is
   optional, but the RM forbids it from being present and empty, so
