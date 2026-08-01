@@ -234,6 +234,16 @@ pub enum ValidationCode {
     /// WOUC — defined terminology code unused in the definition (archie parity;
     /// no openEHR spec governs this — our own design/extension; WARNING).
     Wouc,
+    /// W14DEP — a deprecated ADL 1.4 spelling was used
+    /// (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE` marks the
+    /// paren-less `Type <` domain-block spelling deprecated and the
+    /// parenthesised `(Type) <` form "correct ADL 1.4/ADL 1.5"; WARNING).
+    ///
+    /// NOTE: no openEHR validity code covers deprecated-spelling use — our own
+    /// extension (owner ruling 2026-08-01, spec-adherence §NEVER LAX:
+    /// deprecations are enforced at exactly the deprecation's strength —
+    /// accepted, never silently absorbed).
+    W14dep,
     // ── phase-2 specialisation-vs-flat-parent codes (`master04.5` §Validity
     //    Rules: `C_ATTRIBUTE` / `C_OBJECT` / `ARCHETYPE_SLOT` / `C_ARCHETYPE_ROOT` /
     //    `C_COMPLEX_OBJECT_PROXY`; `master08` §Phase 2 → Validate Specialised
@@ -387,6 +397,7 @@ impl ValidationCode {
             Self::Vrdla => "VRDLA",
             Self::Wacmcl => "WACMCL",
             Self::Wouc => "WOUC",
+            Self::W14dep => "W14DEP",
             Self::Vsance => "VSANCE",
             Self::Vsancc => "VSANCC",
             Self::Vsam => "VSAM",
@@ -421,7 +432,7 @@ impl ValidationCode {
     #[must_use]
     pub fn severity(self) -> Severity {
         match self {
-            Self::Wacmcl | Self::Wouc => Severity::Warning,
+            Self::Wacmcl | Self::Wouc | Self::W14dep => Severity::Warning,
             _ => Severity::Error,
         }
     }
