@@ -187,7 +187,7 @@
     [
       "Adl14OptProvisioning",
       {
-        "passed": 19,
+        "passed": 20,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -250,7 +250,7 @@
     [
       "CompositionOps",
       {
-        "passed": 35,
+        "passed": 38,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 870,
-    "driven": 833,
-    "passed": 833,
+    "selected": 874,
+    "driven": 837,
+    "passed": 837,
     "failed": 0,
     "inconclusive": 0
   }

@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.16.0"
+    "version": "3.17.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.16.0",
+    "version": "3.17.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -29,6 +29,12 @@
     },
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_opt-largest_published",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -403,6 +409,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-context_location_empty",
       "status": "passed",
       "rows_driven": 1,
@@ -469,6 +481,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-largest_published_form",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-null_empty_absent",
       "status": "passed",
       "rows_driven": 1,
@@ -514,6 +532,13 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-setting_invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-setting_invalid_xml",
+      "format": "canonical-xml",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
