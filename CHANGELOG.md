@@ -30,6 +30,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **RM validation reaches legally untagged canonical-JSON nodes.** Canonical
+  JSON requires `_type` only on polymorphic slots, so a node under a
+  concretely-declared attribute (`COMPOSITION.context`,
+  `EVENT_CONTEXT.participations`, …) may omit its tag — and the validation
+  walk, dispatching on the wire tag alone, silently skipped every RM class
+  invariant and terminology binding on such nodes (the same content was
+  refused over canonical XML but committed over JSON). The walk now resolves
+  an untagged node's effective RM type from the parent's declared attribute
+  type (the BMM-generated static RM model), so commits like an out-of-group
+  `EVENT_CONTEXT.setting` are refused 422 regardless of tag presence or
+  format.
+
 - **The documentation version switcher pointed at dead URLs.** Entries in
   the published version manifest kept whichever site base path was current
   when they were archived (`/ehrbase-rs/…` before the rename, `/ferroehr/…`

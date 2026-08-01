@@ -18,6 +18,7 @@
 //! bundle in [`openehr_term::bundle`] (TERM 3.1.0).
 
 use crate::rm_terminology::{Slot, slot_is_violated, slots_for};
+use crate::rm_validate::declared_concrete_type;
 use serde_json::Value;
 
 use super::{ValidationKind, Validator, norm_path};
@@ -27,15 +28,24 @@ impl Validator {
     // mirroring [`super::Validator::rm_invariant_pass`]: a segment is appended
     // before a coded-slot check or a recursion and truncated back after, so the
     // full path string is materialized only when a violation is recorded.
+    // `declared` is the parent attribute's declared RM type when concrete —
+    // the effective type of a node whose wire `_type` is legitimately absent
+    // (canonical JSON requires `_type` only on polymorphic slots), so untagged
+    // nodes like `COMPOSITION.context` still get their coded slots checked
+    // (`crate::rm_validate::declared_concrete_type`).
     pub(super) fn terminology_pass(
         &mut self,
         v: &Value,
         path: &mut String,
-        _parent_type: Option<&str>,
+        declared: Option<&str>,
     ) {
         use std::fmt::Write as _;
         let Some(obj) = v.as_object() else { return };
-        let this_type = obj.get("_type").and_then(Value::as_str).unwrap_or("");
+        let this_type = obj
+            .get("_type")
+            .and_then(Value::as_str)
+            .or(declared)
+            .unwrap_or("");
 
         // Coded slots fixed by the owning RM type (the shared binding table).
         for slot in slots_for(this_type) {
@@ -51,13 +61,14 @@ impl Validator {
             if k.starts_with('_') {
                 continue;
             }
+            let child_declared = declared_concrete_type(this_type, k);
             match val {
                 Value::Array(a) => {
                     for (i, item) in a.iter().enumerate() {
                         if item.is_object() {
                             let base = path.len();
                             let _ = write!(path, "/{k}[{i}]");
-                            self.terminology_pass(item, path, Some(this_type));
+                            self.terminology_pass(item, path, child_declared);
                             path.truncate(base);
                         }
                     }
@@ -65,7 +76,7 @@ impl Validator {
                 Value::Object(_) => {
                     let base = path.len();
                     let _ = write!(path, "/{k}");
-                    self.terminology_pass(val, path, Some(this_type));
+                    self.terminology_pass(val, path, child_declared);
                     path.truncate(base);
                 }
                 _ => {}

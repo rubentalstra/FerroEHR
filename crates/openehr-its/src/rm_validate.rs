@@ -37,27 +37,25 @@ use crate::json_codec::runtime::{FromJson, JsonParseError, from_json_value};
 /// corpus deserializes cleanly at every node, so this never rejects a valid
 /// input; if it ever did, that would expose a codegen field-optionality bug to
 /// fix in the emitter.)
-fn record_type_mismatch(value: &Value, err: &JsonParseError, out: &mut Vec<InvariantViolation>) {
-    let ty = value
-        .get("_type")
-        .and_then(Value::as_str)
-        .unwrap_or("<unknown>");
+fn record_type_mismatch(ty: &str, err: &JsonParseError, out: &mut Vec<InvariantViolation>) {
     out.push(InvariantViolation::here(format!(
         "does not conform to RM type {ty}: {err}"
     )));
 }
 
-fn run<T: FromJson + Validate>(value: &Value, out: &mut Vec<InvariantViolation>) {
+fn run<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     match from_json_value::<T>(value) {
         Ok(v) => v.validate_invariants(out),
-        Err(e) => record_type_mismatch(value, &e, out),
+        Err(e) => record_type_mismatch(ty, &e, out),
     }
 }
 
 /// Like [`run`], but deserialize `T` from a copy of `value` whose nested
 /// RM-node child collections have been emptied ([`prune_child_nodes`]).
 ///
-/// TODO(perf): the RM-invariant pass ([`validate_rm_value`]) is called once per
+/// NOTE (settled perf design — no openEHR spec governs validation-pass
+/// mechanics; our own design): the RM-invariant pass ([`validate_rm_value`])
+/// is called once per
 /// `_type` node while the composition validator recurses the live JSON tree, so
 /// deserializing each node's *whole* subtree (as `from_json_value` does for a
 /// concrete container type) re-parses every descendant once per ancestor —
@@ -86,10 +84,10 @@ fn run<T: FromJson + Validate>(value: &Value, out: &mut Vec<InvariantViolation>)
 /// byte-identical, and the ITS-JSON schema gate remains the exhaustive
 /// structural oracle where one is required (this pass is the RM class-invariant
 /// check, not a schema validator — `422_COMPOSITION.yaml`).
-fn run_shallow<T: FromJson + Validate>(value: &Value, out: &mut Vec<InvariantViolation>) {
+fn run_shallow<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     match from_json_value::<T>(&prune_child_nodes(value)) {
         Ok(v) => v.validate_invariants(out),
-        Err(e) => record_type_mismatch(value, &e, out),
+        Err(e) => record_type_mismatch(ty, &e, out),
     }
 }
 
@@ -147,10 +145,38 @@ pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) 
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
     };
+    validate_rm_invariants_as(ty, value, out);
+}
+
+/// [`validate_rm_invariants`] with the node's RM type supplied by the caller —
+/// the entry a tree walker uses for a node whose wire `_type` is legitimately
+/// absent (canonical JSON requires `_type` only where the declared attribute
+/// type is abstract; see [`declared_concrete_type`]). The `_type`-reading
+/// wrapper stays for callers with no declaration context.
+pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     if openehr_rm::validate::try_fast_validate(ty, value, out) {
         return;
     }
     validate_rm_value_typed(ty, value, out);
+}
+
+/// The declared RM type of `field` on `parent_type` when that type is
+/// concrete, else `None`.
+///
+/// This is the effective-type rule for an UNTAGGED canonical-JSON node: the
+/// ITS-JSON schema requires `_type` only on polymorphic slots, so a node under
+/// a concretely-declared attribute (`COMPOSITION.context` → `EVENT_CONTEXT`,
+/// `EVENT_CONTEXT.participations` → `PARTICIPATION`, …) may legally omit it —
+/// and a validation walk that dispatches on the wire tag alone would skip every
+/// RM invariant on such a node. The BMM-generated static RM model
+/// ([`openehr_rm::model`]) supplies the declaration; an abstract declared type
+/// yields `None` (there the wire MUST tag, and an untagged node is unreadable
+/// rather than silently valid).
+#[must_use]
+pub fn declared_concrete_type(parent_type: &str, field: &str) -> Option<&'static str> {
+    let attr = openehr_rm::model::attribute(parent_type, field)?;
+    let class = openehr_rm::model::class(attr.declared_type)?;
+    (!class.is_abstract).then_some(class.name)
 }
 
 /// Run **all** RM class invariants for a single canonical-JSON node — the core
@@ -251,28 +277,28 @@ pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantV
 
     match ty {
         // data_types
-        "CODE_PHRASE" => run::<CodePhrase>(value, out),
+        "CODE_PHRASE" => run::<CodePhrase>(ty, value, out),
         // DV_TEXT + DV_CODED_TEXT share the DvText enum (Valid_value /
         // Formatting_valid, dv_text.adoc; DV_CODED_TEXT adds the structural
         // defining_code 1..1 at deserialize).
-        "DV_TEXT" | "DV_CODED_TEXT" => run::<DvText>(value, out),
-        "DV_URI" => run::<DvUriData>(value, out),
-        "DV_EHR_URI" => run::<DvEhrUri>(value, out),
-        "DV_IDENTIFIER" => run::<DvIdentifier>(value, out),
-        "TERM_MAPPING" => run::<TermMapping>(value, out),
-        "DV_MULTIMEDIA" => run::<DvMultimedia>(value, out),
-        "DV_PROPORTION" => run::<DvProportion>(value, out),
-        "DV_QUANTITY" => run::<DvQuantity>(value, out),
-        "DV_COUNT" => run::<DvCount>(value, out),
-        "DV_DURATION" => run::<DvDuration>(value, out),
-        "DV_DATE" => run::<DvDate>(value, out),
-        "DV_TIME" => run::<DvTime>(value, out),
-        "DV_DATE_TIME" => run::<DvDateTime>(value, out),
-        "DV_ORDINAL" => run::<DvOrdinal>(value, out),
-        "DV_SCALE" => run::<DvScale>(value, out),
-        "DV_PARSABLE" => run::<DvParsable>(value, out),
-        "DV_PERIODIC_TIME_SPECIFICATION" => run::<DvPeriodicTimeSpecification>(value, out),
-        "REFERENCE_RANGE" => run::<ReferenceRange>(value, out),
+        "DV_TEXT" | "DV_CODED_TEXT" => run::<DvText>(ty, value, out),
+        "DV_URI" => run::<DvUriData>(ty, value, out),
+        "DV_EHR_URI" => run::<DvEhrUri>(ty, value, out),
+        "DV_IDENTIFIER" => run::<DvIdentifier>(ty, value, out),
+        "TERM_MAPPING" => run::<TermMapping>(ty, value, out),
+        "DV_MULTIMEDIA" => run::<DvMultimedia>(ty, value, out),
+        "DV_PROPORTION" => run::<DvProportion>(ty, value, out),
+        "DV_QUANTITY" => run::<DvQuantity>(ty, value, out),
+        "DV_COUNT" => run::<DvCount>(ty, value, out),
+        "DV_DURATION" => run::<DvDuration>(ty, value, out),
+        "DV_DATE" => run::<DvDate>(ty, value, out),
+        "DV_TIME" => run::<DvTime>(ty, value, out),
+        "DV_DATE_TIME" => run::<DvDateTime>(ty, value, out),
+        "DV_ORDINAL" => run::<DvOrdinal>(ty, value, out),
+        "DV_SCALE" => run::<DvScale>(ty, value, out),
+        "DV_PARSABLE" => run::<DvParsable>(ty, value, out),
+        "DV_PERIODIC_TIME_SPECIFICATION" => run::<DvPeriodicTimeSpecification>(ty, value, out),
+        "REFERENCE_RANGE" => run::<ReferenceRange>(ty, value, out),
         // DV_INTERVAL: prefer the DV_ORDERED-typed element so the
         // Limits_consistent ordering invariant runs; fall back to
         // Value elements (boundary flags only) for non-DV_ORDERED payloads.
@@ -280,52 +306,52 @@ pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantV
             if let Ok(v) = from_json_value::<DvInterval<DvOrdered>>(value) {
                 v.validate_invariants(out);
             } else {
-                run::<DvInterval<Value>>(value, out);
+                run::<DvInterval<Value>>(ty, value, out);
             }
         }
         // data_structures. HISTORY and ITEM_TABLE keep the full deserialize —
         // their own invariants read a child collection (`events` / `rows`); the
         // rest are structural containers with scalar-only invariants, so they
         // deserialize shallowly (see `run_shallow`).
-        "ELEMENT" => run::<Element>(value, out),
-        "CLUSTER" => run_shallow::<Cluster>(value, out),
-        "HISTORY" => run::<History<Value>>(value, out),
-        "POINT_EVENT" => run_shallow::<PointEvent<Value>>(value, out),
-        "INTERVAL_EVENT" => run_shallow::<IntervalEvent<Value>>(value, out),
-        "ITEM_TABLE" => run::<ItemTable>(value, out),
+        "ELEMENT" => run::<Element>(ty, value, out),
+        "CLUSTER" => run_shallow::<Cluster>(ty, value, out),
+        "HISTORY" => run::<History<Value>>(ty, value, out),
+        "POINT_EVENT" => run_shallow::<PointEvent<Value>>(ty, value, out),
+        "INTERVAL_EVENT" => run_shallow::<IntervalEvent<Value>>(ty, value, out),
+        "ITEM_TABLE" => run::<ItemTable>(ty, value, out),
         // common
-        "PARTY_IDENTIFIED" => run::<PartyIdentifiedData>(value, out),
-        "PARTY_RELATED" => run::<PartyRelated>(value, out),
-        "AUDIT_DETAILS" => run::<AuditDetailsData>(value, out),
-        "ATTESTATION" => run::<Attestation>(value, out),
-        "FEEDER_AUDIT_DETAILS" => run::<FeederAuditDetails>(value, out),
-        "ARCHETYPED" => run::<Archetyped>(value, out),
+        "PARTY_IDENTIFIED" => run::<PartyIdentifiedData>(ty, value, out),
+        "PARTY_RELATED" => run::<PartyRelated>(ty, value, out),
+        "AUDIT_DETAILS" => run::<AuditDetailsData>(ty, value, out),
+        "ATTESTATION" => run::<Attestation>(ty, value, out),
+        "FEEDER_AUDIT_DETAILS" => run::<FeederAuditDetails>(ty, value, out),
+        "ARCHETYPED" => run::<Archetyped>(ty, value, out),
         // ehr / composition — structural containers (scalar-only invariants),
         // deserialized shallowly (see `run_shallow`). GENERIC_ENTRY's `data:
         // ITEM [1..1]` is a single-valued node, so `run_shallow` keeps it and
         // still enforces its presence.
-        "COMPOSITION" => run_shallow::<Composition>(value, out),
-        "EVENT_CONTEXT" => run_shallow::<EventContext>(value, out),
-        "ACTIVITY" => run_shallow::<Activity>(value, out),
-        "INSTRUCTION_DETAILS" => run::<InstructionDetails>(value, out),
-        "OBSERVATION" => run_shallow::<Observation>(value, out),
-        "INSTRUCTION" => run_shallow::<Instruction>(value, out),
-        "ACTION" => run_shallow::<Action>(value, out),
-        "EVALUATION" => run_shallow::<Evaluation>(value, out),
-        "ADMIN_ENTRY" => run_shallow::<AdminEntry>(value, out),
-        "GENERIC_ENTRY" => run_shallow::<GenericEntry>(value, out),
-        "SECTION" => run_shallow::<Section>(value, out),
-        "FOLDER" => run_shallow::<Folder>(value, out),
-        "ITEM_TAG" => run::<ItemTag>(value, out),
+        "COMPOSITION" => run_shallow::<Composition>(ty, value, out),
+        "EVENT_CONTEXT" => run_shallow::<EventContext>(ty, value, out),
+        "ACTIVITY" => run_shallow::<Activity>(ty, value, out),
+        "INSTRUCTION_DETAILS" => run::<InstructionDetails>(ty, value, out),
+        "OBSERVATION" => run_shallow::<Observation>(ty, value, out),
+        "INSTRUCTION" => run_shallow::<Instruction>(ty, value, out),
+        "ACTION" => run_shallow::<Action>(ty, value, out),
+        "EVALUATION" => run_shallow::<Evaluation>(ty, value, out),
+        "ADMIN_ENTRY" => run_shallow::<AdminEntry>(ty, value, out),
+        "GENERIC_ENTRY" => run_shallow::<GenericEntry>(ty, value, out),
+        "SECTION" => run_shallow::<Section>(ty, value, out),
+        "FOLDER" => run_shallow::<Folder>(ty, value, out),
+        "ITEM_TAG" => run::<ItemTag>(ty, value, out),
         // base identification
-        "OBJECT_REF" => run::<ObjectRefData>(value, out),
-        "PARTY_REF" => run::<PartyRef>(value, out),
-        "VERSION_TREE_ID" => run::<VersionTreeId>(value, out),
-        "OBJECT_VERSION_ID" => run::<ObjectVersionId>(value, out),
-        "ISO_OID" => run::<IsoOid>(value, out),
-        "ARCHETYPE_ID" => run::<ArchetypeId>(value, out),
-        "TERMINOLOGY_ID" => run::<TerminologyId>(value, out),
-        "INTERNET_ID" => run::<InternetId>(value, out),
+        "OBJECT_REF" => run::<ObjectRefData>(ty, value, out),
+        "PARTY_REF" => run::<PartyRef>(ty, value, out),
+        "VERSION_TREE_ID" => run::<VersionTreeId>(ty, value, out),
+        "OBJECT_VERSION_ID" => run::<ObjectVersionId>(ty, value, out),
+        "ISO_OID" => run::<IsoOid>(ty, value, out),
+        "ARCHETYPE_ID" => run::<ArchetypeId>(ty, value, out),
+        "TERMINOLOGY_ID" => run::<TerminologyId>(ty, value, out),
+        "INTERNET_ID" => run::<InternetId>(ty, value, out),
         _ => {}
     }
 }
