@@ -172,6 +172,26 @@ cnf.composition.minimal_event.setting_invalid:
     spec_ref: "TERM SupportTerminology §Vocabularies (setting); RM ehr (EVENT_CONTEXT Setting_valid)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by replacing EVENT_CONTEXT.setting.defining_code.code_string 228 with 999 (no member of the setting group — TERM SupportTerminology §Vocabularies); the TERM ch.3 §3.2 audit wire-refusal twin (#1418)"
+cnf.composition.minimal_event.participation_mode_invalid:
+  source: fixtures/composition/minimal_event.participation_mode_invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "PARTICIPATION.mode defining_code 999 (terminology openehr) is no member of the participation_mode group; the PARTICIPATION node is legally untagged"
+    spec_ref: "TERM SupportTerminology §Vocabularies (participation mode); RM common (PARTICIPATION Mode_valid)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by replacing context.participations[0].mode.defining_code.code_string 193 with 999 — an UNTAGGED node (canonical JSON omits _type on the concretely-declared EVENT_CONTEXT.participations slot), pinning the untagged-node escape class the #1431 triage attributed to the application"
+cnf.composition.minimal_event.location_empty:
+  source: fixtures/composition/minimal_event.location_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "EVENT_CONTEXT.location is the empty string on a legally untagged context node"
+    spec_ref: "RM ehr (EVENT_CONTEXT location_valid: location /= Void implies not location.is_empty)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by adding context.location = \"\" — a CORE invariant violation on an UNTAGGED node (the context object carries no _type, which canonical JSON permits for the concrete COMPOSITION.context slot), pinning the untagged-node escape class of #1431"
 cnf.composition.unknown_template:
   source: fixtures/composition/unknown_template.json
   format: canonical-json

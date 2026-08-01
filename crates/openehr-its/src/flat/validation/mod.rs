@@ -61,7 +61,7 @@ mod leaf;
 mod subtype;
 mod terminology;
 
-use crate::rm_validate::validate_rm_invariants;
+use crate::rm_validate::{declared_concrete_type, validate_rm_invariants_as};
 use indexmap::IndexMap;
 use openehr_rm::paths::PathSegment;
 use serde_json::{Map, Value};
@@ -124,9 +124,12 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
     // One reusable path buffer across passes 1 and 2 (each leaves it empty).
     let mut path = String::new();
     // Pass 1: RM class invariants over the whole instance (compaction-independent).
-    v.rm_invariant_pass(composition, &mut path);
+    // The root's declared type is COMPOSITION — an untagged root is legal
+    // canonical JSON (the ITS-JSON schema requires `_type` only on
+    // polymorphic slots, and the resource root is concretely COMPOSITION).
+    v.rm_invariant_pass(composition, &mut path, Some("COMPOSITION"));
     // Pass 2: RM-mandated openEHR terminology.
-    v.terminology_pass(composition, &mut path, None);
+    v.terminology_pass(composition, &mut path, Some("COMPOSITION"));
     // Pass 3: archetype conformance guided by the WebTemplate tree.
     v.walk(composition, &wt.tree);
     v.out
@@ -142,8 +145,8 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
 pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage> {
     let mut v = Validator::default();
     let mut path = String::new();
-    v.rm_invariant_pass(composition, &mut path);
-    v.terminology_pass(composition, &mut path, None);
+    v.rm_invariant_pass(composition, &mut path, Some("COMPOSITION"));
+    v.terminology_pass(composition, &mut path, Some("COMPOSITION"));
     v.out
 }
 
@@ -624,14 +627,19 @@ impl Validator {
     // back after, so the full path string is materialized only when a violation
     // is actually recorded — not `format!`-allocated afresh at every one of the
     // ~1.5k nodes an IPS commit visits.
-    fn rm_invariant_pass(&mut self, v: &Value, path: &mut String) {
+    //
+    // `declared` is the parent attribute's declared RM type when concrete — the
+    // effective type of a node whose wire `_type` is legitimately absent
+    // (canonical JSON requires `_type` only on polymorphic slots), so untagged
+    // nodes like `COMPOSITION.context` still run their class invariants
+    // (`crate::rm_validate::declared_concrete_type`).
+    fn rm_invariant_pass(&mut self, v: &Value, path: &mut String, declared: Option<&str>) {
         use std::fmt::Write as _;
         let Some(obj) = v.as_object() else { return };
         // One projection pass over the node's entries collects every field the
         // per-node checks below read, so none of them pays a hashed map lookup
         // (this runs for every node of every commit; the only remaining per-node
         // gets are gated behind a matching `_type`).
-        let mut has_type = false;
         let mut ty: Option<&str> = None;
         let mut node_id: Option<&str> = None;
         let mut has_archetype_details = false;
@@ -639,10 +647,7 @@ impl Validator {
         let mut reference_ranges_empty = false;
         for (k, val) in obj {
             match k.as_str() {
-                "_type" => {
-                    has_type = true;
-                    ty = val.as_str();
-                }
+                "_type" => ty = val.as_str(),
                 "archetype_node_id" => node_id = val.as_str(),
                 "archetype_details" => has_archetype_details = !val.is_null(),
                 "mappings" => mappings_empty = val.as_array().is_some_and(Vec::is_empty),
@@ -652,13 +657,16 @@ impl Validator {
                 _ => {}
             }
         }
-        if has_type {
+        // The node's effective RM type: the wire tag, else the parent's
+        // concretely-declared attribute type (untagged nodes are legal there).
+        let ty = ty.or(declared);
+        if let Some(effective) = ty {
             // The core (fast/typed) RM invariants only — the terminology-backed
             // invariants are enforced by the dedicated `terminology_pass` (its
             // own `ValidationKind::Terminology` rendering), so calling the
             // core-only entry here avoids double-reporting them.
             let mut inv = Vec::new();
-            validate_rm_invariants(v, &mut inv);
+            validate_rm_invariants_as(effective, v, &mut inv);
             for iv in inv {
                 let p = if iv.path.is_empty() {
                     norm_path(path)
@@ -675,13 +683,14 @@ impl Validator {
             if k.starts_with('_') {
                 continue;
             }
+            let child_declared = ty.and_then(|t| declared_concrete_type(t, k));
             match val {
                 Value::Array(a) => {
                     for (i, item) in a.iter().enumerate() {
                         if item.is_object() {
                             let base = path.len();
                             let _ = write!(path, "/{k}[{i}]");
-                            self.rm_invariant_pass(item, path);
+                            self.rm_invariant_pass(item, path, child_declared);
                             path.truncate(base);
                         }
                     }
@@ -689,7 +698,7 @@ impl Validator {
                 Value::Object(_) => {
                     let base = path.len();
                     let _ = write!(path, "/{k}");
-                    self.rm_invariant_pass(val, path);
+                    self.rm_invariant_pass(val, path, child_declared);
                     path.truncate(base);
                 }
                 _ => {}
@@ -2817,12 +2826,12 @@ mod tests {
         let iters = 50;
         let t_rm = time_pass(iters, || {
             let mut v = Validator::default();
-            v.rm_invariant_pass(&comp, &mut String::new());
+            v.rm_invariant_pass(&comp, &mut String::new(), Some("COMPOSITION"));
             v.out.len()
         });
         let t_term = time_pass(iters, || {
             let mut v = Validator::default();
-            v.terminology_pass(&comp, &mut String::new(), None);
+            v.terminology_pass(&comp, &mut String::new(), Some("COMPOSITION"));
             v.out.len()
         });
         let t_both = time_pass(iters, || validate_rm_and_terminology(&comp).len());
