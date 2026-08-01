@@ -17,7 +17,7 @@
 # handling is the reservation: q/ehr_id/offset/fetch in the URL are ALWAYS the
 # protocol parameter, and an AQL `$parameter` sharing one of those names is
 # supplied only through the JSON `query_parameters` object, where no protocol
-# meaning exists. Reported upstream as UPR-64.
+# meaning exists. Reported upstream as #1546.
 #
 # THE DISCRIMINATOR. The stored AQL binds `$fetch` as a systolic threshold; the
 # corpus commits ten compositions with systolic 100..190 (one per step of 10),

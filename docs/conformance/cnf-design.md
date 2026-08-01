@@ -382,7 +382,7 @@ Honest implications:
    boundaries are printed, never silent (§8.5, §11). N/A adjudications are
    cited; spec silences/defects are adjudicated in the ambiguity register
    rather than silently edited, and **every carried divergence is reported back
-   upstream** (`upstream_ref` → §13), never absorbed. Both directions are
+   upstream** (`upstream_issue` → §13), never absorbed. Both directions are
    published when comparing products; registry rows are labelled by attestation
    level so self-declaration is never mistaken for certification.
 6. **Vendor neutrality is testable.** No vendor image names, endpoints, auth
@@ -946,12 +946,13 @@ claimed ambiguity the spec actually DEFINES is a catalogue defect — the entry
 is removed and the case made gating, never excused), with the normative
 handling a runner must apply AND the outbound openEHR report it was raised as. Each entry carries
 `ambiguity`, `source` (the first-hand spec citation), `handling`, a
-machine-readable `disposition`, and an **`upstream_ref`** — the SPECPR /
-SPECQUERY / editorial key (or a `UPR-<n>` draft id in
-`docs/conformance/upstream-reports.md`) that pushes the fix back upstream. The
+machine-readable `disposition`, and an **`upstream_issue`** — the GitHub
+issue number of the `upstream-report`-labeled tracker issue that pushes the
+fix back upstream (owner ruling 2026-08-01; the former markdown ledger is
+deleted — the issue IS the report). The
 register is a living artifact; **the file is authoritative** — it has grown
 well beyond the seed extraction. Entry categories (the authoritative, current
-set — with citations, dispositions, and `upstream_ref`s — is the file itself,
+set — with citations, dispositions, and `upstream_issue`s — is the file itself,
 so no per-id table is reproduced here to rot):
 
 - **Released-spec silence** — a released component leaves a behaviour undefined
@@ -972,9 +973,9 @@ so no per-id table is reproduced here to rot):
   for field-setters; a list GET for an existence probe; an SM name the schedule
   spells differently). Internal; no upstream report.
 
-Every `report_only` and `editorial` entry carries an `upstream_ref` (§13); the
-authoritative set is `registers/ambiguities.yaml` and the drafted outbound
-reports are `docs/conformance/upstream-reports.md`.
+Every `report_only` and `editorial` entry carries an `upstream_issue` (§13);
+the authoritative set is `registers/ambiguities.yaml` and each outbound
+report is the GitHub issue it points at (label `upstream-report`).
 
 Each entry carries a machine-readable **`disposition`** the pipeline
 branches on (closed enum): `loose_assert` (assert only what the spec pins) ·
@@ -986,7 +987,7 @@ the catalogue encodes the spec-derivable reading with a citation).
 
 **Transparency is enforced, not optional.** The register never *absorbs* a
 divergence — it documents it and reports it back. Every `report_only` and
-`editorial` entry MUST carry an `upstream_ref` (enforced by the schema and by
+`editorial` entry MUST carry an `upstream_issue` (enforced by the schema and by
 `AmbiguityEntry::check_invariants`), so a gating suspension or a corrected spec
 defect always has an outbound openEHR report attached (§13). This is
 deliberate: a behaviour the spec leaves unassertable is more valuable
@@ -2278,11 +2279,12 @@ the difference between "nice idea, same risk" and "resourced program".
 **Outbound spec-defect reports (the ambiguity register → openEHR).** Building
 and running the catalogue against the real spec surfaces where the spec itself
 is silent, self-contradictory, or misaligned across SM / ITS / CNF. Every such
-finding is a register entry with an `upstream_ref` (§8.5), each drafted as a
-concrete openEHR report in `docs/conformance/upstream-reports.md` — grouped by
-channel (SPECPR / SPECQUERY / editorial / ITS-REST / ITS-XML / TERM / SEC) —
-for a maintainer to file, replacing the `UPR-<n>` draft id with the returned
-key. This is a first-class deliverable of the framework, not a side effect: an
+finding is a register entry with an `upstream_issue` (§8.5), each written as
+a concrete openEHR report on its `upstream-report`-labeled GitHub issue (a
+plain summary, what the released spec says, what this implementation does,
+the resolution sought) for a maintainer to file, recording the returned
+channel key on the issue. This is a first-class deliverable of the
+framework, not a side effect: an
 instrument that exercises the whole spec is exactly the instrument that finds
 the spec's own defects, and reporting them back is how the standard improves.
 
@@ -2305,7 +2307,7 @@ acceptance gate:
 
 | PR | Content | Acceptance gate |
 |---|---|---|
-| U1 | The five schedule-artifact schema families (§8.2 #1–5: case cores, bindings, vocabularies incl. the capability matrix, corpus manifest, ambiguity register — a living artifact, each carried divergence linked via `upstream_ref` to its outbound report) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
+| U1 | The five schedule-artifact schema families (§8.2 #1–5: case cores, bindings, vocabularies incl. the capability matrix, corpus manifest, ambiguity register — a living artifact, each carried divergence linked via `upstream_issue` to its outbound report) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
 | U2 | master06 (EHR) converted: all 21 cases as case cores + the its-rest bindings for the EHR operations + corpus manifest over the existing EHR fixtures | Generated prose semantically equivalent to the current chapter (human-reviewed diff); zero information loss against the AsciiDoc tables |
 | U3 | master07/08/09 (COMPOSITION/CONTRIBUTION/DIRECTORY) conversion + bindings | Same gate; the versioning cases (§8.9 pilot 4 shape) round-trip |
 | U4 | Content chapters (master15–17) conversion — decision tables as data + the literal grammar + generation recipes | Every existing table row preserved verbatim; grammar parses 100% of existing literals |

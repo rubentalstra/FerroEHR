@@ -3,7 +3,7 @@
 # serve the CONTRIBUTION reads in XML refuses an `Accept: application/xml` on
 # the GET-realized has_contribution per the §XML Format 406 MUST — see the
 # sibling case's header for the full derivation (the XSD global-element
-# inventory + the OAS inconsistency UPR-125 reports). Offering the read under a
+# inventory + the OAS inconsistency #1605 reports). Offering the read under a
 # root name the release does not assign is equally conformant (register
 # AMB-167), so this row is judged only against a statement that declares
 # `contribution-xml-unsupported`.

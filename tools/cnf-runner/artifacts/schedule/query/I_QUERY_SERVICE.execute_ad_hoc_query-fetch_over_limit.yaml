@@ -12,7 +12,7 @@
 # whether REST paging overrides, composes with, or conflicts against
 # LIMIT/OFFSET. That silence is adjudicated in register AMB-98, whose fixed
 # handling is COMPOSITION — the AQL LIMIT/OFFSET shape the logical result set,
-# then offset/fetch window it — and which is reported upstream as UPR-62.
+# then offset/fetch window it — and which is reported upstream as #1544.
 #
 # LIMIT 3 over ten committed compositions leaves three logical rows; `fetch: 1`
 # windows that to one. The three candidate readings separate cleanly: composition

@@ -7,8 +7,8 @@ metadata:
 
 Owner ruling (2026-07-20, issue #134, codified in root CLAUDE.md §Issue
 workflow): `docs/plans/WORKLIST.md` is retired to a pointer stub — the open
-GitHub issue list IS the tracker. Issue body = `## Contract` +
-`## Exit criteria` checklist; status/decisions go as issue comments, never
+GitHub issue list IS the tracker. Issue body = plain opening summary +
+`## Acceptance criteria` checklist; status/decisions go as issue comments, never
 ever-growing body cells. Taxonomy: exactly one type label
 (bug/enhancement/documentation/chore/refactor/perf/ci ↔ conventional-commit
 types), P0–P3 priority labels, domain labels (spec:*, spec-update,

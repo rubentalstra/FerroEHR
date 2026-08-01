@@ -31,7 +31,7 @@
 # well-formed but was unable to be followed due to semantic errors") and the
 # OAS responses/422.yaml ("the content type and syntax is correct, could be
 # converted to a resource, but there are semantic validation errors") describe
-# the exchange exactly. UPR-40 still asks upstream to assign the branch.
+# the exchange exactly. #1522 still asks upstream to assign the branch.
 #
 # The payload is otherwise the accepted v2 content (a valid COMPOSITION of the
 # same template), so the uid contradiction is the only rejectable defect.

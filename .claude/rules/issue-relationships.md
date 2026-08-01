@@ -47,7 +47,7 @@ with `--replace`).
 **Use it** to decompose a genuinely multi-part issue into individually
 trackable, individually closeable work items — e.g. a "ranked backlog of N
 items" issue → one child per item; a "audit every chapter" issue → one child per
-chapter. Each child is a real issue with its own contract + exit criteria.
+chapter. Each child is a real issue with its own contract + acceptance criteria.
 
 **Do NOT** use sub-issues to duplicate release grouping. **Milestones remain the
 release spine** (`changelog.md`: a release cuts when its milestone hits zero open
@@ -68,10 +68,13 @@ direction.**
 **Use it** for real in-repo sequencing: #A must merge before #B is workable.
 `scripts/gh-rel.sh blocked-by B A`.
 
-**Do NOT** use it for upstream waits. An issue waiting on openEHR to publish
-normative text is `blocked-upstream` (a **label**, no milestone) — you cannot be
-`blocked_by` a Jira ticket, and there is no in-repo issue to point at. Keep the
-label for upstream; use `blocked-by` only for issue→issue dependencies.
+**Upstream waits** (owner rulings 2026-08-01): `blocked-upstream` keeps its
+narrow meaning — resolved in upstream Jira, normative text not yet published
+(a **label**, no milestone). A wait on a defect WE reported instead points at
+the in-repo `upstream-report` issue with a native `blocked-by` edge (the
+report itself carries `upstream-confirmed` once verified). A wait with no
+in-repo counterpart stays label-only — you cannot be `blocked_by` a Jira
+ticket.
 
 ### 3. Blocking — "Mark as blocking" (the mirror direction)
 
@@ -110,7 +113,7 @@ single most likely way this system goes stale. Concretely:
   is exactly the duplication that shows the same children twice.
 - **An issue's body never lists its blockers or what it blocks.** The
   **Dependencies** panel is canonical.
-- **A parent's exit criteria are OUTCOMES, not a roll-call of children.** "Every
+- **A parent's acceptance criteria are OUTCOMES, not a roll-call of children.** "Every
   sub-issue closed" is already tracked by the progress bar — state the outcome
   the program must reach, and (if useful) point at the panel without naming
   individual children.

@@ -21,8 +21,8 @@ does not decide the work is done on your behalf.
 1. **Identify the issue being closed** (the user names it, or it is the
    issue this branch's PR declares `Closes #N` for). Read it with
    `gh issue view <n> --comments`; if it links a plan file
-   (`docs/plans/*.md`), that file's `## Exit criteria` also applies.
-2. **Verify every `## Exit criteria` checkbox is ticked** — in the issue
+   (`docs/plans/*.md`), that file's exit-criteria checklist also applies.
+2. **Verify every `## Acceptance criteria` checkbox is ticked** — in the issue
    body and in any linked plan file. If any remain `- [ ]`, stop and list
    them — do not tick a criterion yourself just to proceed; a tick must
    reflect real, verified state (e.g. "workspace builds" means someone
@@ -85,6 +85,6 @@ does not decide the work is done on your behalf.
 ## What this skill does not do
 
 It does not run `cargo build`, the test suite, or the CNF pipeline to "check"
-the exit criteria for you — those must already have been run and have
+the acceptance criteria for you — those must already have been run and have
 genuinely passed before this skill is invoked. If in doubt, run
 `/run-conformance` or the relevant `cargo` command first.

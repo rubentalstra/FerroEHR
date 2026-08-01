@@ -46,7 +46,7 @@ component: EHR
 sm_operation: I_EHR_STATUS.get_versioned_ehr_status
 capabilities: [EhrStatus]
 exercises: [Versioning]
-profiles: [CORE]                         # EhrStatus is Core-tier; the WIRE form is assigned by the ITS-REST docs text's own worked example (Resources.md §Resource identification: the full three-part value "should be copied") — AMB-65/UPR-27 carries the RM-side conflict upstream
+profiles: [CORE]                         # EhrStatus is Core-tier; the WIRE form is assigned by the ITS-REST docs text's own worked example (Resources.md §Resource identification: the full three-part value "should be copied") — AMB-65/#1509 carries the RM-side conflict upstream
 ambiguities: [AMB-65, AMB-67]
 test_purpose: >-
   An EHR_STATUS ORIGINAL_VERSION read at an addressed version carries that

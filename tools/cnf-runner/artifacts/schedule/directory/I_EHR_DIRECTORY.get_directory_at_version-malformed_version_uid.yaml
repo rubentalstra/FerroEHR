@@ -16,7 +16,7 @@
 # patterns" but no rejecting lexical invariant, which is why the ITS-REST
 # lexical-form sentence is the operative ground. What AMB-76 still carries is
 # narrower: no per-operation response map DECLARES the 400 — the editorial gap
-# UPR-38 asks openEHR to close.
+# #1520 asks openEHR to close.
 #
 # The token here fails the lexical form on both counts: it is not a UUID and it
 # carries none of the two `::` separators the composite form requires. The

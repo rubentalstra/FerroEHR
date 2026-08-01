@@ -15,7 +15,7 @@
 # its `items` Meaning ("most-recent-last") contradict each other, and the two
 # function postconditions settle it on `items.last` — `most_recent_version`:
 # `Result.is_equal (items.last.version_id.value)`. Oldest-first on the wire;
-# register AMB-68 carries the adjudication and UPR-30 the upstream report.
+# register AMB-68 carries the adjudication and #1512 the upstream report.
 #
 # ANCHOR: `I_ITS_REST_REVISION_HISTORY` is a reserved catalogue pseudo-interface
 # (register AMB-161), not an SM operation — the vendored SM declares no

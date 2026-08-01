@@ -35,7 +35,7 @@
 # under the owner ruling 2026-07-28 (ITS-REST overview Specifications.md
 # presents the OAS files as the release's own computable artifacts; the OAS
 # fills docs-text SILENCE, the docs text still wins on conflict; register
-# AMB-160 records the ruling's application here, upstream ask UPR-122 stands
+# AMB-160 records the ruling's application here, upstream ask #1604 stands
 # for the missing docs text). The `Options` schema declares NO required
 # member — every manifest member is optional — so the case asserts exactly
 # what the released schema requires: a JSON body (the step's canonical-json

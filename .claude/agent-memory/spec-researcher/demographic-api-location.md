@@ -111,5 +111,5 @@ I_PARTY_RELATIONSHIP). **NO `I_DEMOGRAPHIC_SERVICE` Robot suite exists** under
 
 ## Register
 Only demographic entry = **AMB-32** (PARTY_RELATIONSHIP has no wire,
-`fixed_handling`, UPR-11). AMB-33 notes `physical_party_delete` /
+`fixed_handling`, #1495). AMB-33 notes `physical_party_delete` /
 `archive_parties` are also unwired.
