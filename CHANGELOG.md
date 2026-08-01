@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.0] - 2026-08-01
+
 ### Changed
 
 - **The documentation website moved to its own domain,
@@ -4018,7 +4020,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.16.0...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.0...HEAD
+[3.17.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.16.0...v3.17.0
 [3.16.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.3...v3.16.0
 [3.15.3]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.2...v3.15.3
 [3.15.2]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.1...v3.15.2
