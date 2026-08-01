@@ -138,7 +138,7 @@ fn integer_spelling_of_whole_reals_changes_no_verdict() {
 /// so it cannot silently regress into leniency: the present-but-empty
 /// spelling of `EVENT_CONTEXT.participations` IS a violation
 /// (`Participations_validity`: `participations /= Void implies not
-/// participations.is_empty` — RM ehr §EVENT_CONTEXT), while the omitted
+/// participations.is_empty` — RM ehr §`EVENT_CONTEXT`), while the omitted
 /// spelling is clean.
 #[test]
 fn present_but_empty_participations_is_a_violation_and_omitted_is_not() {
