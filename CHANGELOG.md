@@ -66,6 +66,20 @@ workflow refuses a tag that has no matching section here.
   a committed directory — is now rejected rather than stored. Omit the
   attribute instead of sending an empty array.
 
+- **RM class invariants are now enforced on every commit kind, not only on
+  COMPOSITIONs.** The whole-instance RM + terminology pass previously ran only
+  for compositions, so anything *below* the root of an `EHR_STATUS`,
+  `EHR_ACCESS`, directory FOLDER, party or party-relationship body went
+  unchecked. Payloads that were accepted before and are now refused with a
+  `422` include: an empty `archetype_details.rm_version`; a `links` member
+  that is missing `meaning`, `type` or `target`, or whose `target` is not an
+  `ehr://` URI; a present-but-empty `links` list on a node nested inside
+  `EHR_STATUS.other_details` or a party body; and an empty
+  `feeder_audit` `system_id`. The same defects were already `422` inside a
+  COMPOSITION. `EHR_ACCESS.settings` is deliberately unaffected — the RM
+  leaves that slot's type to the implementation, so it carries no RM rules to
+  enforce.
+
 ## [3.17.1] - 2026-08-01
 
 ### Added

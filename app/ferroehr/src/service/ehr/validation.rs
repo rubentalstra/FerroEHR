@@ -4,13 +4,21 @@
 //! `validate_for_commit` dispatch shared by the direct and CONTRIBUTION write
 //! paths, and the `VERSIONED_COMPOSITION` cross-version invariants.
 //!
+//! Every kind's validator pairs its hand-written root rules with the
+//! whole-instance RM class-invariant + terminology pass
+//! ([`validate_rm_invariants_for_commit`]) — the RM class invariants are
+//! properties of the instance, so they bind below the root of an `EHR_STATUS`
+//! or FOLDER exactly as they do inside a COMPOSITION.
+//!
 //! Spec: RM ehr `ehr_status.adoc` / `ehr_access.adoc` /
 //! `versioned_composition.adoc`; RM common `folder.adoc` + inherited
-//! `locatable.adoc`; RM common master06 §Incomplete Content (the
-//! `553|incomplete|` relaxation); ITS-REST `responses/422_COMPOSITION.yaml`;
-//! CNF `master06 §Test Data Sets` (INVALID class 2) +
-//! `master07-func_tc_ehr_composition.adoc` (the persistent-cardinality
-//! convention).
+//! `locatable.adoc` (`Links_valid`, `Archetype_node_id_valid`),
+//! `archetyped.adoc` (`Rm_version_valid`), `link.adoc` (meaning/type/target
+//! 1..1) and `feeder_audit_details.adoc` (`System_id_valid`); RM common
+//! master06 §Incomplete Content (the `553|incomplete|` relaxation); ITS-REST
+//! `responses/422_COMPOSITION.yaml`; CNF `master06 §Test Data Sets`
+//! (INVALID class 2) + `master07-func_tc_ehr_composition.adoc` (the
+//! persistent-cardinality convention).
 
 use serde_json::Value;
 use sqlx::PgConnection;
@@ -213,6 +221,58 @@ impl FerroEhrService {
     }
 }
 
+/// Run the **template-independent** RM class-invariant + openEHR-terminology
+/// passes over a non-COMPOSITION commit body, folding every violation into one
+/// `422`.
+///
+/// The RM class invariants are properties of the *instance*, not of the
+/// resource kind: `ARCHETYPED.Rm_version_valid`
+/// (`RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc` §Invariants),
+/// `LOCATABLE.Links_valid` and `Archetype_node_id_valid`
+/// (`…org.openehr.rm.common.locatable.adoc` §Invariants), `LINK`'s three 1..1
+/// attributes `meaning`/`type`/`target`
+/// (`…org.openehr.rm.common.link.adoc` §Attributes) and
+/// `FEEDER_AUDIT_DETAILS.System_id_valid`
+/// (`…org.openehr.rm.common.feeder_audit_details.adoc` §Invariants) bind every
+/// node carrying the shape, at any depth — so the pass the COMPOSITION arm
+/// runs ([`FerroEhrService::validate_composition_for_commit`]) applies
+/// unchanged to `EHR_STATUS` / `EHR_ACCESS` / FOLDER / demographic bodies.
+/// Without it, a defect below the root of those kinds is invisible: only the
+/// hand-written root checks above ever looked at them.
+///
+/// `declared` is the root node's RM type, used only when the root's wire
+/// `_type` is absent (canonical JSON requires `_type` only on polymorphic
+/// slots); every descendant dispatches from its own tag or its parent
+/// attribute's declared concrete type.
+///
+/// # Errors
+/// [`ServiceError::ValidationFailed`] carrying every violation, keyed by its RM
+/// instance path (→ 422), exactly as the COMPOSITION arm reports its
+/// RM/terminology pass.
+pub(in crate::service) fn validate_rm_invariants_for_commit(
+    data: &Value,
+    declared: &str,
+) -> Result<(), ServiceError> {
+    let messages = openehr_its::flat::validation::validate_rm_and_terminology_as(data, declared);
+    if messages.is_empty() {
+        return Ok(());
+    }
+    metrics::counter!(
+        crate::telemetry::prometheus::VALIDATION_FAILURES,
+        "pass" => "rm_terminology",
+    )
+    .increment(u64::try_from(messages.len()).unwrap_or(u64::MAX));
+    Err(ServiceError::ValidationFailed(
+        messages
+            .into_iter()
+            .map(|m| openehr_its::rest::runtime::ValidationError {
+                path: m.path,
+                message: m.message,
+            })
+            .collect(),
+    ))
+}
+
 /// `VERSIONED_COMPOSITION` cross-version invariants, enforced against the
 /// FIRST stored version's root (RM ehr `versioned_composition.adoc`):
 ///
@@ -322,8 +382,16 @@ fn is_persistent(composition: &Value) -> bool {
 /// - a present `other_details` is a concrete `ITEM_STRUCTURE` (RM ehr
 ///   `ehr_status.adoc` `other_details`; RM `data_structures` master04).
 ///
+/// The root rules above are then followed by the whole-instance RM
+/// class-invariant + terminology pass
+/// ([`validate_rm_invariants_for_commit`]), which reaches every node BELOW the
+/// root — `archetype_details`, `links`, `feeder_audit`, and any
+/// `other_details` structure.
+///
 /// # Errors
-/// [`ServiceError::Unprocessable`] naming the first violated rule (→ 422).
+/// [`ServiceError::Unprocessable`] naming the first violated rule, or
+/// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
+/// found below the root (both → 422).
 /// The root-LOCATABLE invariants shared by the always-root EHR kinds
 /// (`EHR_STATUS`, `EHR_ACCESS` — RM ehr `ehr_status.adoc` /
 /// `ehr_access.adoc`, each with an unconditional `Is_archetype_root`):
@@ -497,7 +565,7 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
             }
         }
     }
-    Ok(())
+    validate_rm_invariants_for_commit(status, "EHR_STATUS")
 }
 
 /// Validate a client-supplied `EHR_ACCESS` before it is committed (via a
@@ -512,8 +580,14 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
 ///   — the RM defines no concrete scheme, so a present `settings` must carry a
 ///   non-empty concrete `_type`, which `scheme()` names (`Scheme_valid`).
 ///
+/// Followed by the whole-instance RM class-invariant + terminology pass
+/// ([`validate_rm_invariants_for_commit`]), which reaches every node below the
+/// root.
+///
 /// # Errors
-/// [`ServiceError::Unprocessable`] naming the first violated rule (→ 422).
+/// [`ServiceError::Unprocessable`] naming the first violated rule, or
+/// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
+/// found below the root (both → 422).
 pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
     let unproc = |m: String| ServiceError::Unprocessable(m);
     let obj = access
@@ -559,7 +633,25 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
                 .to_owned(),
         ));
     }
-    Ok(())
+    // NOTE: `settings` is excluded from the whole-instance RM pass, and only
+    // from it. `EHR_ACCESS.settings` is the RM's one implementation-defined
+    // slot — "Instance is a subtype of the type `ACCESS_CONTROL_SETTINGS`,
+    // allowing for the use of different access control schemes"
+    // (`RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc` §Attributes) —
+    // and the slot's type is abstract with no attributes, no invariants and no
+    // RM-defined descendant: "Access Control Settings for the EHR and
+    // components. Intended to support multiple access control schemes.
+    // Currently implementation dependent."
+    // (`…org.openehr.rm.ehr.access_control_settings.adoc`). So the RM defines
+    // NOTHING for the pass to judge inside it, while a pass that walked in
+    // would refuse every legal instance (the scheme's own `_type` names a class
+    // the RM does not declare). `Scheme_valid` above is the whole of the RM's
+    // demand on the slot.
+    let mut without_settings = access.clone();
+    if let Some(map) = without_settings.as_object_mut() {
+        map.remove("settings");
+    }
+    validate_rm_invariants_for_commit(&without_settings, "EHR_ACCESS")
 }
 
 /// Validate a client-supplied FOLDER tree before it is committed (directory
@@ -585,9 +677,16 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 ///   types it 0..1 and FOLDER carries no `Is_archetype_root` invariant;
 /// - `folders` members recurse.
 ///
+/// The per-node rules above are then followed by the whole-instance RM
+/// class-invariant + terminology pass
+/// ([`validate_rm_invariants_for_commit`]), which reaches the parts of a
+/// FOLDER tree the walk above does not inspect — `archetype_details`, each
+/// `LINK` in `links`, and `feeder_audit`.
+///
 /// # Errors
 /// [`ServiceError::Unprocessable`] naming the first violated rule and the
-/// offending tree path (→ 422).
+/// offending tree path, or [`ServiceError::ValidationFailed`] carrying the
+/// RM-invariant violations found anywhere in the tree (both → 422).
 pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
     fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
         let unproc = |m: String| ServiceError::Unprocessable(m);
@@ -669,7 +768,8 @@ pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceE
         }
         Ok(())
     }
-    walk(folder, "")
+    walk(folder, "")?;
+    validate_rm_invariants_for_commit(folder, "FOLDER")
 }
 
 #[cfg(test)]
@@ -692,9 +792,30 @@ mod tests {
                 .insert("other_details".into(), other);
             st
         };
-        for ty in ["ITEM_TREE", "ITEM_LIST", "ITEM_SINGLE", "ITEM_TABLE"] {
-            validate_ehr_status(&with_other(json!({ "_type": ty, "name": { "_type": "DV_TEXT", "value": "d" }, "archetype_node_id": "at0001" })))
-                .unwrap_or_else(|e| panic!("{ty} other_details must be accepted: {e}"));
+        // Each subtype is spelled out at its own mandatory shape: `ITEM_SINGLE.item`
+        // is `ELEMENT [1..1]` (RM `data_structures`
+        // `org.openehr.rm.data_structures.item_single.adoc` §Attributes), while
+        // ITEM_TREE/ITEM_LIST `items` and ITEM_TABLE `rows` are 0..1. The
+        // whole-instance RM pass reaches `other_details`, so an ITEM_SINGLE
+        // without its item is refused on its own merits — the acceptance
+        // asserted here is of a *valid* instance of each subtype.
+        for other in [
+            json!({ "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "d" },
+                    "archetype_node_id": "at0001" }),
+            json!({ "_type": "ITEM_LIST", "name": { "_type": "DV_TEXT", "value": "d" },
+                    "archetype_node_id": "at0001" }),
+            json!({ "_type": "ITEM_SINGLE", "name": { "_type": "DV_TEXT", "value": "d" },
+                    "archetype_node_id": "at0001",
+                    "item": { "_type": "ELEMENT",
+                              "name": { "_type": "DV_TEXT", "value": "e" },
+                              "archetype_node_id": "at0002",
+                              "value": { "_type": "DV_TEXT", "value": "v" } } }),
+            json!({ "_type": "ITEM_TABLE", "name": { "_type": "DV_TEXT", "value": "d" },
+                    "archetype_node_id": "at0001" }),
+        ] {
+            let ty = other["_type"].as_str().unwrap().to_owned();
+            validate_ehr_status(&with_other(other))
+                .unwrap_or_else(|e| panic!("{ty} other_details must be accepted: {e:?}"));
         }
         for bad in [
             json!({ "_type": "DV_TEXT", "value": "x" }),
@@ -972,5 +1093,139 @@ mod tests {
         let mut without = folder_fixture();
         without.as_object_mut().unwrap().remove("archetype_details");
         validate_folder(&without).expect("archetype_details stays optional on a FOLDER");
+    }
+
+    // ── the whole-instance RM class-invariant pass on the non-COMPOSITION
+    //    commit arms ────────────────────────────────────────────────────────
+    //
+    // The RM class invariants are properties of the instance, not of the
+    // resource kind, so a defect BELOW the root of an EHR_STATUS / FOLDER /
+    // demographic body is a 422 exactly as it is inside a COMPOSITION. Before
+    // `validate_rm_invariants_for_commit` these arms saw only their root.
+
+    /// `ARCHETYPED.Rm_version_valid` (`not rm_version.is_empty`, RM common
+    /// `org.openehr.rm.common.archetyped.adoc` §Invariants) on an `EHR_STATUS`
+    /// commit: the block is below the root, so only the whole-instance pass
+    /// reaches it. The populated twin stays accepted.
+    #[test]
+    fn ehr_status_empty_rm_version_is_refused() {
+        let mut bad = default_ehr_status();
+        bad["archetype_details"]["rm_version"] = json!("");
+        let err = validate_ehr_status(&bad).expect_err("an empty rm_version must be refused");
+        assert!(
+            format!("{err:?}").contains("Rm_version_valid"),
+            "the refusal should name the invariant, got {err:?}"
+        );
+        validate_ehr_status(&default_ehr_status()).expect("a populated rm_version is accepted");
+    }
+
+    /// `LINK.meaning` is 1..1 (RM common `org.openehr.rm.common.link.adoc`
+    /// §Attributes): a FOLDER carrying an incomplete LINK is refused, while the
+    /// complete `ehr://` twin is accepted.
+    #[test]
+    fn folder_link_missing_meaning_is_refused() {
+        let with_link = |link: Value| {
+            let mut folder = folder_fixture();
+            folder
+                .as_object_mut()
+                .unwrap()
+                .insert("links".into(), json!([link]));
+            folder
+        };
+        let err = validate_folder(&with_link(json!({
+            "_type": "LINK",
+            "type": { "_type": "DV_TEXT", "value": "issue" },
+            "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+        })))
+        .expect_err("a LINK without its mandatory meaning must be refused");
+        assert!(
+            format!("{err:?}").contains("meaning"),
+            "the refusal should name the missing attribute, got {err:?}"
+        );
+
+        validate_folder(&with_link(json!({
+            "_type": "LINK",
+            "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+            "type": { "_type": "DV_TEXT", "value": "issue" },
+            "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+        })))
+        .expect("a complete LINK on a folder is accepted");
+    }
+
+    /// `LOCATABLE.Links_valid` (`links /= Void implies not links.is_empty`, RM
+    /// common `org.openehr.rm.common.locatable.adoc` §Invariants) on a node
+    /// NESTED inside `EHR_STATUS.other_details`.
+    #[test]
+    fn ehr_status_nested_empty_links_are_refused() {
+        let other_details = |links: Value| {
+            json!({
+                "_type": "ITEM_TREE",
+                "name": { "_type": "DV_TEXT", "value": "details" },
+                "archetype_node_id": "at0001",
+                "items": [{
+                    "_type": "CLUSTER",
+                    "name": { "_type": "DV_TEXT", "value": "c" },
+                    "archetype_node_id": "at0002",
+                    "links": links,
+                    "items": [{
+                        "_type": "ELEMENT",
+                        "name": { "_type": "DV_TEXT", "value": "e" },
+                        "archetype_node_id": "at0003",
+                        "value": { "_type": "DV_TEXT", "value": "v" }
+                    }]
+                }]
+            })
+        };
+        let with_other = |other: Value| {
+            let mut status = default_ehr_status();
+            status
+                .as_object_mut()
+                .unwrap()
+                .insert("other_details".into(), other);
+            status
+        };
+        let err = validate_ehr_status(&with_other(other_details(json!([]))))
+            .expect_err("a nested present-but-empty links list must be refused");
+        assert!(
+            format!("{err:?}").contains("Links_valid"),
+            "the refusal should name the invariant, got {err:?}"
+        );
+
+        validate_ehr_status(&with_other(other_details(json!([{
+            "_type": "LINK",
+            "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+            "type": { "_type": "DV_TEXT", "value": "issue" },
+            "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+        }]))))
+        .expect("a nested non-empty links list is accepted");
+    }
+
+    /// `FEEDER_AUDIT_DETAILS.System_id_valid` (`not system_id.is_empty`, RM
+    /// common `org.openehr.rm.common.feeder_audit_details.adoc` §Invariants) on
+    /// a FOLDER commit.
+    #[test]
+    fn folder_empty_feeder_system_id_is_refused() {
+        let with_feeder = |system_id: &str| {
+            let mut folder = folder_fixture();
+            folder.as_object_mut().unwrap().insert(
+                "feeder_audit".into(),
+                json!({
+                    "_type": "FEEDER_AUDIT",
+                    "originating_system_audit": {
+                        "_type": "FEEDER_AUDIT_DETAILS",
+                        "system_id": system_id
+                    }
+                }),
+            );
+            folder
+        };
+        let err = validate_folder(&with_feeder(""))
+            .expect_err("an empty feeder-audit system_id must be refused");
+        assert!(
+            format!("{err:?}").contains("System_id_valid"),
+            "the refusal should name the invariant, got {err:?}"
+        );
+        validate_folder(&with_feeder("legacy-lab-1"))
+            .expect("a populated feeder-audit system_id is accepted");
     }
 }

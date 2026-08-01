@@ -144,12 +144,43 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
 /// bindings are properties of the instance, not of the archetype). A COMPOSITION
 /// committed without a declared `template_id` cannot be archetype-conformance-
 /// checked, but must still pass these.
+///
+/// The COMPOSITION-rooted wrapper over
+/// [`validate_rm_and_terminology_as`]; a caller committing another resource
+/// kind names its own root type there.
 #[must_use]
 pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage> {
+    validate_rm_and_terminology_as(composition, "COMPOSITION")
+}
+
+/// [`validate_rm_and_terminology`] with the **declared RM type of the root
+/// node** supplied by the caller — the entry point for every non-COMPOSITION
+/// commit kind (`EHR_STATUS`, `EHR_ACCESS`, `FOLDER`, the demographic PARTY
+/// types, …).
+///
+/// The two passes are properties of the *instance*, not of the resource kind:
+/// `ARCHETYPED.Rm_version_valid`
+/// (`RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc` §Invariants),
+/// `LOCATABLE.Links_valid` / `Archetype_node_id_valid`
+/// (`…common.locatable.adoc` §Invariants), the `LINK` 1..1 attributes
+/// (`…common.link.adoc` §Attributes) and
+/// `FEEDER_AUDIT_DETAILS.System_id_valid`
+/// (`…common.feeder_audit_details.adoc` §Invariants) constrain every node
+/// carrying the shape, wherever it occurs — so the same walk applies to an
+/// `EHR_STATUS` or a FOLDER tree exactly as it does to a COMPOSITION.
+///
+/// `declared` is used only as the *root's* effective RM type for a root whose
+/// wire `_type` is legitimately absent (canonical JSON requires `_type` only
+/// on polymorphic slots); every descendant is dispatched from its own `_type`
+/// or its parent attribute's concretely-declared type
+/// ([`crate::rm_validate::declared_concrete_type`]), so a root type that does
+/// not match a tagged root is simply overridden by the tag.
+#[must_use]
+pub fn validate_rm_and_terminology_as(root: &Value, declared: &str) -> Vec<ValidationMessage> {
     let mut v = Validator::default();
     let mut path = String::new();
-    v.rm_invariant_pass(composition, &mut path, Some("COMPOSITION"));
-    v.terminology_pass(composition, &mut path, Some("COMPOSITION"));
+    v.rm_invariant_pass(root, &mut path, Some(declared));
+    v.terminology_pass(root, &mut path, Some(declared));
     v.out
 }
 

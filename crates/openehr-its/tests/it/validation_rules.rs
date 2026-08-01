@@ -1717,3 +1717,197 @@ fn non_locatable_context_matches_structurally_locatable_still_needs_node_id() {
         walk_only(&bad, &root)
     );
 }
+
+// ── the template-independent pass on a non-COMPOSITION root ────────────────────
+//
+// `validate_rm_and_terminology_as` runs the same two passes with a caller-named
+// root RM type. The RM class invariants below are properties of the INSTANCE,
+// not of the resource kind, so they must fire identically under an `EHR_STATUS`
+// or FOLDER root.
+
+/// A minimal, RM-valid `EHR_STATUS` the tests below perturb.
+fn ehr_status_root() -> Value {
+    json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": { "_type": "PARTY_SELF" },
+        "is_queryable": true,
+        "is_modifiable": true
+    })
+}
+
+/// A minimal, RM-valid root FOLDER the tests below perturb.
+fn folder_root() -> Value {
+    json!({
+        "_type": "FOLDER",
+        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-FOLDER.generic.v1" },
+            "rm_version": "1.2.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": "root" }
+    })
+}
+
+/// The baselines the perturbation tests build on are themselves accepted —
+/// without this the refusals below would prove nothing.
+#[test]
+fn valid_non_composition_roots_pass_the_template_independent_passes() {
+    for (root, ty) in [(ehr_status_root(), "EHR_STATUS"), (folder_root(), "FOLDER")] {
+        let msgs = validate_rm_and_terminology_as(&root, ty);
+        assert!(msgs.is_empty(), "{ty} baseline must be valid: {msgs:?}");
+    }
+}
+
+/// `ARCHETYPED.Rm_version_valid` (`not rm_version.is_empty`, RM common
+/// `org.openehr.rm.common.archetyped.adoc` §Invariants) fires under a
+/// non-COMPOSITION root — the `archetype_details` block is below the root, so
+/// only a whole-instance pass reaches it.
+#[test]
+fn empty_rm_version_is_refused_under_an_ehr_status_root() {
+    let mut bad = ehr_status_root();
+    bad["archetype_details"]["rm_version"] = json!("");
+    let msgs = validate_rm_and_terminology_as(&bad, "EHR_STATUS");
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Rm_version_valid")),
+        "an empty rm_version must be refused: {msgs:?}"
+    );
+}
+
+/// `LINK` types `meaning`, `type` and `target` all 1..1 (RM common
+/// `org.openehr.rm.common.link.adoc` §Attributes), and `target` is a
+/// `DV_EHR_URI` whose `Scheme_valid` fixes the scheme to `ehr`. A LINK on a
+/// FOLDER is judged by the same rules as one inside a COMPOSITION.
+#[test]
+fn folder_link_mandatory_attributes_are_enforced() {
+    let with_links = |links: Value| {
+        let mut folder = folder_root();
+        folder
+            .as_object_mut()
+            .expect("folder object")
+            .insert("links".to_owned(), links);
+        folder
+    };
+
+    let good = with_links(json!([{
+        "_type": "LINK",
+        "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+        "type": { "_type": "DV_TEXT", "value": "issue" },
+        "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+    }]));
+    let msgs = validate_rm_and_terminology_as(&good, "FOLDER");
+    assert!(msgs.is_empty(), "a complete LINK is valid: {msgs:?}");
+
+    // meaning absent — 1..1.
+    let no_meaning = with_links(json!([{
+        "_type": "LINK",
+        "type": { "_type": "DV_TEXT", "value": "issue" },
+        "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+    }]));
+    let msgs = validate_rm_and_terminology_as(&no_meaning, "FOLDER");
+    assert!(
+        msgs.iter().any(|m| m.message.contains("meaning")),
+        "a LINK without meaning must be refused: {msgs:?}"
+    );
+
+    // A non-`ehr` scheme on the target — DV_EHR_URI `Scheme_valid`.
+    let bad_scheme = with_links(json!([{
+        "_type": "LINK",
+        "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+        "type": { "_type": "DV_TEXT", "value": "issue" },
+        "target": { "_type": "DV_EHR_URI", "value": "http://example.org/x" }
+    }]));
+    let msgs = validate_rm_and_terminology_as(&bad_scheme, "FOLDER");
+    assert!(
+        !msgs.is_empty(),
+        "a LINK target that is not an ehr:// URI must be refused"
+    );
+}
+
+/// `LOCATABLE.Links_valid` (`links /= Void implies not links.is_empty`, RM
+/// common `org.openehr.rm.common.locatable.adoc` §Invariants) fires on a node
+/// NESTED below a non-COMPOSITION root — here a CLUSTER inside
+/// `EHR_STATUS.other_details`.
+#[test]
+fn nested_empty_links_are_refused_under_an_ehr_status_root() {
+    let mut bad = ehr_status_root();
+    bad.as_object_mut().expect("status object").insert(
+        "other_details".to_owned(),
+        json!({
+            "_type": "ITEM_TREE",
+            "name": { "_type": "DV_TEXT", "value": "details" },
+            "archetype_node_id": "at0001",
+            "items": [{
+                "_type": "CLUSTER",
+                "name": { "_type": "DV_TEXT", "value": "c" },
+                "archetype_node_id": "at0002",
+                "links": [],
+                "items": [{
+                    "_type": "ELEMENT",
+                    "name": { "_type": "DV_TEXT", "value": "e" },
+                    "archetype_node_id": "at0003",
+                    "value": { "_type": "DV_TEXT", "value": "v" }
+                }]
+            }]
+        }),
+    );
+    let msgs = validate_rm_and_terminology_as(&bad, "EHR_STATUS");
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Links_valid")),
+        "a present-but-empty links list on a nested CLUSTER must be refused: {msgs:?}"
+    );
+}
+
+/// `FEEDER_AUDIT_DETAILS.System_id_valid` (`not system_id.is_empty`, RM common
+/// `org.openehr.rm.common.feeder_audit_details.adoc` §Invariants) fires under a
+/// FOLDER root.
+#[test]
+fn empty_feeder_system_id_is_refused_under_a_folder_root() {
+    let mut bad = folder_root();
+    bad.as_object_mut().expect("folder object").insert(
+        "feeder_audit".to_owned(),
+        json!({
+            "_type": "FEEDER_AUDIT",
+            "originating_system_audit": {
+                "_type": "FEEDER_AUDIT_DETAILS",
+                "system_id": ""
+            }
+        }),
+    );
+    let msgs = validate_rm_and_terminology_as(&bad, "FOLDER");
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("System_id_valid")),
+        "an empty feeder-audit system_id must be refused: {msgs:?}"
+    );
+}
+
+/// The COMPOSITION-rooted wrapper is exactly the generalized entry point at
+/// `"COMPOSITION"` — pinned so the two can never drift apart.
+#[test]
+fn the_composition_wrapper_is_the_generalized_pass_at_composition() {
+    let comp = json!({
+        "_type": "COMPOSITION",
+        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+        "name": { "_type": "DV_TEXT", "value": "enc" },
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-COMPOSITION.encounter.v1" },
+            "rm_version": "" }
+    });
+    assert_eq!(
+        validate_rm_and_terminology(&comp),
+        validate_rm_and_terminology_as(&comp, "COMPOSITION")
+    );
+}
