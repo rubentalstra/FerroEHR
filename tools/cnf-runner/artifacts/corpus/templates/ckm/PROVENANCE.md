@@ -1,12 +1,17 @@
 # CKM template pack — provenance
 
 Vendored from the official openEHR CKM (`https://ckm.openehr.org/ckm/rest/v1`) by
-`scripts/vendor-ckm-templates.sh` on 2026-07-22T18:28:46Z.
+`scripts/vendor-ckm-templates.sh` on 2026-08-01T15:09:43Z.
 Each file is CKM's own OPT export for the cited template, verbatim.
 Example skeletons (`*.example.json`) are generated once against the
 composed SUT by `scripts/generate-ckm-examples.sh` and committed
 (byte-identical payload ground for every SUT; never fetched at run
 time). Manifest entries: `tools/cnf-runner/artifacts/corpus/MANIFEST.yaml`.
+
+The **curated journey pack** below is referenced by slug from the
+manifest, the journey definitions and the example generator — the
+slugs are a stable contract. The **full library** is a separate pack
+under `full/` with its own provenance file.
 
 | cid | slug | display name | status | modified | journey role |
 |---|---|---|---|---|---|
@@ -25,3 +30,4 @@ time). Manifest entries: `tools/cnf-runner/artifacts/corpus/MANIFEST.yaml`.
 | 1013.26.282 | covid19-infection-report | openEHR confirmed COVID-19 infection report.v0 | DRAFT | 2020-08-07T07:19:11+02:00 | public_health_notification (confirmed-case follow-up) |
 | 1013.26.988 | poisoning-case-investigation | Accidental poisoning case investigation form | INITIAL | 2024-12-30T03:35:42+01:00 | case_investigation |
 | 1013.26.980 | diphtheria-case-investigation | Diphtheria case investigation form | INITIAL | 2024-12-30T01:55:25+01:00 | case_investigation |
+| 1013.26.977 | congenital-syphilis-case-investigation | Congenital syphilis case investigation form | INITIAL | 2024-12-30T01:49:57+01:00 | case_investigation (largest published form — the large-payload scale probe) |

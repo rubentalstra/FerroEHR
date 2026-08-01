@@ -206,6 +206,7 @@ case_investigation:
   stages:
     - { op: composition_commit, template: cnf.ckm.poisoning_investigation, at: PT0S }
     - { op: composition_commit, template: cnf.ckm.diphtheria_investigation, at: PT30M }
+    - { op: composition_commit, template: cnf.ckm.syphilis_investigation, at: PT1H }
 
 # ── clinical review (the read-heavy bulk) ───────────────────────────────
 
