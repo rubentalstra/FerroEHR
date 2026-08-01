@@ -5,14 +5,16 @@
 # `master04-common_package.adoc` §Content Criteria Specification says
 # "_extract_type_: what kind of Extract this is, e.g. `|openehr-ehr|`,
 # `|openehr-demographic|`, `|openehr-synchronisation|`, `|openehr-generic|`,
-# `|generic-emr|`, etc" — an ILLUSTRATIVE list, bound to no terminology group,
-# so the spec closes nothing. The served route nevertheless validates, and says
-# so in its own contract, because an unrecognized type silently exporting an
-# openEHR-EHR extract would misdescribe its own payload. That is our own
-# design/extension, and the accepted set is a SUPERSET of every code the RM
-# names (plus the catch-all `other`) precisely so the validation cannot refuse
-# what the RM itself names — the accept side is pinned by the
-# `-spec_named_extract_type` sibling.
+# `|generic-emr|`, etc" — an ILLUSTRATIVE list — and TERM
+# `SupportTerminology/master03-terminology.adoc` §Vocabularies binds the
+# attribute to the `extract_content_type` group (803–808). The served route
+# validates against the UNION of the two value spaces (they are never
+# reconciled upstream), because an unrecognized type silently exporting an
+# openEHR-EHR extract would misdescribe its own payload; the accepted set is
+# a SUPERSET of every code either spec names precisely so the validation
+# cannot refuse what a spec itself names — the accept sides are pinned by the
+# `-spec_named_extract_type` (RM tokens) and `-term_coded_extract_type`
+# (TERM group) siblings.
 #
 # The value driven here is outside any reading of the attribute, so the row
 # tests the refusal and not the boundary of a private list.
@@ -29,6 +31,7 @@ description: "Export by an EXTRACT_SPEC with an out-of-group extract_type"
 spec_refs:
   - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.export_ehr_extracts"
   - "RM ehr_extract master04-common_package §Content Criteria Specification (extract_type)"
+  - "TERM SupportTerminology §Vocabularies (extract content type)"
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs the /message/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family message-extract) and adjudicated by register AMB-34. The row gates the CAPABILITY verdicts only, never ITS-REST wire conformance"
