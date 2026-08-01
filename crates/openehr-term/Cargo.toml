@@ -21,6 +21,11 @@ openehr-base = { path = "../openehr-base" }
 roxmltree.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+# The XSD structural-conformance suite (tests/it) re-parses the vendored
+# assets against the vendored schemas' rules.
+roxmltree.workspace = true
+
 [lints]
 workspace = true
 
