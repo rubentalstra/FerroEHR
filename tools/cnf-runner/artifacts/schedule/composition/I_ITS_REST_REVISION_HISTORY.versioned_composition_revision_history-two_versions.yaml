@@ -18,7 +18,7 @@
 # (items.last.version_id.value)` and `most_recent_version_time_committed` is
 # `Result.is_equal (items.last.audits.first.time_committed.value)`. The most
 # recent item is `items.last`, so the wire is oldest-first. Register AMB-68
-# carries that adjudication and its upstream report (UPR-30); this case is what
+# carries that adjudication and its upstream report (#1512); this case is what
 # pins it on the wire.
 #
 # ANCHOR: `I_ITS_REST_REVISION_HISTORY` is a reserved catalogue pseudo-interface

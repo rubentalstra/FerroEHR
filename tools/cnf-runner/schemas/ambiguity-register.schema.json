@@ -47,9 +47,9 @@
           "pattern": "^[a-z0-9_-]+$"
         }
       },
-      "upstream_ref": {
-        "type": "string",
-        "minLength": 1
+      "upstream_issue": {
+        "type": "integer",
+        "minimum": 1
       }
     },
     "allOf": [
@@ -99,7 +99,7 @@
         },
         "then": {
           "required": [
-            "upstream_ref"
+            "upstream_issue"
           ]
         }
       }

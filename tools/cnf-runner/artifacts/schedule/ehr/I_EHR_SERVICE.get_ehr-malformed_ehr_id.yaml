@@ -22,7 +22,7 @@
 # token below is a UID of no kind: not a UUID, and not any composite form.
 # What AMB-76 still carries is narrower: no operation DECLARES the 400 for a
 # path-parameter-schema violation (this one declares 200 + 404 only), which is
-# the editorial gap UPR-38 asks openEHR to close.
+# the editorial gap #1520 asks openEHR to close.
 #
 # The outcome kind is `bad_request`, which the 2026-07-28 schedule release
 # (#544) added for exactly this family; before it the closed taxonomy had only

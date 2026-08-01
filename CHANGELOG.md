@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Outbound openEHR spec-defect reports moved to the issue tracker.** The
+  `docs/conformance/upstream-reports.md` ledger is deleted; every report is
+  now a GitHub issue labeled `upstream-report` (what the released spec says,
+  what this implementation does, the resolution sought). The ambiguity
+  register's `upstream_ref` field is renamed to `upstream_issue` and carries
+  the GitHub issue number — the published `ambiguity-register.schema.json`
+  changed accordingly.
+
 ### Added
 
 - **New conformance cases for the LOCATABLE root rules and the feeder-system

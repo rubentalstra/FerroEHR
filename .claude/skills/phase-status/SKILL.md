@@ -37,12 +37,12 @@ cd "${CLAUDE_PROJECT_DIR}" && git status --short | head -40 && echo "---" && git
    milestone-assigned / the one the branch implements) and what its stated
    next action is. For the in-flight issue, run
    `gh issue view <n> --comments` and report the latest status comment and
-   the unchecked `## Exit criteria` boxes, plus `scripts/gh-rel.sh tree <n>`
+   the unchecked `## Acceptance criteria` boxes, plus `scripts/gh-rel.sh tree <n>`
    for its parent/children/blockers. **Flag any open issue shown `BLOCKED-by`
    an open blocker** — it is stuck until the blocker closes and is not a
    pickup candidate (`.claude/rules/issue-relationships.md`).
 2. If that issue links a plan file (`docs/plans/*.md`), **Read it** and list
-   every unchecked `- [ ]` line under its Tasks and Exit criteria, in
+   every unchecked `- [ ]` line under its Tasks and Acceptance criteria, in
    order, so it is clear how close the work is to done.
 3. Summarize the git state from the injected output: current branch work,
    uncommitted files, last commits — flag uncommitted work that looks

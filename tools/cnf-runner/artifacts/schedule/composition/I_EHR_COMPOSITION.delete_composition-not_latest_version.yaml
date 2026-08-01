@@ -26,7 +26,7 @@ sm_operation: I_EHR_COMPOSITION.delete_composition
 capabilities: [Versioning]
 exercises: [CompositionOps]
 profiles: [CORE]
-ambiguities: [AMB-77]                    # the SM interface declares no counterpart for this wire conflict (editorial, UPR-39)
+ambiguities: [AMB-77]                    # the SM interface declares no counterpart for this wire conflict (editorial, #1521)
 test_purpose: >-
   delete_composition addressing an existing but superseded version is refused
   as a conflict carrying the latest version uid, and deletes nothing.

@@ -24,24 +24,26 @@ pub struct AmbiguityEntry {
     /// (the ICS `options` declaration selects among them).
     #[serde(default)]
     pub options: Vec<OptionTag>,
-    /// The outbound upstream report this ambiguity was raised as (an openEHR
-    /// SPECPR/SPECQUERY/editorial key once filed, or a `UPR-<n>` draft id in
-    /// `docs/conformance/upstream-reports.md` until then). REQUIRED for
-    /// `report_only` and `editorial` entries — a divergence the framework
-    /// carries must be reported back so openEHR can fix the spec; optional but
-    /// expected for the other dispositions that flag an upstream candidate.
-    /// The register never hides a divergence: it documents it and points at the
-    /// report that pushes the fix upstream.
+    /// The GitHub issue number of the `upstream-report` issue this ambiguity
+    /// was raised as (the tracker issue labeled `upstream-report` carries the
+    /// full report — what the released spec says, what this implementation
+    /// does, the resolution sought; an openEHR channel key, once filed, is
+    /// recorded on that issue). REQUIRED for `report_only` and `editorial`
+    /// entries — a divergence the framework carries must be reported back so
+    /// openEHR can fix the spec; optional but expected for the other
+    /// dispositions that flag an upstream candidate. The register never hides
+    /// a divergence: it documents it and points at the report that pushes the
+    /// fix upstream.
     #[serde(default)]
-    pub upstream_ref: Option<String>,
+    pub upstream_issue: Option<u64>,
 }
 
 impl AmbiguityEntry {
     /// Disposition-shape invariants:
     /// - `option_select` entries enumerate ≥ 2 option tags; other dispositions
     ///   carry none.
-    /// - `report_only` and `editorial` entries MUST carry an `upstream_ref` —
-    ///   a divergence the framework carries (a gating suspension, or a spec/
+    /// - `report_only` and `editorial` entries MUST carry an `upstream_issue`
+    ///   — a divergence the framework carries (a gating suspension, or a spec/
     ///   schedule defect the catalogue corrects) is reported back to openEHR,
     ///   never silently absorbed.
     ///
@@ -51,13 +53,10 @@ impl AmbiguityEntry {
         if matches!(
             self.disposition,
             Disposition::ReportOnly | Disposition::Editorial
-        ) && self
-            .upstream_ref
-            .as_ref()
-            .is_none_or(|r| r.trim().is_empty())
+        ) && self.upstream_issue.is_none()
         {
             return Err(format!(
-                "disposition {:?} must carry an upstream_ref (the outbound openEHR report — SPECPR/SPECQUERY/editorial key or a UPR-<n> draft id)",
+                "disposition {:?} must carry an upstream_issue (the GitHub issue number of the outbound upstream-report issue)",
                 self.disposition
             ));
         }

@@ -13,7 +13,7 @@
 # THE ORDER IS THE RM'S: the class table's Purpose row ("most-recent-first") and
 # its `items` Meaning ("most-recent-last") contradict each other, and the two
 # function postconditions settle it on `items.last`. Oldest-first on the wire;
-# register AMB-68 carries the adjudication and UPR-30 the upstream report.
+# register AMB-68 carries the adjudication and #1512 the upstream report.
 #
 # ANCHOR: `I_ITS_REST_REVISION_HISTORY` is a reserved catalogue pseudo-interface
 # (register AMB-161), not an SM operation. Register AMB-136 records why this

@@ -683,7 +683,7 @@ pub fn ambiguity_register_schema() -> Value {
                 "handling": { "type": "string", "minLength": 1 },
                 "disposition": { "enum": tokens(Disposition::ALL) },
                 "options": { "type": "array", "items": { "type": "string", "pattern": OPTION_TAG_PATTERN } },
-                "upstream_ref": { "type": "string", "minLength": 1 }
+                "upstream_issue": { "type": "integer", "minimum": 1 }
             },
             "allOf": [
                 { "if": { "properties": { "disposition": { "const": "option_select" } } },
@@ -691,7 +691,7 @@ pub fn ambiguity_register_schema() -> Value {
                             "properties": { "options": { "minItems": 2 } } },
                   "else": { "properties": { "options": { "maxItems": 0 } } } },
                 { "if": { "properties": { "disposition": { "enum": ["report_only", "editorial"] } }, "required": ["disposition"] },
-                  "then": { "required": ["upstream_ref"] } }
+                  "then": { "required": ["upstream_issue"] } }
             ]
         }
     })
