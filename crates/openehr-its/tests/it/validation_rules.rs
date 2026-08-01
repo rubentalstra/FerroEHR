@@ -1834,6 +1834,99 @@ fn folder_link_mandatory_attributes_are_enforced() {
     );
 }
 
+/// The COMPOSITION side of the LINK rules: a populated `links` list is accepted
+/// at the COMPOSITION root AND on an interior ENTRY, and a `target` whose scheme
+/// is not `ehr` is refused at BOTH depths.
+///
+/// The interior half is the one that proves the walk reaches there: `content` is
+/// declared `List<CONTENT_ITEM>` (abstract), so the ENTRY carries its own
+/// `_type` and the recursion re-dispatches on it; the ENTRY's `links` are then
+/// judged by the same inherited `LOCATABLE` rules as the root's. The scheme rule
+/// is `DV_EHR_URI.Scheme_valid` (RM `data_types`
+/// `org.openehr.rm.data_types.dv_ehr_uri.adoc` §Invariants); all three LINK
+/// attributes are 1..1 (RM common `org.openehr.rm.common.link.adoc` §Attributes).
+#[test]
+fn composition_links_are_judged_at_root_and_entry_depth() {
+    let link = |target: &str| {
+        json!({
+            "_type": "LINK",
+            "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+            "type": { "_type": "DV_TEXT", "value": "issue" },
+            "target": { "_type": "DV_EHR_URI", "value": target }
+        })
+    };
+    let composition = |root_target: &str, entry_target: &str| {
+        json!({
+            "_type": "COMPOSITION",
+            "archetype_node_id": "openEHR-EHR-COMPOSITION.minimal.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                  "value": "openEHR-EHR-COMPOSITION.minimal.v1" },
+                "rm_version": "1.2.0"
+            },
+            "name": { "_type": "DV_TEXT", "value": "Minimal" },
+            "language": { "terminology_id": { "value": "ISO_639-1" }, "code_string": "en" },
+            "territory": { "terminology_id": { "value": "ISO_3166-1" }, "code_string": "UY" },
+            "category": {
+                "value": "event",
+                "defining_code": { "terminology_id": { "value": "openehr" },
+                                   "code_string": "433" }
+            },
+            "composer": { "_type": "PARTY_IDENTIFIED", "name": "Dr. House" },
+            "links": [link(root_target)],
+            "content": [{
+                "_type": "EVALUATION",
+                "archetype_node_id": "openEHR-EHR-EVALUATION.minimal.v1",
+                "archetype_details": {
+                    "_type": "ARCHETYPED",
+                    "archetype_id": { "_type": "ARCHETYPE_ID",
+                                      "value": "openEHR-EHR-EVALUATION.minimal.v1" },
+                    "rm_version": "1.2.0"
+                },
+                "name": { "_type": "DV_TEXT", "value": "Minimal" },
+                "language": { "terminology_id": { "value": "ISO_639-1" }, "code_string": "en" },
+                "encoding": { "terminology_id": { "value": "IANA_character-sets" },
+                              "code_string": "UTF-8" },
+                "subject": { "_type": "PARTY_SELF" },
+                "links": [link(entry_target)],
+                "data": {
+                    "_type": "ITEM_TREE",
+                    "name": { "_type": "DV_TEXT", "value": "Arbol" },
+                    "archetype_node_id": "at0001",
+                    "items": [{
+                        "_type": "ELEMENT",
+                        "name": { "_type": "DV_TEXT", "value": "quantity" },
+                        "archetype_node_id": "at0002",
+                        "value": { "_type": "DV_QUANTITY", "magnitude": 78.5, "units": "kg" }
+                    }]
+                }
+            }]
+        })
+    };
+
+    let good = composition("ehr://example.org/root", "ehr://example.org/entry");
+    let msgs = validate_rm_and_terminology_as(&good, "COMPOSITION");
+    assert!(
+        msgs.is_empty(),
+        "populated LINKs at both depths are valid: {msgs:?}"
+    );
+
+    let bad_root = composition("http://example.org/root", "ehr://example.org/entry");
+    let msgs = validate_rm_and_terminology_as(&bad_root, "COMPOSITION");
+    assert!(
+        !msgs.is_empty(),
+        "a root LINK target that is not an ehr:// URI must be refused"
+    );
+
+    let bad_entry = composition("ehr://example.org/root", "http://example.org/entry");
+    let msgs = validate_rm_and_terminology_as(&bad_entry, "COMPOSITION");
+    assert!(
+        !msgs.is_empty(),
+        "an ENTRY LINK target that is not an ehr:// URI must be refused"
+    );
+}
+
 /// `LOCATABLE.Links_valid` (`links /= Void implies not links.is_empty`, RM
 /// common `org.openehr.rm.common.locatable.adoc` §Invariants) fires on a node
 /// NESTED below a non-COMPOSITION root — here a CLUSTER inside

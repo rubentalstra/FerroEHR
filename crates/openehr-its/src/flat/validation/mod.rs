@@ -779,20 +779,30 @@ impl Validator {
     }
 
     /// `LOCATABLE.Archetyped_valid`: `is_archetype_root xor archetype_details =
-    /// Void` (`RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc` L60).
-    /// The enforceable arm on an instance is: a **non-root** node — one whose
-    /// `archetype_node_id` is an `at`/`id` term code, which per the node-id
-    /// format can never be the root of an archetyped structure — must NOT carry
-    /// `archetype_details`.
+    /// Void` (`RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+    /// §Invariants). The enforceable arm on an instance is: a **non-root**
+    /// node — one whose `archetype_node_id` is an `at`/`id` term code
+    /// ([`openehr_rm::paths::archetype_node_id_is_term_code`]), which per the
+    /// node-id format can never be the root of an archetyped structure — must
+    /// NOT carry `archetype_details`.
     ///
     /// NOTE: the converse arm ("an archetype-HRID node must carry
-    /// `archetype_details`") is NOT enforced — the reference object model derives
-    /// `is_archetype_root` from `archetype_details` presence (making that reading
-    /// tautological), and the CNF's own valid data sets + the canonical-JSON
-    /// corpus systematically omit `archetype_details` on nested archetype roots
-    /// (182 occurrences measured); the released reference data sets win over a
-    /// prose reading that would reject them. The COMPOSITION root
-    /// arm stays separately enforced (`composition_impl.rs` `Is_archetype_root`).
+    /// `archetype_details`") is NOT enforced, because the invariant's own
+    /// operand is undefined: `locatable.adoc` §Functions gives
+    /// `is_archetype_root ()` a Meaning sentence only ("True if this node is
+    /// the root of an archetyped structure") — no postcondition, no derivation
+    /// expression. Under the reference-object-model reading, where
+    /// `is_archetype_root` IS the presence of `archetype_details`, the
+    /// invariant is a tautology and the converse arm asserts nothing; only
+    /// under the node-id reading would it mandate `archetype_details` on every
+    /// archetype-HRID node, and the released text does not choose between the
+    /// two. An arm that is underivable from the released text is not
+    /// enforceable, so it is registered rather than gated (ambiguity register
+    /// AMB-177, `disposition: report_only`). Corroboration, not the ground:
+    /// the CNF valid data sets and the canonical-JSON corpus systematically
+    /// omit `archetype_details` on nested archetype roots. The COMPOSITION
+    /// root arm stays separately enforced (`composition_impl.rs`
+    /// `Is_archetype_root`).
     ///
     /// The second arm is the root node-id **identity** rule: a node that DOES
     /// carry `archetype_details` is an archetype root, and
@@ -815,11 +825,7 @@ impl Validator {
         let Some(node_id) = node_id else {
             return;
         };
-        let is_term_code = node_id
-            .strip_prefix("at")
-            .or_else(|| node_id.strip_prefix("id"))
-            .is_some_and(|rest| rest.chars().next().is_some_and(|c| c.is_ascii_digit()));
-        if is_term_code && has_archetype_details {
+        if openehr_rm::paths::archetype_node_id_is_term_code(node_id) && has_archetype_details {
             self.push(
                 norm_path(path),
                 format!(
@@ -1134,14 +1140,16 @@ impl Validator {
                         continue; // Matches a fixed sibling alternative.
                     }
                     // NOTE (the closed-world admission rule): an unmatched *archetype-rooted*
-                    // child (`openEHR-…` id) is tolerated when the attribute
+                    // child (a node id in ARCHETYPE_ID lexical form —
+                    // [`openehr_rm::paths::is_archetype_root_node_id`]) is
+                    // tolerated when the attribute
                     // carries no ARCHETYPE_SLOT constraint — OPT 1.4 flattening
                     // does not enumerate the full slot-fill universe, and the
                     // CNF corpus itself commits ENTRY archetypes the template
                     // does not list. Where slots ARE declared, archetype-rooted
                     // fillers stay subject to slot admission (include/exclude)
                     // below.
-                    if ca.slots.is_empty() && nid.starts_with("openEHR-") {
+                    if ca.slots.is_empty() && openehr_rm::paths::is_archetype_root_node_id(nid) {
                         continue;
                     }
                     let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");

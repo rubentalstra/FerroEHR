@@ -779,6 +779,7 @@ mod tests {
     use super::{validate_ehr_access, validate_ehr_status, validate_folder};
     use crate::service::ehr::access::default_ehr_access;
     use crate::service::ehr::service::default_ehr_status;
+    use crate::service::error::ServiceError;
 
     /// `EHR_STATUS.other_details` must be a concrete `ITEM_STRUCTURE`
     /// (RM ehr `ehr_status.adoc`): the four concrete subtypes pass, a foreign
@@ -1150,6 +1151,58 @@ mod tests {
             "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
         })))
         .expect("a complete LINK on a folder is accepted");
+    }
+
+    /// The invalid twin of the `ITEM_SINGLE` arm of
+    /// [`ehr_status_other_details_type_is_enforced`]: `ITEM_SINGLE.item` is
+    /// `ELEMENT [1..1]` (RM `data_structures`
+    /// `org.openehr.rm.data_structures.item_single.adoc` §Attributes: "*1..1* |
+    /// *item*: `ELEMENT`"), so an `EHR_STATUS.other_details` `ITEM_SINGLE`
+    /// WITHOUT its item is a semantically invalid instance and must be refused
+    /// as a validation failure — the branch the REST adapter renders 422 — not
+    /// stored with a hole where the mandatory attribute belongs.
+    #[test]
+    fn ehr_status_other_details_item_single_without_item_is_refused() {
+        let with_other = |other: Value| {
+            let mut status = default_ehr_status();
+            status
+                .as_object_mut()
+                .unwrap()
+                .insert("other_details".into(), other);
+            status
+        };
+        let item_single = |item: Option<Value>| {
+            let mut o = json!({
+                "_type": "ITEM_SINGLE",
+                "name": { "_type": "DV_TEXT", "value": "details" },
+                "archetype_node_id": "at0001"
+            });
+            if let Some(item) = item {
+                o.as_object_mut().unwrap().insert("item".into(), item);
+            }
+            o
+        };
+
+        let err = validate_ehr_status(&with_other(item_single(None)))
+            .expect_err("an ITEM_SINGLE without its mandatory item must be refused");
+        assert!(
+            matches!(err, ServiceError::ValidationFailed(_)),
+            "the refusal must be the validation-failed branch, got {err:?}"
+        );
+        assert!(
+            format!("{err:?}").contains("item"),
+            "the refusal should name the missing mandatory attribute, got {err:?}"
+        );
+
+        // The valid twin, so the refusal is proven specific to the missing
+        // mandatory attribute rather than to ITEM_SINGLE as a shape.
+        validate_ehr_status(&with_other(item_single(Some(json!({
+            "_type": "ELEMENT",
+            "name": { "_type": "DV_TEXT", "value": "e" },
+            "archetype_node_id": "at0002",
+            "value": { "_type": "DV_TEXT", "value": "v" }
+        })))))
+        .expect("an ITEM_SINGLE carrying its mandatory item is accepted");
     }
 
     /// `LOCATABLE.Links_valid` (`links /= Void implies not links.is_empty`, RM

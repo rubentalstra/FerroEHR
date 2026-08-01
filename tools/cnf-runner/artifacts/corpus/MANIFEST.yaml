@@ -152,6 +152,23 @@ cnf.composition.minimal_event.links_empty:
     spec_ref: "RM common locatable.adoc §Invariants (Links_valid: links /= Void implies not links.is_empty)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by adding an explicit empty links list at the root; everything else valid, so the refusal isolates Links_valid"
+cnf.composition.minimal_event.links.v1:
+  source: fixtures/composition/minimal_event.links.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by attaching one COMPLETE LINK at the COMPOSITION root and a second on the interior EVALUATION — the accepting twin of cnf.composition.minimal_event.links_empty and of cnf.composition.minimal_event.link_target_bad_scheme. LOCATABLE.links is 0..1 List<LINK> (RM common locatable.adoc §Attributes: \"Links to other archetyped structures ... Links may be to structures in other compositions\"), inherited by every LOCATABLE, so the two depths prove the rule is applied at the resource root AND below it; each member carries all three 1..1 LINK attributes (RM common link.adoc §Attributes) with an ehr:// DV_EHR_URI target (RM data_types dv_ehr_uri.adoc §Invariants, Scheme_valid)"
+cnf.composition.minimal_event.link_target_bad_scheme:
+  source: fixtures/composition/minimal_event.link_target_bad_scheme.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the interior ENTRY's LINK target is an http:// URI, not an ehr:// one"
+    spec_ref: "RM data_types UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc §Invariants (Scheme_valid: scheme.is_equal (Ehr_scheme)); RM data_types master10-uri_package.adoc §Definitions (Ehr_scheme: String = \"ehr\"); RM common link.adoc §Attributes (target: DV_EHR_URI, 1..1)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.links.v1 by changing the ENTRY-level LINK target scheme from ehr to http and nothing else — one character class changed, so the refusal isolates DV_EHR_URI.Scheme_valid, and placing it on the interior ENTRY (not the root) also proves the check reaches below the resource root; the invalid twin of the valid cnf.composition.minimal_event.links.v1"
 cnf.composition.minimal_event.item_node_id_empty:
   source: fixtures/composition/minimal_event.item_node_id_empty.json
   format: canonical-json

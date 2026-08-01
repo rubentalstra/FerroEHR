@@ -40,7 +40,21 @@ workflow refuses a tag that has no matching section here.
   does not carry it forward, and an update whose content is identical to the
   preceding version still creates version 2.
 
+- **Conformance cases for populated LINKs on a COMPOSITION.** A commit
+  carrying a complete `LINK` at the COMPOSITION root *and* on an interior
+  ENTRY now round-trips with both links intact (the accepting twin of the
+  empty-`links` refusal), and a `LINK` whose `target` is not an `ehr://` URI
+  is refused (422) — placed on the interior ENTRY so the case also proves the
+  rule is applied below the resource root.
+
 ### Fixed
+
+- **The FLAT `_link:i` builder now reports a missing mandatory suffix instead
+  of inventing an empty value.** `|meaning`, `|type` and `|target` are all
+  required on a simplified-format `_link:i` datum; a submission omitting one
+  used to be silently completed with an empty `DV_TEXT`/`DV_EHR_URI`, storing
+  data the client never sent. The conversion is now refused with an error
+  naming the exact key (e.g. `.../_link:0|meaning is required`).
 
 - **Compositions and directories that contradict the RM's archetype-root rule
   are now refused (422) instead of stored.** At an archetype root the
