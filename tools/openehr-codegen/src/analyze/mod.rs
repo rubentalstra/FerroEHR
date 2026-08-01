@@ -279,7 +279,7 @@ impl Model {
     }
 
     // ── type rendering ──────────────────────────────────────────────────────
-    // TODO: `render_type` (and the type-resolution cluster it anchors —
+    // TODO(#1452): `render_type` (and the type-resolution cluster it anchors —
     // `effective_roots`, `referenced_specs`, `generic_param_bounds`,
     // `scope_content_types`) produces a Rust type *string*, which is a stage-4
     // RENDER concern; it is kept here in ANALYZE because it is fused with

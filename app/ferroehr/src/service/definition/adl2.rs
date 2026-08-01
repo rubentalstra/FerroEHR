@@ -269,7 +269,7 @@ impl FerroEhrService {
     /// was engine-validated at its own upload) is skipped rather than failing
     /// the whole build.
     ///
-    /// TODO(perf): cache the parsed archetypes (moka) if the ADL2 registry ever
+    /// TODO(#1446, perf): cache the parsed archetypes (moka) if the ADL2 registry ever
     /// grows large enough that re-parsing it per upload/projection matters; the
     /// registry is an admin surface today, so parse-on-demand is cheap.
     async fn adl2_repository(&self) -> Result<ArchetypeRepository, ServiceError> {
