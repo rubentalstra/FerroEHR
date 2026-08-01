@@ -195,6 +195,104 @@ fn element_xor_matches_typed() {
     }
 }
 
+/// A minimal valid `ELEMENT` for the `ITEM_STRUCTURE` fixtures below.
+fn element() -> Value {
+    json!({"_type": "ELEMENT", "name": {"value": "e"},
+           "archetype_node_id": "at0002",
+           "value": {"_type": "DV_TEXT", "value": "x"}})
+}
+
+/// The `ITEM_STRUCTURE` family + `EHR_STATUS` with the given `archetype_node_id`.
+fn locatables_without_a_typed_impl(node_id: &str) -> Vec<Value> {
+    vec![
+        json!({"_type": "ITEM_TREE", "name": {"value": "tree"},
+               "archetype_node_id": node_id, "items": [element()]}),
+        json!({"_type": "ITEM_LIST", "name": {"value": "list"},
+               "archetype_node_id": node_id, "items": [element()]}),
+        json!({"_type": "ITEM_SINGLE", "name": {"value": "single"},
+               "archetype_node_id": node_id, "item": element()}),
+        json!({"_type": "EHR_STATUS", "name": {"value": "status"},
+               "archetype_node_id": node_id, "subject": {"_type": "PARTY_SELF"},
+               "is_queryable": true, "is_modifiable": true}),
+    ]
+}
+
+/// `LOCATABLE.Archetype_node_id_valid` (`not archetype_node_id.is_empty`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants) is inherited by **every** concrete LOCATABLE descendant — also
+/// the ones with no typed `Validate` impl and no fast-path evaluator
+/// (`ITEM_TREE`, `ITEM_LIST`, `ITEM_SINGLE`, `EHR_STATUS`, the demographic and
+/// `EHR_EXTRACT` LOCATABLEs), which reach only the generated structural decode.
+/// The refusing twin: an empty `archetype_node_id` violates it on each.
+#[test]
+fn inherited_node_id_invariant_reaches_every_concrete_locatable() {
+    for node in locatables_without_a_typed_impl("") {
+        let ty = node["_type"].as_str().unwrap();
+        assert!(!fast_handled(&node), "fast path must not vouch for {node}");
+        let t = typed(&node);
+        assert_eq!(two_tier(&node), t, "fallback divergence on {node}");
+        assert!(
+            t.iter()
+                .any(|v| v.message
+                    == format!("Invariant Archetype_node_id_valid failed on type {ty}")),
+            "expected the inherited Archetype_node_id_valid violation on {ty}, got {t:?}"
+        );
+    }
+}
+
+/// The accepting twin of [`inherited_node_id_invariant_reaches_every_concrete_locatable`]:
+/// the same nodes with a non-empty `archetype_node_id` carry no violation, so
+/// the closeout cannot over-reject.
+#[test]
+fn valid_locatables_without_a_typed_impl_stay_clean() {
+    for node in locatables_without_a_typed_impl("at0001") {
+        let t = typed(&node);
+        assert!(t.is_empty(), "expected a clean node, got {t:?} on {node}");
+        assert_eq!(two_tier(&node), t, "fallback divergence on {node}");
+    }
+}
+
+/// The inherited invariant is reported **once** per node: the classes whose
+/// typed impl already realizes it must not gain a duplicate from the closeout.
+#[test]
+fn inherited_node_id_invariant_is_reported_once() {
+    for node in [
+        json!({"_type": "CLUSTER", "name": {"value": "c"},
+               "archetype_node_id": "", "items": [element()]}),
+        json!({"_type": "SECTION", "name": {"value": "s"}, "archetype_node_id": ""}),
+        json!({"_type": "ITEM_TREE", "name": {"value": "t"},
+               "archetype_node_id": "", "items": [element()]}),
+    ] {
+        let ty = node["_type"].as_str().unwrap();
+        let expected = format!("Invariant Archetype_node_id_valid failed on type {ty}");
+        let n = typed(&node)
+            .iter()
+            .filter(|v| v.message == expected)
+            .count();
+        assert_eq!(n, 1, "expected exactly one {expected}, got {n} on {node}");
+    }
+}
+
+/// An **absent** `archetype_node_id` is a structural defect of a mandatory
+/// attribute (reported by the decode), not an `Archetype_node_id_valid`
+/// violation — the two must not double-report the same missing value.
+#[test]
+fn absent_node_id_is_structural_not_an_invariant_violation() {
+    let node = json!({"_type": "ITEM_TREE", "name": {"value": "tree"},
+                      "items": [element()]});
+    let t = typed(&node);
+    assert!(
+        !t.iter()
+            .any(|v| v.message.contains("Archetype_node_id_valid")),
+        "an absent archetype_node_id must not raise the invariant: {t:?}"
+    );
+    assert!(
+        t.iter()
+            .any(|v| v.message.contains("does not conform to RM type ITEM_TREE")),
+        "an absent mandatory attribute must be refused structurally: {t:?}"
+    );
+}
+
 #[test]
 fn nonconforming_nodes_fall_back_with_identical_output() {
     // Each of these fails the typed deserialize → the fast path must decline and

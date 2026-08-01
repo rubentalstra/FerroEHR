@@ -7,6 +7,11 @@
 //! (`serde_json::Value`), which is the repo's uniform RM representation (the
 //! node codec, the composition validator, and the FLAT converters all navigate it).
 //!
+//! Also carries the two `LOCATABLE` node-id form predicates —
+//! [`archetype_node_id_is_term_code`] and [`is_archetype_root_node_id`], the
+//! single definition of "is this node id an interior term code or an archetype
+//! root identifier?" that the wire validator and the TDD builder both call.
+//!
 //! Also carries the [`EhrUri`] structural parser for the `ehr:` URI scheme
 //! (BASE `master11-paths` §"EHR URIs"; RM `data_types/master10-uri_package`
 //! §"DV_EHR_URI Syntax"), which composes the path parser above for the
@@ -29,6 +34,22 @@
 //!     positional predicates".
 //!
 //! Design notes:
+//! - NOTE: `LOCATABLE.concept(): DV_TEXT` is **not realisable from an
+//!   instance** and is therefore absent here. RM
+//!   `UML/classes/org.openehr.rm.common.locatable.adoc` §Functions defines it
+//!   as the "Clinical concept of the archetype as a whole (= derived from the
+//!   `archetype_node_id` of the root node)", and
+//!   `common/master03-archetyped_package.adoc` §"The LOCATABLE Class" states
+//!   how that derivation runs: "The 'meaning' of any node is derived formally
+//!   from the archetype by obtaining the text value for the
+//!   `archetype_node_id` code from the archetype `ontology` section, in the
+//!   language required." The archetype terminology is not carried on the
+//!   instance, so the RM value tree cannot answer it — only an
+//!   archetype/template-resolving caller can, by looking the root node id up
+//!   in that archetype's terminology. What IS derivable from the instance
+//!   alone — whether a node id names an archetype root at all — is realised as
+//!   [`is_archetype_root_node_id`], and the root's archetype identifier is
+//!   read straight off `archetype_node_id`.
 //! - `PATHABLE.parent()` is a back-reference; per the repo convention (no
 //!   owning back-refs) it is realised as a root-anchored lookup
 //!   ([`parent_of`]), not a stored pointer.
@@ -54,7 +75,7 @@ use serde_json::Value;
 use std::fmt;
 use std::str::FromStr;
 
-use openehr_base::prelude::{ObjectVersionId, Uid};
+use openehr_base::prelude::{ArchetypeId, ObjectVersionId, Uid};
 use uuid::Uuid;
 
 /// Error raised when parsing an openEHR path expression.
@@ -913,6 +934,69 @@ fn predicate_for(v: &Value) -> Predicate {
     }
 }
 
+// ── LOCATABLE node-id forms ──────────────────────────────────────────────────
+
+/// Whether `node_id` is an ADL **term code** — an at-code or id-code such as
+/// `at0005`, `at0002.1` or `id3`.
+///
+/// This is the interior-node form of `LOCATABLE.archetype_node_id`:
+/// `UML/classes/org.openehr.rm.common.locatable.adoc` §Attributes states it is
+/// "Always in the form of an at-code, e.g. `at0005`", and AM `ADL2`
+/// `master02-overview.adoc` §"ADL 2.4" adds the id-code alternative ("ADL 2.4
+/// introduces an option to use the **at-code coding system** of ADL1, as an
+/// alternative to the **id-code coding system** introduced in ADL2"), whose
+/// node codes carry the `id` leader (`master01-preface.adoc`: "'id-codes' are
+/// used for that purpose").
+///
+/// A term code is recognised by its leader followed by `.`-separated numeric
+/// segments; the specialisation suffix (`at0002.1`) is the depth notation of
+/// AM `ADL2` `master09.02-spec_concepts.adoc` §"Specialisation Depth".
+#[must_use]
+pub fn archetype_node_id_is_term_code(node_id: &str) -> bool {
+    let Some(digits) = node_id
+        .strip_prefix("at")
+        .or_else(|| node_id.strip_prefix("id"))
+    else {
+        return false;
+    };
+    !digits.is_empty()
+        && digits
+            .split('.')
+            .all(|seg| !seg.is_empty() && seg.bytes().all(|b| b.is_ascii_digit()))
+}
+
+/// RM `LOCATABLE.is_archetype_root()` decided from the node's
+/// `archetype_node_id` alone — "True if this node is the root of an archetyped
+/// structure" (`UML/classes/org.openehr.rm.common.locatable.adoc` §Functions).
+///
+/// The derivation is the one the RM itself states for the attribute: "At an
+/// archetype root point, the value of this attribute is always the stringified
+/// form of the `archetype_id` found in the `archetype_details` object"
+/// (same file, §Attributes), restated in
+/// `common/master03-archetyped_package.adoc` §"The LOCATABLE Class" ("The only
+/// exception is at archetype root points in data, where `archetype_node_id`
+/// carries the archetype identifier in string form rather than an interior node
+/// id from an archetype"). So a node id in `ARCHETYPE_ID` lexical form —
+/// `rm_originator '-' rm_name '-' rm_entity '.' concept_name { '-'
+/// specialisation }* '.v' version_id` (BASE
+/// `UML/classes/org.openehr.base.base_types.archetype_id.adoc` §Description) —
+/// is an archetype root, and an interior term code
+/// ([`archetype_node_id_is_term_code`]) never is. The two forms are disjoint:
+/// a term code carries neither the three-part RM qualifier nor a `.v` segment.
+///
+/// NOTE: the spec leaves `is_archetype_root()` itself undefined — §Functions
+/// gives only the Meaning sentence above, with no postcondition or derivation
+/// expression — so this node-id reading is one of two readings the text
+/// admits, the other being derivation from `archetype_details` presence (which
+/// would make `LOCATABLE.Archetyped_valid`, `is_archetype_root xor
+/// archetype_details = Void`, a tautology). Callers that need the
+/// `archetype_details` reading must test that attribute themselves; this
+/// function answers only the node-id question.
+#[must_use]
+pub fn is_archetype_root_node_id(node_id: &str) -> bool {
+    !archetype_node_id_is_term_code(node_id) && node_id.parse::<ArchetypeId>().is_ok()
+}
+
 // ── EHR URIs (the `ehr:` scheme) ─────────────────────────────────────────────
 
 /// The literal `ehr` URI scheme (RM `data_types/master10-uri_package`
@@ -1737,5 +1821,64 @@ mod tests {
             "ehr:nonsense_attr".parse::<EhrUri>(),
             Err(EhrUriError::UnrecognisedLocator(_))
         ));
+    }
+
+    /// The two node-id forms of `LOCATABLE.archetype_node_id` are disjoint and
+    /// exhaustive over the shapes the RM defines: an interior term code
+    /// (`locatable.adoc` §Attributes, "Always in the form of an at-code, e.g.
+    /// `at0005`"; AM `ADL2` `master02-overview.adoc` for the id-code
+    /// alternative) and an archetype-root `ARCHETYPE_ID` (BASE
+    /// `archetype_id.adoc` §Description, the lexical form).
+    #[test]
+    fn node_id_forms_are_disjoint() {
+        for term_code in ["at0000", "at0005", "at0002.1", "id3", "id1.1.4"] {
+            assert!(
+                archetype_node_id_is_term_code(term_code),
+                "{term_code} is a term code"
+            );
+            assert!(
+                !is_archetype_root_node_id(term_code),
+                "{term_code} is not an archetype root"
+            );
+        }
+        for hrid in [
+            "openEHR-EHR-COMPOSITION.minimal.v1",
+            "openEHR-EHR-OBSERVATION.blood_pressure-cuff.v2",
+            "CIMI-CORE-CLUSTER.device.v1",
+        ] {
+            assert!(
+                is_archetype_root_node_id(hrid),
+                "{hrid} is an archetype root"
+            );
+            assert!(
+                !archetype_node_id_is_term_code(hrid),
+                "{hrid} is not a term code"
+            );
+        }
+    }
+
+    /// Neither predicate fires on a string that is in no RM node-id form —
+    /// a bare word, an at-leader with no digits, or a truncated archetype id
+    /// missing the RM qualifier or the `.vN` segment.
+    #[test]
+    fn node_id_forms_reject_non_node_ids() {
+        for other in [
+            "",
+            "atrial",
+            "identifier",
+            "at",
+            "id",
+            "openEHR-EHR-COMPOSITION.minimal",
+            "openEHR-EHR.minimal.v1",
+        ] {
+            assert!(
+                !archetype_node_id_is_term_code(other),
+                "{other:?} is no term code"
+            );
+            assert!(
+                !is_archetype_root_node_id(other),
+                "{other:?} is no archetype root"
+            );
+        }
     }
 }

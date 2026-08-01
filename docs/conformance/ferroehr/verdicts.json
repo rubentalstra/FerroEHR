@@ -241,7 +241,7 @@
     [
       "EhrStatus",
       {
-        "passed": 41,
+        "passed": 42,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -250,7 +250,7 @@
     [
       "CompositionOps",
       {
-        "passed": 38,
+        "passed": 44,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -259,7 +259,7 @@
     [
       "DirectoryOps",
       {
-        "passed": 61,
+        "passed": 63,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 8
@@ -277,7 +277,7 @@
     [
       "Versioning",
       {
-        "passed": 59,
+        "passed": 62,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 874,
-    "driven": 837,
-    "passed": 837,
+    "selected": 886,
+    "driven": 849,
+    "passed": 849,
     "failed": 0,
     "inconclusive": 0
   }

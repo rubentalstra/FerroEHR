@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.17.0"
+    "version": "3.17.1"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.17.0",
+    "version": "3.17.1",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -463,6 +463,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-feeder_audit_roundtrip",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-invalid_event",
       "status": "passed",
       "rows_driven": 1,
@@ -475,6 +481,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-item_node_id_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-language_invalid",
       "status": "passed",
       "rows_driven": 1,
@@ -482,6 +494,24 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-largest_published_form",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-link_target_bad_scheme",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-links_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-links_roundtrip",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -520,6 +550,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-root_archetype_id_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -948,6 +984,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.update_composition-feeder_audit_carried",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-feeder_audit_removed",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.update_composition-flat",
       "status": "passed",
       "rows_driven": 1,
@@ -987,6 +1035,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-same_content",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3321,7 +3375,19 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-folder_with_link",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-invalid_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-link_missing_meaning",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4155,6 +4221,12 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.set_ehr_queryable-rm_version_empty",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

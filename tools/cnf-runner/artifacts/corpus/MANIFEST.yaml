@@ -152,6 +152,33 @@ cnf.composition.minimal_event.links_empty:
     spec_ref: "RM common locatable.adoc §Invariants (Links_valid: links /= Void implies not links.is_empty)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by adding an explicit empty links list at the root; everything else valid, so the refusal isolates Links_valid"
+cnf.composition.minimal_event.links.v1:
+  source: fixtures/composition/minimal_event.links.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by attaching one COMPLETE LINK at the COMPOSITION root and a second on the interior EVALUATION — the accepting twin of cnf.composition.minimal_event.links_empty and of cnf.composition.minimal_event.link_target_bad_scheme. LOCATABLE.links is 0..1 List<LINK> (RM common locatable.adoc §Attributes: \"Links to other archetyped structures ... Links may be to structures in other compositions\"), inherited by every LOCATABLE, so the two depths prove the rule is applied at the resource root AND below it; each member carries all three 1..1 LINK attributes (RM common link.adoc §Attributes) with an ehr:// DV_EHR_URI target (RM data_types dv_ehr_uri.adoc §Invariants, Scheme_valid)"
+cnf.composition.minimal_event.link_target_bad_scheme:
+  source: fixtures/composition/minimal_event.link_target_bad_scheme.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the interior ENTRY's LINK target is an http:// URI, not an ehr:// one"
+    spec_ref: "RM data_types UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc §Invariants (Scheme_valid: scheme.is_equal (Ehr_scheme)); RM data_types master10-uri_package.adoc §Definitions (Ehr_scheme: String = \"ehr\"); RM common link.adoc §Attributes (target: DV_EHR_URI, 1..1)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.links.v1 by changing the ENTRY-level LINK target scheme from ehr to http and nothing else — one character class changed, so the refusal isolates DV_EHR_URI.Scheme_valid, and placing it on the interior ENTRY (not the root) also proves the check reaches below the resource root; the invalid twin of the valid cnf.composition.minimal_event.links.v1"
+cnf.composition.minimal_event.item_node_id_empty:
+  source: fixtures/composition/minimal_event.item_node_id_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the content ITEM_TREE carries an empty archetype_node_id"
+    spec_ref: "RM common locatable.adoc §Invariants (Archetype_node_id_valid: not archetype_node_id.is_empty), inherited by every concrete LOCATABLE descendant"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by emptying the EVALUATION.data ITEM_TREE archetype_node_id (at0001 -> \"\"); everything else valid, so the refusal isolates the inherited Archetype_node_id_valid on a node type outside the ENTRY/CLUSTER/ELEMENT set"
 cnf.composition.minimal_event.feeder_audit.v1:
   source: fixtures/composition/minimal_event.feeder_audit.v1.json
   format: canonical-json
@@ -726,6 +753,25 @@ cnf.directory.invalid.missing_name:
     defect: "RM: a FOLDER without a name — LOCATABLE.name is 1..1"
     spec_ref: "RM common UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (name: DV_TEXT, 1..1)"
   provenance: "derived 2026-07-28 from cnf.directory.root_only by removing the mandatory LOCATABLE.name, leaving the payload well-formed JSON with exactly ONE defect — the RM-invalid FOLDER ground the create/update directory rejection cases need"
+# The LINK twins on a directory FOLDER. LOCATABLE.links is 0..1 List<LINK> and
+# every member is a LINK, whose meaning/type/target are each 1..1 — so the
+# valid twin proves a populated LINK is accepted and round-trips, and the
+# invalid twin pins the refusal a lenient server would skip.
+cnf.directory.root_with_link:
+  source: fixtures/directory/root_with_link.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-08-01 from cnf.directory.root_only by adding one complete LOCATABLE.links member — a LINK carrying all three 1..1 attributes with an ehr:// DV_EHR_URI target (RM common UML/classes/org.openehr.rm.common.link.adoc §Attributes)"
+cnf.directory.invalid.link_missing_meaning:
+  source: fixtures/directory/link_missing_meaning.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM: a LINK without its meaning — LINK.meaning is 1..1"
+    spec_ref: "RM common UML/classes/org.openehr.rm.common.link.adoc §Attributes (meaning: DV_TEXT, 1..1)"
+  provenance: "derived 2026-08-01 from cnf.directory.root_with_link by removing the mandatory LINK.meaning, leaving the payload well-formed JSON with exactly ONE defect — the invalid twin of the accepted LINK"
 # Corpus additions for the CNF master17.3 (content, quantity data types)
 # schedule cases. Same entry schema as MANIFEST.yaml; the validate harness
 # concatenates this into MANIFEST.yaml at integration (never edit
@@ -1467,6 +1513,15 @@ cnf.ehr_status.invalid.invalid-other-details:
     defect: "EHR_STATUS carries no _type discriminator"
     spec_ref: "ITS-JSON (canonical JSON: _type is required on polymorphic RM objects)"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.ehr_status.invalid.empty-rm-version:
+  source: fixtures/ehr/invalid/ehr_status.empty_rm_version.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM: the ARCHETYPED block carries an empty rm_version — Rm_version_valid"
+    spec_ref: "RM common UML/classes/org.openehr.rm.common.archetyped.adoc §Invariants (Rm_version_valid: not rm_version.is_empty)"
+  provenance: "authored 2026-08-01 by emptying ARCHETYPED.rm_version on the otherwise-valid minimal EHR_STATUS — a defect BELOW the root, which only a whole-instance RM class-invariant pass reaches"
 # Corpus additions for the Security / Signing (SEC-BASIC + Signing) schedule
 # cases. Merged into corpus/MANIFEST.yaml by the validate harness; same entry
 # schema as MANIFEST.yaml (never edit MANIFEST.yaml directly here).

@@ -18,6 +18,8 @@
 
 use std::collections::BTreeMap;
 
+use crate::analyze::invariants::{Bucket, classify};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Primitive type map (spec foundation type → Rust type)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1147,3 +1149,848 @@ pub(crate) const DIALECT_PREDICATES: &[DialectPredicate] = &[
         reason: "TERM_MAPPING.match is one of < = > ?.",
     },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Emittable-invariant realization register
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// The vendored RM class-documentation directory every [`InvariantRealization`]
+/// citation is relative to.
+pub(crate) const RM_CLASS_DOCS: &str = "docs/specs/openehr/RM/docs/UML/classes";
+
+/// Where an assertion-dialect **emittable** RM class invariant
+/// (`crate::analyze::invariants::Bucket::Emitted`) is realized.
+///
+/// The classifier's `Emitted` verdict says an expression *could* be evaluated
+/// mechanically — it does NOT say anything is evaluating it. Without this
+/// register an invariant classified emittable but realized nowhere is
+/// indistinguishable from one a core enforces, so it disappears silently; every
+/// emittable invariant therefore carries a venue here, and the emitter-invariant
+/// suite fails on any that carries none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum InvariantVenue {
+    /// A generated invariant core in `openehr-rm`'s `validate/generated.rs`
+    /// (`site` = the core function name).
+    Core,
+    /// A hand-written `*_impl.rs` `Validate` realization (`site` = the file).
+    Impl,
+    /// The wire boundary in `openehr-its` (`site` = the file) — a rule whose
+    /// inputs the wire walker holds and a per-node RM core does not.
+    Wire,
+    /// Adjudicated out of the per-node invariant layer: an aggregate /
+    /// cross-object constraint owned by another layer, or an assertion that is
+    /// vacuous on stored data. `site` is empty.
+    Excluded,
+    /// Classified emittable, realized nowhere yet — the honest pending list.
+    /// `site` is empty.
+    Unrealized,
+}
+
+impl InvariantVenue {
+    /// The register-section heading this venue renders under.
+    pub(crate) fn heading(self) -> &'static str {
+        match self {
+            Self::Core => "Realized by a generated core in this file",
+            Self::Impl => "Realized in a hand-written `*_impl.rs`",
+            Self::Wire => "Realized at the wire boundary (`openehr-its`)",
+            Self::Excluded => "Adjudicated out of the per-node invariant layer",
+            Self::Unrealized => "Classified emittable, realized nowhere yet",
+        }
+    }
+}
+
+/// One emittable RM class invariant and the venue realizing it.
+#[derive(Debug)]
+pub(crate) struct InvariantRealization {
+    /// The owning BMM class name.
+    pub class: &'static str,
+    /// The BMM invariant name.
+    pub name: &'static str,
+    /// Where it is realized.
+    pub venue: InvariantVenue,
+    /// The realizing site: a core function name ([`InvariantVenue::Core`]) or a
+    /// repo-relative file ([`InvariantVenue::Impl`] / [`InvariantVenue::Wire`]);
+    /// empty for the two non-realizing venues.
+    pub site: &'static str,
+    /// The class's vendored spec file under [`RM_CLASS_DOCS`] (§Invariants).
+    pub spec_file: &'static str,
+    /// One-line reason.
+    pub reason: &'static str,
+}
+
+/// Every assertion-dialect-emittable RM class invariant, with the venue that
+/// realizes it. Declarative decision data (the same shape as
+/// [`DIALECT_PREDICATES`]): the *set* is derived — it must equal the
+/// classifier's `Emitted` verdicts over the RM schema, which the
+/// emitter-invariant suite checks in both directions — while each row's venue,
+/// site and reason are adjudicated once, here, with the spec citation.
+pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
+    InvariantRealization {
+        class: "ACTIVITY",
+        name: "Action_archetype_id_valid",
+        venue: InvariantVenue::Core,
+        site: "activity_core",
+        spec_file: "org.openehr.rm.composition.activity.adoc",
+        reason: "the ACTIVITY core, called by `activity_impl.rs` and the fast path.",
+    },
+    InvariantRealization {
+        class: "ARCHETYPED",
+        name: "Rm_version_valid",
+        venue: InvariantVenue::Core,
+        site: "archetyped_core",
+        spec_file: "org.openehr.rm.common.archetyped.adoc",
+        reason: "the ARCHETYPED core, called by `archetyped_impl.rs` and the fast path.",
+    },
+    InvariantRealization {
+        class: "CODE_PHRASE",
+        name: "Code_string_valid",
+        venue: InvariantVenue::Core,
+        site: "code_phrase_core",
+        spec_file: "org.openehr.rm.data_types.code_phrase.adoc",
+        reason: "the CODE_PHRASE core, called by `code_phrase_impl.rs` and the fast path.",
+    },
+    InvariantRealization {
+        class: "COMPOSITION",
+        name: "Is_archetype_root",
+        venue: InvariantVenue::Core,
+        site: "composition_core",
+        spec_file: "org.openehr.rm.composition.composition.adoc",
+        reason: "`is_archetype_root` is `archetype_details /= Void` (locatable.adoc §Functions).",
+    },
+    InvariantRealization {
+        class: "DV_AMOUNT",
+        name: "Accuracy_is_percent_validity",
+        venue: InvariantVenue::Core,
+        site: "dv_amount_core",
+        spec_file: "org.openehr.rm.data_types.dv_amount.adoc",
+        reason: "shared by every concrete DV_AMOUNT descendant.",
+    },
+    InvariantRealization {
+        class: "DV_AMOUNT",
+        name: "Accuracy_validity",
+        venue: InvariantVenue::Core,
+        site: "dv_amount_core",
+        spec_file: "org.openehr.rm.data_types.dv_amount.adoc",
+        reason: "shared by every concrete DV_AMOUNT descendant.",
+    },
+    InvariantRealization {
+        class: "DV_DATE",
+        name: "Value_valid",
+        venue: InvariantVenue::Core,
+        site: "temporal_value_core",
+        spec_file: "org.openehr.rm.data_types.dv_date.adoc",
+        reason: "the ISO-8601 date validator supplies the verdict.",
+    },
+    InvariantRealization {
+        class: "DV_DATE_TIME",
+        name: "Value_valid",
+        venue: InvariantVenue::Core,
+        site: "temporal_value_core",
+        spec_file: "org.openehr.rm.data_types.dv_date_time.adoc",
+        reason: "the ISO-8601 date-time validator supplies the verdict.",
+    },
+    InvariantRealization {
+        class: "DV_DURATION",
+        name: "Value_valid",
+        venue: InvariantVenue::Core,
+        site: "temporal_value_core",
+        spec_file: "org.openehr.rm.data_types.dv_duration.adoc",
+        reason: "the ISO-8601 duration validator supplies the verdict.",
+    },
+    InvariantRealization {
+        class: "DV_TIME",
+        name: "Value_valid",
+        venue: InvariantVenue::Core,
+        site: "temporal_value_core",
+        spec_file: "org.openehr.rm.data_types.dv_time.adoc",
+        reason: "the ISO-8601 time validator supplies the verdict.",
+    },
+    InvariantRealization {
+        class: "DV_IDENTIFIER",
+        name: "Id_valid",
+        venue: InvariantVenue::Core,
+        site: "dv_identifier_core",
+        spec_file: "org.openehr.rm.data_types.dv_identifier.adoc",
+        reason: "called by `dv_identifier_impl.rs` and the fast path.",
+    },
+    InvariantRealization {
+        class: "DV_PARSABLE",
+        name: "Formalism_valid",
+        venue: InvariantVenue::Core,
+        site: "dv_parsable_core",
+        spec_file: "org.openehr.rm.data_types.dv_parsable.adoc",
+        reason: "called by `dv_parsable_impl.rs` and the fast path.",
+    },
+    InvariantRealization {
+        class: "DV_PROPORTION",
+        name: "Fraction_validity",
+        venue: InvariantVenue::Core,
+        site: "dv_proportion_core",
+        spec_file: "org.openehr.rm.data_types.dv_proportion.adoc",
+        reason: "the DV_PROPORTION core evaluates all six own invariants.",
+    },
+    InvariantRealization {
+        class: "DV_PROPORTION",
+        name: "Percent_validity",
+        venue: InvariantVenue::Core,
+        site: "dv_proportion_core",
+        spec_file: "org.openehr.rm.data_types.dv_proportion.adoc",
+        reason: "the DV_PROPORTION core evaluates all six own invariants.",
+    },
+    InvariantRealization {
+        class: "DV_PROPORTION",
+        name: "Precision_validity",
+        venue: InvariantVenue::Core,
+        site: "dv_proportion_core",
+        spec_file: "org.openehr.rm.data_types.dv_proportion.adoc",
+        reason: "the DV_PROPORTION core evaluates all six own invariants.",
+    },
+    InvariantRealization {
+        class: "DV_PROPORTION",
+        name: "Type_validity",
+        venue: InvariantVenue::Core,
+        site: "dv_proportion_core",
+        spec_file: "org.openehr.rm.data_types.dv_proportion.adoc",
+        reason: "the DV_PROPORTION core evaluates all six own invariants.",
+    },
+    InvariantRealization {
+        class: "DV_PROPORTION",
+        name: "Unitary_validity",
+        venue: InvariantVenue::Core,
+        site: "dv_proportion_core",
+        spec_file: "org.openehr.rm.data_types.dv_proportion.adoc",
+        reason: "the DV_PROPORTION core evaluates all six own invariants.",
+    },
+    InvariantRealization {
+        class: "DV_PROPORTION",
+        name: "Valid_denominator",
+        venue: InvariantVenue::Core,
+        site: "dv_proportion_core",
+        spec_file: "org.openehr.rm.data_types.dv_proportion.adoc",
+        reason: "the DV_PROPORTION core evaluates all six own invariants.",
+    },
+    InvariantRealization {
+        class: "DV_QUANTIFIED",
+        name: "Magnitude_status_valid",
+        venue: InvariantVenue::Core,
+        site: "magnitude_status_core",
+        spec_file: "org.openehr.rm.data_types.dv_quantified.adoc",
+        reason: "shared by every concrete DV_QUANTIFIED descendant.",
+    },
+    InvariantRealization {
+        class: "DV_TEXT",
+        name: "Formatting_valid",
+        venue: InvariantVenue::Core,
+        site: "dv_text_core",
+        spec_file: "org.openehr.rm.data_types.dv_text.adoc",
+        reason: "shared by DV_TEXT and DV_CODED_TEXT.",
+    },
+    InvariantRealization {
+        class: "DV_TEXT",
+        name: "Valid_value",
+        venue: InvariantVenue::Core,
+        site: "dv_text_core",
+        spec_file: "org.openehr.rm.data_types.dv_text.adoc",
+        reason: "shared by DV_TEXT and DV_CODED_TEXT.",
+    },
+    InvariantRealization {
+        class: "DV_URI",
+        name: "Value_valid",
+        venue: InvariantVenue::Core,
+        site: "dv_uri_core",
+        spec_file: "org.openehr.rm.data_types.dv_uri.adoc",
+        reason: "extended by `dv_ehr_uri_impl.rs` for the DV_EHR_URI scheme rule.",
+    },
+    InvariantRealization {
+        class: "ENTRY",
+        name: "Is_archetype_root",
+        venue: InvariantVenue::Core,
+        site: "entry_root_core",
+        spec_file: "org.openehr.rm.composition.entry.adoc",
+        reason: "shared by every concrete ENTRY subtype.",
+    },
+    InvariantRealization {
+        class: "EVENT_CONTEXT",
+        name: "location_valid",
+        venue: InvariantVenue::Core,
+        site: "event_context_core",
+        spec_file: "org.openehr.rm.composition.event_context.adoc",
+        reason: "called by `event_context_impl.rs` and the fast path.",
+    },
+    InvariantRealization {
+        class: "HISTORY",
+        name: "Events_valid",
+        venue: InvariantVenue::Core,
+        site: "history_basic_core",
+        spec_file: "org.openehr.rm.data_structures.history.adoc",
+        reason: "called by `history_impl.rs` and the fast path.",
+    },
+    InvariantRealization {
+        class: "LOCATABLE",
+        name: "Archetype_node_id_valid",
+        venue: InvariantVenue::Core,
+        site: "archetype_node_id_core",
+        spec_file: "org.openehr.rm.common.locatable.adoc",
+        reason: "inherited by every concrete LOCATABLE descendant; the typed dispatcher closes out the classes with no typed impl from the generated concrete-descendant closure.",
+    },
+    InvariantRealization {
+        class: "PARTY_IDENTIFIED",
+        name: "Basic_validity",
+        venue: InvariantVenue::Core,
+        site: "party_identified_core",
+        spec_file: "org.openehr.rm.common.party_identified.adoc",
+        reason: "shared by PARTY_IDENTIFIED and PARTY_RELATED.",
+    },
+    InvariantRealization {
+        class: "PARTY_IDENTIFIED",
+        name: "Name_valid",
+        venue: InvariantVenue::Core,
+        site: "party_identified_core",
+        spec_file: "org.openehr.rm.common.party_identified.adoc",
+        reason: "shared by PARTY_IDENTIFIED and PARTY_RELATED.",
+    },
+    InvariantRealization {
+        class: "TERM_MAPPING",
+        name: "Match_valid",
+        venue: InvariantVenue::Core,
+        site: "term_mapping_core",
+        spec_file: "org.openehr.rm.data_types.term_mapping.adoc",
+        reason: "the match code is one of `< = > ?`.",
+    },
+    InvariantRealization {
+        class: "AUDIT_DETAILS",
+        name: "System_id_valid",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/common/generic/audit_details_impl.rs",
+        spec_file: "org.openehr.rm.common.audit_details.adoc",
+        reason: "re-stated on the ATTESTATION subtype impl for its own RM type name.",
+    },
+    InvariantRealization {
+        class: "FEEDER_AUDIT_DETAILS",
+        name: "System_id_valid",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/common/archetyped/feeder_audit_details_impl.rs",
+        spec_file: "org.openehr.rm.common.feeder_audit_details.adoc",
+        reason: "the FEEDER_AUDIT_DETAILS system id is checked on its own type.",
+    },
+    InvariantRealization {
+        class: "DV_MULTIMEDIA",
+        name: "Integrity_check_validity",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs",
+        spec_file: "org.openehr.rm.data_types.dv_multimedia.adoc",
+        reason: "an integrity check requires its algorithm.",
+    },
+    InvariantRealization {
+        class: "DV_MULTIMEDIA",
+        name: "Not_empty",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs",
+        spec_file: "org.openehr.rm.data_types.dv_multimedia.adoc",
+        reason: "inline data or an external URI must be present.",
+    },
+    InvariantRealization {
+        class: "DV_MULTIMEDIA",
+        name: "Size_valid",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs",
+        spec_file: "org.openehr.rm.data_types.dv_multimedia.adoc",
+        reason: "a negative encapsulated size is refused.",
+    },
+    InvariantRealization {
+        class: "INSTRUCTION_DETAILS",
+        name: "Activity_path_valid",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/composition/content/entry/instruction_details_impl.rs",
+        spec_file: "org.openehr.rm.composition.instruction_details.adoc",
+        reason: "the activity id must be non-empty.",
+    },
+    InvariantRealization {
+        class: "ITEM_TAG",
+        name: "Inv_value_valid",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/common/tags/item_tag_impl.rs",
+        spec_file: "org.openehr.rm.common.item_tag.adoc",
+        reason: "a present tag value must be non-empty.",
+    },
+    InvariantRealization {
+        class: "REFERENCE_RANGE",
+        name: "Range_is_simple",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/data_types/quantity/reference_range_impl.rs",
+        spec_file: "org.openehr.rm.data_types.reference_range.adoc",
+        reason: "each present interval limit must itself be simple (no nested reference ranges).",
+    },
+    InvariantRealization {
+        class: "COMPOSITION",
+        name: "Content_valid",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.composition.composition.adoc",
+        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+    },
+    InvariantRealization {
+        class: "EVENT_CONTEXT",
+        name: "Participations_validity",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.composition.event_context.adoc",
+        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+    },
+    InvariantRealization {
+        class: "SECTION",
+        name: "Items_valid",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.composition.section.adoc",
+        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+    },
+    InvariantRealization {
+        class: "ENTRY",
+        name: "Other_participations_valid",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.composition.entry.adoc",
+        reason: "enforced per concrete ENTRY subtype at the wire boundary.",
+    },
+    InvariantRealization {
+        class: "INSTRUCTION",
+        name: "Activities_valid",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.composition.instruction.adoc",
+        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+    },
+    InvariantRealization {
+        class: "DV_TEXT",
+        name: "Mappings_valid",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.data_types.dv_text.adoc",
+        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+    },
+    InvariantRealization {
+        class: "DV_ORDERED",
+        name: "Other_reference_ranges_validity",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.data_types.dv_ordered.adoc",
+        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+    },
+    InvariantRealization {
+        class: "LOCATABLE",
+        name: "Links_valid",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.common.locatable.adoc",
+        reason: "inherited by every LOCATABLE; keyed on the `links` attribute rather than the RM type.",
+    },
+    InvariantRealization {
+        class: "LOCATABLE",
+        name: "Archetyped_valid",
+        venue: InvariantVenue::Wire,
+        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        spec_file: "org.openehr.rm.common.locatable.adoc",
+        reason: "the archetype-root XOR needs the node's archetype-root context, which the wire walker holds.",
+    },
+    InvariantRealization {
+        class: "EHR",
+        name: "Ehr_status_valid",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.ehr.ehr.adoc",
+        reason: "a cross-object reference resolved by the EHR service against the store, not a property of the value being validated.",
+    },
+    InvariantRealization {
+        class: "EHR",
+        name: "Ehr_access_valid",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.ehr.ehr.adoc",
+        reason: "a cross-object reference resolved by the EHR service against the store, not a property of the value being validated.",
+    },
+    InvariantRealization {
+        class: "EHR",
+        name: "Directory_valid",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.ehr.ehr.adoc",
+        reason: "a cross-object reference resolved by the EHR service against the store, not a property of the value being validated.",
+    },
+    InvariantRealization {
+        class: "VERSIONED_OBJECT",
+        name: "Uid_validity",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.common.versioned_object.adoc",
+        reason: "the versioning aggregate, owned by the versioning layer's commit path.",
+    },
+    InvariantRealization {
+        class: "VERSION",
+        name: "Preceding_version_uid_validity",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.common.version.adoc",
+        reason: "the version chain, owned by the versioning layer's commit path.",
+    },
+    InvariantRealization {
+        class: "REVISION_HISTORY_ITEM",
+        name: "Audit_valid",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.common.revision_history_item.adoc",
+        reason: "the revision-history audit chain, owned by the versioning layer's commit path.",
+    },
+    InvariantRealization {
+        class: "DV_ORDERED",
+        name: "Is_simple_validity",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.data_types.dv_ordered.adoc",
+        reason: "vacuous on stored data: `is_simple ()` is defined as `True if this quantity has no reference ranges` (§Functions), i.e. exactly the antecedent.",
+    },
+    InvariantRealization {
+        class: "HISTORY",
+        name: "Periodic_validity",
+        venue: InvariantVenue::Excluded,
+        site: "",
+        spec_file: "org.openehr.rm.data_structures.history.adoc",
+        reason: "vacuous on stored data: `is_periodic ()` is a derived function (§Functions) with no wire representation; the stored node carries only `period`.",
+    },
+    InvariantRealization {
+        class: "ACTOR",
+        name: "Roles_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.actor.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "ADDRESS",
+        name: "Type_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.address.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "CONTACT",
+        name: "Purpose_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.contact.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY",
+        name: "Contacts_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.party.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY",
+        name: "Identities_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.party.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY",
+        name: "Is_archetype_root",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.party.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY",
+        name: "Type_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.party.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY",
+        name: "Uid_mandatory",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.party.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY_IDENTITY",
+        name: "Purpose_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.party_identity.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY_RELATIONSHIP",
+        name: "Type_validity",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.party_relationship.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "ROLE",
+        name: "Capabilities_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.demographic.role.adoc",
+        reason: "demographic hierarchy: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EXTRACT",
+        name: "Sequence_nr_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr_extract.extract.adoc",
+        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EXTRACT_CONTENT_ITEM",
+        name: "Item_validity",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr_extract.extract_content_item.adoc",
+        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EXTRACT_UPDATE_SPEC",
+        name: "Overall_validity",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr_extract.extract_update_spec.adoc",
+        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EXTRACT_UPDATE_SPEC",
+        name: "Send_changes_only_validity",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr_extract.extract_update_spec.adoc",
+        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EXTRACT_UPDATE_SPEC",
+        name: "Trigger_events_validity",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr_extract.extract_update_spec.adoc",
+        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EXTRACT_VERSION_SPEC",
+        name: "Includes_revision_history_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr_extract.extract_version_spec.adoc",
+        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "AUTHORED_RESOURCE",
+        name: "Current_revision_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.authored_resource.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "AUTHORED_RESOURCE",
+        name: "Revision_history_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.authored_resource.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION",
+        name: "Details_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION",
+        name: "Lifecycle_state_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION",
+        name: "Original_author_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION_ITEM",
+        name: "Purpose_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description_item.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION_ITEM",
+        name: "Use_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description_item.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION_ITEM",
+        name: "copyright_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description_item.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "RESOURCE_DESCRIPTION_ITEM",
+        name: "misuse_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.resource_description_item.adoc",
+        reason: "authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "ORIGINAL_VERSION",
+        name: "Attestations_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.original_version.adoc",
+        reason: "versioning layer: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "ORIGINAL_VERSION",
+        name: "Is_merged_validity",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.original_version.adoc",
+        reason: "versioning layer: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "ORIGINAL_VERSION",
+        name: "Other_input_version_uids_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.original_version.adoc",
+        reason: "versioning layer: no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "ATTESTATION",
+        name: "Items_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.attestation.adoc",
+        reason: "the reference implementation marks this invariant `ignored` (never checked), so realizing it would over-reject.",
+    },
+    InvariantRealization {
+        class: "DV_PARAGRAPH",
+        name: "Items_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.data_types.dv_paragraph.adoc",
+        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "DV_PARSABLE",
+        name: "Size_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.data_types.dv_parsable.adoc",
+        reason: "no invariant realization in `openehr-rm` or `openehr-its` (the sibling DV_MULTIMEDIA rule is realized).",
+    },
+    InvariantRealization {
+        class: "EHR_ACCESS",
+        name: "Is_archetype_root",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr.ehr_access.adoc",
+        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EHR_ACCESS",
+        name: "Scheme_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr.ehr_access.adoc",
+        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "EHR_STATUS",
+        name: "Is_archetype_root",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.ehr.ehr_status.adoc",
+        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+    },
+    InvariantRealization {
+        class: "PARTY_IDENTIFIED",
+        name: "Identifiers_valid",
+        venue: InvariantVenue::Unrealized,
+        site: "",
+        spec_file: "org.openehr.rm.common.party_identified.adoc",
+        reason: "the present-but-empty list rule is not extended to `identifiers` at the wire boundary.",
+    },
+];
+
+/// The register row for `class.name`, if the invariant is registered.
+pub(crate) fn invariant_realization(
+    class: &str,
+    name: &str,
+) -> Option<&'static InvariantRealization> {
+    INVARIANT_REALIZATIONS
+        .iter()
+        .find(|r| r.class == class && r.name == name)
+}
+
+/// One accounted emittable invariant: a classifier `Emitted` verdict paired
+/// with the register row that says where it is realized. A `None` realization
+/// is an **unaccounted** emit — an invariant the classifier calls mechanically
+/// evaluable that no venue claims — which the generated file reports and the
+/// emitter-invariant suite fails on.
+#[derive(Debug)]
+pub(crate) struct AccountedInvariant {
+    /// The owning BMM class name.
+    pub class: String,
+    /// The BMM invariant name.
+    pub name: String,
+    /// The register row, or `None` when the invariant is unaccounted.
+    pub realization: Option<&'static InvariantRealization>,
+}
+
+/// Account every **emittable** invariant among `invariants` — `(class, name,
+/// assertion-expression)` triples, typically a BMM schema's own class
+/// invariants — against [`INVARIANT_REALIZATIONS`], sorted by `(class, name)`.
+///
+/// The accounted *set* is derived from the classifier
+/// ([`crate::analyze::invariants::classify`]), never from a list: an invariant
+/// that changes bucket, appears with a spec bump, or is added to the vendored
+/// BMM enters this accounting automatically.
+pub(crate) fn account_emitted<'a>(
+    invariants: impl Iterator<Item = (&'a str, &'a str, &'a str)>,
+) -> Vec<AccountedInvariant> {
+    let mut out: Vec<AccountedInvariant> = invariants
+        .filter(|(_, _, expr)| classify(expr) == Bucket::Emitted)
+        .map(|(class, name, _)| AccountedInvariant {
+            class: class.to_owned(),
+            name: name.to_owned(),
+            realization: invariant_realization(class, name),
+        })
+        .collect();
+    out.sort_by(|a, b| (&a.class, &a.name).cmp(&(&b.class, &b.name)));
+    out
+}
