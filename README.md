@@ -15,7 +15,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 &nbsp;·&nbsp; ADL
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[**Documentation**](https://rubentalstra.github.io/ferroehr/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Contributing](#contributing-and-security)
+[**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Contributing](#contributing-and-security)
 
 </div>
 
@@ -335,7 +335,7 @@ And the per-chapter outcomes side by side:
 The full, generated comparison — profile verdicts, capability-by-capability
 evidence, failures in both directions, and the stress overlay once both
 committed reports exist — is the
-[comparison page](https://rubentalstra.github.io/ferroehr/docs/latest/comparison.html)
+[comparison page](https://ferroehr.eu/docs/latest/comparison.html)
 on the website and [`docs/conformance/COMPARISON.md`](docs/conformance/COMPARISON.md)
 in the repo, with each system's committed measurement records under
 [`docs/conformance/`](docs/conformance/). Reproduce either side with the
@@ -350,7 +350,7 @@ helm install ferroehr deploy/helm/ferroehr \
   --set database.existingSecret=my-db-secret
 ```
 
-See the [documentation website](https://rubentalstra.github.io/ferroehr/)
+See the [documentation website](https://ferroehr.eu/)
 for the production checklist: database role separation, TLS, backup and
 point-in-time recovery, and audit logging.
 
@@ -374,7 +374,7 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 
 | | |
 |---|---|
-| [Documentation website](https://rubentalstra.github.io/ferroehr/) | The user guide + OpenAPI endpoint reference (versioned per release) |
+| [Documentation website](https://ferroehr.eu/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
 | [Version matrix](docs/VERSIONS.md) | Every pin: openEHR spec versions, Rust toolchain, PostgreSQL |

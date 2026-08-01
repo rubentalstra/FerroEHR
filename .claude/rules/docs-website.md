@@ -8,7 +8,7 @@ paths: ["website/**", "scripts/assemble-oas.sh", "scripts/build-site.sh", "scrip
      root CLAUDE.md hard rules; this file carries the detail and loads when
      website files are touched. -->
 
-The public site — https://rubentalstra.github.io/ferroehr/ — is built from
+The public site — https://ferroehr.eu/ — is built from
 `website/` by `.github/workflows/docs.yml` and deployed to GitHub Pages.
 No openEHR spec governs the website — our own design; this rule is the
 authority for layout, look & feel, and content.

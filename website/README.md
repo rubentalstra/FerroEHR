@@ -1,8 +1,8 @@
 # FerroEHR documentation website
 
 This directory holds the public documentation site published to
-**https://rubentalstra.github.io/ferroehr/** (GitHub Pages, project sub-path
-`/ferroehr/`). The site conventions — toolchain pins, URL scheme,
+**https://ferroehr.eu/** (GitHub Pages, custom apex domain — the site is
+served at the domain root). The site conventions — toolchain pins, URL scheme,
 versioning machinery, design tokens, content map — are documented in
 `.claude/rules/docs-website.md` and this file.
 

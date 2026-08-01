@@ -19,8 +19,8 @@
 
 | | ferroehr | upstream (Java) |
 |---|---|---|
-| Product | ferroehr 3.15.0 | ehrbase-java 2.34.0 |
-| Run date | 2026-07-31 | 2026-07-28 |
+| Product | ferroehr 3.15.3 | ehrbase-java 2.34.0 |
+| Run date | 2026-08-01 | 2026-07-28 |
 | Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-07-31) vs **upstream EHRbase
+Runs compared: **ferroehr** (run of 2026-08-01) vs **upstream EHRbase
 2.34.0** (run of 2026-07-28) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own

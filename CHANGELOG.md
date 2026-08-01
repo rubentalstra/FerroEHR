@@ -15,7 +15,27 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The documentation website moved to its own domain,
+  <https://ferroehr.eu/>.** It was published at
+  `rubentalstra.github.io/ferroehr/`, a GitHub Pages *project* sub-path;
+  it is now served at the root of the `ferroehr.eu` apex over HTTPS, with
+  `www.ferroehr.eu` redirecting to it. Every published URL loses the
+  `/ferroehr` prefix — the user guide is at `/docs/latest/`, the OpenAPI
+  endpoint reference at `/api/`. The old GitHub Pages URLs keep working
+  through GitHub's own redirect, so existing links and bookmarks do not
+  break. This affects the website only; the CDR's REST base path
+  (`/ferroehr/rest/openehr/v1`) is unchanged.
+
 ### Fixed
+
+- **The documentation version switcher pointed at dead URLs.** Entries in
+  the published version manifest kept whichever site base path was current
+  when they were archived (`/ehrbase-rs/…` before the rename, `/ferroehr/…`
+  before the domain move), so selecting an older release led to a 404. Each
+  entry is now re-anchored to the live base at build time, which repairs
+  every archived version without rebuilding the frozen documentation trees.
 
 - **`EXTRACT_SPEC.extract_type` accepts the TERM `extract_content_type`
   vocabulary.** The EHR-Extract export refused the codes TERM 3.1.0 binds to
