@@ -142,3 +142,50 @@ fn scan_predicated_paths(text: &str) -> Vec<String> {
     }
     out
 }
+
+/// W14DEP: the paren-less inline dADL domain-block spelling is deprecated —
+/// `ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE` marks `Type <`
+/// "deprecated" and `(Type) <` "correct ADL 1.4/ADL 1.5". The form stays
+/// ACCEPTED (the normative grammar defines only the paren-less spelling, and
+/// the live CKM library uses it exclusively — the docs-vs-grammar inversion is
+/// reported upstream); this check surfaces the deprecation at exactly its
+/// spec strength: a warning naming the preferred spelling, per occurrence.
+///
+/// Token-level scan (comments and string literals are not tokens, so neither
+/// can false-positive): a lowered domain-type name (`C_DV_QUANTITY`,
+/// `C_DV_ORDINAL`, `C_CODE_PHRASE`) followed by `<`, with no `(` immediately
+/// before the name.
+pub(super) fn check_deprecated_domain_spelling_adl14(
+    text: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    use openehr_lang::lexer::{Token, lex_adl};
+    // A lex failure never reaches here on the validation path (the artefact
+    // already parsed), so an Err simply yields no warnings.
+    let Ok(tokens) = lex_adl(text) else { return };
+    for (i, spanned) in tokens.iter().enumerate() {
+        let Token::AlphaUcId(name) = &spanned.token else {
+            continue;
+        };
+        if !crate::adl14::domain::is_adl14_domain_type(name.as_str()) {
+            continue;
+        }
+        let followed_by_lt = matches!(tokens.get(i + 1).map(|s| &s.token), Some(Token::SymLt));
+        let preceded_by_paren = i
+            .checked_sub(1)
+            .and_then(|j| tokens.get(j))
+            .is_some_and(|s| matches!(s.token, Token::LParen));
+        if followed_by_lt && !preceded_by_paren {
+            issues.push(ValidationIssue {
+                code: ValidationCode::W14dep,
+                severity: ValidationCode::W14dep.severity(),
+                message: format!(
+                    "the paren-less domain-block spelling `{name} <…>` is deprecated \
+                     (master05-cadl §Symbols); write `({name}) <…>`"
+                ),
+                path: None,
+                span: Some(spanned.span.clone()),
+            });
+        }
+    }
+}
