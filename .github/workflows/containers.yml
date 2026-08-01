@@ -37,17 +37,52 @@ permissions:
 
 jobs:
   # ── Detect which images need (re)building ───────────────────────────────────
+  # The ci.yml owner ruling (2026-07-17) applied to images: a push that touches
+  # none of an image's build inputs must not recompile and republish it. A
+  # docs-only develop push used to run FOUR native release compiles (two
+  # binaries × two arches) plus a cargo-leptos site build for byte-identical
+  # images. Tag pushes and manual dispatches always build everything (the
+  # per-job conditions below), so a release can never miss an image.
   changes:
     name: detect changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
+      app: ${{ steps.filter.outputs.app }}
+      admin_ui: ${{ steps.filter.outputs.admin_ui }}
       postgres: ${{ steps.filter.outputs.postgres }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
+          # The app filter mirrors the ui-e2e-binary cache key in ci.yml (the
+          # inputs the server build reads); admin_ui mirrors the ui-e2e-console
+          # key plus its own Dockerfile. Shared workspace manifests appear in
+          # both — a lockfile bump rebuilds both images, correctly.
           filters: |
+            app:
+              - 'crates/**'
+              - 'app/ferroehr/**'
+              - 'app/ferroehr-rest/**'
+              - 'app/ferroehr-server/**'
+              - 'tools/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - '.cargo/**'
+              - 'docker/Dockerfile'
+              - 'docker/smoke-test.sh'
+              - '.github/workflows/containers.yml'
+            admin_ui:
+              - 'crates/**'
+              - 'app/ferroehr-admin-ui/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - '.cargo/**'
+              - 'docker/admin-ui/**'
+              - '.github/workflows/containers.yml'
             postgres:
               - 'docker/postgres/**'
               - '.github/workflows/containers.yml'
@@ -55,7 +90,16 @@ jobs:
   # ── Compile the server binary natively per arch (no QEMU, no in-Docker cargo) ─
   binary:
     name: binary (${{ matrix.platform }})
+    needs: changes
+    # Skip cascades: app-image needs this job, smoke needs app-image — a
+    # skipped need skips the dependent automatically, so the whole app lane
+    # turns off together.
+    if: >-
+      needs.changes.outputs.app == 'true' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
     strategy:
       fail-fast: true
       matrix:
@@ -118,6 +162,7 @@ jobs:
   app-image:
     name: app image
     runs-on: ubuntu-26.04
+    timeout-minutes: 15
     needs: binary
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -182,7 +227,14 @@ jobs:
   # with plain cargo. Same glibc rationale as the app binary job.
   admin-ui-binary:
     name: admin-ui binary (${{ matrix.platform }})
+    needs: changes
+    # Same cascade as the app lane: admin-ui-image skips with this job.
+    if: >-
+      needs.changes.outputs.admin_ui == 'true' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
     strategy:
       fail-fast: true
       matrix:
@@ -263,6 +315,7 @@ jobs:
   admin-ui-image:
     name: admin-ui image
     runs-on: ubuntu-26.04
+    timeout-minutes: 15
     needs: admin-ui-binary
     steps:
       - uses: actions/checkout@v7
@@ -322,6 +375,7 @@ jobs:
   postgres-image:
     name: postgres image
     runs-on: ubuntu-26.04
+    timeout-minutes: 15
     needs: changes
     if: >-
       needs.changes.outputs.postgres == 'true' ||
@@ -365,6 +419,7 @@ jobs:
   smoke:
     name: compose smoke (amd64)
     runs-on: ubuntu-26.04
+    timeout-minutes: 20
     needs: app-image
     steps:
       - uses: actions/checkout@v7
@@ -376,9 +431,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull pushed app image (by digest)
+        env:
+          DIGEST: ${{ needs.app-image.outputs.digest }}
         run: |
-          docker pull "${APP_IMAGE}@${{ needs.app-image.outputs.digest }}"
-          docker tag  "${APP_IMAGE}@${{ needs.app-image.outputs.digest }}" ferroehr:smoke
+          docker pull "${APP_IMAGE}@${DIGEST}"
+          docker tag  "${APP_IMAGE}@${DIGEST}" ferroehr:smoke
 
       - name: Build postgres image (amd64; COPY-only, seconds)
         run: docker build -t ferroehr-postgres:smoke docker/postgres

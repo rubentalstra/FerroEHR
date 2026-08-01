@@ -41,6 +41,7 @@ jobs:
   analyze:
     name: Analyze (rust)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       security-events: write # upload the SARIF results / alerts
       contents: read

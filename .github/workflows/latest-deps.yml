@@ -22,6 +22,13 @@ jobs:
   latest-deps:
     name: build against latest in-range deps
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      # A scheduled red is invisible unless someone happens to open the
+      # Actions tab — the failure step below files it on the tracker instead
+      # (the same visibility mechanism as the two spec watchers).
+      issues: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -34,3 +41,28 @@ jobs:
         run: |
           cargo check --workspace --exclude ferroehr-admin-ui --all-targets --all-features
           cargo check -p ferroehr-admin-ui --all-targets --features ssr
+      - name: Open a tracker issue on failure (deduplicated)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title="latest-deps: workspace no longer builds against the newest in-range dependencies"
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq 'length')
+          if [ "$existing" -gt 0 ]; then
+            echo "Open issue already tracks this — not filing a duplicate."
+            exit 0
+          fi
+          body_file=$(mktemp)
+          cat > "$body_file" <<EOF
+          The scheduled latest-deps run failed: a newest-in-range dependency set no longer compiles (Cargo book: verifying latest dependencies).
+
+          Run: $RUN_URL
+
+          Triage: reproduce with \`cargo update && cargo check --workspace --exclude ferroehr-admin-ui --all-targets --all-features\`, then either fix the incompatibility or pin the offending range with a dated comment.
+          EOF
+          gh issue create \
+            --title "$title" \
+            --label "bug" --label "P2" --label "ci" \
+            --body-file "$body_file"

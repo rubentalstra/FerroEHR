@@ -129,7 +129,7 @@ cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
 cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
 cargo fmt --all
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --exclude ferroehr-admin-ui --all-features --no-deps   # the rustdoc gate (intra-doc links, doc lints)
-cargo audit && cargo deny check
+cargo deny check   # subsumes cargo-audit: same RustSec DB + yanked/licenses/bans/sources
 # conformance pipeline (the acceptance instrument) — the CNF 2.0 runner:
 bash scripts/conformance.sh   # compose up --build (fresh volumes) → the CNF catalogue → verdicts → docs/conformance/<sut>/ (results + verdicts + report/statement/certificate + badges); baseline numbers live ONLY in the committed artifacts
 # measured performance (hour-plus, exclusive SUT): CONF_PERF_CLASS=POC|S|L|R [CONF_PERF_HOURS=1|2|4|6|8|12] bash scripts/conformance.sh
