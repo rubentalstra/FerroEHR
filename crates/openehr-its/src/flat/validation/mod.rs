@@ -614,6 +614,22 @@ struct Validator {
     bindings: Vec<ConstraintBindingCheck>,
 }
 
+/// The present-but-empty state of the attribute-keyed RM list invariants, read
+/// once per node by [`Validator::rm_invariant_pass`] and handed to
+/// [`Validator::check_nonempty_lists`] (an absent list and a present-empty list
+/// are indistinguishable after typed deserialize, so the distinction only
+/// exists at the JSON level).
+#[derive(Clone, Copy, Debug, Default)]
+struct NonEmptyListFlags {
+    /// `DV_TEXT.mappings` is present as an empty array (`Mappings_valid`).
+    mappings_empty: bool,
+    /// `DV_ORDERED.other_reference_ranges` is present as an empty array
+    /// (`Other_reference_ranges_validity`).
+    reference_ranges_empty: bool,
+    /// `LOCATABLE.links` is present as an empty array (`Links_valid`).
+    links_empty: bool,
+}
+
 impl Validator {
     fn push(&mut self, path: impl Into<String>, message: impl Into<String>, kind: ValidationKind) {
         self.out.push(ValidationMessage {
@@ -646,17 +662,26 @@ impl Validator {
         let mut ty: Option<&str> = None;
         let mut node_id: Option<&str> = None;
         let mut has_archetype_details = false;
+        let mut details_archetype_id: Option<&str> = None;
         let mut mappings_empty = false;
         let mut reference_ranges_empty = false;
+        let mut links_empty = false;
         for (k, val) in obj {
             match k.as_str() {
                 "_type" => ty = val.as_str(),
                 "archetype_node_id" => node_id = val.as_str(),
-                "archetype_details" => has_archetype_details = !val.is_null(),
+                "archetype_details" => {
+                    has_archetype_details = !val.is_null();
+                    details_archetype_id = val
+                        .get("archetype_id")
+                        .and_then(|a| a.get("value"))
+                        .and_then(Value::as_str);
+                }
                 "mappings" => mappings_empty = val.as_array().is_some_and(Vec::is_empty),
                 "other_reference_ranges" => {
                     reference_ranges_empty = val.as_array().is_some_and(Vec::is_empty);
                 }
+                "links" => links_empty = val.as_array().is_some_and(Vec::is_empty),
                 _ => {}
             }
         }
@@ -683,8 +708,17 @@ impl Validator {
                 self.push(p, iv.message, ValidationKind::Invariant);
             }
         }
-        self.check_archetyped_valid(node_id, has_archetype_details, path);
-        self.check_nonempty_lists(obj, ty, mappings_empty, reference_ranges_empty, path);
+        self.check_archetyped_valid(node_id, has_archetype_details, details_archetype_id, path);
+        self.check_nonempty_lists(
+            obj,
+            ty,
+            NonEmptyListFlags {
+                mappings_empty,
+                reference_ranges_empty,
+                links_empty,
+            },
+            path,
+        );
         self.check_data_structure_shapes(obj, ty, path);
         for (k, val) in obj {
             if k.starts_with('_') {
@@ -725,13 +759,26 @@ impl Validator {
     /// `is_archetype_root` from `archetype_details` presence (making that reading
     /// tautological), and the CNF's own valid data sets + the canonical-JSON
     /// corpus systematically omit `archetype_details` on nested archetype roots
-    /// (182 occurrences measured); the CNF fixtures win over a prose reading that
-    /// would reject them (`.claude/rules/spec-adherence.md`). The COMPOSITION root
+    /// (182 occurrences measured); the released reference data sets win over a
+    /// prose reading that would reject them. The COMPOSITION root
     /// arm stays separately enforced (`composition_impl.rs` `Is_archetype_root`).
+    ///
+    /// The second arm is the root node-id **identity** rule: a node that DOES
+    /// carry `archetype_details` is an archetype root, and
+    /// `RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+    /// §Attributes (`archetype_node_id`) fixes its value verbatim — "At an
+    /// archetype root point, the value of this attribute is always the
+    /// stringified form of the `archetype_id` found in the `archetype_details`
+    /// object" (restated in `RM/docs/common/master03-archetyped_package.adoc`
+    /// §The LOCATABLE Class: "the only exception is at archetype root points in
+    /// data, where `archetype_node_id` carries the archetype identifier in
+    /// string form"). A root whose two archetype identities disagree names no
+    /// resolvable generating archetype.
     fn check_archetyped_valid(
         &mut self,
         node_id: Option<&str>,
         has_archetype_details: bool,
+        details_archetype_id: Option<&str>,
         path: &str,
     ) {
         let Some(node_id) = node_id else {
@@ -751,6 +798,19 @@ impl Validator {
                 ValidationKind::Invariant,
             );
         }
+        if let Some(archetype_id) = details_archetype_id
+            && archetype_id != node_id
+        {
+            self.push(
+                norm_path(path),
+                format!(
+                    "archetype root archetype_node_id {node_id:?} is not the stringified \
+                     archetype_details.archetype_id {archetype_id:?} — at an archetype root \
+                     the two are always the same value (LOCATABLE.archetype_node_id)"
+                ),
+                ValidationKind::Invariant,
+            );
+        }
     }
 
     /// The RM's "present implies non-empty" list invariants, checkable only at
@@ -763,13 +823,13 @@ impl Validator {
     /// - `SECTION.Items_valid` (`section.adoc`);
     /// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
     ///   ENTRY subtype);
-    /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`).
+    /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`);
+    /// - `LOCATABLE.Links_valid` (`locatable.adoc`), attribute-keyed.
     fn check_nonempty_lists(
         &mut self,
         obj: &Map<String, Value>,
         ty: Option<&str>,
-        mappings_empty: bool,
-        reference_ranges_empty: bool,
+        flags: NonEmptyListFlags,
         path: &str,
     ) {
         const RULES: &[(&str, &str, &str)] = &[
@@ -810,16 +870,19 @@ impl Validator {
         ];
         // Attribute-keyed rules that apply on ANY node carrying the attribute
         // (like the terminology pass's null_flavour handling):
-        // `DV_TEXT.Mappings_valid` and `DV_ORDERED.Other_reference_ranges_validity`
-        // (`dv_text.adoc` / `dv_ordered.adoc`) — no other RM attribute shares
-        // these names.
+        // `DV_TEXT.Mappings_valid`, `DV_ORDERED.Other_reference_ranges_validity`
+        // and `LOCATABLE.Links_valid` (`links /= Void implies not
+        // links.is_empty` — `locatable.adoc` §Invariants; every archetyped RM
+        // node inherits it, so it is keyed on the attribute rather than on a
+        // class list) — no other RM attribute shares these names.
         for (attr, invariant, is_empty) in [
-            ("mappings", "Mappings_valid", mappings_empty),
+            ("mappings", "Mappings_valid", flags.mappings_empty),
             (
                 "other_reference_ranges",
                 "Other_reference_ranges_validity",
-                reference_ranges_empty,
+                flags.reference_ranges_empty,
             ),
+            ("links", "Links_valid", flags.links_empty),
         ] {
             if is_empty {
                 self.push(
@@ -2772,6 +2835,114 @@ mod tests {
                 .any(|m| m.message.contains("at0013")),
             "the residual instance is still closed-world checked against the \
              unqualified overlay"
+        );
+    }
+
+    // ── LOCATABLE root identity + Links_valid (RM invariant pass) ─────────────
+
+    /// Run only pass 1 (the RM class invariants over the whole instance).
+    fn rm_only(instance: &Value) -> Vec<ValidationMessage> {
+        let mut v = Validator::default();
+        v.rm_invariant_pass(instance, &mut String::new(), Some("COMPOSITION"));
+        v.out
+    }
+
+    /// A minimal archetype-root node carrying an ARCHETYPED block, used to
+    /// isolate the `LOCATABLE` root/link rules from every other invariant.
+    fn root_node(node_id: &str, archetype_id: &str) -> Value {
+        json!({
+            "_type": "SECTION",
+            "name": { "_type": "DV_TEXT", "value": "s" },
+            "archetype_node_id": node_id,
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID", "value": archetype_id },
+                "rm_version": "1.2.0"
+            },
+            "items": [{
+                "_type": "OBSERVATION", "archetype_node_id": "at0001",
+                "name": { "_type": "DV_TEXT", "value": "o" }
+            }]
+        })
+    }
+
+    /// `RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc` §Attributes
+    /// (`archetype_node_id`): "At an archetype root point, the value of this
+    /// attribute is always the stringified form of the `archetype_id` found in
+    /// the `archetype_details` object" — a root whose two archetype identities
+    /// disagree is refused.
+    #[test]
+    fn archetype_root_node_id_mismatch_rejected() {
+        let inst = root_node(
+            "openEHR-EHR-SECTION.other.v1",
+            "openEHR-EHR-SECTION.adhoc.v1",
+        );
+        let msgs = rm_only(&inst);
+        assert!(
+            msgs.iter().any(|m| m.kind == ValidationKind::Invariant
+                && m.message.contains("LOCATABLE.archetype_node_id")),
+            "expected a root node-id identity violation, got {msgs:?}"
+        );
+    }
+
+    /// The accepting twin: the same root whose `archetype_node_id` IS the
+    /// stringified `archetype_details.archetype_id` raises no identity finding.
+    #[test]
+    fn archetype_root_node_id_match_accepted() {
+        let inst = root_node(
+            "openEHR-EHR-SECTION.adhoc.v1",
+            "openEHR-EHR-SECTION.adhoc.v1",
+        );
+        let msgs = rm_only(&inst);
+        assert!(
+            !msgs
+                .iter()
+                .any(|m| m.message.contains("LOCATABLE.archetype_node_id")),
+            "a matching root must not violate the node-id identity rule: {msgs:?}"
+        );
+    }
+
+    /// `locatable.adoc` §Invariants `Links_valid`: `links /= Void implies not
+    /// links.is_empty` — a present-but-empty `links` list is refused on ANY
+    /// LOCATABLE node (the invariant is inherited, so the rule is
+    /// attribute-keyed).
+    #[test]
+    fn links_present_but_empty_rejected() {
+        let mut inst = root_node(
+            "openEHR-EHR-SECTION.adhoc.v1",
+            "openEHR-EHR-SECTION.adhoc.v1",
+        );
+        inst.as_object_mut()
+            .expect("root object")
+            .insert("links".into(), json!([]));
+        let msgs = rm_only(&inst);
+        assert!(
+            msgs.iter()
+                .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Links_valid")),
+            "expected a Links_valid violation, got {msgs:?}"
+        );
+    }
+
+    /// The accepting twin: a non-empty `links` list satisfies `Links_valid`.
+    #[test]
+    fn links_non_empty_accepted() {
+        let mut inst = root_node(
+            "openEHR-EHR-SECTION.adhoc.v1",
+            "openEHR-EHR-SECTION.adhoc.v1",
+        );
+        inst.as_object_mut().expect("root object").insert(
+            "links".into(),
+            json!([{
+                "_type": "LINK",
+                "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+                "type": { "_type": "DV_TEXT", "value": "issue" },
+                "target": { "_type": "DV_EHR_URI", "value": "ehr://example/x" }
+            }]),
+        );
+        let msgs = rm_only(&inst);
+        assert!(
+            !msgs.iter().any(|m| m.message.contains("Links_valid")),
+            "a non-empty links list must not violate Links_valid: {msgs:?}"
         );
     }
 

@@ -132,6 +132,40 @@ cnf.composition.minimal_event.invalid_structure:
     spec_ref: "RM ehr (EVALUATION.data is mandatory, 1..1)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-07-21 by removing the mandatory EVALUATION.data from the real v1 payload (RM ehr: EVALUATION.data 1..1)"
+cnf.composition.minimal_event.root_archetype_id_mismatch:
+  source: fixtures/composition/minimal_event.root_archetype_id_mismatch.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the root archetype_node_id is not the stringified archetype_details.archetype_id"
+    spec_ref: "RM common locatable.adoc §Attributes (archetype_node_id: \"At an archetype root point, the value of this attribute is always the stringified form of the archetype_id found in the archetype_details object\"); RM common master03-archetyped_package.adoc §The LOCATABLE Class"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by changing the root archetype_node_id to openEHR-EHR-COMPOSITION.other.v1 while leaving the ARCHETYPED block naming openEHR-EHR-COMPOSITION.minimal.v1 — one string changed, so the refusal isolates the root node-id identity rule; the invalid twin of the valid cnf.composition.minimal_event.v1"
+cnf.composition.minimal_event.links_empty:
+  source: fixtures/composition/minimal_event.links_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "LOCATABLE.links is present as an empty list at the COMPOSITION root"
+    spec_ref: "RM common locatable.adoc §Invariants (Links_valid: links /= Void implies not links.is_empty)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by adding an explicit empty links list at the root; everything else valid, so the refusal isolates Links_valid"
+cnf.composition.minimal_event.feeder_audit.v1:
+  source: fixtures/composition/minimal_event.feeder_audit.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-01 from cnf.composition.minimal_event.v1 by attaching FEEDER_AUDIT at the COMPOSITION root and a second one on the interior ELEMENT — the granularity RM common master03-archetyped_package.adoc §Structural Correspondence describes (\"separate FEEDER_AUDIT objects may need to be generated for parts of a Composition\"). The root instance populates every modelled FEEDER_AUDIT attribute: originating_system_item_ids, an inline original_content DV_PARSABLE (§Original Content: \"allows the original content item itself to be either included inline or pointed to\"), originating_system_audit and feeder_system_audit, the former carrying FEEDER_AUDIT_DETAILS.other_details as a small ITEM_TREE (\"Optional attribute to carry any custom meta-data\", feeder_audit_details.adoc §Attributes)"
+cnf.composition.minimal_event.feeder_audit.v2:
+  source: fixtures/composition/minimal_event.feeder_audit.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "the v2 content state of cnf.composition.minimal_event.feeder_audit.v1 — cnf.composition.minimal_event.v2 carrying the identical FEEDER_AUDIT pair, so an update can prove the feeder audit is RETAINED across versioning (RM common master03-archetyped_package.adoc §Structural Correspondence: \"when a new version is created, the feeder information is retained as part of the current version\")"
 cnf.composition.minimal_event.territory_invalid:
   source: fixtures/composition/minimal_event.territory_invalid.json
   format: canonical-json
