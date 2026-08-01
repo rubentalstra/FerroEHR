@@ -29,6 +29,7 @@ mod opt14_am14_divergence;
 mod opt14_corpus;
 mod rest_contract;
 mod rm_validation;
+mod shape_tolerance;
 mod spec_vectors;
 mod structured;
 mod tdd;
