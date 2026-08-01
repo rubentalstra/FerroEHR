@@ -1,7 +1,7 @@
 # Conformance Report
 
-SUT: ferroehr 3.15.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.15.0 · verification pack: passed
+SUT: ferroehr 3.15.3 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.15.3 · verification pack: passed
 
 ## Summary
 

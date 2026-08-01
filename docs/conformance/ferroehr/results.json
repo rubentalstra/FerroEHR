@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.15.0"
+    "version": "3.15.3"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.15.0",
+    "version": "3.15.3",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -18,7 +18,7 @@
       "wt-structured"
     ]
   },
-  "ixit_digest": "e3e980f7315ba23c",
+  "ixit_digest": "160895d92245739c",
   "restapi_specs_version": "1.1.0",
   "outcomes": [
     {

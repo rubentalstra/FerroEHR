@@ -4,9 +4,9 @@
 
 | Field | Value |
 | --- | --- |
-| Solution | ferroehr 3.15.0 |
+| Solution | ferroehr 3.15.3 |
 | Vendor | Ruben Talstra |
-| Runner | cnf-runner 3.15.0 |
+| Runner | cnf-runner 3.15.3 |
 | Infrastructure | ixit.json#/environment |
 
 ## Scope of Test
