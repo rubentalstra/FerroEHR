@@ -9,6 +9,8 @@
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
 mod bel_parse;
+mod bmm3_model;
+mod bmm_enumeration_validity;
 mod escape_validation;
 mod lexer_equivalence;
 mod odin_spec_examples;

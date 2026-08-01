@@ -613,6 +613,19 @@ pub fn decision_maps() -> Vec<DeclMap> {
                 .collect(),
         },
         DeclMap {
+            map: "untyped_field",
+            check_existence: true,
+            entries: overrides::UNTYPED_FIELDS
+                .iter()
+                .map(|e| DeclEntry {
+                    key: format!("{}.{}", e.class, e.field),
+                    decision: "adjudicated free-form JSON (serde_json::Value)".to_string(),
+                    citation: e.citation.to_string(),
+                    reason: e.reason.to_string(),
+                })
+                .collect(),
+        },
+        DeclMap {
             map: "field_default",
             check_existence: true,
             entries: overrides::FIELD_DEFAULTS
@@ -714,6 +727,22 @@ pub fn subtype_extensions() -> Vec<(String, String)> {
     overrides::SUBTYPE_EXTENSIONS
         .iter()
         .map(|e| (e.parent.to_string(), e.subtype.to_string()))
+        .collect()
+}
+
+/// The adjudicated free-form (`serde_json::Value`) fields, as
+/// `(class, field, citation)` triples.
+#[must_use]
+pub fn untyped_fields() -> Vec<(String, String, String)> {
+    overrides::UNTYPED_FIELDS
+        .iter()
+        .map(|e| {
+            (
+                e.class.to_string(),
+                e.field.to_string(),
+                e.citation.to_string(),
+            )
+        })
         .collect()
 }
 

@@ -57,6 +57,19 @@ impl PBmmEnumeration {
         enumeration_field!(self, item_values).as_slice()
     }
 
+    /// The inheritance ancestors this persisted enumeration states
+    /// (`P_BMM_CLASS.ancestors`, `org.openehr.lang.bmm_persistence.p_bmm_class.adoc`
+    /// §Attributes).
+    ///
+    /// An enumeration "may have only one ancestor"
+    /// (`LANG/docs/bmm3/master07-core-classes.adoc` §Range-Constrained Classes),
+    /// so this list is the input to that validity rule and to
+    /// [`PBmmEnumeration::underlying_type_name`].
+    #[must_use]
+    pub fn ancestors(&self) -> &[String] {
+        enumeration_field!(self, ancestors).as_slice()
+    }
+
     /// `P_BMM_ENUMERATION.item_documentations`: "Optional documentation strings
     /// for the enumeration items, in the same order as `_item_names_`" (class
     /// doc §Attributes).

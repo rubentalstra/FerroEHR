@@ -4,6 +4,20 @@
 //! normative BEL syntax; `docs/specs/openehr/LANG/docs/BEL/masterAppA-syntax`).
 //! Operator precedence follows that grammar: `implies` < `or` < `xor` < `and` <
 //! `not` < comparison/`matches` < `+ -` < `* / %` < `^` < unary < primary.
+//!
+//! NOTE (adjudicated, cross-spec conflict): that order is **BEL's** — the
+//! `boolean_expr` alternatives of `base_expressions.g4` are listed in ascending
+//! precedence (`SYM_NOT` … `SYM_AND`, `SYM_XOR`, `SYM_OR`, `SYM_IMPLIES`), so
+//! `xor` binds TIGHTER than `or`. The openEHR Expression Language states the
+//! opposite: its Logical Operators table
+//! (`docs/specs/openehr/LANG/docs/EL/master05-expressions.adoc` §Primitive
+//! Operators, "descending precendence order") lists `NOT` > `AND` > `OR` >
+//! `XOR` > `IMPLIES`, and §Precedence and Parentheses makes that table
+//! normative for EL. The two therefore disagree on `a xor b or c`: BEL (and
+//! this parser) reads `(a xor b) or c`, EL reads `a xor (b or c)`. This parser
+//! implements BEL, which is the STABLE spec whose grammar openEHR vendors —
+//! EL is DEVELOPMENT with no vendored grammar. Any future EL parser must take
+//! its precedence from the EL tables and must NOT reuse this ordering.
 
 use crate::bel::{BelBuilder, BelError, BelLiteral};
 use crate::beom::core::operator_kind::OperatorKind;

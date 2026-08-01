@@ -37,8 +37,35 @@ workflow refuses a tag that has no matching section here.
 - **ODIN path extraction.** `OdinValue::paths()` extracts the
   `master05-content` tree-path set (attribute paths, `attr[key]` container
   paths, nested bare-key segments) from any parsed ODIN structure.
+- **The BMM v3 behavioural surface: type lattice, class/feature functions and a
+  v3 materialisation.** `openehr-lang` now answers the `master06-core-types`
+  meta-type lattice (`is_abstract`, `is_primitive`, `type_base_name`,
+  `unitary_type`, `effective_type`, `effective_base_class`,
+  `is_open`/`is_closed`/`is_partially_closed`), the `master07`/`master08` class
+  and feature functions (`BMM_SIMPLE_CLASS.type`, `BMM_GENERIC_CLASS.type` +
+  `generic_parameter_conformance_type`, `has_ancestor_class`, `all_ancestors`,
+  `flat_features`, `BMM_ENUMERATION.name_map`, `signature`, `arity`,
+  `is_boolean`), and materialises a v3 `BMM_MODEL` from a P_BMM schema
+  (`create_bmm3_model`) — which lands three things the v2.x transform cannot: a
+  generic ancestor's parameter substitution, a class's routines and constants, and
+  a `value_constraint` on the type it constrains.
 
 ### Fixed
+
+- **A malformed enumeration is refused instead of loaded silently.** A P_BMM
+  enumeration with more than one ancestor, or with `item_values` that are not 1:1
+  with `item_names`, now fails model materialisation with a typed error
+  (`EnumerationAncestorCount`, `EnumerationItemListsNotOneToOne`) — the two rules
+  `master07-core-classes` §Range-Constrained Classes and the `BMM_ENUMERATION`
+  class definition state. Stating names without values stays valid (the assumed
+  values 0, 1, 2, … apply).
+- **Container literal values are typed on the wire.** `BMM_CONTAINER_VALUE` and
+  `BMM_INDEXED_CONTAINER_VALUE` bound their inherited `type` slot to free-form
+  JSON; they now carry `BMM_CONTAINER_TYPE` / `BMM_INDEXED_CONTAINER_TYPE`, so a
+  container literal's `type` member is a `_type`-tagged container type in
+  canonical JSON instead of an arbitrary value. The two slots openEHR genuinely
+  leaves untyped (`BMM_INTERVAL_VALUE.type`, `EL_CASE.value_constraint`) now carry
+  their adjudication as a generated `NOTE` at the field.
 
 - **The generated LANG model carries both extant BMM generations in full.**
   `openehr-lang` was generated from the two vendored LANG schemas name-merged
