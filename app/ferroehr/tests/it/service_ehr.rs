@@ -269,7 +269,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     );
 
     let original = svc
-        .composition_original_version(ehr_uuid, comp_ovid_v1.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, comp_ovid_v1.parse().expect("ovid"))
         .await
         .expect("original version");
     assert_eq!(original["_type"], "ORIGINAL_VERSION");
@@ -288,7 +288,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         "v1 must not carry preceding_version_uid"
     );
     let original_v2 = svc
-        .composition_original_version(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
         .await
         .expect("original version v2");
     assert_eq!(original_v2["preceding_version_uid"]["value"], comp_ovid_v1);
@@ -387,7 +387,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let parts: Vec<&str> = comp_ovid_v2.split("::").collect();
     let deleted_ovid = format!("{}::{}::3", parts[0], parts[1]);
     let deleted_version = svc
-        .composition_original_version(ehr_uuid, deleted_ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, deleted_ovid.parse().expect("ovid"))
         .await
         .expect("deleted version wrapper");
     assert_eq!(
@@ -913,7 +913,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     // The stored ORIGINAL_VERSION echoes the client's change type verbatim
     // (code 250 + rubric "amendment"), not a rewritten "modification".
     let version = svc
-        .composition_original_version(ehr_uuid, ovid_v2.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, ovid_v2.parse().expect("ovid"))
         .await
         .expect("amended version");
     assert_eq!(
@@ -2563,7 +2563,7 @@ async fn the_bootstrap_ehr_status_version_has_no_preceding_version_uid() {
 
     let vo_id = parts[0].parse().expect("versioned-object uuid");
     let original_v1 = svc
-        .ehr_status_original_version(ehr_uuid, vo_id, parts[2])
+        .ehr_status_version_envelope(ehr_uuid, vo_id, parts[2])
         .await
         .expect("bootstrap ORIGINAL_VERSION");
     assert_eq!(original_v1["_type"], "ORIGINAL_VERSION");
@@ -2589,7 +2589,7 @@ async fn the_bootstrap_ehr_status_version_has_no_preceding_version_uid() {
         .expect("status v2");
     let parts_v2: Vec<&str> = ovid_v2.split("::").collect();
     let original_v2 = svc
-        .ehr_status_original_version(
+        .ehr_status_version_envelope(
             ehr_uuid,
             parts_v2[0].parse().expect("versioned-object uuid"),
             parts_v2[2],

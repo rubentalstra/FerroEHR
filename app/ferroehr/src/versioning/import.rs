@@ -3,22 +3,31 @@
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Copying / §Committal
 //! and Audits. Each received original is committed locally wrapped in an
-//! `IMPORTED_VERSION` whose **own** contribution records the local act of
-//! committal, while the wrapped original — its 3-part identity, `commit_audit`,
-//! `lifecycle_state`, data, `signature`, `attestations` — is preserved verbatim
-//! ("the `ORIGINAL_VERSION` instance is never modified", master06 §Copying).
+//! `IMPORTED_VERSION`, and the two acts are stored side by side exactly as
+//! §Committal and Audits requires: "Both the contribution and `commit_audit` of
+//! the latter object correspond to the local act of committal, while the
+//! knowledge of the original Contribution and committal are retained inside the
+//! wrapped `ORIGINAL_VERSION` instance."
 //!
-//! NOTE (master06 §Committal): the greenfield store holds one row per
-//! version (identity + `commit_audit` + data), not a distinct
-//! `IMPORTED_VERSION` wrapper object; the served form is the `ORIGINAL_VERSION`.
-//! The "import" is expressed as (a) the preserved original `commit_audit` +
-//! 3-part version identity and (b) a fresh local import CONTRIBUTION recording
-//! the local committal — which is exactly what an `IMPORTED_VERSION`'s own
-//! contribution/`commit_audit` denote. master06 §Committal sanctions a
-//! non-distributed holder keeping only the `ORIGINAL_VERSION` content; the one
-//! visible deviation is that the served `ORIGINAL_VERSION.contribution`
-//! references the local import contribution, not the (foreign) source
-//! contribution.
+//! Concretely, per imported version row:
+//!
+//! * the LOCAL act — `contribution_id` (the one fresh import CONTRIBUTION),
+//!   `audit_id` (its `AUDIT_DETAILS`: this server's `system_id`, the importing
+//!   committer, the server-computed import instant, `249|creation|` per
+//!   §Contributions "import of item"), and the wrapper's own `signature`;
+//! * the FOREIGN act — the wrapped original's own `contribution` `OBJECT_REF`,
+//!   `commit_audit` (with its source `time_committed`) and `signature`, held
+//!   verbatim in `vo_version.wrapped_original`, beside its unchanged 3-part
+//!   identity, `lifecycle_state`, data and `attestations` ("the
+//!   `ORIGINAL_VERSION` instance is never modified", §Copying).
+//!
+//! Keeping the LOCAL act in the row's own audit is what makes §Copying's
+//! chronology rule hold for this store: "the commit times always reflect the
+//! local (more recent) act of committal, not the original committal … rather
+//! than giving the illusion that recently copied Versions were there earlier
+//! than the time of local committal" — so `VERSIONED_OBJECT.time_created`, the
+//! `Last-Modified` header and every as-of-instant read are computed from the
+//! import, never from the source system's clock.
 
 use serde_json::Value;
 use sqlx::PgConnection;
@@ -26,10 +35,10 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
-use crate::storage::codec::decompose;
-use crate::versioning::Kind;
+use crate::storage::codec::{decompose, reassemble};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::TreeId;
+use crate::versioning::{Kind, SigningCtx};
 
 /// A lineage key: the trunk (`("", 0, 0)`) or one specific branch of one system
 /// (`(creating_system_id, trunk_version, branch_number)`). Versions on the same
@@ -93,10 +102,13 @@ pub(crate) struct ImportVersion {
     pub(crate) other_input_version_uids: Vec<String>,
     /// The wrapped original's resolved `version_lifecycle_state` code.
     pub(crate) lifecycle_state: String,
-    /// The wrapped original's `commit_audit`, preserved verbatim.
-    pub(crate) commit_audit: AuditInput,
-    /// The wrapped original's `commit_audit.time_committed`, preserved verbatim.
-    pub(crate) commit_time: jiff::Timestamp,
+    /// The wrapped original's own `VERSION.contribution` `OBJECT_REF` (1..1) —
+    /// a reference into the SOURCE system's contribution set, preserved
+    /// verbatim (master06 §Committal and Audits).
+    pub(crate) contribution: Value,
+    /// The wrapped original's `commit_audit`, preserved verbatim as the
+    /// canonical `AUDIT_DETAILS` fragment received.
+    pub(crate) commit_audit: Value,
     /// The version data (`Value::Null` for a `523|deleted|` version — no nodes).
     pub(crate) data: Value,
     /// The wrapped original's `VERSION.signature` (preserved, never re-signed).
@@ -104,6 +116,24 @@ pub(crate) struct ImportVersion {
     /// The wrapped original's `ATTESTATION`s (already full RM objects),
     /// preserved.
     pub(crate) attestations: Vec<Value>,
+}
+
+/// The `vo_version.wrapped_original` fragment for one received original: its
+/// own `contribution`, `commit_audit` and (optional) `signature`, verbatim —
+/// "the knowledge of the original Contribution and committal are retained
+/// inside the wrapped `ORIGINAL_VERSION` instance" (master06 §Committal and
+/// Audits).
+fn wrapped_fragment(version: &ImportVersion) -> Value {
+    let mut fragment = serde_json::json!({
+        "contribution": version.contribution,
+        "commit_audit": version.commit_audit,
+    });
+    if let Some(signature) = &version.signature
+        && let Value::Object(map) = &mut fragment
+    {
+        map.insert("signature".to_owned(), Value::String(signature.clone()));
+    }
+    fragment
 }
 
 impl ImportVersion {
@@ -139,20 +169,12 @@ pub(crate) struct ImportContainer {
 /// [`ServiceError::Conflict`]; plus decompose/storage write errors.
 pub(crate) async fn commit_import(
     tx: &mut PgConnection,
+    ctx: &SigningCtx<'_>,
     ehr_id: EhrId,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
-    outbox_enabled: bool,
 ) -> Result<Uuid, ServiceError> {
-    commit_import_scoped(
-        tx,
-        Some(ehr_id),
-        import_audit,
-        containers,
-        false,
-        outbox_enabled,
-    )
-    .await
+    commit_import_scoped(tx, ctx, Some(ehr_id), import_audit, containers, false).await
 }
 
 /// Land demographics-chapter parties into the demographic repository under their
@@ -165,9 +187,9 @@ pub(crate) async fn commit_import(
 /// the containers that do not already exist locally.
 pub(crate) async fn commit_demographic_import(
     tx: &mut PgConnection,
+    ctx: &SigningCtx<'_>,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
-    outbox_enabled: bool,
 ) -> Result<(), ServiceError> {
     if containers.is_empty() {
         return Ok(());
@@ -182,7 +204,7 @@ pub(crate) async fn commit_demographic_import(
     if fresh.is_empty() {
         return Ok(());
     }
-    commit_import_scoped(tx, None, import_audit, fresh, true, outbox_enabled).await?;
+    commit_import_scoped(tx, ctx, None, import_audit, fresh, true).await?;
     Ok(())
 }
 
@@ -190,8 +212,10 @@ pub(crate) async fn commit_demographic_import(
 /// imported container are committed in the single local import act, so they get
 /// a synthetic strictly-increasing local `sys_period` chain (base = import time,
 /// 1 µs steps) **per lineage** with only each lineage's highest version open.
-/// The true source chronology is preserved in each version's
-/// `commit_audit.time_committed`.
+/// That is exactly §Copying's rule that "the commit times always reflect the
+/// local (more recent) act of committal"; the source chronology is not lost but
+/// moved inside the wrapped `ORIGINAL_VERSION`, where §Committal and Audits
+/// puts it.
 #[expect(
     clippy::too_many_lines,
     reason = "one linear import transaction; splitting it would obscure the \
@@ -199,20 +223,29 @@ pub(crate) async fn commit_demographic_import(
 )]
 async fn commit_import_scoped(
     tx: &mut PgConnection,
+    ctx: &SigningCtx<'_>,
     ehr_id: Option<EhrId>,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
     skip_existing: bool,
-    outbox_enabled: bool,
 ) -> Result<Uuid, ServiceError> {
     // One instant anchors the whole import's temporal chain — the DATABASE
     // transaction timestamp (returned by the audit insert), never the app
     // clock: under app↔DB skew an app-clock base could close an existing open
     // lineage at an instant before that row's lower bound (an invalid
     // tstzrange) and diverge from the audit's `import_time`.
+    //
+    // This ONE audit row is the local act of committal for the CONTRIBUTION and
+    // for every IMPORTED_VERSION it carries: master06 §Committal and Audits
+    // requires the CONTRIBUTION audit's `system_id`, `committer` and
+    // `time_committed` to be "copied into the corresponding attributes of the
+    // `commit_audit` of each VERSION included in the CONTRIBUTION", and an
+    // import's per-version `change_type` is uniformly `249|creation|`
+    // (§Contributions, "import of item"), so the copy is the row itself.
     let (contribution_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
     let base = import_time;
+    let local_commit_audit = import_audit.canonical(&import_time)?;
     let contribution_id = crate::storage::version_repo::commit::insert_contribution(
         tx,
         ehr_id,
@@ -306,12 +339,15 @@ async fn commit_import_scoped(
         for (i, version) in versions.iter().enumerate() {
             ordinal += 1;
             // PHI-free outbox entry: identity + provenance only; no template_id.
+            // The announced `change_type` is the LOCAL act's — an import commits
+            // every wrapped original as `249|creation|` (master06 §Contributions,
+            // "import of item").
             outbox_versions.push(serde_json::json!({
                 "vo_id": container.vo_id,
                 "kind": container.kind.as_str(),
                 "sys_version": ordinal,
                 "version_tree_id": version.tree.to_string(),
-                "change_type": version.commit_audit.change_type,
+                "change_type": import_audit.change_type,
                 "template_id": Value::Null,
             }));
             // Synthetic strictly-increasing local period; the next version ON
@@ -326,15 +362,64 @@ async fn commit_import_scoped(
                         i64::try_from(i + 1 + offset).unwrap_or(0),
                     )
                 });
-            // Preserves the source commit time verbatim — master06 §Copying
-            // ("the ORIGINAL_VERSION instance is never modified").
-            let audit_id = crate::storage::version_repo::commit::insert_audit_at(
-                tx,
-                &version.commit_audit.row(),
-                version.commit_time,
-            )
-            .await?;
             let (trunk_version, branch_number, branch_version) = version.tree.columns();
+            // The wrapped ORIGINAL_VERSION, reproduced exactly as received: its
+            // own contribution reference, commit audit (with the SOURCE
+            // `time_committed`) and signature, beside the identity/lifecycle/
+            // data columns the row already carries. master06 §Copying: "the
+            // `ORIGINAL_VERSION` instance is never modified — it remains a
+            // faithful copy of its original".
+            let wrapped_original = wrapped_fragment(version);
+            // The content, decomposed once: the node rows to write AND — through
+            // `reassemble` — the exact bytes a later read will serve. The
+            // wrapper is signed over THOSE, never over the received JSON, so
+            // commit-time and read-time canonical forms are identical by
+            // construction (the same rule the local commit path follows).
+            let rows = if version.data.is_null() {
+                Vec::new()
+            } else {
+                decompose(version.data.clone())?
+            };
+            let served = if rows.is_empty() {
+                Value::Null
+            } else {
+                reassemble(&rows)?
+            };
+            // The wrapper's own signature, "which signifies the act of
+            // importing and making available locally an `ORIGINAL_VERSION` from
+            // another system" (master06 §Digital Signature). Signed over the
+            // same IMPORTED_VERSION value the read path rebuilds.
+            let item = crate::versioning::wire::build_original_version(
+                &crate::versioning::wire::OriginalVersionParts {
+                    creating_system_id: &version.creating_system_id,
+                    vo_id: container.vo_id,
+                    tree: version.tree,
+                    preceding_version_uid: version.preceding_version_uid.as_deref(),
+                    other_input_version_uids: &version.other_input_version_uids,
+                    contribution: &version.contribution,
+                    commit_audit: &version.commit_audit,
+                    lifecycle_state: &version.lifecycle_state,
+                    data: &served,
+                    // The received original's own attestations are attributes
+                    // of `item`, so they ride inside the wrapper's signed form:
+                    // master06 §Digital Signature says of an IMPORTED_VERSION
+                    // that "all attributes of the object are serialised and then
+                    // used to generate a signature". They are the version's
+                    // at-committal attestations for this repository — nothing
+                    // else can be, since the local act of importing supplies no
+                    // attestations of its own (an import replays received
+                    // ORIGINAL_VERSIONs; §Copying: "the `ORIGINAL_VERSION`
+                    // instance is never modified").
+                    attestations: &version.attestations,
+                    signature: version.signature.as_deref(),
+                },
+            );
+            let signature = crate::versioning::integrity::sign_imported_version(
+                ctx,
+                contribution_id,
+                &local_commit_audit,
+                &item,
+            )?;
             crate::storage::version_repo::import::insert_imported_vo_version(
                 tx,
                 &crate::storage::version_repo::import::ImportedVersionRow {
@@ -350,16 +435,16 @@ async fn commit_import_scoped(
                     preceding_version_uid: version.preceding_version_uid.as_deref(),
                     other_input_version_uids: &version.other_input_version_uids,
                     contribution_id,
-                    audit_id,
-                    signature: version.signature.as_deref(),
+                    audit_id: contribution_audit_id,
+                    signature: signature.as_deref(),
+                    wrapped_original: &wrapped_original,
                     lower,
                     upper,
                 },
             )
             .await?;
             // A `523|deleted|` version stores no node rows (data is Void).
-            if !version.data.is_null() {
-                let rows = decompose(version.data.clone())?;
+            if !rows.is_empty() {
                 crate::storage::node_repo::write_nodes(tx, container.vo_id, ordinal, ehr_id, &rows)
                     .await?;
             }
@@ -369,13 +454,16 @@ async fn commit_import_scoped(
                     container.vo_id,
                     ordinal,
                     contribution_id,
+                    // At committal: these rode in with the original and are
+                    // inside the wrapper signature computed just above.
+                    true,
                     attestation,
                 )
                 .await?;
             }
         }
     }
-    if outbox_enabled && !outbox_versions.is_empty() {
+    if ctx.outbox_enabled && !outbox_versions.is_empty() {
         crate::storage::version_repo::commit::write_outbox(
             tx,
             contribution_id,

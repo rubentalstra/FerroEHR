@@ -70,10 +70,15 @@
 //! (`template_store` OPTs via `vo_version.template_id`, `stored_query`) are NOT
 //! carried — they are provisioned through the DEFINITION API and must pre-exist
 //! (a COMPOSITION referencing an absent template fails its FK on load, reported
-//! per EHR). Demographic parties (ehr-less versioned objects) and standalone
+//! per EHR). Demographic parties (ehr-less versioned objects) and
 //! `vo_attestation` rows are out of this EHR-scoped dump; a whole-repository
-//! back-up would need a demographic dump wave (deferred). The verbatim
-//! version-row re-persist is a storage seam
+//! back-up would need a demographic dump wave (deferred).
+//! TODO(#1685): carry the `vo_attestation` rows (with their `at_committal`
+//! flag) — an at-committal attestation is inside the version's signed canonical
+//! form (RM common master06 §Digital Signature: "serialising the entire Version
+//! object"), so restoring the version's `signature` without its attestations
+//! leaves a restored version whose signature cannot verify.
+//! The verbatim version-row re-persist is a storage seam
 //! ([`crate::storage::version_repo::import::insert_version_verbatim`]); this module
 //! keeps the archive format and orchestration.
 //!
@@ -110,7 +115,7 @@ use crate::storage::codec::decompose;
 use crate::storage::{node_repo, version_repo};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
-use crate::versioning::wire::build_original_version;
+use crate::versioning::wire::{OriginalVersionParts, build_original_version, contribution_ref};
 
 /// Lifecycle-state code of a logically-deleted version (RM common master06
 /// §Logical Deletion) — such versions store no `node` rows, so their exported
@@ -229,6 +234,12 @@ struct VersionRecord {
     #[serde(default)]
     signature_client_supplied: bool,
     creating_system_id: String,
+    /// The wrapped `ORIGINAL_VERSION`'s own `{contribution, commit_audit,
+    /// signature?}` on an `IMPORTED_VERSION` row (RM common master06 §Committal
+    /// and Audits), `None` on a locally created version. `#[serde(default)]` so
+    /// archives dumped before this member existed load as local originals.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    wrapped_original: Option<Value>,
     /// The reassembled canonical openEHR JSON, INLINE — the
     /// `openehr_canonical_json` payload form. `Value::Null` (serialized as an
     /// absent key) for a logically-deleted version, which stores no node rows,
@@ -566,45 +577,86 @@ fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
 /// the same object, not two renderings of it.
 ///
 /// `audit` is the record's `audit` row the version's `audit_id` names (RM
-/// common master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1).
-/// Attestations are deliberately absent: they are appended after committal and
-/// this EHR-scoped dump carries no `vo_attestation` rows (the module docs).
+/// common master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1) —
+/// used only for a locally created version; an imported one renders the WRAPPED
+/// original's own foreign provenance instead (§Committal and Audits).
+/// Attestations are absent because this EHR-scoped dump carries no
+/// `vo_attestation` rows at all (the module docs).
 ///
 /// # Errors
 /// [`ServiceError::Internal`] when the archived audit carries a commit time
-/// that is not an RFC 3339 instant; the [`build_original_version`] rejection
-/// when its committer is not a canonical `PARTY_PROXY`.
+/// that is not an RFC 3339 instant, or an imported record's wrapped original is
+/// missing a mandatory `VERSION` attribute; the [`AuditInput::canonical`]
+/// rejection when the committer is not a canonical `PARTY_PROXY`.
 fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Value, ServiceError> {
-    let time_committed: jiff::Timestamp = audit.time_committed.parse().map_err(|e| {
-        ServiceError::Internal(format!(
-            "audit {} carries an uninterpretable commit time {:?}: {e}",
-            audit.id, audit.time_committed
-        ))
-    })?;
     let other_input_version_uids: Vec<String> = v
         .other_input_version_uids
         .as_ref()
         .and_then(|value| serde_json::from_value(value.clone()).ok())
         .unwrap_or_default();
-    build_original_version(
-        &v.creating_system_id,
-        v.vo_id,
-        TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version),
-        v.preceding_version_uid.as_deref(),
-        &other_input_version_uids,
-        v.contribution_id,
-        &AuditInput {
+    let tree = TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version);
+    // An IMPORTED_VERSION row's document is the WRAPPED original — its own
+    // foreign contribution / commit_audit / signature — because that, not the
+    // local wrapper, is what an `<version>` document of this version is
+    // (RM common master06 §Committal and Audits); the local act rides the
+    // record's own columns and is restored from them on load.
+    let (contribution, commit_audit, signature) = if let Some(wrapped) = &v.wrapped_original {
+        (
+            wrapped.get("contribution").cloned().ok_or_else(|| {
+                ServiceError::Internal(format!(
+                    "version {} of {} is imported but its wrapped ORIGINAL_VERSION carries no \
+                     contribution",
+                    v.sys_version, v.vo_id
+                ))
+            })?,
+            wrapped.get("commit_audit").cloned().ok_or_else(|| {
+                ServiceError::Internal(format!(
+                    "version {} of {} is imported but its wrapped ORIGINAL_VERSION carries no \
+                     commit_audit",
+                    v.sys_version, v.vo_id
+                ))
+            })?,
+            wrapped
+                .get("signature")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+        )
+    } else {
+        let time_committed: jiff::Timestamp = audit.time_committed.parse().map_err(|e| {
+            ServiceError::Internal(format!(
+                "audit {} carries an uninterpretable commit time {:?}: {e}",
+                audit.id, audit.time_committed
+            ))
+        })?;
+        let commit_audit = AuditInput {
             system_id: audit.system_id.clone(),
             change_type: audit.change_type.clone(),
             description: audit.description.clone(),
             committer: audit.committer.clone(),
             attestation: audit.attestation.clone(),
-        },
-        &time_committed,
-        &v.lifecycle_state,
-        &v.body,
-        v.signature.as_deref(),
-    )
+        }
+        .canonical(&time_committed)?;
+        (
+            contribution_ref(v.contribution_id),
+            commit_audit,
+            v.signature.clone(),
+        )
+    };
+    Ok(build_original_version(&OriginalVersionParts {
+        creating_system_id: &v.creating_system_id,
+        vo_id: v.vo_id,
+        tree,
+        preceding_version_uid: v.preceding_version_uid.as_deref(),
+        other_input_version_uids: &other_input_version_uids,
+        contribution: &contribution,
+        commit_audit: &commit_audit,
+        lifecycle_state: &v.lifecycle_state,
+        data: &v.body,
+        // The archive carries no `vo_attestation` rows, so no version document
+        // can render an `attestations` list (module docs).
+        attestations: &[],
+        signature: signature.as_deref(),
+    }))
 }
 
 /// Serialize an `ORIGINAL_VERSION` envelope as a canonical-XML document under
@@ -1114,7 +1166,8 @@ impl FerroEhrService {
             "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
              preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
              upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
-             template_id, signature, signature_client_supplied, creating_system_id \
+             template_id, signature, signature_client_supplied, creating_system_id, \
+             wrapped_original \
              FROM vo_version WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
         )
         .bind(ehr_id)
@@ -1149,6 +1202,7 @@ impl FerroEhrService {
                 signature: r.try_get("signature")?,
                 signature_client_supplied: r.try_get("signature_client_supplied")?,
                 creating_system_id: r.try_get("creating_system_id")?,
+                wrapped_original: r.try_get("wrapped_original")?,
                 body,
                 // Filled in by `externalize_version_documents` when the export
                 // is `openehr_canonical_xml`.
@@ -1419,6 +1473,7 @@ async fn insert_version(
             signature: v.signature.as_deref(),
             signature_client_supplied: v.signature_client_supplied,
             creating_system_id: &v.creating_system_id,
+            wrapped_original: v.wrapped_original.as_ref(),
         },
     )
     .await?;

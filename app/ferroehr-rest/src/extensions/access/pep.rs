@@ -849,7 +849,7 @@ mod tests {
         );
         assert_eq!(version_of(uid), Some("2".to_owned()));
         // A branch VERSION_TREE_ID is carried whole (RM common master06
-        // §Version tree).
+        // §The 'Virtual Version Tree').
         assert_eq!(
             version_of("0197f1c2-3aa0-7000-8000-000000000001::sys::2.1.3"),
             Some("2.1.3".to_owned())

@@ -9,4 +9,7 @@ pub mod version;
 pub mod versioned_object;
 
 // hand-written modules (spec behaviour), auto-declared:
+pub mod imported_version_impl;
+pub mod original_version_impl;
 pub mod version_impl;
+pub mod versioned_object_impl;

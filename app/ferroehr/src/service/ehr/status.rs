@@ -23,7 +23,7 @@ use crate::versioning::audit::change_type;
 use crate::versioning::change::update;
 use crate::versioning::object_version_id::{TreeId, expected_from_if_match, parse_tree_id};
 use crate::versioning::read::{read_current, read_version, version_at};
-use crate::versioning::wire::{original_version, revision_history, versioned_object};
+use crate::versioning::wire::{revision_history, version_envelope, versioned_object};
 
 use super::ensure_if_match;
 use crate::service::datetime::parse_at_time;
@@ -256,7 +256,10 @@ impl FerroEhrService {
         ))
     }
 
-    /// An `ORIGINAL_VERSION` of an `EHR_STATUS` at a specific version.
+    /// The VERSION envelope of an `EHR_STATUS` at a specific version — an
+    /// `ORIGINAL_VERSION`, or an `IMPORTED_VERSION` when the version was
+    /// received from another system (RM common master06 §Version and its
+    /// Subtypes).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the version does not exist or belongs to
@@ -276,10 +279,10 @@ impl FerroEhrService {
                     format!("EHR_STATUS {vo_id} v{version}"),
                 )
             })?;
-        original_version(&read, self.signer())
+        version_envelope(&read, self.signer())
     }
 
-    /// The `ORIGINAL_VERSION` of an EHR's `EHR_STATUS` extant at `at`, or the
+    /// The VERSION envelope of an EHR's `EHR_STATUS` extant at `at`, or the
     /// latest when `at` is `None` (`GET …/versioned_ehr_status/version`). The metadata carries the `version_uid` for the
     /// `200_VERSION_at_time` `ETag`/`Location`.
     ///
@@ -317,7 +320,7 @@ impl FerroEhrService {
             read.tree,
             read.time_committed,
         );
-        let ov = original_version(&read, self.signer())?;
+        let ov = version_envelope(&read, self.signer())?;
         Ok(ServiceResponse::new(ov, meta))
     }
 
@@ -752,7 +755,7 @@ impl FerroEhrService {
         Ok(self.status_revision_history(an_ehr_id).await?.body)
     }
 
-    /// The `ORIGINAL_VERSION` of the EHR's `EHR_STATUS` extant at `a_time`, or
+    /// The VERSION envelope of the EHR's `EHR_STATUS` extant at `a_time`, or
     /// the latest when `a_time` is `None`
     /// (`GET …/versioned_ehr_status/version`).
     ///
@@ -768,13 +771,13 @@ impl FerroEhrService {
         Ok(self.status_version_at_time(an_ehr_id, at).await?.body)
     }
 
-    /// The `ORIGINAL_VERSION` of an `EHR_STATUS` at a specific version
+    /// The VERSION envelope of an `EHR_STATUS` at a specific version
     /// (`GET …/versioned_ehr_status/version/{version_uid}`).
     ///
     /// # Errors
     /// [`SmError`] for a malformed version id, an unknown version
     /// (404-equivalent), or a read failure.
-    pub async fn ehr_status_original_version(
+    pub async fn ehr_status_version_envelope(
         &self,
         an_ehr_id: EhrId,
         a_version_uid: VoId,

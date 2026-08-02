@@ -135,7 +135,7 @@ async fn create_ehr(svc: &FerroEhrService) -> String {
 
 /// Read the served `ORIGINAL_VERSION` of a composition version.
 async fn read_version(svc: &FerroEhrService, ehr_id: &str, _vo: &str, ovid: &str) -> Value {
-    svc.composition_original_version(
+    svc.composition_version_envelope(
         ehr_id.parse().expect("ehr uuid"),
         ovid.parse().expect("ovid"),
     )

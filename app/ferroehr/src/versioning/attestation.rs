@@ -7,8 +7,28 @@
 //! be added at any time after committal" and a `666|attestation|` member of a
 //! CONTRIBUTION adds **no** new version. Attestations of an old version are not
 //! valid for a new version (they are keyed to `(vo_id, sys_version)` and never
-//! copied forward), and they are not part of the version's signed canonical
-//! form (added after signing).
+//! copied forward).
+//!
+//! NOTE (which attestations the `VERSION.signature` covers, master06 §Digital
+//! Signature + §Attestation): the two arrival routes stand on opposite sides of
+//! the signature.
+//!
+//! * Committed WITH the version (`UPDATE_VERSION.attestations` — SM
+//!   `UML/classes/update_version.adoc` §Attributes; master06 §Attestation,
+//!   "Signing content at committal"): these are attributes of the Version at the
+//!   moment it is serialised, and §Digital Signature signs "the entire Version
+//!   object (note that the signature attribute will be Void at this point)" —
+//!   `signature` is the ONLY exclusion. They are therefore completed BEFORE the
+//!   signature is computed ([`complete_accompanying`]) and stored with
+//!   `at_committal = true`, so the bytes signed at commit are the bytes served
+//!   at read.
+//! * Added afterwards (the `666|attestation|` CONTRIBUTION member, [`attest`];
+//!   §Attestation: "Attestations can be added at any time after committal of the
+//!   content being attested"; §Contributions: "a new `ATTESTATION` is added to
+//!   the attestations list of an **existing** `ORIGINAL_VERSION`"): these
+//!   necessarily post-date the signature, so they are stored with
+//!   `at_committal = false` and appended to the served version AFTER
+//!   verification, never entering its canonical form.
 
 use openehr_rm::prelude::{Attestation, DvEhrUri, DvMultimedia, DvText};
 use serde_json::Value;
@@ -86,6 +106,11 @@ pub(crate) async fn attest(
         vo_id,
         target.sys_version,
         contribution_id,
+        // AFTER committal by construction: this route attaches to a version
+        // that already exists (master06 §Contributions, "an existing
+        // `ORIGINAL_VERSION`"), so the attestation post-dates that version's
+        // signature and stays outside its canonical form.
+        false,
         attestation,
     )
     .await?;
@@ -97,6 +122,10 @@ pub(crate) async fn attest(
         kind,
         // A 666 attestation adds no new version; it is announced in the
         // contribution's outbox envelope as a change to the existing version.
+        // The code lives on the ATTESTATION's OWN inherited `change_type`, not
+        // on a `commit_audit` it does not have (register AMB-190 — the
+        // §Contributions row's `ATTESTATION._commit_audit_._change_type_` path
+        // names no attribute of the class).
         change_type: change_type::ATTESTATION.to_owned(),
         template_id: None,
         // The contribution's commit-act time — a 666 attestation adds no new
@@ -105,37 +134,50 @@ pub(crate) async fn attest(
     })
 }
 
-/// Complete + persist the attestations committed together with a NEW version
+/// Complete the attestations committed together with a NEW version
 /// (`UPDATE_VERSION.attestations`; master06 §Attestation "Signing content at
-/// committal"). Each partial `UPDATE_ATTESTATION` is completed into a full RM
-/// `ATTESTATION` and attached to the just-written version — same transaction.
+/// committal") into full canonical RM `ATTESTATION`s.
+///
+/// This runs BEFORE the version's signature is computed, and its output is both
+/// what gets signed and what gets stored ([`insert_at_committal_attestations`])
+/// — one completion, so the signed bytes and the served bytes cannot drift
+/// (master06 §Digital Signature).
 ///
 /// # Errors
-/// The [`complete_attestation`] `Unprocessable` rejections; the storage error
-/// of the attestation insert.
-#[expect(
-    clippy::too_many_arguments,
-    reason = "the parts of an ATTESTATION plus its target version; a parameter \
-              struct would not read clearer at the one call site"
-)]
-pub(crate) async fn insert_accompanying_attestations(
+/// The [`complete_attestation`] `Unprocessable` rejections.
+pub(crate) fn complete_accompanying(
+    partials: &[Value],
+    system_id: &str,
+    committer_fallback: &Value,
+    now: jiff::Timestamp,
+) -> Result<Vec<Value>, ServiceError> {
+    partials
+        .iter()
+        .map(|partial| complete_attestation(partial, system_id, committer_fallback, now))
+        .collect()
+}
+
+/// Persist the already-completed attestations of a just-written version, marked
+/// `at_committal` — they are inside that version's signed canonical form
+/// (master06 §Digital Signature; see the module docs).
+///
+/// # Errors
+/// The storage error of the attestation insert.
+pub(crate) async fn insert_at_committal_attestations(
     tx: &mut PgConnection,
     vo_id: VoId,
     sys_version: i32,
     contribution_id: Uuid,
-    system_id: &str,
-    committer_fallback: &Value,
-    now: jiff::Timestamp,
-    partials: &[Value],
+    completed: &[Value],
 ) -> Result<(), ServiceError> {
-    for partial in partials {
-        let full = complete_attestation(partial, system_id, committer_fallback, now)?;
+    for full in completed {
         crate::storage::version_repo::attestation::insert_attestation(
             tx,
             vo_id,
             sys_version,
             contribution_id,
-            &full,
+            true,
+            full,
         )
         .await?;
     }
@@ -231,7 +273,14 @@ impl AttestationParts {
         // exactly that: `List<DV_EHR_URI>` typing plus `Items_valid`, and NO
         // containment check — a cross-system path is accepted verbatim.
         // Register entry AMB-180.
-        let items = partial.get("items");
+        //
+        // A JSON `null` is the ABSENT encoding of an optional attribute, not a
+        // present-but-invalid list — the same reading `attested_view` and
+        // `proof` below already apply, and the one the native `UPDATE_VERSION`
+        // DTO emits for `Option::None`. So it is filtered out before
+        // `Items_valid` is evaluated; a present-but-EMPTY list (`[]`) still
+        // fails, which is what the invariant actually forbids.
+        let items = partial.get("items").filter(|v| !v.is_null());
         if let Some(items) = items
             && items.as_array().is_none_or(Vec::is_empty)
         {
@@ -641,6 +690,32 @@ mod tests {
             matches!(&err, ServiceError::Unprocessable(m) if m.contains("Reason_valid")),
             "got {err:?}"
         );
+    }
+
+    /// A JSON `null` `items` is the ABSENT encoding of the 0..1 attribute, so
+    /// it is accepted and yields no list — `ATTESTATION.Items_valid` (`items
+    /// /= Void implies not items.is_empty`) constrains a PRESENT list, and
+    /// Void is exactly what a null spells. This is the shape the native
+    /// `UPDATE_VERSION.attestations` DTO emits for `Option::None`, so a
+    /// rejection here would make the at-committal attestation route
+    /// unreachable through the typed API.
+    #[test]
+    fn null_items_is_absent_not_invalid() {
+        let att = complete_attestation(
+            &json!({
+                "reason": { "_type": "DV_TEXT", "value": "witness" },
+                "is_pending": false,
+                "items": Value::Null,
+                "proof": Value::Null,
+                "attested_view": Value::Null,
+                "description": Value::Null
+            }),
+            "ferroehr.local",
+            &committer(),
+            now(),
+        )
+        .expect("a null optional is absent, not invalid");
+        assert_eq!(att.get("items"), None, "no items list is serialized");
     }
 
     /// A present-but-empty `items` list is refused (`ATTESTATION.Items_valid`:

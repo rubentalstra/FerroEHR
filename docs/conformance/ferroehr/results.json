@@ -4594,6 +4594,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-reexport_of_an_import",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-unauthenticated",
       "status": "passed",
       "rows_driven": 1,
@@ -4601,6 +4607,12 @@
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-duplicate",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr-local_chronology",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5129,6 +5141,13 @@
     },
     {
       "case": "SIG-VERSION-across_version_kinds",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SIG-VERSION-at_committal_attestation_signed",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

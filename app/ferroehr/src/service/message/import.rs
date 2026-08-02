@@ -56,17 +56,15 @@ use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
 use crate::versioning::Kind;
-use crate::versioning::attestation::AttestationParts;
-use crate::versioning::audit::AuditInput;
-use crate::versioning::audit::{
-    change_type, change_type_code, decode_description, description_fragment,
-};
+use crate::versioning::audit::{change_type, change_type_code};
 use crate::versioning::import::{
     ImportContainer, ImportVersion, commit_demographic_import, commit_import,
 };
 use crate::versioning::lifecycle;
 use crate::versioning::lifecycle::lifecycle_state_code;
 use crate::versioning::object_version_id::parse_object_version_id;
+use openehr_base::prelude::ObjectRef;
+use openehr_rm::common::generic::audit_details::AuditDetails;
 use openehr_rm::ehr_extract::common::extract::Extract;
 
 impl FerroEhrService {
@@ -140,10 +138,10 @@ impl FerroEhrService {
             ));
         }
         let audit = self.audit(change_type::CREATION, "EHR Extract import");
-        let outbox_enabled = self.outbox_enabled();
+        let signing = self.signing_ctx();
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
-        commit_import(&mut tx, ehr_id, &audit, containers, outbox_enabled).await?;
-        commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
+        commit_import(&mut tx, &signing, ehr_id, &audit, containers).await?;
+        commit_demographic_import(&mut tx, &signing, &audit, parties).await?;
         // An EHR is created as "a root EHR object, an EHR Status object, and an
         // EHR Access object" (RM ehr master04 §EHR Creation) and `EHR.ehr_access`
         // is 1..1 (`ehr.adoc` invariant `Ehr_access_valid`). An extract that
@@ -226,10 +224,10 @@ impl FerroEhrService {
 
         let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
         let audit = self.audit(change_type::CREATION, "EHR Extract import");
-        let outbox_enabled = self.outbox_enabled();
+        let signing = self.signing_ctx();
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
-        commit_import(&mut tx, an_ehr_id, &audit, containers, outbox_enabled).await?;
-        commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
+        commit_import(&mut tx, &signing, an_ehr_id, &audit, containers).await?;
+        commit_demographic_import(&mut tx, &signing, &audit, parties).await?;
         // An imported EHR_STATUS version can change the current status
         // (Copying Case 3 append) — including its subject; re-promote the `ehr`
         // columns from the stored current status so the subject lookup +
@@ -472,23 +470,84 @@ fn parse_import_containers(
     ))
 }
 
+/// The wrapped original's `VERSION.commit_audit` (1..1), validated and returned
+/// as the canonical fragment to store verbatim — including its concrete class:
+/// a version committed elsewhere with an `ATTESTATION` commit audit keeps that
+/// class and its own attributes here (RM common master06 §Attestation;
+/// §Copying: "the received instance is never modified"), so a re-export renders
+/// what was imported.
+///
+/// Validity is proven by TYPING the received fragment through the canonical
+/// codec — the `ATTESTATION` subtype dispatches on `_type` — after which the
+/// stored fragment is that typed value's canonical encoding, byte-identical to
+/// a well-formed input.
+fn parse_wrapped_commit_audit(ov: &Value) -> Result<Value, SmError> {
+    let audit = ov
+        .get("commit_audit")
+        .ok_or_else(|| SmError::precondition("imported ORIGINAL_VERSION has no commit_audit"))?;
+    let typed = openehr_its::json::from_canonical_value::<AuditDetails>(audit).map_err(|e| {
+        SmError::precondition(format!(
+            "imported commit_audit is not a canonical AUDIT_DETAILS or its ATTESTATION \
+             subtype (RM common master06 §Committal and Audits): {e}"
+        ))
+    })?;
+    let (system_id, change_type, time_committed) = match &typed {
+        AuditDetails::AuditDetails(a) => (&a.system_id, &a.change_type, &a.time_committed),
+        AuditDetails::Attestation(a) => (&a.system_id, &a.change_type, &a.time_committed),
+    };
+    if system_id.is_empty() {
+        return Err(SmError::precondition(
+            "imported commit_audit.system_id is required and non-empty",
+        ));
+    }
+    // AUDIT_DETAILS.Change_type_valid: change_type is coded from the openEHR
+    // `audit change type` group (audit_details.adoc §Invariants).
+    let change_token = &change_type.defining_code.code_string;
+    if change_type_code(change_token).is_none() {
+        return Err(SmError::precondition(format!(
+            "imported commit_audit.change_type {change_token:?} is not an audit_change_type code"
+        )));
+    }
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "the mapped error already echoes the rejected token; the \
+                  discarded parse error adds only its own wording, which is \
+                  not part of the wire contract"
+    )]
+    let _: jiff::Timestamp = time_committed.value.parse().map_err(|_| {
+        SmError::precondition(format!(
+            "imported commit_audit.time_committed {:?} is not an ISO 8601 instant",
+            time_committed.value
+        ))
+    })?;
+    Ok(openehr_its::json::to_canonical_value(&typed))
+}
+
 /// Parse one received `ORIGINAL_VERSION` into its cloned `vo_id` and the
 /// [`ImportVersion`] to replay — preserving the wrapped original's full 3-part
 /// identity (incl. branch `version_tree_id`s), `preceding_version_uid`,
-/// `other_input_version_uids`, `commit_audit`, lifecycle, data, signature and
-/// attestations verbatim (master06 §Copying: "the `ORIGINAL_VERSION` instance
-/// is never modified"; `ehr_extract` master05
+/// `other_input_version_uids`, `contribution`, `commit_audit`, lifecycle, data,
+/// signature and attestations verbatim (master06 §Copying: "the
+/// `ORIGINAL_VERSION` instance is never modified"; `ehr_extract` master05
 /// `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`).
-#[expect(
-    clippy::too_many_lines,
-    reason = "the ORIGINAL_VERSION field-by-field parse; each field is one \
-              short block and splitting them would scatter the shape"
-)]
 fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> {
     // A member typed anything other than ORIGINAL_VERSION (e.g. an
-    // already-wrapped IMPORTED_VERSION) is invalid — the received instance "is
-    // never modified" and is re-wrapped as IMPORTED_VERSION by the importer
-    // (master06 §Copying).
+    // already-wrapped IMPORTED_VERSION) is invalid on TWO independent grounds,
+    // and there is therefore no such thing as a nested wrapper here:
+    //   * `X_VERSIONED_OBJECT.versions` is declared
+    //     `List<ORIGINAL_VERSION<T>>` (RM ehr_extract
+    //     `UML/classes/org.openehr.rm.ehr_extract.x_versioned_object.adoc`
+    //     §Attributes), so an IMPORTED_VERSION is not an admissible member;
+    //   * master06 §Copying makes the ORIGINAL_VERSION the unit of copying
+    //     ("In openEHR, the smallest unit of copying of content between
+    //     systems that satisfies traceability requirements is the
+    //     `ORIGINAL_VERSION`") and has each receiving system create its OWN
+    //     wrapper — "Original versions can be copied any number of times; in
+    //     each system into which they are imported, an `IMPORTED_VERSION` is
+    //     created as a wrapper" (§Committal and Audits). A re-export of an
+    //     imported version therefore ships the WRAPPED original, not our
+    //     wrapper ([`crate::versioning::wire::original_version`]), and a
+    //     re-import wraps that original afresh. Wrappers never nest.
     match ov.get("_type").and_then(Value::as_str) {
         None | Some("ORIGINAL_VERSION") => {}
         Some(other) => {
@@ -525,80 +584,24 @@ fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> 
         })
         .unwrap_or_default();
 
-    // commit_audit (VERSION.commit_audit 1..1) preserved verbatim — including
-    // its concrete class: a version committed elsewhere with an ATTESTATION
-    // commit_audit keeps that class and its own attributes here (RM common
-    // master06 §Attestation; §Copying: "the received instance is never
-    // modified"), so a re-export renders what was imported.
-    let audit = ov
-        .get("commit_audit")
-        .ok_or_else(|| SmError::precondition("imported ORIGINAL_VERSION has no commit_audit"))?;
-    let system_id = audit
-        .get("system_id")
-        .and_then(Value::as_str)
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| {
-            SmError::precondition("imported commit_audit.system_id is required and non-empty")
-        })?
-        .to_owned();
-    let change_token = audit
-        .pointer("/change_type/defining_code/code_string")
-        .and_then(Value::as_str)
-        .or_else(|| audit.pointer("/change_type/value").and_then(Value::as_str))
-        .ok_or_else(|| SmError::precondition("imported commit_audit.change_type is required"))?;
-    let change_type = change_type_code(change_token).ok_or_else(|| {
-        SmError::precondition(format!(
-            "imported commit_audit.change_type {change_token:?} is not an audit_change_type code"
-        ))
+    // VERSION.contribution (1..1) — the SOURCE system's CONTRIBUTION reference,
+    // kept verbatim: master06 §Committal and Audits puts "the knowledge of the
+    // original Contribution and committal" inside the wrapped ORIGINAL_VERSION,
+    // while the local import CONTRIBUTION is recorded on the IMPORTED_VERSION
+    // wrapper the change-control engine builds around it.
+    let contribution = ov.get("contribution").cloned().ok_or_else(|| {
+        SmError::precondition(
+            "imported ORIGINAL_VERSION has no contribution (VERSION.contribution 1..1)",
+        )
     })?;
-    let committer = audit.get("committer").cloned().ok_or_else(|| {
-        SmError::precondition("imported commit_audit.committer is required (AUDIT_DETAILS 1..1)")
-    })?;
-    // The whole DV_TEXT fragment, so a DV_CODED_TEXT description keeps its
-    // defining_code (RM common master04 §Audit Details).
-    let description = audit
-        .get("description")
-        .filter(|d| !d.is_null())
-        .map(|d| match d {
-            Value::String(s) => Ok(description_fragment(s)),
-            other => {
-                decode_description(other).map(|text| openehr_its::json::to_canonical_value(&text))
-            }
-        })
-        .transpose()
-        .map_err(|e: ServiceError| SmError::precondition(e.to_string()))?;
-    // ATTESTATION is the only AUDIT_DETAILS subtype (RM common master06
-    // §Committal and Audits: "AUDIT_DETAILS ... or its subtype ATTESTATION");
-    // its own attributes are decoded typed and kept.
-    let attestation = match audit.get("_type").and_then(Value::as_str) {
-        None | Some("AUDIT_DETAILS") => None,
-        Some("ATTESTATION") => Some(
-            AttestationParts::decode(audit)
-                .map_err(|e| SmError::precondition(e.to_string()))?
-                .fragment(),
-        ),
-        Some(other) => {
-            return Err(SmError::precondition(format!(
-                "imported commit_audit _type {other:?} is not an AUDIT_DETAILS or its \
-                 ATTESTATION subtype (RM common master06 §Committal and Audits)"
-            )));
-        }
-    };
-    let time_str = audit
-        .pointer("/time_committed/value")
-        .and_then(Value::as_str)
-        .ok_or_else(|| SmError::precondition("imported commit_audit.time_committed is required"))?;
-    #[expect(
-        clippy::map_err_ignore,
-        reason = "the mapped error already echoes the rejected token; the \
-                  discarded parse error adds only its own wording, which is \
-                  not part of the wire contract"
-    )]
-    let commit_time: jiff::Timestamp = time_str.parse().map_err(|_| {
-        SmError::precondition(format!(
-            "imported commit_audit.time_committed {time_str:?} is not an ISO 8601 instant"
-        ))
-    })?;
+    if openehr_its::json::from_canonical_value::<ObjectRef>(&contribution).is_err() {
+        return Err(SmError::precondition(
+            "imported ORIGINAL_VERSION.contribution is not a canonical OBJECT_REF \
+             (RM common version.adoc §Attributes)",
+        ));
+    }
+
+    let commit_audit = parse_wrapped_commit_audit(ov)?;
 
     // lifecycle_state (ORIGINAL_VERSION.lifecycle_state) resolved to its code.
     let lifecycle_token = ov
@@ -649,14 +652,8 @@ fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> 
             preceding_version_uid,
             other_input_version_uids,
             lifecycle_state,
-            commit_audit: AuditInput {
-                system_id,
-                change_type,
-                description,
-                committer,
-                attestation,
-            },
-            commit_time,
+            contribution,
+            commit_audit,
             data,
             signature,
             attestations,
@@ -670,11 +667,17 @@ mod tests {
 
     use super::*;
 
-    /// A minimal spec-shaped `ORIGINAL_VERSION` wire value for the import parser.
+    /// A minimal spec-shaped `ORIGINAL_VERSION` wire value for the import parser
+    /// — carrying both mandatory `VERSION` attributes (`contribution` 1..1,
+    /// `commit_audit` 1..1; RM common `version.adoc` §Attributes).
     fn original_version(type_field: Option<&str>) -> Value {
         let mut ov = json!({
             "uid": { "_type": "OBJECT_VERSION_ID",
                      "value": "018f4a5e-9df1-7d1e-8b6f-2b8c00000001::sysA.example.org::1" },
+            "contribution": { "_type": "OBJECT_REF", "namespace": "local",
+                              "type": "CONTRIBUTION",
+                              "id": { "_type": "HIER_OBJECT_ID",
+                                      "value": "3d2c1b0a-0000-4000-8000-000000000abc" } },
             "commit_audit": {
                 "_type": "AUDIT_DETAILS",
                 "system_id": "sysA.example.org",
@@ -716,5 +719,74 @@ mod tests {
                 err.message
             );
         }
+    }
+
+    /// The received original's OWN `contribution` and `commit_audit` are the
+    /// FOREIGN act, kept for the wrapped `ORIGINAL_VERSION` — RM common
+    /// master06 §Committal and Audits: "the knowledge of the original
+    /// Contribution and committal are retained inside the wrapped
+    /// `ORIGINAL_VERSION` instance". Regression for #1679, whose defect was
+    /// that the received `contribution` was dropped entirely and the foreign
+    /// `commit_audit` was written as the version row's own.
+    #[test]
+    fn wrapped_original_keeps_its_foreign_contribution_and_audit() {
+        let (_, version) =
+            parse_imported_version(&original_version(None)).expect("the fixture parses");
+        assert_eq!(
+            version
+                .contribution
+                .pointer("/id/value")
+                .and_then(Value::as_str),
+            Some("3d2c1b0a-0000-4000-8000-000000000abc"),
+            "the received contribution reference must be preserved verbatim"
+        );
+        assert_eq!(
+            version
+                .commit_audit
+                .pointer("/time_committed/value")
+                .and_then(Value::as_str),
+            Some("2026-07-11T10:00:00Z"),
+            "the source commit instant must ride the wrapped original, not the row"
+        );
+        assert_eq!(
+            version
+                .commit_audit
+                .get("system_id")
+                .and_then(Value::as_str),
+            Some("sysA.example.org"),
+        );
+    }
+
+    /// `VERSION.contribution` is 1..1 (RM common `version.adoc` §Attributes);
+    /// an `ORIGINAL_VERSION` arriving without one cannot be wrapped without
+    /// losing the original Contribution master06 §Committal and Audits says
+    /// must be retained, so it is refused.
+    #[test]
+    fn a_received_original_without_a_contribution_is_refused() {
+        let mut ov = original_version(None);
+        ov.as_object_mut().expect("object").remove("contribution");
+        let err = parse_imported_version(&ov).expect_err("contribution is mandatory");
+        assert!(
+            err.message.contains("contribution"),
+            "error should name the missing attribute, got: {}",
+            err.message
+        );
+    }
+
+    /// `AUDIT_DETAILS.Change_type_valid`: the commit audit's `change_type` is
+    /// coded from the openEHR `audit change type` group
+    /// (`UML/classes/org.openehr.rm.common.audit_details.adoc` §Invariants), so
+    /// a foreign code is refused rather than stored verbatim.
+    #[test]
+    fn a_received_commit_audit_with_an_unknown_change_type_is_refused() {
+        let mut ov = original_version(None);
+        *ov.pointer_mut("/commit_audit/change_type/defining_code/code_string")
+            .expect("code_string") = json!("999999");
+        let err = parse_imported_version(&ov).expect_err("change_type must be an openEHR code");
+        assert!(
+            err.message.contains("audit_change_type"),
+            "error should name the violated invariant, got: {}",
+            err.message
+        );
     }
 }

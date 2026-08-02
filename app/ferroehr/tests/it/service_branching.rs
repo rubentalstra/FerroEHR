@@ -1,14 +1,16 @@
 //! Version-tree branching + merge provenance, end-to-end against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!
-//! Spec: RM common `master06-change_control_package.adoc` §Version tree /
-//! §Distributed versioning — "To support branching, a further pair of numbers
-//! is added … branching version identifiers [are required] when local
-//! modifications are made to versions copied from elsewhere" — and §Version
-//! Merging (`ORIGINAL_VERSION.other_input_version_uids`). BASE
-//! `VERSION_TREE_ID`: `trunk_version [ '.' branch_number '.' branch_version ]`.
+//! Spec: RM common `master06-change_control_package.adoc` §The 'Virtual Version
+//! Tree' and §Versioning Semantics → §Version Identification — its §Local
+//! Versioning subsection ("To support branching, a further pair of numbers is
+//! added") and its §Distributed Versioning subsection ("to require branching
+//! version identifiers to be used when local modifications are made to versions
+//! copied from elsewhere") — plus §Version Merging
+//! (`ORIGINAL_VERSION.other_input_version_uids`). BASE `VERSION_TREE_ID`:
+//! `trunk_version [ '.' branch_number '.' branch_version ]`.
 //!
-//! Covers (A1 rm-common-change-control R7/R19/R50):
+//! Covers:
 //! 1. modifying an imported version created by ANOTHER system forks a branch
 //!    (`t.1.1`, local `creating_system_id`) while the imported trunk version
 //!    stays the container current;
@@ -282,7 +284,7 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
     // (3) The branch version is addressable by its full OBJECT_VERSION_ID and
     // serves the TRUE preceding_version_uid (the foreign trunk version).
     let ov = svc
-        .composition_original_version(target, branch_uid.parse().unwrap())
+        .composition_version_envelope(target, branch_uid.parse().unwrap())
         .await
         .expect("branch ORIGINAL_VERSION");
     assert_eq!(ov["uid"]["value"], json!(branch_uid));
@@ -305,17 +307,17 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
     let branch_uid2 = first_version_uid(&contribution2.body);
     assert_eq!(branch_uid2, format!("{vo_id}::{LOCAL}::2.1.2"));
     let ov2 = svc
-        .composition_original_version(target, branch_uid2.parse().unwrap())
+        .composition_version_envelope(target, branch_uid2.parse().unwrap())
         .await
         .expect("branch tip ORIGINAL_VERSION");
     assert_eq!(ov2["preceding_version_uid"]["value"], json!(branch_uid));
-    svc.composition_original_version(target, branch_uid.parse().unwrap())
+    svc.composition_version_envelope(target, branch_uid.parse().unwrap())
         .await
         .expect("superseded branch version stays readable");
 
     // (5) A second fork from the same foreign trunk version numbers the NEXT
     // branch (2.2.1) — branch numbers count per fork point (master06
-    // §Version tree).
+    // §The 'Virtual Version Tree').
     let contribution3 = svc
         .create_ehr_contribution(
             target,
@@ -352,7 +354,7 @@ async fn merge_provenance_round_trips_the_wire() {
         .expect("merge commit");
     let v2 = first_version_uid(&contribution.body);
     let ov = svc
-        .composition_original_version(ehr, v2.parse().unwrap())
+        .composition_version_envelope(ehr, v2.parse().unwrap())
         .await
         .expect("merged ORIGINAL_VERSION");
     assert_eq!(
@@ -363,7 +365,7 @@ async fn merge_provenance_round_trips_the_wire() {
     );
     // A plain version carries none.
     let ov1 = svc
-        .composition_original_version(ehr, v1.parse().unwrap())
+        .composition_version_envelope(ehr, v1.parse().unwrap())
         .await
         .expect("v1");
     assert!(ov1.get("other_input_version_uids").is_none());
@@ -417,10 +419,22 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
 
     let branch_uid = format!("{vo_id}::{LOCAL}::2.1.1");
     let ov = third_svc
-        .composition_original_version(third, branch_uid.parse().unwrap())
+        .composition_version_envelope(third, branch_uid.parse().unwrap())
         .await
         .expect("re-imported branch version");
-    assert_eq!(ov["uid"]["value"], json!(branch_uid));
+    // In the THIRD repository the version is a copy, so it is served as an
+    // IMPORTED_VERSION wrapping the received original (master06 §Copying). An
+    // IMPORTED_VERSION carries NO `uid` attribute of its own: `uid` is an
+    // effected function, `Post: Result = item.uid`
+    // (`UML/classes/org.openehr.rm.common.imported_version.adoc` §Functions;
+    // master06 §Version and its Subtypes — "an `IMPORTED_VERSION` does not have
+    // its own version identifier distinct from the version it is wrapping"),
+    // and ITS-REST 1.1.0's `schemas/ehr/ImportedVersion.yaml` likewise declares
+    // only `item` on top of `Version.yaml`. So the branch identity is read
+    // through the wrapper.
+    assert_eq!(ov["_type"], json!("IMPORTED_VERSION"));
+    assert_eq!(ov["item"]["uid"]["value"], json!(branch_uid));
+    assert_eq!(ov["item"]["_type"], json!("ORIGINAL_VERSION"));
     let trunk = third_svc
         .get_composition_latest(third, vo_id)
         .await

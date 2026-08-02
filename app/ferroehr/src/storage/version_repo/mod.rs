@@ -8,7 +8,8 @@
 //! policy) stay in the versioning layer, which hands these functions plain
 //! value inputs and consumes the [`read::StoredVersion`] read shape. The change
 //! control law these rows realize is RM common master06 (§Contributions,
-//! §Committal and Audits, §Version tree, §Copying); `AUDIT_DETAILS`/
+//! §Committal and Audits, §The 'Virtual Version Tree', §Copying);
+//! `AUDIT_DETAILS`/
 //! `ATTESTATION` are master04. Every write runs inside a caller-owned `sqlx`
 //! transaction so a version + nodes + contribution + audit (+ outbox) commit
 //! atomically (master06 §Committal: "similar to nested transactions").

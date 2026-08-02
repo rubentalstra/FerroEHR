@@ -5,7 +5,8 @@
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
 //! §Storage). The change-control law realized here is RM common master06
-//! (§Committal and Audits, §Version tree); `AUDIT_DETAILS` is master04.
+//! (§Committal and Audits, §The 'Virtual Version Tree'); `AUDIT_DETAILS` is
+//! master04.
 
 use serde_json::Value;
 use sqlx::{PgConnection, Row};
