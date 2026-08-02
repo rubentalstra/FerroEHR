@@ -106,6 +106,16 @@ workflow refuses a tag that has no matching section here.
   references intact, so a server that collapsed the duplicate would fail; and
   a folder that carries a composition *by value* in `items` instead of a
   reference to it is refused with `422`, leaving the EHR without a directory.
+  Two further cases pin how *wide* an identifier that reference slot accepts.
+  A folder reference may be **version-pinned** — its id a three-part
+  `OBJECT_VERSION_ID` naming one particular version of a composition — and it
+  now round-trips with all three parts intact, so a server that truncated it
+  to the leading UUID would fail. And a reference identified in a **foreign
+  scheme** (a `GENERIC_ID`) is accepted and served back unchanged: the
+  Reference Model types the slot at `OBJECT_ID`, whose family has six concrete
+  members, while the published OpenAPI schema for the same slot enumerates
+  only two — the adjudication ships in the conformance ambiguity register as
+  `AMB-186`.
 
 - **Conformance cases for the ATTESTATION wire family.** The catalogue now
   drives the `666|attestation|` CONTRIBUTION member end to end: attesting an

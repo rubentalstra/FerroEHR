@@ -1,8 +1,18 @@
-//! Hand-written RM/BASE class invariant for `OBJECT_REF`.
+//! Hand-written BASE class check for `OBJECT_REF.namespace`.
 //!
-//! `Namespace_valid` (archie `ObjectRef`): `namespace` matches the openEHR
-//! namespace regex `[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*` (the special values `local`
-//! and `unknown` are ordinary matches of it).
+//! The rule is released text. BASE base_types
+//! `UML/classes/org.openehr.base.base_types.object_ref.adoc` §Attributes
+//! states it in the `namespace` Meaning row: "Legal values for `_namespace_`
+//! are: `"local"`, `"unknown"`, a string matching the standard regex
+//! `[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*`. Note that the first two are just special
+//! values of the regex, and will be matched by it."
+//!
+//! NOTE: BASE states the rule but declares no invariant NAME for it — the
+//! `OBJECT_REF` class table has no §Invariants section at all.
+//! `Namespace_valid` is the label this workspace gives the check so its
+//! violation reads in the same uniform `Invariant <name> failed on type
+//! <RM_TYPE>` shape every other class check uses; the label is our own
+//! convention, not a released invariant name.
 
 use super::object_ref::ObjectRefData;
 use crate::validate::{InvariantViolation, Validate};
