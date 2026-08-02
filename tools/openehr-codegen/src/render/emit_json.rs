@@ -380,7 +380,10 @@ fn emit_to_json(b: &mut String, ty: &JsonType, prelude: &str) {
 fn emit_write_field(b: &mut String, f: &JsonField) {
     let (wire, rust) = (&f.wire_name, &f.rust_name);
     match f.kind {
-        JsonFieldKind::Plain => {
+        // `Plain` and `NonEmptyContainer` share a body deliberately: a `1..*`
+        // container is non-empty by construction, so like a mandatory scalar it
+        // is always written — there is no omit-when-empty branch to emit.
+        JsonFieldKind::Plain | JsonFieldKind::NonEmptyContainer => {
             let _ = writeln!(b, "w.field(\"{wire}\", &self.{rust});");
         }
         JsonFieldKind::Optional => {
@@ -493,7 +496,11 @@ fn emit_struct_from_json(
             (JsonFieldKind::Plain, Some(default)) => {
                 format!("runtime::defaulted_field(node, \"{wire}\", {default})?")
             }
-            (JsonFieldKind::Plain, None) => {
+            // A `1..*` container reads as a mandatory field of the
+            // `NonEmptyVec` type itself, so it shares the mandatory-scalar read:
+            // absence is refused by `required_field`, emptiness by the type's
+            // own constructor (`openehr_base::containers::NonEmptyVec::new`).
+            (JsonFieldKind::Plain, None) | (JsonFieldKind::NonEmptyContainer, _) => {
                 format!("runtime::required_field(node, \"{wire}\", \"{spec}\")?")
             }
             (JsonFieldKind::Optional, _) => format!("runtime::optional_field(node, \"{wire}\")?"),

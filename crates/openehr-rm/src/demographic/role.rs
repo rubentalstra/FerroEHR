@@ -39,7 +39,7 @@ pub struct Role {
 
     // inherited: PARTY
     /// Identities used by the party to identify itself, such as legal name, stage names, aliases, nicknames and so on.
-    pub identities: Vec<PartyIdentity>,
+    pub identities: openehr_base::containers::NonEmptyVec<PartyIdentity>,
     /// Contacts for this party.
     pub contacts: Option<Vec<Contact>>,
     /// All other details for this Party.

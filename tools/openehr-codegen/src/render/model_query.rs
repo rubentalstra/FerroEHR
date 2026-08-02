@@ -113,6 +113,18 @@ pub(crate) struct Query<'a> {
     pub class: Option<&'a str>,
     /// Restrict to one attribute name (exact, as the BMM spells it).
     pub attribute: Option<&'a str>,
+    /// Report one row per class × **flattened** attribute (every attribute the
+    /// class carries, inherited ones included) instead of one row per class ×
+    /// DECLARED attribute.
+    ///
+    /// This is the inheritance dimension: an attribute declared on an abstract
+    /// class appears once in the default (declared) view and once per
+    /// descendant here, each with its own emission computed by the same
+    /// [`crate::render::emit::field_type`] call the struct renderer makes for
+    /// that class — so a per-descendant divergence (the self-recursion boxing
+    /// check resolving differently, a redeclared generic parameter) is visible
+    /// instead of assumed absent.
+    pub flattened: bool,
 }
 
 /// One reported attribute: the BMM facts plus the current emission decision.
@@ -137,6 +149,10 @@ struct Row {
     /// (the canonical-JSON field order), preserved because the report itself is
     /// sorted by name.
     decl: usize,
+    /// The class that DECLARES the attribute. Equal to `class` for an
+    /// attribute the class declares itself; the ancestor's name for an
+    /// inherited one (only ever different in the flattened view).
+    declared_on: String,
     /// The BMM attribute name.
     attribute: String,
     /// The declared type exactly as the BMM states it (`List<OBJECT_REF>`,
@@ -164,7 +180,7 @@ struct Scope {
 }
 
 /// The column headers, in report order.
-const HEADERS: [&str; 13] = [
+const HEADERS: [&str; 14] = [
     "component",
     "bmm",
     "package",
@@ -172,6 +188,7 @@ const HEADERS: [&str; 13] = [
     "abstract",
     "class_emission",
     "decl",
+    "declared_on",
     "attribute",
     "bmm_type",
     "existence",
@@ -182,7 +199,7 @@ const HEADERS: [&str; 13] = [
 
 impl Row {
     /// The row's cells, in [`HEADERS`] order.
-    fn cells(&self) -> [String; 13] {
+    fn cells(&self) -> [String; 14] {
         [
             self.component.to_string(),
             self.bmm.clone(),
@@ -195,6 +212,7 @@ impl Row {
             },
             self.class_emission.to_string(),
             self.decl.to_string(),
+            self.declared_on.clone(),
             self.attribute.clone(),
             self.bmm_type.clone(),
             self.existence.to_string(),
@@ -212,7 +230,7 @@ impl Row {
 /// names a component/class/attribute the loaded model does not have (the error
 /// lists the valid values).
 pub(crate) fn render(query: &Query<'_>, format: Format) -> Result<String, Error> {
-    let scope = collect(query.component)?;
+    let scope = collect(query.component, query.flattened)?;
     let mut rows = scope.rows;
 
     if let Some(class) = query.class {
@@ -257,9 +275,11 @@ fn select_keys(component: Option<&str>) -> Result<Vec<&'static str>, Error> {
 
 /// Load every selected component and project its attributes into rows, sorted
 /// by (component, generation, class, attribute) for byte-stable output.
-fn collect(component: Option<&str>) -> Result<Scope, Error> {
-    let mut rows: Vec<Row> = Vec::new();
-    let mut classes: BTreeSet<String> = BTreeSet::new();
+fn collect(component: Option<&str>, flattened: bool) -> Result<Scope, Error> {
+    let mut out = Scope {
+        rows: Vec::new(),
+        classes: BTreeSet::new(),
+    };
     for key in select_keys(component)? {
         let composed = compose(key)?;
         let deps: Vec<&BmmSchema> = composed.dep_schemas.iter().collect();
@@ -282,12 +302,12 @@ fn collect(component: Option<&str>) -> Result<Scope, Error> {
                 &generation.model,
                 &schema,
                 &composed.external,
-                &mut rows,
-                &mut classes,
+                flattened,
+                &mut out,
             );
         }
     }
-    rows.sort_by(|a, b| {
+    out.rows.sort_by(|a, b| {
         (a.component, &a.bmm, &a.class, &a.attribute).cmp(&(
             b.component,
             &b.bmm,
@@ -295,7 +315,7 @@ fn collect(component: Option<&str>) -> Result<Scope, Error> {
             &b.attribute,
         ))
     });
-    Ok(Scope { rows, classes })
+    Ok(out)
 }
 
 /// Project one BMM generation's classes into rows.
@@ -305,8 +325,8 @@ fn collect_generation(
     model: &Model,
     schema: &BmmSchema,
     external: &External,
-    rows: &mut Vec<Row>,
-    classes: &mut BTreeSet<String>,
+    flattened: bool,
+    out: &mut Scope,
 ) {
     let used = model.used_as_type();
     // The same set `emit_version` calls `local`: the spec names this version
@@ -316,22 +336,38 @@ fn collect_generation(
     let bmm = bmm_stem(bmm_file);
 
     for (name, class) in &schema.classes {
-        classes.insert(name.clone());
+        out.classes.insert(name.clone());
         let emission = decide(model, class, &used);
         let class_emission = emission_label(&emission);
         let skipped = matches!(emission, Emission::Skip);
         let generics = struct_generics(model, class);
         let subst = class_binding(name);
-        for (decl, prop) in class.properties.iter().enumerate() {
+        // Declared view: the class's own properties. Flattened view: every
+        // property the class CARRIES, resolved through the same
+        // `Model::flattened_props` the struct renderer walks — so the emission
+        // column is computed for the class that actually emits the field.
+        let declared: Vec<(String, &BmmProperty)> =
+            class.properties.iter().map(|p| (name.clone(), p)).collect();
+        let inherited: Vec<(String, &BmmProperty)> = if flattened {
+            model
+                .flattened_props(class)
+                .into_iter()
+                .map(|rp| (rp.owner, rp.prop))
+                .collect()
+        } else {
+            Vec::new()
+        };
+        let props = if flattened { inherited } else { declared };
+        for (decl, (owner, prop)) in props.into_iter().enumerate() {
             let shape = if skipped {
                 NOT_EMITTED.to_string()
-            } else if back_reference(name, &prop.name).is_some() {
+            } else if back_reference(&owner, &prop.name).is_some() {
                 BACK_REFERENCE.to_string()
             } else {
                 field_type(model, class, prop, &generics, &subst, &local, external)
             };
             let (container, cardinality) = container_columns(prop);
-            rows.push(Row {
+            out.rows.push(Row {
                 component,
                 bmm: bmm.clone(),
                 package: packages
@@ -342,6 +378,7 @@ fn collect_generation(
                 class_abstract: class.is_abstract,
                 class_emission,
                 decl,
+                declared_on: owner,
                 attribute: prop.name.clone(),
                 bmm_type: bmm_type_text(prop),
                 existence: if prop.is_mandatory { "1..1" } else { "0..1" },
@@ -452,7 +489,7 @@ fn unknown_value(kind: &str, value: &str, valid: &BTreeSet<String>) -> Error {
 
 /// Column-aligned text with a header, a rule, and a row-count footer.
 fn render_table(rows: &[Row]) -> String {
-    let cells: Vec<[String; 13]> = rows.iter().map(Row::cells).collect();
+    let cells: Vec<[String; 14]> = rows.iter().map(Row::cells).collect();
     let mut widths: [usize; 13] = [0; 13];
     for (w, h) in widths.iter_mut().zip(HEADERS) {
         *w = h.len();

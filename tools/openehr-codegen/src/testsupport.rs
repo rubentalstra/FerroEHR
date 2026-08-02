@@ -964,11 +964,28 @@ pub fn model_query(
     attribute: Option<&str>,
     format: &str,
 ) -> Result<String, Error> {
+    model_query_view(component, class, attribute, format, false)
+}
+
+/// [`model_query`] with the view selectable: `flattened` reports one row per
+/// class × CARRIED attribute (inherited ones included, each with its declaring
+/// class) instead of one row per class × declared attribute.
+///
+/// # Errors
+/// Same as [`model_query`].
+pub fn model_query_view(
+    component: Option<&str>,
+    class: Option<&str>,
+    attribute: Option<&str>,
+    format: &str,
+    flattened: bool,
+) -> Result<String, Error> {
     model_query::render(
         &model_query::Query {
             component,
             class,
             attribute,
+            flattened,
         },
         model_query::Format::parse(format)?,
     )

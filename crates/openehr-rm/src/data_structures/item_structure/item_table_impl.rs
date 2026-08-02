@@ -120,7 +120,8 @@ mod tests {
             links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
-            items,
+            items: openehr_base::containers::NonEmptyVec::new(items)
+                .expect("a fixture container declared 1..* must have members"),
         }
     }
 
@@ -207,7 +208,10 @@ mod tests {
             links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
-            items: elems.into_iter().map(Item::Element).collect(),
+            items: openehr_base::containers::NonEmptyVec::new(
+                elems.into_iter().map(Item::Element).collect(),
+            )
+            .expect("the fixture row carries elements"),
         };
         let bool_val = || DataValue::DvBoolean(DvBoolean { value: true });
         let count_val = || {

@@ -645,7 +645,13 @@ fn realization_register_venues_are_real() {
                 );
                 assert!(
                     gen_file.contains(&format!("Invariant {} failed", a.name))
-                        || gen_file.contains(&format!("invariant_failed(\"{}\"", a.name)),
+                        || gen_file.contains(&format!("invariant_failed(\"{}\"", a.name))
+                        // A parameterised core builds its message from a
+                        // generated rule table rather than a literal, so the
+                        // invariant's name appears as the table row that drives
+                        // it (`NONEMPTY_LIST_RULES`). Same property, same file:
+                        // generated.rs is still what produces the violation.
+                        || gen_file.contains(&format!("\"{}\"),", a.name)),
                     "{where_}: no violation message for it in validate/generated.rs",
                 );
             }

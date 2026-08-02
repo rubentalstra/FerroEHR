@@ -344,7 +344,7 @@ pub(crate) fn compose(key: &str) -> Result<Composed, Box<dyn std::error::Error>>
 
     // external = the prelude index over prelude_deps (each dep's emittable specs
     // under its prelude path), in declaration order.
-    let mut external = External::default();
+    let mut external = External::default().in_crate(comp.crate_name);
     for dep_key in comp.prelude_deps {
         let dep_comp = lookup(dep_key)?;
         let dep_own = dependency_view_schema(dep_key)?;

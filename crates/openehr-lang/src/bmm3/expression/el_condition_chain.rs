@@ -14,7 +14,7 @@ use crate::bmm3::expression::el_conditional_expression::ElConditionalExpression;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ElConditionChain<T> {
     /// Members of the chain, equivalent to branches in an if/then/else chain and cases in a case statement.
-    pub items: Vec<ElConditionalExpression<T>>,
+    pub items: openehr_base::containers::NonEmptyVec<ElConditionalExpression<T>>,
 
     // inherited: EL_DECISION_TABLE
     /// Result expression of conditional, if its `_condition_` evaluates to True.

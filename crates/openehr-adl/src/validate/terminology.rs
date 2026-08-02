@@ -230,7 +230,7 @@ pub(super) fn check_terminology(
         if let Some(vs) = term.value_sets.as_ref() {
             for set in vs.values() {
                 used_all.insert(set.id.as_str());
-                for m in set.members.iter() {
+                for m in &set.members {
                     used_all.insert(m.as_str());
                 }
             }
@@ -299,7 +299,7 @@ fn check_value_sets(
         }
         // VTVSUQ: members must be unique within the value set.
         let mut seen = BTreeSet::new();
-        for m in set.members.iter() {
+        for m in &set.members {
             if !seen.insert(m.as_str()) {
                 issues.push(ValidationIssue::new(
                     ValidationCode::Vtvsuq,
@@ -311,7 +311,7 @@ fn check_value_sets(
         // form (master07). Runs only when the archetype is its own flat form; the
         // specialised flat-form half runs in [`super::flat`].
         if flat_self {
-            for m in set.members.iter() {
+            for m in &set.members {
                 if !defined.contains(m.as_str()) {
                     issues.push(ValidationIssue::new(
                         ValidationCode::Vtvsmd,
@@ -358,7 +358,7 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
             // terminology-code values too.
             for tuple in complex_attribute_tuples(cco) {
                 for prim_tuple in tuple.tuples.iter().flatten() {
-                    for member in prim_tuple.members.iter() {
+                    for member in &prim_tuple.members {
                         if let CPrimitiveObject::CTerminologyCode(tc) = member {
                             usage.value_codes.extend(constraint_codes(&tc.constraint));
                         }

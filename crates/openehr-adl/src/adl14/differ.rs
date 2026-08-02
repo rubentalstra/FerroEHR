@@ -68,6 +68,16 @@ fn strip_inherited(child: &mut CComplexObject, parent: &CComplexObject) {
     if let Some(attributes) = cd.attributes.as_mut() {
         attributes.retain(|a| !attr_is_empty_inherited(a));
     }
+    // Stripping every attribute makes the object's attribute list ABSENT, not
+    // present-and-empty: ADL 2 writes a member list by writing its members
+    // (`docs/specs/openehr/AM/docs/ADL2/master04-syntax.adoc` §Structure — a
+    // `matches {…}` block is written only when it carries content), so an
+    // object with nothing left states no block at all. Parsing the reference
+    // differential form back yields `None`, and the two must agree.
+    cd.attributes = cd
+        .attributes
+        .take()
+        .and_then(openehr_base::containers::present);
 }
 
 fn strip_attr(attr: &mut CAttribute, parent_def: &CComplexObject) {
@@ -76,6 +86,12 @@ fn strip_attr(attr: &mut CAttribute, parent_def: &CComplexObject) {
         // is not found unchanged in the flat parent.
         children.retain(|child| !is_inherited_unchanged(child, parent_def));
     }
+    // Same rule as the attribute list above: no surviving child means the
+    // attribute states no children, not an empty child list.
+    attr.children = attr
+        .children
+        .take()
+        .and_then(openehr_base::containers::present);
     for child in attr.children.iter_mut().flatten() {
         if let CObject::CComplexObject(cco) = child
             && let Some(pmatch) = find_by_node_id(parent_def, node_id_of_cco(cco))
@@ -159,7 +175,7 @@ fn prune_terminology(data: &mut AuthoredArchetypeData) {
     if let Some(vs) = data.terminology.value_sets.as_mut() {
         vs.retain(|id, _| referenced.contains(id));
         for set in vs.values() {
-            for m in set.members.iter() {
+            for m in &set.members {
                 referenced.insert(m.clone());
             }
         }

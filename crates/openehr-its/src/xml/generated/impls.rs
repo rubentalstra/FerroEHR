@@ -3476,7 +3476,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::AddressedMessage {
             sender_reference: __sender_reference.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element sender_reference".into())
             })?,
-            addressees: __addressees,
+            addressees: openehr_base::containers::NonEmptyVec::new(__addressees).map_err(
+                |__e| {
+                    crate::xml::runtime::XmlError::Parse(
+                        ::std::format!("element addressees: {__e}",).into(),
+                    )
+                },
+            )?,
             urgency: __urgency,
             message: __message.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element message".into())
@@ -3810,7 +3816,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Agent {
             },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            identities: __identities,
+            identities: openehr_base::containers::NonEmptyVec::new(__identities).map_err(
+                |__e| {
+                    crate::xml::runtime::XmlError::Parse(
+                        ::std::format!("element identities: {__e}",).into(),
+                    )
+                },
+            )?,
             contacts: if __contacts.is_empty() {
                 None
             } else {
@@ -4565,7 +4577,9 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Cluster {
             },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
+            items: openehr_base::containers::NonEmptyVec::new(__items).map_err(|__e| {
+                crate::xml::runtime::XmlError::Parse(::std::format!("element items: {__e}",).into())
+            })?,
         })
     }
 }
@@ -4980,7 +4994,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Contact {
             },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            addresses: __addresses,
+            addresses: openehr_base::containers::NonEmptyVec::new(__addresses).map_err(|__e| {
+                crate::xml::runtime::XmlError::Parse(
+                    ::std::format!("element addresses: {__e}",).into(),
+                )
+            })?,
             time_validity: __time_validity,
         })
     }
@@ -5119,7 +5137,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Contribution {
             uid: __uid.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element uid".into())
             })?,
-            versions: __versions,
+            versions: openehr_base::containers::NonEmptyVec::new(__versions).map_err(|__e| {
+                crate::xml::runtime::XmlError::Parse(
+                    ::std::format!("element versions: {__e}",).into(),
+                )
+            })?,
             audit: __audit.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element audit".into())
             })?,
@@ -6764,7 +6786,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvParagraph {
                 }
             }
         }
-        Ok(openehr_rm::prelude::DvParagraph { items: __items })
+        Ok(openehr_rm::prelude::DvParagraph {
+            items: openehr_base::containers::NonEmptyVec::new(__items).map_err(|__e| {
+                crate::xml::runtime::XmlError::Parse(::std::format!("element items: {__e}",).into())
+            })?,
+        })
     }
 }
 
@@ -9897,7 +9923,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractManifest {
             }
         }
         Ok(openehr_rm::prelude::ExtractManifest {
-            entities: __entities,
+            entities: openehr_base::containers::NonEmptyVec::new(__entities).map_err(|__e| {
+                crate::xml::runtime::XmlError::Parse(
+                    ::std::format!("element entities: {__e}",).into(),
+                )
+            })?,
         })
     }
 }
@@ -11293,7 +11323,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Group {
             },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            identities: __identities,
+            identities: openehr_base::containers::NonEmptyVec::new(__identities).map_err(
+                |__e| {
+                    crate::xml::runtime::XmlError::Parse(
+                        ::std::format!("element identities: {__e}",).into(),
+                    )
+                },
+            )?,
             contacts: if __contacts.is_empty() {
                 None
             } else {
@@ -13938,7 +13974,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Organisation {
             },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            identities: __identities,
+            identities: openehr_base::containers::NonEmptyVec::new(__identities).map_err(
+                |__e| {
+                    crate::xml::runtime::XmlError::Parse(
+                        ::std::format!("element identities: {__e}",).into(),
+                    )
+                },
+            )?,
             contacts: if __contacts.is_empty() {
                 None
             } else {
@@ -15221,7 +15263,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Person {
             },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            identities: __identities,
+            identities: openehr_base::containers::NonEmptyVec::new(__identities).map_err(
+                |__e| {
+                    crate::xml::runtime::XmlError::Parse(
+                        ::std::format!("element identities: {__e}",).into(),
+                    )
+                },
+            )?,
             contacts: if __contacts.is_empty() {
                 None
             } else {
@@ -15770,7 +15818,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::RevisionHistory {
                 }
             }
         }
-        Ok(openehr_rm::prelude::RevisionHistory { items: __items })
+        Ok(openehr_rm::prelude::RevisionHistory {
+            items: openehr_base::containers::NonEmptyVec::new(__items).map_err(|__e| {
+                crate::xml::runtime::XmlError::Parse(::std::format!("element items: {__e}",).into())
+            })?,
+        })
     }
 }
 
@@ -15836,7 +15888,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::RevisionHistoryItem {
             version_id: __version_id.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element version_id".into())
             })?,
-            audits: __audits,
+            audits: openehr_base::containers::NonEmptyVec::new(__audits).map_err(|__e| {
+                crate::xml::runtime::XmlError::Parse(
+                    ::std::format!("element audits: {__e}",).into(),
+                )
+            })?,
         })
     }
 }
@@ -15999,7 +16055,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Role {
             },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            identities: __identities,
+            identities: openehr_base::containers::NonEmptyVec::new(__identities).map_err(
+                |__e| {
+                    crate::xml::runtime::XmlError::Parse(
+                        ::std::format!("element identities: {__e}",).into(),
+                    )
+                },
+            )?,
             contacts: if __contacts.is_empty() {
                 None
             } else {

@@ -858,7 +858,9 @@ pub(crate) fn field_type(
                 format!("Option<{inner}>")
             }
         }
-        BmmPropKind::Container { item, .. } => {
+        BmmPropKind::Container {
+            item, cardinality, ..
+        } => {
             // A byte buffer (`Array<Octet>` / `List<Octet>`, e.g.
             // `DV_MULTIMEDIA.data`) is inline base64 *text* on the canonical
             // wire, not a JSON array — carry the base64 verbatim as a `String`
@@ -901,11 +903,22 @@ pub(crate) fn field_type(
             // `Null` or an empty list (array) SHOULD be absent when serialized
             // as JSON"). The reader is the direction that gains: absent → `None`,
             // `[]` → `Some(vec![])`.
+            //
+            // A MANDATORY container whose BMM cardinality has a lower bound of
+            // 1 (`CLUSTER.items: List<ITEM> {1..*}`,
+            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+            // §Attributes) emits `NonEmptyVec<T>` instead of `Vec<T>`: the bound
+            // is a structural statement about the model, so the type carries it
+            // and the empty state stops being representable. A mandatory
+            // container with a `0..*` cardinality keeps the plain `Vec<T>` — it
+            // genuinely admits zero members.
             let item_ty = model.render_type(item, generics, subst, local, external);
-            if p.is_mandatory {
-                format!("Vec<{item_ty}>")
-            } else {
-                format!("Option<Vec<{item_ty}>>")
+            let lower_bound_one = cardinality.as_ref().is_some_and(|c| c.lower >= 1)
+                && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);
+            match (p.is_mandatory, lower_bound_one) {
+                (true, true) => format!("{}::NonEmptyVec<{item_ty}>", external.containers_path()),
+                (true, false) => format!("Vec<{item_ty}>"),
+                (false, _) => format!("Option<Vec<{item_ty}>>"),
             }
         }
     }

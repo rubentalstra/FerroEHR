@@ -139,13 +139,14 @@ mod tests {
             version_id: ObjectVersionId {
                 value: version_id.to_owned(),
             },
-            audits,
+            audits: openehr_base::containers::NonEmptyVec::new(audits)
+                .expect("a fixture container declared 1..* must have members"),
         }
     }
 
     fn history() -> RevisionHistory {
         RevisionHistory {
-            items: vec![
+            items: nonempty(vec![
                 item(
                     "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::1",
                     vec![commit_audit("2026-07-07T10:11:12Z")],
@@ -157,8 +158,13 @@ mod tests {
                         attestation("2026-07-09T09:00:00Z"),
                     ],
                 ),
-            ],
+            ]),
         }
+    }
+
+    /// A fixture container the model declares `1..*`.
+    fn nonempty<T>(members: Vec<T>) -> openehr_base::containers::NonEmptyVec<T> {
+        openehr_base::containers::NonEmptyVec::new(members).expect("the fixture states members")
     }
 
     /// `Post: Result.is_equal (items.last.version_id.value)`.
@@ -186,18 +192,35 @@ mod tests {
         );
     }
 
-    /// The spec-unrepresentable inputs report absence rather than a fabricated
-    /// value (module docs).
+    /// The states this used to construct — an empty `items` and an item with no
+    /// `audits` — are now UNREPRESENTABLE rather than merely reported as
+    /// absent: `REVISION_HISTORY.items` and `REVISION_HISTORY_ITEM.audits` are
+    /// both `1..*`
+    /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history.adoc`
+    /// and `…revision_history_item.adoc` §Attributes), and the emission shape
+    /// carries those bounds. Refusal at construction is strictly stronger than
+    /// reporting `None`, so the assertions move to the refusal.
     #[test]
-    fn empty_shapes_report_none() {
-        let empty = RevisionHistory { items: Vec::new() };
-        assert_eq!(empty.most_recent_version(), None);
-        assert_eq!(empty.most_recent_version_time_committed(), None);
+    fn the_spec_unrepresentable_shapes_are_refused_at_construction() {
+        assert!(
+            openehr_base::containers::NonEmptyVec::<RevisionHistoryItem>::new(Vec::new()).is_err(),
+            "an empty REVISION_HISTORY.items must not be constructible"
+        );
+        assert!(
+            openehr_base::containers::NonEmptyVec::<AuditDetails>::new(Vec::new()).is_err(),
+            "an empty REVISION_HISTORY_ITEM.audits must not be constructible"
+        );
+    }
 
-        let auditless = RevisionHistory {
-            items: vec![item("x::y::1", Vec::new())],
-        };
-        assert_eq!(auditless.most_recent_version(), Some("x::y::1"));
-        assert_eq!(auditless.most_recent_version_time_committed(), None);
+    /// A populated history still reports its most recent version and that
+    /// version's commit time (the behaviour the removed absence cases framed).
+    #[test]
+    fn a_populated_history_reports_its_most_recent_version() {
+        let h = history();
+        assert_eq!(
+            h.most_recent_version(),
+            Some("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2")
+        );
+        assert!(h.most_recent_version_time_committed().is_some());
     }
 }

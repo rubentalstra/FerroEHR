@@ -397,6 +397,7 @@ impl<'a> OptModel<'a> {
                     target: String::new(),
                     map_value: None,
                     default: None,
+                    nonempty: false,
                 },
                 decl_type,
             });
@@ -424,6 +425,7 @@ impl<'a> OptModel<'a> {
                     target: "OrderedDict".to_string(),
                     map_value: Some("String".to_string()),
                     default: None,
+                    nonempty: false,
                 };
             } else {
                 // Box a single-valued reference to a generated enum: those slots
@@ -460,6 +462,7 @@ impl<'a> OptModel<'a> {
                     target,
                     map_value: None,
                     default,
+                    nonempty: false,
                 };
             }
             out.push(OptField {

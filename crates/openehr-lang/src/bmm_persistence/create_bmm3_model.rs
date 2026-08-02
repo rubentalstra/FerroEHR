@@ -1002,7 +1002,14 @@ fn build_generic_type(
     Ok(BmmGenericType {
         value_constraint: value_set_spec(generic.value_constraint.as_deref()),
         base_class,
-        generic_parameters,
+        // `BMM_GENERIC_TYPE.generic_parameters` is `1..*`
+        // (`docs/specs/openehr/LANG/docs/UML/classes/org.openehr.lang.bmm3.bmm_generic_type.adoc`
+        // §Attributes); a source type specifier that supplied none is refused
+        // here rather than carried as an empty list.
+        generic_parameters: openehr_base::containers::NonEmptyVec::new(generic_parameters)
+            .map_err(|empty| PBmmReadError::TypeDefinitionMissing {
+                context: format!("generic type `{}`: {empty}", generic.root_type),
+            })?,
     })
 }
 

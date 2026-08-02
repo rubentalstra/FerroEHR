@@ -400,6 +400,19 @@ impl<T: ToJson> ToJson for Vec<T> {
     }
 }
 
+/// A `1..*` container writes exactly like the `Vec` it wraps — the bound is a
+/// model constraint, not a wire distinction.
+impl<T: ToJson> ToJson for openehr_base::containers::NonEmptyVec<T> {
+    fn write_json(&self, w: &mut JsonWriter) {
+        w.begin_array();
+        for e in self {
+            w.element();
+            e.write_json(w);
+        }
+        w.end_array();
+    }
+}
+
 impl<T: ToJson> ToJson for [T] {
     fn write_json(&self, w: &mut JsonWriter) {
         w.begin_array();
@@ -1170,6 +1183,19 @@ impl<T: FromJson> FromJson for Vec<T> {
             out.push(T::from_json(e).map_err(|err| err.in_index(i))?);
         }
         Ok(out)
+    }
+}
+
+/// A `1..*` container reads as an array and is then handed to its own
+/// constructor, so a present-but-EMPTY array is refused at parse instead of
+/// surviving into the model — the structural realization of a BMM cardinality
+/// lower bound of 1 (e.g. `CLUSTER.items`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+/// §Attributes).
+impl<T: FromJson> FromJson for openehr_base::containers::NonEmptyVec<T> {
+    fn from_json<N: JsonNode>(node: &N) -> Result<Self, JsonParseError> {
+        let members = Vec::<T>::from_json(node)?;
+        Self::new(members).map_err(|e| JsonParseError::custom(e.to_string()))
     }
 }
 

@@ -13,10 +13,16 @@ BMM** by `openehr-codegen -- emit`. Versioned by the spec
   (`PATHABLE.parent()`) use `Weak`/index, never an owning reference.
 - **`src/validate.rs` is the hand-written value-level validation layer** (the
   one non-`*_impl.rs` exception): the allocation-free fast path, the shared
-  invariant helpers, and the JSON-level per-node checks the typed model cannot
-  express (`check_mandatory_containers`, `check_nonempty_lists`,
-  `check_archetyped_valid`, `check_data_structure_shapes` — a `Vec` collapses
-  absent and present-but-empty, the raw JSON does not). Its sibling
+  invariant helpers, and the model-driven per-node checks run as their own
+  layers beside the fast/typed core pair (`check_mandatory_containers`,
+  `nonempty_list_violations` — the `x /= Void implies not x.is_empty` family,
+  evaluated over the BMM-derived `generated::NONEMPTY_LIST_RULES` table and its
+  descendant closure —, `check_archetyped_valid`,
+  `check_data_structure_shapes`). **Container shapes carry their own bounds:**
+  an optional container emits `Option<Vec<T>>` (absence and present-but-
+  emptiness are distinct states the RM relies on) and a `1..*` container emits
+  `openehr_base::containers::NonEmptyVec<T>` (the bound is structural, so an
+  empty list is unrepresentable rather than merely rejected). Its sibling
   `validate/terminology.rs` is the openEHR terminology-group / code-set binding
   table over the `openehr-term` bundle — **this crate DOES depend on
   `openehr-term`** (`openehr-term` reaches only `openehr-base`, so there is no

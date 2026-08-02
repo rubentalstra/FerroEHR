@@ -167,7 +167,7 @@ pub(crate) fn assemble(
     // A `template` may carry `template_overlay` blocks; overlays store
     // whole-file byte spans, so they re-assemble against the same `src`.
     let mut overlays = Vec::new();
-    for ov in art.overlays.iter() {
+    for ov in &art.overlays {
         match assemble(ov, src, dialect) {
             Ok(Archetype::TemplateOverlay(b)) => overlays.push(*b),
             Ok(_) => {}
@@ -559,10 +559,17 @@ fn merge_value_sets(v: &OdinValue, out: &mut BTreeMap<String, ValueSet>) {
         let id = obj
             .and_then(|o| string_of(o.get("id")))
             .unwrap_or_else(|| id_key.clone());
-        let members = obj
+        // `VALUE_SET.members` is `1..*`
+        // (`docs/specs/openehr/AM/docs/AOM2/master05-terminology.adoc`
+        // §VALUE_SET): a value set stating no member is not a value set, so the
+        // entry is skipped rather than materialised empty.
+        let Some(members) = obj
             .and_then(|o| o.get("members"))
             .map(string_list)
-            .unwrap_or_default();
+            .and_then(|m| openehr_base::containers::NonEmptyVec::new(m).ok())
+        else {
+            continue;
+        };
         out.insert(id_key, ValueSet { id, members });
     }
 }

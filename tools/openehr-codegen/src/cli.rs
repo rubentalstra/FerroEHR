@@ -101,7 +101,13 @@ fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
 /// and their `LANG` citations).
 ///
 /// Usage: `model-query [--class NAME] [--attribute NAME] [--component KEY]
-/// [--format table|tsv|json]`; no filter reports the whole loaded model.
+/// [--flattened] [--format table|tsv|json]`; no filter reports the whole loaded
+/// model.
+///
+/// `--flattened` switches from one row per class × DECLARED attribute to one
+/// row per class × **carried** attribute (inherited ones included), adding the
+/// declaring class in the `declared_on` column — the inheritance dimension a
+/// declared-only view cannot express.
 fn cmd_model_query(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let (query, format) = parse_model_query_args(args)?;
     print!("{}", model_query::render(&query, format)?);
@@ -124,6 +130,12 @@ fn parse_model_query_args(
             Some((f, v)) => (f, Some(v)),
             None => (arg.as_str(), None),
         };
+        // A valueless switch must not swallow the next argument.
+        if flag == "--flattened" {
+            query.flattened = true;
+            i += 1;
+            continue;
+        }
         let value = if let Some(v) = inline {
             i += 1;
             Some(v)
@@ -143,7 +155,7 @@ fn parse_model_query_args(
             other => {
                 return Err(format!(
                     "unknown model-query option {other:?}; valid options: --class NAME, \
-                     --attribute NAME, --component KEY, --format {}",
+                     --attribute NAME, --component KEY, --flattened, --format {}",
                     model_query::Format::VALID
                 )
                 .into());

@@ -18,6 +18,7 @@ impl Validate for Cluster {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data_structures::representation::item::Item;
     use crate::data_types::text::dv_text::{DvText, DvTextData};
 
     fn text(value: &str) -> DvText {
@@ -31,6 +32,21 @@ mod tests {
         })
     }
 
+    /// A minimal ELEMENT, the simplest legal `CLUSTER.items` member.
+    fn element() -> Item {
+        Item::Element(crate::data_structures::representation::element::Element {
+            name: text("element"),
+            archetype_node_id: "at0002".to_owned(),
+            uid: None,
+            links: None,
+            archetype_details: None,
+            feeder_audit: None,
+            null_flavour: None,
+            value: None,
+            null_reason: None,
+        })
+    }
+
     fn cluster(node_id: &str) -> Cluster {
         Cluster {
             name: text("cluster"),
@@ -39,13 +55,19 @@ mod tests {
             links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
-            items: Vec::new(),
+            items: openehr_base::containers::NonEmptyVec::of(element()),
         }
     }
 
+    /// `CLUSTER.items` is `1..*`
+    /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+    /// §Attributes), and the emission shape carries that bound, so an empty item
+    /// list is refused at CONSTRUCTION rather than reported by the invariant
+    /// layer. (This replaces the former `empty_items_still_valid`: the state it
+    /// asserted was benign is now unrepresentable, which is strictly stronger.)
     #[test]
-    fn empty_items_still_valid() {
-        assert!(cluster("at0001").invariants().is_empty());
+    fn an_empty_item_list_is_unrepresentable() {
+        assert!(openehr_base::containers::NonEmptyVec::<Item>::new(Vec::new()).is_err());
     }
 
     #[test]

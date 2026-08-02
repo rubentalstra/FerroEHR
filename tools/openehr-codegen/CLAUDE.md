@@ -17,7 +17,13 @@ The single deterministic generator behind the whole spec layer. Lives under
 - `model-query` — read-only report: what the vendored BMM states about every
   class attribute (declared type, existence, container + cardinality, class
   abstractness) beside the field shape the emitter currently emits for it;
-  `[--class X] [--attribute Y] [--component KEY] [--format table|tsv|json]`.
+  `[--class X] [--attribute Y] [--component KEY] [--flattened]
+  [--format table|tsv|json]`. **`--flattened` is the inheritance dimension**:
+  one row per class × CARRIED attribute (inherited ones included) with the
+  declaring class in `declared_on`, so a per-descendant divergence is
+  queryable instead of assumed — the default view reports DECLARED attributes
+  only, which cannot express it. Use the flattened view for any question of
+  the form "does every class that carries X emit the same shape".
 - `check` / `check-xsd` — input validation.
 
 ## Pipeline structure (four stages + CLI)

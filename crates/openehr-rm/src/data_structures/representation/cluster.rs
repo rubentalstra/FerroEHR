@@ -31,5 +31,5 @@ pub struct Cluster {
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
     pub feeder_audit: Option<FeederAudit>,
     /// Ordered list of items - `CLUSTER` or `ELEMENT` objects - under this `CLUSTER`.
-    pub items: Vec<Item>,
+    pub items: openehr_base::containers::NonEmptyVec<Item>,
 }

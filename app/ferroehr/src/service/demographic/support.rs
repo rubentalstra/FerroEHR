@@ -177,7 +177,12 @@ fn revision_history_item(
         version_id: ObjectVersionId {
             value: object_version_id(vo_id, &meta.creating_system_id, tree),
         },
-        audits: vec![AuditInput::from_meta(meta).typed(&meta.time_committed)?],
+        // `REVISION_HISTORY_ITEM.audits` is `1..*`
+        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history_item.adoc`
+        // §Attributes); this item always carries its commit audit.
+        audits: openehr_base::containers::NonEmptyVec::of(
+            AuditInput::from_meta(meta).typed(&meta.time_committed)?,
+        ),
     })
 }
 
@@ -307,6 +312,16 @@ impl FerroEhrService {
             .iter()
             .map(|meta| revision_history_item(vo_id, meta))
             .collect::<Result<Vec<_>, _>>()?;
+        // `REVISION_HISTORY.items` is `1..*`
+        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history.adoc`
+        // §Attributes): a versioned object with no versions has no revision
+        // history resource to return.
+        let items = openehr_base::containers::NonEmptyVec::new(items).map_err(|empty| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("versioned object {vo_id}: {empty}"),
+            )
+        })?;
         Ok(openehr_its::json::to_canonical_value(&RevisionHistory {
             items,
         }))

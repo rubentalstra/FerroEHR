@@ -489,19 +489,39 @@ mod tests {
         );
         let d = data(&cco);
         assert_eq!(
-            int_bounds(&d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0]),
+            int_bounds(
+                &d.attributes.as_deref().unwrap_or_default()[0]
+                    .children
+                    .as_deref()
+                    .unwrap_or_default()[0]
+            ),
             (Some(0.0), None, true, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes.as_deref().unwrap_or_default()[1].children.as_deref().unwrap_or_default()[0]),
+            int_bounds(
+                &d.attributes.as_deref().unwrap_or_default()[1]
+                    .children
+                    .as_deref()
+                    .unwrap_or_default()[0]
+            ),
             (None, Some(5.0), false, true)
         );
         assert_eq!(
-            int_bounds(&d.attributes.as_deref().unwrap_or_default()[2].children.as_deref().unwrap_or_default()[0]),
+            int_bounds(
+                &d.attributes.as_deref().unwrap_or_default()[2]
+                    .children
+                    .as_deref()
+                    .unwrap_or_default()[0]
+            ),
             (Some(0.0), None, true, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes.as_deref().unwrap_or_default()[3].children.as_deref().unwrap_or_default()[0]),
+            int_bounds(
+                &d.attributes.as_deref().unwrap_or_default()[3]
+                    .children
+                    .as_deref()
+                    .unwrap_or_default()[0]
+            ),
             (Some(0.0), Some(10.0), true, true)
         );
     }
@@ -521,15 +541,30 @@ mod tests {
         );
         let d = data(&cco);
         assert_eq!(
-            int_bounds(&d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0]),
+            int_bounds(
+                &d.attributes.as_deref().unwrap_or_default()[0]
+                    .children
+                    .as_deref()
+                    .unwrap_or_default()[0]
+            ),
             (Some(0.0), Some(1000.0), false, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes.as_deref().unwrap_or_default()[1].children.as_deref().unwrap_or_default()[0]),
+            int_bounds(
+                &d.attributes.as_deref().unwrap_or_default()[1]
+                    .children
+                    .as_deref()
+                    .unwrap_or_default()[0]
+            ),
             (Some(0.0), Some(1000.0), false, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes.as_deref().unwrap_or_default()[2].children.as_deref().unwrap_or_default()[0]),
+            int_bounds(
+                &d.attributes.as_deref().unwrap_or_default()[2]
+                    .children
+                    .as_deref()
+                    .unwrap_or_default()[0]
+            ),
             (Some(0.0), Some(1000.0), false, true)
         );
     }
@@ -548,15 +583,27 @@ mod tests {
              }",
         );
         let d = data(&cco);
-        match &d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CString(cs) => assert_eq!(cs.constraint, Some(vec!["en".to_owned()])),
             other => panic!("expected CString, got {other:?}"),
         }
-        match &d.attributes.as_deref().unwrap_or_default()[1].children.as_deref().unwrap_or_default()[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CInteger(ci) => assert_eq!(ci.constraint.as_ref().map_or(0, Vec::len), 2),
             other => panic!("expected CInteger, got {other:?}"),
         }
-        match &d.attributes.as_deref().unwrap_or_default()[2].children.as_deref().unwrap_or_default()[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[2]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CBoolean(cb) => assert_eq!(cb.constraint, Some(vec![true])),
             other => panic!("expected CBoolean, got {other:?}"),
         }

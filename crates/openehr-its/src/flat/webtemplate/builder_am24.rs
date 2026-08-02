@@ -527,7 +527,7 @@ fn expand_codes(term: &ArchetypeTerminology, constraint: &str) -> Vec<String> {
             .value_sets
             .as_ref()
             .and_then(|vs| vs.get(c))
-            .map(|vs| vs.members.clone())
+            .map(|vs| vs.members.to_vec())
             .unwrap_or_default();
     }
     vec![c.to_owned()]

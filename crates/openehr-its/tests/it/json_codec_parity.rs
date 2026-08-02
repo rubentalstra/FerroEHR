@@ -232,13 +232,28 @@ fn tolerance_concrete_poly_slot_defaults_type() {
     assert!(matches!(a, DvText::DvText(_)));
 }
 
-/// Tolerance rule 6 — **`Option`/`Vec` defaulting** and the **`Interval` literal
-/// flag defaults** are reproduced (minimal input, defaults materialized).
+/// Tolerance rule 6 — **optional-attribute defaulting** and the **`Interval`
+/// literal flag defaults** are reproduced (minimal input, defaults
+/// materialized).
+///
+/// An OPTIONAL container reads absent as `None`, not as an empty `Vec`: the two
+/// are distinct RM states (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc`
+/// §Invariants, `Mappings_valid: mappings /= void implies not
+/// mappings.is_empty`, is contentless otherwise), and the emission shape
+/// `Option<Vec<T>>` carries both. The wire is unchanged either way — an empty
+/// list is never written (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §JSON Format).
 #[test]
 fn tolerance_option_vec_and_interval_defaults() {
-    // Option absent → None, Vec absent → empty: a minimal DV_TEXT.
+    // Both an optional single attribute and an optional container read absent
+    // as `None`: a minimal DV_TEXT.
     let a: DvTextData = from_json_str(r#"{"_type":"DV_TEXT","value":""}"#).unwrap();
-    assert!(a.mappings.is_empty() && a.language.is_none());
+    assert!(a.mappings.is_none() && a.language.is_none());
+    // ...and a PRESENT but empty list is preserved as such, which is the state
+    // the `Mappings_valid` invariant exists to refuse.
+    let empty: DvTextData =
+        from_json_str(r#"{"_type":"DV_TEXT","value":"","mappings":[]}"#).unwrap();
+    assert_eq!(empty.mappings, Some(Vec::new()));
     // Interval `*_included`/`*_unbounded` flags omitted → their literal defaults,
     // which materialize on re-serialization.
     let json = r#"{"_type":"DV_INTERVAL","lower":{"_type":"DV_QUANTITY","magnitude":1.0,"units":"mm"},"upper":{"_type":"DV_QUANTITY","magnitude":2.0,"units":"mm"}}"#;

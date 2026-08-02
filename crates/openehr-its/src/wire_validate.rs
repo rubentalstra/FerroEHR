@@ -73,8 +73,8 @@ fn run<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantV
 /// collection (`HISTORY.events`, `ITEM_TABLE.rows`) keep the full [`run`]
 /// deserialize.
 ///
-/// NOTE: truncating a child *collection* here means a malformation *inside*
-/// a dropped array element is no longer reported at this ancestor's path — it is
+/// NOTE: emptying a child *collection* here means a malformation *inside*
+/// an array element is no longer reported at this ancestor's path — it is
 /// reported at that element's own recursion step instead (each collection member
 /// is a separate `_type` node the composition validator visits and dispatches).
 /// For array-element types the dispatcher does not cover (embedded non-LOCATABLE
@@ -92,41 +92,44 @@ fn run_shallow<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<In
     }
 }
 
-/// A shallow copy of an RM node with every nested RM-node **collection**
-/// truncated to its first member, recursing through single-valued nested nodes
-/// (which are kept, so the node's own mandatory single attributes stay enforced
-/// on deserialize). Scalar arrays (e.g. `DV_MULTIMEDIA.data` octets) are kept
-/// as-is. See [`run_shallow`] for why this is sound for the structural container
-/// types.
-///
-/// Truncating rather than emptying is what makes the shallow decode
-/// SHAPE-FAITHFUL: an optional container decodes to `Option<Vec<T>>`, so
-/// emptying an array would turn a populated list into the one state the
-/// `x /= Void implies not x.is_empty` family forbids. One member is enough for
-/// every invariant that reads a collection at all (all of them are presence /
-/// non-emptiness tests), and the cost stays bounded — one spine, not the
-/// subtree.
+/// A shallow copy of an RM node with every nested RM-node **collection** emptied,
+/// recursing through single-valued nested nodes (which are kept, so the node's
+/// own mandatory single attributes stay enforced on deserialize). Scalar arrays
+/// (e.g. `DV_MULTIMEDIA.data` octets) are kept as-is. See [`run_shallow`] for why
+/// this is sound for the structural container types.
 fn prune_child_nodes(value: &Value) -> Value {
     let Value::Object(map) = value else {
         return value.clone();
     };
+    let ty = map.get("_type").and_then(Value::as_str);
     let mut out = serde_json::Map::with_capacity(map.len());
     for (key, child) in map {
         let pruned = match child {
             // An array of RM nodes: the children are recursed into (and fully
             // validated) individually by the composition validator, so this
-            // node's own invariants never need their CONTENT — but the array's
-            // PRESENCE and NON-EMPTINESS are load-bearing (an optional container
-            // decodes to `Option<Vec<T>>`, and `x /= Void implies not
-            // x.is_empty` judges exactly those two bits), so the first member is
-            // kept (itself pruned) rather than the array emptied.
-            Value::Array(items) if items.iter().any(Value::is_object) => Value::Array(
-                items
-                    .first()
-                    .map(|first| prune_child_nodes(first))
-                    .into_iter()
-                    .collect(),
-            ),
+            // node's own invariants never need them.
+            //
+            // A `1..*` container keeps ONE member (itself pruned), because its
+            // emission shape is non-empty by construction
+            // (`openehr_base::containers::NonEmptyVec`) and an emptied array
+            // would fail to decode — a false structural violation on valid
+            // input. Everything else is emptied outright.
+            //
+            // NOTE: emptying leaves an OPTIONAL container decoding to
+            // `Some(vec![])` — a present-but-empty list, the state
+            // `x /= Void implies not x.is_empty` forbids. That is safe here
+            // because the run_shallow classes' own invariants never read a child
+            // collection (this function's documented precondition), and that
+            // invariant family is judged on the RAW node by
+            // `openehr_rm::validate::nonempty_list_violations`, a layer outside
+            // the fast/typed pair — never on this pruned copy.
+            Value::Array(items) if items.iter().any(Value::is_object) => {
+                if ty.is_some_and(|t| lower_bound_one(t, key)) {
+                    Value::Array(items.first().map(prune_child_nodes).into_iter().collect())
+                } else {
+                    Value::Array(Vec::new())
+                }
+            }
             // A single nested node: keep it (its presence is a structural
             // constraint this node's deserialize must still enforce), but recurse
             // to empty ITS child collections.
@@ -137,6 +140,14 @@ fn prune_child_nodes(value: &Value) -> Value {
         out.insert(key.clone(), pruned);
     }
     Value::Object(out)
+}
+
+/// Whether the static RM model declares `attribute` of `ty` as a container with
+/// a cardinality lower bound of 1 — the attributes whose emission shape is
+/// `NonEmptyVec<T>` and which therefore cannot decode from an emptied array.
+fn lower_bound_one(ty: &str, attribute: &str) -> bool {
+    openehr_rm::model::attributes(ty)
+        .any(|a| a.name == attribute && a.cardinality.is_some_and(|c| c.lower >= 1))
 }
 
 /// Run the **core** (non-terminology) RM class invariants for a single

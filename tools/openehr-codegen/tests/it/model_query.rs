@@ -15,7 +15,7 @@
 use openehr_codegen::testsupport;
 
 /// The report's header line, as its 13 column names.
-const HEADER: [&str; 13] = [
+const HEADER: [&str; 14] = [
     "component",
     "bmm",
     "package",
@@ -23,6 +23,7 @@ const HEADER: [&str; 13] = [
     "abstract",
     "class_emission",
     "decl",
+    "declared_on",
     "attribute",
     "bmm_type",
     "existence",
@@ -32,7 +33,7 @@ const HEADER: [&str; 13] = [
 ];
 
 /// `FOLDER` (RM 1.2.0), sorted by attribute name as the report sorts.
-const FOLDER: [[&str; 13]; 3] = [
+const FOLDER: [[&str; 14]; 3] = [
     [
         "rm",
         "openehr_rm_1.2.0",
@@ -41,6 +42,7 @@ const FOLDER: [[&str; 13]; 3] = [
         "-",
         "struct",
         "2",
+        "FOLDER",
         "details",
         "ITEM_STRUCTURE",
         "0..1",
@@ -56,12 +58,13 @@ const FOLDER: [[&str; 13]; 3] = [
         "-",
         "struct",
         "1",
+        "FOLDER",
         "folders",
         "List<FOLDER>",
         "0..1",
         "List",
         "0..*",
-        "Vec<Folder>",
+        "Option<Vec<Folder>>",
     ],
     [
         "rm",
@@ -71,18 +74,19 @@ const FOLDER: [[&str; 13]; 3] = [
         "-",
         "struct",
         "0",
+        "FOLDER",
         "items",
         "List<OBJECT_REF>",
         "0..1",
         "List",
         "0..*",
-        "Vec<ObjectRef>",
+        "Option<Vec<ObjectRef>>",
     ],
 ];
 
 /// `LOCATABLE` (RM 1.2.0) — abstract, so the class emits an untagged enum over
 /// its concrete descendants and these attributes flatten into each of them.
-const LOCATABLE: [[&str; 13]; 6] = [
+const LOCATABLE: [[&str; 14]; 6] = [
     [
         "rm",
         "openehr_rm_1.2.0",
@@ -91,6 +95,7 @@ const LOCATABLE: [[&str; 13]; 6] = [
         "abstract",
         "enum",
         "4",
+        "LOCATABLE",
         "archetype_details",
         "ARCHETYPED",
         "0..1",
@@ -106,6 +111,7 @@ const LOCATABLE: [[&str; 13]; 6] = [
         "abstract",
         "enum",
         "1",
+        "LOCATABLE",
         "archetype_node_id",
         "String",
         "1..1",
@@ -121,6 +127,7 @@ const LOCATABLE: [[&str; 13]; 6] = [
         "abstract",
         "enum",
         "5",
+        "LOCATABLE",
         "feeder_audit",
         "FEEDER_AUDIT",
         "0..1",
@@ -136,12 +143,13 @@ const LOCATABLE: [[&str; 13]; 6] = [
         "abstract",
         "enum",
         "3",
+        "LOCATABLE",
         "links",
         "List<LINK>",
         "0..1",
         "List",
         "0..*",
-        "Vec<Link>",
+        "Option<Vec<Link>>",
     ],
     [
         "rm",
@@ -151,6 +159,7 @@ const LOCATABLE: [[&str; 13]; 6] = [
         "abstract",
         "enum",
         "0",
+        "LOCATABLE",
         "name",
         "DV_TEXT",
         "1..1",
@@ -166,6 +175,7 @@ const LOCATABLE: [[&str; 13]; 6] = [
         "abstract",
         "enum",
         "2",
+        "LOCATABLE",
         "uid",
         "UID_BASED_ID",
         "0..1",
@@ -176,7 +186,7 @@ const LOCATABLE: [[&str; 13]; 6] = [
 ];
 
 /// The TSV text a header plus these rows must render as.
-fn expected_tsv(rows: &[[&str; 13]]) -> String {
+fn expected_tsv(rows: &[[&str; 14]]) -> String {
     let mut out = String::new();
     for row in std::iter::once(&HEADER).chain(rows) {
         out.push_str(&row.join("\t"));
@@ -186,8 +196,9 @@ fn expected_tsv(rows: &[[&str; 13]]) -> String {
 }
 
 /// `FOLDER`'s reported rows are exactly what the vendored RM BMM states, with
-/// the field shapes the emitter currently emits (`Vec<T>` for both `0..1
-/// List<>` attributes, `Option<T>` for the optional single one).
+/// the field shapes the emitter currently emits (`Option<Vec<T>>` for both
+/// `0..1 List<>` attributes — absence and present-but-emptiness are distinct
+/// model states — and `Option<T>` for the optional single one).
 #[test]
 fn folder_rows_match_the_vendored_bmm() {
     let report = testsupport::model_query(Some("rm"), Some("FOLDER"), None, "tsv")
@@ -211,7 +222,7 @@ fn an_attribute_filter_selects_one_row() {
         .expect("the RM composition loads");
     let items = FOLDER
         .iter()
-        .filter(|r| r.get(7) == Some(&"items"))
+        .filter(|r| r.get(8) == Some(&"items"))
         .copied()
         .collect::<Vec<_>>();
     assert_eq!(report, expected_tsv(&items));
@@ -274,4 +285,59 @@ fn unknown_filter_values_are_rejected_with_the_valid_ones() {
         .expect_err("`yaml` is not a report format")
         .to_string();
     assert!(format.contains("table, tsv, json"), "{format}");
+}
+
+/// The flattened view reports every attribute a class CARRIES, not just the
+/// ones it declares — the inheritance dimension.
+///
+/// `LOCATABLE.links` is declared once on the abstract `LOCATABLE`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Attributes) and inherited by every archetyped RM class, so the declared
+/// view reports it once while the flattened view reports it once per carrier,
+/// each naming `LOCATABLE` as the declaring class.
+#[test]
+fn the_flattened_view_reports_inherited_attributes_per_carrier() {
+    let declared = testsupport::model_query_view(Some("rm"), None, Some("links"), "tsv", false)
+        .expect("the rm composition loads");
+    let flattened = testsupport::model_query_view(Some("rm"), None, Some("links"), "tsv", true)
+        .expect("the rm composition loads");
+    let rows = |report: &str| report.lines().skip(1).count();
+    assert_eq!(
+        rows(&declared),
+        1,
+        "links is declared exactly once, on LOCATABLE"
+    );
+    assert!(
+        rows(&flattened) > 1,
+        "the flattened view must report every class that carries links, got {}",
+        rows(&flattened)
+    );
+    for line in flattened.lines().skip(1) {
+        let cells: Vec<&str> = line.split('\t').collect();
+        assert_eq!(
+            cells.get(7).copied(),
+            Some("LOCATABLE"),
+            "every carrier must name LOCATABLE as the declaring class: {line}"
+        );
+    }
+}
+
+/// The emission column of the flattened view is computed for the CARRYING
+/// class, so a per-descendant divergence is visible rather than assumed absent.
+/// `LOCATABLE.links` resolves identically everywhere; the assertion pins that
+/// so a future emitter change that breaks the uniformity is caught here.
+#[test]
+fn a_uniformly_inherited_container_emits_one_shape_for_every_carrier() {
+    let report = testsupport::model_query_view(Some("rm"), None, Some("links"), "tsv", true)
+        .expect("the rm composition loads");
+    let shapes: std::collections::BTreeSet<&str> = report
+        .lines()
+        .skip(1)
+        .filter_map(|l| l.split('\t').nth(13))
+        .collect();
+    assert_eq!(
+        shapes,
+        ["Option<Vec<Link>>"].into_iter().collect(),
+        "LOCATABLE.links must emit one shape for every carrier"
+    );
 }

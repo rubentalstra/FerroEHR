@@ -202,6 +202,7 @@ fn archetype_ref_item_resolves_to_target_node() {
         .expect("a rules statement set")
         .statement
         .into_iter()
+        .flatten()
         .next()
         .expect("a rule statement");
     let Statement::Assertion(a) = stmt else {

@@ -15,7 +15,7 @@ use crate::am24::bmm3::expression::el_value_generator::ElValueGenerator;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ElCaseTable<T> {
     /// Members of the chain, equivalent to branches in an if/then/else chain and cases in a case statement.
-    pub items: Vec<ElCase<T>>,
+    pub items: openehr_base::containers::NonEmptyVec<ElCase<T>>,
 
     // inherited: EL_DECISION_TABLE
     /// Result expression of conditional, if its `_condition_` evaluates to True.

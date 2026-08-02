@@ -92,12 +92,14 @@ mod tests {
             preceding_version_uid: Some(ObjectVersionId {
                 value: "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2".to_owned(),
             }),
-            other_input_version_uids: other_input
-                .into_iter()
-                .map(|value| ObjectVersionId {
-                    value: value.to_owned(),
-                })
-                .collect(),
+            other_input_version_uids: openehr_base::containers::present(
+                other_input
+                    .into_iter()
+                    .map(|value| ObjectVersionId {
+                        value: value.to_owned(),
+                    })
+                    .collect(),
+            ),
             lifecycle_state: DvCodedText {
                 value: "complete".to_owned(),
                 hyperlink: None,

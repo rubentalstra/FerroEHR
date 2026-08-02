@@ -14,7 +14,7 @@ pub struct AddressedMessage {
     /// Identification of message used by sender. This will be the same no matter how many times this message is sent to these recipients.
     pub sender_reference: String,
     /// Intended recipients, in the form of internet addresses.
-    pub addressees: Vec<String>,
+    pub addressees: openehr_base::containers::NonEmptyVec<String>,
     /// Urgency with which destination should deal with message:
     ///
     /// * -1 - low

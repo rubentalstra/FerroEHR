@@ -295,7 +295,7 @@ pub(super) fn validate_flat_form(flat: &Archetype) -> Vec<ValidationIssue> {
     // VTVSMD: value-set members must be defined in the flattened terminology.
     if let Some(value_sets) = v.terminology.value_sets.as_ref() {
         for set in value_sets.values() {
-            for m in set.members.iter() {
+            for m in &set.members {
                 if !defined.contains(m.as_str()) {
                     issues.push(ValidationIssue::new(
                         ValidationCode::Vtvsmd,

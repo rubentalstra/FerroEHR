@@ -120,9 +120,8 @@ impl BmmGenericType {
     #[must_use]
     pub fn type_name(&self) -> String {
         let root = &self.base_class.name;
-        let parameters: Vec<String> = self
-            .generic_parameters
-            .iter()
+        let parameters: Vec<String> = (&self.generic_parameters)
+            .into_iter()
             .map(BmmUnitaryType::type_name)
             .collect();
         format!("{root}<{}>", parameters.join(","))
@@ -159,7 +158,7 @@ impl BmmGenericType {
     #[must_use]
     pub fn flattened_type_list(&self) -> Vec<String> {
         let mut out = vec![self.base_class.name.clone()];
-        for parameter in self.generic_parameters.iter() {
+        for parameter in &self.generic_parameters {
             out.extend(parameter.flattened_type_list());
         }
         unique(out)

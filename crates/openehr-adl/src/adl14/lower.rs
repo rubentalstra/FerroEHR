@@ -303,7 +303,14 @@ impl Parser<'_> {
             )?;
             let symbol = self.parse_adl14_ordinal_symbol()?;
             tuples.push(CPrimitiveTuple {
-                members: vec![value, symbol],
+                // A `value|symbol` ordinal row always has exactly two members,
+                // so the `1..*` bound of `C_PRIMITIVE_TUPLE.members` holds by
+                // construction here.
+                members: {
+                    let mut row = openehr_base::containers::NonEmptyVec::of(value);
+                    row.push(symbol);
+                    row
+                },
             });
             if !self.eat(|t| matches!(t, Token::SymComma)) {
                 break;

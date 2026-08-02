@@ -520,6 +520,15 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                         b,
                         "{fname}: if {var}.is_empty() {{ None }} else {{ Some({var}) }},"
                     );
+                } else if f.nonempty {
+                    // A `1..*` container goes through its own constructor, so a
+                    // document with zero occurrences is refused at parse.
+                    let var = acc_var(fname);
+                    let _ = writeln!(
+                        b,
+                        "{fname}: openehr_base::containers::NonEmptyVec::new({var}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {}: {{__e}}\", ).into()))?,",
+                        f.wire_name
+                    );
                 } else if f.multiple || f.optional {
                     let _ = writeln!(b, "{fname}: {},", acc_var(fname));
                 } else if let Some(default) = &f.default {

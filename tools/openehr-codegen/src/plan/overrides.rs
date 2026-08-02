@@ -613,6 +613,50 @@ pub(crate) const FIELD_DEFAULTS: &[FieldDefault] = &[
     },
 ];
 
+/// A container attribute whose vendored cardinality lower bound is CONTRADICTED
+/// by the same release's normative syntax, with the citation that resolves it.
+///
+/// The emitter never softens a bound on its own — a `1..*` is emitted as
+/// `NonEmptyVec<T>` precisely so the model carries it. An entry here exists
+/// only where the vendored release states the bound BOTH ways and the syntax
+/// chapter (which defines the persistence form and shows conformant instances)
+/// governs over the UML class table.
+struct CardinalityContradiction {
+    /// The declaring BMM class.
+    owner: &'static str,
+    /// The container attribute.
+    field: &'static str,
+    /// The spec text that resolves the contradiction.
+    #[expect(
+        dead_code,
+        reason = "the citation is this decision map's spec record — it exists to be read at review, exactly like every other override map's citation field, and is deliberately not consumed by emitted text"
+    )]
+    citation: &'static str,
+    /// One-line reason.
+    #[expect(
+        dead_code,
+        reason = "the reason is this decision map's spec record — read at review, not consumed by emitted text"
+    )]
+    reason: &'static str,
+}
+
+/// Every adjudicated cardinality contradiction in the vendored inputs.
+static CARDINALITY_CONTRADICTIONS: &[CardinalityContradiction] = &[CardinalityContradiction {
+    owner: "P_BMM_GENERIC_TYPE",
+    field: "generic_parameter_defs",
+    citation: "docs/specs/openehr/LANG/docs/bmm_persistence/master04-syntax.adoc \u{a7}Generic                Classes: \"within `P_BMM_GENERIC_TYPE`, use `_generic_parameters_` for a list of                string types; use `_generic_parameter_defs_` for a list of complex type                references\" \u{2014} the two are ALTERNATIVES, and the chapter\u{2019}s own                example writes `root_type = <\"DV_INTERVAL\"> generic_parameters =                <\"DV_QUANTITY\">` with no `generic_parameter_defs` at all. The UML class table                (docs/specs/openehr/LANG/docs/UML/classes/org.openehr.lang.bmm_persistence.p_bmm_generic_type.adoc)                states 1..1 for the same attribute, which would make that example \u{2014} and                every string-parameterised generic type in a real .bmm schema \u{2014} invalid,                and would leave the 0..1 `generic_parameters` attribute dead. The syntax                chapter governs.",
+    reason: "Reported upstream as a spec defect; the syntax chapter's reading is emitted.",
+}];
+
+/// Whether `(owner, field)`'s vendored cardinality lower bound is an adjudicated
+/// contradiction that the emitter must NOT realize as a non-empty container.
+#[must_use]
+pub(crate) fn cardinality_contradicted(owner: &str, field: &str) -> bool {
+    CARDINALITY_CONTRADICTIONS
+        .iter()
+        .any(|c| c.owner == owner && c.field == field)
+}
+
 /// The serde default expression for `(owner, field)`, or `None`. Behaviour-
 /// identical to the former inline `field_default`.
 pub(crate) fn field_default(owner: &str, field: &str) -> Option<&'static str> {
@@ -1538,7 +1582,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "COMPOSITION",
         name: "Content_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.composition.composition.adoc",
         reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
@@ -1546,7 +1590,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "EVENT_CONTEXT",
         name: "Participations_validity",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.composition.event_context.adoc",
         reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
@@ -1554,7 +1598,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "SECTION",
         name: "Items_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.composition.section.adoc",
         reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
@@ -1562,7 +1606,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "ENTRY",
         name: "Other_participations_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.composition.entry.adoc",
         reason: "inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`.",
     },
@@ -1570,7 +1614,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "INSTRUCTION",
         name: "Activities_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.composition.instruction.adoc",
         reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
@@ -1578,7 +1622,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "DV_TEXT",
         name: "Mappings_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.data_types.dv_text.adoc",
         reason: "inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`.",
     },
@@ -1586,7 +1630,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "DV_ORDERED",
         name: "Other_reference_ranges_validity",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.data_types.dv_ordered.adoc",
         reason: "inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`.",
     },
@@ -1594,7 +1638,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "LOCATABLE",
         name: "Links_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.common.locatable.adoc",
         reason: "inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`.",
     },
@@ -1674,7 +1718,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "ACTOR",
         name: "Roles_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.demographic.actor.adoc",
         reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
@@ -1906,7 +1950,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         class: "ATTESTATION",
         name: "Items_valid",
         venue: InvariantVenue::Core,
-        site: "crates/openehr-rm/src/validate/generated.rs",
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.common.attestation.adoc",
         reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },

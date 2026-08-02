@@ -29,5 +29,5 @@ pub struct PCString {
     /// True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.
     pub is_enumerated_type_constraint: Option<bool>,
     /// String constraint - a list of literal strings and / or regular expression strings delimited by the ‘/’ character.
-    pub constraint: Vec<String>,
+    pub constraint: openehr_base::containers::NonEmptyVec<String>,
 }

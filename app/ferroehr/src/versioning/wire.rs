@@ -83,7 +83,11 @@ pub(crate) async fn revision_history(
         // "there will always be at least one commit audit … there may also be
         // further attestations" — the commit audit first, then the version's
         // attestations in commit order (master04 §Revision History).
-        let mut audits = vec![AuditInput::from_meta(row).typed(&row.time_committed)?];
+        // The commit audit makes the `1..*` bound of
+        // `REVISION_HISTORY_ITEM.audits` hold by construction.
+        let mut audits = openehr_base::containers::NonEmptyVec::of(
+            AuditInput::from_meta(row).typed(&row.time_committed)?,
+        );
         for stored in attestations.remove(&row.sys_version).unwrap_or_default() {
             audits.push(stored_attestation(&stored)?);
         }
@@ -98,6 +102,16 @@ pub(crate) async fn revision_history(
             audits,
         });
     }
+    // `REVISION_HISTORY.items` is `1..*`
+    // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history.adoc`
+    // §Attributes): a versioned object always has at least one version, so an
+    // empty history is not a representable resource.
+    let items = openehr_base::containers::NonEmptyVec::new(items).map_err(|empty| {
+        ServiceError::sm(
+            CallStatusType::VersionedObjectDoesNotExist,
+            format!("versioned object {vo_id}: {empty}"),
+        )
+    })?;
     let history = RevisionHistory { items };
     // The history resource's `Last-Modified` value (ITS-REST overview
     // `Requests_and_responses.md` §"`ETag` and Last-Modified": derived from

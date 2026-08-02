@@ -1493,13 +1493,17 @@ fn ordinal_tuple(c: &opt14::CDvOrdinal, cx: &mut RootCx) -> CObject {
         .list
         .iter()
         .map(|o| CPrimitiveTuple {
-            members: vec![
-                tuple_integer(Some(o.value), None),
-                tuple_code(
+            // A `[value, symbol]` ordinal row always has two members, so the
+            // `1..*` bound of `C_PRIMITIVE_TUPLE.members` holds by construction.
+            members: {
+                let mut row =
+                    openehr_base::containers::NonEmptyVec::of(tuple_integer(Some(o.value), None));
+                row.push(tuple_code(
                     Some(o.symbol.defining_code.terminology_id.value.as_str()),
                     &o.symbol.defining_code.code_string,
-                ),
-            ],
+                ));
+                row
+            },
         })
         .collect::<Vec<_>>();
     let attribute_tuples = if tuples.is_empty() {
@@ -1594,10 +1598,12 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
             .list
             .iter()
             .map(|item| {
-                let mut members = vec![
-                    tuple_string(&item.units),
-                    tuple_real(item.magnitude.as_ref().map(real_interval)),
-                ];
+                // A `[units, magnitude]` (optionally `+ precision`) row always
+                // has at least two members, so the `1..*` bound of
+                // `C_PRIMITIVE_TUPLE.members` holds by construction.
+                let mut members =
+                    openehr_base::containers::NonEmptyVec::of(tuple_string(&item.units));
+                members.push(tuple_real(item.magnitude.as_ref().map(real_interval)));
                 if all_precision {
                     members.push(tuple_integer(
                         None,
@@ -2080,9 +2086,17 @@ mod tests {
         let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = &constrained else {
             panic!("expected a complex object");
         };
-        assert_eq!(d.attribute_tuples.len(), 1, "one [units, magnitude] tuple");
         assert_eq!(
-            d.attribute_tuples.first().map(|t| t.tuples.len()),
+            d.attribute_tuples.as_ref().map_or(0, Vec::len),
+            1,
+            "one [units, magnitude] tuple"
+        );
+        assert_eq!(
+            d.attribute_tuples
+                .iter()
+                .flatten()
+                .next()
+                .map(|t| t.tuples.as_ref().map_or(0, Vec::len)),
             Some(2),
             "one row per unit"
         );
@@ -2091,9 +2105,15 @@ mod tests {
         let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = &widened else {
             panic!("expected a complex object");
         };
-        assert!(d.attribute_tuples.is_empty(), "no tuple without magnitudes");
         assert!(
-            d.attributes.iter().any(|a| a.rm_attribute_name == "units"),
+            d.attribute_tuples.as_ref().is_none_or(Vec::is_empty),
+            "no tuple without magnitudes"
+        );
+        assert!(
+            d.attributes
+                .iter()
+                .flatten()
+                .any(|a| a.rm_attribute_name == "units"),
             "a plain units attribute instead"
         );
     }
@@ -2197,7 +2217,11 @@ mod tests {
             panic!("expected a C_DURATION");
         };
         assert_eq!(d.pattern_constraint.as_deref(), Some("PTH"));
-        assert_eq!(d.constraint.len(), 1, "the range must be carried");
+        assert_eq!(
+            d.constraint.as_ref().map_or(0, Vec::len),
+            1,
+            "the range must be carried"
+        );
         assert_eq!(d.assumed_value.map(|a| a.value), Some("PT1H".to_owned()));
         assert!(cx.notes.is_empty(), "durations carry both without a report");
     }
@@ -2231,7 +2255,11 @@ mod tests {
             panic!("expected a C_DATE");
         };
         assert!(d.pattern_constraint.is_none(), "the pattern must drop");
-        assert_eq!(d.constraint.len(), 1, "the range must be kept");
+        assert_eq!(
+            d.constraint.as_ref().map_or(0, Vec::len),
+            1,
+            "the range must be kept"
+        );
         assert!(
             cx.notes.keys().any(|k| k.starts_with("temporal_pattern.")),
             "the dropped pattern must be reported: {:?}",

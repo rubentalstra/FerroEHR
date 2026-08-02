@@ -83,7 +83,7 @@ fn value_sets(t: &ArchetypeTerminology) -> BTreeMap<String, Vec<String>> {
         .clone()
         .unwrap_or_default()
         .into_iter()
-        .map(|(k, v)| (k, v.members))
+        .map(|(k, v)| (k, v.members.into_vec()))
         .collect()
 }
 

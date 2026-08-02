@@ -557,7 +557,10 @@ mod tests {
             panic!("expected a plain complex object root");
         };
         let CObject::CComplexObject(CComplexObject::CComplexObject(second)) =
-            &d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[1]
+            &d.attributes.as_deref().unwrap_or_default()[0]
+                .children
+                .as_deref()
+                .unwrap_or_default()[1]
         else {
             panic!("expected the re-ordered ELEMENT");
         };

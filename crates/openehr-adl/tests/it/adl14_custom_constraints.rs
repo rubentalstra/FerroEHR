@@ -160,8 +160,7 @@ fn ordinal_rows(tuple: &CAttributeTuple) -> Vec<(f64, String)> {
         .iter()
         .flatten()
         .map(|row| {
-            let value = match row.members.iter().next().expect("the value member")
-            {
+            let value = match row.members.iter().next().expect("the value member") {
                 CPrimitiveObject::CInteger(c) => match c.constraint.iter().flatten().next() {
                     Some(openehr_base::prelude::Interval::PointInterval(p)) => {
                         f64::from(p.lower.expect("a point ordinal value"))
@@ -465,13 +464,12 @@ fn pipe_ordinal_assumed_value_lands_on_its_own_row() {
         .tuples
         .iter()
         .flatten()
-        .map(|row| {
-            match row.members.iter().next().expect("the value member")
-            {
+        .map(
+            |row| match row.members.iter().next().expect("the value member") {
                 CPrimitiveObject::CInteger(c) => c.assumed_value,
                 other => panic!("not an integer ordinal value: {other:?}"),
-            }
-        })
+            },
+        )
         .collect();
     assert_eq!(
         assumed,

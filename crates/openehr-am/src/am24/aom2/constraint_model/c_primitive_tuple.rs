@@ -10,5 +10,5 @@ use crate::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 #[derive(Debug, Clone, PartialEq)]
 pub struct CPrimitiveTuple {
     /// Object constraint members of this tuple group.
-    pub members: Vec<CPrimitiveObject>,
+    pub members: openehr_base::containers::NonEmptyVec<CPrimitiveObject>,
 }

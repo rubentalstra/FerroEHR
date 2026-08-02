@@ -33,9 +33,31 @@ pub(crate) struct External {
     /// Each entry: the set of spec class names a dependency exports, and the
     /// Rust path to import them from (its prelude).
     deps: Vec<(BTreeSet<String>, String)>,
+    /// Path to the hand-written container-shape module
+    /// (`openehr_base::containers`, or `crate::containers` inside
+    /// `openehr-base` itself). `NonEmptyVec` — the emission shape of a `1..*`
+    /// container — is named from here.
+    containers: String,
 }
 
 impl External {
+    /// Point the container-shape path at the crate being emitted: within
+    /// `openehr-base` the module is `crate::containers`, elsewhere it is
+    /// reached through the `openehr_base` dependency.
+    pub(crate) fn in_crate(mut self, crate_name: &str) -> Self {
+        self.containers = if crate_name == "openehr-base" {
+            "crate::containers".to_string()
+        } else {
+            "openehr_base::containers".to_string()
+        };
+        self
+    }
+
+    /// The path the `NonEmptyVec` container shape is named from.
+    pub(crate) fn containers_path(&self) -> &str {
+        &self.containers
+    }
+
     /// Register a dependency crate's exported spec names under a prelude path.
     pub(crate) fn with(mut self, specs: BTreeSet<String>, prelude_path: &str) -> Self {
         self.deps.push((specs, prelude_path.to_string()));

@@ -191,7 +191,7 @@ fn vdifv_differential_path_without_specialisation() {
     let mut a = parse(BASE);
     root_data_mut(&mut a)
         .attributes
-        .as_deref()
+        .as_deref_mut()
         .unwrap_or_default()[0]
         .differential_path = Some("/element_attr".to_owned());
     let issues = validate_integrity(&a, None);
@@ -216,19 +216,21 @@ fn vobav_assumed_value_outside_constraint() {
     let mut a = parse(BASE);
     let el = &mut root_data_mut(&mut a)
         .attributes
-        .as_deref()
+        .as_deref_mut()
         .unwrap_or_default()[0]
-        .children[0];
+        .children
+        .as_deref_mut()
+        .unwrap_or_default()[0];
     if let CObject::CComplexObject(CComplexObject::CComplexObject(elem)) = el {
         // give the ELEMENT a `value` attribute constrained to a C_STRING whose
         // assumed value is not in the constraint list.
         use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-        elem.attributes.push(CAttribute {
+        elem.attributes.get_or_insert_default().push(CAttribute {
             parent: None,
             soc_parent: None,
             rm_attribute_name: "value".to_owned(),
             existence: None,
-            children: vec![CObject::CString(CString {
+            children: Some(vec![CObject::CString(CString {
                 parent: None,
                 soc_parent: None,
                 rm_type_name: "String".to_owned(),
@@ -240,8 +242,8 @@ fn vobav_assumed_value_outside_constraint() {
                 default_value: None,
                 assumed_value: Some("z".to_owned()),
                 is_enumerated_type_constraint: None,
-                constraint: vec!["a".to_owned(), "b".to_owned()],
-            })],
+                constraint: Some(vec!["a".to_owned(), "b".to_owned()]),
+            })]),
             differential_path: None,
             cardinality: None,
             is_multiple: false,
@@ -273,16 +275,18 @@ fn vobav_ordered_assumed_value_outside_interval_constraint() {
     let mut a = parse(BASE);
     let el = &mut root_data_mut(&mut a)
         .attributes
-        .as_deref()
+        .as_deref_mut()
         .unwrap_or_default()[0]
-        .children[0];
+        .children
+        .as_deref_mut()
+        .unwrap_or_default()[0];
     if let CObject::CComplexObject(CComplexObject::CComplexObject(elem)) = el {
-        elem.attributes.push(CAttribute {
+        elem.attributes.get_or_insert_default().push(CAttribute {
             parent: None,
             soc_parent: None,
             rm_attribute_name: "value".to_owned(),
             existence: None,
-            children: vec![CObject::CInteger(CInteger {
+            children: Some(vec![CObject::CInteger(CInteger {
                 parent: None,
                 soc_parent: None,
                 rm_type_name: "Integer".to_owned(),
@@ -294,8 +298,8 @@ fn vobav_ordered_assumed_value_outside_interval_constraint() {
                 default_value: None,
                 assumed_value: Some(20.0),
                 is_enumerated_type_constraint: None,
-                constraint: vec![interval_0_10],
-            })],
+                constraint: Some(vec![interval_0_10]),
+            })]),
             differential_path: None,
             cardinality: None,
             is_multiple: false,
@@ -411,7 +415,10 @@ terminology
     let mut a = parse(src);
     // reach the C_ARCHETYPE_ROOT child of `items` and corrupt its reference.
     let root = root_data_mut(&mut a);
-    let child = &mut root.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0];
+    let child = &mut root.attributes.as_deref_mut().unwrap_or_default()[0]
+        .children
+        .as_deref_mut()
+        .unwrap_or_default()[0];
     if let CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) = child {
         let r: &mut CArchetypeRoot = r;
         r.archetype_ref = "bogus_ref".to_owned();
@@ -455,8 +462,10 @@ fn archetype_root_child_mut(
     let root = root_data_mut(a);
     let child = root
         .attributes
+        .as_deref_mut()
+        .unwrap_or_default()
         .first_mut()
-        .and_then(|attr| attr.children.first_mut())
+        .and_then(|attr| attr.children.as_deref_mut().unwrap_or_default().first_mut())
         .expect("the fixture root has a first attribute with a first child");
     match child {
         CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r,

@@ -242,14 +242,33 @@ fn node_conforms(obj: &Map<String, Value>, class: &'static RmClass, shallow: boo
             }
             Container::List | Container::Set => match v {
                 Value::Array(items) => {
+                    let lower_bound_one = attr.cardinality.is_some_and(|c| c.lower >= 1);
+                    if attr.is_mandatory {
+                        mandatory_seen += 1;
+                    }
+                    // A `1..*` container emits as `NonEmptyVec<T>`, whose
+                    // constructor refuses an empty list — so an empty array does
+                    // NOT deserialize and this checker must not vouch.
+                    if lower_bound_one && items.is_empty() {
+                        return false;
+                    }
                     if shallow {
                         // Mirror `prune_child_nodes`: an array containing at
                         // least one object is emptied before the shallow typed
-                        // deserialize (so its contents never matter), and an
-                        // empty array trivially deserializes. A non-empty
-                        // all-scalar array is kept by the prune and typed-
-                        // checked — don't vouch for it.
-                        if !(items.is_empty() || items.iter().any(Value::is_object)) {
+                        // deserialize (so its contents never matter) UNLESS the
+                        // attribute is `1..*`, where the prune keeps the first
+                        // member — which the typed decode then inspects, so this
+                        // checker must inspect it too. An empty array trivially
+                        // deserializes. A non-empty all-scalar array is kept by
+                        // the prune and typed-checked — don't vouch for it.
+                        if lower_bound_one {
+                            if !items
+                                .first()
+                                .is_some_and(|f| value_conforms(f, attr.declared_type, true))
+                            {
+                                return false;
+                            }
+                        } else if !(items.is_empty() || items.iter().any(Value::is_object)) {
                             return false;
                         }
                     } else {
@@ -267,15 +286,12 @@ fn node_conforms(obj: &Map<String, Value>, class: &'static RmClass, shallow: boo
             Container::Hash => return false,
         }
     }
-    // Absent attributes: `Vec` defaults to empty and `Option` to `None`, but a
-    // missing plain mandatory attribute fails the typed deserialize — every
-    // mandatory single-valued attribute must have been seen (non-null).
-    mandatory_seen
-        == class
-            .attributes
-            .iter()
-            .filter(|a| a.is_mandatory && a.container == Container::None)
-            .count()
+    // Absent attributes: an OPTIONAL container defaults to `None` and an
+    // optional single attribute to `None`, but a missing MANDATORY attribute
+    // fails the typed deserialize — whether it is single-valued or a container
+    // (a mandatory container is a plain `Vec`/`NonEmptyVec` field the reader
+    // requires). Every mandatory attribute must therefore have been seen.
+    mandatory_seen == class.attributes.iter().filter(|a| a.is_mandatory).count()
 }
 
 /// Whether a single value verifiably deserializes as the declared spec type.

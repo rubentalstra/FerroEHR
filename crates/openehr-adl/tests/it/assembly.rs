@@ -90,7 +90,10 @@ fn terminology_maps_definitions_bindings_and_value_sets() {
         Some("http://snomed.info/id/123")
     );
     let vs = t.value_sets.as_ref().expect("value_sets");
-    assert_eq!(vs.get("ac1").expect("ac1").members, vec!["at1", "at2"]);
+    assert_eq!(
+        vs.get("ac1").expect("ac1").members.as_ref(),
+        ["at1".to_owned(), "at2".to_owned()]
+    );
 }
 
 #[test]
@@ -151,7 +154,7 @@ fn description_maps_author_details_and_regression_tag() {
         .and_then(|m| m.get("en"))
         .expect("en detail");
     assert_eq!(en.purpose, "A test purpose.");
-    assert_eq!(en.keywords, vec!["test", "adl"]);
+    assert_eq!(en.keywords, Some(vec!["test".to_owned(), "adl".to_owned()]));
     assert_eq!(
         d.other_details
             .as_ref()

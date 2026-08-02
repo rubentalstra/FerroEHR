@@ -665,12 +665,14 @@ impl<'a> Converter<'a> {
 
         let mut value_sets: BTreeMap<String, ValueSet> = old.value_sets.clone().unwrap_or_default();
         for s in &self.synth {
-            if let Some(members) = &s.value_set_members {
+            if let Some(members) = &s.value_set_members
+                && let Ok(members) = openehr_base::containers::NonEmptyVec::new(members.clone())
+            {
                 value_sets.insert(
                     s.code.clone(),
                     ValueSet {
                         id: s.code.clone(),
-                        members: members.clone(),
+                        members,
                     },
                 );
             }
@@ -815,7 +817,7 @@ fn convert_constraints_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>, own
         // Tuple ROWS carry the actual primitive constraints — convert their
         // terminology codes (ordinal symbols etc.) like attribute ones.
         for row in tuple.tuples.iter_mut().flatten() {
-            for m in row.members.iter_mut() {
+            for m in &mut row.members {
                 if let CPrimitiveObject::CTerminologyCode(tc) = m {
                     let (constraint, assumed) = cx.convert_constraint(&tc.constraint, &node_text);
                     tc.constraint = constraint;

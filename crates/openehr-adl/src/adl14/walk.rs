@@ -92,7 +92,7 @@ pub(super) fn walk_constraints(def: &CComplexObject, f: &mut impl FnMut(&str, &s
             // `[value, symbol]` symbol codes) — visit their terminology codes
             // so value at-codes are planned and converted like attribute ones.
             for row in tuple.tuples.iter().flatten() {
-                for m in row.members.iter() {
+                for m in &row.members {
                     if let CPrimitiveObject::CTerminologyCode(tc) = m {
                         f(&tc.constraint, "");
                     }

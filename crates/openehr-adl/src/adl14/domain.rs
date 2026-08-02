@@ -256,6 +256,14 @@ fn partition_list_rows(list: &OdinValue) -> Result<Vec<Partition>, DomainLowerin
                     };
                     prim_members.push(v);
                 }
+                let Ok(prim_members) = openehr_base::containers::NonEmptyVec::new(prim_members)
+                else {
+                    // `C_PRIMITIVE_TUPLE.members` is `1..*`
+                    // (`docs/specs/openehr/AM/docs/AOM2/master04-5-constraint_model.adoc`
+                    // §C_PRIMITIVE_TUPLE); a row that matched no member name is
+                    // not a tuple row.
+                    return Err(DomainLoweringError::Empty);
+                };
                 tuples.push(CPrimitiveTuple {
                     members: prim_members,
                 });
@@ -941,7 +949,10 @@ mod tests {
             panic!("expected a plain complex object root");
         };
         let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
-            &d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0]
+            &d.attributes.as_deref().unwrap_or_default()[0]
+                .children
+                .as_deref()
+                .unwrap_or_default()[0]
         else {
             panic!("expected the lowered DV_QUANTITY object");
         };
@@ -1001,7 +1012,10 @@ mod tests {
             panic!("expected a plain complex object root");
         };
         let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
-            &d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0]
+            &d.attributes.as_deref().unwrap_or_default()[0]
+                .children
+                .as_deref()
+                .unwrap_or_default()[0]
         else {
             panic!("expected the lowered DV_QUANTITY object");
         };
@@ -1014,7 +1028,7 @@ mod tests {
         let CObject::CString(c) = &units.children.as_deref().unwrap_or_default()[0] else {
             panic!("expected a C_STRING units constraint");
         };
-        assert_eq!(c.constraint, vec!["C".to_owned(), "F".to_owned()]);
+        assert_eq!(c.constraint, Some(vec!["C".to_owned(), "F".to_owned()]));
         assert_eq!(c.assumed_value.as_deref(), Some("F"));
     }
 

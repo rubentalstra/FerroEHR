@@ -98,7 +98,7 @@ fn value_set_members(
         .as_ref()
         .map(|vs| {
             vs.values()
-                .map(|set| (set.id.clone(), set.members.clone()))
+                .map(|set| (set.id.clone(), set.members.to_vec()))
                 .collect()
         })
         .unwrap_or_default()

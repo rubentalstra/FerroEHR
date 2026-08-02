@@ -736,7 +736,19 @@ impl Parser<'_> {
             SyntaxErrorCode::Scoat,
             "expecting ']' closing a tuple row",
         )?;
-        Ok(CPrimitiveTuple { members: items })
+        // `C_PRIMITIVE_TUPLE.members` is `1..*`; the loop above requires at
+        // least one item before the closing bracket, so an empty row is a
+        // syntax error rather than an empty tuple.
+        let Ok(members) = openehr_base::containers::NonEmptyVec::new(items) else {
+            let span = self.cur_span();
+            self.push(
+                SyntaxErrorCode::Scoat,
+                "a tuple row must state at least one value",
+                span,
+            );
+            return Err(());
+        };
+        Ok(CPrimitiveTuple { members })
     }
 
     /// `c_objects : c_regular_object_ordered+ | c_inline_primitive_object`,
@@ -1050,7 +1062,10 @@ mod tests {
         );
         let d = data(&cco);
         // DV_QUANTITY under value
-        let q = &d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0];
+        let q = &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0];
         match q {
             CObject::CComplexObject(CComplexObject::CComplexObject(qd)) => {
                 assert_eq!(qd.attribute_tuples.as_ref().map_or(0, Vec::len), 1);
@@ -1074,7 +1089,10 @@ mod tests {
             _ => panic!("expected DV_QUANTITY complex object"),
         }
         // DV_ORDINAL tuple with terminology members
-        let o = &d.attributes.as_deref().unwrap_or_default()[1].children.as_deref().unwrap_or_default()[0];
+        let o = &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0];
         match o {
             CObject::CComplexObject(CComplexObject::CComplexObject(od)) => {
                 let t = &od.attribute_tuples.as_deref().unwrap_or_default()[0];
@@ -1116,7 +1134,10 @@ mod tests {
              }\n\
              }",
         );
-        let history = &data(&cco).attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0];
+        let history = &data(&cco).attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0];
         let CObject::CComplexObject(CComplexObject::CComplexObject(h)) = history else {
             panic!("expected the HISTORY complex object")
         };

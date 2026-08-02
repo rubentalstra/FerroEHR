@@ -10,5 +10,5 @@ use crate::ehr_extract::common::extract_entity_manifest::ExtractEntityManifest;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExtractManifest {
     /// List of entity manifests uids of items included in the Extract; for openEHR data, these are uids identifying the version containers.
-    pub entities: Vec<ExtractEntityManifest>,
+    pub entities: openehr_base::containers::NonEmptyVec<ExtractEntityManifest>,
 }
