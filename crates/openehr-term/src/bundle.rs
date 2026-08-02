@@ -26,6 +26,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
 
+use openehr_base::containers::present;
 use openehr_base::prelude::Iso8601Date;
 
 use crate::terminology::code::Code;
@@ -123,22 +124,45 @@ struct LanguageBundle {
     group_codes: BTreeMap<String, HashMap<String, usize>>,
 }
 
+/// The `TERMINOLOGY.vocabularies` list as a slice — the attribute is optional
+/// (`0..1`), so `None` (the vendored asset declaring no `<group>`) reads as the
+/// empty slice.
+fn vocabularies(t: &Terminology) -> &[TerminologyGroup] {
+    t.vocabularies.as_deref().unwrap_or_default()
+}
+
+/// The `TERMINOLOGY.code_sets` list as a slice (optional attribute, see
+/// [`vocabularies`]).
+fn code_sets(t: &Terminology) -> &[CodeSet] {
+    t.code_sets.as_deref().unwrap_or_default()
+}
+
+/// The `TERMINOLOGY_GROUP.concepts` list as a slice (optional attribute, see
+/// [`vocabularies`]).
+fn concepts(g: &TerminologyGroup) -> &[TerminologyConcept] {
+    g.concepts.as_deref().unwrap_or_default()
+}
+
+/// The `CODE_SET.codes` list as a slice (optional attribute, see
+/// [`vocabularies`]).
+fn code_list(cs: &CodeSet) -> &[Code] {
+    cs.codes.as_deref().unwrap_or_default()
+}
+
 impl LanguageBundle {
     fn index(terminology: Terminology) -> Self {
         let mut group_by_id = HashMap::new();
         let mut group_codes: BTreeMap<String, HashMap<String, usize>> = BTreeMap::new();
-        for (gi, group) in terminology.vocabularies.iter().enumerate() {
+        for (gi, group) in vocabularies(&terminology).iter().enumerate() {
             group_by_id.insert(group.openehr_id.clone(), gi);
-            let codes = group
-                .concepts
+            let codes = concepts(group)
                 .iter()
                 .enumerate()
                 .map(|(ci, c)| (c.id.clone(), ci))
                 .collect();
             group_codes.insert(group.openehr_id.clone(), codes);
         }
-        let code_set_by_id = terminology
-            .code_sets
+        let code_set_by_id = code_sets(&terminology)
             .iter()
             .enumerate()
             .map(|(i, cs)| (cs.openehr_id.clone(), i))
@@ -196,7 +220,9 @@ impl OpenehrTerminology {
             )));
         };
 
-        let external = parse_terminology(EXTERNAL_XML)?.code_sets;
+        let external = parse_terminology(EXTERNAL_XML)?
+            .code_sets
+            .unwrap_or_default();
         let mut external_by_id = HashMap::new();
         let mut external_by_external_id = HashMap::new();
         let mut external_codes = HashMap::new();
@@ -207,7 +233,7 @@ impl OpenehrTerminology {
             }
             external_codes.insert(
                 cs.openehr_id.clone(),
-                cs.codes.iter().map(|c| c.value.clone()).collect(),
+                code_list(cs).iter().map(|c| c.value.clone()).collect(),
             );
         }
 
@@ -242,16 +268,14 @@ impl OpenehrTerminology {
     pub fn group(&self, group_id: &str) -> Option<&TerminologyGroup> {
         let b = self.canonical();
         let &gi = b.group_by_id.get(group_id)?;
-        b.terminology.vocabularies.get(gi)
+        vocabularies(&b.terminology).get(gi)
     }
 
     /// The openEHR id of the group whose display name is `name`
     /// (e.g. `"null flavours"` → `"null_flavours"`).
     #[must_use]
     pub fn group_id(&self, name: &str) -> Option<&str> {
-        self.canonical()
-            .terminology
-            .vocabularies
+        vocabularies(&self.canonical().terminology)
             .iter()
             .find(|g| g.name == name)
             .map(|g| g.openehr_id.as_str())
@@ -261,7 +285,7 @@ impl OpenehrTerminology {
     #[must_use]
     pub fn concepts_in_group(&self, group_id: &str) -> &[TerminologyConcept] {
         match self.group(group_id) {
-            Some(g) => &g.concepts,
+            Some(g) => concepts(g),
             None => &[],
         }
     }
@@ -273,7 +297,7 @@ impl OpenehrTerminology {
         let b = self.languages.get(lang)?;
         let &gi = b.group_by_id.get(group_id)?;
         let &ci = b.group_codes.get(group_id)?.get(code)?;
-        let concept = b.terminology.vocabularies.get(gi)?.concepts.get(ci)?;
+        let concept = concepts(vocabularies(&b.terminology).get(gi)?).get(ci)?;
         Some(concept.rubric.as_str())
     }
 
@@ -290,11 +314,9 @@ impl OpenehrTerminology {
         for (group_id, codes) in &b.group_codes {
             if let Some(&ci) = codes.get(code)
                 && let Some(&gi) = b.group_by_id.get(group_id)
-                && let Some(concept) = b
-                    .terminology
-                    .vocabularies
+                && let Some(concept) = vocabularies(&b.terminology)
                     .get(gi)
-                    .and_then(|v| v.concepts.get(ci))
+                    .and_then(|v| concepts(v).get(ci))
             {
                 return Some(concept.rubric.as_str());
             }
@@ -417,7 +439,7 @@ impl OpenehrTerminology {
     pub fn code_set(&self, openehr_id: &str) -> Option<&CodeSet> {
         let b = self.canonical();
         let &i = b.code_set_by_id.get(openehr_id)?;
-        b.terminology.code_sets.get(i)
+        code_sets(&b.terminology).get(i)
     }
 
     /// `DV_ORDERED.normal_status` — the `normal_statuses` code set
@@ -425,7 +447,7 @@ impl OpenehrTerminology {
     #[must_use]
     pub fn is_valid_normal_status(&self, code: &str) -> bool {
         self.code_set("normal_statuses")
-            .is_some_and(|cs| cs.codes.iter().any(|c| c.value == code))
+            .is_some_and(|cs| code_list(cs).iter().any(|c| c.value == code))
     }
 
     // ── External code sets (openehr_external_terminologies.xml) ──────────────
@@ -584,8 +606,8 @@ pub fn parse_terminology(xml: &str) -> Result<Terminology, TerminologyError> {
     Ok(Terminology {
         name: attr(&root, "name").unwrap_or_default().to_owned(),
         language: attr(&root, "language").unwrap_or_default().to_owned(),
-        code_sets,
-        vocabularies,
+        code_sets: present(code_sets),
+        vocabularies: present(vocabularies),
         version: attr(&root, "version").map(ToOwned::to_owned),
         date: attr(&root, "date").map(|d| Iso8601Date {
             value: d.to_owned(),
@@ -608,7 +630,7 @@ fn parse_code_set(node: &roxmltree::Node) -> CodeSet {
         name: attr(node, "name").unwrap_or_default().to_owned(),
         openehr_id: attr(node, "openehr_id").unwrap_or_default().to_owned(),
         issuer: attr(node, "issuer").unwrap_or_default().to_owned(),
-        codes,
+        codes: present(codes),
         external_id: attr(node, "external_id").map(ToOwned::to_owned),
         status: status_attr(node),
     }
@@ -627,7 +649,7 @@ fn parse_group(node: &roxmltree::Node) -> TerminologyGroup {
         .collect();
     TerminologyGroup {
         name: attr(node, "name").unwrap_or_default().to_owned(),
-        concepts,
+        concepts: present(concepts),
         openehr_id: attr(node, "openehr_id").unwrap_or_default().to_owned(),
         status: status_attr(node),
     }
@@ -915,18 +937,18 @@ mod tests {
                </terminology>"#,
         )
         .expect("synthetic terminology parses");
-        let cs = &t.code_sets[0];
+        let cs = &code_sets(&t)[0];
         assert_eq!(cs.status, Some(TerminologyStatus::Active));
-        assert_eq!(cs.codes[0].status, Some(TerminologyStatus::Retired));
-        assert_eq!(cs.codes[1].status, None);
-        let g = &t.vocabularies[0];
+        assert_eq!(code_list(cs)[0].status, Some(TerminologyStatus::Retired));
+        assert_eq!(code_list(cs)[1].status, None);
+        let g = &vocabularies(&t)[0];
         assert_eq!(g.status, Some(TerminologyStatus::Trial));
         // An out-of-set token is preserved, never dropped (from_wire is total).
         assert_eq!(
-            g.concepts[0].status,
+            concepts(g)[0].status,
             Some(TerminologyStatus::Other("experimental".to_owned()))
         );
-        assert_eq!(g.concepts[1].status, None);
+        assert_eq!(concepts(g)[1].status, None);
     }
 
     #[test]
@@ -935,19 +957,18 @@ mod tests {
         // relies on: every parsed status is None at the 3.1.0 pin.
         let t = openehr();
         let no_status = |term: &Terminology| {
-            term.code_sets
+            code_sets(term)
                 .iter()
-                .all(|cs| cs.status.is_none() && cs.codes.iter().all(|c| c.status.is_none()))
-                && term
-                    .vocabularies
+                .all(|cs| cs.status.is_none() && code_list(cs).iter().all(|c| c.status.is_none()))
+                && vocabularies(term)
                     .iter()
-                    .all(|g| g.status.is_none() && g.concepts.iter().all(|c| c.status.is_none()))
+                    .all(|g| g.status.is_none() && concepts(g).iter().all(|c| c.status.is_none()))
         };
         assert!(no_status(t.terminology()));
         assert!(
             t.external_code_sets()
                 .iter()
-                .all(|cs| cs.status.is_none() && cs.codes.iter().all(|c| c.status.is_none()))
+                .all(|cs| cs.status.is_none() && code_list(cs).iter().all(|c| c.status.is_none()))
         );
     }
 

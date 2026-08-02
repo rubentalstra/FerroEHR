@@ -192,7 +192,7 @@ impl UpdateVersion {
                     PartyIdentifiedData {
                         external_ref: None,
                         name: Some(crate::service::SYSTEM_COMMITTER_NAME.to_owned()),
-                        identifiers: Vec::new(),
+                        identifiers: openehr_base::containers::present(Vec::new()),
                     },
                 )),
                 system_id: None,

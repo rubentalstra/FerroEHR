@@ -44,5 +44,5 @@ pub struct Archetype {
     /// Identifier of the specialisation parent of this archetype.
     pub parent_archetype_id: Option<ArchetypeId>,
     /// Invariant statements about this object. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub invariants: Vec<Assertion>,
+    pub invariants: Option<Vec<Assertion>>,
 }

@@ -48,7 +48,7 @@ mod tests {
             value: "creation".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -67,7 +67,7 @@ mod tests {
             time_committed: DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: Vec::new(),
+                other_reference_ranges: openehr_base::containers::present(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: "2021-01-01T00:00:00".to_owned(),
@@ -77,12 +77,12 @@ mod tests {
             committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             attested_view: None,
             proof: None,
-            items: Vec::new(),
+            items: openehr_base::containers::present(Vec::new()),
             reason: DvText::DvText(DvTextData {
                 value: "witness".to_owned(),
                 hyperlink: None,
                 formatting: None,
-                mappings: Vec::new(),
+                mappings: openehr_base::containers::present(Vec::new()),
                 language: None,
                 encoding: None,
             }),

@@ -510,7 +510,8 @@ fn the_pinned_openehr_odin_schemas_read_their_persisted_interfaces() {
             let class = schema
                 .primitive_types
                 .iter()
-                .chain(schema.class_definitions.iter())
+                .flatten()
+                .chain(schema.class_definitions.iter().flatten())
                 .find(|class| class.name() == *name)
                 .unwrap_or_else(|| panic!("{file}: {name} is not in the class list"));
             assert!(

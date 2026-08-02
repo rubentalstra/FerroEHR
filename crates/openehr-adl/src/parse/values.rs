@@ -466,7 +466,9 @@ mod tests {
     /// interval an integer constraint carries; an unbounded endpoint is `None`.
     fn int_bounds(o: &CObject) -> (Option<f64>, Option<f64>, bool, bool) {
         match o {
-            CObject::CInteger(ci) => crate::aom::interval::interval_bounds_f64(&ci.constraint[0]),
+            CObject::CInteger(ci) => crate::aom::interval::interval_bounds_f64(
+                &ci.constraint.as_deref().unwrap_or_default()[0],
+            ),
             other => panic!("expected CInteger, got {other:?}"),
         }
     }
@@ -487,19 +489,19 @@ mod tests {
         );
         let d = data(&cco);
         assert_eq!(
-            int_bounds(&d.attributes[0].children[0]),
+            int_bounds(&d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0]),
             (Some(0.0), None, true, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes[1].children[0]),
+            int_bounds(&d.attributes.as_deref().unwrap_or_default()[1].children.as_deref().unwrap_or_default()[0]),
             (None, Some(5.0), false, true)
         );
         assert_eq!(
-            int_bounds(&d.attributes[2].children[0]),
+            int_bounds(&d.attributes.as_deref().unwrap_or_default()[2].children.as_deref().unwrap_or_default()[0]),
             (Some(0.0), None, true, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes[3].children[0]),
+            int_bounds(&d.attributes.as_deref().unwrap_or_default()[3].children.as_deref().unwrap_or_default()[0]),
             (Some(0.0), Some(10.0), true, true)
         );
     }
@@ -519,15 +521,15 @@ mod tests {
         );
         let d = data(&cco);
         assert_eq!(
-            int_bounds(&d.attributes[0].children[0]),
+            int_bounds(&d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0]),
             (Some(0.0), Some(1000.0), false, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes[1].children[0]),
+            int_bounds(&d.attributes.as_deref().unwrap_or_default()[1].children.as_deref().unwrap_or_default()[0]),
             (Some(0.0), Some(1000.0), false, false)
         );
         assert_eq!(
-            int_bounds(&d.attributes[2].children[0]),
+            int_bounds(&d.attributes.as_deref().unwrap_or_default()[2].children.as_deref().unwrap_or_default()[0]),
             (Some(0.0), Some(1000.0), false, true)
         );
     }
@@ -546,16 +548,16 @@ mod tests {
              }",
         );
         let d = data(&cco);
-        match &d.attributes[0].children[0] {
-            CObject::CString(cs) => assert_eq!(cs.constraint, vec!["en".to_owned()]),
+        match &d.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0] {
+            CObject::CString(cs) => assert_eq!(cs.constraint, Some(vec!["en".to_owned()])),
             other => panic!("expected CString, got {other:?}"),
         }
-        match &d.attributes[1].children[0] {
-            CObject::CInteger(ci) => assert_eq!(ci.constraint.len(), 2),
+        match &d.attributes.as_deref().unwrap_or_default()[1].children.as_deref().unwrap_or_default()[0] {
+            CObject::CInteger(ci) => assert_eq!(ci.constraint.as_ref().map_or(0, Vec::len), 2),
             other => panic!("expected CInteger, got {other:?}"),
         }
-        match &d.attributes[2].children[0] {
-            CObject::CBoolean(cb) => assert_eq!(cb.constraint, vec![true]),
+        match &d.attributes.as_deref().unwrap_or_default()[2].children.as_deref().unwrap_or_default()[0] {
+            CObject::CBoolean(cb) => assert_eq!(cb.constraint, Some(vec![true])),
             other => panic!("expected CBoolean, got {other:?}"),
         }
     }

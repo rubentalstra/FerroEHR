@@ -32,6 +32,7 @@ use crate::bmm::core::bmm_package_impl::package_at_path_in;
 use crate::bmm::core::bmm_property::BmmProperty;
 use crate::bmm::core::bmm_type::BmmType;
 use crate::bmm::core::bmm_type_impl::ANY_TYPE_NAME;
+use openehr_base::containers::present;
 
 /// The delimiter separating the segments of the property path
 /// `BMM_MODEL.property_definition_at_path` navigates.
@@ -285,11 +286,11 @@ impl BmmModel {
                 documentation: None,
                 packages: None,
                 name: self.schema_name.clone(),
-                classes: Vec::new(),
+                classes: present(Vec::new()),
             },
             properties: None,
             source_schema_id: self.schema_id(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: present(Vec::new()),
             is_abstract: true,
             is_primitive_type: false,
             is_override: false,
@@ -579,7 +580,7 @@ mod tests {
             documentation: None,
             packages: None,
             name: name.to_owned(),
-            classes: Vec::new(),
+            classes: openehr_base::containers::present(Vec::new()),
         }
     }
 
@@ -654,7 +655,7 @@ mod tests {
                 )
             },
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type,
             is_override: false,
@@ -671,10 +672,10 @@ mod tests {
             schema_lifecycle_state: "stable".to_owned(),
             schema_author: "openEHR SEC".to_owned(),
             schema_description: "test schema".to_owned(),
-            schema_contributors: Vec::new(),
+            schema_contributors: openehr_base::containers::present(Vec::new()),
             archetype_parent_class: None,
             archetype_data_value_parent_class: None,
-            archetype_rm_closure_packages: Vec::new(),
+            archetype_rm_closure_packages: openehr_base::containers::present(Vec::new()),
             archetype_visualise_descendants_of: None,
             documentation: None,
             packages: if packages.is_empty() {
@@ -787,12 +788,12 @@ mod tests {
                 package: package("org.openehr.base"),
                 properties: None,
                 source_schema_id: "openehr_test_1.0.0".to_owned(),
-                immediate_descendants: Vec::new(),
+                immediate_descendants: openehr_base::containers::present(Vec::new()),
                 is_abstract: false,
                 is_primitive_type: false,
                 is_override: false,
-                item_names: vec!["equal".to_owned()],
-                item_values: Vec::new(),
+                item_names: Some(vec!["equal".to_owned()]),
+                item_values: openehr_base::containers::present(Vec::new()),
                 underlying_type_name: "Integer".to_owned(),
             }));
         let model = model(
@@ -967,7 +968,7 @@ mod tests {
             package: package("org.openehr.base.test"),
             properties: None,
             source_schema_id: "test".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type: false,
             is_override: false,

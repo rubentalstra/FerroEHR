@@ -122,7 +122,7 @@ impl FlatScan<'_> {
             if self.check_cardinality {
                 self.check_cardinality_occurrences(attr, &attr_path);
             }
-            for child in &attr.children {
+            for child in attr.children.iter().flatten() {
                 let child_path = child_path(&attr_path, object_node_id(child));
                 match child {
                     CObject::CComplexObjectProxy(proxy) => {
@@ -215,7 +215,7 @@ impl FlatScan<'_> {
         };
         let mut mandatory_floor: i64 = 0;
         let mut has_optional = false;
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let Some(occ) = child_occurrences(child) else {
                 continue;
             };
@@ -295,7 +295,7 @@ pub(super) fn validate_flat_form(flat: &Archetype) -> Vec<ValidationIssue> {
     // VTVSMD: value-set members must be defined in the flattened terminology.
     if let Some(value_sets) = v.terminology.value_sets.as_ref() {
         for set in value_sets.values() {
-            for m in &set.members {
+            for m in set.members.iter() {
                 if !defined.contains(m.as_str()) {
                     issues.push(ValidationIssue::new(
                         ValidationCode::Vtvsmd,
@@ -330,7 +330,7 @@ fn walk_flat(
         if attr.cardinality.is_some() {
             check_container_cardinality(&attr_path, attr, issues);
         }
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let cpath = child_path(&attr_path, object_node_id(child));
             check_node_id_unique(child, &cpath, seen, issues);
             if let CObject::CComplexObject(child_cco) = child {
@@ -442,7 +442,7 @@ fn check_container_cardinality(
         return;
     };
     let mut sum_lower = 0i64;
-    for child in &attr.children {
+    for child in attr.children.iter().flatten() {
         let Some(occ) = child_occurrences(child) else {
             continue;
         };

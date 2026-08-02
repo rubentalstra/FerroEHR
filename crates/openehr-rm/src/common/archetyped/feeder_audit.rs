@@ -12,9 +12,9 @@ use crate::data_types::encapsulated::dv_encapsulated::DvEncapsulated;
 #[derive(Debug, Clone, PartialEq)]
 pub struct FeederAudit {
     /// Identifiers used for the item in the originating system, e.g. filler and placer ids.
-    pub originating_system_item_ids: Vec<DvIdentifier>,
+    pub originating_system_item_ids: Option<Vec<DvIdentifier>>,
     /// Identifiers used for the item in the feeder system, where the feeder system is distinct from the originating system.
-    pub feeder_system_item_ids: Vec<DvIdentifier>,
+    pub feeder_system_item_ids: Option<Vec<DvIdentifier>>,
     /// Optional inline inclusion of or reference to original content corresponding to the openEHR content at this node. Typically a URI reference to a document or message in a persistent store associated with the EHR.
     pub original_content: Option<DvEncapsulated>,
     /// Any audit information for the information item from the originating system.

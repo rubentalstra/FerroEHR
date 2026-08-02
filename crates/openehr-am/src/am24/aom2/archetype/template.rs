@@ -31,7 +31,7 @@ pub struct Template {
     /// The terminology of the archetype.
     pub terminology: ArchetypeTerminology,
     /// Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub rules: Vec<StatementSet>,
+    pub rules: Option<Vec<StatementSet>>,
     /// The `rm_overlay` attribute of openEHR `ARCHETYPE` (the vendored BMM carries no documentation for it).
     pub rm_overlay: Option<RmOverlay>,
 
@@ -61,5 +61,5 @@ pub struct Template {
     /// The `other_meta_data` attribute of openEHR `AUTHORED_ARCHETYPE` (the vendored BMM carries no documentation for it).
     pub other_meta_data: std::collections::BTreeMap<String, String>,
     /// Overlay archetypes, i.e. partial archetypes that include full definition and terminology, but logically derive all their meta-data from the owning template.
-    pub overlays: Vec<TemplateOverlay>,
+    pub overlays: Option<Vec<TemplateOverlay>>,
 }

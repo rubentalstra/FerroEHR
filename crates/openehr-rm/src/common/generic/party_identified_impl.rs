@@ -7,11 +7,10 @@
 //!   /= Void` — realized here, through the generated `party_identified_core`.
 //! - `Name_valid`: `name /= Void implies not name.is_empty` — same core.
 //! - `Identifiers_valid`: `identifiers /= Void implies not
-//!   identifiers.is_empty` — NOT realized here: the BMM `List` emits as a
-//!   `Vec`, so an absent and a present-but-empty `identifiers` are the same
-//!   value in the typed model and the rule has nothing to distinguish. The
-//!   emittable-invariant realization register (`crate::validate::generated`
-//!   module header) carries that verdict.
+//!   identifiers.is_empty` — realized here, through the generated
+//!   `nonempty_list_core`: the optional-container emission shape
+//!   (`Option<Vec<T>>`) makes present-but-empty a distinct value, so the rule
+//!   has something to judge.
 
 use crate::common::generic::party_identified::PartyIdentifiedData;
 use crate::validate::{InvariantViolation, Validate};
@@ -21,7 +20,7 @@ impl Validate for PartyIdentifiedData {
         crate::validate::generated::party_identified_core(
             "PARTY_IDENTIFIED",
             self.name.as_deref(),
-            !self.identifiers.is_empty(),
+            self.identifiers.is_some(),
             self.external_ref.is_some(),
             out,
         );
@@ -36,7 +35,7 @@ mod tests {
         PartyIdentifiedData {
             external_ref: None,
             name: name.map(str::to_owned),
-            identifiers: Vec::new(),
+            identifiers: openehr_base::containers::present(Vec::new()),
         }
     }
 

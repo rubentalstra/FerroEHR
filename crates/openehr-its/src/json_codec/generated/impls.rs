@@ -916,8 +916,10 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::ResourceDescr
         if let Some(v) = &self.original_publisher {
             w.field("original_publisher", v);
         }
-        if !self.other_contributors.is_empty() {
-            w.field("other_contributors", &self.other_contributors);
+        if let Some(v) = &self.other_contributors
+            && !v.is_empty()
+        {
+            w.field("other_contributors", v);
         }
         w.field("lifecycle_state", &self.lifecycle_state);
         if let Some(v) = &self.custodian_namespace {
@@ -969,7 +971,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ResourceDes
             )?,
             original_namespace: runtime::optional_field(node, "original_namespace")?,
             original_publisher: runtime::optional_field(node, "original_publisher")?,
-            other_contributors: runtime::container_field(node, "other_contributors")?,
+            other_contributors: runtime::optional_container_field(node, "other_contributors")?,
             lifecycle_state: runtime::required_field(
                 node,
                 "lifecycle_state",
@@ -998,8 +1000,10 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::ResourceDescr
         w.field_str("_type", "RESOURCE_DESCRIPTION_ITEM");
         w.field("language", &self.language);
         w.field("purpose", &self.purpose);
-        if !self.keywords.is_empty() {
-            w.field("keywords", &self.keywords);
+        if let Some(v) = &self.keywords
+            && !v.is_empty()
+        {
+            w.field("keywords", v);
         }
         if let Some(v) = &self.use_ {
             w.field("use", v);
@@ -1026,7 +1030,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ResourceDes
         ::core::result::Result::Ok(Self {
             language: runtime::required_field(node, "language", "RESOURCE_DESCRIPTION_ITEM")?,
             purpose: runtime::required_field(node, "purpose", "RESOURCE_DESCRIPTION_ITEM")?,
-            keywords: runtime::container_field(node, "keywords")?,
+            keywords: runtime::optional_container_field(node, "keywords")?,
             use_: runtime::optional_field(node, "use")?,
             misuse: runtime::optional_field(node, "misuse")?,
             original_resource_uri: runtime::optional_field(node, "original_resource_uri")?,
@@ -1101,8 +1105,10 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::TranslationDe
         if let Some(v) = &self.version_last_translated {
             w.field("version_last_translated", v);
         }
-        if !self.other_contributors.is_empty() {
-            w.field("other_contributors", &self.other_contributors);
+        if let Some(v) = &self.other_contributors
+            && !v.is_empty()
+        {
+            w.field("other_contributors", v);
         }
         w.end_object();
     }
@@ -1120,7 +1126,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Translation
             accreditation: runtime::optional_field(node, "accreditation")?,
             other_details: runtime::optional_field(node, "other_details")?,
             version_last_translated: runtime::optional_field(node, "version_last_translated")?,
-            other_contributors: runtime::container_field(node, "other_contributors")?,
+            other_contributors: runtime::optional_container_field(node, "other_contributors")?,
         })
     }
 }
@@ -1385,8 +1391,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Action {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -1396,8 +1404,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Action {
         }
         w.field("language", &self.language);
         w.field("encoding", &self.encoding);
-        if !self.other_participations.is_empty() {
-            w.field("other_participations", &self.other_participations);
+        if let Some(v) = &self.other_participations
+            && !v.is_empty()
+        {
+            w.field("other_participations", v);
         }
         if let Some(v) = &self.workflow_id {
             w.field("workflow_id", v);
@@ -1432,12 +1442,12 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Action {
             name: runtime::required_field(node, "name", "ACTION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ACTION")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             language: runtime::required_field(node, "language", "ACTION")?,
             encoding: runtime::required_field(node, "encoding", "ACTION")?,
-            other_participations: runtime::container_field(node, "other_participations")?,
+            other_participations: runtime::optional_container_field(node, "other_participations")?,
             workflow_id: runtime::optional_field(node, "workflow_id")?,
             subject: runtime::required_field(node, "subject", "ACTION")?,
             provider: runtime::optional_field(node, "provider")?,
@@ -1463,8 +1473,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Activity {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -1491,7 +1503,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Activity {
             name: runtime::required_field(node, "name", "ACTIVITY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ACTIVITY")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             timing: runtime::optional_field(node, "timing")?,
@@ -1563,8 +1575,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Address {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -1587,7 +1601,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Address {
             name: runtime::required_field(node, "name", "ADDRESS")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ADDRESS")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             details: runtime::required_field(node, "details", "ADDRESS")?,
@@ -1647,8 +1661,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::AdminEntry {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -1658,8 +1674,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::AdminEntry {
         }
         w.field("language", &self.language);
         w.field("encoding", &self.encoding);
-        if !self.other_participations.is_empty() {
-            w.field("other_participations", &self.other_participations);
+        if let Some(v) = &self.other_participations
+            && !v.is_empty()
+        {
+            w.field("other_participations", v);
         }
         if let Some(v) = &self.workflow_id {
             w.field("workflow_id", v);
@@ -1683,12 +1701,12 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::AdminEntry {
             name: runtime::required_field(node, "name", "ADMIN_ENTRY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ADMIN_ENTRY")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             language: runtime::required_field(node, "language", "ADMIN_ENTRY")?,
             encoding: runtime::required_field(node, "encoding", "ADMIN_ENTRY")?,
-            other_participations: runtime::container_field(node, "other_participations")?,
+            other_participations: runtime::optional_container_field(node, "other_participations")?,
             workflow_id: runtime::optional_field(node, "workflow_id")?,
             subject: runtime::required_field(node, "subject", "ADMIN_ENTRY")?,
             provider: runtime::optional_field(node, "provider")?,
@@ -1709,8 +1727,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Agent {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -1721,20 +1741,28 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Agent {
         if !self.identities.is_empty() {
             w.field("identities", &self.identities);
         }
-        if !self.contacts.is_empty() {
-            w.field("contacts", &self.contacts);
+        if let Some(v) = &self.contacts
+            && !v.is_empty()
+        {
+            w.field("contacts", v);
         }
         if let Some(v) = &self.details {
             w.field("details", v);
         }
-        if !self.relationships.is_empty() {
-            w.field("relationships", &self.relationships);
+        if let Some(v) = &self.relationships
+            && !v.is_empty()
+        {
+            w.field("relationships", v);
         }
-        if !self.languages.is_empty() {
-            w.field("languages", &self.languages);
+        if let Some(v) = &self.languages
+            && !v.is_empty()
+        {
+            w.field("languages", v);
         }
-        if !self.roles.is_empty() {
-            w.field("roles", &self.roles);
+        if let Some(v) = &self.roles
+            && !v.is_empty()
+        {
+            w.field("roles", v);
         }
         w.end_object();
     }
@@ -1750,15 +1778,15 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Agent {
             name: runtime::required_field(node, "name", "AGENT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "AGENT")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             identities: runtime::container_field(node, "identities")?,
-            contacts: runtime::container_field(node, "contacts")?,
+            contacts: runtime::optional_container_field(node, "contacts")?,
             details: runtime::optional_field(node, "details")?,
-            relationships: runtime::container_field(node, "relationships")?,
-            languages: runtime::container_field(node, "languages")?,
-            roles: runtime::container_field(node, "roles")?,
+            relationships: runtime::optional_container_field(node, "relationships")?,
+            languages: runtime::optional_container_field(node, "languages")?,
+            roles: runtime::optional_container_field(node, "roles")?,
         })
     }
 }
@@ -1813,8 +1841,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Attestation {
         if let Some(v) = &self.proof {
             w.field("proof", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.field("reason", &self.reason);
         w.field("is_pending", &self.is_pending);
@@ -1836,7 +1866,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Attestation {
             committer: runtime::required_field(node, "committer", "ATTESTATION")?,
             attested_view: runtime::optional_field(node, "attested_view")?,
             proof: runtime::optional_field(node, "proof")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
             reason: runtime::required_field(node, "reason", "ATTESTATION")?,
             is_pending: runtime::required_field(node, "is_pending", "ATTESTATION")?,
         })
@@ -1971,8 +2001,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Capability {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -1998,7 +2030,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Capability {
             name: runtime::required_field(node, "name", "CAPABILITY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "CAPABILITY")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             credentials: runtime::required_field(node, "credentials", "CAPABILITY")?,
@@ -2069,8 +2101,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Cluster {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -2095,7 +2129,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Cluster {
             name: runtime::required_field(node, "name", "CLUSTER")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "CLUSTER")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             items: runtime::container_field(node, "items")?,
@@ -2166,8 +2200,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Composition {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -2182,8 +2218,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Composition {
             w.field("context", v);
         }
         w.field("composer", &self.composer);
-        if !self.content.is_empty() {
-            w.field("content", &self.content);
+        if let Some(v) = &self.content
+            && !v.is_empty()
+        {
+            w.field("content", v);
         }
         w.end_object();
     }
@@ -2199,7 +2237,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Composition {
             name: runtime::required_field(node, "name", "COMPOSITION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "COMPOSITION")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             language: runtime::required_field(node, "language", "COMPOSITION")?,
@@ -2207,7 +2245,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Composition {
             category: runtime::required_field(node, "category", "COMPOSITION")?,
             context: runtime::optional_field(node, "context")?,
             composer: runtime::required_field(node, "composer", "COMPOSITION")?,
-            content: runtime::container_field(node, "content")?,
+            content: runtime::optional_container_field(node, "content")?,
         })
     }
 }
@@ -2224,8 +2262,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Contact {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -2253,7 +2293,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Contact {
             name: runtime::required_field(node, "name", "CONTACT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "CONTACT")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             addresses: runtime::container_field(node, "addresses")?,
@@ -2685,8 +2725,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvCodedText {
         if let Some(v) = &self.formatting {
             w.field("formatting", v);
         }
-        if !self.mappings.is_empty() {
-            w.field("mappings", &self.mappings);
+        if let Some(v) = &self.mappings
+            && !v.is_empty()
+        {
+            w.field("mappings", v);
         }
         if let Some(v) = &self.language {
             w.field("language", v);
@@ -2709,7 +2751,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvCodedText {
             value: runtime::required_field(node, "value", "DV_CODED_TEXT")?,
             hyperlink: runtime::optional_field(node, "hyperlink")?,
             formatting: runtime::optional_field(node, "formatting")?,
-            mappings: runtime::container_field(node, "mappings")?,
+            mappings: runtime::optional_container_field(node, "mappings")?,
             language: runtime::optional_field(node, "language")?,
             encoding: runtime::optional_field(node, "encoding")?,
             defining_code: runtime::required_field(node, "defining_code", "DV_CODED_TEXT")?,
@@ -2730,8 +2772,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvCount {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         if let Some(v) = &self.magnitude_status {
             w.field("magnitude_status", v);
@@ -2756,7 +2800,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvCount {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             magnitude_status: runtime::optional_field(node, "magnitude_status")?,
             accuracy: runtime::optional_field(node, "accuracy")?,
             accuracy_is_percent: runtime::optional_field(node, "accuracy_is_percent")?,
@@ -2778,8 +2825,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvDate {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         if let Some(v) = &self.magnitude_status {
             w.field("magnitude_status", v);
@@ -2801,7 +2850,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvDate {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             magnitude_status: runtime::optional_field(node, "magnitude_status")?,
             accuracy: runtime::optional_field(node, "accuracy")?,
             value: runtime::required_field(node, "value", "DV_DATE")?,
@@ -2822,8 +2874,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvDateTime {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         if let Some(v) = &self.magnitude_status {
             w.field("magnitude_status", v);
@@ -2845,7 +2899,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvDateTime {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             magnitude_status: runtime::optional_field(node, "magnitude_status")?,
             accuracy: runtime::optional_field(node, "accuracy")?,
             value: runtime::required_field(node, "value", "DV_DATE_TIME")?,
@@ -2866,8 +2923,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvDuration {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         if let Some(v) = &self.magnitude_status {
             w.field("magnitude_status", v);
@@ -2892,7 +2951,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvDuration {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             magnitude_status: runtime::optional_field(node, "magnitude_status")?,
             accuracy: runtime::optional_field(node, "accuracy")?,
             accuracy_is_percent: runtime::optional_field(node, "accuracy_is_percent")?,
@@ -3217,8 +3279,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvOrdinal {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         w.field("symbol", &self.symbol);
         w.field("value", &self.value);
@@ -3235,7 +3299,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvOrdinal {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             symbol: runtime::required_field(node, "symbol", "DV_ORDINAL")?,
             value: runtime::required_field(node, "value", "DV_ORDINAL")?,
         })
@@ -3339,8 +3406,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvProportion {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         if let Some(v) = &self.magnitude_status {
             w.field("magnitude_status", v);
@@ -3370,7 +3439,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvProportion 
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             magnitude_status: runtime::optional_field(node, "magnitude_status")?,
             accuracy: runtime::optional_field(node, "accuracy")?,
             accuracy_is_percent: runtime::optional_field(node, "accuracy_is_percent")?,
@@ -3460,8 +3532,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvQuantity {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         if let Some(v) = &self.magnitude_status {
             w.field("magnitude_status", v);
@@ -3496,7 +3570,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvQuantity {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             magnitude_status: runtime::optional_field(node, "magnitude_status")?,
             accuracy: runtime::optional_field(node, "accuracy")?,
             accuracy_is_percent: runtime::optional_field(node, "accuracy_is_percent")?,
@@ -3522,8 +3599,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvScale {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         w.field("symbol", &self.symbol);
         w.field("value", &self.value);
@@ -3540,7 +3619,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvScale {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             symbol: runtime::required_field(node, "symbol", "DV_SCALE")?,
             value: runtime::required_field(node, "value", "DV_SCALE")?,
         })
@@ -3632,8 +3714,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvTextData {
         if let Some(v) = &self.formatting {
             w.field("formatting", v);
         }
-        if !self.mappings.is_empty() {
-            w.field("mappings", &self.mappings);
+        if let Some(v) = &self.mappings
+            && !v.is_empty()
+        {
+            w.field("mappings", v);
         }
         if let Some(v) = &self.language {
             w.field("language", v);
@@ -3655,7 +3739,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvTextData {
             value: runtime::required_field(node, "value", "DV_TEXT")?,
             hyperlink: runtime::optional_field(node, "hyperlink")?,
             formatting: runtime::optional_field(node, "formatting")?,
-            mappings: runtime::container_field(node, "mappings")?,
+            mappings: runtime::optional_container_field(node, "mappings")?,
             language: runtime::optional_field(node, "language")?,
             encoding: runtime::optional_field(node, "encoding")?,
         })
@@ -3713,8 +3797,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvTime {
         if let Some(v) = &self.normal_range {
             w.field("normal_range", v);
         }
-        if !self.other_reference_ranges.is_empty() {
-            w.field("other_reference_ranges", &self.other_reference_ranges);
+        if let Some(v) = &self.other_reference_ranges
+            && !v.is_empty()
+        {
+            w.field("other_reference_ranges", v);
         }
         if let Some(v) = &self.magnitude_status {
             w.field("magnitude_status", v);
@@ -3736,7 +3822,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvTime {
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
-            other_reference_ranges: runtime::container_field(node, "other_reference_ranges")?,
+            other_reference_ranges: runtime::optional_container_field(
+                node,
+                "other_reference_ranges",
+            )?,
             magnitude_status: runtime::optional_field(node, "magnitude_status")?,
             accuracy: runtime::optional_field(node, "accuracy")?,
             value: runtime::required_field(node, "value", "DV_TIME")?,
@@ -3867,23 +3956,31 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Ehr {
         w.field_str("_type", "EHR");
         w.field("system_id", &self.system_id);
         w.field("ehr_id", &self.ehr_id);
-        if !self.contributions.is_empty() {
-            w.field("contributions", &self.contributions);
+        if let Some(v) = &self.contributions
+            && !v.is_empty()
+        {
+            w.field("contributions", v);
         }
         w.field("ehr_status", &self.ehr_status);
         w.field("ehr_access", &self.ehr_access);
-        if !self.compositions.is_empty() {
-            w.field("compositions", &self.compositions);
+        if let Some(v) = &self.compositions
+            && !v.is_empty()
+        {
+            w.field("compositions", v);
         }
         if let Some(v) = &self.directory {
             w.field("directory", v);
         }
         w.field("time_created", &self.time_created);
-        if !self.folders.is_empty() {
-            w.field("folders", &self.folders);
+        if let Some(v) = &self.folders
+            && !v.is_empty()
+        {
+            w.field("folders", v);
         }
-        if !self.tags.is_empty() {
-            w.field("tags", &self.tags);
+        if let Some(v) = &self.tags
+            && !v.is_empty()
+        {
+            w.field("tags", v);
         }
         w.end_object();
     }
@@ -3898,14 +3995,14 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Ehr {
         ::core::result::Result::Ok(Self {
             system_id: runtime::required_field(node, "system_id", "EHR")?,
             ehr_id: runtime::required_field(node, "ehr_id", "EHR")?,
-            contributions: runtime::container_field(node, "contributions")?,
+            contributions: runtime::optional_container_field(node, "contributions")?,
             ehr_status: runtime::required_field(node, "ehr_status", "EHR")?,
             ehr_access: runtime::required_field(node, "ehr_access", "EHR")?,
-            compositions: runtime::container_field(node, "compositions")?,
+            compositions: runtime::optional_container_field(node, "compositions")?,
             directory: runtime::optional_field(node, "directory")?,
             time_created: runtime::required_field(node, "time_created", "EHR")?,
-            folders: runtime::container_field(node, "folders")?,
-            tags: runtime::container_field(node, "tags")?,
+            folders: runtime::optional_container_field(node, "folders")?,
+            tags: runtime::optional_container_field(node, "tags")?,
         })
     }
 }
@@ -3922,8 +4019,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::EhrAccess {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -3948,7 +4047,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::EhrAccess {
             name: runtime::required_field(node, "name", "EHR_ACCESS")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EHR_ACCESS")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             settings: runtime::optional_field(node, "settings")?,
@@ -3968,8 +4067,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::EhrStatus {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -3997,7 +4098,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::EhrStatus {
             name: runtime::required_field(node, "name", "EHR_STATUS")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EHR_STATUS")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             subject: runtime::required_field(node, "subject", "EHR_STATUS")?,
@@ -4020,8 +4121,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Element {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4052,7 +4155,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Element {
             name: runtime::required_field(node, "name", "ELEMENT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ELEMENT")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             null_flavour: runtime::optional_field(node, "null_flavour")?,
@@ -4129,8 +4232,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Evaluation {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4140,8 +4245,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Evaluation {
         }
         w.field("language", &self.language);
         w.field("encoding", &self.encoding);
-        if !self.other_participations.is_empty() {
-            w.field("other_participations", &self.other_participations);
+        if let Some(v) = &self.other_participations
+            && !v.is_empty()
+        {
+            w.field("other_participations", v);
         }
         if let Some(v) = &self.workflow_id {
             w.field("workflow_id", v);
@@ -4171,12 +4278,12 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Evaluation {
             name: runtime::required_field(node, "name", "EVALUATION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EVALUATION")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             language: runtime::required_field(node, "language", "EVALUATION")?,
             encoding: runtime::required_field(node, "encoding", "EVALUATION")?,
-            other_participations: runtime::container_field(node, "other_participations")?,
+            other_participations: runtime::optional_container_field(node, "other_participations")?,
             workflow_id: runtime::optional_field(node, "workflow_id")?,
             subject: runtime::required_field(node, "subject", "EVALUATION")?,
             provider: runtime::optional_field(node, "provider")?,
@@ -4252,8 +4359,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::EventContext {
         if let Some(v) = &self.health_care_facility {
             w.field("health_care_facility", v);
         }
-        if !self.participations.is_empty() {
-            w.field("participations", &self.participations);
+        if let Some(v) = &self.participations
+            && !v.is_empty()
+        {
+            w.field("participations", v);
         }
         w.end_object();
     }
@@ -4272,7 +4381,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::EventContext 
             setting: runtime::required_field(node, "setting", "EVENT_CONTEXT")?,
             other_context: runtime::optional_field(node, "other_context")?,
             health_care_facility: runtime::optional_field(node, "health_care_facility")?,
-            participations: runtime::container_field(node, "participations")?,
+            participations: runtime::optional_container_field(node, "participations")?,
         })
     }
 }
@@ -4289,8 +4398,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Extract {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4298,8 +4409,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Extract {
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.chapters.is_empty() {
-            w.field("chapters", &self.chapters);
+        if let Some(v) = &self.chapters
+            && !v.is_empty()
+        {
+            w.field("chapters", v);
         }
         if let Some(v) = &self.specification {
             w.field("specification", v);
@@ -4310,8 +4423,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Extract {
         w.field("time_created", &self.time_created);
         w.field("system_id", &self.system_id);
         w.field("sequence_nr", &self.sequence_nr);
-        if !self.participations.is_empty() {
-            w.field("participations", &self.participations);
+        if let Some(v) = &self.participations
+            && !v.is_empty()
+        {
+            w.field("participations", v);
         }
         w.end_object();
     }
@@ -4327,16 +4442,16 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Extract {
             name: runtime::required_field(node, "name", "EXTRACT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EXTRACT")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            chapters: runtime::container_field(node, "chapters")?,
+            chapters: runtime::optional_container_field(node, "chapters")?,
             specification: runtime::optional_field(node, "specification")?,
             request_id: runtime::optional_field(node, "request_id")?,
             time_created: runtime::required_field(node, "time_created", "EXTRACT")?,
             system_id: runtime::required_field(node, "system_id", "EXTRACT")?,
             sequence_nr: runtime::required_field(node, "sequence_nr", "EXTRACT")?,
-            participations: runtime::container_field(node, "participations")?,
+            participations: runtime::optional_container_field(node, "participations")?,
         })
     }
 }
@@ -4351,8 +4466,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractActionRe
         w.field("name", &self.name);
         w.field("archetype_node_id", &self.archetype_node_id);
         w.field("uid", &self.uid);
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4380,7 +4497,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractAction
                 "EXTRACT_ACTION_REQUEST",
             )?,
             uid: runtime::required_field(node, "uid", "EXTRACT_ACTION_REQUEST")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             request_id: runtime::required_field(node, "request_id", "EXTRACT_ACTION_REQUEST")?,
@@ -4401,8 +4518,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractChapterD
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4410,8 +4529,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractChapterD
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -4431,10 +4552,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractChapte
                 "EXTRACT_CHAPTER",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -4529,8 +4650,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractEntityCh
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4538,8 +4661,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractEntityCh
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.field("extract_id_key", &self.extract_id_key);
         w.end_object();
@@ -4560,10 +4685,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractEntity
                 "EXTRACT_ENTITY_CHAPTER",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
             extract_id_key: runtime::required_field(
                 node,
                 "extract_id_key",
@@ -4587,11 +4712,15 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractEntityMa
         if let Some(v) = &self.subject_id {
             w.field("subject_id", v);
         }
-        if !self.other_ids.is_empty() {
-            w.field("other_ids", &self.other_ids);
+        if let Some(v) = &self.other_ids
+            && !v.is_empty()
+        {
+            w.field("other_ids", v);
         }
-        if !self.item_list.is_empty() {
-            w.field("item_list", &self.item_list);
+        if let Some(v) = &self.item_list
+            && !v.is_empty()
+        {
+            w.field("item_list", v);
         }
         w.end_object();
     }
@@ -4611,8 +4740,8 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractEntity
             )?,
             ehr_id: runtime::optional_field(node, "ehr_id")?,
             subject_id: runtime::optional_field(node, "subject_id")?,
-            other_ids: runtime::container_field(node, "other_ids")?,
-            item_list: runtime::container_field(node, "item_list")?,
+            other_ids: runtime::optional_container_field(node, "other_ids")?,
+            item_list: runtime::optional_container_field(node, "item_list")?,
         })
     }
 }
@@ -4657,8 +4786,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractFolder {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4666,8 +4797,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractFolder {
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -4687,10 +4820,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractFolder
                 "EXTRACT_FOLDER",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -4810,8 +4943,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractRequest 
         w.field("name", &self.name);
         w.field("archetype_node_id", &self.archetype_node_id);
         w.field("uid", &self.uid);
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -4841,7 +4976,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractReques
                 "EXTRACT_REQUEST",
             )?,
             uid: runtime::required_field(node, "uid", "EXTRACT_REQUEST")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             extract_spec: runtime::required_field(node, "extract_spec", "EXTRACT_REQUEST")?,
@@ -4865,8 +5000,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractSpec {
         w.field("include_multimedia", &self.include_multimedia);
         w.field("priority", &self.priority);
         w.field("link_depth", &self.link_depth);
-        if !self.criteria.is_empty() {
-            w.field("criteria", &self.criteria);
+        if let Some(v) = &self.criteria
+            && !v.is_empty()
+        {
+            w.field("criteria", v);
         }
         if let Some(v) = &self.other_details {
             w.field("other_details", v);
@@ -4892,7 +5029,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractSpec {
             )?,
             priority: runtime::required_field(node, "priority", "EXTRACT_SPEC")?,
             link_depth: runtime::required_field(node, "link_depth", "EXTRACT_SPEC")?,
-            criteria: runtime::container_field(node, "criteria")?,
+            criteria: runtime::optional_container_field(node, "criteria")?,
             other_details: runtime::optional_field(node, "other_details")?,
         })
     }
@@ -4909,8 +5046,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractUpdateSp
         if let Some(v) = &self.repeat_period {
             w.field("repeat_period", v);
         }
-        if !self.trigger_events.is_empty() {
-            w.field("trigger_events", &self.trigger_events);
+        if let Some(v) = &self.trigger_events
+            && !v.is_empty()
+        {
+            w.field("trigger_events", v);
         }
         w.field("update_method", &self.update_method);
         w.end_object();
@@ -4930,7 +5069,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractUpdate
                 "EXTRACT_UPDATE_SPEC",
             )?,
             repeat_period: runtime::optional_field(node, "repeat_period")?,
-            trigger_events: runtime::container_field(node, "trigger_events")?,
+            trigger_events: runtime::optional_container_field(node, "trigger_events")?,
             update_method: runtime::required_field(node, "update_method", "EXTRACT_UPDATE_SPEC")?,
         })
     }
@@ -4983,14 +5122,15 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::FeederAudit {
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "FEEDER_AUDIT");
-        if !self.originating_system_item_ids.is_empty() {
-            w.field(
-                "originating_system_item_ids",
-                &self.originating_system_item_ids,
-            );
+        if let Some(v) = &self.originating_system_item_ids
+            && !v.is_empty()
+        {
+            w.field("originating_system_item_ids", v);
         }
-        if !self.feeder_system_item_ids.is_empty() {
-            w.field("feeder_system_item_ids", &self.feeder_system_item_ids);
+        if let Some(v) = &self.feeder_system_item_ids
+            && !v.is_empty()
+        {
+            w.field("feeder_system_item_ids", v);
         }
         if let Some(v) = &self.original_content {
             w.field("original_content", v);
@@ -5010,11 +5150,14 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::FeederAudit {
         runtime::expect_object(node, "FEEDER_AUDIT")?;
         runtime::check_type(node, "FEEDER_AUDIT")?;
         ::core::result::Result::Ok(Self {
-            originating_system_item_ids: runtime::container_field(
+            originating_system_item_ids: runtime::optional_container_field(
                 node,
                 "originating_system_item_ids",
             )?,
-            feeder_system_item_ids: runtime::container_field(node, "feeder_system_item_ids")?,
+            feeder_system_item_ids: runtime::optional_container_field(
+                node,
+                "feeder_system_item_ids",
+            )?,
             original_content: runtime::optional_field(node, "original_content")?,
             originating_system_audit: runtime::required_field(
                 node,
@@ -5086,8 +5229,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Folder {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5095,11 +5240,15 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Folder {
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
-        if !self.folders.is_empty() {
-            w.field("folders", &self.folders);
+        if let Some(v) = &self.folders
+            && !v.is_empty()
+        {
+            w.field("folders", v);
         }
         if let Some(v) = &self.details {
             w.field("details", v);
@@ -5118,11 +5267,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Folder {
             name: runtime::required_field(node, "name", "FOLDER")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "FOLDER")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            items: runtime::container_field(node, "items")?,
-            folders: runtime::container_field(node, "folders")?,
+            items: runtime::optional_container_field(node, "items")?,
+            folders: runtime::optional_container_field(node, "folders")?,
             details: runtime::optional_field(node, "details")?,
         })
     }
@@ -5140,8 +5289,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::GenericContentI
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5210,7 +5361,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::GenericConten
                 "GENERIC_CONTENT_ITEM",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             is_primary: runtime::required_field(node, "is_primary", "GENERIC_CONTENT_ITEM")?,
@@ -5244,8 +5395,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::GenericEntry {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5268,7 +5421,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::GenericEntry 
             name: runtime::required_field(node, "name", "GENERIC_ENTRY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "GENERIC_ENTRY")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             data: runtime::required_field(node, "data", "GENERIC_ENTRY")?,
@@ -5288,8 +5441,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Group {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5300,20 +5455,28 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Group {
         if !self.identities.is_empty() {
             w.field("identities", &self.identities);
         }
-        if !self.contacts.is_empty() {
-            w.field("contacts", &self.contacts);
+        if let Some(v) = &self.contacts
+            && !v.is_empty()
+        {
+            w.field("contacts", v);
         }
         if let Some(v) = &self.details {
             w.field("details", v);
         }
-        if !self.relationships.is_empty() {
-            w.field("relationships", &self.relationships);
+        if let Some(v) = &self.relationships
+            && !v.is_empty()
+        {
+            w.field("relationships", v);
         }
-        if !self.languages.is_empty() {
-            w.field("languages", &self.languages);
+        if let Some(v) = &self.languages
+            && !v.is_empty()
+        {
+            w.field("languages", v);
         }
-        if !self.roles.is_empty() {
-            w.field("roles", &self.roles);
+        if let Some(v) = &self.roles
+            && !v.is_empty()
+        {
+            w.field("roles", v);
         }
         w.end_object();
     }
@@ -5329,15 +5492,15 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Group {
             name: runtime::required_field(node, "name", "GROUP")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "GROUP")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             identities: runtime::container_field(node, "identities")?,
-            contacts: runtime::container_field(node, "contacts")?,
+            contacts: runtime::optional_container_field(node, "contacts")?,
             details: runtime::optional_field(node, "details")?,
-            relationships: runtime::container_field(node, "relationships")?,
-            languages: runtime::container_field(node, "languages")?,
-            roles: runtime::container_field(node, "roles")?,
+            relationships: runtime::optional_container_field(node, "relationships")?,
+            languages: runtime::optional_container_field(node, "languages")?,
+            roles: runtime::optional_container_field(node, "roles")?,
         })
     }
 }
@@ -5356,8 +5519,10 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5375,8 +5540,10 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
         if let Some(v) = &self.summary {
             w.field("summary", v);
         }
-        if !self.events.is_empty() {
-            w.field("events", &self.events);
+        if let Some(v) = &self.events
+            && !v.is_empty()
+        {
+            w.field("events", v);
         }
         w.end_object();
     }
@@ -5394,14 +5561,14 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
             name: runtime::required_field(node, "name", "HISTORY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "HISTORY")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             origin: runtime::required_field(node, "origin", "HISTORY")?,
             period: runtime::optional_field(node, "period")?,
             duration: runtime::optional_field(node, "duration")?,
             summary: runtime::optional_field(node, "summary")?,
-            events: runtime::container_field(node, "events")?,
+            events: runtime::optional_container_field(node, "events")?,
         })
     }
 }
@@ -5454,8 +5621,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Instruction {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5465,8 +5634,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Instruction {
         }
         w.field("language", &self.language);
         w.field("encoding", &self.encoding);
-        if !self.other_participations.is_empty() {
-            w.field("other_participations", &self.other_participations);
+        if let Some(v) = &self.other_participations
+            && !v.is_empty()
+        {
+            w.field("other_participations", v);
         }
         if let Some(v) = &self.workflow_id {
             w.field("workflow_id", v);
@@ -5488,8 +5659,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Instruction {
         if let Some(v) = &self.wf_definition {
             w.field("wf_definition", v);
         }
-        if !self.activities.is_empty() {
-            w.field("activities", &self.activities);
+        if let Some(v) = &self.activities
+            && !v.is_empty()
+        {
+            w.field("activities", v);
         }
         w.end_object();
     }
@@ -5505,12 +5678,12 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Instruction {
             name: runtime::required_field(node, "name", "INSTRUCTION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "INSTRUCTION")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             language: runtime::required_field(node, "language", "INSTRUCTION")?,
             encoding: runtime::required_field(node, "encoding", "INSTRUCTION")?,
-            other_participations: runtime::container_field(node, "other_participations")?,
+            other_participations: runtime::optional_container_field(node, "other_participations")?,
             workflow_id: runtime::optional_field(node, "workflow_id")?,
             subject: runtime::required_field(node, "subject", "INSTRUCTION")?,
             provider: runtime::optional_field(node, "provider")?,
@@ -5519,7 +5692,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Instruction {
             narrative: runtime::required_field(node, "narrative", "INSTRUCTION")?,
             expiry_time: runtime::optional_field(node, "expiry_time")?,
             wf_definition: runtime::optional_field(node, "wf_definition")?,
-            activities: runtime::container_field(node, "activities")?,
+            activities: runtime::optional_container_field(node, "activities")?,
         })
     }
 }
@@ -5568,8 +5741,10 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5607,7 +5782,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
                 "INTERVAL_EVENT",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             time: runtime::required_field(node, "time", "INTERVAL_EVENT")?,
@@ -5634,8 +5809,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::IsmTransition {
         if let Some(v) = &self.careflow_step {
             w.field("careflow_step", v);
         }
-        if !self.reason.is_empty() {
-            w.field("reason", &self.reason);
+        if let Some(v) = &self.reason
+            && !v.is_empty()
+        {
+            w.field("reason", v);
         }
         w.end_object();
     }
@@ -5651,7 +5828,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::IsmTransition
             current_state: runtime::required_field(node, "current_state", "ISM_TRANSITION")?,
             transition: runtime::optional_field(node, "transition")?,
             careflow_step: runtime::optional_field(node, "careflow_step")?,
-            reason: runtime::container_field(node, "reason")?,
+            reason: runtime::optional_container_field(node, "reason")?,
         })
     }
 }
@@ -5708,8 +5885,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemList {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5717,8 +5896,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemList {
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -5734,10 +5915,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemList {
             name: runtime::required_field(node, "name", "ITEM_LIST")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_LIST")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -5754,8 +5935,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemSingle {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5778,7 +5961,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemSingle {
             name: runtime::required_field(node, "name", "ITEM_SINGLE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_SINGLE")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             item: runtime::required_field(node, "item", "ITEM_SINGLE")?,
@@ -5848,8 +6031,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemTable {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5857,8 +6042,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemTable {
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.rows.is_empty() {
-            w.field("rows", &self.rows);
+        if let Some(v) = &self.rows
+            && !v.is_empty()
+        {
+            w.field("rows", v);
         }
         w.end_object();
     }
@@ -5874,10 +6061,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemTable {
             name: runtime::required_field(node, "name", "ITEM_TABLE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_TABLE")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            rows: runtime::container_field(node, "rows")?,
+            rows: runtime::optional_container_field(node, "rows")?,
         })
     }
 }
@@ -5930,8 +6117,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemTree {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -5939,8 +6128,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemTree {
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -5956,10 +6147,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemTree {
             name: runtime::required_field(node, "name", "ITEM_TREE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_TREE")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -6320,8 +6511,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Observation {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -6331,8 +6524,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Observation {
         }
         w.field("language", &self.language);
         w.field("encoding", &self.encoding);
-        if !self.other_participations.is_empty() {
-            w.field("other_participations", &self.other_participations);
+        if let Some(v) = &self.other_participations
+            && !v.is_empty()
+        {
+            w.field("other_participations", v);
         }
         if let Some(v) = &self.workflow_id {
             w.field("workflow_id", v);
@@ -6365,12 +6560,12 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Observation {
             name: runtime::required_field(node, "name", "OBSERVATION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "OBSERVATION")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             language: runtime::required_field(node, "language", "OBSERVATION")?,
             encoding: runtime::required_field(node, "encoding", "OBSERVATION")?,
-            other_participations: runtime::container_field(node, "other_participations")?,
+            other_participations: runtime::optional_container_field(node, "other_participations")?,
             workflow_id: runtime::optional_field(node, "workflow_id")?,
             subject: runtime::required_field(node, "subject", "OBSERVATION")?,
             provider: runtime::optional_field(node, "provider")?,
@@ -6465,8 +6660,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::OpenehrContentI
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -6502,7 +6699,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::OpenehrConten
                 "OPENEHR_CONTENT_ITEM",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             is_primary: runtime::required_field(node, "is_primary", "OPENEHR_CONTENT_ITEM")?,
@@ -6596,8 +6793,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Organisation {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -6608,20 +6807,28 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Organisation {
         if !self.identities.is_empty() {
             w.field("identities", &self.identities);
         }
-        if !self.contacts.is_empty() {
-            w.field("contacts", &self.contacts);
+        if let Some(v) = &self.contacts
+            && !v.is_empty()
+        {
+            w.field("contacts", v);
         }
         if let Some(v) = &self.details {
             w.field("details", v);
         }
-        if !self.relationships.is_empty() {
-            w.field("relationships", &self.relationships);
+        if let Some(v) = &self.relationships
+            && !v.is_empty()
+        {
+            w.field("relationships", v);
         }
-        if !self.languages.is_empty() {
-            w.field("languages", &self.languages);
+        if let Some(v) = &self.languages
+            && !v.is_empty()
+        {
+            w.field("languages", v);
         }
-        if !self.roles.is_empty() {
-            w.field("roles", &self.roles);
+        if let Some(v) = &self.roles
+            && !v.is_empty()
+        {
+            w.field("roles", v);
         }
         w.end_object();
     }
@@ -6637,15 +6844,15 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Organisation 
             name: runtime::required_field(node, "name", "ORGANISATION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ORGANISATION")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             identities: runtime::container_field(node, "identities")?,
-            contacts: runtime::container_field(node, "contacts")?,
+            contacts: runtime::optional_container_field(node, "contacts")?,
             details: runtime::optional_field(node, "details")?,
-            relationships: runtime::container_field(node, "relationships")?,
-            languages: runtime::container_field(node, "languages")?,
-            roles: runtime::container_field(node, "roles")?,
+            relationships: runtime::optional_container_field(node, "relationships")?,
+            languages: runtime::optional_container_field(node, "languages")?,
+            roles: runtime::optional_container_field(node, "roles")?,
         })
     }
 }
@@ -6668,12 +6875,16 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
         if let Some(v) = &self.preceding_version_uid {
             w.field("preceding_version_uid", v);
         }
-        if !self.other_input_version_uids.is_empty() {
-            w.field("other_input_version_uids", &self.other_input_version_uids);
+        if let Some(v) = &self.other_input_version_uids
+            && !v.is_empty()
+        {
+            w.field("other_input_version_uids", v);
         }
         w.field("lifecycle_state", &self.lifecycle_state);
-        if !self.attestations.is_empty() {
-            w.field("attestations", &self.attestations);
+        if let Some(v) = &self.attestations
+            && !v.is_empty()
+        {
+            w.field("attestations", v);
         }
         if let Some(v) = &self.data {
             w.field("data", v);
@@ -6696,9 +6907,12 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
             commit_audit: runtime::required_field(node, "commit_audit", "ORIGINAL_VERSION")?,
             uid: runtime::required_field(node, "uid", "ORIGINAL_VERSION")?,
             preceding_version_uid: runtime::optional_field(node, "preceding_version_uid")?,
-            other_input_version_uids: runtime::container_field(node, "other_input_version_uids")?,
+            other_input_version_uids: runtime::optional_container_field(
+                node,
+                "other_input_version_uids",
+            )?,
             lifecycle_state: runtime::required_field(node, "lifecycle_state", "ORIGINAL_VERSION")?,
-            attestations: runtime::container_field(node, "attestations")?,
+            attestations: runtime::optional_container_field(node, "attestations")?,
             data: runtime::optional_field(node, "data")?,
         })
     }
@@ -6806,8 +7020,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::PartyIdentified
         if let Some(v) = &self.name {
             w.field("name", v);
         }
-        if !self.identifiers.is_empty() {
-            w.field("identifiers", &self.identifiers);
+        if let Some(v) = &self.identifiers
+            && !v.is_empty()
+        {
+            w.field("identifiers", v);
         }
         w.end_object();
     }
@@ -6822,7 +7038,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyIdentifi
         ::core::result::Result::Ok(Self {
             external_ref: runtime::optional_field(node, "external_ref")?,
             name: runtime::optional_field(node, "name")?,
-            identifiers: runtime::container_field(node, "identifiers")?,
+            identifiers: runtime::optional_container_field(node, "identifiers")?,
         })
     }
 }
@@ -6877,8 +7093,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::PartyIdentity {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -6905,7 +7123,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyIdentity
                 "PARTY_IDENTITY",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             details: runtime::required_field(node, "details", "PARTY_IDENTITY")?,
@@ -6969,8 +7187,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::PartyRelated {
         if let Some(v) = &self.name {
             w.field("name", v);
         }
-        if !self.identifiers.is_empty() {
-            w.field("identifiers", &self.identifiers);
+        if let Some(v) = &self.identifiers
+            && !v.is_empty()
+        {
+            w.field("identifiers", v);
         }
         w.field("relationship", &self.relationship);
         w.end_object();
@@ -6986,7 +7206,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyRelated 
         ::core::result::Result::Ok(Self {
             external_ref: runtime::optional_field(node, "external_ref")?,
             name: runtime::optional_field(node, "name")?,
-            identifiers: runtime::container_field(node, "identifiers")?,
+            identifiers: runtime::optional_container_field(node, "identifiers")?,
             relationship: runtime::required_field(node, "relationship", "PARTY_RELATED")?,
         })
     }
@@ -7004,8 +7224,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::PartyRelationsh
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -7039,7 +7261,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyRelation
                 "PARTY_RELATIONSHIP",
             )?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             details: runtime::optional_field(node, "details")?,
@@ -7326,8 +7548,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Person {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -7338,20 +7562,28 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Person {
         if !self.identities.is_empty() {
             w.field("identities", &self.identities);
         }
-        if !self.contacts.is_empty() {
-            w.field("contacts", &self.contacts);
+        if let Some(v) = &self.contacts
+            && !v.is_empty()
+        {
+            w.field("contacts", v);
         }
         if let Some(v) = &self.details {
             w.field("details", v);
         }
-        if !self.relationships.is_empty() {
-            w.field("relationships", &self.relationships);
+        if let Some(v) = &self.relationships
+            && !v.is_empty()
+        {
+            w.field("relationships", v);
         }
-        if !self.languages.is_empty() {
-            w.field("languages", &self.languages);
+        if let Some(v) = &self.languages
+            && !v.is_empty()
+        {
+            w.field("languages", v);
         }
-        if !self.roles.is_empty() {
-            w.field("roles", &self.roles);
+        if let Some(v) = &self.roles
+            && !v.is_empty()
+        {
+            w.field("roles", v);
         }
         w.end_object();
     }
@@ -7367,15 +7599,15 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Person {
             name: runtime::required_field(node, "name", "PERSON")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "PERSON")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             identities: runtime::container_field(node, "identities")?,
-            contacts: runtime::container_field(node, "contacts")?,
+            contacts: runtime::optional_container_field(node, "contacts")?,
             details: runtime::optional_field(node, "details")?,
-            relationships: runtime::container_field(node, "relationships")?,
-            languages: runtime::container_field(node, "languages")?,
-            roles: runtime::container_field(node, "roles")?,
+            relationships: runtime::optional_container_field(node, "relationships")?,
+            languages: runtime::optional_container_field(node, "languages")?,
+            roles: runtime::optional_container_field(node, "roles")?,
         })
     }
 }
@@ -7394,8 +7626,10 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -7424,7 +7658,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
             name: runtime::required_field(node, "name", "POINT_EVENT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "POINT_EVENT")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             time: runtime::required_field(node, "time", "POINT_EVENT")?,
@@ -7490,8 +7724,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ResourceDescrip
         w.begin_object();
         w.field_str("_type", "RESOURCE_DESCRIPTION");
         w.field("original_author", &self.original_author);
-        if !self.other_contributors.is_empty() {
-            w.field("other_contributors", &self.other_contributors);
+        if let Some(v) = &self.other_contributors
+            && !v.is_empty()
+        {
+            w.field("other_contributors", v);
         }
         w.field("lifecycle_state", &self.lifecycle_state);
         if let Some(v) = &self.resource_package_uri {
@@ -7517,7 +7753,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ResourceDescr
                 "original_author",
                 "RESOURCE_DESCRIPTION",
             )?,
-            other_contributors: runtime::container_field(node, "other_contributors")?,
+            other_contributors: runtime::optional_container_field(node, "other_contributors")?,
             lifecycle_state: runtime::required_field(
                 node,
                 "lifecycle_state",
@@ -7539,8 +7775,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ResourceDescrip
         w.field_str("_type", "RESOURCE_DESCRIPTION_ITEM");
         w.field("language", &self.language);
         w.field("purpose", &self.purpose);
-        if !self.keywords.is_empty() {
-            w.field("keywords", &self.keywords);
+        if let Some(v) = &self.keywords
+            && !v.is_empty()
+        {
+            w.field("keywords", v);
         }
         if let Some(v) = &self.use_ {
             w.field("use", v);
@@ -7570,7 +7808,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ResourceDescr
         ::core::result::Result::Ok(Self {
             language: runtime::required_field(node, "language", "RESOURCE_DESCRIPTION_ITEM")?,
             purpose: runtime::required_field(node, "purpose", "RESOURCE_DESCRIPTION_ITEM")?,
-            keywords: runtime::container_field(node, "keywords")?,
+            keywords: runtime::optional_container_field(node, "keywords")?,
             use_: runtime::optional_field(node, "use")?,
             misuse: runtime::optional_field(node, "misuse")?,
             copyright: runtime::optional_field(node, "copyright")?,
@@ -7646,8 +7884,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Role {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -7658,21 +7898,27 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Role {
         if !self.identities.is_empty() {
             w.field("identities", &self.identities);
         }
-        if !self.contacts.is_empty() {
-            w.field("contacts", &self.contacts);
+        if let Some(v) = &self.contacts
+            && !v.is_empty()
+        {
+            w.field("contacts", v);
         }
         if let Some(v) = &self.details {
             w.field("details", v);
         }
-        if !self.relationships.is_empty() {
-            w.field("relationships", &self.relationships);
+        if let Some(v) = &self.relationships
+            && !v.is_empty()
+        {
+            w.field("relationships", v);
         }
         if let Some(v) = &self.time_validity {
             w.field("time_validity", v);
         }
         w.field("performer", &self.performer);
-        if !self.capabilities.is_empty() {
-            w.field("capabilities", &self.capabilities);
+        if let Some(v) = &self.capabilities
+            && !v.is_empty()
+        {
+            w.field("capabilities", v);
         }
         w.end_object();
     }
@@ -7688,16 +7934,16 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Role {
             name: runtime::required_field(node, "name", "ROLE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ROLE")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
             identities: runtime::container_field(node, "identities")?,
-            contacts: runtime::container_field(node, "contacts")?,
+            contacts: runtime::optional_container_field(node, "contacts")?,
             details: runtime::optional_field(node, "details")?,
-            relationships: runtime::container_field(node, "relationships")?,
+            relationships: runtime::optional_container_field(node, "relationships")?,
             time_validity: runtime::optional_field(node, "time_validity")?,
             performer: runtime::required_field(node, "performer", "ROLE")?,
-            capabilities: runtime::container_field(node, "capabilities")?,
+            capabilities: runtime::optional_container_field(node, "capabilities")?,
         })
     }
 }
@@ -7714,8 +7960,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Section {
         if let Some(v) = &self.uid {
             w.field("uid", v);
         }
-        if !self.links.is_empty() {
-            w.field("links", &self.links);
+        if let Some(v) = &self.links
+            && !v.is_empty()
+        {
+            w.field("links", v);
         }
         if let Some(v) = &self.archetype_details {
             w.field("archetype_details", v);
@@ -7723,8 +7971,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Section {
         if let Some(v) = &self.feeder_audit {
             w.field("feeder_audit", v);
         }
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -7740,10 +7990,10 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Section {
             name: runtime::required_field(node, "name", "SECTION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "SECTION")?,
             uid: runtime::optional_field(node, "uid")?,
-            links: runtime::container_field(node, "links")?,
+            links: runtime::optional_container_field(node, "links")?,
             archetype_details: runtime::optional_field(node, "archetype_details")?,
             feeder_audit: runtime::optional_field(node, "feeder_audit")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -7756,8 +8006,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::SyncExtract {
         w.begin_object();
         w.field_str("_type", "SYNC_EXTRACT");
         w.field("specification", &self.specification);
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -7771,7 +8023,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::SyncExtract {
         runtime::check_type(node, "SYNC_EXTRACT")?;
         ::core::result::Result::Ok(Self {
             specification: runtime::required_field(node, "specification", "SYNC_EXTRACT")?,
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -7808,8 +8060,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::SyncExtractSpec
         w.begin_object();
         w.field_str("_type", "SYNC_EXTRACT_SPEC");
         w.field("includes_versions", &self.includes_versions);
-        if !self.contribution_list.is_empty() {
-            w.field("contribution_list", &self.contribution_list);
+        if let Some(v) = &self.contribution_list
+            && !v.is_empty()
+        {
+            w.field("contribution_list", v);
         }
         if let Some(v) = &self.contributions_since {
             w.field("contributions_since", v);
@@ -7833,7 +8087,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::SyncExtractSp
                 "includes_versions",
                 "SYNC_EXTRACT_SPEC",
             )?,
-            contribution_list: runtime::container_field(node, "contribution_list")?,
+            contribution_list: runtime::optional_container_field(node, "contribution_list")?,
             contributions_since: runtime::optional_field(node, "contributions_since")?,
             all_contributions: runtime::optional_field(node, "all_contributions")?,
         })
@@ -8225,8 +8479,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::XContribution {
         w.field_str("_type", "X_CONTRIBUTION");
         w.field("uid", &self.uid);
         w.field("audit", &self.audit);
-        if !self.versions.is_empty() {
-            w.field("versions", &self.versions);
+        if let Some(v) = &self.versions
+            && !v.is_empty()
+        {
+            w.field("versions", v);
         }
         w.end_object();
     }
@@ -8241,7 +8497,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XContribution
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_CONTRIBUTION")?,
             audit: runtime::required_field(node, "audit", "X_CONTRIBUTION")?,
-            versions: runtime::container_field(node, "versions")?,
+            versions: runtime::optional_container_field(node, "versions")?,
         })
     }
 }
@@ -8261,8 +8517,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::XVersionedCompo
         if let Some(v) = &self.revision_history {
             w.field("revision_history", v);
         }
-        if !self.versions.is_empty() {
-            w.field("versions", &self.versions);
+        if let Some(v) = &self.versions
+            && !v.is_empty()
+        {
+            w.field("versions", v);
         }
         w.end_object();
     }
@@ -8289,7 +8547,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedCom
                 "X_VERSIONED_COMPOSITION",
             )?,
             revision_history: runtime::optional_field(node, "revision_history")?,
-            versions: runtime::container_field(node, "versions")?,
+            versions: runtime::optional_container_field(node, "versions")?,
         })
     }
 }
@@ -8309,8 +8567,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::XVersionedEhrAc
         if let Some(v) = &self.revision_history {
             w.field("revision_history", v);
         }
-        if !self.versions.is_empty() {
-            w.field("versions", &self.versions);
+        if let Some(v) = &self.versions
+            && !v.is_empty()
+        {
+            w.field("versions", v);
         }
         w.end_object();
     }
@@ -8337,7 +8597,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedEhr
                 "X_VERSIONED_EHR_ACCESS",
             )?,
             revision_history: runtime::optional_field(node, "revision_history")?,
-            versions: runtime::container_field(node, "versions")?,
+            versions: runtime::optional_container_field(node, "versions")?,
         })
     }
 }
@@ -8357,8 +8617,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::XVersionedEhrSt
         if let Some(v) = &self.revision_history {
             w.field("revision_history", v);
         }
-        if !self.versions.is_empty() {
-            w.field("versions", &self.versions);
+        if let Some(v) = &self.versions
+            && !v.is_empty()
+        {
+            w.field("versions", v);
         }
         w.end_object();
     }
@@ -8385,7 +8647,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedEhr
                 "X_VERSIONED_EHR_STATUS",
             )?,
             revision_history: runtime::optional_field(node, "revision_history")?,
-            versions: runtime::container_field(node, "versions")?,
+            versions: runtime::optional_container_field(node, "versions")?,
         })
     }
 }
@@ -8405,8 +8667,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::XVersionedFolde
         if let Some(v) = &self.revision_history {
             w.field("revision_history", v);
         }
-        if !self.versions.is_empty() {
-            w.field("versions", &self.versions);
+        if let Some(v) = &self.versions
+            && !v.is_empty()
+        {
+            w.field("versions", v);
         }
         w.end_object();
     }
@@ -8433,7 +8697,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedFol
                 "X_VERSIONED_FOLDER",
             )?,
             revision_history: runtime::optional_field(node, "revision_history")?,
-            versions: runtime::container_field(node, "versions")?,
+            versions: runtime::optional_container_field(node, "versions")?,
         })
     }
 }
@@ -8455,8 +8719,10 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
         if let Some(v) = &self.revision_history {
             w.field("revision_history", v);
         }
-        if !self.versions.is_empty() {
-            w.field("versions", &self.versions);
+        if let Some(v) = &self.versions
+            && !v.is_empty()
+        {
+            w.field("versions", v);
         }
         w.end_object();
     }
@@ -8485,7 +8751,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
                 "X_VERSIONED_OBJECT",
             )?,
             revision_history: runtime::optional_field(node, "revision_history")?,
-            versions: runtime::container_field(node, "versions")?,
+            versions: runtime::optional_container_field(node, "versions")?,
         })
     }
 }
@@ -8567,8 +8833,10 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::XVersionedParty
         if let Some(v) = &self.revision_history {
             w.field("revision_history", v);
         }
-        if !self.versions.is_empty() {
-            w.field("versions", &self.versions);
+        if let Some(v) = &self.versions
+            && !v.is_empty()
+        {
+            w.field("versions", v);
         }
         w.end_object();
     }
@@ -8595,7 +8863,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedPar
                 "X_VERSIONED_PARTY",
             )?,
             revision_history: runtime::optional_field(node, "revision_history")?,
-            versions: runtime::container_field(node, "versions")?,
+            versions: runtime::optional_container_field(node, "versions")?,
         })
     }
 }
@@ -8677,8 +8945,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_class::
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_abstract", &self.is_abstract);
         w.field("is_primitive_type", &self.is_primitive_type);
@@ -8700,7 +8970,10 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_class
             package: runtime::required_field(node, "package", "BMM_CLASS")?,
             properties: runtime::optional_field(node, "properties")?,
             source_schema_id: runtime::required_field(node, "source_schema_id", "BMM_CLASS")?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_abstract: runtime::required_field(node, "is_abstract", "BMM_CLASS")?,
             is_primitive_type: runtime::required_field(node, "is_primitive_type", "BMM_CLASS")?,
             is_override: runtime::required_field(node, "is_override", "BMM_CLASS")?,
@@ -9172,17 +9445,23 @@ impl crate::json_codec::runtime::ToJson
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_abstract", &self.is_abstract);
         w.field("is_primitive_type", &self.is_primitive_type);
         w.field("is_override", &self.is_override);
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.field("underlying_type_name", &self.underlying_type_name);
         w.end_object();
@@ -9204,7 +9483,10 @@ impl crate::json_codec::runtime::FromJson
             package: runtime::required_field(node, "package", "BMM_ENUMERATION")?,
             properties: runtime::optional_field(node, "properties")?,
             source_schema_id: runtime::required_field(node, "source_schema_id", "BMM_ENUMERATION")?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_abstract: runtime::required_field(node, "is_abstract", "BMM_ENUMERATION")?,
             is_primitive_type: runtime::required_field(
                 node,
@@ -9212,8 +9494,8 @@ impl crate::json_codec::runtime::FromJson
                 "BMM_ENUMERATION",
             )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
             underlying_type_name: runtime::required_field(
                 node,
                 "underlying_type_name",
@@ -9303,17 +9585,23 @@ impl crate::json_codec::runtime::ToJson
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_abstract", &self.is_abstract);
         w.field("is_primitive_type", &self.is_primitive_type);
         w.field("is_override", &self.is_override);
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.field("underlying_type_name", &self.underlying_type_name);
         w.end_object();
@@ -9339,7 +9627,10 @@ impl crate::json_codec::runtime::FromJson
                 "source_schema_id",
                 "BMM_ENUMERATION_INTEGER",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_abstract: runtime::required_field(node, "is_abstract", "BMM_ENUMERATION_INTEGER")?,
             is_primitive_type: runtime::required_field(
                 node,
@@ -9347,8 +9638,8 @@ impl crate::json_codec::runtime::FromJson
                 "BMM_ENUMERATION_INTEGER",
             )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_INTEGER")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
             underlying_type_name: runtime::required_field(
                 node,
                 "underlying_type_name",
@@ -9379,17 +9670,23 @@ impl crate::json_codec::runtime::ToJson
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_abstract", &self.is_abstract);
         w.field("is_primitive_type", &self.is_primitive_type);
         w.field("is_override", &self.is_override);
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.field("underlying_type_name", &self.underlying_type_name);
         w.end_object();
@@ -9415,7 +9712,10 @@ impl crate::json_codec::runtime::FromJson
                 "source_schema_id",
                 "BMM_ENUMERATION_STRING",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_abstract: runtime::required_field(node, "is_abstract", "BMM_ENUMERATION_STRING")?,
             is_primitive_type: runtime::required_field(
                 node,
@@ -9423,8 +9723,8 @@ impl crate::json_codec::runtime::FromJson
                 "BMM_ENUMERATION_STRING",
             )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_STRING")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
             underlying_type_name: runtime::required_field(
                 node,
                 "underlying_type_name",
@@ -9455,8 +9755,10 @@ impl crate::json_codec::runtime::ToJson
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_abstract", &self.is_abstract);
         w.field("is_primitive_type", &self.is_primitive_type);
@@ -9485,7 +9787,10 @@ impl crate::json_codec::runtime::FromJson
                 "source_schema_id",
                 "BMM_GENERIC_CLASS",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_abstract: runtime::required_field(node, "is_abstract", "BMM_GENERIC_CLASS")?,
             is_primitive_type: runtime::required_field(
                 node,
@@ -9656,8 +9961,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_model::
         w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
         w.field("schema_author", &self.schema_author);
         w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
+        if let Some(v) = &self.schema_contributors
+            && !v.is_empty()
+        {
+            w.field("schema_contributors", v);
         }
         if let Some(v) = &self.archetype_parent_class {
             w.field("archetype_parent_class", v);
@@ -9665,11 +9972,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_model::
         if let Some(v) = &self.archetype_data_value_parent_class {
             w.field("archetype_data_value_parent_class", v);
         }
-        if !self.archetype_rm_closure_packages.is_empty() {
-            w.field(
-                "archetype_rm_closure_packages",
-                &self.archetype_rm_closure_packages,
-            );
+        if let Some(v) = &self.archetype_rm_closure_packages
+            && !v.is_empty()
+        {
+            w.field("archetype_rm_closure_packages", v);
         }
         if let Some(v) = &self.archetype_visualise_descendants_of {
             w.field("archetype_visualise_descendants_of", v);
@@ -9705,13 +10011,13 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_model
             )?,
             schema_author: runtime::required_field(node, "schema_author", "BMM_MODEL")?,
             schema_description: runtime::required_field(node, "schema_description", "BMM_MODEL")?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            schema_contributors: runtime::optional_container_field(node, "schema_contributors")?,
             archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
             archetype_data_value_parent_class: runtime::optional_field(
                 node,
                 "archetype_data_value_parent_class",
             )?,
-            archetype_rm_closure_packages: runtime::container_field(
+            archetype_rm_closure_packages: runtime::optional_container_field(
                 node,
                 "archetype_rm_closure_packages",
             )?,
@@ -9904,8 +10210,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::bmm::core::bmm_package
             w.field("packages", v);
         }
         w.field("name", &self.name);
-        if !self.classes.is_empty() {
-            w.field("classes", &self.classes);
+        if let Some(v) = &self.classes
+            && !v.is_empty()
+        {
+            w.field("classes", v);
         }
         w.end_object();
     }
@@ -9921,7 +10229,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_packa
             documentation: runtime::optional_field(node, "documentation")?,
             packages: runtime::optional_field(node, "packages")?,
             name: runtime::required_field(node, "name", "BMM_PACKAGE")?,
-            classes: runtime::container_field(node, "classes")?,
+            classes: runtime::optional_container_field(node, "classes")?,
         })
     }
 }
@@ -10119,8 +10427,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaCore
         w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
         w.field("schema_author", &self.schema_author);
         w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
+        if let Some(v) = &self.schema_contributors
+            && !v.is_empty()
+        {
+            w.field("schema_contributors", v);
         }
         if let Some(v) = &self.archetype_parent_class {
             w.field("archetype_parent_class", v);
@@ -10128,11 +10438,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaCore
         if let Some(v) = &self.archetype_data_value_parent_class {
             w.field("archetype_data_value_parent_class", v);
         }
-        if !self.archetype_rm_closure_packages.is_empty() {
-            w.field(
-                "archetype_rm_closure_packages",
-                &self.archetype_rm_closure_packages,
-            );
+        if let Some(v) = &self.archetype_rm_closure_packages
+            && !v.is_empty()
+        {
+            w.field("archetype_rm_closure_packages", v);
         }
         if let Some(v) = &self.archetype_visualise_descendants_of {
             w.field("archetype_visualise_descendants_of", v);
@@ -10163,13 +10472,13 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaCo
                 "schema_description",
                 "BMM_SCHEMA_CORE",
             )?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            schema_contributors: runtime::optional_container_field(node, "schema_contributors")?,
             archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
             archetype_data_value_parent_class: runtime::optional_field(
                 node,
                 "archetype_data_value_parent_class",
             )?,
-            archetype_rm_closure_packages: runtime::container_field(
+            archetype_rm_closure_packages: runtime::optional_container_field(
                 node,
                 "archetype_rm_closure_packages",
             )?,
@@ -10518,8 +10827,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ExprFunctionC
         if let Some(v) = &self.item {
             w.field("item", v);
         }
-        if !self.arguments.is_empty() {
-            w.field("arguments", &self.arguments);
+        if let Some(v) = &self.arguments
+            && !v.is_empty()
+        {
+            w.field("arguments", v);
         }
         w.end_object();
     }
@@ -10533,7 +10844,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprFunctio
         runtime::check_type(node, "EXPR_FUNCTION_CALL")?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
-            arguments: runtime::container_field(node, "arguments")?,
+            arguments: runtime::optional_container_field(node, "arguments")?,
         })
     }
 }
@@ -10907,8 +11218,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ExternalQuery
         w.field_str("_type", "EXTERNAL_QUERY");
         w.field("context", &self.context);
         w.field("query_id", &self.query_id);
-        if !self.query_args.is_empty() {
-            w.field("query_args", &self.query_args);
+        if let Some(v) = &self.query_args
+            && !v.is_empty()
+        {
+            w.field("query_args", v);
         }
         w.end_object();
     }
@@ -10923,7 +11236,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExternalQue
         ::core::result::Result::Ok(Self {
             context: runtime::required_field(node, "context", "EXTERNAL_QUERY")?,
             query_id: runtime::required_field(node, "query_id", "EXTERNAL_QUERY")?,
-            query_args: runtime::container_field(node, "query_args")?,
+            query_args: runtime::optional_container_field(node, "query_args")?,
         })
     }
 }
@@ -11001,8 +11314,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmClassData
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -11030,8 +11345,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmClassData
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
         w.end_object();
     }
@@ -11046,7 +11363,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmClassDa
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CLASS")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -11057,7 +11374,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmClassDa
             source_schema_id: runtime::required_field(node, "source_schema_id", "P_BMM_CLASS")?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_CLASS")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
         })
     }
 }
@@ -11390,8 +11707,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmEnumerati
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -11419,17 +11738,25 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmEnumerati
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
-        if !self.item_documentations.is_empty() {
-            w.field("item_documentations", &self.item_documentations);
+        if let Some(v) = &self.item_documentations
+            && !v.is_empty()
+        {
+            w.field("item_documentations", v);
         }
         w.end_object();
     }
@@ -11444,7 +11771,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -11459,10 +11786,10 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
             )?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
-            item_documentations: runtime::container_field(node, "item_documentations")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
+            item_documentations: runtime::optional_container_field(node, "item_documentations")?,
         })
     }
 }
@@ -11523,8 +11850,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmEnumerati
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -11552,17 +11881,25 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmEnumerati
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
-        if !self.item_documentations.is_empty() {
-            w.field("item_documentations", &self.item_documentations);
+        if let Some(v) = &self.item_documentations
+            && !v.is_empty()
+        {
+            w.field("item_documentations", v);
         }
         w.end_object();
     }
@@ -11577,7 +11914,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_INTEGER")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -11592,10 +11929,10 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
             )?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION_INTEGER")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
-            item_documentations: runtime::container_field(node, "item_documentations")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
+            item_documentations: runtime::optional_container_field(node, "item_documentations")?,
         })
     }
 }
@@ -11611,8 +11948,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmEnumerati
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -11640,17 +11979,25 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmEnumerati
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
-        if !self.item_documentations.is_empty() {
-            w.field("item_documentations", &self.item_documentations);
+        if let Some(v) = &self.item_documentations
+            && !v.is_empty()
+        {
+            w.field("item_documentations", v);
         }
         w.end_object();
     }
@@ -11665,7 +12012,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_STRING")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -11680,10 +12027,10 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
             )?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION_STRING")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
-            item_documentations: runtime::container_field(node, "item_documentations")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
+            item_documentations: runtime::optional_container_field(node, "item_documentations")?,
         })
     }
 }
@@ -11961,8 +12308,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmGenericTy
         if !self.generic_parameter_defs.is_empty() {
             w.field("generic_parameter_defs", &self.generic_parameter_defs);
         }
-        if !self.generic_parameters.is_empty() {
-            w.field("generic_parameters", &self.generic_parameters);
+        if let Some(v) = &self.generic_parameters
+            && !v.is_empty()
+        {
+            w.field("generic_parameters", v);
         }
         w.end_object();
     }
@@ -11979,7 +12328,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmGeneric
             value_constraint: runtime::optional_field(node, "value_constraint")?,
             root_type: runtime::required_field(node, "root_type", "P_BMM_GENERIC_TYPE")?,
             generic_parameter_defs: runtime::container_field(node, "generic_parameter_defs")?,
-            generic_parameters: runtime::container_field(node, "generic_parameters")?,
+            generic_parameters: runtime::optional_container_field(node, "generic_parameters")?,
         })
     }
 }
@@ -12304,8 +12653,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmPackage {
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.classes.is_empty() {
-            w.field("classes", &self.classes);
+        if let Some(v) = &self.classes
+            && !v.is_empty()
+        {
+            w.field("classes", v);
         }
         if let Some(v) = &self.bmm_package_definition {
             w.field("bmm_package_definition", v);
@@ -12324,7 +12675,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmPackage
             packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE")?,
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_PACKAGE")?,
-            classes: runtime::container_field(node, "classes")?,
+            classes: runtime::optional_container_field(node, "classes")?,
             bmm_package_definition: runtime::optional_field(node, "bmm_package_definition")?,
         })
     }
@@ -12471,8 +12822,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmSchema {
         w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
         w.field("schema_author", &self.schema_author);
         w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
+        if let Some(v) = &self.schema_contributors
+            && !v.is_empty()
+        {
+            w.field("schema_contributors", v);
         }
         if let Some(v) = &self.archetype_parent_class {
             w.field("archetype_parent_class", v);
@@ -12480,11 +12833,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmSchema {
         if let Some(v) = &self.archetype_data_value_parent_class {
             w.field("archetype_data_value_parent_class", v);
         }
-        if !self.archetype_rm_closure_packages.is_empty() {
-            w.field(
-                "archetype_rm_closure_packages",
-                &self.archetype_rm_closure_packages,
-            );
+        if let Some(v) = &self.archetype_rm_closure_packages
+            && !v.is_empty()
+        {
+            w.field("archetype_rm_closure_packages", v);
         }
         if let Some(v) = &self.archetype_visualise_descendants_of {
             w.field("archetype_visualise_descendants_of", v);
@@ -12493,11 +12845,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmSchema {
         if let Some(v) = &self.includes {
             w.field("includes", v);
         }
-        if !self.primitive_types.is_empty() {
-            w.field("primitive_types", &self.primitive_types);
+        if let Some(v) = &self.primitive_types
+            && !v.is_empty()
+        {
+            w.field("primitive_types", v);
         }
-        if !self.class_definitions.is_empty() {
-            w.field("class_definitions", &self.class_definitions);
+        if let Some(v) = &self.class_definitions
+            && !v.is_empty()
+        {
+            w.field("class_definitions", v);
         }
         w.end_object();
     }
@@ -12526,13 +12882,13 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSchema 
                 "schema_description",
                 "P_BMM_SCHEMA",
             )?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            schema_contributors: runtime::optional_container_field(node, "schema_contributors")?,
             archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
             archetype_data_value_parent_class: runtime::optional_field(
                 node,
                 "archetype_data_value_parent_class",
             )?,
-            archetype_rm_closure_packages: runtime::container_field(
+            archetype_rm_closure_packages: runtime::optional_container_field(
                 node,
                 "archetype_rm_closure_packages",
             )?,
@@ -12542,8 +12898,8 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSchema 
             )?,
             bmm_version: runtime::required_field(node, "bmm_version", "P_BMM_SCHEMA")?,
             includes: runtime::optional_field(node, "includes")?,
-            primitive_types: runtime::container_field(node, "primitive_types")?,
-            class_definitions: runtime::container_field(node, "class_definitions")?,
+            primitive_types: runtime::optional_container_field(node, "primitive_types")?,
+            class_definitions: runtime::optional_container_field(node, "class_definitions")?,
         })
     }
 }
@@ -12563,8 +12919,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmSchemaDes
         }
         w.field("schema_id", &self.schema_id);
         w.field("meta_data", &self.meta_data);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
         if let Some(v) = &self.bmm_schema {
             w.field("bmm_schema", v);
@@ -12584,7 +12942,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSchemaD
             schema: runtime::optional_field(node, "schema")?,
             schema_id: runtime::required_field(node, "schema_id", "P_BMM_SCHEMA_DESCRIPTOR")?,
             meta_data: runtime::required_field(node, "meta_data", "P_BMM_SCHEMA_DESCRIPTOR")?,
-            includes: runtime::container_field(node, "includes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
             bmm_schema: runtime::optional_field(node, "bmm_schema")?,
         })
     }
@@ -12874,8 +13232,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ReferenceMode
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "REFERENCE_MODEL_ACCESS");
-        if !self.schema_directories.is_empty() {
-            w.field("schema_directories", &self.schema_directories);
+        if let Some(v) = &self.schema_directories
+            && !v.is_empty()
+        {
+            w.field("schema_directories", v);
         }
         if let Some(v) = &self.all_schemas {
             w.field("all_schemas", v);
@@ -12894,7 +13254,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ReferenceMo
         runtime::expect_object(node, "REFERENCE_MODEL_ACCESS")?;
         runtime::check_type(node, "REFERENCE_MODEL_ACCESS")?;
         ::core::result::Result::Ok(Self {
-            schema_directories: runtime::container_field(node, "schema_directories")?,
+            schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
             valid_models: runtime::optional_field(node, "valid_models")?,
         })
@@ -12916,8 +13276,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::SchemaDescrip
         }
         w.field("schema_id", &self.schema_id);
         w.field("meta_data", &self.meta_data);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
         w.end_object();
     }
@@ -12934,7 +13296,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::SchemaDescr
             schema: runtime::optional_field(node, "schema")?,
             schema_id: runtime::required_field(node, "schema_id", "SCHEMA_DESCRIPTOR")?,
             meta_data: runtime::required_field(node, "meta_data", "SCHEMA_DESCRIPTOR")?,
-            includes: runtime::container_field(node, "includes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
         })
     }
 }
@@ -13029,8 +13391,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::StatementSet 
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "STATEMENT_SET");
-        if !self.statement.is_empty() {
-            w.field("statement", &self.statement);
+        if let Some(v) = &self.statement
+            && !v.is_empty()
+        {
+            w.field("statement", v);
         }
         if let Some(v) = &self.name {
             w.field("name", v);
@@ -13046,7 +13410,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::StatementSe
         runtime::expect_object(node, "STATEMENT_SET")?;
         runtime::check_type(node, "STATEMENT_SET")?;
         ::core::result::Result::Ok(Self {
-            statement: runtime::container_field(node, "statement")?,
+            statement: runtime::optional_container_field(node, "statement")?,
             name: runtime::optional_field(node, "name")?,
         })
     }
@@ -13622,8 +13986,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmConstant {
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         w.field("generator", &self.generator);
@@ -13644,7 +14010,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmConstant
             r#type: runtime::required_field(node, "type", "BMM_CONSTANT")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_CONSTANT")?,
             generator: runtime::required_field(node, "generator", "BMM_CONSTANT")?,
         })
@@ -13672,8 +14038,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerP
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         if let Some(v) = &self.is_im_runtime {
@@ -13705,7 +14073,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContaine
             r#type: runtime::required_field(node, "type", "BMM_CONTAINER_PROPERTY")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_CONTAINER_PROPERTY")?,
             is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
             is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
@@ -14022,11 +14390,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -14036,8 +14408,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -14055,8 +14429,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -14064,11 +14440,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.converters {
             w.field("converters", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.end_object();
     }
@@ -14084,24 +14464,27 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
             name: runtime::required_field(node, "name", "BMM_ENUMERATION")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_ENUMERATION")?,
             properties: runtime::optional_field(node, "properties")?,
             source_schema_id: runtime::required_field(node, "source_schema_id", "BMM_ENUMERATION")?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
         })
     }
 }
@@ -14163,11 +14546,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -14177,8 +14564,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -14196,8 +14585,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -14205,11 +14596,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.converters {
             w.field("converters", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.end_object();
     }
@@ -14225,8 +14620,8 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_INTEGER")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_ENUMERATION_INTEGER")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -14235,18 +14630,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
                 "source_schema_id",
                 "BMM_ENUMERATION_INTEGER",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_INTEGER")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
         })
     }
 }
@@ -14265,11 +14663,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -14279,8 +14681,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -14298,8 +14702,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -14307,11 +14713,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
         if let Some(v) = &self.converters {
             w.field("converters", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.end_object();
     }
@@ -14327,8 +14737,8 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_STRING")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_ENUMERATION_STRING")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -14337,18 +14747,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
                 "source_schema_id",
                 "BMM_ENUMERATION_STRING",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_STRING")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
         })
     }
 }
@@ -14476,8 +14889,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeatureGro
         w.field_str("_type", "BMM_FEATURE_GROUP");
         w.field("name", &self.name);
         w.field("properties", &self.properties);
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.visibility {
             w.field("visibility", v);
@@ -14495,7 +14910,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeatureG
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_FEATURE_GROUP")?,
             properties: runtime::required_field(node, "properties", "BMM_FEATURE_GROUP")?,
-            features: runtime::container_field(node, "features")?,
+            features: runtime::optional_container_field(node, "features")?,
             visibility: runtime::optional_field(node, "visibility")?,
         })
     }
@@ -14607,18 +15022,26 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFunction {
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
-        if !self.parameters.is_empty() {
-            w.field("parameters", &self.parameters);
+        if let Some(v) = &self.parameters
+            && !v.is_empty()
+        {
+            w.field("parameters", v);
         }
-        if !self.pre_conditions.is_empty() {
-            w.field("pre_conditions", &self.pre_conditions);
+        if let Some(v) = &self.pre_conditions
+            && !v.is_empty()
+        {
+            w.field("pre_conditions", v);
         }
-        if !self.post_conditions.is_empty() {
-            w.field("post_conditions", &self.post_conditions);
+        if let Some(v) = &self.post_conditions
+            && !v.is_empty()
+        {
+            w.field("post_conditions", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -14644,11 +15067,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFunction
             r#type: runtime::required_field(node, "type", "BMM_FUNCTION")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_FUNCTION")?,
-            parameters: runtime::container_field(node, "parameters")?,
-            pre_conditions: runtime::container_field(node, "pre_conditions")?,
-            post_conditions: runtime::container_field(node, "post_conditions")?,
+            parameters: runtime::optional_container_field(node, "parameters")?,
+            pre_conditions: runtime::optional_container_field(node, "pre_conditions")?,
+            post_conditions: runtime::optional_container_field(node, "post_conditions")?,
             definition: runtime::optional_field(node, "definition")?,
             operator_definition: runtime::optional_field(node, "operator_definition")?,
             result: runtime::required_field(node, "result", "BMM_FUNCTION")?,
@@ -14698,11 +15121,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericCla
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -14712,8 +15139,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericCla
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -14731,8 +15160,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmGenericCla
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -14755,8 +15186,8 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericC
             name: runtime::required_field(node, "name", "BMM_GENERIC_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_GENERIC_CLASS")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -14765,14 +15196,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericC
                 "source_schema_id",
                 "BMM_GENERIC_CLASS",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_GENERIC_CLASS")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
             generic_parameters: runtime::required_field(
@@ -14861,8 +15295,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmIndexedCon
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         if let Some(v) = &self.is_im_runtime {
@@ -14894,7 +15330,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedC
             r#type: runtime::required_field(node, "type", "BMM_INDEXED_CONTAINER_PROPERTY")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_INDEXED_CONTAINER_PROPERTY")?,
             is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
             is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
@@ -15217,8 +15653,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLocalRouti
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_LOCAL_ROUTINE");
-        if !self.locals.is_empty() {
-            w.field("locals", &self.locals);
+        if let Some(v) = &self.locals
+            && !v.is_empty()
+        {
+            w.field("locals", v);
         }
         w.field("body", &self.body);
         w.end_object();
@@ -15232,7 +15670,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLocalRou
         runtime::expect_object(node, "BMM_LOCAL_ROUTINE")?;
         runtime::check_type(node, "BMM_LOCAL_ROUTINE")?;
         ::core::result::Result::Ok(Self {
-            locals: runtime::container_field(node, "locals")?,
+            locals: runtime::optional_container_field(node, "locals")?,
             body: runtime::required_field(node, "body", "BMM_LOCAL_ROUTINE")?,
         })
     }
@@ -15260,8 +15698,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModel {
         if let Some(v) = &self.class_definitions {
             w.field("class_definitions", v);
         }
-        if !self.used_models.is_empty() {
-            w.field("used_models", &self.used_models);
+        if let Some(v) = &self.used_models
+            && !v.is_empty()
+        {
+            w.field("used_models", v);
         }
         if let Some(v) = &self.modules {
             w.field("modules", v);
@@ -15284,7 +15724,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModel {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL")?,
             class_definitions: runtime::optional_field(node, "class_definitions")?,
-            used_models: runtime::container_field(node, "used_models")?,
+            used_models: runtime::optional_container_field(node, "used_models")?,
             modules: runtime::optional_field(node, "modules")?,
         })
     }
@@ -15297,8 +15737,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelAcces
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_MODEL_ACCESS");
-        if !self.schema_directories.is_empty() {
-            w.field("schema_directories", &self.schema_directories);
+        if let Some(v) = &self.schema_directories
+            && !v.is_empty()
+        {
+            w.field("schema_directories", v);
         }
         if let Some(v) = &self.all_schemas {
             w.field("all_schemas", v);
@@ -15320,7 +15762,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelAcc
         runtime::expect_object(node, "BMM_MODEL_ACCESS")?;
         runtime::check_type(node, "BMM_MODEL_ACCESS")?;
         ::core::result::Result::Ok(Self {
-            schema_directories: runtime::container_field(node, "schema_directories")?,
+            schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
             bmm_models: runtime::optional_field(node, "bmm_models")?,
             matching_bmm_models: runtime::optional_field(node, "matching_bmm_models")?,
@@ -15659,8 +16101,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackage {
         if let Some(v) = &self.packages {
             w.field("packages", v);
         }
-        if !self.members.is_empty() {
-            w.field("members", &self.members);
+        if let Some(v) = &self.members
+            && !v.is_empty()
+        {
+            w.field("members", v);
         }
         w.end_object();
     }
@@ -15677,7 +16121,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackage 
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
             packages: runtime::optional_field(node, "packages")?,
-            members: runtime::container_field(node, "members")?,
+            members: runtime::optional_container_field(node, "members")?,
         })
     }
 }
@@ -15916,18 +16360,26 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmProcedure 
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
-        if !self.parameters.is_empty() {
-            w.field("parameters", &self.parameters);
+        if let Some(v) = &self.parameters
+            && !v.is_empty()
+        {
+            w.field("parameters", v);
         }
-        if !self.pre_conditions.is_empty() {
-            w.field("pre_conditions", &self.pre_conditions);
+        if let Some(v) = &self.pre_conditions
+            && !v.is_empty()
+        {
+            w.field("pre_conditions", v);
         }
-        if !self.post_conditions.is_empty() {
-            w.field("post_conditions", &self.post_conditions);
+        if let Some(v) = &self.post_conditions
+            && !v.is_empty()
+        {
+            w.field("post_conditions", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -15949,11 +16401,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedur
             r#type: runtime::required_field(node, "type", "BMM_PROCEDURE")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_PROCEDURE")?,
-            parameters: runtime::container_field(node, "parameters")?,
-            pre_conditions: runtime::container_field(node, "pre_conditions")?,
-            post_conditions: runtime::container_field(node, "post_conditions")?,
+            parameters: runtime::optional_container_field(node, "parameters")?,
+            pre_conditions: runtime::optional_container_field(node, "pre_conditions")?,
+            post_conditions: runtime::optional_container_field(node, "post_conditions")?,
             definition: runtime::optional_field(node, "definition")?,
         })
     }
@@ -16338,8 +16790,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchema {
         w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
         w.field("schema_author", &self.schema_author);
         w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
+        if let Some(v) = &self.schema_contributors
+            && !v.is_empty()
+        {
+            w.field("schema_contributors", v);
         }
         w.end_object();
     }
@@ -16368,7 +16822,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchema {
             )?,
             schema_author: runtime::required_field(node, "schema_author", "BMM_SCHEMA")?,
             schema_description: runtime::required_field(node, "schema_description", "BMM_SCHEMA")?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            schema_contributors: runtime::optional_container_field(node, "schema_contributors")?,
         })
     }
 }
@@ -16388,8 +16842,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaDesc
         }
         w.field("schema_id", &self.schema_id);
         w.field("meta_data", &self.meta_data);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
         w.end_object();
     }
@@ -16406,7 +16862,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaDe
             bmm_model: runtime::optional_field(node, "bmm_model")?,
             schema_id: runtime::required_field(node, "schema_id", "BMM_SCHEMA_DESCRIPTOR")?,
             meta_data: runtime::required_field(node, "meta_data", "BMM_SCHEMA_DESCRIPTOR")?,
-            includes: runtime::container_field(node, "includes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
         })
     }
 }
@@ -16570,11 +17026,15 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleClas
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -16584,8 +17044,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleClas
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -16603,8 +17065,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleClas
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -16626,8 +17090,8 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleCl
             name: runtime::required_field(node, "name", "BMM_SIMPLE_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_SIMPLE_CLASS")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -16636,14 +17100,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleCl
                 "source_schema_id",
                 "BMM_SIMPLE_CLASS",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_SIMPLE_CLASS")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
         })
@@ -16793,8 +17260,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSingleton 
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         w.field("generator", &self.generator);
@@ -16815,7 +17284,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSingleto
             r#type: runtime::required_field(node, "type", "BMM_SINGLETON")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_SINGLETON")?,
             generator: runtime::required_field(node, "generator", "BMM_SINGLETON")?,
         })
@@ -16884,8 +17353,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatementB
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_STATEMENT_BLOCK");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -16898,7 +17369,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatemen
         runtime::expect_object(node, "BMM_STATEMENT_BLOCK")?;
         runtime::check_type(node, "BMM_STATEMENT_BLOCK")?;
         ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -17183,8 +17654,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryPro
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         if let Some(v) = &self.is_im_runtime {
@@ -17213,7 +17686,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryP
             r#type: runtime::required_field(node, "type", "BMM_UNITARY_PROPERTY")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_UNITARY_PROPERTY")?,
             is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
             is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
@@ -18105,8 +18578,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFunctionAge
         if let Some(v) = &self.closed_args {
             w.field("closed_args", v);
         }
-        if !self.open_args.is_empty() {
-            w.field("open_args", &self.open_args);
+        if let Some(v) = &self.open_args
+            && !v.is_empty()
+        {
+            w.field("open_args", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -18126,7 +18601,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFunctionA
             name: runtime::required_field(node, "name", "EL_FUNCTION_AGENT")?,
             scoper: runtime::optional_field(node, "scoper")?,
             closed_args: runtime::optional_field(node, "closed_args")?,
-            open_args: runtime::container_field(node, "open_args")?,
+            open_args: runtime::optional_container_field(node, "open_args")?,
             definition: runtime::optional_field(node, "definition")?,
         })
     }
@@ -18283,8 +18758,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElProcedureAg
         if let Some(v) = &self.closed_args {
             w.field("closed_args", v);
         }
-        if !self.open_args.is_empty() {
-            w.field("open_args", &self.open_args);
+        if let Some(v) = &self.open_args
+            && !v.is_empty()
+        {
+            w.field("open_args", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -18304,7 +18781,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElProcedure
             name: runtime::required_field(node, "name", "EL_PROCEDURE_AGENT")?,
             scoper: runtime::optional_field(node, "scoper")?,
             closed_args: runtime::optional_field(node, "closed_args")?,
-            open_args: runtime::container_field(node, "open_args")?,
+            open_args: runtime::optional_container_field(node, "open_args")?,
             definition: runtime::optional_field(node, "definition")?,
         })
     }
@@ -18589,8 +19066,10 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTuple {
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "EL_TUPLE");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.field("type", &self.r#type);
         w.end_object();
@@ -18604,7 +19083,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTuple {
         runtime::expect_object(node, "EL_TUPLE")?;
         runtime::check_type(node, "EL_TUPLE")?;
         ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
             r#type: runtime::required_field(node, "type", "EL_TUPLE")?,
         })
     }
@@ -18875,8 +19354,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::Archetype
         if let Some(v) = &self.parent_archetype_id {
             w.field("parent_archetype_id", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         w.end_object();
     }
@@ -18901,7 +19382,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
             archetype_id: runtime::required_field(node, "archetype_id", "ARCHETYPE")?,
             concept: runtime::required_field(node, "concept", "ARCHETYPE")?,
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
         })
     }
 }
@@ -19041,8 +19522,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::Archetype
         if !self.constraint_codes.is_empty() {
             w.field("constraint_codes", &self.constraint_codes);
         }
-        if !self.terminologies_available.is_empty() {
-            w.field("terminologies_available", &self.terminologies_available);
+        if let Some(v) = &self.terminologies_available
+            && !v.is_empty()
+        {
+            w.field("terminologies_available", v);
         }
         w.field("specialisation_depth", &self.specialisation_depth);
         if !self.term_attribute_names.is_empty() {
@@ -19061,7 +19544,10 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
         ::core::result::Result::Ok(Self {
             term_codes: runtime::container_field(node, "term_codes")?,
             constraint_codes: runtime::container_field(node, "constraint_codes")?,
-            terminologies_available: runtime::container_field(node, "terminologies_available")?,
+            terminologies_available: runtime::optional_container_field(
+                node,
+                "terminologies_available",
+            )?,
             specialisation_depth: runtime::required_field(
                 node,
                 "specialisation_depth",
@@ -19082,11 +19568,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::Archetype
         w.field("rm_type_name", &self.rm_type_name);
         w.field("occurrences", &self.occurrences);
         w.field("node_id", &self.node_id);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
-        if !self.excludes.is_empty() {
-            w.field("excludes", &self.excludes);
+        if let Some(v) = &self.excludes
+            && !v.is_empty()
+        {
+            w.field("excludes", v);
         }
         w.end_object();
     }
@@ -19102,8 +19592,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
             rm_type_name: runtime::required_field(node, "rm_type_name", "ARCHETYPE_SLOT")?,
             occurrences: runtime::required_field(node, "occurrences", "ARCHETYPE_SLOT")?,
             node_id: runtime::required_field(node, "node_id", "ARCHETYPE_SLOT")?,
-            includes: runtime::container_field(node, "includes")?,
-            excludes: runtime::container_field(node, "excludes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
+            excludes: runtime::optional_container_field(node, "excludes")?,
         })
     }
 }
@@ -19150,8 +19640,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::Assertion
             w.field("string_expression", v);
         }
         w.field("expression", &self.expression);
-        if !self.variables.is_empty() {
-            w.field("variables", &self.variables);
+        if let Some(v) = &self.variables
+            && !v.is_empty()
+        {
+            w.field("variables", v);
         }
         w.end_object();
     }
@@ -19167,7 +19659,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Asserti
             tag: runtime::optional_field(node, "tag")?,
             string_expression: runtime::optional_field(node, "string_expression")?,
             expression: runtime::required_field(node, "expression", "ASSERTION")?,
-            variables: runtime::container_field(node, "variables")?,
+            variables: runtime::optional_container_field(node, "variables")?,
         })
     }
 }
@@ -19381,8 +19873,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CComplexO
         if let Some(v) = &self.assumed_value {
             w.field("assumed_value", v);
         }
-        if !self.attributes.is_empty() {
-            w.field("attributes", &self.attributes);
+        if let Some(v) = &self.attributes
+            && !v.is_empty()
+        {
+            w.field("attributes", v);
         }
         w.end_object();
     }
@@ -19399,7 +19893,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CComple
             occurrences: runtime::required_field(node, "occurrences", "C_COMPLEX_OBJECT")?,
             node_id: runtime::required_field(node, "node_id", "C_COMPLEX_OBJECT")?,
             assumed_value: runtime::optional_field(node, "assumed_value")?,
-            attributes: runtime::container_field(node, "attributes")?,
+            attributes: runtime::optional_container_field(node, "attributes")?,
         })
     }
 }
@@ -19675,8 +20169,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CInteger 
         if let Some(v) = &self.assumed_value {
             w.field("assumed_value", v);
         }
-        if !self.list.is_empty() {
-            w.field("list", &self.list);
+        if let Some(v) = &self.list
+            && !v.is_empty()
+        {
+            w.field("list", v);
         }
         if let Some(v) = &self.range {
             w.field("range", v);
@@ -19693,7 +20189,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CIntege
         runtime::check_type(node, "C_INTEGER")?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
-            list: runtime::container_field(node, "list")?,
+            list: runtime::optional_container_field(node, "list")?,
             range: runtime::optional_field(node, "range")?,
         })
     }
@@ -19708,8 +20204,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CMultiple
         w.field_str("_type", "C_MULTIPLE_ATTRIBUTE");
         w.field("rm_attribute_name", &self.rm_attribute_name);
         w.field("existence", &self.existence);
-        if !self.children.is_empty() {
-            w.field("children", &self.children);
+        if let Some(v) = &self.children
+            && !v.is_empty()
+        {
+            w.field("children", v);
         }
         w.field("cardinality", &self.cardinality);
         w.end_object();
@@ -19729,7 +20227,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CMultip
                 "C_MULTIPLE_ATTRIBUTE",
             )?,
             existence: runtime::required_field(node, "existence", "C_MULTIPLE_ATTRIBUTE")?,
-            children: runtime::container_field(node, "children")?,
+            children: runtime::optional_container_field(node, "children")?,
             cardinality: runtime::required_field(node, "cardinality", "C_MULTIPLE_ATTRIBUTE")?,
         })
     }
@@ -19818,8 +20316,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::COrdinal 
         if let Some(v) = &self.assumed_value {
             w.field("assumed_value", v);
         }
-        if !self.list.is_empty() {
-            w.field("list", &self.list);
+        if let Some(v) = &self.list
+            && !v.is_empty()
+        {
+            w.field("list", v);
         }
         w.end_object();
     }
@@ -19836,7 +20336,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::COrdina
             occurrences: runtime::required_field(node, "occurrences", "C_ORDINAL")?,
             node_id: runtime::required_field(node, "node_id", "C_ORDINAL")?,
             assumed_value: runtime::optional_field(node, "assumed_value")?,
-            list: runtime::container_field(node, "list")?,
+            list: runtime::optional_container_field(node, "list")?,
         })
     }
 }
@@ -19959,8 +20459,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CQuantity
             w.field("assumed_value", v);
         }
         w.field("property", &self.property);
-        if !self.list.is_empty() {
-            w.field("list", &self.list);
+        if let Some(v) = &self.list
+            && !v.is_empty()
+        {
+            w.field("list", v);
         }
         w.end_object();
     }
@@ -19978,7 +20480,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CQuanti
             node_id: runtime::required_field(node, "node_id", "C_QUANTITY")?,
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             property: runtime::required_field(node, "property", "C_QUANTITY")?,
-            list: runtime::container_field(node, "list")?,
+            list: runtime::optional_container_field(node, "list")?,
         })
     }
 }
@@ -20021,8 +20523,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CReal {
         if let Some(v) = &self.assumed_value {
             w.field("assumed_value", v);
         }
-        if !self.list.is_empty() {
-            w.field("list", &self.list);
+        if let Some(v) = &self.list
+            && !v.is_empty()
+        {
+            w.field("list", v);
         }
         if let Some(v) = &self.range {
             w.field("range", v);
@@ -20039,7 +20543,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CReal {
         runtime::check_type(node, "C_REAL")?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
-            list: runtime::container_field(node, "list")?,
+            list: runtime::optional_container_field(node, "list")?,
             range: runtime::optional_field(node, "range")?,
         })
     }
@@ -20101,8 +20605,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CSingleAt
         w.field_str("_type", "C_SINGLE_ATTRIBUTE");
         w.field("rm_attribute_name", &self.rm_attribute_name);
         w.field("existence", &self.existence);
-        if !self.children.is_empty() {
-            w.field("children", &self.children);
+        if let Some(v) = &self.children
+            && !v.is_empty()
+        {
+            w.field("children", v);
         }
         w.end_object();
     }
@@ -20121,7 +20627,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CSingle
                 "C_SINGLE_ATTRIBUTE",
             )?,
             existence: runtime::required_field(node, "existence", "C_SINGLE_ATTRIBUTE")?,
-            children: runtime::container_field(node, "children")?,
+            children: runtime::optional_container_field(node, "children")?,
         })
     }
 }
@@ -20139,8 +20645,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CString {
         if let Some(v) = &self.pattern {
             w.field("pattern", v);
         }
-        if !self.list.is_empty() {
-            w.field("list", &self.list);
+        if let Some(v) = &self.list
+            && !v.is_empty()
+        {
+            w.field("list", v);
         }
         w.field("list_open", &self.list_open);
         w.end_object();
@@ -20156,7 +20664,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CString
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             pattern: runtime::optional_field(node, "pattern")?,
-            list: runtime::container_field(node, "list")?,
+            list: runtime::optional_container_field(node, "list")?,
             list_open: runtime::required_field(node, "list_open", "C_STRING")?,
         })
     }
@@ -20925,8 +21433,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Archetype
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -20934,11 +21444,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Archetype
         if let Some(v) = &self.sibling_order {
             w.field("sibling_order", v);
         }
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
-        if !self.excludes.is_empty() {
-            w.field("excludes", &self.excludes);
+        if let Some(v) = &self.excludes
+            && !v.is_empty()
+        {
+            w.field("excludes", v);
         }
         w.field("is_closed", &self.is_closed);
         w.end_object();
@@ -20957,11 +21471,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Archety
             rm_type_name: runtime::required_field(node, "rm_type_name", "ARCHETYPE_SLOT")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "ARCHETYPE_SLOT")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
-            includes: runtime::container_field(node, "includes")?,
-            excludes: runtime::container_field(node, "excludes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
+            excludes: runtime::optional_container_field(node, "excludes")?,
             is_closed: runtime::required_field(node, "is_closed", "ARCHETYPE_SLOT")?,
         })
     }
@@ -21125,8 +21639,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::AuthoredA
         w.field("is_differential", &self.is_differential);
         w.field("definition", &self.definition);
         w.field("terminology", &self.terminology);
-        if !self.rules.is_empty() {
-            w.field("rules", &self.rules);
+        if let Some(v) = &self.rules
+            && !v.is_empty()
+        {
+            w.field("rules", v);
         }
         if let Some(v) = &self.rm_overlay {
             w.field("rm_overlay", v);
@@ -21174,7 +21690,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Authore
             )?,
             definition: runtime::required_field(node, "definition", "AUTHORED_ARCHETYPE")?,
             terminology: runtime::required_field(node, "terminology", "AUTHORED_ARCHETYPE")?,
-            rules: runtime::container_field(node, "rules")?,
+            rules: runtime::optional_container_field(node, "rules")?,
             rm_overlay: runtime::optional_field(node, "rm_overlay")?,
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(
@@ -21548,8 +22064,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmConsta
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         w.field("generator", &self.generator);
@@ -21570,7 +22088,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmCons
             r#type: runtime::required_field(node, "type", "BMM_CONSTANT")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_CONSTANT")?,
             generator: runtime::required_field(node, "generator", "BMM_CONSTANT")?,
         })
@@ -21598,8 +22116,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmContai
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         if let Some(v) = &self.is_im_runtime {
@@ -21631,7 +22151,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmCont
             r#type: runtime::required_field(node, "type", "BMM_CONTAINER_PROPERTY")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_CONTAINER_PROPERTY")?,
             is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
             is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
@@ -21949,11 +22469,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -21963,8 +22487,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -21982,8 +22508,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -21991,11 +22519,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.converters {
             w.field("converters", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.end_object();
     }
@@ -22011,24 +22543,27 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
             name: runtime::required_field(node, "name", "BMM_ENUMERATION")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_ENUMERATION")?,
             properties: runtime::optional_field(node, "properties")?,
             source_schema_id: runtime::required_field(node, "source_schema_id", "BMM_ENUMERATION")?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
         })
     }
 }
@@ -22094,11 +22629,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -22108,8 +22647,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -22127,8 +22668,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -22136,11 +22679,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.converters {
             w.field("converters", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.end_object();
     }
@@ -22156,8 +22703,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_INTEGER")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_ENUMERATION_INTEGER")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -22166,18 +22713,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
                 "source_schema_id",
                 "BMM_ENUMERATION_INTEGER",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_INTEGER")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
         })
     }
 }
@@ -22196,11 +22746,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -22210,8 +22764,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -22229,8 +22785,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -22238,11 +22796,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmEnumer
         if let Some(v) = &self.converters {
             w.field("converters", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
         w.end_object();
     }
@@ -22258,8 +22820,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_STRING")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_ENUMERATION_STRING")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -22268,18 +22830,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
                 "source_schema_id",
                 "BMM_ENUMERATION_STRING",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_ENUMERATION_STRING")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
         })
     }
 }
@@ -22358,8 +22923,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFeatur
         w.field_str("_type", "BMM_FEATURE_GROUP");
         w.field("name", &self.name);
         w.field("properties", &self.properties);
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.visibility {
             w.field("visibility", v);
@@ -22377,7 +22944,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFeat
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_FEATURE_GROUP")?,
             properties: runtime::required_field(node, "properties", "BMM_FEATURE_GROUP")?,
-            features: runtime::container_field(node, "features")?,
+            features: runtime::optional_container_field(node, "features")?,
             visibility: runtime::optional_field(node, "visibility")?,
         })
     }
@@ -22493,18 +23060,26 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFuncti
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
-        if !self.parameters.is_empty() {
-            w.field("parameters", &self.parameters);
+        if let Some(v) = &self.parameters
+            && !v.is_empty()
+        {
+            w.field("parameters", v);
         }
-        if !self.pre_conditions.is_empty() {
-            w.field("pre_conditions", &self.pre_conditions);
+        if let Some(v) = &self.pre_conditions
+            && !v.is_empty()
+        {
+            w.field("pre_conditions", v);
         }
-        if !self.post_conditions.is_empty() {
-            w.field("post_conditions", &self.post_conditions);
+        if let Some(v) = &self.post_conditions
+            && !v.is_empty()
+        {
+            w.field("post_conditions", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -22530,11 +23105,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFunc
             r#type: runtime::required_field(node, "type", "BMM_FUNCTION")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_FUNCTION")?,
-            parameters: runtime::container_field(node, "parameters")?,
-            pre_conditions: runtime::container_field(node, "pre_conditions")?,
-            post_conditions: runtime::container_field(node, "post_conditions")?,
+            parameters: runtime::optional_container_field(node, "parameters")?,
+            pre_conditions: runtime::optional_container_field(node, "pre_conditions")?,
+            post_conditions: runtime::optional_container_field(node, "post_conditions")?,
             definition: runtime::optional_field(node, "definition")?,
             operator_definition: runtime::optional_field(node, "operator_definition")?,
             result: runtime::required_field(node, "result", "BMM_FUNCTION")?,
@@ -22584,11 +23159,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmGeneri
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -22598,8 +23177,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmGeneri
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -22617,8 +23198,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmGeneri
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -22641,8 +23224,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGene
             name: runtime::required_field(node, "name", "BMM_GENERIC_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_GENERIC_CLASS")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -22651,14 +23234,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGene
                 "source_schema_id",
                 "BMM_GENERIC_CLASS",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_GENERIC_CLASS")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
             generic_parameters: runtime::required_field(
@@ -22763,8 +23349,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmIndexe
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         if let Some(v) = &self.is_im_runtime {
@@ -22798,7 +23386,7 @@ impl crate::json_codec::runtime::FromJson
             r#type: runtime::required_field(node, "type", "BMM_INDEXED_CONTAINER_PROPERTY")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_INDEXED_CONTAINER_PROPERTY")?,
             is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
             is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
@@ -23055,8 +23643,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmLocalR
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_LOCAL_ROUTINE");
-        if !self.locals.is_empty() {
-            w.field("locals", &self.locals);
+        if let Some(v) = &self.locals
+            && !v.is_empty()
+        {
+            w.field("locals", v);
         }
         w.field("body", &self.body);
         w.end_object();
@@ -23070,7 +23660,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmLoca
         runtime::expect_object(node, "BMM_LOCAL_ROUTINE")?;
         runtime::check_type(node, "BMM_LOCAL_ROUTINE")?;
         ::core::result::Result::Ok(Self {
-            locals: runtime::container_field(node, "locals")?,
+            locals: runtime::optional_container_field(node, "locals")?,
             body: runtime::required_field(node, "body", "BMM_LOCAL_ROUTINE")?,
         })
     }
@@ -23098,8 +23688,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModel 
         if let Some(v) = &self.class_definitions {
             w.field("class_definitions", v);
         }
-        if !self.used_models.is_empty() {
-            w.field("used_models", &self.used_models);
+        if let Some(v) = &self.used_models
+            && !v.is_empty()
+        {
+            w.field("used_models", v);
         }
         if let Some(v) = &self.modules {
             w.field("modules", v);
@@ -23122,7 +23714,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmMode
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL")?,
             class_definitions: runtime::optional_field(node, "class_definitions")?,
-            used_models: runtime::container_field(node, "used_models")?,
+            used_models: runtime::optional_container_field(node, "used_models")?,
             modules: runtime::optional_field(node, "modules")?,
         })
     }
@@ -23135,8 +23727,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModelA
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_MODEL_ACCESS");
-        if !self.schema_directories.is_empty() {
-            w.field("schema_directories", &self.schema_directories);
+        if let Some(v) = &self.schema_directories
+            && !v.is_empty()
+        {
+            w.field("schema_directories", v);
         }
         if let Some(v) = &self.all_schemas {
             w.field("all_schemas", v);
@@ -23158,7 +23752,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmMode
         runtime::expect_object(node, "BMM_MODEL_ACCESS")?;
         runtime::check_type(node, "BMM_MODEL_ACCESS")?;
         ::core::result::Result::Ok(Self {
-            schema_directories: runtime::container_field(node, "schema_directories")?,
+            schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
             bmm_models: runtime::optional_field(node, "bmm_models")?,
             matching_bmm_models: runtime::optional_field(node, "matching_bmm_models")?,
@@ -23487,8 +24081,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmPackag
         if let Some(v) = &self.packages {
             w.field("packages", v);
         }
-        if !self.members.is_empty() {
-            w.field("members", &self.members);
+        if let Some(v) = &self.members
+            && !v.is_empty()
+        {
+            w.field("members", v);
         }
         w.end_object();
     }
@@ -23505,7 +24101,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPack
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
             packages: runtime::optional_field(node, "packages")?,
-            members: runtime::container_field(node, "members")?,
+            members: runtime::optional_container_field(node, "members")?,
         })
     }
 }
@@ -23729,18 +24325,26 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmProced
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
-        if !self.parameters.is_empty() {
-            w.field("parameters", &self.parameters);
+        if let Some(v) = &self.parameters
+            && !v.is_empty()
+        {
+            w.field("parameters", v);
         }
-        if !self.pre_conditions.is_empty() {
-            w.field("pre_conditions", &self.pre_conditions);
+        if let Some(v) = &self.pre_conditions
+            && !v.is_empty()
+        {
+            w.field("pre_conditions", v);
         }
-        if !self.post_conditions.is_empty() {
-            w.field("post_conditions", &self.post_conditions);
+        if let Some(v) = &self.post_conditions
+            && !v.is_empty()
+        {
+            w.field("post_conditions", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -23762,11 +24366,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProc
             r#type: runtime::required_field(node, "type", "BMM_PROCEDURE")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_PROCEDURE")?,
-            parameters: runtime::container_field(node, "parameters")?,
-            pre_conditions: runtime::container_field(node, "pre_conditions")?,
-            post_conditions: runtime::container_field(node, "post_conditions")?,
+            parameters: runtime::optional_container_field(node, "parameters")?,
+            pre_conditions: runtime::optional_container_field(node, "pre_conditions")?,
+            post_conditions: runtime::optional_container_field(node, "post_conditions")?,
             definition: runtime::optional_field(node, "definition")?,
         })
     }
@@ -24155,8 +24759,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchema
         w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
         w.field("schema_author", &self.schema_author);
         w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
+        if let Some(v) = &self.schema_contributors
+            && !v.is_empty()
+        {
+            w.field("schema_contributors", v);
         }
         w.end_object();
     }
@@ -24185,7 +24791,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSche
             )?,
             schema_author: runtime::required_field(node, "schema_author", "BMM_SCHEMA")?,
             schema_description: runtime::required_field(node, "schema_description", "BMM_SCHEMA")?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            schema_contributors: runtime::optional_container_field(node, "schema_contributors")?,
         })
     }
 }
@@ -24204,8 +24810,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchema
         w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
         w.field("schema_author", &self.schema_author);
         w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
+        if let Some(v) = &self.schema_contributors
+            && !v.is_empty()
+        {
+            w.field("schema_contributors", v);
         }
         if let Some(v) = &self.archetype_parent_class {
             w.field("archetype_parent_class", v);
@@ -24213,11 +24821,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchema
         if let Some(v) = &self.archetype_data_value_parent_class {
             w.field("archetype_data_value_parent_class", v);
         }
-        if !self.archetype_rm_closure_packages.is_empty() {
-            w.field(
-                "archetype_rm_closure_packages",
-                &self.archetype_rm_closure_packages,
-            );
+        if let Some(v) = &self.archetype_rm_closure_packages
+            && !v.is_empty()
+        {
+            w.field("archetype_rm_closure_packages", v);
         }
         if let Some(v) = &self.archetype_visualise_descendants_of {
             w.field("archetype_visualise_descendants_of", v);
@@ -24248,13 +24855,13 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSche
                 "schema_description",
                 "BMM_SCHEMA_CORE",
             )?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            schema_contributors: runtime::optional_container_field(node, "schema_contributors")?,
             archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
             archetype_data_value_parent_class: runtime::optional_field(
                 node,
                 "archetype_data_value_parent_class",
             )?,
-            archetype_rm_closure_packages: runtime::container_field(
+            archetype_rm_closure_packages: runtime::optional_container_field(
                 node,
                 "archetype_rm_closure_packages",
             )?,
@@ -24319,8 +24926,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSchema
         }
         w.field("schema_id", &self.schema_id);
         w.field("meta_data", &self.meta_data);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
         w.end_object();
     }
@@ -24337,7 +24946,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSche
             bmm_model: runtime::optional_field(node, "bmm_model")?,
             schema_id: runtime::required_field(node, "schema_id", "BMM_SCHEMA_DESCRIPTOR")?,
             meta_data: runtime::required_field(node, "meta_data", "BMM_SCHEMA_DESCRIPTOR")?,
-            includes: runtime::container_field(node, "includes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
         })
     }
 }
@@ -24467,11 +25076,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSimple
         if let Some(v) = &self.extensions {
             w.field("extensions", v);
         }
-        if !self.feature_groups.is_empty() {
-            w.field("feature_groups", &self.feature_groups);
+        if let Some(v) = &self.feature_groups
+            && !v.is_empty()
+        {
+            w.field("feature_groups", v);
         }
-        if !self.features.is_empty() {
-            w.field("features", &self.features);
+        if let Some(v) = &self.features
+            && !v.is_empty()
+        {
+            w.field("features", v);
         }
         if let Some(v) = &self.ancestors {
             w.field("ancestors", v);
@@ -24481,8 +25094,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSimple
             w.field("properties", v);
         }
         w.field("source_schema_id", &self.source_schema_id);
-        if !self.immediate_descendants.is_empty() {
-            w.field("immediate_descendants", &self.immediate_descendants);
+        if let Some(v) = &self.immediate_descendants
+            && !v.is_empty()
+        {
+            w.field("immediate_descendants", v);
         }
         w.field("is_override", &self.is_override);
         if let Some(v) = &self.static_properties {
@@ -24500,8 +25115,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSimple
         if let Some(v) = &self.is_abstract {
             w.field("is_abstract", v);
         }
-        if !self.invariants.is_empty() {
-            w.field("invariants", &self.invariants);
+        if let Some(v) = &self.invariants
+            && !v.is_empty()
+        {
+            w.field("invariants", v);
         }
         if let Some(v) = &self.creators {
             w.field("creators", v);
@@ -24523,8 +25140,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimp
             name: runtime::required_field(node, "name", "BMM_SIMPLE_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
             extensions: runtime::optional_field(node, "extensions")?,
-            feature_groups: runtime::container_field(node, "feature_groups")?,
-            features: runtime::container_field(node, "features")?,
+            feature_groups: runtime::optional_container_field(node, "feature_groups")?,
+            features: runtime::optional_container_field(node, "features")?,
             ancestors: runtime::optional_field(node, "ancestors")?,
             package: runtime::required_field(node, "package", "BMM_SIMPLE_CLASS")?,
             properties: runtime::optional_field(node, "properties")?,
@@ -24533,14 +25150,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimp
                 "source_schema_id",
                 "BMM_SIMPLE_CLASS",
             )?,
-            immediate_descendants: runtime::container_field(node, "immediate_descendants")?,
+            immediate_descendants: runtime::optional_container_field(
+                node,
+                "immediate_descendants",
+            )?,
             is_override: runtime::required_field(node, "is_override", "BMM_SIMPLE_CLASS")?,
             static_properties: runtime::optional_field(node, "static_properties")?,
             functions: runtime::optional_field(node, "functions")?,
             procedures: runtime::optional_field(node, "procedures")?,
             is_primitive: runtime::optional_field(node, "is_primitive")?,
             is_abstract: runtime::optional_field(node, "is_abstract")?,
-            invariants: runtime::container_field(node, "invariants")?,
+            invariants: runtime::optional_container_field(node, "invariants")?,
             creators: runtime::optional_field(node, "creators")?,
             converters: runtime::optional_field(node, "converters")?,
         })
@@ -24692,8 +25312,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSingle
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         w.field("generator", &self.generator);
@@ -24714,7 +25336,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSing
             r#type: runtime::required_field(node, "type", "BMM_SINGLETON")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_SINGLETON")?,
             generator: runtime::required_field(node, "generator", "BMM_SINGLETON")?,
         })
@@ -24783,8 +25405,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmStatem
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "BMM_STATEMENT_BLOCK");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.end_object();
     }
@@ -24797,7 +25421,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStat
         runtime::expect_object(node, "BMM_STATEMENT_BLOCK")?;
         runtime::check_type(node, "BMM_STATEMENT_BLOCK")?;
         ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
         })
     }
 }
@@ -25101,8 +25725,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmUnitar
         if let Some(v) = &self.is_synthesised_generic {
             w.field("is_synthesised_generic", v);
         }
-        if !self.feature_extensions.is_empty() {
-            w.field("feature_extensions", &self.feature_extensions);
+        if let Some(v) = &self.feature_extensions
+            && !v.is_empty()
+        {
+            w.field("feature_extensions", v);
         }
         w.field("group", &self.group);
         if let Some(v) = &self.is_im_runtime {
@@ -25131,7 +25757,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmUnit
             r#type: runtime::required_field(node, "type", "BMM_UNITARY_PROPERTY")?,
             is_nullable: runtime::optional_field(node, "is_nullable")?,
             is_synthesised_generic: runtime::optional_field(node, "is_synthesised_generic")?,
-            feature_extensions: runtime::container_field(node, "feature_extensions")?,
+            feature_extensions: runtime::optional_container_field(node, "feature_extensions")?,
             group: runtime::required_field(node, "group", "BMM_UNITARY_PROPERTY")?,
             is_im_runtime: runtime::optional_field(node, "is_im_runtime")?,
             is_im_infrastructure: runtime::optional_field(node, "is_im_infrastructure")?,
@@ -25386,8 +26012,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CArchetyp
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -25398,11 +26026,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CArchetyp
         if let Some(v) = &self.default_value {
             w.field("default_value", v);
         }
-        if !self.attributes.is_empty() {
-            w.field("attributes", &self.attributes);
+        if let Some(v) = &self.attributes
+            && !v.is_empty()
+        {
+            w.field("attributes", v);
         }
-        if !self.attribute_tuples.is_empty() {
-            w.field("attribute_tuples", &self.attribute_tuples);
+        if let Some(v) = &self.attribute_tuples
+            && !v.is_empty()
+        {
+            w.field("attribute_tuples", v);
         }
         w.field("archetype_ref", &self.archetype_ref);
         w.end_object();
@@ -25421,12 +26053,12 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CArchet
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_ARCHETYPE_ROOT")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_ARCHETYPE_ROOT")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
-            attributes: runtime::container_field(node, "attributes")?,
-            attribute_tuples: runtime::container_field(node, "attribute_tuples")?,
+            attributes: runtime::optional_container_field(node, "attributes")?,
+            attribute_tuples: runtime::optional_container_field(node, "attribute_tuples")?,
             archetype_ref: runtime::required_field(node, "archetype_ref", "C_ARCHETYPE_ROOT")?,
         })
     }
@@ -25449,8 +26081,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CAttribut
         if let Some(v) = &self.existence {
             w.field("existence", v);
         }
-        if !self.children.is_empty() {
-            w.field("children", &self.children);
+        if let Some(v) = &self.children
+            && !v.is_empty()
+        {
+            w.field("children", v);
         }
         if let Some(v) = &self.differential_path {
             w.field("differential_path", v);
@@ -25474,7 +26108,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CAttrib
             soc_parent: runtime::optional_field(node, "soc_parent")?,
             rm_attribute_name: runtime::required_field(node, "rm_attribute_name", "C_ATTRIBUTE")?,
             existence: runtime::optional_field(node, "existence")?,
-            children: runtime::container_field(node, "children")?,
+            children: runtime::optional_container_field(node, "children")?,
             differential_path: runtime::optional_field(node, "differential_path")?,
             cardinality: runtime::optional_field(node, "cardinality")?,
             is_multiple: runtime::required_field(node, "is_multiple", "C_ATTRIBUTE")?,
@@ -25489,11 +26123,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CAttribut
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "C_ATTRIBUTE_TUPLE");
-        if !self.members.is_empty() {
-            w.field("members", &self.members);
+        if let Some(v) = &self.members
+            && !v.is_empty()
+        {
+            w.field("members", v);
         }
-        if !self.tuples.is_empty() {
-            w.field("tuples", &self.tuples);
+        if let Some(v) = &self.tuples
+            && !v.is_empty()
+        {
+            w.field("tuples", v);
         }
         w.end_object();
     }
@@ -25506,8 +26144,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CAttrib
         runtime::expect_object(node, "C_ATTRIBUTE_TUPLE")?;
         runtime::check_type(node, "C_ATTRIBUTE_TUPLE")?;
         ::core::result::Result::Ok(Self {
-            members: runtime::container_field(node, "members")?,
-            tuples: runtime::container_field(node, "tuples")?,
+            members: runtime::optional_container_field(node, "members")?,
+            tuples: runtime::optional_container_field(node, "tuples")?,
         })
     }
 }
@@ -25530,8 +26168,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CBoolean 
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -25548,8 +26188,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CBoolean 
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         w.end_object();
     }
@@ -25567,7 +26209,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CBoolea
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_BOOLEAN")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_BOOLEAN")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -25576,7 +26218,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CBoolea
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
         })
     }
 }
@@ -25599,8 +26241,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CComplexO
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -25611,11 +26255,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CComplexO
         if let Some(v) = &self.default_value {
             w.field("default_value", v);
         }
-        if !self.attributes.is_empty() {
-            w.field("attributes", &self.attributes);
+        if let Some(v) = &self.attributes
+            && !v.is_empty()
+        {
+            w.field("attributes", v);
         }
-        if !self.attribute_tuples.is_empty() {
-            w.field("attribute_tuples", &self.attribute_tuples);
+        if let Some(v) = &self.attribute_tuples
+            && !v.is_empty()
+        {
+            w.field("attribute_tuples", v);
         }
         w.end_object();
     }
@@ -25633,12 +26281,12 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CComple
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_COMPLEX_OBJECT")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_COMPLEX_OBJECT")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
-            attributes: runtime::container_field(node, "attributes")?,
-            attribute_tuples: runtime::container_field(node, "attribute_tuples")?,
+            attributes: runtime::optional_container_field(node, "attributes")?,
+            attribute_tuples: runtime::optional_container_field(node, "attribute_tuples")?,
         })
     }
 }
@@ -25699,8 +26347,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CComplexO
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -25725,7 +26375,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CComple
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_COMPLEX_OBJECT_PROXY")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_COMPLEX_OBJECT_PROXY")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             target_path: runtime::required_field(node, "target_path", "C_COMPLEX_OBJECT_PROXY")?,
@@ -25751,8 +26401,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CDate {
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -25769,8 +26421,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CDate {
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         if let Some(v) = &self.pattern_constraint {
             w.field("pattern_constraint", v);
@@ -25791,7 +26445,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDate {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_DATE")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_DATE")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -25800,7 +26454,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDate {
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
             pattern_constraint: runtime::optional_field(node, "pattern_constraint")?,
         })
     }
@@ -25824,8 +26478,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CDateTime
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -25842,8 +26498,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CDateTime
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         if let Some(v) = &self.pattern_constraint {
             w.field("pattern_constraint", v);
@@ -25864,7 +26522,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDateTi
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_DATE_TIME")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_DATE_TIME")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -25873,7 +26531,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDateTi
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
             pattern_constraint: runtime::optional_field(node, "pattern_constraint")?,
         })
     }
@@ -25980,8 +26638,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CDuration
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -25998,8 +26658,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CDuration
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         if let Some(v) = &self.pattern_constraint {
             w.field("pattern_constraint", v);
@@ -26020,7 +26682,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDurati
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_DURATION")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_DURATION")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -26029,7 +26691,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDurati
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
             pattern_constraint: runtime::optional_field(node, "pattern_constraint")?,
         })
     }
@@ -26053,8 +26715,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CInteger 
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -26071,8 +26735,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CInteger 
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         w.end_object();
     }
@@ -26090,7 +26756,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CIntege
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_INTEGER")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_INTEGER")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -26099,7 +26765,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CIntege
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
         })
     }
 }
@@ -26376,8 +27042,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CReal {
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -26394,8 +27062,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CReal {
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         w.end_object();
     }
@@ -26413,7 +27083,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CReal {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_REAL")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_REAL")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -26422,7 +27092,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CReal {
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
         })
     }
 }
@@ -26485,8 +27155,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CString {
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -26503,8 +27175,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CString {
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         w.end_object();
     }
@@ -26522,7 +27196,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CString
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_STRING")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_STRING")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -26531,7 +27205,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CString
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
         })
     }
 }
@@ -26683,8 +27357,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CTerminol
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -26721,7 +27397,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CTermin
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_TERMINOLOGY_CODE")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_TERMINOLOGY_CODE")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -26754,8 +27430,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CTime {
             w.field("occurrences", v);
         }
         w.field("node_id", &self.node_id);
-        if !self.alternative_ids.is_empty() {
-            w.field("alternative_ids", &self.alternative_ids);
+        if let Some(v) = &self.alternative_ids
+            && !v.is_empty()
+        {
+            w.field("alternative_ids", v);
         }
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
@@ -26772,8 +27450,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CTime {
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         if let Some(v) = &self.pattern_constraint {
             w.field("pattern_constraint", v);
@@ -26794,7 +27474,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CTime {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_TIME")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "C_TIME")?,
-            alternative_ids: runtime::container_field(node, "alternative_ids")?,
+            alternative_ids: runtime::optional_container_field(node, "alternative_ids")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             sibling_order: runtime::optional_field(node, "sibling_order")?,
             default_value: runtime::optional_field(node, "default_value")?,
@@ -26803,7 +27483,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CTime {
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
             pattern_constraint: runtime::optional_field(node, "pattern_constraint")?,
         })
     }
@@ -27441,8 +28121,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElFunctio
         if let Some(v) = &self.closed_args {
             w.field("closed_args", v);
         }
-        if !self.open_args.is_empty() {
-            w.field("open_args", &self.open_args);
+        if let Some(v) = &self.open_args
+            && !v.is_empty()
+        {
+            w.field("open_args", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -27462,7 +28144,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElFunct
             name: runtime::required_field(node, "name", "EL_FUNCTION_AGENT")?,
             scoper: runtime::optional_field(node, "scoper")?,
             closed_args: runtime::optional_field(node, "closed_args")?,
-            open_args: runtime::container_field(node, "open_args")?,
+            open_args: runtime::optional_container_field(node, "open_args")?,
             definition: runtime::optional_field(node, "definition")?,
         })
     }
@@ -27619,8 +28301,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElProcedu
         if let Some(v) = &self.closed_args {
             w.field("closed_args", v);
         }
-        if !self.open_args.is_empty() {
-            w.field("open_args", &self.open_args);
+        if let Some(v) = &self.open_args
+            && !v.is_empty()
+        {
+            w.field("open_args", v);
         }
         if let Some(v) = &self.definition {
             w.field("definition", v);
@@ -27640,7 +28324,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElProce
             name: runtime::required_field(node, "name", "EL_PROCEDURE_AGENT")?,
             scoper: runtime::optional_field(node, "scoper")?,
             closed_args: runtime::optional_field(node, "closed_args")?,
-            open_args: runtime::container_field(node, "open_args")?,
+            open_args: runtime::optional_container_field(node, "open_args")?,
             definition: runtime::optional_field(node, "definition")?,
         })
     }
@@ -27925,8 +28609,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElTuple {
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "EL_TUPLE");
-        if !self.items.is_empty() {
-            w.field("items", &self.items);
+        if let Some(v) = &self.items
+            && !v.is_empty()
+        {
+            w.field("items", v);
         }
         w.field("type", &self.r#type);
         w.end_object();
@@ -27940,7 +28626,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElTuple
         runtime::expect_object(node, "EL_TUPLE")?;
         runtime::check_type(node, "EL_TUPLE")?;
         ::core::result::Result::Ok(Self {
-            items: runtime::container_field(node, "items")?,
+            items: runtime::optional_container_field(node, "items")?,
             r#type: runtime::required_field(node, "type", "EL_TUPLE")?,
         })
     }
@@ -28460,8 +29146,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ExprFunct
         if let Some(v) = &self.item {
             w.field("item", v);
         }
-        if !self.arguments.is_empty() {
-            w.field("arguments", &self.arguments);
+        if let Some(v) = &self.arguments
+            && !v.is_empty()
+        {
+            w.field("arguments", v);
         }
         w.end_object();
     }
@@ -28475,7 +29163,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprFun
         runtime::check_type(node, "EXPR_FUNCTION_CALL")?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
-            arguments: runtime::container_field(node, "arguments")?,
+            arguments: runtime::optional_container_field(node, "arguments")?,
         })
     }
 }
@@ -28783,8 +29471,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Operation
         w.field("is_differential", &self.is_differential);
         w.field("definition", &self.definition);
         w.field("terminology", &self.terminology);
-        if !self.rules.is_empty() {
-            w.field("rules", &self.rules);
+        if let Some(v) = &self.rules
+            && !v.is_empty()
+        {
+            w.field("rules", v);
         }
         if let Some(v) = &self.rm_overlay {
             w.field("rm_overlay", v);
@@ -28838,7 +29528,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Operati
             )?,
             definition: runtime::required_field(node, "definition", "OPERATIONAL_TEMPLATE")?,
             terminology: runtime::required_field(node, "terminology", "OPERATIONAL_TEMPLATE")?,
-            rules: runtime::container_field(node, "rules")?,
+            rules: runtime::optional_container_field(node, "rules")?,
             rm_overlay: runtime::optional_field(node, "rm_overlay")?,
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(
@@ -29041,11 +29731,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PArchetyp
         if let Some(v) = &self.is_deprecated {
             w.field("is_deprecated", v);
         }
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
-        if !self.excludes.is_empty() {
-            w.field("excludes", &self.excludes);
+        if let Some(v) = &self.excludes
+            && !v.is_empty()
+        {
+            w.field("excludes", v);
         }
         w.field("is_closed", &self.is_closed);
         w.end_object();
@@ -29063,8 +29757,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PArchet
             occurrences: runtime::optional_field(node, "occurrences")?,
             node_id: runtime::required_field(node, "node_id", "P_ARCHETYPE_SLOT")?,
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
-            includes: runtime::container_field(node, "includes")?,
-            excludes: runtime::container_field(node, "excludes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
+            excludes: runtime::optional_container_field(node, "excludes")?,
             is_closed: runtime::required_field(node, "is_closed", "P_ARCHETYPE_SLOT")?,
         })
     }
@@ -29132,8 +29826,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PAuthored
         w.field("is_differential", &self.is_differential);
         w.field("definition", &self.definition);
         w.field("terminology", &self.terminology);
-        if !self.rules.is_empty() {
-            w.field("rules", &self.rules);
+        if let Some(v) = &self.rules
+            && !v.is_empty()
+        {
+            w.field("rules", v);
         }
         if let Some(v) = &self.uid {
             w.field("uid", v);
@@ -29148,8 +29844,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PAuthored
         if let Some(v) = &self.annotations {
             w.field("annotations", v);
         }
-        if !self.translations.is_empty() {
-            w.field("translations", &self.translations);
+        if let Some(v) = &self.translations
+            && !v.is_empty()
+        {
+            w.field("translations", v);
         }
         if let Some(v) = &self.adl_version {
             w.field("adl_version", v);
@@ -29178,7 +29876,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PAuthor
             )?,
             definition: runtime::required_field(node, "definition", "P_AUTHORED_ARCHETYPE")?,
             terminology: runtime::required_field(node, "terminology", "P_AUTHORED_ARCHETYPE")?,
-            rules: runtime::container_field(node, "rules")?,
+            rules: runtime::optional_container_field(node, "rules")?,
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(
                 node,
@@ -29188,7 +29886,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PAuthor
             description: runtime::optional_field(node, "description")?,
             is_controlled: runtime::optional_field(node, "is_controlled")?,
             annotations: runtime::optional_field(node, "annotations")?,
-            translations: runtime::container_field(node, "translations")?,
+            translations: runtime::optional_container_field(node, "translations")?,
             adl_version: runtime::optional_field(node, "adl_version")?,
             build_uid: runtime::required_field(node, "build_uid", "P_AUTHORED_ARCHETYPE")?,
             rm_release: runtime::required_field(node, "rm_release", "P_AUTHORED_ARCHETYPE")?,
@@ -29350,8 +30048,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmClass
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -29379,8 +30079,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmClass
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
         w.end_object();
     }
@@ -29395,7 +30097,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmCla
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CLASS")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -29406,7 +30108,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmCla
             source_schema_id: runtime::required_field(node, "source_schema_id", "P_BMM_CLASS")?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_CLASS")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
         })
     }
 }
@@ -29709,8 +30411,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnume
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -29738,17 +30442,25 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnume
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
-        if !self.item_documentations.is_empty() {
-            w.field("item_documentations", &self.item_documentations);
+        if let Some(v) = &self.item_documentations
+            && !v.is_empty()
+        {
+            w.field("item_documentations", v);
         }
         w.end_object();
     }
@@ -29763,7 +30475,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -29778,10 +30490,10 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
             )?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
-            item_documentations: runtime::container_field(node, "item_documentations")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
+            item_documentations: runtime::optional_container_field(node, "item_documentations")?,
         })
     }
 }
@@ -29848,8 +30560,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnume
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -29877,17 +30591,25 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnume
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
-        if !self.item_documentations.is_empty() {
-            w.field("item_documentations", &self.item_documentations);
+        if let Some(v) = &self.item_documentations
+            && !v.is_empty()
+        {
+            w.field("item_documentations", v);
         }
         w.end_object();
     }
@@ -29902,7 +30624,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_INTEGER")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -29917,10 +30639,10 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
             )?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION_INTEGER")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
-            item_documentations: runtime::container_field(node, "item_documentations")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
+            item_documentations: runtime::optional_container_field(node, "item_documentations")?,
         })
     }
 }
@@ -29936,8 +30658,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnume
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.ancestors.is_empty() {
-            w.field("ancestors", &self.ancestors);
+        if let Some(v) = &self.ancestors
+            && !v.is_empty()
+        {
+            w.field("ancestors", v);
         }
         if let Some(v) = &self.constants {
             w.field("constants", v);
@@ -29965,17 +30689,25 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmEnume
             w.field("bmm_class", v);
         }
         w.field("uid", &self.uid);
-        if !self.ancestor_defs.is_empty() {
-            w.field("ancestor_defs", &self.ancestor_defs);
+        if let Some(v) = &self.ancestor_defs
+            && !v.is_empty()
+        {
+            w.field("ancestor_defs", v);
         }
-        if !self.item_names.is_empty() {
-            w.field("item_names", &self.item_names);
+        if let Some(v) = &self.item_names
+            && !v.is_empty()
+        {
+            w.field("item_names", v);
         }
-        if !self.item_values.is_empty() {
-            w.field("item_values", &self.item_values);
+        if let Some(v) = &self.item_values
+            && !v.is_empty()
+        {
+            w.field("item_values", v);
         }
-        if !self.item_documentations.is_empty() {
-            w.field("item_documentations", &self.item_documentations);
+        if let Some(v) = &self.item_documentations
+            && !v.is_empty()
+        {
+            w.field("item_documentations", v);
         }
         w.end_object();
     }
@@ -29990,7 +30722,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_STRING")?,
-            ancestors: runtime::container_field(node, "ancestors")?,
+            ancestors: runtime::optional_container_field(node, "ancestors")?,
             constants: runtime::optional_field(node, "constants")?,
             properties: runtime::optional_field(node, "properties")?,
             functions: runtime::optional_field(node, "functions")?,
@@ -30005,10 +30737,10 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
             )?,
             bmm_class: runtime::optional_field(node, "bmm_class")?,
             uid: runtime::required_field(node, "uid", "P_BMM_ENUMERATION_STRING")?,
-            ancestor_defs: runtime::container_field(node, "ancestor_defs")?,
-            item_names: runtime::container_field(node, "item_names")?,
-            item_values: runtime::container_field(node, "item_values")?,
-            item_documentations: runtime::container_field(node, "item_documentations")?,
+            ancestor_defs: runtime::optional_container_field(node, "ancestor_defs")?,
+            item_names: runtime::optional_container_field(node, "item_names")?,
+            item_values: runtime::optional_container_field(node, "item_values")?,
+            item_documentations: runtime::optional_container_field(node, "item_documentations")?,
         })
     }
 }
@@ -30290,8 +31022,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmGener
         if !self.generic_parameter_defs.is_empty() {
             w.field("generic_parameter_defs", &self.generic_parameter_defs);
         }
-        if !self.generic_parameters.is_empty() {
-            w.field("generic_parameters", &self.generic_parameters);
+        if let Some(v) = &self.generic_parameters
+            && !v.is_empty()
+        {
+            w.field("generic_parameters", v);
         }
         w.end_object();
     }
@@ -30308,7 +31042,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmGen
             value_constraint: runtime::optional_field(node, "value_constraint")?,
             root_type: runtime::required_field(node, "root_type", "P_BMM_GENERIC_TYPE")?,
             generic_parameter_defs: runtime::container_field(node, "generic_parameter_defs")?,
-            generic_parameters: runtime::container_field(node, "generic_parameters")?,
+            generic_parameters: runtime::optional_container_field(node, "generic_parameters")?,
         })
     }
 }
@@ -30649,8 +31383,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmPacka
             w.field("documentation", v);
         }
         w.field("name", &self.name);
-        if !self.classes.is_empty() {
-            w.field("classes", &self.classes);
+        if let Some(v) = &self.classes
+            && !v.is_empty()
+        {
+            w.field("classes", v);
         }
         if let Some(v) = &self.bmm_package_definition {
             w.field("bmm_package_definition", v);
@@ -30669,7 +31405,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmPac
             packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE")?,
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_PACKAGE")?,
-            classes: runtime::container_field(node, "classes")?,
+            classes: runtime::optional_container_field(node, "classes")?,
             bmm_package_definition: runtime::optional_field(node, "bmm_package_definition")?,
         })
     }
@@ -30820,8 +31556,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSchem
         w.field("schema_lifecycle_state", &self.schema_lifecycle_state);
         w.field("schema_author", &self.schema_author);
         w.field("schema_description", &self.schema_description);
-        if !self.schema_contributors.is_empty() {
-            w.field("schema_contributors", &self.schema_contributors);
+        if let Some(v) = &self.schema_contributors
+            && !v.is_empty()
+        {
+            w.field("schema_contributors", v);
         }
         if let Some(v) = &self.archetype_parent_class {
             w.field("archetype_parent_class", v);
@@ -30829,11 +31567,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSchem
         if let Some(v) = &self.archetype_data_value_parent_class {
             w.field("archetype_data_value_parent_class", v);
         }
-        if !self.archetype_rm_closure_packages.is_empty() {
-            w.field(
-                "archetype_rm_closure_packages",
-                &self.archetype_rm_closure_packages,
-            );
+        if let Some(v) = &self.archetype_rm_closure_packages
+            && !v.is_empty()
+        {
+            w.field("archetype_rm_closure_packages", v);
         }
         if let Some(v) = &self.archetype_visualise_descendants_of {
             w.field("archetype_visualise_descendants_of", v);
@@ -30842,11 +31579,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSchem
         if let Some(v) = &self.includes {
             w.field("includes", v);
         }
-        if !self.primitive_types.is_empty() {
-            w.field("primitive_types", &self.primitive_types);
+        if let Some(v) = &self.primitive_types
+            && !v.is_empty()
+        {
+            w.field("primitive_types", v);
         }
-        if !self.class_definitions.is_empty() {
-            w.field("class_definitions", &self.class_definitions);
+        if let Some(v) = &self.class_definitions
+            && !v.is_empty()
+        {
+            w.field("class_definitions", v);
         }
         w.end_object();
     }
@@ -30875,13 +31616,13 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSch
                 "schema_description",
                 "P_BMM_SCHEMA",
             )?,
-            schema_contributors: runtime::container_field(node, "schema_contributors")?,
+            schema_contributors: runtime::optional_container_field(node, "schema_contributors")?,
             archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
             archetype_data_value_parent_class: runtime::optional_field(
                 node,
                 "archetype_data_value_parent_class",
             )?,
-            archetype_rm_closure_packages: runtime::container_field(
+            archetype_rm_closure_packages: runtime::optional_container_field(
                 node,
                 "archetype_rm_closure_packages",
             )?,
@@ -30891,8 +31632,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSch
             )?,
             bmm_version: runtime::required_field(node, "bmm_version", "P_BMM_SCHEMA")?,
             includes: runtime::optional_field(node, "includes")?,
-            primitive_types: runtime::container_field(node, "primitive_types")?,
-            class_definitions: runtime::container_field(node, "class_definitions")?,
+            primitive_types: runtime::optional_container_field(node, "primitive_types")?,
+            class_definitions: runtime::optional_container_field(node, "class_definitions")?,
         })
     }
 }
@@ -30912,8 +31653,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PBmmSchem
         }
         w.field("schema_id", &self.schema_id);
         w.field("meta_data", &self.meta_data);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
         if let Some(v) = &self.bmm_schema {
             w.field("bmm_schema", v);
@@ -30933,7 +31676,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSch
             schema: runtime::optional_field(node, "schema")?,
             schema_id: runtime::required_field(node, "schema_id", "P_BMM_SCHEMA_DESCRIPTOR")?,
             meta_data: runtime::required_field(node, "meta_data", "P_BMM_SCHEMA_DESCRIPTOR")?,
-            includes: runtime::container_field(node, "includes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
             bmm_schema: runtime::optional_field(node, "bmm_schema")?,
         })
     }
@@ -31165,11 +31908,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCArchety
             w.field("is_frozen", v);
         }
         w.field("default_value", &self.default_value);
-        if !self.attributes.is_empty() {
-            w.field("attributes", &self.attributes);
+        if let Some(v) = &self.attributes
+            && !v.is_empty()
+        {
+            w.field("attributes", v);
         }
-        if !self.attribute_tuples.is_empty() {
-            w.field("attribute_tuples", &self.attribute_tuples);
+        if let Some(v) = &self.attribute_tuples
+            && !v.is_empty()
+        {
+            w.field("attribute_tuples", v);
         }
         w.field("archetype_ref", &self.archetype_ref);
         w.end_object();
@@ -31189,8 +31936,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCArche
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             is_frozen: runtime::optional_field(node, "is_frozen")?,
             default_value: runtime::required_field(node, "default_value", "P_C_ARCHETYPE_ROOT")?,
-            attributes: runtime::container_field(node, "attributes")?,
-            attribute_tuples: runtime::container_field(node, "attribute_tuples")?,
+            attributes: runtime::optional_container_field(node, "attributes")?,
+            attribute_tuples: runtime::optional_container_field(node, "attribute_tuples")?,
             archetype_ref: runtime::required_field(node, "archetype_ref", "P_C_ARCHETYPE_ROOT")?,
         })
     }
@@ -31207,8 +31954,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCAttribu
         if let Some(v) = &self.existence {
             w.field("existence", v);
         }
-        if !self.children.is_empty() {
-            w.field("children", &self.children);
+        if let Some(v) = &self.children
+            && !v.is_empty()
+        {
+            w.field("children", v);
         }
         if let Some(v) = &self.differential_path {
             w.field("differential_path", v);
@@ -31230,7 +31979,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCAttri
         ::core::result::Result::Ok(Self {
             rm_attribute_name: runtime::required_field(node, "rm_attribute_name", "P_C_ATTRIBUTE")?,
             existence: runtime::optional_field(node, "existence")?,
-            children: runtime::container_field(node, "children")?,
+            children: runtime::optional_container_field(node, "children")?,
             differential_path: runtime::optional_field(node, "differential_path")?,
             cardinality: runtime::optional_field(node, "cardinality")?,
             is_multiple: runtime::required_field(node, "is_multiple", "P_C_ATTRIBUTE")?,
@@ -31245,8 +31994,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCAttribu
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "P_C_ATTRIBUTE_TUPLE");
-        if !self.members.is_empty() {
-            w.field("members", &self.members);
+        if let Some(v) = &self.members
+            && !v.is_empty()
+        {
+            w.field("members", v);
         }
         w.end_object();
     }
@@ -31259,7 +32010,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCAttri
         runtime::expect_object(node, "P_C_ATTRIBUTE_TUPLE")?;
         runtime::check_type(node, "P_C_ATTRIBUTE_TUPLE")?;
         ::core::result::Result::Ok(Self {
-            members: runtime::container_field(node, "members")?,
+            members: runtime::optional_container_field(node, "members")?,
         })
     }
 }
@@ -31289,8 +32040,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCBoolean
         if let Some(v) = &self.is_enumerated_type_constraint {
             w.field("is_enumerated_type_constraint", v);
         }
-        if !self.constraint.is_empty() {
-            w.field("constraint", &self.constraint);
+        if let Some(v) = &self.constraint
+            && !v.is_empty()
+        {
+            w.field("constraint", v);
         }
         w.end_object();
     }
@@ -31314,7 +32067,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCBoole
                 node,
                 "is_enumerated_type_constraint",
             )?,
-            constraint: runtime::container_field(node, "constraint")?,
+            constraint: runtime::optional_container_field(node, "constraint")?,
         })
     }
 }
@@ -31338,11 +32091,15 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCComplex
             w.field("is_frozen", v);
         }
         w.field("default_value", &self.default_value);
-        if !self.attributes.is_empty() {
-            w.field("attributes", &self.attributes);
+        if let Some(v) = &self.attributes
+            && !v.is_empty()
+        {
+            w.field("attributes", v);
         }
-        if !self.attribute_tuples.is_empty() {
-            w.field("attribute_tuples", &self.attribute_tuples);
+        if let Some(v) = &self.attribute_tuples
+            && !v.is_empty()
+        {
+            w.field("attribute_tuples", v);
         }
         w.end_object();
     }
@@ -31361,8 +32118,8 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCCompl
             is_deprecated: runtime::optional_field(node, "is_deprecated")?,
             is_frozen: runtime::optional_field(node, "is_frozen")?,
             default_value: runtime::required_field(node, "default_value", "P_C_COMPLEX_OBJECT")?,
-            attributes: runtime::container_field(node, "attributes")?,
-            attribute_tuples: runtime::container_field(node, "attribute_tuples")?,
+            attributes: runtime::optional_container_field(node, "attributes")?,
+            attribute_tuples: runtime::optional_container_field(node, "attribute_tuples")?,
         })
     }
 }
@@ -31856,8 +32613,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::POperatio
         w.field("is_differential", &self.is_differential);
         w.field("definition", &self.definition);
         w.field("terminology", &self.terminology);
-        if !self.rules.is_empty() {
-            w.field("rules", &self.rules);
+        if let Some(v) = &self.rules
+            && !v.is_empty()
+        {
+            w.field("rules", v);
         }
         if let Some(v) = &self.uid {
             w.field("uid", v);
@@ -31872,8 +32631,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::POperatio
         if let Some(v) = &self.annotations {
             w.field("annotations", v);
         }
-        if !self.translations.is_empty() {
-            w.field("translations", &self.translations);
+        if let Some(v) = &self.translations
+            && !v.is_empty()
+        {
+            w.field("translations", v);
         }
         if let Some(v) = &self.adl_version {
             w.field("adl_version", v);
@@ -31908,7 +32669,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::POperat
             )?,
             definition: runtime::required_field(node, "definition", "P_OPERATIONAL_TEMPLATE")?,
             terminology: runtime::required_field(node, "terminology", "P_OPERATIONAL_TEMPLATE")?,
-            rules: runtime::container_field(node, "rules")?,
+            rules: runtime::optional_container_field(node, "rules")?,
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(
                 node,
@@ -31918,7 +32679,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::POperat
             description: runtime::optional_field(node, "description")?,
             is_controlled: runtime::optional_field(node, "is_controlled")?,
             annotations: runtime::optional_field(node, "annotations")?,
-            translations: runtime::container_field(node, "translations")?,
+            translations: runtime::optional_container_field(node, "translations")?,
             adl_version: runtime::optional_field(node, "adl_version")?,
             build_uid: runtime::required_field(node, "build_uid", "P_OPERATIONAL_TEMPLATE")?,
             rm_release: runtime::required_field(node, "rm_release", "P_OPERATIONAL_TEMPLATE")?,
@@ -31948,8 +32709,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PTemplate
         w.field("is_differential", &self.is_differential);
         w.field("definition", &self.definition);
         w.field("terminology", &self.terminology);
-        if !self.rules.is_empty() {
-            w.field("rules", &self.rules);
+        if let Some(v) = &self.rules
+            && !v.is_empty()
+        {
+            w.field("rules", v);
         }
         if let Some(v) = &self.uid {
             w.field("uid", v);
@@ -31964,8 +32727,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PTemplate
         if let Some(v) = &self.annotations {
             w.field("annotations", v);
         }
-        if !self.translations.is_empty() {
-            w.field("translations", &self.translations);
+        if let Some(v) = &self.translations
+            && !v.is_empty()
+        {
+            w.field("translations", v);
         }
         if let Some(v) = &self.adl_version {
             w.field("adl_version", v);
@@ -31990,13 +32755,13 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PTempla
             is_differential: runtime::required_field(node, "is_differential", "P_TEMPLATE")?,
             definition: runtime::required_field(node, "definition", "P_TEMPLATE")?,
             terminology: runtime::required_field(node, "terminology", "P_TEMPLATE")?,
-            rules: runtime::container_field(node, "rules")?,
+            rules: runtime::optional_container_field(node, "rules")?,
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(node, "original_language", "P_TEMPLATE")?,
             description: runtime::optional_field(node, "description")?,
             is_controlled: runtime::optional_field(node, "is_controlled")?,
             annotations: runtime::optional_field(node, "annotations")?,
-            translations: runtime::container_field(node, "translations")?,
+            translations: runtime::optional_container_field(node, "translations")?,
             adl_version: runtime::optional_field(node, "adl_version")?,
             build_uid: runtime::required_field(node, "build_uid", "P_TEMPLATE")?,
             rm_release: runtime::required_field(node, "rm_release", "P_TEMPLATE")?,
@@ -32013,8 +32778,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Reference
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "REFERENCE_MODEL_ACCESS");
-        if !self.schema_directories.is_empty() {
-            w.field("schema_directories", &self.schema_directories);
+        if let Some(v) = &self.schema_directories
+            && !v.is_empty()
+        {
+            w.field("schema_directories", v);
         }
         if let Some(v) = &self.all_schemas {
             w.field("all_schemas", v);
@@ -32033,7 +32800,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Referen
         runtime::expect_object(node, "REFERENCE_MODEL_ACCESS")?;
         runtime::check_type(node, "REFERENCE_MODEL_ACCESS")?;
         ::core::result::Result::Ok(Self {
-            schema_directories: runtime::container_field(node, "schema_directories")?,
+            schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
             valid_models: runtime::optional_field(node, "valid_models")?,
         })
@@ -32057,8 +32824,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ResourceD
         if let Some(v) = &self.original_publisher {
             w.field("original_publisher", v);
         }
-        if !self.other_contributors.is_empty() {
-            w.field("other_contributors", &self.other_contributors);
+        if let Some(v) = &self.other_contributors
+            && !v.is_empty()
+        {
+            w.field("other_contributors", v);
         }
         w.field("lifecycle_state", &self.lifecycle_state);
         if let Some(v) = &self.custodian_namespace {
@@ -32110,7 +32879,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Resourc
             )?,
             original_namespace: runtime::optional_field(node, "original_namespace")?,
             original_publisher: runtime::optional_field(node, "original_publisher")?,
-            other_contributors: runtime::container_field(node, "other_contributors")?,
+            other_contributors: runtime::optional_container_field(node, "other_contributors")?,
             lifecycle_state: runtime::required_field(
                 node,
                 "lifecycle_state",
@@ -32201,8 +32970,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::SchemaDes
         }
         w.field("schema_id", &self.schema_id);
         w.field("meta_data", &self.meta_data);
-        if !self.includes.is_empty() {
-            w.field("includes", &self.includes);
+        if let Some(v) = &self.includes
+            && !v.is_empty()
+        {
+            w.field("includes", v);
         }
         w.end_object();
     }
@@ -32219,7 +32990,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::SchemaD
             schema: runtime::optional_field(node, "schema")?,
             schema_id: runtime::required_field(node, "schema_id", "SCHEMA_DESCRIPTOR")?,
             meta_data: runtime::required_field(node, "meta_data", "SCHEMA_DESCRIPTOR")?,
-            includes: runtime::container_field(node, "includes")?,
+            includes: runtime::optional_container_field(node, "includes")?,
         })
     }
 }
@@ -32342,8 +33113,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Statement
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "STATEMENT_SET");
-        if !self.statement.is_empty() {
-            w.field("statement", &self.statement);
+        if let Some(v) = &self.statement
+            && !v.is_empty()
+        {
+            w.field("statement", v);
         }
         if let Some(v) = &self.name {
             w.field("name", v);
@@ -32359,7 +33132,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Stateme
         runtime::expect_object(node, "STATEMENT_SET")?;
         runtime::check_type(node, "STATEMENT_SET")?;
         ::core::result::Result::Ok(Self {
-            statement: runtime::container_field(node, "statement")?,
+            statement: runtime::optional_container_field(node, "statement")?,
             name: runtime::optional_field(node, "name")?,
         })
     }
@@ -32379,8 +33152,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Template 
         w.field("is_differential", &self.is_differential);
         w.field("definition", &self.definition);
         w.field("terminology", &self.terminology);
-        if !self.rules.is_empty() {
-            w.field("rules", &self.rules);
+        if let Some(v) = &self.rules
+            && !v.is_empty()
+        {
+            w.field("rules", v);
         }
         if let Some(v) = &self.rm_overlay {
             w.field("rm_overlay", v);
@@ -32408,8 +33183,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Template 
         w.field("rm_release", &self.rm_release);
         w.field("is_generated", &self.is_generated);
         w.field("other_meta_data", &self.other_meta_data);
-        if !self.overlays.is_empty() {
-            w.field("overlays", &self.overlays);
+        if let Some(v) = &self.overlays
+            && !v.is_empty()
+        {
+            w.field("overlays", v);
         }
         w.end_object();
     }
@@ -32427,7 +33204,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Templat
             is_differential: runtime::required_field(node, "is_differential", "TEMPLATE")?,
             definition: runtime::required_field(node, "definition", "TEMPLATE")?,
             terminology: runtime::required_field(node, "terminology", "TEMPLATE")?,
-            rules: runtime::container_field(node, "rules")?,
+            rules: runtime::optional_container_field(node, "rules")?,
             rm_overlay: runtime::optional_field(node, "rm_overlay")?,
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(node, "original_language", "TEMPLATE")?,
@@ -32440,7 +33217,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Templat
             rm_release: runtime::required_field(node, "rm_release", "TEMPLATE")?,
             is_generated: runtime::required_field(node, "is_generated", "TEMPLATE")?,
             other_meta_data: runtime::required_field(node, "other_meta_data", "TEMPLATE")?,
-            overlays: runtime::container_field(node, "overlays")?,
+            overlays: runtime::optional_container_field(node, "overlays")?,
         })
     }
 }
@@ -32459,8 +33236,10 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::TemplateO
         w.field("is_differential", &self.is_differential);
         w.field("definition", &self.definition);
         w.field("terminology", &self.terminology);
-        if !self.rules.is_empty() {
-            w.field("rules", &self.rules);
+        if let Some(v) = &self.rules
+            && !v.is_empty()
+        {
+            w.field("rules", v);
         }
         if let Some(v) = &self.rm_overlay {
             w.field("rm_overlay", v);
@@ -32481,7 +33260,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Templat
             is_differential: runtime::required_field(node, "is_differential", "TEMPLATE_OVERLAY")?,
             definition: runtime::required_field(node, "definition", "TEMPLATE_OVERLAY")?,
             terminology: runtime::required_field(node, "terminology", "TEMPLATE_OVERLAY")?,
-            rules: runtime::container_field(node, "rules")?,
+            rules: runtime::optional_container_field(node, "rules")?,
             rm_overlay: runtime::optional_field(node, "rm_overlay")?,
         })
     }
@@ -32609,8 +33388,10 @@ impl crate::json_codec::runtime::ToJson for openehr_term::prelude::CodeSet {
         w.field("name", &self.name);
         w.field("openehr_id", &self.openehr_id);
         w.field("issuer", &self.issuer);
-        if !self.codes.is_empty() {
-            w.field("codes", &self.codes);
+        if let Some(v) = &self.codes
+            && !v.is_empty()
+        {
+            w.field("codes", v);
         }
         if let Some(v) = &self.external_id {
             w.field("external_id", v);
@@ -32632,7 +33413,7 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::CodeSet {
             name: runtime::required_field(node, "name", "CODE_SET")?,
             openehr_id: runtime::required_field(node, "openehr_id", "CODE_SET")?,
             issuer: runtime::required_field(node, "issuer", "CODE_SET")?,
-            codes: runtime::container_field(node, "codes")?,
+            codes: runtime::optional_container_field(node, "codes")?,
             external_id: runtime::optional_field(node, "external_id")?,
             status: runtime::optional_field(node, "status")?,
         })
@@ -32648,11 +33429,15 @@ impl crate::json_codec::runtime::ToJson for openehr_term::prelude::Terminology {
         w.field_str("_type", "TERMINOLOGY");
         w.field("name", &self.name);
         w.field("language", &self.language);
-        if !self.code_sets.is_empty() {
-            w.field("code_sets", &self.code_sets);
+        if let Some(v) = &self.code_sets
+            && !v.is_empty()
+        {
+            w.field("code_sets", v);
         }
-        if !self.vocabularies.is_empty() {
-            w.field("vocabularies", &self.vocabularies);
+        if let Some(v) = &self.vocabularies
+            && !v.is_empty()
+        {
+            w.field("vocabularies", v);
         }
         if let Some(v) = &self.version {
             w.field("version", v);
@@ -32673,8 +33458,8 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::Terminology
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "TERMINOLOGY")?,
             language: runtime::required_field(node, "language", "TERMINOLOGY")?,
-            code_sets: runtime::container_field(node, "code_sets")?,
-            vocabularies: runtime::container_field(node, "vocabularies")?,
+            code_sets: runtime::optional_container_field(node, "code_sets")?,
+            vocabularies: runtime::optional_container_field(node, "vocabularies")?,
             version: runtime::optional_field(node, "version")?,
             date: runtime::optional_field(node, "date")?,
         })
@@ -32719,8 +33504,10 @@ impl crate::json_codec::runtime::ToJson for openehr_term::prelude::TerminologyGr
         w.begin_object();
         w.field_str("_type", "TERMINOLOGY_GROUP");
         w.field("name", &self.name);
-        if !self.concepts.is_empty() {
-            w.field("concepts", &self.concepts);
+        if let Some(v) = &self.concepts
+            && !v.is_empty()
+        {
+            w.field("concepts", v);
         }
         w.field("openehr_id", &self.openehr_id);
         if let Some(v) = &self.status {
@@ -32738,7 +33525,7 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::Terminology
         runtime::check_type(node, "TERMINOLOGY_GROUP")?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "TERMINOLOGY_GROUP")?,
-            concepts: runtime::container_field(node, "concepts")?,
+            concepts: runtime::optional_container_field(node, "concepts")?,
             openehr_id: runtime::required_field(node, "openehr_id", "TERMINOLOGY_GROUP")?,
             status: runtime::optional_field(node, "status")?,
         })

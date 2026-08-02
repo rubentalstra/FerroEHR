@@ -583,7 +583,7 @@ impl RmScan<'_> {
         // `C_ATTRIBUTE`._is_multiple_ is False"). The single/multiple
         // determination is the RM's, not the parser's cardinality heuristic.
         if !rm_attr.is_multiple {
-            for child in &attr.children {
+            for child in attr.children.iter().flatten() {
                 if let Some(occ) = child_occurrences(child)
                     && let Some(upper) = finite_upper(occ)
                     && upper > 1
@@ -604,7 +604,7 @@ impl RmScan<'_> {
     /// Walk the children of an attribute whose RM declared type is known,
     /// checking each child's type existence/conformance and recursing.
     fn walk_children(&mut self, attr_path: &str, attr: &CAttribute, rm_attr: &RmAttr) {
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let child_type = object_rm_type(child);
             let child_path = child_path(attr_path, object_node_id(child));
 
@@ -728,7 +728,7 @@ impl RmScan<'_> {
     /// only VCORM (type existence) is checked, and the subtree is recursed with
     /// each child's own RM type.
     fn walk_children_untyped(&mut self, attr_path: &str, attr: &CAttribute) {
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let child_type = object_rm_type(child);
             let child_path = child_path(attr_path, object_node_id(child));
             if !child_type.is_empty() && !self.rm.type_exists(child_type) {
@@ -769,7 +769,7 @@ impl RmScan<'_> {
         match child {
             CObject::CInteger(c) => match en.underlying {
                 EnumUnderlying::Integer => {
-                    for v in integer_point_values(&c.constraint) {
+                    for v in integer_point_values(c.constraint.as_deref().unwrap_or_default()) {
                         if !en.int_values.contains(&i64::from(v)) {
                             push_issue(
                                 &mut self.issues,
@@ -791,7 +791,7 @@ impl RmScan<'_> {
             },
             CObject::CString(c) => match en.underlying {
                 EnumUnderlying::String => {
-                    for v in string_literal_values(&c.constraint) {
+                    for v in string_literal_values(c.constraint.as_deref().unwrap_or_default()) {
                         if !en.str_values.iter().any(|lit| lit == v) {
                             push_issue(
                                 &mut self.issues,

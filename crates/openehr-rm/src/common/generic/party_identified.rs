@@ -22,7 +22,7 @@ pub struct PartyIdentifiedData {
     /// Optional human-readable name (in String form).
     pub name: Option<String>,
     /// One or more formal identifiers (possibly computable).
-    pub identifiers: Vec<DvIdentifier>,
+    pub identifiers: Option<Vec<DvIdentifier>>,
 }
 
 /// Polymorphic slot of `PARTY_IDENTIFIED`, dispatched on each payload's `_type`.

@@ -1279,6 +1279,34 @@ pub fn container_field<N: JsonNode, T: FromJson>(
     }
 }
 
+/// Read an OPTIONAL container field (BMM existence `0..1`): absent → `None`,
+/// a present array → `Some`, including `Some(vec![])` for a present-but-empty
+/// one.
+///
+/// Absence and present-but-emptiness are two distinct RM states — the
+/// `x /= Void implies not x.is_empty` invariant family (e.g.
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants, `Links_valid`) is contentless unless both are representable —
+/// so the reader preserves them and the typed invariants judge the empty one.
+/// A present `null` is an error, exactly as for [`container_field`]: `null` is
+/// not an array, and the released serialization rule
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §JSON Format) says a `Null` attribute is absent rather than written, so a
+/// literal `null` is not a shape any conformant producer emits.
+///
+/// # Errors
+/// Returns a [`JsonParseError`] if a present value (including `null`) is not an
+/// array of `T`.
+pub fn optional_container_field<N: JsonNode, T: FromJson>(
+    node: &N,
+    key: &str,
+) -> Result<Option<Vec<T>>, JsonParseError> {
+    match node.get(key) {
+        Some(v) => Ok(Some(Vec::from_json(v).map_err(|e| e.in_field(key))?)),
+        None => Ok(None),
+    }
+}
+
 /// Read a plain field that carries a literal default (the `Interval`
 /// `*_included`/`*_unbounded` flags): absent → `default`. Verbatim from the
 /// derive's `#[openehr(default = "…")]`.

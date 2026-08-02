@@ -30,7 +30,7 @@ pub struct CString {
     ///
     pub node_id: String,
     /// Additional identifiers of this node. openEHR archetypes can carry original ALD2 id-codes in this attribute and it can also carry human readable codes for future use. Alternative ids must be unique within the archetype.
-    pub alternative_ids: Vec<String>,
+    pub alternative_ids: Option<Vec<String>>,
     /// True if this node and by implication all sub-nodes are deprecated for use.
     pub is_deprecated: Option<bool>,
     /// Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
@@ -46,5 +46,5 @@ pub struct CString {
     /// String constraint - a list of literal strings and / or regular expression strings delimited by the ‘/’ character.
     ///
     /// To represent no constraint, use an empty list, or alternatively, a regex 'any' pattern, i.e. `/.*/`.
-    pub constraint: Vec<String>,
+    pub constraint: Option<Vec<String>>,
 }

@@ -12,7 +12,7 @@ pub struct CString {
     /// Regular expression pattern for proposed instances of String to match.
     pub pattern: Option<String>,
     /// Set of Strings specifying constraint.
-    pub list: Vec<String>,
+    pub list: Option<Vec<String>>,
     /// True if the list is being used to specify the constraint but is not considered exhaustive.
     pub list_open: bool,
 }

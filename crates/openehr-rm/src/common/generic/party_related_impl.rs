@@ -22,7 +22,7 @@ impl Validate for PartyRelated {
         crate::validate::generated::party_identified_core(
             "PARTY_RELATED",
             self.name.as_deref(),
-            !self.identifiers.is_empty(),
+            self.identifiers.is_some(),
             self.external_ref.is_some(),
             out,
         );
@@ -41,7 +41,7 @@ mod tests {
             value: "mother".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -58,7 +58,7 @@ mod tests {
         PartyRelated {
             external_ref: None,
             name: name.map(str::to_owned),
-            identifiers: Vec::new(),
+            identifiers: openehr_base::containers::present(Vec::new()),
             relationship: relationship(),
         }
     }

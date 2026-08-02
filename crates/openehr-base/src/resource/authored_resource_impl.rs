@@ -62,7 +62,7 @@ mod tests {
                                     accreditation: None,
                                     other_details: None,
                                     version_last_translated: None,
-                                    other_contributors: Vec::new(),
+                                    other_contributors: None,
                                 },
                             )
                         })

@@ -216,8 +216,13 @@ fn template_with_overlay_assembles_and_round_trips() {
     let AuthoredArchetype::Template(t) = inner.as_ref() else {
         panic!("expected a TEMPLATE, got {inner:?}");
     };
-    assert_eq!(t.overlays.len(), 1);
-    assert_eq!(t.overlays[0].archetype_id.concept_id, "ov");
+    assert_eq!(t.overlays.as_ref().map_or(0, Vec::len), 1);
+    assert_eq!(
+        t.overlays.as_deref().unwrap_or_default()[0]
+            .archetype_id
+            .concept_id,
+        "ov"
+    );
     // round-trips through the printer.
     let second = parse_artefact(&print(&first), Dialect::Adl2).expect("re-parse");
     assert_eq!(first, second);

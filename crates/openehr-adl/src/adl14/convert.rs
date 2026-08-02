@@ -772,14 +772,14 @@ impl<'a> Converter<'a> {
 fn renumber_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>) {
     let Some(d) = cco_data_mut(cco) else { return };
     d.node_id = cx.new_node_id(&d.node_id);
-    for attr in &mut d.attributes {
-        for child in &mut attr.children {
+    for attr in d.attributes.iter_mut().flatten() {
+        for child in attr.children.iter_mut().flatten() {
             renumber_obj(child, cx);
         }
     }
-    for tuple in &mut d.attribute_tuples {
-        for member in &mut tuple.members {
-            for child in &mut member.children {
+    for tuple in d.attribute_tuples.iter_mut().flatten() {
+        for member in tuple.members.iter_mut().flatten() {
+            for child in member.children.iter_mut().flatten() {
                 renumber_obj(child, cx);
             }
         }
@@ -801,21 +801,21 @@ fn renumber_obj(obj: &mut CObject, cx: &mut Converter<'_>) {
 fn convert_constraints_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>, owner_text: &str) {
     let Some(d) = cco_data_mut(cco) else { return };
     let node_text = owner_text.to_owned();
-    for attr in &mut d.attributes {
-        for child in &mut attr.children {
+    for attr in d.attributes.iter_mut().flatten() {
+        for child in attr.children.iter_mut().flatten() {
             convert_constraints_obj(child, cx, &node_text);
         }
     }
-    for tuple in &mut d.attribute_tuples {
-        for member in &mut tuple.members {
-            for child in &mut member.children {
+    for tuple in d.attribute_tuples.iter_mut().flatten() {
+        for member in tuple.members.iter_mut().flatten() {
+            for child in member.children.iter_mut().flatten() {
                 convert_constraints_obj(child, cx, &node_text);
             }
         }
         // Tuple ROWS carry the actual primitive constraints — convert their
         // terminology codes (ordinal symbols etc.) like attribute ones.
-        for row in &mut tuple.tuples {
-            for m in &mut row.members {
+        for row in tuple.tuples.iter_mut().flatten() {
+            for m in row.members.iter_mut() {
                 if let CPrimitiveObject::CTerminologyCode(tc) = m {
                     let (constraint, assumed) = cx.convert_constraint(&tc.constraint, &node_text);
                     tc.constraint = constraint;

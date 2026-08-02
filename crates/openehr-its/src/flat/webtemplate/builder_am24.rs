@@ -324,7 +324,7 @@ fn build_children(
             if attr.rm_attribute_name == "name" {
                 continue; // The name attribute names the node (master04 §"Field Identifiers").
             }
-            for child_co in &attr.children {
+            for child_co in attr.children.iter().flatten() {
                 if is_leaf_ignored(child_co) {
                     continue; // Unfilled slot / proxy: no node.
                 }
@@ -448,7 +448,7 @@ fn build_inputs(
 fn text_input(cstring: Option<&CString>, suffix: Option<&str>) -> WebTemplateInput {
     let mut input = WebTemplateInput::new(WebTemplateInputType::Text, suffix);
     if let Some(cs) = cstring {
-        for entry in &cs.constraint {
+        for entry in cs.constraint.iter().flatten() {
             if let Some(regex) = delimited_regex(entry) {
                 input.validation = Some(WebTemplateValidation {
                     pattern: Some(regex.to_owned()),
@@ -561,24 +561,31 @@ fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<
         let names: Vec<&str> = tuple
             .members
             .iter()
+            .flatten()
             .map(|m| m.rm_attribute_name.as_str())
             .collect();
         if !names.contains(&"units") {
             continue;
         }
-        for row in &tuple.tuples {
+        for row in tuple.tuples.iter().flatten() {
             let mut unit_value = None;
             let mut validation = WebTemplateValidation::default();
             for (i, name) in names.iter().enumerate() {
                 match (*name, row.members.get(i)) {
                     ("units", Some(CPrimitiveObject::CString(cs))) => {
-                        unit_value = cs.constraint.iter().find(|s| delimited_regex(s).is_none());
+                        unit_value = cs
+                            .constraint
+                            .iter()
+                            .flatten()
+                            .find(|s| delimited_regex(s).is_none());
                     }
                     ("magnitude", Some(CPrimitiveObject::CReal(cr))) => {
-                        validation.range = cr.constraint.first().and_then(real_range);
+                        validation.range =
+                            cr.constraint.iter().flatten().next().and_then(real_range);
                     }
                     ("precision", Some(CPrimitiveObject::CInteger(ci))) => {
-                        validation.precision = ci.constraint.first().and_then(int_range);
+                        validation.precision =
+                            ci.constraint.iter().flatten().next().and_then(int_range);
                     }
                     _ => {}
                 }
@@ -599,6 +606,7 @@ fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<
         for unit in cs
             .constraint
             .iter()
+            .flatten()
             .filter(|s| delimited_regex(s).is_none())
         {
             if !units.list.iter().any(|cv| &cv.value == unit) {
@@ -609,7 +617,7 @@ fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<
         }
     }
     if let Some(cr) = creal_under(co, "magnitude")
-        && let Some(range) = cr.constraint.first().and_then(real_range)
+        && let Some(range) = cr.constraint.iter().flatten().next().and_then(real_range)
     {
         magnitude.validation = Some(WebTemplateValidation {
             range: Some(range),
@@ -628,7 +636,7 @@ fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<
 fn count_input(co: &CObject) -> WebTemplateInput {
     let mut input = WebTemplateInput::new(WebTemplateInputType::Integer, None);
     if let Some(ci) = cinteger_under(co, "magnitude")
-        && let Some(range) = ci.constraint.first().and_then(int_range)
+        && let Some(range) = ci.constraint.iter().flatten().next().and_then(int_range)
     {
         input.validation = Some(WebTemplateValidation {
             range: Some(range),
@@ -651,12 +659,13 @@ fn ordinal_input(
         let names: Vec<&str> = tuple
             .members
             .iter()
+            .flatten()
             .map(|m| m.rm_attribute_name.as_str())
             .collect();
         if !names.contains(&"symbol") {
             continue;
         }
-        for row in &tuple.tuples {
+        for row in tuple.tuples.iter().flatten() {
             let mut code = None;
             // `DV_ORDINAL.value` is an Integer; `DV_SCALE.value` is a Real —
             // tracked separately so no lossy `f64 as i32` cast is needed.
@@ -668,11 +677,23 @@ fn ordinal_input(
                         code = expand_codes(term, &ctc.constraint).into_iter().next();
                     }
                     ("value", Some(CPrimitiveObject::CInteger(ci))) => {
-                        ordinal = ci.constraint.first().and_then(point_i32).unwrap_or(0);
+                        ordinal = ci
+                            .constraint
+                            .iter()
+                            .flatten()
+                            .next()
+                            .and_then(point_i32)
+                            .unwrap_or(0);
                         scale_value = f64::from(ordinal);
                     }
                     ("value", Some(CPrimitiveObject::CReal(cr))) => {
-                        scale_value = cr.constraint.first().and_then(point_f64).unwrap_or(0.0);
+                        scale_value = cr
+                            .constraint
+                            .iter()
+                            .flatten()
+                            .next()
+                            .and_then(point_f64)
+                            .unwrap_or(0.0);
                     }
                     _ => {}
                 }
@@ -694,7 +715,7 @@ fn ordinal_input(
 fn boolean_input(co: &CObject) -> WebTemplateInput {
     let mut input = WebTemplateInput::new(WebTemplateInputType::Boolean, None);
     if let Some(cb) = cboolean_under(co, "value") {
-        let allows = |v: bool| cb.constraint.contains(&v);
+        let allows = |v: bool| cb.constraint.as_ref().is_some_and(|c| c.contains(&v));
         if allows(false) && !allows(true) {
             input.list.push(WebTemplateCodedValue::new(
                 "false",
@@ -745,10 +766,18 @@ fn duration_input(co: &CObject) -> WebTemplateInput {
 
 fn proportion_inputs(co: &CObject, proportion_types: &mut Vec<String>) -> Vec<WebTemplateInput> {
     let type_codes: Vec<i32> = cinteger_under(co, "type")
-        .map(|ci| ci.constraint.iter().filter_map(point_i32).collect())
+        .map(|ci| {
+            ci.constraint
+                .iter()
+                .flatten()
+                .filter_map(point_i32)
+                .collect()
+        })
         .unwrap_or_default();
-    let is_integral = cboolean_under(co, "is_integral")
-        .is_some_and(|b| b.constraint.contains(&true) && !b.constraint.contains(&false));
+    let is_integral = cboolean_under(co, "is_integral").is_some_and(|b| {
+        b.constraint.as_ref().is_some_and(|c| c.contains(&true))
+            && !b.constraint.as_ref().is_some_and(|c| c.contains(&false))
+    });
 
     *proportion_types = if type_codes.is_empty() {
         super::PROPORTION_KINDS
@@ -773,7 +802,7 @@ fn proportion_inputs(co: &CObject, proportion_types: &mut Vec<String>) -> Vec<We
         .map(|suffix| {
             let mut input = WebTemplateInput::new(ty, Some(suffix));
             if let Some(cr) = creal_under(co, suffix)
-                && let Some(range) = cr.constraint.first().and_then(real_range)
+                && let Some(range) = cr.constraint.iter().flatten().next().and_then(real_range)
             {
                 input.validation = Some(WebTemplateValidation {
                     range: Some(range),
@@ -796,7 +825,7 @@ fn cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
         let Some(card) = &attr.cardinality else {
             continue;
         };
-        if requires_cardinality(card, attr.children.len()) {
+        if requires_cardinality(card, attr.children.as_ref().map_or(0, Vec::len)) {
             let (min, max) = occ(&card.interval);
             out.push(WebTemplateCardinality {
                 min,
@@ -895,8 +924,8 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
         // value constraint — a pure primitive-value constraint never appears as a
         // navigable instance attribute.
         let object_valued = attr.is_multiple
-            || attr.children.is_empty()
-            || attr.children.iter().any(is_object_valued);
+            || attr.children.as_ref().is_none_or(Vec::is_empty)
+            || attr.children.iter().flatten().any(is_object_valued);
         if !object_valued {
             continue;
         }
@@ -939,13 +968,14 @@ fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttr
         if attr
             .children
             .iter()
+            .flatten()
             .any(|c| matches!(c, CObject::CComplexObjectProxy(_)))
         {
             continue;
         }
         let mut allowed_ids: Vec<String> = Vec::new();
         let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             match child {
                 CObject::ArchetypeSlot(s) => slots.push(archetype_slot(s)),
                 // A node-identified LOCATABLE alternative (an at/id-coded
@@ -983,8 +1013,18 @@ fn archetype_slot(s: &ArchetypeSlot) -> WebTemplateArchetypeSlot {
         rm_type: s.rm_type_name.clone(),
         min: min.unwrap_or(0).max(0),
         max,
-        includes: s.includes.iter().filter_map(slot_pattern).collect(),
-        excludes: s.excludes.iter().filter_map(slot_pattern).collect(),
+        includes: s
+            .includes
+            .iter()
+            .flatten()
+            .filter_map(slot_pattern)
+            .collect(),
+        excludes: s
+            .excludes
+            .iter()
+            .flatten()
+            .filter_map(slot_pattern)
+            .collect(),
     }
 }
 
@@ -1023,7 +1063,7 @@ fn structural_stubs(
         if !ENTRY_STRUCTURAL_ATTRS.contains(&attr.rm_attribute_name.as_str()) {
             continue;
         }
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             // Only a node-identified structural child gives a concrete identity to
             // stamp; a slot / proxy leaves the attribute to its placeholder.
             let CObject::CComplexObject(_) = child else {
@@ -1049,16 +1089,24 @@ fn structural_stubs(
 
 fn co_attributes(co: &CObject) -> &[CAttribute] {
     match co {
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => &d.attributes,
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => &r.attributes,
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => {
+            d.attributes.as_deref().unwrap_or_default()
+        }
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
+            r.attributes.as_deref().unwrap_or_default()
+        }
         _ => &[],
     }
 }
 
 fn co_attribute_tuples(co: &CObject) -> &[CAttributeTuple] {
     match co {
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => &d.attribute_tuples,
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => &r.attribute_tuples,
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => {
+            d.attribute_tuples.as_deref().unwrap_or_default()
+        }
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
+            r.attribute_tuples.as_deref().unwrap_or_default()
+        }
         _ => &[],
     }
 }
@@ -1067,7 +1115,7 @@ fn attr_children<'a>(co: &'a CObject, name: &str) -> impl Iterator<Item = &'a CO
     co_attributes(co)
         .iter()
         .filter(move |a| a.rm_attribute_name == name)
-        .flat_map(|a| a.children.iter())
+        .flat_map(|a| a.children.iter().flatten())
 }
 
 fn cstring_under<'a>(co: &'a CObject, name: &str) -> Option<&'a CString> {

@@ -28,5 +28,5 @@ pub struct XVersionedEhrAccess {
     /// Optional revision history of the original `VERSIONED_OBJECT`. If included, it is the complete revision history.
     pub revision_history: Option<RevisionHistory>,
     /// 0 or more Versions from the original `VERSIONED_OBJECT`, according to the Extract specification.
-    pub versions: Vec<OriginalVersion<EhrAccess>>,
+    pub versions: Option<Vec<OriginalVersion<EhrAccess>>>,
 }

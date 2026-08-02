@@ -436,7 +436,7 @@ pub(crate) fn complete_attestation(
         committer: party_proxy(&committer)?,
         attested_view: parts.attested_view,
         proof: parts.proof,
-        items: parts.items,
+        items: openehr_base::containers::present(parts.items),
         reason: parts.reason,
         is_pending: parts.is_pending,
     }))

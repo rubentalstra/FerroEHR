@@ -31,7 +31,7 @@ pub struct Role {
     /// Optional globally unique object identifier for root points of archetyped structures.
     pub uid: Option<UidBasedId>,
     /// Links to other archetyped structures (data whose root object inherits from `ARCHETYPED`, such as `ENTRY`, `SECTION` and so on). Links may be to structures in other compositions.
-    pub links: Vec<Link>,
+    pub links: Option<Vec<Link>>,
     /// Details of archetyping used on this node.
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
@@ -41,15 +41,15 @@ pub struct Role {
     /// Identities used by the party to identify itself, such as legal name, stage names, aliases, nicknames and so on.
     pub identities: Vec<PartyIdentity>,
     /// Contacts for this party.
-    pub contacts: Vec<Contact>,
+    pub contacts: Option<Vec<Contact>>,
     /// All other details for this Party.
     pub details: Option<ItemStructure>,
     /// Relationships in which this Party takes part as source.
-    pub relationships: Vec<PartyRelationship>,
+    pub relationships: Option<Vec<PartyRelationship>>,
     /// Valid time interval for this role.
     pub time_validity: Option<DvInterval<DvDate>>,
     /// Reference to Version container of Actor playing the role.
     pub performer: PartyRef,
     /// The capabilities of this role.
-    pub capabilities: Vec<Capability>,
+    pub capabilities: Option<Vec<Capability>>,
 }

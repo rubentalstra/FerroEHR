@@ -17,5 +17,5 @@ pub struct IsmTransition {
     /// The step in the careflow process which occurred as part of generating this action, e.g.  dispense ,  start_administration. This attribute represents the clinical  label for the activity, as  opposed to current_state which represents  the state machine (ISM)  computable form. Defined in archetype.
     pub careflow_step: Option<DvCodedText>,
     /// Optional possibility of adding one or more reasons for this careflow step having been taken. Multiple reasons may occur in medication management for example.
-    pub reason: Vec<DvText>,
+    pub reason: Option<Vec<DvText>>,
 }

@@ -40,11 +40,11 @@ pub struct BmmGenericClass {
 
     // inherited: BMM_MODULE
     /// List of feature groups in this class.
-    pub feature_groups: Vec<BmmFeatureGroup>,
+    pub feature_groups: Option<Vec<BmmFeatureGroup>>,
 
     // inherited: BMM_CLASS
     /// Features of this module.
-    pub features: Vec<BmmFeature>,
+    pub features: Option<Vec<BmmFeature>>,
     /// List of immediate inheritance parents.
     pub ancestors: Option<std::collections::BTreeMap<String, BmmModelType>>,
     /// Package this class belongs to.
@@ -54,7 +54,7 @@ pub struct BmmGenericClass {
     /// Reference to original source schema defining this class. Useful for UI tools to determine which original schema file to open for a given class for manual editing.
     pub source_schema_id: String,
     /// List of computed references to base classes of immediate inheritance descendants, derived when members of `_ancestors_` are attached at creation time.
-    pub immediate_descendants: Vec<BmmClass>,
+    pub immediate_descendants: Option<Vec<BmmClass>>,
     /// True if this definition overrides a class of the same name in an included schema.
     pub is_override: bool,
     /// Static properties defined in this class (subset of `_features_`).
@@ -68,7 +68,7 @@ pub struct BmmGenericClass {
     /// True if this class is marked as abstract, i.e. direct instances cannot be created from its direct type.
     pub is_abstract: Option<bool>,
     /// The `invariants` attribute of openEHR `BMM_CLASS` (the vendored BMM carries no documentation for it).
-    pub invariants: Vec<BmmAssertion>,
+    pub invariants: Option<Vec<BmmAssertion>>,
     /// Subset of `_procedures_` that may be used to initialise a new instance of an object, and whose execution will guarantee that class invariants are satisfied.
     pub creators: Option<std::collections::BTreeMap<String, BmmProcedure>>,
     /// Subset of `_creators_` that create a new instance from a single argument of another type.

@@ -97,8 +97,12 @@ fn object_at<'a>(root: &'a CComplexObject, path: &str) -> Option<&'a CComplexObj
             .iter()
             .find(|a| a.rm_attribute_name == attr_name)?;
         let child = match id {
-            Some(id) => attr.children.iter().find(|c| object_node_id(c) == id)?,
-            None => attr.children.first()?,
+            Some(id) => attr
+                .children
+                .iter()
+                .flatten()
+                .find(|c| object_node_id(c) == id)?,
+            None => attr.children.iter().flatten().next()?,
         };
         current = match child {
             CObject::CComplexObject(cco) => cco,
@@ -117,6 +121,7 @@ fn ids(a: &Archetype, obj_path: &str, attr: &str) -> Vec<String> {
         .map(|x| {
             x.children
                 .iter()
+                .flatten()
                 .map(|c| object_node_id(c).to_owned())
                 .collect()
         })
@@ -129,7 +134,12 @@ fn child<'a>(a: &'a Archetype, obj_path: &str, attr: &str, nid: &str) -> &'a COb
     complex_attributes(obj)
         .iter()
         .find(|x| x.rm_attribute_name == attr)
-        .and_then(|x| x.children.iter().find(|c| object_node_id(c) == nid))
+        .and_then(|x| {
+            x.children
+                .iter()
+                .flatten()
+                .find(|c| object_node_id(c) == nid)
+        })
         .unwrap_or_else(|| panic!("no child {nid} under {obj_path}/{attr}"))
 }
 

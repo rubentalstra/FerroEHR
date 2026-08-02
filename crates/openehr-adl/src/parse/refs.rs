@@ -72,12 +72,12 @@ impl Parser<'_> {
                 rm_type_name: rm_type,
                 occurrences,
                 node_id,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
-                attributes: Vec::new(),
-                attribute_tuples: Vec::new(),
+                attributes: openehr_base::containers::present(Vec::new()),
+                attribute_tuples: openehr_base::containers::present(Vec::new()),
                 archetype_ref,
             }),
         )))
@@ -132,7 +132,7 @@ impl Parser<'_> {
             rm_type_name: rm_type,
             occurrences,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             target_path,
@@ -221,11 +221,11 @@ impl Parser<'_> {
             rm_type_name: rm_type,
             occurrences,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
-            includes,
-            excludes,
+            includes: openehr_base::containers::present(includes),
+            excludes: openehr_base::containers::present(excludes),
             is_closed,
         }))
     }
@@ -332,14 +332,15 @@ mod tests {
         let CComplexObject::CComplexObject(d) = &cco else {
             panic!("expected a plain complex object root");
         };
-        let items = &d.attributes[0];
-        let CObject::ArchetypeSlot(anon) = &items.children[0] else {
+        let items = &d.attributes.as_deref().unwrap_or_default()[0];
+        let CObject::ArchetypeSlot(anon) = &items.children.as_deref().unwrap_or_default()[0] else {
             panic!("expected the anonymous slot");
         };
         assert_eq!(anon.rm_type_name, "OBSERVATION");
         assert!(anon.node_id.is_empty(), "anonymous slot has no node id");
-        assert_eq!(anon.includes.len(), 1);
-        let CObject::ArchetypeSlot(named) = &items.children[1] else {
+        assert_eq!(anon.includes.as_ref().map_or(0, Vec::len), 1);
+        let CObject::ArchetypeSlot(named) = &items.children.as_deref().unwrap_or_default()[1]
+        else {
             panic!("expected the identified slot");
         };
         assert_eq!(named.node_id, "at2002");
@@ -375,20 +376,23 @@ mod tests {
              }\n}",
         );
         let d = data(&cco);
-        let children = &d.attributes[0].children;
+        let children = d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default();
         // slot
         match &children[0] {
             CObject::ArchetypeSlot(s) => {
                 assert_eq!(s.node_id, "id2");
-                assert_eq!(s.includes.len(), 1);
+                assert_eq!(s.includes.as_ref().map_or(0, Vec::len), 1);
                 assert!(
-                    s.includes[0]
+                    s.includes.as_deref().unwrap_or_default()[0]
                         .string_expression
                         .as_ref()
                         .unwrap()
                         .contains("archetype_id")
                 );
-                assert_eq!(s.excludes.len(), 1);
+                assert_eq!(s.excludes.as_ref().map_or(0, Vec::len), 1);
                 assert!(!s.is_closed);
             }
             _ => panic!("expected ArchetypeSlot"),

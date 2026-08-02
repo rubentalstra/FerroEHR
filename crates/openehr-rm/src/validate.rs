@@ -15,11 +15,11 @@
 //!    checks).
 //! 2. **The JSON-level per-node checks the typed model cannot express** —
 //!    [`check_mandatory_containers`] (model-driven container lower bounds),
-//!    [`check_nonempty_lists`] (the `x /= Void implies not x.is_empty` family),
-//!    [`check_archetyped_valid`] and [`check_data_structure_shapes`]. Each is a
-//!    pure function returning its violations; the typed model collapses "absent"
-//!    and "present but empty" into one `Vec`, so these are only decidable on the
-//!    JSON value.
+//!    [`nonempty_list_violations`] (the `x /= Void implies not x.is_empty`
+//!    family, over the BMM-derived rule table), [`check_archetyped_valid`] and
+//!    [`check_data_structure_shapes`]. Each is a pure function over the node's
+//!    own value, run as its own layer beside the fast/typed core pair so the
+//!    equivalence property between those two stays exactly the core property.
 //! 3. **The terminology-backed invariants**, in the sibling [`terminology`]
 //!    module (they need the openEHR terminology bundle, not just the node).
 //!
@@ -137,13 +137,14 @@ pub fn locatable_node_id_violation(ty: &str, value: &Value) -> Option<InvariantV
 /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
 /// §Attributes), so a CLUSTER with an absent or empty `items` does not conform.
 ///
-/// This is a distinct mechanism from the codec decode: the canonical-JSON
-/// reader deliberately treats an absent array as an empty `Vec` (wire
-/// tolerance), so the omission is invisible to typed decoding — the lower bound
-/// is enforced HERE, from the model, for every class uniformly. The
-/// optional-attribute family (`x /= Void implies not x.is_empty`, e.g.
-/// `COMPOSITION.content`) stays with [`check_nonempty_lists`] — this function
-/// only judges MANDATORY containers, so the two never double-report.
+/// This is a distinct mechanism from the codec decode: a MANDATORY container
+/// emits as a bare `Vec<T>` and the canonical-JSON reader treats an absent
+/// array as an empty `Vec` (wire tolerance), so the omission is invisible to
+/// typed decoding — the lower bound is enforced HERE, from the model, for every
+/// class uniformly. The OPTIONAL-attribute family (`x /= Void implies not
+/// x.is_empty`, e.g. `COMPOSITION.content`) is a different rule with a different
+/// evaluator ([`nonempty_list_violations`]); this function only judges MANDATORY
+/// containers, so the two never double-report.
 /// `List<Octet>` is exempt by shape: canonical JSON renders it as an inline
 /// base64 string, which presence-checks as a non-array member.
 ///
@@ -178,20 +179,44 @@ pub fn check_mandatory_containers(ty: &str, value: &Value, out: &mut Vec<Invaria
     }
 }
 
-/// The present-but-empty state of the attribute-keyed RM list invariants, read
-/// once from a node's entries by the caller and handed to
-/// [`check_nonempty_lists`] (an absent list and a present-empty list are
-/// indistinguishable after typed deserialize, so the distinction only exists at
-/// the JSON level).
-#[derive(Clone, Copy, Debug, Default)]
-pub struct NonEmptyListFlags {
-    /// `DV_TEXT.mappings` is present as an empty array (`Mappings_valid`).
-    pub mappings_empty: bool,
-    /// `DV_ORDERED.other_reference_ranges` is present as an empty array
-    /// (`Other_reference_ranges_validity`).
-    pub reference_ranges_empty: bool,
-    /// `LOCATABLE.links` is present as an empty array (`Links_valid`).
-    pub links_empty: bool,
+/// The `x /= Void implies not x.is_empty` invariant family for one node: every
+/// rule of the generated table [`generated::NONEMPTY_LIST_RULES`] that applies
+/// to `ty`, evaluated against the node's own attributes.
+///
+/// The rule table is READ FROM THE BMM (every class invariant with that exact
+/// assertion shape over a container attribute), and a rule applies to its
+/// declaring class **and its transitive concrete descendants** — resolved from
+/// the generated static RM model ([`crate::model::descendants`]), never from a
+/// hand-maintained list — so `LOCATABLE.Links_valid`,
+/// `DV_ORDERED.Other_reference_ranges_validity` and
+/// `ENTRY.Other_participations_valid` reach every descendant, and a class the
+/// spec adds to the hierarchy is covered the moment the model is regenerated.
+///
+/// The optional-container emission shape (`Option<Vec<T>>`) is what makes the
+/// family decidable at all: the forbidden state is the attribute PRESENT with
+/// zero members, which the canonical-JSON reader now preserves
+/// (`openehr_its::json_codec::runtime::optional_container_field`). This
+/// evaluator reads it off the node, which is the same value the typed model
+/// carries.
+///
+/// Kept OUTSIDE the fast/typed core pair (the caller runs it as its own layer,
+/// exactly like [`check_mandatory_containers`]), so the fast-vs-typed
+/// equivalence property stays exactly the core property and no rule can be
+/// reported twice.
+///
+/// Every violation is reported on the node itself (an empty
+/// [`InvariantViolation::path`]); the caller prefixes the absolute RM path.
+pub fn nonempty_list_violations(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    for (class, attribute, invariant) in generated::NONEMPTY_LIST_RULES {
+        if *class != ty && !crate::model::descendants(class).contains(&ty) {
+            continue;
+        }
+        let present_and_empty = value
+            .get(*attribute)
+            .and_then(Value::as_array)
+            .is_some_and(Vec::is_empty);
+        generated::nonempty_list_core(ty, attribute, invariant, present_and_empty, out);
+    }
 }
 
 /// `LOCATABLE.Archetyped_valid`: `is_archetype_root xor archetype_details =
@@ -259,110 +284,6 @@ pub fn check_archetyped_valid(
              archetype_details.archetype_id {archetype_id:?} — at an archetype root \
              the two are always the same value (LOCATABLE.archetype_node_id)"
         )));
-    }
-    out
-}
-
-/// The RM's "present implies non-empty" list invariants, checkable only at
-/// the JSON level (after typed deserialize an absent list and a
-/// present-empty list are both an empty `Vec`):
-///
-/// - `COMPOSITION.Content_valid`: `content /= Void implies not
-///   content.is_empty` (`composition.adoc`);
-/// - `EVENT_CONTEXT.Participations_validity` (`event_context.adoc`);
-/// - `SECTION.Items_valid` (`section.adoc`);
-/// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
-///   ENTRY subtype);
-/// - `INSTRUCTION.Activities_valid` (`instruction.adoc`);
-/// - `LOCATABLE.Links_valid` (`locatable.adoc`), attribute-keyed.
-///
-/// All under `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.*`
-/// §Invariants. `ty` is the node's effective RM type (`None` when the wire
-/// carries no `_type` and the parent attribute declares an abstract one); the
-/// attribute-keyed rules still apply then, the class-keyed ones cannot.
-/// Every violation is reported on the node itself (an empty
-/// [`InvariantViolation::path`]); the caller prefixes the absolute RM path.
-#[must_use]
-pub fn check_nonempty_lists(
-    obj: &serde_json::Map<String, Value>,
-    ty: Option<&str>,
-    flags: NonEmptyListFlags,
-) -> Vec<InvariantViolation> {
-    const RULES: &[(&str, &str, &str)] = &[
-        ("COMPOSITION", "content", "Content_valid"),
-        ("EVENT_CONTEXT", "participations", "Participations_validity"),
-        ("SECTION", "items", "Items_valid"),
-        (
-            "OBSERVATION",
-            "other_participations",
-            "Other_participations_valid",
-        ),
-        (
-            "EVALUATION",
-            "other_participations",
-            "Other_participations_valid",
-        ),
-        (
-            "INSTRUCTION",
-            "other_participations",
-            "Other_participations_valid",
-        ),
-        (
-            "ACTION",
-            "other_participations",
-            "Other_participations_valid",
-        ),
-        (
-            "ADMIN_ENTRY",
-            "other_participations",
-            "Other_participations_valid",
-        ),
-        (
-            "GENERIC_ENTRY",
-            "other_participations",
-            "Other_participations_valid",
-        ),
-        ("INSTRUCTION", "activities", "Activities_valid"),
-    ];
-    let mut out = Vec::new();
-    // Attribute-keyed rules that apply on ANY node carrying the attribute
-    // (like the terminology binding table's null_flavour handling):
-    // `DV_TEXT.Mappings_valid`, `DV_ORDERED.Other_reference_ranges_validity`
-    // and `LOCATABLE.Links_valid` (`links /= Void implies not
-    // links.is_empty` — `locatable.adoc` §Invariants; every archetyped RM
-    // node inherits it, so it is keyed on the attribute rather than on a
-    // class list) — no other RM attribute shares these names.
-    for (attr, invariant, is_empty) in [
-        ("mappings", "Mappings_valid", flags.mappings_empty),
-        (
-            "other_reference_ranges",
-            "Other_reference_ranges_validity",
-            flags.reference_ranges_empty,
-        ),
-        ("links", "Links_valid", flags.links_empty),
-    ] {
-        if is_empty {
-            out.push(InvariantViolation::here(format!(
-                "{attr} is present but empty — a present list must be \
-                 non-empty ({invariant})"
-            )));
-        }
-    }
-    let Some(ty) = ty else {
-        return out;
-    };
-    for (rule_ty, attr, invariant) in RULES {
-        if *rule_ty == ty
-            && obj
-                .get(*attr)
-                .and_then(Value::as_array)
-                .is_some_and(Vec::is_empty)
-        {
-            out.push(InvariantViolation::here(format!(
-                "{ty}.{attr} is present but empty — a present list must be \
-                 non-empty ({ty}.{invariant})"
-            )));
-        }
     }
     out
 }

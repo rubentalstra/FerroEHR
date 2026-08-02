@@ -39,6 +39,7 @@ use crate::bmm_persistence::include_resolution::resolve_includes;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor;
 use crate::bmm_persistence::reader::read_schema;
+use openehr_base::containers::present;
 
 /// The P_BMM generation this reader implements, as its major version.
 ///
@@ -155,7 +156,7 @@ impl SchemaDescriptor {
             schema: None,
             schema_id: schema.schema_id(),
             meta_data: meta_data_of(&schema, &display),
-            includes: include_ids_of(&schema),
+            includes: present(include_ids_of(&schema)),
             bmm_schema: None,
         }))
     }
@@ -180,7 +181,7 @@ impl SchemaDescriptor {
     /// schema" (class doc §Attributes).
     #[must_use]
     pub fn includes(&self) -> &[String] {
-        descriptor!(self, |leaf| leaf.includes.as_slice())
+        descriptor!(self, |leaf| leaf.includes.as_deref().unwrap_or_default())
     }
 
     /// The path of the file this descriptor was read from
@@ -281,14 +282,14 @@ impl SchemaDescriptor {
         match self {
             SchemaDescriptor::PBmmSchemaDescriptor(leaf) => {
                 leaf.meta_data = meta_data;
-                leaf.includes = includes;
+                leaf.includes = present(includes);
                 leaf.schema = None;
                 leaf.bmm_schema = None;
                 leaf.p_schema = Some(schema);
             }
             SchemaDescriptor::SchemaDescriptor(leaf) => {
                 leaf.meta_data = meta_data;
-                leaf.includes = includes;
+                leaf.includes = present(includes);
                 leaf.schema = None;
                 leaf.p_schema = Some(schema);
             }

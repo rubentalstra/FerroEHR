@@ -62,19 +62,21 @@ fn strip_inherited(child: &mut CComplexObject, parent: &CComplexObject) {
         return;
     };
     // Recurse into attributes; drop children that are inherited-unchanged.
-    for attr in &mut cd.attributes {
+    for attr in cd.attributes.iter_mut().flatten() {
         strip_attr(attr, parent);
     }
-    cd.attributes.retain(|a| !attr_is_empty_inherited(a));
+    if let Some(attributes) = cd.attributes.as_mut() {
+        attributes.retain(|a| !attr_is_empty_inherited(a));
+    }
 }
 
 fn strip_attr(attr: &mut CAttribute, parent_def: &CComplexObject) {
-    attr.children.retain(|child| {
+    if let Some(children) = attr.children.as_mut() {
         // Keep a node that is redefined/new (has a specialisation depth) or that
         // is not found unchanged in the flat parent.
-        !is_inherited_unchanged(child, parent_def)
-    });
-    for child in &mut attr.children {
+        children.retain(|child| !is_inherited_unchanged(child, parent_def));
+    }
+    for child in attr.children.iter_mut().flatten() {
         if let CObject::CComplexObject(cco) = child
             && let Some(pmatch) = find_by_node_id(parent_def, node_id_of_cco(cco))
         {
@@ -86,7 +88,7 @@ fn strip_attr(attr: &mut CAttribute, parent_def: &CComplexObject) {
 fn attr_is_empty_inherited(attr: &CAttribute) -> bool {
     // An attribute with no surviving children (and no local existence/cardinality
     // override) carries nothing differential.
-    attr.children.is_empty()
+    attr.children.as_ref().is_none_or(Vec::is_empty)
         && attr.existence.is_none()
         && attr.cardinality.is_none()
         && attr.differential_path.is_none()
@@ -123,8 +125,8 @@ fn find_by_node_id<'a>(def: &'a CComplexObject, node_id: &str) -> Option<&'a CCo
     if d.node_id == node_id {
         return Some(def);
     }
-    for attr in &d.attributes {
-        for child in &attr.children {
+    for attr in d.attributes.iter().flatten() {
+        for child in attr.children.iter().flatten() {
             if let CObject::CComplexObject(cco) = child
                 && let Some(found) = find_by_node_id(cco, node_id)
             {
@@ -157,7 +159,7 @@ fn prune_terminology(data: &mut AuthoredArchetypeData) {
     if let Some(vs) = data.terminology.value_sets.as_mut() {
         vs.retain(|id, _| referenced.contains(id));
         for set in vs.values() {
-            for m in &set.members {
+            for m in set.members.iter() {
                 referenced.insert(m.clone());
             }
         }
@@ -178,14 +180,14 @@ fn collect_referenced_codes(def: &CComplexObject, out: &mut std::collections::BT
         return;
     };
     out.insert(d.node_id.clone());
-    for attr in &d.attributes {
-        for child in &attr.children {
+    for attr in d.attributes.iter().flatten() {
+        for child in attr.children.iter().flatten() {
             collect_codes_obj(child, out);
         }
     }
-    for tuple in &d.attribute_tuples {
-        for member in &tuple.members {
-            for child in &member.children {
+    for tuple in d.attribute_tuples.iter().flatten() {
+        for member in tuple.members.iter().flatten() {
+            for child in member.children.iter().flatten() {
                 collect_codes_obj(child, out);
             }
         }

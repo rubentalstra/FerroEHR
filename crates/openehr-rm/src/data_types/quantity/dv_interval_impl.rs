@@ -110,7 +110,7 @@ mod tests {
         DvQuantity {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: Vec::new(),
+            other_reference_ranges: openehr_base::containers::present(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             accuracy_is_percent: None,

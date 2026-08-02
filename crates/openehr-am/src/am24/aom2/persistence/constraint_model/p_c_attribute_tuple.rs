@@ -8,5 +8,5 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct PCAttributeTuple {
     /// Member attribute constraint objects.
-    pub members: Vec<String>,
+    pub members: Option<Vec<String>>,
 }

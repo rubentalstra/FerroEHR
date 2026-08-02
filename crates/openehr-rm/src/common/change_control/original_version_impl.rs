@@ -20,16 +20,18 @@ use crate::common::change_control::original_version::OriginalVersion;
 impl<T> OriginalVersion<T> {
     /// `ORIGINAL_VERSION.is_merged`: whether this version was created from more
     /// than just its preceding version — the derived boolean of
-    /// `other_input_version_uids` (`Is_merged_validity`).
+    /// `other_input_version_uids`.
     ///
-    /// The spec expresses the invariant against `Void`; the BMM `List`
-    /// attribute emits as a `Vec`, in which absent and empty coincide, and
-    /// `Other_input_version_uids_valid` (`other_input_version_uids /= Void
-    /// implies not other_input_version_uids.is_empty`) forbids the one state
-    /// that would tell them apart. So non-empty IS present.
+    /// `Is_merged_validity` (`other_input_version_ids = Void xor is_merged`,
+    /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc`
+    /// §Invariants) is stated against `Void`, and the optional-container
+    /// emission shape (`Option<Vec<T>>`) carries `Void` directly — so this is
+    /// the invariant read verbatim: merged iff the attribute is present. The
+    /// companion `Other_input_version_uids_valid` (`/= Void implies not
+    /// is_empty`) is realized separately, on the same value.
     #[must_use]
     pub fn is_merged(&self) -> bool {
-        !self.other_input_version_uids.is_empty()
+        self.other_input_version_uids.is_some()
     }
 }
 
@@ -61,7 +63,7 @@ mod tests {
                 time_committed: DvDateTime {
                     normal_status: None,
                     normal_range: None,
-                    other_reference_ranges: Vec::new(),
+                    other_reference_ranges: openehr_base::containers::present(Vec::new()),
                     magnitude_status: None,
                     accuracy: None,
                     value: "2026-07-07T10:11:12Z".to_owned(),
@@ -70,7 +72,7 @@ mod tests {
                     value: "modification".to_owned(),
                     hyperlink: None,
                     formatting: None,
-                    mappings: Vec::new(),
+                    mappings: openehr_base::containers::present(Vec::new()),
                     language: None,
                     encoding: None,
                     defining_code: CodePhrase {
@@ -100,7 +102,7 @@ mod tests {
                 value: "complete".to_owned(),
                 hyperlink: None,
                 formatting: None,
-                mappings: Vec::new(),
+                mappings: openehr_base::containers::present(Vec::new()),
                 language: None,
                 encoding: None,
                 defining_code: CodePhrase {
@@ -111,7 +113,7 @@ mod tests {
                     preferred_term: None,
                 },
             },
-            attestations: Vec::new(),
+            attestations: openehr_base::containers::present(Vec::new()),
             data: Some("content".to_owned()),
         }
     }

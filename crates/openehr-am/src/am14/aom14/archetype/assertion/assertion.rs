@@ -17,5 +17,5 @@ pub struct Assertion {
     /// Root of expression tree.
     pub expression: ExprItem,
     /// Definitions of variables used in the assertion expression.
-    pub variables: Vec<AssertionVariable>,
+    pub variables: Option<Vec<AssertionVariable>>,
 }

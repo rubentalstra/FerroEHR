@@ -90,7 +90,7 @@ impl BmmRmModel {
     /// Transitive ancestor names (upper-cased) of `class`, within this schema.
     fn ancestors_of(&self, class: &str, out: &mut Vec<String>) {
         if let Some(c) = self.classes.get(class) {
-            for a in &c.ancestors {
+            for a in c.ancestors.iter() {
                 if !out.contains(a) {
                     out.push(a.clone());
                     self.ancestors_of(a, out);

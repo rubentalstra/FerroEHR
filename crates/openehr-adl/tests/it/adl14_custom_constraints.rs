@@ -99,7 +99,12 @@ fn value_object(src: &str) -> CObject {
         .iter()
         .find(|a| a.rm_attribute_name == "items")
         .expect("the items attribute");
-    let element = items.children.first().expect("the ELEMENT child");
+    let element = items
+        .children
+        .iter()
+        .flatten()
+        .next()
+        .expect("the ELEMENT child");
     let CObject::CComplexObject(element) = element else {
         panic!("the ELEMENT child is not a complex object");
     };
@@ -108,7 +113,9 @@ fn value_object(src: &str) -> CObject {
         .find(|a| a.rm_attribute_name == "value")
         .expect("the value attribute")
         .children
-        .first()
+        .iter()
+        .flatten()
+        .next()
         .expect("the value constraint")
         .clone()
 }
@@ -131,11 +138,19 @@ fn ordinal_tuple(obj: &CObject) -> &CAttributeTuple {
         "the ordinal lowers onto the DV_ORDINAL reference-model type"
     );
     assert!(
-        data.attributes.is_empty(),
+        data.attributes.as_ref().is_none_or(Vec::is_empty),
         "the ordinal tuple is the whole constraint; no plain attribute is emitted"
     );
-    assert_eq!(data.attribute_tuples.len(), 1, "exactly one tuple");
-    data.attribute_tuples.first().expect("the one tuple")
+    assert_eq!(
+        data.attribute_tuples.as_ref().map_or(0, Vec::len),
+        1,
+        "exactly one tuple"
+    );
+    data.attribute_tuples
+        .iter()
+        .flatten()
+        .next()
+        .expect("the one tuple")
 }
 
 /// The `(value, symbol-constraint)` pairs of a lowered ordinal tuple.
@@ -143,15 +158,17 @@ fn ordinal_rows(tuple: &CAttributeTuple) -> Vec<(f64, String)> {
     tuple
         .tuples
         .iter()
+        .flatten()
         .map(|row| {
-            let value = match row.members.first().expect("the value member") {
-                CPrimitiveObject::CInteger(c) => match c.constraint.first() {
+            let value = match row.members.iter().next().expect("the value member")
+            {
+                CPrimitiveObject::CInteger(c) => match c.constraint.iter().flatten().next() {
                     Some(openehr_base::prelude::Interval::PointInterval(p)) => {
                         f64::from(p.lower.expect("a point ordinal value"))
                     }
                     other => panic!("the ordinal value is not a point constraint: {other:?}"),
                 },
-                CPrimitiveObject::CReal(c) => match c.constraint.first() {
+                CPrimitiveObject::CReal(c) => match c.constraint.iter().flatten().next() {
                     Some(openehr_base::prelude::Interval::PointInterval(p)) => {
                         p.lower.expect("a point ordinal value")
                     }
@@ -379,6 +396,7 @@ fn pipe_ordinal_builds_the_value_symbol_tuple() {
     let members: Vec<&str> = tuple
         .members
         .iter()
+        .flatten()
         .map(|m| m.rm_attribute_name.as_str())
         .collect();
     assert_eq!(members, vec!["value", "symbol"]);
@@ -446,9 +464,13 @@ fn pipe_ordinal_assumed_value_lands_on_its_own_row() {
     let assumed: Vec<Option<f64>> = tuple
         .tuples
         .iter()
-        .map(|row| match row.members.first().expect("the value member") {
-            CPrimitiveObject::CInteger(c) => c.assumed_value,
-            other => panic!("not an integer ordinal value: {other:?}"),
+        .flatten()
+        .map(|row| {
+            match row.members.iter().next().expect("the value member")
+            {
+                CPrimitiveObject::CInteger(c) => c.assumed_value,
+                other => panic!("not an integer ordinal value: {other:?}"),
+            }
         })
         .collect();
     assert_eq!(

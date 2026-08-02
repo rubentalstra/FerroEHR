@@ -13,7 +13,7 @@ pub struct ArchetypeOntology {
     pub constraint_codes: Vec<String>,
     // NOTE: `parent_archetype` (BMM-mandatory back-reference) omitted — AM AOM14 archetype_ontology (parent_archetype: Archetype which owns this terminology). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
     /// List of terminologies to which term or constraint bindings exist in this terminology.
-    pub terminologies_available: Vec<String>,
+    pub terminologies_available: Option<Vec<String>>,
     /// Specialisation depth of this archetype. Unspecialised archetypes have depth 0, with each additional level of specialisation adding 1 to the specialisation_depth.
     pub specialisation_depth: i32,
     /// The `term_attribute_names` attribute of openEHR `ARCHETYPE_ONTOLOGY` (the vendored BMM carries no documentation for it).

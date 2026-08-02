@@ -871,47 +871,42 @@ pub(crate) fn field_type(
                     "Option<String>".to_string()
                 };
             }
-            // NOTE: a container property is `Vec<T>` regardless of its BMM
-            // optionality. This is the ONE decision point of the
-            // Vec-for-optional-container convention, so the adjudication lives
+            // NOTE: a container property's Rust shape follows its BMM
+            // EXISTENCE, exactly like a single-valued one — `Vec<T>` when the
+            // attribute is mandatory (existence `1..1`), `Option<Vec<T>>` when
+            // it is optional (`0..1`). This is the ONE decision point of the
+            // optionality-aware container convention, so the adjudication lives
             // here.
             //
             // The RM DOES distinguish Void from empty on a `0..1 List<T>`
-            // attribute. FOLDER is the exemplar: RM common
+            // attribute, and states rules that are only expressible when the
+            // two states are distinct: `LOCATABLE.Links_valid: links /= Void
+            // implies not links.is_empty`
+            // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+            // §Invariants) is contentless unless a present-but-empty list is
+            // representable. FOLDER is the structural exemplar: RM common
             // `UML/classes/org.openehr.rm.common.folder.adoc` §Attributes
             // types BOTH `items` ("The list of references to other (usually)
             // versioned objects logically in this folder") and `folders`
             // ("Sub-folders of this Folder") at 0..1, so "no items attribute"
             // and "an empty items list" are two distinct model states.
+            // `Option<Vec<T>>` is the shape that carries them, so the
+            // present-implies-non-empty invariant family becomes a typed check
+            // over the model rather than a JSON-value-only side check.
             //
-            // No released sentence picks a wire form for that distinction —
-            // the ITS-REST docs text and the released OAS are both silent on
-            // absent-versus-empty arrays — so this is OUR OWN DESIGN /
-            // EXTENSION: no openEHR spec governs it. The codec emits
-            // absent-for-empty and reads absent as empty, collapsing the two
-            // states in one direction only, which is lossless everywhere the
-            // Void state carries no meaning of its own.
-            //
-            // TODO(#1450): `EL_AGENT.open_args` is the one known site where it IS
-            // lossy — the attribute is `0..1` and its Void state is normatively
-            // load-bearing twice: "If not provided, and the `_name_` refers to
-            // a routine with more arguments than supplied in `_closed_args_`,
-            // the missing arguments are inferred from the `_definition_`"
-            // (`…bmm3.el_agent.adoc` §Attributes), and `is_callable()` is
-            // defined as `Result = open_arguments = Void` (same file
-            // §Functions), which `EL_AGENT_CALL.Inv_valid_call`
-            // (`…bmm3.el_agent_call.adoc` §Invariants),
-            // `EL_FUNCTION_CALL.Inv_valid_agent` (`…bmm3.el_function_call.adoc`
-            // §Invariants) and `BMM_PROCEDURE_CALL.Inv_valid_agent`
-            // (`…bmm3.bmm_procedure_call.adoc` §Invariants) all reduce to. Give
-            // this field `Option<Vec<String>>` (a `type_override`-style entry,
-            // or optionality-aware container rendering) before any EL agent
-            // evaluation or invariant check lands; nothing evaluates EL today,
-            // which is why the convention still stands here.
-            format!(
-                "Vec<{}>",
-                model.render_type(item, generics, subst, local, external)
-            )
+            // The WIRE is unaffected: the canonical-JSON writer omits an empty
+            // list whether it is `None` or `Some(vec![])`, per the released
+            // sentence `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+            // §JSON Format ("The RM attributes (even required ones) that are
+            // `Null` or an empty list (array) SHOULD be absent when serialized
+            // as JSON"). The reader is the direction that gains: absent → `None`,
+            // `[]` → `Some(vec![])`.
+            let item_ty = model.render_type(item, generics, subst, local, external);
+            if p.is_mandatory {
+                format!("Vec<{item_ty}>")
+            } else {
+                format!("Option<Vec<{item_ty}>>")
+            }
         }
     }
 }

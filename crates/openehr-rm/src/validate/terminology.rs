@@ -149,10 +149,10 @@ impl CodeSet {
             // No dedicated convenience method: check the internal code set directly.
             CodeSet::CompressionAlgorithms => t
                 .code_set("compression_algorithms")
-                .is_some_and(|cs| cs.codes.iter().any(|c| c.value == code)),
+                .is_some_and(|cs| cs.codes.iter().flatten().any(|c| c.value == code)),
             CodeSet::IntegrityCheckAlgorithms => t
                 .code_set("integrity_check_algorithms")
-                .is_some_and(|cs| cs.codes.iter().any(|c| c.value == code)),
+                .is_some_and(|cs| cs.codes.iter().flatten().any(|c| c.value == code)),
         }
     }
 

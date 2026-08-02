@@ -1866,8 +1866,10 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
         for (k, v) in &self.original_author {
             w.write_kv_element("original_author", k, v)?;
         }
-        for v in &self.other_contributors {
-            v.write_xml(w, "other_contributors", Some("String"))?;
+        if let Some(vs) = &self.other_contributors {
+            for v in vs {
+                v.write_xml(w, "other_contributors", Some("String"))?;
+            }
         }
         self.lifecycle_state
             .write_xml(w, "lifecycle_state", Some("String"))?;
@@ -2022,7 +2024,11 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
             original_author: __original_author,
             original_namespace: __original_namespace,
             original_publisher: __original_publisher,
-            other_contributors: __other_contributors,
+            other_contributors: if __other_contributors.is_empty() {
+                None
+            } else {
+                Some(__other_contributors)
+            },
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element lifecycle_state".into())
             })?,
@@ -2080,8 +2086,10 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescriptionIt
         self.language
             .write_xml(w, "language", Some("Terminology_code"))?;
         self.purpose.write_xml(w, "purpose", Some("String"))?;
-        for v in &self.keywords {
-            v.write_xml(w, "keywords", Some("String"))?;
+        if let Some(vs) = &self.keywords {
+            for v in vs {
+                v.write_xml(w, "keywords", Some("String"))?;
+            }
         }
         if let Some(v) = &self.use_ {
             v.write_xml(w, "use", Some("String"))?;
@@ -2162,7 +2170,11 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
             purpose: __purpose.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element purpose".into())
             })?,
-            keywords: __keywords,
+            keywords: if __keywords.is_empty() {
+                None
+            } else {
+                Some(__keywords)
+            },
             use_: __use_,
             misuse: __misuse,
             original_resource_uri: if __original_resource_uri.is_empty() {
@@ -2332,8 +2344,10 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::TranslationDetails {
         if let Some(v) = &self.version_last_translated {
             v.write_xml(w, "version_last_translated", Some("String"))?;
         }
-        for v in &self.other_contributors {
-            v.write_xml(w, "other_contributors", Some("String"))?;
+        if let Some(vs) = &self.other_contributors {
+            for v in vs {
+                v.write_xml(w, "other_contributors", Some("String"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -2402,7 +2416,11 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::TranslationDetails 
                 Some(__other_details)
             },
             version_last_translated: __version_last_translated,
-            other_contributors: __other_contributors,
+            other_contributors: if __other_contributors.is_empty() {
+                None
+            } else {
+                Some(__other_contributors)
+            },
         })
     }
 }
@@ -2882,8 +2900,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Action {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -2899,8 +2919,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Action {
         if let Some(v) = &self.provider {
             v.write_xml(w, "provider", Some("PARTY_PROXY"))?;
         }
-        for v in &self.other_participations {
-            v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+        if let Some(vs) = &self.other_participations {
+            for v in vs {
+                v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+            }
         }
         if let Some(v) = &self.protocol {
             v.write_xml(w, "protocol", Some("ITEM_STRUCTURE"))?;
@@ -3030,7 +3052,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Action {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             language: __language.ok_or_else(|| {
@@ -3039,7 +3065,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Action {
             encoding: __encoding.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element encoding".into())
             })?,
-            other_participations: __other_participations,
+            other_participations: if __other_participations.is_empty() {
+                None
+            } else {
+                Some(__other_participations)
+            },
             workflow_id: __workflow_id,
             subject: __subject.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element subject".into())
@@ -3087,8 +3117,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Activity {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -3175,7 +3207,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Activity {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             timing: __timing,
@@ -3267,8 +3303,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Address {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -3341,7 +3379,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Address {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             details: __details.ok_or_else(|| {
@@ -3469,8 +3511,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::AdminEntry {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -3486,8 +3530,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::AdminEntry {
         if let Some(v) = &self.provider {
             v.write_xml(w, "provider", Some("PARTY_PROXY"))?;
         }
-        for v in &self.other_participations {
-            v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+        if let Some(vs) = &self.other_participations {
+            for v in vs {
+                v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+            }
         }
         self.data.write_xml(w, "data", Some("ITEM_STRUCTURE"))?;
         if let Some(v) = &self.workflow_id {
@@ -3581,7 +3627,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::AdminEntry {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             language: __language.ok_or_else(|| {
@@ -3590,7 +3640,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::AdminEntry {
             encoding: __encoding.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element encoding".into())
             })?,
-            other_participations: __other_participations,
+            other_participations: if __other_participations.is_empty() {
+                None
+            } else {
+                Some(__other_participations)
+            },
             workflow_id: __workflow_id,
             subject: __subject.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element subject".into())
@@ -3629,8 +3683,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Agent {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -3641,20 +3697,28 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Agent {
         for v in &self.identities {
             v.write_xml(w, "identities", Some("PARTY_IDENTITY"))?;
         }
-        for v in &self.contacts {
-            v.write_xml(w, "contacts", Some("CONTACT"))?;
+        if let Some(vs) = &self.contacts {
+            for v in vs {
+                v.write_xml(w, "contacts", Some("CONTACT"))?;
+            }
         }
-        for v in &self.relationships {
-            v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+        if let Some(vs) = &self.relationships {
+            for v in vs {
+                v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+            }
         }
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
-        for v in &self.roles {
-            v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        if let Some(vs) = &self.roles {
+            for v in vs {
+                v.write_xml(w, "roles", Some("PARTY_REF"))?;
+            }
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(vs) = &self.languages {
+            for v in vs {
+                v.write_xml(w, "languages", Some("DV_TEXT"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -3739,15 +3803,35 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Agent {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             identities: __identities,
-            contacts: __contacts,
+            contacts: if __contacts.is_empty() {
+                None
+            } else {
+                Some(__contacts)
+            },
             details: __details,
-            relationships: __relationships,
-            languages: __languages,
-            roles: __roles,
+            relationships: if __relationships.is_empty() {
+                None
+            } else {
+                Some(__relationships)
+            },
+            languages: if __languages.is_empty() {
+                None
+            } else {
+                Some(__languages)
+            },
+            roles: if __roles.is_empty() {
+                None
+            } else {
+                Some(__roles)
+            },
         })
     }
 }
@@ -3865,8 +3949,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Attestation {
         if let Some(v) = &self.proof {
             v.write_xml(w, "proof", Some("String"))?;
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("DV_EHR_URI"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("DV_EHR_URI"))?;
+            }
         }
         self.reason.write_xml(w, "reason", Some("DV_TEXT"))?;
         self.is_pending
@@ -3953,7 +4039,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Attestation {
             })?,
             attested_view: __attested_view,
             proof: __proof,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
             reason: __reason.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element reason".into())
             })?,
@@ -4214,8 +4304,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Capability {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -4296,7 +4388,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Capability {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             credentials: __credentials.ok_or_else(|| {
@@ -4385,8 +4481,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Cluster {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -4460,7 +4558,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Cluster {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             items: __items,
@@ -4621,8 +4723,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Composition {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -4641,8 +4745,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Composition {
         if let Some(v) = &self.context {
             v.write_xml(w, "context", Some("EVENT_CONTEXT"))?;
         }
-        for v in &self.content {
-            v.write_xml(w, "content", Some("CONTENT_ITEM"))?;
+        if let Some(vs) = &self.content {
+            for v in vs {
+                v.write_xml(w, "content", Some("CONTENT_ITEM"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -4727,7 +4833,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Composition {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             language: __language.ok_or_else(|| {
@@ -4743,7 +4853,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Composition {
             composer: __composer.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element composer".into())
             })?,
-            content: __content,
+            content: if __content.is_empty() {
+                None
+            } else {
+                Some(__content)
+            },
         })
     }
 }
@@ -4774,8 +4888,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Contact {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -4857,7 +4973,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Contact {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             addresses: __addresses,
@@ -5395,8 +5515,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvCodedText {
         if let Some(v) = &self.formatting {
             v.write_xml(w, "formatting", Some("String"))?;
         }
-        for v in &self.mappings {
-            v.write_xml(w, "mappings", Some("TERM_MAPPING"))?;
+        if let Some(vs) = &self.mappings {
+            for v in vs {
+                v.write_xml(w, "mappings", Some("TERM_MAPPING"))?;
+            }
         }
         if let Some(v) = &self.language {
             v.write_xml(w, "language", Some("CODE_PHRASE"))?;
@@ -5465,7 +5587,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvCodedText {
             })?,
             hyperlink: __hyperlink,
             formatting: __formatting,
-            mappings: __mappings,
+            mappings: if __mappings.is_empty() {
+                None
+            } else {
+                Some(__mappings)
+            },
             language: __language,
             encoding: __encoding,
             defining_code: __defining_code.ok_or_else(|| {
@@ -5499,8 +5625,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvCount {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -5576,7 +5704,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvCount {
         Ok(openehr_rm::prelude::DvCount {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             magnitude_status: __magnitude_status,
             accuracy: __accuracy,
             accuracy_is_percent: __accuracy_is_percent,
@@ -5611,8 +5743,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvDate {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -5679,7 +5813,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvDate {
         Ok(openehr_rm::prelude::DvDate {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             magnitude_status: __magnitude_status,
             accuracy: __accuracy,
             value: __value.ok_or_else(|| {
@@ -5713,8 +5851,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvDateTime {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -5781,7 +5921,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvDateTime {
         Ok(openehr_rm::prelude::DvDateTime {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             magnitude_status: __magnitude_status,
             accuracy: __accuracy,
             value: __value.ok_or_else(|| {
@@ -5815,8 +5959,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvDuration {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -5891,7 +6037,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvDuration {
         Ok(openehr_rm::prelude::DvDuration {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             magnitude_status: __magnitude_status,
             accuracy: __accuracy,
             accuracy_is_percent: __accuracy_is_percent,
@@ -6487,8 +6637,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvOrdinal {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -6545,7 +6697,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvOrdinal {
         Ok(openehr_rm::prelude::DvOrdinal {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             symbol: __symbol.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element symbol".into())
             })?,
@@ -6776,8 +6932,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvProportion {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -6869,7 +7027,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvProportion {
         Ok(openehr_rm::prelude::DvProportion {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             magnitude_status: __magnitude_status,
             accuracy: __accuracy,
             accuracy_is_percent: __accuracy_is_percent,
@@ -6978,8 +7140,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvQuantity {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -7082,7 +7246,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvQuantity {
         Ok(openehr_rm::prelude::DvQuantity {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             magnitude_status: __magnitude_status,
             accuracy: __accuracy,
             accuracy_is_percent: __accuracy_is_percent,
@@ -7126,8 +7294,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvScale {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         self.symbol.write_xml(w, "symbol", Some("DV_CODED_TEXT"))?;
         self.value.write_xml(w, "value", Some("Real"))?;
@@ -7181,7 +7351,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvScale {
         Ok(openehr_rm::prelude::DvScale {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             symbol: __symbol.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element symbol".into())
             })?,
@@ -7334,8 +7508,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvTextData {
         if let Some(v) = &self.formatting {
             v.write_xml(w, "formatting", Some("String"))?;
         }
-        for v in &self.mappings {
-            v.write_xml(w, "mappings", Some("TERM_MAPPING"))?;
+        if let Some(vs) = &self.mappings {
+            for v in vs {
+                v.write_xml(w, "mappings", Some("TERM_MAPPING"))?;
+            }
         }
         if let Some(v) = &self.language {
             v.write_xml(w, "language", Some("CODE_PHRASE"))?;
@@ -7397,7 +7573,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvTextData {
             })?,
             hyperlink: __hyperlink,
             formatting: __formatting,
-            mappings: __mappings,
+            mappings: if __mappings.is_empty() {
+                None
+            } else {
+                Some(__mappings)
+            },
             language: __language,
             encoding: __encoding,
         })
@@ -7470,8 +7650,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::DvTime {
         if let Some(v) = &self.normal_range {
             v.write_xml(w, "normal_range", Some("DV_INTERVAL"))?;
         }
-        for v in &self.other_reference_ranges {
-            v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+        if let Some(vs) = &self.other_reference_ranges {
+            for v in vs {
+                v.write_xml(w, "other_reference_ranges", Some("REFERENCE_RANGE"))?;
+            }
         }
         if let Some(v) = &self.normal_status {
             v.write_xml(w, "normal_status", Some("CODE_PHRASE"))?;
@@ -7538,7 +7720,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::DvTime {
         Ok(openehr_rm::prelude::DvTime {
             normal_status: __normal_status,
             normal_range: __normal_range,
-            other_reference_ranges: __other_reference_ranges,
+            other_reference_ranges: if __other_reference_ranges.is_empty() {
+                None
+            } else {
+                Some(__other_reference_ranges)
+            },
             magnitude_status: __magnitude_status,
             accuracy: __accuracy,
             value: __value.ok_or_else(|| {
@@ -7728,8 +7914,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Ehr {
         self.ehr_id.write_xml(w, "ehr_id", Some("HIER_OBJECT_ID"))?;
         self.time_created
             .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
-        for v in &self.contributions {
-            v.write_xml(w, "contributions", Some("OBJECT_REF"))?;
+        if let Some(vs) = &self.contributions {
+            for v in vs {
+                v.write_xml(w, "contributions", Some("OBJECT_REF"))?;
+            }
         }
         self.ehr_access
             .write_xml(w, "ehr_access", Some("OBJECT_REF"))?;
@@ -7738,14 +7926,20 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Ehr {
         if let Some(v) = &self.directory {
             v.write_xml(w, "directory", Some("OBJECT_REF"))?;
         }
-        for v in &self.folders {
-            v.write_xml(w, "folders", Some("OBJECT_REF"))?;
+        if let Some(vs) = &self.folders {
+            for v in vs {
+                v.write_xml(w, "folders", Some("OBJECT_REF"))?;
+            }
         }
-        for v in &self.compositions {
-            v.write_xml(w, "compositions", Some("OBJECT_REF"))?;
+        if let Some(vs) = &self.compositions {
+            for v in vs {
+                v.write_xml(w, "compositions", Some("OBJECT_REF"))?;
+            }
         }
-        for v in &self.tags {
-            v.write_xml(w, "tags", Some("OBJECT_REF"))?;
+        if let Some(vs) = &self.tags {
+            for v in vs {
+                v.write_xml(w, "tags", Some("OBJECT_REF"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -7819,20 +8013,36 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Ehr {
             ehr_id: __ehr_id.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element ehr_id".into())
             })?,
-            contributions: __contributions,
+            contributions: if __contributions.is_empty() {
+                None
+            } else {
+                Some(__contributions)
+            },
             ehr_status: __ehr_status.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element ehr_status".into())
             })?,
             ehr_access: __ehr_access.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element ehr_access".into())
             })?,
-            compositions: __compositions,
+            compositions: if __compositions.is_empty() {
+                None
+            } else {
+                Some(__compositions)
+            },
             directory: __directory,
             time_created: __time_created.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element time_created".into())
             })?,
-            folders: __folders,
-            tags: __tags,
+            folders: if __folders.is_empty() {
+                None
+            } else {
+                Some(__folders)
+            },
+            tags: if __tags.is_empty() {
+                None
+            } else {
+                Some(__tags)
+            },
         })
     }
 }
@@ -7863,8 +8073,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::EhrAccess {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -7938,7 +8150,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrAccess {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             settings: __settings,
@@ -7972,8 +8188,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::EhrStatus {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -8067,7 +8285,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EhrStatus {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             subject: __subject.ok_or_else(|| {
@@ -8110,8 +8332,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Element {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -8200,7 +8424,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Element {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             null_flavour: __null_flavour,
@@ -8293,8 +8521,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Evaluation {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -8310,8 +8540,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Evaluation {
         if let Some(v) = &self.provider {
             v.write_xml(w, "provider", Some("PARTY_PROXY"))?;
         }
-        for v in &self.other_participations {
-            v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+        if let Some(vs) = &self.other_participations {
+            for v in vs {
+                v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+            }
         }
         if let Some(v) = &self.protocol {
             v.write_xml(w, "protocol", Some("ITEM_STRUCTURE"))?;
@@ -8420,7 +8652,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Evaluation {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             language: __language.ok_or_else(|| {
@@ -8429,7 +8665,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Evaluation {
             encoding: __encoding.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element encoding".into())
             })?,
-            other_participations: __other_participations,
+            other_participations: if __other_participations.is_empty() {
+                None
+            } else {
+                Some(__other_participations)
+            },
             workflow_id: __workflow_id,
             subject: __subject.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element subject".into())
@@ -8525,8 +8765,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::EventContext {
         if let Some(v) = &self.health_care_facility {
             v.write_xml(w, "health_care_facility", Some("PARTY_IDENTIFIED"))?;
         }
-        for v in &self.participations {
-            v.write_xml(w, "participations", Some("PARTICIPATION"))?;
+        if let Some(vs) = &self.participations {
+            for v in vs {
+                v.write_xml(w, "participations", Some("PARTICIPATION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -8594,7 +8836,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::EventContext {
             })?,
             other_context: __other_context,
             health_care_facility: __health_care_facility,
-            participations: __participations,
+            participations: if __participations.is_empty() {
+                None
+            } else {
+                Some(__participations)
+            },
         })
     }
 }
@@ -8625,8 +8871,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Extract {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -8641,13 +8889,17 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Extract {
             .write_xml(w, "time_created", Some("DV_DATE_TIME"))?;
         self.system_id
             .write_xml(w, "system_id", Some("HIER_OBJECT_ID"))?;
-        for v in &self.participations {
-            v.write_xml(w, "participations", Some("EXTRACT_PARTICIPATION"))?;
+        if let Some(vs) = &self.participations {
+            for v in vs {
+                v.write_xml(w, "participations", Some("EXTRACT_PARTICIPATION"))?;
+            }
         }
         self.sequence_nr
             .write_xml(w, "sequence_nr", Some("Integer"))?;
-        for v in &self.chapters {
-            v.write_xml(w, "chapters", Some("EXTRACT_CHAPTER"))?;
+        if let Some(vs) = &self.chapters {
+            for v in vs {
+                v.write_xml(w, "chapters", Some("EXTRACT_CHAPTER"))?;
+            }
         }
         if let Some(v) = &self.specification {
             v.write_xml(w, "specification", Some("EXTRACT_SPEC"))?;
@@ -8742,10 +8994,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Extract {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            chapters: __chapters,
+            chapters: if __chapters.is_empty() {
+                None
+            } else {
+                Some(__chapters)
+            },
             specification: __specification,
             request_id: __request_id,
             time_created: __time_created.ok_or_else(|| {
@@ -8757,7 +9017,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Extract {
             sequence_nr: __sequence_nr.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element sequence_nr".into())
             })?,
-            participations: __participations,
+            participations: if __participations.is_empty() {
+                None
+            } else {
+                Some(__participations)
+            },
         })
     }
 }
@@ -8786,8 +9050,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractActionRequest {
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
         self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -8867,7 +9133,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractActionRequest 
             uid: __uid.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element uid".into())
             })?,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             request_id: __request_id.ok_or_else(|| {
@@ -8906,8 +9176,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractChapterData {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -8915,8 +9187,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractChapterData {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("EXTRACT_ITEM"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("EXTRACT_ITEM"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -8981,10 +9255,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractChapterData {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
         })
     }
 }
@@ -9111,8 +9393,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractEntityChapter {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -9120,8 +9404,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractEntityChapter {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("EXTRACT_ITEM"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("EXTRACT_ITEM"))?;
+            }
         }
         self.extract_id_key
             .write_xml(w, "extract_id_key", Some("String"))?;
@@ -9193,10 +9479,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractEntityChapter 
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
             extract_id_key: __extract_id_key.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element extract_id_key".into())
             })?,
@@ -9233,11 +9527,15 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractEntityManifest {
         if let Some(v) = &self.subject_id {
             v.write_xml(w, "subject_id", Some("String"))?;
         }
-        for v in &self.other_ids {
-            v.write_xml(w, "other_ids", Some("String"))?;
+        if let Some(vs) = &self.other_ids {
+            for v in vs {
+                v.write_xml(w, "other_ids", Some("String"))?;
+            }
         }
-        for v in &self.item_list {
-            v.write_xml(w, "item_list", Some("OBJECT_REF"))?;
+        if let Some(vs) = &self.item_list {
+            for v in vs {
+                v.write_xml(w, "item_list", Some("OBJECT_REF"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -9290,8 +9588,16 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractEntityManifest
             })?,
             ehr_id: __ehr_id,
             subject_id: __subject_id,
-            other_ids: __other_ids,
-            item_list: __item_list,
+            other_ids: if __other_ids.is_empty() {
+                None
+            } else {
+                Some(__other_ids)
+            },
+            item_list: if __item_list.is_empty() {
+                None
+            } else {
+                Some(__item_list)
+            },
         })
     }
 }
@@ -9388,8 +9694,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractFolder {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -9397,8 +9705,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractFolder {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("EXTRACT_ITEM"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("EXTRACT_ITEM"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -9463,10 +9773,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractFolder {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
         })
     }
 }
@@ -9690,8 +10008,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractRequest {
         w.write_start(__e)?;
         self.name.write_xml(w, "name", Some("DV_TEXT"))?;
         self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -9774,7 +10094,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractRequest {
             uid: __uid.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element uid".into())
             })?,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             extract_spec: __extract_spec.ok_or_else(|| {
@@ -9810,8 +10134,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractSpec {
             .write_xml(w, "extract_type", Some("DV_CODED_TEXT"))?;
         self.link_depth
             .write_xml(w, "link_depth", Some("Integer"))?;
-        for v in &self.criteria {
-            v.write_xml(w, "criteria", Some("DV_PARSABLE"))?;
+        if let Some(vs) = &self.criteria {
+            for v in vs {
+                v.write_xml(w, "criteria", Some("DV_PARSABLE"))?;
+            }
         }
         if let Some(v) = &self.other_details {
             v.write_xml(w, "other_details", Some("ITEM_STRUCTURE"))?;
@@ -9901,7 +10227,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractSpec {
             link_depth: __link_depth.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element link_depth".into())
             })?,
-            criteria: __criteria,
+            criteria: if __criteria.is_empty() {
+                None
+            } else {
+                Some(__criteria)
+            },
             other_details: __other_details,
         })
     }
@@ -9933,8 +10263,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ExtractUpdateSpec {
         if let Some(v) = &self.repeat_period {
             v.write_xml(w, "repeat_period", Some("DV_DURATION"))?;
         }
-        for v in &self.trigger_events {
-            v.write_xml(w, "trigger_events", Some("DV_CODED_TEXT"))?;
+        if let Some(vs) = &self.trigger_events {
+            for v in vs {
+                v.write_xml(w, "trigger_events", Some("DV_CODED_TEXT"))?;
+            }
         }
         self.update_method
             .write_xml(w, "update_method", Some("CODE_PHRASE"))?;
@@ -9987,7 +10319,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ExtractUpdateSpec {
                 crate::xml::runtime::XmlError::Parse("missing element persist_in_server".into())
             })?,
             repeat_period: __repeat_period,
-            trigger_events: __trigger_events,
+            trigger_events: if __trigger_events.is_empty() {
+                None
+            } else {
+                Some(__trigger_events)
+            },
             update_method: __update_method.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element update_method".into())
             })?,
@@ -10107,11 +10443,15 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::FeederAudit {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        for v in &self.originating_system_item_ids {
-            v.write_xml(w, "originating_system_item_ids", Some("DV_IDENTIFIER"))?;
+        if let Some(vs) = &self.originating_system_item_ids {
+            for v in vs {
+                v.write_xml(w, "originating_system_item_ids", Some("DV_IDENTIFIER"))?;
+            }
         }
-        for v in &self.feeder_system_item_ids {
-            v.write_xml(w, "feeder_system_item_ids", Some("DV_IDENTIFIER"))?;
+        if let Some(vs) = &self.feeder_system_item_ids {
+            for v in vs {
+                v.write_xml(w, "feeder_system_item_ids", Some("DV_IDENTIFIER"))?;
+            }
         }
         if let Some(v) = &self.original_content {
             v.write_xml(w, "original_content", Some("DV_ENCAPSULATED"))?;
@@ -10174,8 +10514,16 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::FeederAudit {
             }
         }
         Ok(openehr_rm::prelude::FeederAudit {
-            originating_system_item_ids: __originating_system_item_ids,
-            feeder_system_item_ids: __feeder_system_item_ids,
+            originating_system_item_ids: if __originating_system_item_ids.is_empty() {
+                None
+            } else {
+                Some(__originating_system_item_ids)
+            },
+            feeder_system_item_ids: if __feeder_system_item_ids.is_empty() {
+                None
+            } else {
+                Some(__feeder_system_item_ids)
+            },
             original_content: __original_content,
             originating_system_audit: __originating_system_audit.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse(
@@ -10320,8 +10668,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Folder {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -10329,11 +10679,15 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Folder {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.folders {
-            v.write_xml(w, "folders", Some("FOLDER"))?;
+        if let Some(vs) = &self.folders {
+            for v in vs {
+                v.write_xml(w, "folders", Some("FOLDER"))?;
+            }
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("OBJECT_REF"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("OBJECT_REF"))?;
+            }
         }
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
@@ -10409,11 +10763,23 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Folder {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
-            folders: __folders,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
+            folders: if __folders.is_empty() {
+                None
+            } else {
+                Some(__folders)
+            },
             details: __details,
         })
     }
@@ -10445,8 +10811,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::GenericContentItem {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -10625,7 +10993,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericContentItem {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             is_primary: __is_primary.ok_or_else(|| {
@@ -10679,8 +11051,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::GenericEntry {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -10752,7 +11126,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::GenericEntry {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             data: __data.ok_or_else(|| {
@@ -10788,8 +11166,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Group {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -10800,20 +11180,28 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Group {
         for v in &self.identities {
             v.write_xml(w, "identities", Some("PARTY_IDENTITY"))?;
         }
-        for v in &self.contacts {
-            v.write_xml(w, "contacts", Some("CONTACT"))?;
+        if let Some(vs) = &self.contacts {
+            for v in vs {
+                v.write_xml(w, "contacts", Some("CONTACT"))?;
+            }
         }
-        for v in &self.relationships {
-            v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+        if let Some(vs) = &self.relationships {
+            for v in vs {
+                v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+            }
         }
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
-        for v in &self.roles {
-            v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        if let Some(vs) = &self.roles {
+            for v in vs {
+                v.write_xml(w, "roles", Some("PARTY_REF"))?;
+            }
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(vs) = &self.languages {
+            for v in vs {
+                v.write_xml(w, "languages", Some("DV_TEXT"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -10898,15 +11286,35 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Group {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             identities: __identities,
-            contacts: __contacts,
+            contacts: if __contacts.is_empty() {
+                None
+            } else {
+                Some(__contacts)
+            },
             details: __details,
-            relationships: __relationships,
-            languages: __languages,
-            roles: __roles,
+            relationships: if __relationships.is_empty() {
+                None
+            } else {
+                Some(__relationships)
+            },
+            languages: if __languages.is_empty() {
+                None
+            } else {
+                Some(__languages)
+            },
+            roles: if __roles.is_empty() {
+                None
+            } else {
+                Some(__roles)
+            },
         })
     }
 }
@@ -10937,8 +11345,10 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml for openehr_rm::p
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -10953,8 +11363,10 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml for openehr_rm::p
         if let Some(v) = &self.duration {
             v.write_xml(w, "duration", Some("DV_DURATION"))?;
         }
-        for v in &self.events {
-            v.write_xml(w, "events", Some("EVENT"))?;
+        if let Some(vs) = &self.events {
+            for v in vs {
+                v.write_xml(w, "events", Some("EVENT"))?;
+            }
         }
         if let Some(v) = &self.summary {
             v.write_xml(w, "summary", Some("ITEM_STRUCTURE"))?;
@@ -11040,7 +11452,11 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             origin: __origin.ok_or_else(|| {
@@ -11049,7 +11465,11 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
             period: __period,
             duration: __duration,
             summary: __summary,
-            events: __events,
+            events: if __events.is_empty() {
+                None
+            } else {
+                Some(__events)
+            },
         })
     }
 }
@@ -11170,8 +11590,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Instruction {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -11187,8 +11609,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Instruction {
         if let Some(v) = &self.provider {
             v.write_xml(w, "provider", Some("PARTY_PROXY"))?;
         }
-        for v in &self.other_participations {
-            v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+        if let Some(vs) = &self.other_participations {
+            for v in vs {
+                v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+            }
         }
         if let Some(v) = &self.protocol {
             v.write_xml(w, "protocol", Some("ITEM_STRUCTURE"))?;
@@ -11203,8 +11627,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Instruction {
         if let Some(v) = &self.wf_definition {
             v.write_xml(w, "wf_definition", Some("DV_PARSABLE"))?;
         }
-        for v in &self.activities {
-            v.write_xml(w, "activities", Some("ACTIVITY"))?;
+        if let Some(vs) = &self.activities {
+            for v in vs {
+                v.write_xml(w, "activities", Some("ACTIVITY"))?;
+            }
         }
         if let Some(v) = &self.workflow_id {
             v.write_xml(w, "workflow_id", Some("OBJECT_REF"))?;
@@ -11319,7 +11745,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Instruction {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             language: __language.ok_or_else(|| {
@@ -11328,7 +11758,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Instruction {
             encoding: __encoding.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element encoding".into())
             })?,
-            other_participations: __other_participations,
+            other_participations: if __other_participations.is_empty() {
+                None
+            } else {
+                Some(__other_participations)
+            },
             workflow_id: __workflow_id,
             subject: __subject.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element subject".into())
@@ -11341,7 +11775,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Instruction {
             })?,
             expiry_time: __expiry_time,
             wf_definition: __wf_definition,
-            activities: __activities,
+            activities: if __activities.is_empty() {
+                None
+            } else {
+                Some(__activities)
+            },
         })
     }
 }
@@ -11451,8 +11889,10 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -11558,7 +11998,11 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             time: __time.ok_or_else(|| {
@@ -11608,8 +12052,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::IsmTransition {
         if let Some(v) = &self.careflow_step {
             v.write_xml(w, "careflow_step", Some("DV_CODED_TEXT"))?;
         }
-        for v in &self.reason {
-            v.write_xml(w, "reason", Some("DV_TEXT"))?;
+        if let Some(vs) = &self.reason {
+            for v in vs {
+                v.write_xml(w, "reason", Some("DV_TEXT"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -11659,7 +12105,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::IsmTransition {
             })?,
             transition: __transition,
             careflow_step: __careflow_step,
-            reason: __reason,
+            reason: if __reason.is_empty() {
+                None
+            } else {
+                Some(__reason)
+            },
         })
     }
 }
@@ -11732,8 +12182,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemList {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -11741,8 +12193,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemList {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("ELEMENT"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("ELEMENT"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -11807,10 +12261,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ItemList {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
         })
     }
 }
@@ -11841,8 +12303,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemSingle {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -11914,7 +12378,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ItemSingle {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             item: __item.ok_or_else(|| {
@@ -12002,8 +12470,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemTable {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -12011,8 +12481,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemTable {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.rows {
-            v.write_xml(w, "rows", Some("CLUSTER"))?;
+        if let Some(vs) = &self.rows {
+            for v in vs {
+                v.write_xml(w, "rows", Some("CLUSTER"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -12077,10 +12549,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ItemTable {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            rows: __rows,
+            rows: if __rows.is_empty() {
+                None
+            } else {
+                Some(__rows)
+            },
         })
     }
 }
@@ -12201,8 +12681,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemTree {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -12210,8 +12692,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemTree {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("ITEM"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("ITEM"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -12276,10 +12760,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ItemTree {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
         })
     }
 }
@@ -12791,8 +13283,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Observation {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -12808,8 +13302,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Observation {
         if let Some(v) = &self.provider {
             v.write_xml(w, "provider", Some("PARTY_PROXY"))?;
         }
-        for v in &self.other_participations {
-            v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+        if let Some(vs) = &self.other_participations {
+            for v in vs {
+                v.write_xml(w, "other_participations", Some("PARTICIPATION"))?;
+            }
         }
         if let Some(v) = &self.protocol {
             v.write_xml(w, "protocol", Some("ITEM_STRUCTURE"))?;
@@ -12925,7 +13421,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Observation {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             language: __language.ok_or_else(|| {
@@ -12934,7 +13434,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Observation {
             encoding: __encoding.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element encoding".into())
             })?,
-            other_participations: __other_participations,
+            other_participations: if __other_participations.is_empty() {
+                None
+            } else {
+                Some(__other_participations)
+            },
             workflow_id: __workflow_id,
             subject: __subject.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element subject".into())
@@ -13081,8 +13585,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::OpenehrContentItem {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -13176,7 +13682,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::OpenehrContentItem {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             is_primary: __is_primary.ok_or_else(|| {
@@ -13301,8 +13811,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Organisation {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -13313,20 +13825,28 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Organisation {
         for v in &self.identities {
             v.write_xml(w, "identities", Some("PARTY_IDENTITY"))?;
         }
-        for v in &self.contacts {
-            v.write_xml(w, "contacts", Some("CONTACT"))?;
+        if let Some(vs) = &self.contacts {
+            for v in vs {
+                v.write_xml(w, "contacts", Some("CONTACT"))?;
+            }
         }
-        for v in &self.relationships {
-            v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+        if let Some(vs) = &self.relationships {
+            for v in vs {
+                v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+            }
         }
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
-        for v in &self.roles {
-            v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        if let Some(vs) = &self.roles {
+            for v in vs {
+                v.write_xml(w, "roles", Some("PARTY_REF"))?;
+            }
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(vs) = &self.languages {
+            for v in vs {
+                v.write_xml(w, "languages", Some("DV_TEXT"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -13411,15 +13931,35 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Organisation {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             identities: __identities,
-            contacts: __contacts,
+            contacts: if __contacts.is_empty() {
+                None
+            } else {
+                Some(__contacts)
+            },
             details: __details,
-            relationships: __relationships,
-            languages: __languages,
-            roles: __roles,
+            relationships: if __relationships.is_empty() {
+                None
+            } else {
+                Some(__relationships)
+            },
+            languages: if __languages.is_empty() {
+                None
+            } else {
+                Some(__languages)
+            },
+            roles: if __roles.is_empty() {
+                None
+            } else {
+                Some(__roles)
+            },
         })
     }
 }
@@ -13461,11 +14001,15 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
         if let Some(v) = &self.preceding_version_uid {
             v.write_xml(w, "preceding_version_uid", Some("OBJECT_VERSION_ID"))?;
         }
-        for v in &self.other_input_version_uids {
-            v.write_xml(w, "other_input_version_uids", Some("OBJECT_VERSION_ID"))?;
+        if let Some(vs) = &self.other_input_version_uids {
+            for v in vs {
+                v.write_xml(w, "other_input_version_uids", Some("OBJECT_VERSION_ID"))?;
+            }
         }
-        for v in &self.attestations {
-            v.write_xml(w, "attestations", Some("ATTESTATION"))?;
+        if let Some(vs) = &self.attestations {
+            for v in vs {
+                v.write_xml(w, "attestations", Some("ATTESTATION"))?;
+            }
         }
         self.lifecycle_state
             .write_xml(w, "lifecycle_state", Some("DV_CODED_TEXT"))?;
@@ -13548,11 +14092,19 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
                 crate::xml::runtime::XmlError::Parse("missing element uid".into())
             })?,
             preceding_version_uid: __preceding_version_uid,
-            other_input_version_uids: __other_input_version_uids,
+            other_input_version_uids: if __other_input_version_uids.is_empty() {
+                None
+            } else {
+                Some(__other_input_version_uids)
+            },
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element lifecycle_state".into())
             })?,
-            attestations: __attestations,
+            attestations: if __attestations.is_empty() {
+                None
+            } else {
+                Some(__attestations)
+            },
             data: __data,
         })
     }
@@ -13725,8 +14277,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::PartyIdentifiedData {
         if let Some(v) = &self.name {
             v.write_xml(w, "name", Some("String"))?;
         }
-        for v in &self.identifiers {
-            v.write_xml(w, "identifiers", Some("DV_IDENTIFIER"))?;
+        if let Some(vs) = &self.identifiers {
+            for v in vs {
+                v.write_xml(w, "identifiers", Some("DV_IDENTIFIER"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -13768,7 +14322,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyIdentifiedData {
         Ok(openehr_rm::prelude::PartyIdentifiedData {
             external_ref: __external_ref,
             name: __name,
-            identifiers: __identifiers,
+            identifiers: if __identifiers.is_empty() {
+                None
+            } else {
+                Some(__identifiers)
+            },
         })
     }
 }
@@ -13843,8 +14401,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::PartyIdentity {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -13917,7 +14477,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyIdentity {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             details: __details.ok_or_else(|| {
@@ -13999,8 +14563,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::PartyRelated {
         if let Some(v) = &self.name {
             v.write_xml(w, "name", Some("String"))?;
         }
-        for v in &self.identifiers {
-            v.write_xml(w, "identifiers", Some("DV_IDENTIFIER"))?;
+        if let Some(vs) = &self.identifiers {
+            for v in vs {
+                v.write_xml(w, "identifiers", Some("DV_IDENTIFIER"))?;
+            }
         }
         self.relationship
             .write_xml(w, "relationship", Some("DV_CODED_TEXT"))?;
@@ -14049,7 +14615,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyRelated {
         Ok(openehr_rm::prelude::PartyRelated {
             external_ref: __external_ref,
             name: __name,
-            identifiers: __identifiers,
+            identifiers: if __identifiers.is_empty() {
+                None
+            } else {
+                Some(__identifiers)
+            },
             relationship: __relationship.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element relationship".into())
             })?,
@@ -14083,8 +14653,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::PartyRelationship {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -14176,7 +14748,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::PartyRelationship {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             details: __details,
@@ -14518,8 +15094,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Person {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -14530,20 +15108,28 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Person {
         for v in &self.identities {
             v.write_xml(w, "identities", Some("PARTY_IDENTITY"))?;
         }
-        for v in &self.contacts {
-            v.write_xml(w, "contacts", Some("CONTACT"))?;
+        if let Some(vs) = &self.contacts {
+            for v in vs {
+                v.write_xml(w, "contacts", Some("CONTACT"))?;
+            }
         }
-        for v in &self.relationships {
-            v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+        if let Some(vs) = &self.relationships {
+            for v in vs {
+                v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+            }
         }
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
-        for v in &self.roles {
-            v.write_xml(w, "roles", Some("PARTY_REF"))?;
+        if let Some(vs) = &self.roles {
+            for v in vs {
+                v.write_xml(w, "roles", Some("PARTY_REF"))?;
+            }
         }
-        for v in &self.languages {
-            v.write_xml(w, "languages", Some("DV_TEXT"))?;
+        if let Some(vs) = &self.languages {
+            for v in vs {
+                v.write_xml(w, "languages", Some("DV_TEXT"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -14628,15 +15214,35 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Person {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             identities: __identities,
-            contacts: __contacts,
+            contacts: if __contacts.is_empty() {
+                None
+            } else {
+                Some(__contacts)
+            },
             details: __details,
-            relationships: __relationships,
-            languages: __languages,
-            roles: __roles,
+            relationships: if __relationships.is_empty() {
+                None
+            } else {
+                Some(__relationships)
+            },
+            languages: if __languages.is_empty() {
+                None
+            } else {
+                Some(__languages)
+            },
+            roles: if __roles.is_empty() {
+                None
+            } else {
+                Some(__roles)
+            },
         })
     }
 }
@@ -14669,8 +15275,10 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -14756,7 +15364,11 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             time: __time.ok_or_else(|| {
@@ -14881,8 +15493,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescription {
         for (k, v) in &self.original_author {
             w.write_kv_element("original_author", k, v)?;
         }
-        for v in &self.other_contributors {
-            v.write_xml(w, "other_contributors", Some("String"))?;
+        if let Some(vs) = &self.other_contributors {
+            for v in vs {
+                v.write_xml(w, "other_contributors", Some("String"))?;
+            }
         }
         self.lifecycle_state
             .write_xml(w, "lifecycle_state", Some("String"))?;
@@ -14948,7 +15562,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
         }
         Ok(openehr_rm::prelude::ResourceDescription {
             original_author: __original_author,
-            other_contributors: __other_contributors,
+            other_contributors: if __other_contributors.is_empty() {
+                None
+            } else {
+                Some(__other_contributors)
+            },
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element lifecycle_state".into())
             })?,
@@ -14987,8 +15605,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescriptionItem
         self.language
             .write_xml(w, "language", Some("CODE_PHRASE"))?;
         self.purpose.write_xml(w, "purpose", Some("String"))?;
-        for v in &self.keywords {
-            v.write_xml(w, "keywords", Some("String"))?;
+        if let Some(vs) = &self.keywords {
+            for v in vs {
+                v.write_xml(w, "keywords", Some("String"))?;
+            }
         }
         if let Some(v) = &self.use_ {
             v.write_xml(w, "use", Some("String"))?;
@@ -15076,7 +15696,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescriptionIt
             purpose: __purpose.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element purpose".into())
             })?,
-            keywords: __keywords,
+            keywords: if __keywords.is_empty() {
+                None
+            } else {
+                Some(__keywords)
+            },
             use_: __use_,
             misuse: __misuse,
             copyright: __copyright,
@@ -15243,8 +15867,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Role {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -15255,17 +15881,23 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Role {
         for v in &self.identities {
             v.write_xml(w, "identities", Some("PARTY_IDENTITY"))?;
         }
-        for v in &self.contacts {
-            v.write_xml(w, "contacts", Some("CONTACT"))?;
+        if let Some(vs) = &self.contacts {
+            for v in vs {
+                v.write_xml(w, "contacts", Some("CONTACT"))?;
+            }
         }
-        for v in &self.relationships {
-            v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+        if let Some(vs) = &self.relationships {
+            for v in vs {
+                v.write_xml(w, "relationships", Some("PARTY_RELATIONSHIP"))?;
+            }
         }
         if let Some(v) = &self.details {
             v.write_xml(w, "details", Some("ITEM_STRUCTURE"))?;
         }
-        for v in &self.capabilities {
-            v.write_xml(w, "capabilities", Some("CAPABILITY"))?;
+        if let Some(vs) = &self.capabilities {
+            for v in vs {
+                v.write_xml(w, "capabilities", Some("CAPABILITY"))?;
+            }
         }
         if let Some(v) = &self.time_validity {
             v.write_xml(w, "time_validity", Some("DV_INTERVAL"))?;
@@ -15360,18 +15992,34 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Role {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
             identities: __identities,
-            contacts: __contacts,
+            contacts: if __contacts.is_empty() {
+                None
+            } else {
+                Some(__contacts)
+            },
             details: __details,
-            relationships: __relationships,
+            relationships: if __relationships.is_empty() {
+                None
+            } else {
+                Some(__relationships)
+            },
             time_validity: __time_validity,
             performer: __performer.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element performer".into())
             })?,
-            capabilities: __capabilities,
+            capabilities: if __capabilities.is_empty() {
+                None
+            } else {
+                Some(__capabilities)
+            },
         })
     }
 }
@@ -15402,8 +16050,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Section {
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UID_BASED_ID"))?;
         }
-        for v in &self.links {
-            v.write_xml(w, "links", Some("LINK"))?;
+        if let Some(vs) = &self.links {
+            for v in vs {
+                v.write_xml(w, "links", Some("LINK"))?;
+            }
         }
         if let Some(v) = &self.archetype_details {
             v.write_xml(w, "archetype_details", Some("ARCHETYPED"))?;
@@ -15411,8 +16061,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::Section {
         if let Some(v) = &self.feeder_audit {
             v.write_xml(w, "feeder_audit", Some("FEEDER_AUDIT"))?;
         }
-        for v in &self.items {
-            v.write_xml(w, "items", Some("CONTENT_ITEM"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("CONTENT_ITEM"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -15477,10 +16129,18 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Section {
                 })?
                 .to_string(),
             uid: __uid,
-            links: __links,
+            links: if __links.is_empty() {
+                None
+            } else {
+                Some(__links)
+            },
             archetype_details: __archetype_details,
             feeder_audit: __feeder_audit,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
         })
     }
 }
@@ -15508,8 +16168,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::SyncExtract {
         w.write_start(__e)?;
         self.specification
             .write_xml(w, "specification", Some("SYNC_EXTRACT_SPEC"))?;
-        for v in &self.items {
-            v.write_xml(w, "items", Some("X_CONTRIBUTION"))?;
+        if let Some(vs) = &self.items {
+            for v in vs {
+                v.write_xml(w, "items", Some("X_CONTRIBUTION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -15548,7 +16210,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::SyncExtract {
             specification: __specification.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element specification".into())
             })?,
-            items: __items,
+            items: if __items.is_empty() {
+                None
+            } else {
+                Some(__items)
+            },
         })
     }
 }
@@ -15636,8 +16302,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::SyncExtractSpec {
         w.write_start(__e)?;
         self.includes_versions
             .write_xml(w, "includes_versions", Some("Boolean"))?;
-        for v in &self.contribution_list {
-            v.write_xml(w, "contribution_list", Some("HIER_OBJECT_ID"))?;
+        if let Some(vs) = &self.contribution_list {
+            for v in vs {
+                v.write_xml(w, "contribution_list", Some("HIER_OBJECT_ID"))?;
+            }
         }
         if let Some(v) = &self.contributions_since {
             v.write_xml(w, "contributions_since", Some("DV_DATE_TIME"))?;
@@ -15693,7 +16361,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::SyncExtractSpec {
             includes_versions: __includes_versions.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element includes_versions".into())
             })?,
-            contribution_list: __contribution_list,
+            contribution_list: if __contribution_list.is_empty() {
+                None
+            } else {
+                Some(__contribution_list)
+            },
             contributions_since: __contributions_since,
             all_contributions: __all_contributions,
         })
@@ -16569,8 +17241,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::XContribution {
         w.write_start(__e)?;
         self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
         self.audit.write_xml(w, "audit", Some("AUDIT_DETAILS"))?;
-        for v in &self.versions {
-            v.write_xml(w, "versions", Some("VERSION"))?;
+        if let Some(vs) = &self.versions {
+            for v in vs {
+                v.write_xml(w, "versions", Some("VERSION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -16615,7 +17289,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::XContribution {
             audit: __audit.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element audit".into())
             })?,
-            versions: __versions,
+            versions: if __versions.is_empty() {
+                None
+            } else {
+                Some(__versions)
+            },
         })
     }
 }
@@ -16652,8 +17330,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::XVersionedComposition {
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
-        for v in &self.versions {
-            v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+        if let Some(vs) = &self.versions {
+            for v in vs {
+                v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -16728,7 +17408,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::XVersionedComposition
                 crate::xml::runtime::XmlError::Parse("missing element extract_version_count".into())
             })?,
             revision_history: __revision_history,
-            versions: __versions,
+            versions: if __versions.is_empty() {
+                None
+            } else {
+                Some(__versions)
+            },
         })
     }
 }
@@ -16765,8 +17449,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::XVersionedEhrAccess {
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
-        for v in &self.versions {
-            v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+        if let Some(vs) = &self.versions {
+            for v in vs {
+                v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -16841,7 +17527,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::XVersionedEhrAccess {
                 crate::xml::runtime::XmlError::Parse("missing element extract_version_count".into())
             })?,
             revision_history: __revision_history,
-            versions: __versions,
+            versions: if __versions.is_empty() {
+                None
+            } else {
+                Some(__versions)
+            },
         })
     }
 }
@@ -16878,8 +17568,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::XVersionedEhrStatus {
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
-        for v in &self.versions {
-            v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+        if let Some(vs) = &self.versions {
+            for v in vs {
+                v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -16954,7 +17646,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::XVersionedEhrStatus {
                 crate::xml::runtime::XmlError::Parse("missing element extract_version_count".into())
             })?,
             revision_history: __revision_history,
-            versions: __versions,
+            versions: if __versions.is_empty() {
+                None
+            } else {
+                Some(__versions)
+            },
         })
     }
 }
@@ -16991,8 +17687,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::XVersionedFolder {
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
-        for v in &self.versions {
-            v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+        if let Some(vs) = &self.versions {
+            for v in vs {
+                v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -17067,7 +17765,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::XVersionedFolder {
                 crate::xml::runtime::XmlError::Parse("missing element extract_version_count".into())
             })?,
             revision_history: __revision_history,
-            versions: __versions,
+            versions: if __versions.is_empty() {
+                None
+            } else {
+                Some(__versions)
+            },
         })
     }
 }
@@ -17106,8 +17808,10 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
-        for v in &self.versions {
-            v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+        if let Some(vs) = &self.versions {
+            for v in vs {
+                v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -17184,7 +17888,11 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
                 crate::xml::runtime::XmlError::Parse("missing element extract_version_count".into())
             })?,
             revision_history: __revision_history,
-            versions: __versions,
+            versions: if __versions.is_empty() {
+                None
+            } else {
+                Some(__versions)
+            },
         })
     }
 }
@@ -17311,8 +18019,10 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::XVersionedParty {
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
-        for v in &self.versions {
-            v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+        if let Some(vs) = &self.versions {
+            for v in vs {
+                v.write_xml(w, "versions", Some("ORIGINAL_VERSION"))?;
+            }
         }
         w.write_end(tag)?;
         Ok(())
@@ -17387,7 +18097,11 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::XVersionedParty {
                 crate::xml::runtime::XmlError::Parse("missing element extract_version_count".into())
             })?,
             revision_history: __revision_history,
-            versions: __versions,
+            versions: if __versions.is_empty() {
+                None
+            } else {
+                Some(__versions)
+            },
         })
     }
 }

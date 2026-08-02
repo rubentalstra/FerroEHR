@@ -38,6 +38,9 @@
 //! - `archetyped_core` — ARCHETYPED `Rm_version_valid`.
 //! - `party_identified_core` — PARTY_IDENTIFIED / PARTY_RELATED `Basic_validity`,
 //!   `Name_valid`.
+//! - `nonempty_list_core` — the whole `x /= Void implies not x.is_empty`
+//!   family, decidable on the typed model now that an optional container emits
+//!   as `Option<Vec<T>>`.
 //!
 //! Complex invariants stay hand-written where the projection is non-trivial:
 //! ELEMENT's null-flavour XOR (`element_impl`), DV_EHR_URI's `Scheme_valid`
@@ -56,8 +59,11 @@
 //! ## Realized by a generated core in this file
 //!
 //! - `ACTIVITY.Action_archetype_id_valid` — `activity_core`: the ACTIVITY core, called by `activity_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.activity.adoc §Invariants).
+//! - `ACTOR.Roles_valid` — `crates/openehr-rm/src/validate/generated.rs`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.actor.adoc §Invariants).
 //! - `ARCHETYPED.Rm_version_valid` — `archetyped_core`: the ARCHETYPED core, called by `archetyped_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc §Invariants).
+//! - `ATTESTATION.Items_valid` — `crates/openehr-rm/src/validate/generated.rs`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.attestation.adoc §Invariants).
 //! - `CODE_PHRASE.Code_string_valid` — `code_phrase_core`: the CODE_PHRASE core, called by `code_phrase_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.code_phrase.adoc §Invariants).
+//! - `COMPOSITION.Content_valid` — `crates/openehr-rm/src/validate/generated.rs`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
 //! - `COMPOSITION.Is_archetype_root` — `composition_core`: `is_archetype_root` is `archetype_details /= Void` (locatable.adoc §Functions). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
 //! - `DV_AMOUNT.Accuracy_is_percent_validity` — `dv_amount_core`: shared by every concrete DV_AMOUNT descendant. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_amount.adoc §Invariants).
 //! - `DV_AMOUNT.Accuracy_validity` — `dv_amount_core`: shared by every concrete DV_AMOUNT descendant. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_amount.adoc §Invariants).
@@ -65,6 +71,7 @@
 //! - `DV_DATE_TIME.Value_valid` — `temporal_value_core`: the ISO-8601 date-time validator supplies the verdict. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_date_time.adoc §Invariants).
 //! - `DV_DURATION.Value_valid` — `temporal_value_core`: the ISO-8601 duration validator supplies the verdict. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_duration.adoc §Invariants).
 //! - `DV_IDENTIFIER.Id_valid` — `dv_identifier_core`: called by `dv_identifier_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_identifier.adoc §Invariants).
+//! - `DV_ORDERED.Other_reference_ranges_validity` — `crates/openehr-rm/src/validate/generated.rs`: inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
 //! - `DV_PARSABLE.Formalism_valid` — `dv_parsable_core`: called by `dv_parsable_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_parsable.adoc §Invariants).
 //! - `DV_PROPORTION.Fraction_validity` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
 //! - `DV_PROPORTION.Percent_validity` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
@@ -74,41 +81,37 @@
 //! - `DV_PROPORTION.Valid_denominator` — `dv_proportion_core`: the DV_PROPORTION core evaluates all six own invariants. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc §Invariants).
 //! - `DV_QUANTIFIED.Magnitude_status_valid` — `magnitude_status_core`: shared by every concrete DV_QUANTIFIED descendant. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_quantified.adoc §Invariants).
 //! - `DV_TEXT.Formatting_valid` — `dv_text_core`: shared by DV_TEXT and DV_CODED_TEXT. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
+//! - `DV_TEXT.Mappings_valid` — `crates/openehr-rm/src/validate/generated.rs`: inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
 //! - `DV_TEXT.Valid_value` — `dv_text_core`: shared by DV_TEXT and DV_CODED_TEXT. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
 //! - `DV_TIME.Value_valid` — `temporal_value_core`: the ISO-8601 time validator supplies the verdict. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_time.adoc §Invariants).
 //! - `DV_URI.Value_valid` — `dv_uri_core`: extended by `dv_ehr_uri_impl.rs` for the DV_EHR_URI scheme rule. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_uri.adoc §Invariants).
 //! - `ENTRY.Is_archetype_root` — `entry_root_core`: shared by every concrete ENTRY subtype. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
+//! - `ENTRY.Other_participations_valid` — `crates/openehr-rm/src/validate/generated.rs`: inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
+//! - `EVENT_CONTEXT.Participations_validity` — `crates/openehr-rm/src/validate/generated.rs`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
 //! - `EVENT_CONTEXT.location_valid` — `event_context_core`: called by `event_context_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
 //! - `HISTORY.Events_valid` — `history_basic_core`: called by `history_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants).
+//! - `INSTRUCTION.Activities_valid` — `crates/openehr-rm/src/validate/generated.rs`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction.adoc §Invariants).
 //! - `LOCATABLE.Archetype_node_id_valid` — `archetype_node_id_core`: inherited by every concrete LOCATABLE descendant; the typed dispatcher closes out the classes with no typed impl from the generated concrete-descendant closure. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
+//! - `LOCATABLE.Links_valid` — `crates/openehr-rm/src/validate/generated.rs`: inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
 //! - `PARTY_IDENTIFIED.Basic_validity` — `party_identified_core`: shared by PARTY_IDENTIFIED and PARTY_RELATED. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
 //! - `PARTY_IDENTIFIED.Name_valid` — `party_identified_core`: shared by PARTY_IDENTIFIED and PARTY_RELATED. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
+//! - `SECTION.Items_valid` — `crates/openehr-rm/src/validate/generated.rs`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.section.adoc §Invariants).
 //! - `TERM_MAPPING.Match_valid` — `term_mapping_core`: the match code is one of `< = > ?`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.term_mapping.adoc §Invariants).
 //!
 //! ## Realized in hand-written `openehr-rm` code
 //!
 //! - `AUDIT_DETAILS.System_id_valid` — `crates/openehr-rm/src/common/generic/audit_details_impl.rs`: re-stated on the ATTESTATION subtype impl for its own RM type name. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.audit_details.adoc §Invariants).
-//! - `COMPOSITION.Content_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
 //! - `DV_MULTIMEDIA.Integrity_check_validity` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: an integrity check requires its algorithm. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
 //! - `DV_MULTIMEDIA.Not_empty` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: inline data or an external URI must be present. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
 //! - `DV_MULTIMEDIA.Size_valid` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: a negative encapsulated size is refused. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
-//! - `DV_ORDERED.Other_reference_ranges_validity` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family, attribute-keyed on the JSON value (`check_nonempty_lists`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
-//! - `DV_TEXT.Mappings_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family, attribute-keyed on the JSON value (`check_nonempty_lists`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
-//! - `ENTRY.Other_participations_valid` — `crates/openehr-rm/src/validate.rs`: enforced per concrete ENTRY subtype on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
-//! - `EVENT_CONTEXT.Participations_validity` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
 //! - `FEEDER_AUDIT_DETAILS.System_id_valid` — `crates/openehr-rm/src/common/archetyped/feeder_audit_details_impl.rs`: the FEEDER_AUDIT_DETAILS system id is checked on its own type. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.feeder_audit_details.adoc §Invariants).
-//! - `INSTRUCTION.Activities_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction.adoc §Invariants).
 //! - `INSTRUCTION_DETAILS.Activity_path_valid` — `crates/openehr-rm/src/composition/content/entry/instruction_details_impl.rs`: the activity id must be non-empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction_details.adoc §Invariants).
 //! - `ITEM_TAG.Inv_value_valid` — `crates/openehr-rm/src/common/tags/item_tag_impl.rs`: a present tag value must be non-empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants).
 //! - `LOCATABLE.Archetyped_valid` — `crates/openehr-rm/src/validate.rs`: the enforceable arm reads the node's own `archetype_node_id` + `archetype_details` off the JSON value (`check_archetyped_valid`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
-//! - `LOCATABLE.Links_valid` — `crates/openehr-rm/src/validate.rs`: inherited by every LOCATABLE; keyed on the `links` attribute rather than the RM type (`check_nonempty_lists`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
 //! - `REFERENCE_RANGE.Range_is_simple` — `crates/openehr-rm/src/data_types/quantity/reference_range_impl.rs`: each present interval limit must itself be simple (no nested reference ranges). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.reference_range.adoc §Invariants).
-//! - `SECTION.Items_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.section.adoc §Invariants).
 //!
 //! ## Realized at the application write boundary (`app/`)
 //!
-//! - `ACTOR.Roles_valid` — `app/ferroehr/src/service/demographic/validate.rs`: `roles /= Void implies not roles.is_empty`: the BMM `List` emits as a `Vec`, so absent and present-but-empty are one value in the typed model; the demographic write boundary reads the raw body and rejects a present-but-empty list (422). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.actor.adoc §Invariants).
-//! - `ATTESTATION.Items_valid` — `app/ferroehr/src/versioning/attestation.rs`: `items /= Void implies not items.is_empty`: the BMM `List` emits as a `Vec`, so absent and present-but-empty are one value in the typed model; the attestation-completion path reads the raw wire partial and rejects a present-but-empty `items` (422). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.attestation.adoc §Invariants).
 //! - `EHR_ACCESS.Is_archetype_root` — `app/ferroehr/src/service/ehr/validation.rs`: unconditional (`is_archetype_root`), so every EHR_ACCESS is a root LOCATABLE; the commit-time validator runs the root-LOCATABLE checks it entails (`Archetyped_valid`, the root `archetype_node_id` rule). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc §Invariants).
 //! - `EHR_ACCESS.Scheme_valid` — `app/ferroehr/src/service/ehr/validation.rs`: `not scheme.is_empty`: `scheme` names the concrete ACCESS_CONTROL_SETTINGS subtype, which the typed model carries only as the payload's `_type`; the commit-time validator requires a present `settings` to name it (422). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc §Invariants).
 //! - `EHR_STATUS.Is_archetype_root` — `app/ferroehr/src/service/ehr/validation.rs`: unconditional (`is_archetype_root`), so every EHR_STATUS is a root LOCATABLE; the commit-time validator runs the root-LOCATABLE checks it entails (`Archetyped_valid`, the root `archetype_node_id` rule). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc §Invariants).
@@ -231,6 +234,44 @@ const PK_UNITARY: i32 = 1;
 const PK_PERCENT: i32 = 2;
 const PK_FRACTION: i32 = 3;
 const PK_INTEGER_FRACTION: i32 = 4;
+
+/// The `x /= Void implies not x.is_empty` rules, read from the vendored
+/// BMM class invariants: `(class, attribute, invariant)`. Applied to the
+/// class and its transitive concrete descendants by
+/// [`super::nonempty_list_violations`].
+pub(crate) const NONEMPTY_LIST_RULES: &[(&str, &str, &str)] = &[
+    ("ACTOR", "roles", "Roles_valid"),
+    ("ATTESTATION", "items", "Items_valid"),
+    ("COMPOSITION", "content", "Content_valid"),
+    (
+        "DV_ORDERED",
+        "other_reference_ranges",
+        "Other_reference_ranges_validity",
+    ),
+    ("DV_TEXT", "mappings", "Mappings_valid"),
+    (
+        "ENTRY",
+        "other_participations",
+        "Other_participations_valid",
+    ),
+    ("EVENT_CONTEXT", "participations", "Participations_validity"),
+    (
+        "EXTRACT_UPDATE_SPEC",
+        "trigger_events",
+        "Trigger_events_validity",
+    ),
+    ("INSTRUCTION", "activities", "Activities_valid"),
+    ("LOCATABLE", "links", "Links_valid"),
+    ("ORIGINAL_VERSION", "attestations", "Attestations_valid"),
+    (
+        "ORIGINAL_VERSION",
+        "other_input_version_uids",
+        "Other_input_version_uids_valid",
+    ),
+    ("PARTY", "contacts", "Contacts_valid"),
+    ("PARTY_IDENTIFIED", "identifiers", "Identifiers_valid"),
+    ("SECTION", "items", "Items_valid"),
+];
 
 /// CODE_PHRASE `Code_string_valid`: the code string must be non-empty.
 pub(crate) fn code_phrase_core(code_string: &str, out: &mut Vec<InvariantViolation>) {
@@ -519,6 +560,36 @@ pub(crate) fn party_identified_core(
     if name.is_some_and(str::is_empty) {
         out.push(InvariantViolation::here(format!(
             "Invariant Name_valid failed on type {ty}"
+        )));
+    }
+}
+
+/// The `x /= Void implies not x.is_empty` invariant family, shared by every RM
+/// class that declares one (`LOCATABLE.Links_valid`, `COMPOSITION.Content_valid`,
+/// `SECTION.Items_valid`, `ENTRY.Other_participations_valid`,
+/// `INSTRUCTION.Activities_valid`, `EVENT_CONTEXT.Participations_validity`,
+/// `DV_TEXT.Mappings_valid`, `DV_ORDERED.Other_reference_ranges_validity`,
+/// `PARTY_IDENTIFIED.Identifiers_valid`, `ACTOR.Roles_valid`,
+/// `ATTESTATION.Items_valid`, `ORIGINAL_VERSION.Attestations_valid` /
+/// `Other_input_version_uids_valid`, … — each `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.*`
+/// §Invariants).
+///
+/// `present_and_empty` is the whole rule: the attribute is present on the
+/// instance AND holds zero members. It is decidable on the typed model because
+/// an optional container emits as `Option<Vec<T>>` — `Some(vec![])` is exactly
+/// the forbidden state — so callers pass
+/// `self.attr.as_ref().is_some_and(Vec::is_empty)`.
+pub(crate) fn nonempty_list_core(
+    ty: &str,
+    attribute: &str,
+    invariant: &str,
+    present_and_empty: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if present_and_empty {
+        out.push(InvariantViolation::here(format!(
+            "{ty}.{attribute} is present but empty — a present list must be \
+             non-empty ({ty}.{invariant})"
         )));
     }
 }

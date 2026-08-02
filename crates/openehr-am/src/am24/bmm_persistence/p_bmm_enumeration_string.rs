@@ -22,7 +22,7 @@ pub struct PBmmEnumerationString {
     /// Name of the class. Persisted attribute.
     pub name: String,
     /// List of immediate inheritance parents. If there are generic ancestors, use `_ancestor_defs_` instead. Persisted attribute.
-    pub ancestors: Vec<String>,
+    pub ancestors: Option<Vec<String>>,
     /// Constants defined in this class, keyed by name. Persistent attribute.
     pub constants: Option<std::collections::BTreeMap<String, PBmmConstant>>,
     /// List of attributes defined in this class. Persistent attribute.
@@ -46,13 +46,13 @@ pub struct PBmmEnumerationString {
     /// Unique id generated for later comparison during merging, in order to detect if two classes are the same. Assigned in post-load processing.
     pub uid: i32,
     /// List of structured inheritance ancestors, used only in the case of generic inheritance. Persisted attribute.
-    pub ancestor_defs: Vec<PBmmGenericType>,
+    pub ancestor_defs: Option<Vec<PBmmGenericType>>,
 
     // inherited: P_BMM_ENUMERATION
     /// The `item_names` attribute of openEHR `P_BMM_ENUMERATION` (the vendored BMM carries no documentation for it).
-    pub item_names: Vec<String>,
+    pub item_names: Option<Vec<String>>,
     /// The `item_values` attribute of openEHR `P_BMM_ENUMERATION` (the vendored BMM carries no documentation for it).
-    pub item_values: Vec<serde_json::Value>,
+    pub item_values: Option<Vec<serde_json::Value>>,
     /// Optional documentation strings for the enumeration items, in the same order as `_item_names_`. Persisted attribute.
-    pub item_documentations: Vec<String>,
+    pub item_documentations: Option<Vec<String>>,
 }

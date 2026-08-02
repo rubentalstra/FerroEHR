@@ -15,7 +15,7 @@ pub struct BmmFeatureGroup {
     /// Set of properties of this group, represented as name/value pairs. These are understood to apply logically to all of the features contained within the group.
     pub properties: std::collections::BTreeMap<String, String>,
     /// Set of features in this group.
-    pub features: Vec<BmmFeature>,
+    pub features: Option<Vec<BmmFeature>>,
     /// Optional visibility to apply to all features in this group.
     pub visibility: Option<BmmVisibility>,
 }

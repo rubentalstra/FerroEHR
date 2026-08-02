@@ -189,7 +189,11 @@ fn vdifv_differential_path_without_specialisation() {
     // specialised archetype. (In source this would be the syntax error SDSF, so
     // the state is built by mutation.)
     let mut a = parse(BASE);
-    root_data_mut(&mut a).attributes[0].differential_path = Some("/element_attr".to_owned());
+    root_data_mut(&mut a)
+        .attributes
+        .as_deref()
+        .unwrap_or_default()[0]
+        .differential_path = Some("/element_attr".to_owned());
     let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Vdifv);
 }
@@ -210,7 +214,11 @@ fn vobav_assumed_value_outside_constraint() {
     // the value space of its constraint.
     use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
     let mut a = parse(BASE);
-    let el = &mut root_data_mut(&mut a).attributes[0].children[0];
+    let el = &mut root_data_mut(&mut a)
+        .attributes
+        .as_deref()
+        .unwrap_or_default()[0]
+        .children[0];
     if let CObject::CComplexObject(CComplexObject::CComplexObject(elem)) = el {
         // give the ELEMENT a `value` attribute constrained to a C_STRING whose
         // assumed value is not in the constraint list.
@@ -226,7 +234,7 @@ fn vobav_assumed_value_outside_constraint() {
                 rm_type_name: "String".to_owned(),
                 occurrences: None,
                 node_id: String::new(),
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
@@ -263,7 +271,11 @@ fn vobav_ordered_assumed_value_outside_interval_constraint() {
             upper_included: true,
         }));
     let mut a = parse(BASE);
-    let el = &mut root_data_mut(&mut a).attributes[0].children[0];
+    let el = &mut root_data_mut(&mut a)
+        .attributes
+        .as_deref()
+        .unwrap_or_default()[0]
+        .children[0];
     if let CObject::CComplexObject(CComplexObject::CComplexObject(elem)) = el {
         elem.attributes.push(CAttribute {
             parent: None,
@@ -276,7 +288,7 @@ fn vobav_ordered_assumed_value_outside_interval_constraint() {
                 rm_type_name: "Integer".to_owned(),
                 occurrences: None,
                 node_id: String::new(),
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
@@ -399,7 +411,7 @@ terminology
     let mut a = parse(src);
     // reach the C_ARCHETYPE_ROOT child of `items` and corrupt its reference.
     let root = root_data_mut(&mut a);
-    let child = &mut root.attributes[0].children[0];
+    let child = &mut root.attributes.as_deref().unwrap_or_default()[0].children.as_deref().unwrap_or_default()[0];
     if let CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) = child {
         let r: &mut CArchetypeRoot = r;
         r.archetype_ref = "bogus_ref".to_owned();

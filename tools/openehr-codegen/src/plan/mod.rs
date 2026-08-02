@@ -126,6 +126,9 @@ pub(crate) fn decide<'a>(
 pub(crate) struct XmlField {
     pub wire_name: String,
     pub rust_name: String,
+    /// The Rust field is wrapped in `Option<…>`. Orthogonal to
+    /// [`XmlField::multiple`]: an optional container is `Option<Vec<T>>`, so
+    /// both flags are set.
     pub optional: bool,
     pub multiple: bool,
     pub target: String,
@@ -212,8 +215,14 @@ pub(crate) struct JsonField {
 pub(crate) enum JsonFieldKind {
     /// `Option<T>` — omitted when `None`.
     Optional,
-    /// `Vec<T>` — omitted when empty.
+    /// `Vec<T>` (a mandatory container) — omitted when empty.
     Container,
+    /// `Option<Vec<T>>` (an optional container) — omitted when `None` **and**
+    /// when `Some` but empty, per
+    /// `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+    /// §JSON Format; read back as `None` when absent and `Some(vec![])` when
+    /// present-but-empty.
+    OptionalContainer,
     /// Anything else (including a mandatory `Box<T>`, a `BTreeMap`, or a
     /// `#[openehr(default)]` flag) — always emitted.
     Plain,
@@ -294,7 +303,11 @@ impl Model {
                     BmmPropKind::Container { item, .. } if item.root_name() == "Octet");
                 let multiple = matches!(&p.kind, BmmPropKind::Container { .. }) && !octet;
                 let kind = if multiple {
-                    JsonFieldKind::Container
+                    if p.is_mandatory {
+                        JsonFieldKind::Container
+                    } else {
+                        JsonFieldKind::OptionalContainer
+                    }
                 } else if p.is_mandatory {
                     JsonFieldKind::Plain
                 } else {
@@ -450,7 +463,7 @@ impl Model {
                 XmlField {
                     wire_name: p.name.clone(),
                     rust_name: naming::field_ident(&p.name),
-                    optional: !p.is_mandatory && !multiple,
+                    optional: !p.is_mandatory,
                     multiple,
                     target,
                     map_value,

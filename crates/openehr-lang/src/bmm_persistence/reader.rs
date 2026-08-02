@@ -87,6 +87,7 @@ use crate::bmm_persistence::p_bmm_type::PBmmType;
 use crate::odin::OdinInterval;
 use crate::odin::OdinKey;
 use crate::odin::OdinValue;
+use openehr_base::containers::present;
 
 /// Schema-level attributes the pinned P_BMM model does not declare, accepted
 /// and discarded.
@@ -170,15 +171,15 @@ pub fn read_schema(src: &str) -> Result<PBmmSchema, PBmmReadError> {
         schema_lifecycle_state,
         schema_author,
         schema_description,
-        schema_contributors,
+        schema_contributors: present(schema_contributors),
         archetype_parent_class,
         archetype_data_value_parent_class,
-        archetype_rm_closure_packages,
+        archetype_rm_closure_packages: present(archetype_rm_closure_packages),
         archetype_visualise_descendants_of,
         bmm_version,
         includes,
-        primitive_types,
-        class_definitions,
+        primitive_types: present(primitive_types),
+        class_definitions: present(class_definitions),
     })
 }
 
@@ -685,7 +686,7 @@ fn read_packages(
                 packages,
                 documentation,
                 name: package_name,
-                classes,
+                classes: present(classes),
                 bmm_package_definition: None,
             },
         );
@@ -746,8 +747,9 @@ struct ClassParts {
     documentation: Option<String>,
     /// `P_BMM_CLASS.name`.
     name: String,
-    /// `P_BMM_CLASS.ancestors`.
-    ancestors: Vec<String>,
+    /// `P_BMM_CLASS.ancestors` (optional container: `None` = the class
+    /// declares no ancestors).
+    ancestors: Option<Vec<String>>,
     /// `P_BMM_CLASS.constants`.
     constants: Option<BTreeMap<String, PBmmConstant>>,
     /// `P_BMM_CLASS.properties`.
@@ -766,18 +768,18 @@ struct ClassParts {
     source_schema_id: String,
     /// `P_BMM_CLASS.uid`, stamped by the reader.
     uid: i32,
-    /// `P_BMM_CLASS.ancestor_defs`.
-    ancestor_defs: Vec<PBmmGenericType>,
+    /// `P_BMM_CLASS.ancestor_defs` (optional container).
+    ancestor_defs: Option<Vec<PBmmGenericType>>,
 }
 
 /// The enumeration-only attributes of `P_BMM_ENUMERATION`.
 struct EnumerationParts {
-    /// `P_BMM_ENUMERATION.item_names`.
-    item_names: Vec<String>,
-    /// `P_BMM_ENUMERATION.item_values`.
-    item_values: Vec<serde_json::Value>,
-    /// `P_BMM_ENUMERATION.item_documentations`.
-    item_documentations: Vec<String>,
+    /// `P_BMM_ENUMERATION.item_names` (optional container).
+    item_names: Option<Vec<String>>,
+    /// `P_BMM_ENUMERATION.item_values` (optional container).
+    item_values: Option<Vec<serde_json::Value>>,
+    /// `P_BMM_ENUMERATION.item_documentations` (optional container).
+    item_documentations: Option<Vec<String>>,
 }
 
 /// Reads one class definition, dispatching on its optional type marker.
@@ -862,7 +864,7 @@ fn read_class_parts(
     let name = read_name(block, key)?;
     Ok(ClassParts {
         documentation: block.optional_string("documentation")?,
-        ancestors: block.string_list("ancestors")?,
+        ancestors: present(block.string_list("ancestors")?),
         constants: read_constants(block)?,
         properties: read_properties(block)?,
         functions: read_functions(block)?,
@@ -870,7 +872,7 @@ fn read_class_parts(
         is_abstract: block.optional_bool("is_abstract")?,
         is_override: block.optional_bool("is_override")?,
         generic_parameter_defs: read_generic_parameter_defs(block)?,
-        ancestor_defs: read_ancestor_defs(block)?,
+        ancestor_defs: present(read_ancestor_defs(block)?),
         source_schema_id: schema_id.to_owned(),
         uid,
         name,
@@ -885,9 +887,9 @@ fn read_enumeration_parts(block: &mut Block<'_>) -> Result<EnumerationParts, PBm
         None => Vec::new(),
     };
     Ok(EnumerationParts {
-        item_names: block.string_list("item_names")?,
-        item_documentations: block.string_list("item_documentations")?,
-        item_values,
+        item_names: present(block.string_list("item_names")?),
+        item_documentations: present(block.string_list("item_documentations")?),
+        item_values: present(item_values),
     })
 }
 
@@ -1646,7 +1648,7 @@ fn read_generic_type(path: &str, value: &OdinValue) -> Result<PBmmGenericType, P
         value_constraint,
         root_type,
         generic_parameter_defs,
-        generic_parameters,
+        generic_parameters: present(generic_parameters),
     })
 }
 
@@ -1823,6 +1825,7 @@ mod tests {
         schema
             .class_definitions
             .iter()
+            .flatten()
             .find(|class| class.name() == name)
             .expect("the fixture defines the class")
     }
@@ -1926,7 +1929,7 @@ mod tests {
             .packages
             .get("org.openehr.test_pkg")
             .expect("the top-level package reads");
-        assert_eq!(package.classes.len(), 3);
+        assert_eq!(package.classes.as_ref().map_or(0, Vec::len), 3);
 
         let error = read(
             r#"
@@ -2491,13 +2494,20 @@ mod tests {
             >
         "#,
         )?;
-        assert_eq!(schema.primitive_types.len(), 2);
-        assert!(schema.primitive_types.iter().all(PBmmClass::is_abstract));
+        assert_eq!(schema.primitive_types.as_ref().map_or(0, Vec::len), 2);
+        assert!(
+            schema
+                .primitive_types
+                .iter()
+                .flatten()
+                .all(PBmmClass::is_abstract)
+        );
         // uid numbering runs over primitive_types first, then class_definitions.
         assert_eq!(
             schema
                 .primitive_types
                 .iter()
+                .flatten()
                 .map(PBmmClass::uid)
                 .collect::<Vec<Option<i32>>>(),
             [Some(1), Some(2)]

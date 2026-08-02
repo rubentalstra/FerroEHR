@@ -74,7 +74,7 @@ impl PBmmGenericType {
     /// the same position.
     #[must_use]
     pub fn as_type_string(&self) -> String {
-        let mut parameters: Vec<String> = self.generic_parameters.clone();
+        let mut parameters: Vec<String> = self.generic_parameters.clone().unwrap_or_default();
         parameters.extend(
             self.generic_parameter_defs
                 .iter()
@@ -170,7 +170,9 @@ mod tests {
             value_constraint: None,
             root_type: root.to_owned(),
             generic_parameter_defs: Vec::new(),
-            generic_parameters: parameters.iter().map(|p| (*p).to_owned()).collect(),
+            generic_parameters: openehr_base::containers::present(
+                parameters.iter().map(|p| (*p).to_owned()).collect(),
+            ),
         }
     }
 

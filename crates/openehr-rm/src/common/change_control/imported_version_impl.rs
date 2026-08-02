@@ -89,7 +89,7 @@ mod tests {
             value: rubric.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -108,7 +108,7 @@ mod tests {
             time_committed: DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: Vec::new(),
+                other_reference_ranges: openehr_base::containers::present(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: "2026-07-07T10:11:12Z".to_owned(),
@@ -146,9 +146,9 @@ mod tests {
             preceding_version_uid: Some(version_id(
                 "8849182c-82ad-4088-a07f-48ead4180515::remote.example::1",
             )),
-            other_input_version_uids: Vec::new(),
+            other_input_version_uids: openehr_base::containers::present(Vec::new()),
             lifecycle_state: coded("532", "complete"),
-            attestations: Vec::new(),
+            attestations: openehr_base::containers::present(Vec::new()),
             data: Some("content".to_owned()),
         }
     }

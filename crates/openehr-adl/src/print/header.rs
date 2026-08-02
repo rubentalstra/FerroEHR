@@ -113,7 +113,11 @@ impl Printer {
                 &format!("version_last_translated = <{}>", quoted(v)),
             );
         }
-        self.odin_string_list(depth + 1, "other_contributors", &td.other_contributors);
+        self.odin_string_list(
+            depth + 1,
+            "other_contributors",
+            td.other_contributors.as_deref().unwrap_or_default(),
+        );
         if let Some(od) = &td.other_details {
             self.odin_string_map(depth + 1, "other_details", od);
         }
@@ -131,7 +135,11 @@ impl Printer {
         self.odin_string_map(1, "original_author", &d.original_author);
         self.opt_string(1, "original_namespace", d.original_namespace.as_deref());
         self.opt_string(1, "original_publisher", d.original_publisher.as_deref());
-        self.odin_string_list(1, "other_contributors", &d.other_contributors);
+        self.odin_string_list(
+            1,
+            "other_contributors",
+            d.other_contributors.as_deref().unwrap_or_default(),
+        );
         self.line(
             1,
             &format!("lifecycle_state = <{}>", quoted(&d.lifecycle_state)),
@@ -173,7 +181,11 @@ impl Printer {
             &format!("language = <{}>", term_code_str(&item.language)),
         );
         self.line(depth + 1, &format!("purpose = <{}>", quoted(&item.purpose)));
-        self.odin_string_list(depth + 1, "keywords", &item.keywords);
+        self.odin_string_list(
+            depth + 1,
+            "keywords",
+            item.keywords.as_deref().unwrap_or_default(),
+        );
         if let Some(u) = &item.use_ {
             self.line(depth + 1, &format!("use = <{}>", quoted(u)));
         }

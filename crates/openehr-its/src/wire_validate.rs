@@ -73,8 +73,8 @@ fn run<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantV
 /// collection (`HISTORY.events`, `ITEM_TABLE.rows`) keep the full [`run`]
 /// deserialize.
 ///
-/// NOTE: emptying a child *collection* here means a malformation *inside*
-/// an array element is no longer reported at this ancestor's path — it is
+/// NOTE: truncating a child *collection* here means a malformation *inside*
+/// a dropped array element is no longer reported at this ancestor's path — it is
 /// reported at that element's own recursion step instead (each collection member
 /// is a separate `_type` node the composition validator visits and dispatches).
 /// For array-element types the dispatcher does not cover (embedded non-LOCATABLE
@@ -92,11 +92,20 @@ fn run_shallow<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<In
     }
 }
 
-/// A shallow copy of an RM node with every nested RM-node **collection** emptied,
-/// recursing through single-valued nested nodes (which are kept, so the node's
-/// own mandatory single attributes stay enforced on deserialize). Scalar arrays
-/// (e.g. `DV_MULTIMEDIA.data` octets) are kept as-is. See [`run_shallow`] for why
-/// this is sound for the structural container types.
+/// A shallow copy of an RM node with every nested RM-node **collection**
+/// truncated to its first member, recursing through single-valued nested nodes
+/// (which are kept, so the node's own mandatory single attributes stay enforced
+/// on deserialize). Scalar arrays (e.g. `DV_MULTIMEDIA.data` octets) are kept
+/// as-is. See [`run_shallow`] for why this is sound for the structural container
+/// types.
+///
+/// Truncating rather than emptying is what makes the shallow decode
+/// SHAPE-FAITHFUL: an optional container decodes to `Option<Vec<T>>`, so
+/// emptying an array would turn a populated list into the one state the
+/// `x /= Void implies not x.is_empty` family forbids. One member is enough for
+/// every invariant that reads a collection at all (all of them are presence /
+/// non-emptiness tests), and the cost stays bounded — one spine, not the
+/// subtree.
 fn prune_child_nodes(value: &Value) -> Value {
     let Value::Object(map) = value else {
         return value.clone();
@@ -106,8 +115,18 @@ fn prune_child_nodes(value: &Value) -> Value {
         let pruned = match child {
             // An array of RM nodes: the children are recursed into (and fully
             // validated) individually by the composition validator, so this
-            // node's own invariants never need them — drop them.
-            Value::Array(items) if items.iter().any(Value::is_object) => Value::Array(Vec::new()),
+            // node's own invariants never need their CONTENT — but the array's
+            // PRESENCE and NON-EMPTINESS are load-bearing (an optional container
+            // decodes to `Option<Vec<T>>`, and `x /= Void implies not
+            // x.is_empty` judges exactly those two bits), so the first member is
+            // kept (itself pruned) rather than the array emptied.
+            Value::Array(items) if items.iter().any(Value::is_object) => Value::Array(
+                items
+                    .first()
+                    .map(|first| prune_child_nodes(first))
+                    .into_iter()
+                    .collect(),
+            ),
             // A single nested node: keep it (its presence is a structural
             // constraint this node's deserialize must still enforce), but recurse
             // to empty ITS child collections.
@@ -173,12 +192,14 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
     };
-    // The core path (fast/typed), then the two orthogonal layers — the
-    // model-driven mandatory-container lower bounds and the terminology-backed
-    // invariants (each dispatches on the same `_type`). The core tiers stay a
-    // pure pair so the fast-vs-typed equivalence property holds exactly.
+    // The core path (fast/typed), then the three orthogonal layers — the
+    // model-driven mandatory-container lower bounds, the model-driven
+    // present-implies-non-empty family, and the terminology-backed invariants
+    // (each dispatches on the same `_type`). The core tiers stay a pure pair so
+    // the fast-vs-typed equivalence property holds exactly.
     validate_rm_invariants_as(ty, value, out);
     openehr_rm::validate::check_mandatory_containers(ty, value, out);
+    openehr_rm::validate::nonempty_list_violations(ty, value, out);
     openehr_rm::validate::terminology::validate_rm_terminology(ty, value, out);
 }
 

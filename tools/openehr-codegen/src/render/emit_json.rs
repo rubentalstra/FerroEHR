@@ -395,6 +395,21 @@ fn emit_write_field(b: &mut String, f: &JsonField) {
                 "if !self.{rust}.is_empty() {{ w.field(\"{wire}\", &self.{rust}); }}"
             );
         }
+        // An optional container omits BOTH states an empty array could carry —
+        // `None` and `Some(vec![])` — because the released serialization rule is
+        // about emptiness, not about optionality:
+        // `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+        // §JSON Format, "The RM attributes (even required ones) that are `Null`
+        // or an empty list (array) SHOULD be absent when serialized as JSON."
+        // The present-but-empty state therefore lives in the typed model (where
+        // the `x /= Void implies not x.is_empty` invariants judge it) and never
+        // reaches the wire.
+        JsonFieldKind::OptionalContainer => {
+            let _ = writeln!(
+                b,
+                "if let Some(v) = &self.{rust} && !v.is_empty() {{ w.field(\"{wire}\", v); }}"
+            );
+        }
     }
 }
 
@@ -484,6 +499,9 @@ fn emit_struct_from_json(
             (JsonFieldKind::Optional, _) => format!("runtime::optional_field(node, \"{wire}\")?"),
             (JsonFieldKind::Container, _) => {
                 format!("runtime::container_field(node, \"{wire}\")?")
+            }
+            (JsonFieldKind::OptionalContainer, _) => {
+                format!("runtime::optional_container_field(node, \"{wire}\")?")
             }
         };
         let _ = writeln!(b, "{rust_name}: {read},");

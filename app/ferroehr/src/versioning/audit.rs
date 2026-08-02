@@ -315,7 +315,7 @@ impl AuditInput {
                     committer,
                     attested_view: parts.attested_view,
                     proof: parts.proof,
-                    items: parts.items,
+                    items: openehr_base::containers::present(parts.items),
                     reason: parts.reason,
                     is_pending: parts.is_pending,
                 }))
@@ -373,7 +373,7 @@ pub(crate) fn openehr_coded_text(code: &str, rubric: String) -> DvCodedText {
         value: rubric,
         hyperlink: None,
         formatting: None,
-        mappings: Vec::new(),
+        mappings: openehr_base::containers::present(Vec::new()),
         language: None,
         encoding: None,
         defining_code: CodePhrase {
@@ -392,7 +392,7 @@ pub(crate) fn dv_date_time(instant: &jiff::Timestamp) -> DvDateTime {
     DvDateTime {
         normal_status: None,
         normal_range: None,
-        other_reference_ranges: Vec::new(),
+        other_reference_ranges: openehr_base::containers::present(Vec::new()),
         magnitude_status: None,
         accuracy: None,
         value: instant.to_string(),
@@ -406,7 +406,7 @@ pub(crate) fn dv_text(value: &str) -> DvText {
         value: value.to_owned(),
         hyperlink: None,
         formatting: None,
-        mappings: Vec::new(),
+        mappings: openehr_base::containers::present(Vec::new()),
         language: None,
         encoding: None,
     })

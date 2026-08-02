@@ -41,8 +41,8 @@ use std::fmt::Write as _;
 
 use openehr_rm::model::declared_concrete_type;
 use openehr_rm::validate::{
-    NonEmptyListFlags, check_archetyped_valid, check_data_structure_shapes,
-    check_mandatory_containers, check_nonempty_lists,
+    check_archetyped_valid, check_data_structure_shapes, check_mandatory_containers,
+    nonempty_list_violations,
 };
 
 use crate::flat::webtemplate::WebTemplate;
@@ -220,9 +220,6 @@ pub(crate) fn rm_invariant_pass(
     let mut node_id: Option<&str> = None;
     let mut has_archetype_details = false;
     let mut details_archetype_id: Option<&str> = None;
-    let mut mappings_empty = false;
-    let mut reference_ranges_empty = false;
-    let mut links_empty = false;
     for (k, val) in obj {
         match k.as_str() {
             "_type" => ty = val.as_str(),
@@ -234,11 +231,6 @@ pub(crate) fn rm_invariant_pass(
                     .and_then(|a| a.get("value"))
                     .and_then(Value::as_str);
             }
-            "mappings" => mappings_empty = val.as_array().is_some_and(Vec::is_empty),
-            "other_reference_ranges" => {
-                reference_ranges_empty = val.as_array().is_some_and(Vec::is_empty);
-            }
-            "links" => links_empty = val.as_array().is_some_and(Vec::is_empty),
             _ => {}
         }
     }
@@ -256,6 +248,10 @@ pub(crate) fn rm_invariant_pass(
         // bounds (kept outside the core pair so the fast-vs-typed
         // equivalence property stays exact).
         check_mandatory_containers(effective, v, &mut inv);
+        // The optional-container family (`x /= Void implies not x.is_empty`),
+        // over the BMM-derived rule table — the second orthogonal model-driven
+        // layer, kept outside the core pair for the same reason.
+        nonempty_list_violations(effective, v, &mut inv);
     }
     // The JSON-level per-node checks (`openehr-rm`'s own value semantics):
     // they read the raw node, so an absent list and a present-but-empty one
@@ -265,15 +261,6 @@ pub(crate) fn rm_invariant_pass(
         node_id,
         has_archetype_details,
         details_archetype_id,
-    ));
-    inv.extend(check_nonempty_lists(
-        obj,
-        ty,
-        NonEmptyListFlags {
-            mappings_empty,
-            reference_ranges_empty,
-            links_empty,
-        },
     ));
     inv.extend(check_data_structure_shapes(obj, ty));
     for iv in inv {

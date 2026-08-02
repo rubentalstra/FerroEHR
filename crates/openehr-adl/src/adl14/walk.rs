@@ -34,14 +34,14 @@ pub(super) fn cco_data_mut(cco: &mut CComplexObject) -> Option<&mut CComplexObje
 pub(super) fn collect_node_codes(def: &CComplexObject, f: &mut impl FnMut(&str)) {
     if let CComplexObject::CComplexObject(d) = def {
         f(&d.node_id);
-        for attr in &d.attributes {
-            for child in &attr.children {
+        for attr in d.attributes.iter().flatten() {
+            for child in attr.children.iter().flatten() {
                 collect_node_codes_obj(child, f);
             }
         }
-        for tuple in &d.attribute_tuples {
-            for member in &tuple.members {
-                for child in &member.children {
+        for tuple in d.attribute_tuples.iter().flatten() {
+            for member in tuple.members.iter().flatten() {
+                for child in member.children.iter().flatten() {
                     collect_node_codes_obj(child, f);
                 }
             }
@@ -77,22 +77,22 @@ pub(super) fn collect_local_value_codes(def: &CComplexObject, f: &mut impl FnMut
 /// rubric context — unused here, passed empty).
 pub(super) fn walk_constraints(def: &CComplexObject, f: &mut impl FnMut(&str, &str)) {
     if let CComplexObject::CComplexObject(d) = def {
-        for attr in &d.attributes {
-            for child in &attr.children {
+        for attr in d.attributes.iter().flatten() {
+            for child in attr.children.iter().flatten() {
                 walk_constraints_obj(child, f);
             }
         }
-        for tuple in &d.attribute_tuples {
-            for member in &tuple.members {
-                for child in &member.children {
+        for tuple in d.attribute_tuples.iter().flatten() {
+            for member in tuple.members.iter().flatten() {
+                for child in member.children.iter().flatten() {
                     walk_constraints_obj(child, f);
                 }
             }
             // Tuple ROWS carry the actual primitive constraints (e.g. ordinal
             // `[value, symbol]` symbol codes) — visit their terminology codes
             // so value at-codes are planned and converted like attribute ones.
-            for row in &tuple.tuples {
-                for m in &row.members {
+            for row in tuple.tuples.iter().flatten() {
+                for m in row.members.iter() {
                     if let CPrimitiveObject::CTerminologyCode(tc) = m {
                         f(&tc.constraint, "");
                     }

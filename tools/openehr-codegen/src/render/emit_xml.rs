@@ -374,7 +374,18 @@ fn emit_write_field(b: &mut String, f: &XmlField) {
         return;
     }
     let (name, rust, target) = (&f.wire_name, &f.rust_name, &f.target);
-    if f.multiple {
+    if f.multiple && f.optional {
+        // An optional container (`Option<Vec<T>>`). Canonical XML has no
+        // representation for "the attribute is present but holds zero members"
+        // — a repeated element with zero occurrences IS absence — so `None` and
+        // `Some(vec![])` both write nothing, and the reader maps zero
+        // occurrences back to `None` (`emit_from_xml` below). The
+        // present-but-empty state is JSON-only by the wire's own shape.
+        let _ = writeln!(
+            b,
+            "if let Some(vs) = &self.{rust} {{ for v in vs {{ v.write_xml(w, \"{name}\", Some(\"{target}\"))?; }} }}"
+        );
+    } else if f.multiple {
         let _ = writeln!(
             b,
             "for v in &self.{rust} {{ v.write_xml(w, \"{name}\", Some(\"{target}\"))?; }}"
@@ -500,6 +511,15 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                     } else {
                         let _ = writeln!(b, "{fname}: {var},");
                     }
+                } else if f.multiple && f.optional {
+                    // Zero occurrences of a repeated element is indistinguishable
+                    // from the attribute's absence in XML, so it reads back as
+                    // `None` (see `emit_write_field`).
+                    let var = acc_var(fname);
+                    let _ = writeln!(
+                        b,
+                        "{fname}: if {var}.is_empty() {{ None }} else {{ Some({var}) }},"
+                    );
                 } else if f.multiple || f.optional {
                     let _ = writeln!(b, "{fname}: {},", acc_var(fname));
                 } else if let Some(default) = &f.default {

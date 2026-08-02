@@ -122,8 +122,10 @@ impl BmmPackage {
     /// §Functions).
     #[must_use]
     pub fn root_classes(&self) -> Vec<&BmmClass> {
-        if !self.classes.is_empty() {
-            return self.classes.iter().collect();
+        if let Some(classes) = &self.classes
+            && !classes.is_empty()
+        {
+            return classes.iter().collect();
         }
         let mut out = Vec::new();
         for child in self.packages.iter().flat_map(BTreeMap::values) {
@@ -173,7 +175,9 @@ mod tests {
             documentation: None,
             packages: None,
             name: name.to_owned(),
-            classes: classes.iter().map(|c| simple_class(c)).collect(),
+            classes: openehr_base::containers::present(
+                classes.iter().map(|c| simple_class(c)).collect(),
+            ),
         };
         if !children.is_empty() {
             let map: BTreeMap<String, BmmPackage> = children
@@ -195,11 +199,11 @@ mod tests {
                 documentation: None,
                 packages: None,
                 name: "org.openehr.rm".to_owned(),
-                classes: Vec::new(),
+                classes: openehr_base::containers::present(Vec::new()),
             },
             properties: None,
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type: false,
             is_override: false,

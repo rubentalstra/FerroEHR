@@ -42,9 +42,9 @@ use crate::adl14::walk::cco_data_mut;
 /// proxy is expanded.
 pub(super) fn materialise_adl14_occurrences(def: &mut CComplexObject) {
     let Some(d) = cco_data_mut(def) else { return };
-    for attr in &mut d.attributes {
+    for attr in d.attributes.iter_mut().flatten() {
         let is_container = attr.cardinality.is_some();
-        for child in &mut attr.children {
+        for child in attr.children.iter_mut().flatten() {
             if is_container
                 && complex_occurrences(child).is_none()
                 && !matches!(child, CObject::CComplexObjectProxy(_))
@@ -96,9 +96,9 @@ pub(super) fn elide_multiplicity(def: &mut CComplexObject) {
 
 fn elide_cco(cco: &mut CComplexObject) {
     let Some(d) = cco_data_mut(cco) else { return };
-    for attr in &mut d.attributes {
+    for attr in d.attributes.iter_mut().flatten() {
         elide_attr(attr);
-        for child in &mut attr.children {
+        for child in attr.children.iter_mut().flatten() {
             if let CObject::CComplexObject(c) = child {
                 elide_cco(c);
             }
@@ -116,7 +116,7 @@ fn elide_attr(attr: &mut CAttribute) {
         attr.cardinality = None;
         attr.is_multiple = false;
     }
-    for child in &mut attr.children {
+    for child in attr.children.iter_mut().flatten() {
         if let Some(occ) = complex_occurrences(child)
             && is_zero_unbounded(occ)
         {

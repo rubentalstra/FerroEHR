@@ -19,7 +19,7 @@ pub struct PBmmPackage {
     /// Name of the package from schema; this name may be qualified if it is a top-level package within the schema, or unqualified. Persistent attribute.
     pub name: String,
     /// List of classes in this package. Persistent attribute.
-    pub classes: Vec<String>,
+    pub classes: Option<Vec<String>>,
     /// `BMM_PACKAGE` created by `_create_bmm_package_definition_`.
     pub bmm_package_definition: Option<BmmPackage>,
 }

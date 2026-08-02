@@ -13,7 +13,7 @@ use crate::validate::{InvariantViolation, Validate};
 impl Validate for ItemTable {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
         // Valid_structure: rows contain only ELEMENTs.
-        if self.rows.iter().any(|row| {
+        if self.rows.iter().flatten().any(|row| {
             row.items
                 .iter()
                 .any(|item| !matches!(item, Item::Element(_)))
@@ -23,10 +23,11 @@ impl Validate for ItemTable {
             ));
         }
         // Valid_number_of_rows: every row has the same number of items.
-        if let Some(first) = self.rows.first()
+        if let Some(first) = self.rows.iter().flatten().next()
             && self
                 .rows
                 .iter()
+                .flatten()
                 .any(|row| row.items.len() != first.items.len())
         {
             out.push(InvariantViolation::here(
@@ -37,7 +38,7 @@ impl Validate for ItemTable {
         // ELEMENTs across rows must have identical names and value types —
         // "each of which in turn must have identical names and value types in
         // the corresponding positions in each row".
-        if let Some(first) = self.rows.first() {
+        if let Some(first) = self.rows.iter().flatten().next() {
             use crate::data_types::text::dv_text::DvText;
             let name_of = |name: &DvText| match name {
                 DvText::DvText(t) => t.value.clone(),
@@ -59,6 +60,7 @@ impl Validate for ItemTable {
             if self
                 .rows
                 .iter()
+                .flatten()
                 .skip(1)
                 .any(|row| signature(row) != first_sig)
             {
@@ -90,7 +92,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -101,7 +103,7 @@ mod tests {
             name: text("e"),
             archetype_node_id: id.to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             null_flavour: None,
@@ -115,7 +117,7 @@ mod tests {
             name: text("row"),
             archetype_node_id: "at0002".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             items,
@@ -127,10 +129,10 @@ mod tests {
             name: text("table"),
             archetype_node_id: "at0001".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
-            rows,
+            rows: openehr_base::containers::present(rows),
         }
     }
 
@@ -191,7 +193,7 @@ mod tests {
             name: text(name),
             archetype_node_id: "at0001".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             null_flavour: None,
@@ -202,7 +204,7 @@ mod tests {
             name: text("row"),
             archetype_node_id: "at0002".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             items: elems.into_iter().map(Item::Element).collect(),
@@ -212,7 +214,7 @@ mod tests {
             DataValue::DvCount(DvCount {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: Vec::new(),
+                other_reference_ranges: openehr_base::containers::present(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 accuracy_is_percent: None,
@@ -223,10 +225,10 @@ mod tests {
             name: text("t"),
             archetype_node_id: "at0000".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
-            rows,
+            rows: openehr_base::containers::present(rows),
         };
         let regular = table(vec![
             row(vec![named("a", bool_val()), named("b", count_val())]),

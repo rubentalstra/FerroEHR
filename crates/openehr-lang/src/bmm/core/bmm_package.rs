@@ -20,5 +20,5 @@ pub struct BmmPackage {
     /// Name of this package. This name may be qualified if it is a top-level package.
     pub name: String,
     /// Classes listed as being in this package.
-    pub classes: Vec<BmmClass>,
+    pub classes: Option<Vec<BmmClass>>,
 }

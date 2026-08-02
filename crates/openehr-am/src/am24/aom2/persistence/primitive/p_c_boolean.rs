@@ -29,5 +29,5 @@ pub struct PCBoolean {
     /// True if this constraint is actually of an enumerated type that conforms to a primitive type, not a primitive.
     pub is_enumerated_type_constraint: Option<bool>,
     /// The `constraint` attribute of openEHR `P_C_BOOLEAN` (the vendored BMM carries no documentation for it).
-    pub constraint: Vec<bool>,
+    pub constraint: Option<Vec<bool>>,
 }

@@ -152,7 +152,7 @@ impl BmmGenericType {
     #[must_use]
     pub fn flattened_type_list(&self) -> Vec<String> {
         let mut out = vec![self.base_class.name.clone()];
-        for parameter in &self.generic_parameters {
+        for parameter in self.generic_parameters.iter() {
             out.extend(parameter.flattened_type_list());
         }
         unique(out)
@@ -412,7 +412,7 @@ mod tests {
             documentation: None,
             packages: None,
             name: "org.openehr.base.foundation_types".to_owned(),
-            classes: Vec::new(),
+            classes: openehr_base::containers::present(Vec::new()),
         }
     }
 
@@ -425,7 +425,7 @@ mod tests {
             package: package(),
             properties: None,
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type: false,
             is_override: false,
@@ -442,7 +442,7 @@ mod tests {
             package: package(),
             properties: None,
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type: false,
             is_override: false,

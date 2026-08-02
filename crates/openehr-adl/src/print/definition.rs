@@ -46,15 +46,15 @@ impl Printer {
             CObject::CComplexObject(CComplexObject::CComplexObject(d)) => {
                 let _ = write!(head, "{}{}", d.rm_type_name, node_bracket(&d.node_id));
                 head.push_str(&occ_suffix(d.occurrences.as_ref()));
-                let has_body = !d.attributes.is_empty()
-                    || !d.attribute_tuples.is_empty()
+                let has_body = !d.attributes.as_ref().is_none_or(Vec::is_empty)
+                    || !d.attribute_tuples.as_ref().is_none_or(Vec::is_empty)
                     || d.default_value.is_some();
                 if has_body {
                     self.line(depth, &format!("{head} matches {{"));
-                    for a in &d.attributes {
+                    for a in d.attributes.iter().flatten() {
                         self.attribute(a, depth + 1);
                     }
-                    for t in &d.attribute_tuples {
+                    for t in d.attribute_tuples.iter().flatten() {
                         self.attribute_tuple(t, depth + 1);
                     }
                     if let Some(dv) = &d.default_value {
@@ -108,14 +108,14 @@ impl Printer {
         if let Some(card) = &a.cardinality {
             let _ = write!(head, " cardinality matches {}", card_braces(card));
         }
-        if a.children.is_empty() {
+        if a.children.as_ref().is_none_or(Vec::is_empty) {
             self.line(depth, &head);
             return;
         }
         // A single C_STRING regex child came from the `attr matches {/re/}`
         // contained-regexp shortcut (`cadl2.g4`); re-emit that form.
-        if let [CObject::CString(cs)] = a.children.as_slice()
-            && let Some(regex) = regex_of(&cs.constraint)
+        if let [CObject::CString(cs)] = a.children.as_deref().unwrap_or_default()
+            && let Some(regex) = regex_of(cs.constraint.as_deref().unwrap_or_default())
         {
             let mut body = regex.to_owned();
             if let Some(assumed) = &cs.assumed_value {
@@ -125,7 +125,7 @@ impl Printer {
             return;
         }
         // A single inline primitive child prints inline; regular objects nest.
-        if let [child] = a.children.as_slice()
+        if let [child] = a.children.as_deref().unwrap_or_default()
             && let Some(prim) = cobject_to_primitive(child)
             && prim_type_and_node(child).1 == "Primitive_node_id"
         {
@@ -136,7 +136,7 @@ impl Printer {
             return;
         }
         self.line(depth, &format!("{head} matches {{"));
-        for child in &a.children {
+        for child in a.children.iter().flatten() {
             self.object(child, depth + 1);
         }
         self.line(depth, "}");
@@ -146,14 +146,15 @@ impl Printer {
         let members = t
             .members
             .iter()
+            .flatten()
             .map(|m| m.rm_attribute_name.clone())
             .collect::<Vec<_>>()
             .join(", ");
         self.line(depth, &format!("[{members}] matches {{"));
         // Tuple rows are comma-separated (`cadl2.g4` `c_primitive_tuple
         // (',' c_primitive_tuple)*`); emit a trailing comma on all but the last.
-        let last = t.tuples.len().saturating_sub(1);
-        for (idx, row) in t.tuples.iter().enumerate() {
+        let last = t.tuples.as_ref().map_or(0, Vec::len).saturating_sub(1);
+        for (idx, row) in t.tuples.iter().flatten().enumerate() {
             self.tuple_row(row, depth + 1, idx != last);
         }
         self.line(depth, "}");
@@ -184,7 +185,9 @@ impl Printer {
         // `C_ARCHETYPE_ROOT`. A source-form external reference / slot filler has
         // Void children and prints with the `use_archetype` keyword
         // (`cadl2.g4` c_archetype_root).
-        if r.attributes.is_empty() && r.attribute_tuples.is_empty() {
+        if r.attributes.as_ref().is_none_or(Vec::is_empty)
+            && r.attribute_tuples.as_ref().is_none_or(Vec::is_empty)
+        {
             self.line(
                 depth,
                 &format!("{head}use_archetype {}{node}{occ}", r.rm_type_name),
@@ -195,10 +198,10 @@ impl Printer {
             depth,
             &format!("{head}{}{node}{occ} matches {{", r.rm_type_name),
         );
-        for a in &r.attributes {
+        for a in r.attributes.iter().flatten() {
             self.attribute(a, depth + 1);
         }
-        for t in &r.attribute_tuples {
+        for t in r.attribute_tuples.iter().flatten() {
             self.attribute_tuple(t, depth + 1);
         }
         self.line(depth, "}");
@@ -228,16 +231,18 @@ impl Printer {
             return;
         }
         let occ = occ_suffix(s.occurrences.as_ref());
-        if s.includes.is_empty() && s.excludes.is_empty() {
+        if s.includes.as_ref().is_none_or(Vec::is_empty)
+            && s.excludes.as_ref().is_none_or(Vec::is_empty)
+        {
             self.line(depth, &format!("{base}{occ}"));
             return;
         }
         self.line(depth, &format!("{base}{occ} matches {{"));
-        for inc in &s.includes {
+        for inc in s.includes.iter().flatten() {
             self.line(depth + 1, "include");
             self.line(depth + 2, &assertion_str(inc));
         }
-        for exc in &s.excludes {
+        for exc in s.excludes.iter().flatten() {
             self.line(depth + 1, "exclude");
             self.line(depth + 2, &assertion_str(exc));
         }
@@ -335,6 +340,7 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
             let mut s = c
                 .constraint
                 .iter()
+                .flatten()
                 .map(|b| bool_str(*b))
                 .collect::<Vec<_>>()
                 .join(", ");
@@ -344,7 +350,7 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
             s
         }
         CPrimitiveObject::CString(c) => {
-            if let Some(regex) = regex_of(&c.constraint) {
+            if let Some(regex) = regex_of(c.constraint.as_deref().unwrap_or_default()) {
                 let mut s = regex.to_owned();
                 if let Some(a) = &c.assumed_value {
                     let _ = write!(s, "; {}", quoted(a));
@@ -354,6 +360,7 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
             let mut s = c
                 .constraint
                 .iter()
+                .flatten()
                 .map(|v| quoted(v))
                 .collect::<Vec<_>>()
                 .join(", ");
@@ -363,7 +370,7 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
             s
         }
         CPrimitiveObject::CInteger(c) => {
-            let mut s = int_list(&c.constraint);
+            let mut s = int_list(c.constraint.as_deref().unwrap_or_default());
             if let Some(a) = c.assumed_value {
                 // The integer assumed value is stored as a whole `f64`
                 // (`C_INTEGER.assumed_value`); `Display` renders it without a
@@ -373,7 +380,7 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
             s
         }
         CPrimitiveObject::CReal(c) => {
-            let mut s = real_list(&c.constraint);
+            let mut s = real_list(c.constraint.as_deref().unwrap_or_default());
             if let Some(a) = c.assumed_value {
                 let _ = write!(s, "; {}", real_str(a));
             }
@@ -381,22 +388,22 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
         }
         CPrimitiveObject::CDate(c) => temporal(
             c.pattern_constraint.as_deref(),
-            &c.constraint,
+            c.constraint.as_deref().unwrap_or_default(),
             c.assumed_value.as_ref().map(|v| v.value.as_str()),
         ),
         CPrimitiveObject::CTime(c) => temporal(
             c.pattern_constraint.as_deref(),
-            &c.constraint,
+            c.constraint.as_deref().unwrap_or_default(),
             c.assumed_value.as_ref().map(|v| v.value.as_str()),
         ),
         CPrimitiveObject::CDateTime(c) => temporal(
             c.pattern_constraint.as_deref(),
-            &c.constraint,
+            c.constraint.as_deref().unwrap_or_default(),
             c.assumed_value.as_ref().map(|v| v.value.as_str()),
         ),
         CPrimitiveObject::CDuration(c) => temporal(
             c.pattern_constraint.as_deref(),
-            &c.constraint,
+            c.constraint.as_deref().unwrap_or_default(),
             c.assumed_value.as_ref().map(|v| v.value.as_str()),
         ),
         CPrimitiveObject::CTerminologyCode(c) => terminology_code_inline(c),

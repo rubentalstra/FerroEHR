@@ -58,13 +58,13 @@ pub(super) fn feeder_audit(
     time_iso: &str,
 ) -> Value {
     let audit = FeederAudit {
-        originating_system_item_ids: vec![DvIdentifier {
+        originating_system_item_ids: Some(vec![DvIdentifier {
             issuer: Some("FHIR".to_owned()),
             assigner: None,
             id: resource_id.to_owned(),
             r#type: Some(resource_type.to_owned()),
-        }],
-        feeder_system_item_ids: Vec::new(),
+        }]),
+        feeder_system_item_ids: openehr_base::containers::present(Vec::new()),
         original_content: None,
         originating_system_audit: Box::new(FeederAuditDetails {
             system_id: ORIGINATING_SYSTEM.to_owned(),
@@ -74,7 +74,7 @@ pub(super) fn feeder_audit(
             time: Some(DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: Vec::new(),
+                other_reference_ranges: openehr_base::containers::present(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: time_iso.to_owned(),

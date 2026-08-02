@@ -17,9 +17,9 @@ pub struct PArchetypeSlot {
     /// The `is_deprecated` attribute of openEHR `P_C_OBJECT` (the vendored BMM carries no documentation for it).
     pub is_deprecated: Option<bool>,
     /// List of constraints defining other archetypes that could be included at this point.
-    pub includes: Vec<serde_json::Value>,
+    pub includes: Option<Vec<serde_json::Value>>,
     /// List of constraints defining other archetypes that cannot be included at this point.
-    pub excludes: Vec<serde_json::Value>,
+    pub excludes: Option<Vec<serde_json::Value>>,
     /// The `is_closed` attribute of openEHR `P_ARCHETYPE_SLOT` (the vendored BMM carries no documentation for it).
     pub is_closed: bool,
 }
