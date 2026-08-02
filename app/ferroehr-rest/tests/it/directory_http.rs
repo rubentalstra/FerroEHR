@@ -1204,3 +1204,84 @@ async fn by_version_read_rejects_fabricated_creating_system_id() {
         "a fabricated creating_system_id names no VERSION"
     );
 }
+
+// ── 22. FOLDER.details is an ITEM_STRUCTURE slot ─────────────────────────────
+
+/// A valid `FOLDER.details` — an `ITEM_TREE`, one of the four concrete
+/// `ITEM_STRUCTURE` subtypes (RM `data_structures` `master04`).
+fn item_tree_details() -> Value {
+    json!({
+        "_type": "ITEM_TREE",
+        "name": dv_text("details"),
+        "archetype_node_id": "at0001",
+        "items": [{
+            "_type": "ELEMENT",
+            "name": dv_text("note"),
+            "archetype_node_id": "at0002",
+            "value": dv_text("ward 4")
+        }]
+    })
+}
+
+/// The ACCEPTING twin: `FOLDER.details` (0..1) is typed `ITEM_STRUCTURE` —
+/// "Any individual Folder may contain meta-data in its `details` attribute
+/// (type `ITEM_STRUCTURE`)" (RM common `master05-directory_package.adoc`
+/// §Overview; `org.openehr.rm.common.folder.adoc`). A concrete `ITEM_TREE`
+/// commits and reads back verbatim, in JSON and in canonical XML.
+#[tokio::test]
+async fn details_item_structure_commits_and_reads_back() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let mut folder = folder_json("root", vec![]);
+    folder["details"] = item_tree_details();
+    let (status, _h, body) = create_directory(&app, &ehr, &folder, None).await;
+    assert_eq!(
+        status,
+        StatusCode::CREATED,
+        "ITEM_TREE details commit: {body}"
+    );
+
+    let (status, _h, body) = send(&app, get(format!("{BASE}/ehr/{ehr}/directory"), None)).await;
+    assert_eq!(status, StatusCode::OK, "JSON read: {body}");
+    let read: Value = serde_json::from_str(&body).expect("a JSON FOLDER body");
+    assert_eq!(
+        read["details"], folder["details"],
+        "FOLDER.details round-trips verbatim"
+    );
+
+    let (status, _h, body) = send(
+        &app,
+        get(
+            format!("{BASE}/ehr/{ehr}/directory"),
+            Some("application/xml"),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "XML read: {body}");
+    assert!(
+        body.contains("ward 4"),
+        "the canonical XML carries the details ITEM_TREE: {body}"
+    );
+}
+
+/// The REFUSING twin: a `DV_TEXT` is not an `ITEM_STRUCTURE`, so it may not
+/// occupy `FOLDER.details` — the commit is a 422 naming the slot (RM common
+/// `master05-directory_package.adoc` §Overview;
+/// `org.openehr.rm.common.folder.adoc` `details: ITEM_STRUCTURE [0..1]`).
+#[tokio::test]
+async fn details_not_item_structure_refused() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let mut folder = folder_json("root", vec![]);
+    folder["details"] = json!({ "_type": "DV_TEXT", "value": "x" });
+    let (status, _h, body) = create_directory(&app, &ehr, &folder, None).await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "a DV_TEXT in the ITEM_STRUCTURE slot is refused: {body}"
+    );
+    assert!(
+        body.contains("ITEM_STRUCTURE") && body.contains("details"),
+        "the 422 names the FOLDER.details slot and its declared type: {body}"
+    );
+}

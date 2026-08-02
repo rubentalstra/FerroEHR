@@ -813,6 +813,21 @@ fn aggregate_change_type(version_codes: &[String]) -> String {
 /// demographic contribution (`party_only`) may carry only party roots +
 /// `PARTY_RELATIONSHIP`, and an EHR contribution may carry neither.
 ///
+/// NOTE (register AMB-184 — why `FOLDER` is not a demographic kind):
+/// RM common `master05-directory_package.adoc` §Overview says a
+/// `VERSIONED_FOLDER` is "useful in the EHR, Demographics service or anywhere
+/// else where Folders are used". That sentence is aspirational prose, not a
+/// service definition, and neither released service surface admits a
+/// demographic folder: SM `UML/classes/i_demographic_service.adoc` declares
+/// exactly four functions — `create_party`, `create_party_relationship`,
+/// `i_party`, `i_party_relationship` — with no folder or directory operation
+/// and no folder-bearing type, and the ITS-REST demographic API defines no
+/// folder path at all (every `directory_*` operation is mounted EHR-scoped at
+/// `/ehr/{ehr_id}/directory` in `specifications/ehr.openapi.yaml`). So
+/// `FOLDER` stays EHR-only in both directions of this check: the released
+/// scoping is the reality, and admitting a demographic folder here would
+/// invent a resource no released surface can address.
+///
 /// # Errors
 /// [`ServiceError::Unprocessable`] (`422`) on a scope mismatch in either
 /// direction.

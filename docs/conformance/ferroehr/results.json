@@ -3472,6 +3472,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-details_not_item_structure",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-ehr_not_modifiable",
       "status": "passed",
       "rows_driven": 1,
@@ -3502,6 +3508,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-items_by_value",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-link_missing_meaning",
       "status": "passed",
       "rows_driven": 1,
@@ -3510,6 +3522,12 @@
     {
       "case": "I_EHR_DIRECTORY.create_directory-prefer_minimal",
       "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-with_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3583,6 +3601,12 @@
     },
     {
       "case": "I_EHR_DIRECTORY.get_directory-empty_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory-multiply_classified_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

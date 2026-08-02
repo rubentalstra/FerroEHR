@@ -76,6 +76,18 @@ workflow refuses a tag that has no matching section here.
   is refused (422) — placed on the interior ENTRY so the case also proves the
   rule is applied below the resource root.
 
+- **Conformance cases for `FOLDER.items` — the directory's reference slot.**
+  The catalogue exercised directory folders, names, links and `details`, but
+  never the attribute the whole abstraction rests on: a folder's `items` list
+  holds *references* to other objects, never the objects themselves, and the
+  same object may be referenced from more than one folder (that is what lets
+  one directory classify a composition as both an episode and a problem). A
+  directory whose two sibling folders both reference the same target — beside
+  a second, distinct target — is now committed and read back with **both**
+  references intact, so a server that collapsed the duplicate would fail; and
+  a folder that carries a composition *by value* in `items` instead of a
+  reference to it is refused with `422`, leaving the EHR without a directory.
+
 - **Conformance cases for the ATTESTATION wire family.** The catalogue now
   drives the `666|attestation|` CONTRIBUTION member end to end: attesting an
   existing COMPOSITION version is accepted, adds **no** new version, reports
@@ -129,6 +141,17 @@ workflow refuses a tag that has no matching section here.
   vendoring run.
 
 ### Fixed
+
+- **A path predicate carrying a parenthesised uniqueness modifier is now
+  refused instead of silently matching nothing.** The Reference Model's
+  directory chapter shows folder paths written with a name and a bracketed
+  uniqueness modifier (`/folders[hospital episodes(car accident Aug 1998)]`),
+  a form the formal openEHR path grammar this server implements does not
+  define. Such a predicate used to be accepted and bound whole as an
+  archetype node id, so the path quietly resolved to nothing; it is now a
+  loud unsupported-predicate error. Plain node-id and archetype-id
+  predicates (`[at0003]`, `[openEHR-EHR-COMPOSITION.x.v1]`) and bare name
+  tokens are unaffected.
 
 - **An OAuth2/OIDC committer's identifier now names the token issuer.** Every
   authenticated write stamps the committing principal into

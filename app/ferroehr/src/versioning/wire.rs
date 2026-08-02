@@ -10,8 +10,11 @@
 //! [`super::read`]; the residual SQL (first-version time, all-version metadata)
 //! is delegated to `crate::storage::version_repo`.
 
-use openehr_base::prelude::ObjectVersionId;
-use openehr_rm::prelude::{AuditDetails, RevisionHistory, RevisionHistoryItem};
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_rm::prelude::{
+    AuditDetails, RevisionHistory, RevisionHistoryItem, VersionedComposition, VersionedEhrAccess,
+    VersionedEhrStatus, VersionedFolder, VersionedObject, VersionedObjectData, VersionedParty,
+};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -148,6 +151,10 @@ fn stored_attestation(stored: &Value) -> Result<AuditDetails, ServiceError> {
 /// `time_created` (1..1) — the commit time of the object's first version
 /// (`VERSIONED_OBJECT.time_created`, RM common master06 §Versioned Objects).
 ///
+/// The body is constructed as the generated [`VersionedObject`] subtype and
+/// serialized through the native codec, so it carries `_type` first and the
+/// BMM's own attribute order rather than a hand-built literal's.
+///
 /// NOTE (EHR-Extract import, master06 §Copying): the earliest **held**
 /// version is used, not a hardcoded `sys_version = 1`. A latest-only clone
 /// (`import_ehr` over an `export_ehrs` extract) legitimately holds a partial
@@ -180,18 +187,56 @@ pub(crate) async fn versioned_object(
                     format!("versioned object {vo_id}"),
                 )
             })?;
-    let body = json!({
-        "_type": rm_type,
-        "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
-        "owner_id": {
-            "_type": "OBJECT_REF",
-            "namespace": "local",
-            "type": "EHR",
-            "id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() }
-        },
-        "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
+    let uid = HierObjectId {
+        value: vo_id.to_string(),
+    };
+    let owner_id = ObjectRef::ObjectRef(ObjectRefData {
+        namespace: "local".to_owned(),
+        r#type: "EHR".to_owned(),
+        id: ObjectId::HierObjectId(HierObjectId {
+            value: ehr_id.to_string(),
+        }),
     });
-    Ok((body, last_modified))
+    let time_created = crate::versioning::audit::dv_date_time(&time_created);
+    let container = match rm_type {
+        "VERSIONED_COMPOSITION" => VersionedObject::VersionedComposition(VersionedComposition {
+            uid,
+            owner_id,
+            time_created,
+        }),
+        "VERSIONED_EHR_STATUS" => VersionedObject::VersionedEhrStatus(VersionedEhrStatus {
+            uid,
+            owner_id,
+            time_created,
+        }),
+        "VERSIONED_EHR_ACCESS" => VersionedObject::VersionedEhrAccess(VersionedEhrAccess {
+            uid,
+            owner_id,
+            time_created,
+        }),
+        "VERSIONED_FOLDER" => VersionedObject::VersionedFolder(VersionedFolder {
+            uid,
+            owner_id,
+            time_created,
+        }),
+        "VERSIONED_PARTY" => VersionedObject::VersionedParty(VersionedParty {
+            uid,
+            owner_id,
+            time_created,
+        }),
+        // The generic container of RM common master06 §Versioned Objects, for a
+        // kind with no dedicated `VERSIONED_*` binding (the EHR-extract export's
+        // own fallback).
+        _ => VersionedObject::VersionedObject(VersionedObjectData {
+            uid,
+            owner_id,
+            time_created,
+        }),
+    };
+    Ok((
+        openehr_its::json::to_canonical_value(&container),
+        last_modified,
+    ))
 }
 
 /// An `ORIGINAL_VERSION` wrapping a loaded version, with read-time signature
