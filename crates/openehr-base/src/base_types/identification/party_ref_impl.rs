@@ -1,8 +1,11 @@
-//! Hand-written RM/BASE class invariants for `PARTY_REF`.
+//! Hand-written BASE class checks for `PARTY_REF`.
 //!
-//! Mirrors archie `PartyRef`:
-//! - `Type_validity`: `type` is one of the demographic/party types.
-//! - `Namespace_valid`: inherited from `OBJECT_REF`.
+//! - `Type_validity` — a RELEASED invariant, declared by BASE base_types
+//!   `UML/classes/org.openehr.base.base_types.party_ref.adoc` §Invariants:
+//!   `type` is one of the demographic/party types the assertion enumerates.
+//! - `Namespace_valid` — the `OBJECT_REF` namespace rule, inherited. BASE
+//!   declares the rule but no invariant name for it, so that label is this
+//!   workspace's own convention (see `object_ref_impl`).
 
 use super::object_ref_impl::namespace_valid;
 use super::party_ref::PartyRef;

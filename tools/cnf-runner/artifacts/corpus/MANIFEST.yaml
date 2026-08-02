@@ -777,9 +777,11 @@ cnf.directory.root_only.xml:
 cnf.directory.v2.xml:
   source: fixtures/directory/v2.xml
   format: canonical-xml
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "codec-derived 2026-07-28 from fixtures/directory/v2.json via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair); the JSON twin is the openEHR CNF Robot corpus payload re-adjudicated 2026-07-21 to spec-text-only evidence"
+  rm_versions: [">=1.1.0"]
+  validity:
+    verdict: valid
+    spec_ref: "RM common master05-directory_package.adoc §Overview (FOLDER.details, type ITEM_STRUCTURE) + registers/ambiguities.yaml AMB-185"
+  provenance: "codec-derived 2026-07-28 from fixtures/directory/v2.json via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair); the JSON twin is the openEHR CNF Robot corpus payload re-adjudicated 2026-07-21 to spec-text-only evidence. HONEST BOUNDARY (2026-08-02, AMB-185): the payload carries FOLDER.details, an RM 1.1.0 addition, so the document is a correct RM 1.2.0 FOLDER and a correct canonical-XML serialization of one — but it does NOT validate against the ITS-XML Release-1.0.2v2 (namespace .../v1) bundle, whose ALL/Structure.xsd FOLDER declares folders + items alone; the nsv2 RM/latest lineage declares details. rm_versions is therefore >=1.1.0, matching the earliest RM whose schemas model the attribute. Proven at the wire by crates/openehr-its/tests/it/xml_xsd_validity.rs (the directory.details vector)"
 cnf.directory.invalid.missing_name:
   source: fixtures/directory/missing_name.json
   format: canonical-json
@@ -849,6 +851,30 @@ cnf.directory.invalid.items_by_value:
     defect: "RM: a FOLDER whose items member is a COMPOSITION by value — FOLDER.items is typed List<OBJECT_REF>"
     spec_ref: "RM common UML/classes/org.openehr.rm.common.folder.adoc §Attributes (items: List<OBJECT_REF>, 0..1); RM common master05-directory_package.adoc §Overview; RM ehr master04-ehr_package.adoc §Folders (\"Folder structures do not contain Compositions, only references to them\")"
   provenance: "derived 2026-08-01 from cnf.directory.root_only by adding an `items` list whose single member is the corpus's own valid COMPOSITION cnf.composition.minimal_persistent.v1 embedded BY VALUE, leaving the payload well-formed JSON with exactly ONE defect — the member is a full RM-valid COMPOSITION, so the only thing wrong with it is that it sits in the reference slot instead of an OBJECT_REF to it; the accepting twin is cnf.directory.with_items"
+# The FOLDER.items ID-WIDTH pair. cnf.directory.with_items covers the ordinary
+# HIER_OBJECT_ID reference; these two cover the rest of the width the released
+# sources admit in that slot, so the accepted width is ASSERTED rather than
+# incidental. BASE base_types UML/classes/org.openehr.base.base_types.object_ref.adoc
+# §Attributes types `id` as `OBJECT_ID` (1..1) — the abstract root of the
+# six-member concrete family (HIER_OBJECT_ID, OBJECT_VERSION_ID, ARCHETYPE_ID,
+# TEMPLATE_ID, TERMINOLOGY_ID, GENERIC_ID; see each class table's *Inherit*
+# row) — and the ITS-JSON RM schema's OBJECT_REF.id enumerates exactly those
+# six `_type` values. The released OAS narrows the same slot to two
+# (Folder.yaml `items` -> UObjectRefOfUidBasedId -> UUidBasedId `oneOf`
+# {HIER_OBJECT_ID, OBJECT_VERSION_ID}); register AMB-186 carries that
+# narrowing and the wide-acceptance adjudication.
+cnf.directory.versioned_id_items:
+  source: fixtures/directory/versioned_id_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-08-02 from cnf.directory.root_only by adding an `items` list whose single member is a `local`/COMPOSITION OBJECT_REF carrying a THREE-PART OBJECT_VERSION_ID — the version-pinned reference form BASE base_types UML/classes/org.openehr.base.base_types.object_version_id.adoc §Description defines (lexical form `object_id '::' creating_system_id '::' version_tree_id`) and the released ITS-REST specifications/schemas/base_types/ObjectRef.yaml carries as its OWN example; the id value is that example's value verbatim (fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1, type COMPOSITION). As with cnf.directory.with_items the target need not exist: BASE object_ref.adoc §Description says the referenced object 'may exist locally or be maintained outside the current namespace'"
+cnf.directory.wide_id_items:
+  source: fixtures/directory/wide_id_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-08-02 from cnf.directory.root_only by adding an `items` list whose single member is an OBJECT_REF whose id is a GENERIC_ID — the widest member of the OBJECT_ID family, 'Generic identifier type for identifiers whose format is otherwise unknown to openEHR' with its mandatory 1..1 `scheme` (BASE base_types UML/classes/org.openehr.base.base_types.generic_id.adoc §Description + §Attributes). `type` is `ANY`, which BASE object_ref.adoc §Attributes states outright for this case: 'The type name ANY can be used to indicate that any type is accepted (e.g. if the type is unknown)'. This is the fixture that makes the accepted id width assertable beyond the two subtypes the released OAS enumerates (register AMB-186)"
 # Corpus additions for the CNF master17.3 (content, quantity data types)
 # schedule cases. Same entry schema as MANIFEST.yaml; the validate harness
 # concatenates this into MANIFEST.yaml at integration (never edit

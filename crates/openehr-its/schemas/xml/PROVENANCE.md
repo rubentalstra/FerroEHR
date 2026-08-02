@@ -6,7 +6,7 @@ validation inputs and the `emit-xml` codegen oracle; no code here.
 
 Source repo: https://github.com/openEHR/specifications-ITS-XML
 
-## Two lineages are vendored — they use DIFFERENT XML namespaces
+## Two lineages are vendored — they differ by NAMESPACE **and by RM generation**
 
 The ITS-XML repo's `Release-2.0.0` restructure changed the XML target namespace
 from `http://schemas.openehr.org/v1` to `http://schemas.openehr.org/v2`
@@ -21,6 +21,35 @@ vendored as the upstream `components/` tree, verbatim:
 
 Fetched: 2026-07-04. (The `openEHR/v1/Template` namespace in the OET/Template
 schemas is the separate template-document namespace, not the RM namespace.)
+
+**The two bundles are NOT the same schema in two namespaces.** The 2.0.0
+restructure also re-packaged the schemas per component and per RM release, and
+the flat `Release-1.0.2v2` bundle was never re-issued against a newer RM — so
+it is frozen at an RM generation older than the RM 1.2.0 model this repository
+generates from. Concretely, measured mechanically by the gate
+`crates/openehr-its/tests/it/xml_xsd_validity.rs`:
+
+- The nsv1 bundle publishes only `components/ALL/` (11 XSDs) + `components/AOM2/`
+  — no `Ehr.xsd`, no `Demographic.xsd`. **50 concrete RM 1.2.0 classes have no
+  `xs:complexType` there at all** (EHR, EHR_STATUS, CONTRIBUTION, the
+  `VERSIONED_*` containers, the demographic PARTY types, `DV_SCALE`,
+  `ITEM_TAG`, …).
+- Where nsv1 *does* declare the class it declares **23 fewer attributes across
+  17 classes** — `FOLDER.details`, `ELEMENT.null_reason`,
+  `CODE_PHRASE.preferred_term`, `DV_QUANTITY.units_system`/`units_display_name`,
+  `FEEDER_AUDIT_DETAILS.other_details` (nsv2 `RM/Release-1.1.0`);
+  `ISM_TRANSITION.reason` and the EHR-Extract members (nsv2
+  `RM/Release-1.0.3`); `ENTRY.workflow_id`, which every nsv2 RM release folder
+  declares and nsv1 never does.
+- The nsv2 lineage **cannot be compiled by a conformant XSD processor**: its
+  `archetypeNodeId` `pattern` facet uses Perl `(?:…)` groups, which XML Schema
+  Part 2 Appendix F (<https://www.w3.org/TR/xmlschema-2/#regexs>) does not
+  define.
+
+The full per-attribute adjudication is pinned in that gate and in
+`tools/cnf-runner/artifacts/registers/ambiguities.yaml` AMB-185. A served v1
+document may therefore carry RM 1.2.0 members the v1 XSD predates; the codec
+does not trim the RM model to fit an older schema packaging.
 
 ## Which namespace does the CDR serve? — v1 default, v2 negotiated
 
@@ -37,7 +66,8 @@ schemas is the separate template-document namespace, not the RM namespace.)
 ## Generation status — SETTLED (one codec, both namespaces)
 
 - RM *model* stays 1.2.0 internally (JSON serialization unaffected).
-- `emit-xml` generates ONE impl set serving **both** wire lineages — they
-  differ only by the root `xmlns`, selected at serialize time
-  (`crates/openehr-its/src/xml/runtime.rs`); this is NOT an AM-style dual
-  generation.
+- `emit-xml` generates ONE impl set serving **both** wire lineages — our two
+  SERIALIZED documents differ only by the root `xmlns`, selected at serialize
+  time (`crates/openehr-its/src/xml/runtime.rs`); this is NOT an AM-style dual
+  generation. (The one codec always writes the full RM 1.2.0 model; what the
+  two *schemas* accept differs, per the section above.)

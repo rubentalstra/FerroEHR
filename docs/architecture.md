@@ -149,12 +149,16 @@ per-component decision (dual generation via the `am14`/`am24` codegen
 pattern only if the ecosystem runs both; otherwise cutover). ITS-REST is
 single-version by owner ruling: the CDR implements the latest released REST
 API, nothing else. **ITS-XML is not a second generation either**: its 2.0.0
-restructure changed only the schemas' target namespace, so one generated
-codec serves both published lineages and the wire namespace is a
-serialize-time choice — v1 (the released-STABLE bundle) by default, v2 when
+restructure changed the schemas' target namespace while leaving every element
+name and `xsi:type` spelled identically, so one generated codec serves both
+published lineages and the wire namespace is a serialize-time choice — v1
+(the released-STABLE bundle) by default, v2 when
 a request selects it with the `version` media-type parameter on
 `application/xml` (our own extension; no openEHR spec governs namespace
-selection on the REST wire). Upstream spec changes and releases are detected
+selection on the REST wire). The two bundles are not interchangeable as
+VALIDATORS, though — the v1 one is frozen at an older RM generation, so a
+correct RM 1.2.0 document can fail against it (`docs/VERSIONS.md` §Spec
+version policy; register AMB-185). Upstream spec changes and releases are detected
 automatically by the scheduled watcher workflows and filed as `spec-update`
 issues for triage.
 

@@ -110,11 +110,15 @@ pub fn locatable_node_id_violation(ty: &str, value: &Value) -> Option<InvariantV
     out.pop()
 }
 
-/// Build an archie-style class-invariant violation:
-/// `"Invariant <name> failed on type <RM_TYPE>"` — the exact message the
-/// reference implementation's `RMObjectValidator` emits for every invariant
-/// failure. The path is left empty (the value itself); the composition
-/// validator prefixes the absolute RM path.
+/// Build a class-invariant violation in this workspace's uniform message
+/// shape: `"Invariant <name> failed on type <RM_TYPE>"`, where `<name>` is the
+/// invariant's own BMM name, so a failure is identifiable by that name alone.
+///
+/// NOTE: no openEHR spec governs the wording of a violation message — the
+/// shape is our own convention (it originated in openEHR's reference
+/// implementation, which is prior art only, never the ground). The path is
+/// left empty (the value itself); the composition validator prefixes the
+/// absolute RM path.
 #[must_use]
 pub(crate) fn invariant_failed(name: &str, rm_type: &str) -> InvariantViolation {
     InvariantViolation::here(format!("Invariant {name} failed on type {rm_type}"))

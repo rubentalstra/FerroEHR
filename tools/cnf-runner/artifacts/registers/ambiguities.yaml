@@ -285,9 +285,48 @@ AMB-24:
     The SM I_EHR_DIRECTORY.get_versioned_directory operation is not surfaced
     by ITS-REST 1.1.0 — there is no versioned_directory resource (unlike
     versioned_composition and versioned_ehr_status).
+    SCOPE (2026-08-02): the withheld surface is not one operation but the
+    WHOLE VERSIONED_FOLDER container. VERSIONED_FOLDER is "A version-controlled
+    hierarchy of `FOLDERs` giving the effect of a directory" and declares NO
+    members of its own — it inherits the entire VERSIONED_OBJECT<T> function
+    set. SM I_EHR_DIRECTORY realizes only the version-ADDRESSING half of that
+    set (`has_version_at_time` -> has_directory_version /
+    get_directory_at_time, `has_version_id`/`version_with_id` ->
+    has_directory_version / get_directory_at_version), and its container-level
+    operation is the one this entry opens with. EIGHT declared functions
+    therefore have neither an SM operation nor an ITS-REST route: the audit
+    surface `revision_history()`; the enumeration surface `version_count()`,
+    `all_version_ids()`, `all_versions()`; the head selectors
+    `latest_version()` and `latest_trunk_version()`; the version-kind
+    predicate `is_original_version()`; and `trunk_lifecycle_state()`, whose
+    logical-deletion answer reaches the wire only indirectly, as the read
+    outcome the deleted-head cases observe. The asymmetry is visible in the
+    release's own file set: the versioned COMPOSITION container has four
+    operations including an explicit `versioned_composition_revision_history`,
+    and the versioned EHR_STATUS container likewise, while the five released
+    directory operations are the unversioned ones plus two version-addressed
+    reads.
   source: >-
-    SM i_ehr_directory.adoc (get_versioned_directory — defines the operation) vs
-    released ITS-REST 1.1.0 (no versioned_directory resource — no wire)
+    SM UML/classes/i_ehr_directory.adoc §Functions — TEN operations, read
+    first-hand and enumerated: has_directory, has_path, create_directory,
+    get_directory, get_directory_at_time, update_directory, delete_directory,
+    has_directory_version, get_directory_at_version, get_versioned_directory;
+    none of them is revision_history, version_count, all_version_ids,
+    all_versions, latest_version, latest_trunk_version, is_original_version or
+    trunk_lifecycle_state. RM common
+    UML/classes/org.openehr.rm.common.versioned_folder.adoc (§Description +
+    §Inherit: VERSIONED_OBJECT, no own members) and
+    UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions (the
+    declared set, each 1..1) — the surface the container defines. Released
+    ITS-REST 1.1.0: no versioned_directory resource — the
+    specifications/operations/ directory carries directory_create,
+    directory_delete, directory_get_at_time, directory_get_by_version_id and
+    directory_update and nothing versioned, while the same directory carries
+    versioned_composition_get, versioned_composition_revision_history,
+    versioned_composition_version_get_by_id,
+    versioned_composition_version_get_at_time and the versioned_ehr_status
+    siblings — so the omission is specific to the directory container, not a
+    general absence of versioned-container routes.
   handling: >-
     The three official get_versioned_directory cases are in the catalogue,
     active and SM-anchored; the its-rest binding carries an explicit
@@ -1675,6 +1714,32 @@ AMB-65:
     should be copied to the COMPOSITION.uid attribute") + RM common
     locatable.adoc §Attributes (`uid`: UID_BASED_ID 0..1 — both forms legal) —
     released-vs-released contradiction CONFIRMED first-hand.
+    THE CONTRADICTION IS NOT EHR_STATUS-LOCAL: it is carried VERBATIM by FIVE
+    class tables, and every one of them contradicts ITSELF the same way. A
+    sweep of `object_id()` across RM docs/UML/classes returns exactly five
+    files — org.openehr.rm.common.folder.adoc,
+    org.openehr.rm.composition.composition.adoc,
+    org.openehr.rm.demographic.party.adoc, org.openehr.rm.ehr.ehr_status.adoc
+    and org.openehr.rm.ehr.ehr_access.adoc — each carrying the SAME NOTE in
+    its §Description: "It is strongly recommended that the inherited attribute
+    `_uid_` be populated in <the class>, using the UID copied from the
+    `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object",
+    immediately followed by a worked example that copies the value WHOLE: "the
+    `ORIGINAL_VERSION.uid` `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`
+    would be copied to the `_uid_` field of …". Each NOTE's own example
+    therefore lands on the ITS-REST result, not on the `object_id()` wording
+    the same sentence prescribes — so the master03 wording is the outlier
+    against five self-contradicting class tables, not one.
+    FOLDER-SPECIFIC CORROBORATION, both verified first-hand: the released
+    ITS-REST OAS `specifications/schemas/ehr/Folder.yaml` `example` gives the
+    resource a `uid` of `{_type: OBJECT_VERSION_ID, value:
+    8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1}` — an
+    illustration, cited AS the OAS and never read as a presence requirement,
+    but it illustrates the FULL form; and the ITS-JSON RM schema
+    (crates/openehr-its/schemas/json/openehr_rm_1.1.0_all.json,
+    `definitions.FOLDER.properties.uid`) admits both UID_BASED_ID subtypes,
+    enumerating `_type` OBJECT_VERSION_ID | HIER_OBJECT_ID — so the wire model
+    for a directory root leaves the choice open exactly as LOCATABLE does.
   handling: >-
     Fixed handling: on the wire the served top-level object carries the FULL
     three-part OBJECT_VERSION_ID, the ITS-REST form. Grounds, all from the same
@@ -6628,7 +6693,11 @@ AMB-167:
     LOCATABLE-derived, so not even the generic `items` root is available;
     absent entirely from the 1.0.2-nsv1 bundle); EHR_STATUS (LOCATABLE
     subtype, no element; absent from nsv1); FOLDER (LOCATABLE subtype, no
-    element; present in BOTH bundles); PERSON/ORGANISATION/GROUP/AGENT/ROLE
+    element; a complexType of that NAME is present in BOTH bundles, but it is
+    NOT the same type — nsv1 `ALL/Structure.xsd` declares `folders` + `items`
+    alone, while nsv2 `RM/latest/Common.xsd` also declares `details`, the
+    RM 1.1.0 addition; AMB-185 registers that delta and the rest of the
+    nsv1-vs-RM-1.2.0 sweep); PERSON/ORGANISATION/GROUP/AGENT/ROLE
     and PARTY_RELATIONSHIP (LOCATABLE subtypes, no element; absent from
     nsv1); CONTRIBUTION (complexType, NOT LOCATABLE-derived; absent from
     nsv1); REVISION_HISTORY (complexType, no element — no binding declares
@@ -6685,7 +6754,11 @@ AMB-167:
     with mandatory `total_version_count` + `extract_version_count` and
     ORIGINAL_VERSION-restricted `versions`), NOT the RM `VERSIONED_OBJECT`
     complexType, which has no element of its own; no XSD in either bundle
-    mentions ITEM_TAG.
+    mentions ITEM_TAG. CORRECTED 2026-08-02: this entry's per-resource
+    classification asked only WHETHER a complexType exists in each bundle, and
+    for FOLDER that answer ("present in BOTH") concealed that the two
+    complexTypes DIFFER — a same-name-different-type case the sweep in AMB-185
+    generalises to 23 attribute divergences and 50 wholly-absent classes.
     (3) THE RELEASED OAS, citable only where the docs text is silent (owner
     ruling 2026-07-28) and cited AS the OAS — the per-operation declaration
     of the media type:
@@ -6848,10 +6921,21 @@ AMB-169:
     payload format"; "The client SHOULD use the `Accept: application/xml`
     request header to specify the expected XML response format") + §"Data
     representation" ("Services MUST support at least one of the openEHR **XML**
-    or **JSON** canonical formats") — neither section names a namespace, a
-    schema release, or any media-type parameter, and a grep of
-    specifications/docs/** for `schemas.openehr.org`, `namespace` or a
-    media-type-parameter clause returns ZERO hits. The two lineages and their
+    or **JSON** canonical formats") — neither section names a NAMESPACE and
+    neither names any media-type parameter; a grep of specifications/docs/**
+    for `schemas.openehr.org` or a media-type-parameter clause returns ZERO
+    hits. CORRECTED 2026-08-02 — the earlier wording also claimed neither
+    section names "a schema release", and that is wrong on its face: the
+    §"XML Format" phrase "[published XSDs]" is a MARKDOWN LINK whose target is
+    `https://specifications.openehr.org/releases/ITS-XML/latest`, i.e. the
+    release IS named, as `latest`. That resolves to the newest published
+    ITS-XML release — presently the 2.0.0 lineage, whose namespace is
+    `http://schemas.openehr.org/v2` — while the same repository's README
+    directs stable consumers to `Release-1.0.2` and marks 2.0.0 TRIAL. So the
+    released text does not merely omit the lineage: its own link points one
+    way while the schema repository's own release guidance points the other,
+    which is why the SERVED-lineage choice remains implementation-defined
+    rather than simply undocumented. The two lineages and their
     status come from the ITS-XML component itself (README.adoc §"Releases and
     IM Versions": "NOTE: These schemas are in *TRIAL* state and subject to
     change. An older *STABLE* release of openEHR XML schema can be still found
@@ -7613,3 +7697,235 @@ AMB-184:
     flips only if a released SM interface or ITS-REST path introduces a
     demographic directory resource.
   disposition: fixed_handling
+
+AMB-185:
+  ambiguity: >-
+    THE §XML FORMAT `MUST CONFORM` CANNOT BE SATISFIED AGAINST BOTH PUBLISHED
+    LINEAGES AT ONCE, BECAUSE THE TWO PUBLISHED XSD BUNDLES MODEL DIFFERENT RM
+    GENERATIONS. ITS-REST states one unconditional obligation for canonical
+    XML — request payloads and responses "MUST conform to the [published
+    XSDs]" — and treats the published XSDs as a single set. They are not one
+    set. openEHR publishes TWO ITS-XML bundles: the `Release-1.0.2v2` bundle
+    (namespace `http://schemas.openehr.org/v1`, which the schema repository's
+    README still presents as the STABLE release) and the `Release-2.0.0v2`
+    bundle (namespace `…/v2`, marked TRIAL there). The 2.0.0 release did not
+    only change the namespace: it RESTRUCTURED the repository into per-
+    component, per-RM-release folders, and the older flat bundle was never
+    re-issued against a newer RM. The v1 bundle is therefore frozen at an RM
+    generation that predates a large part of RM 1.2.0, while a conformant RM
+    1.2.0 serializer must write the RM 1.2.0 model. A document that is a
+    correct RM 1.2.0 instance can consequently be INVALID against the v1
+    schemas and VALID against the v2 ones — the obligation's two halves
+    disagree, and no serialization choice satisfies both. Separately, the v2
+    lineage cannot be compiled by a conformant XSD processor at all (see
+    source (2c)), so for the newer half the obligation currently has no
+    machine-checkable referent either.
+  source: >-
+    ALL SOURCES READ FIRST-HAND, in the oracle order.
+    (1) DOCS TEXT — ITS-REST specifications/docs/overview/Resources.md §"XML
+    Format", first sentence: "When resources are serialized in **canonical
+    XML** format, both request payloads and responses MUST conform to the
+    [published XSDs]", the bracketed phrase linking to
+    `https://specifications.openehr.org/releases/ITS-XML/latest`. §"Data
+    representation" makes OFFERING XML a service choice ("Services MUST
+    support at least one of the openEHR **XML** or **JSON** canonical
+    formats"), but says nothing about which bundle a served document is judged
+    against. AMB-169 registers the served-lineage choice itself; this entry is
+    about the CONTENT delta between the bundles, which AMB-169 explicitly did
+    not cover (its premise was that the lineages differ by namespace alone).
+    (2) THE PUBLISHED XSDs, both vendored bundles, swept mechanically against
+    the generated RM 1.2.0 model by the gate
+    `crates/openehr-its/tests/it/xml_xsd_validity.rs` (the sweep re-derives
+    itself on every run; the numbers below are its pinned output).
+    (2a) THE nsv1 BUNDLE IS INCOMPLETE FOR RM 1.2.0 — 50 concrete RM classes
+    have NO complexType in it at all. Upstream's `Release-1.0.2v2` tag
+    publishes exactly `components/ALL/` (11 XSDs) + `components/AOM2/`
+    (verified against the upstream tag tree), so the bundle carries no
+    `Ehr.xsd` and no `Demographic.xsd`: EHR, EHR_STATUS, EHR_ACCESS,
+    CONTRIBUTION, every VERSIONED_* container, the five demographic PARTY
+    types and PARTY_RELATIONSHIP, plus later additions such as DV_SCALE and
+    ITEM_TAG, simply have no v1 schema. (AMB-167 classifies the REST
+    consequence — media type declared, document withheld.)
+    (2b) WHERE nsv1 DOES DECLARE THE CLASS, IT DECLARES FEWER MEMBERS — 23
+    attribute divergences over 17 classes, each traceable to the nsv2 RM
+    release folder that DOES declare it. `ISM_TRANSITION.reason`,
+    `EXTRACT_CHAPTER.items`, the four `EXTRACT_ENTITY_MANIFEST` members,
+    `EXTRACT_SPEC.priority` and `EXTRACT_UPDATE_SPEC.update_method` arrive in
+    nsv2 `RM/Release-1.0.3`; `FOLDER.details`, `ELEMENT.null_reason`,
+    `CODE_PHRASE.preferred_term`, `DV_QUANTITY.units_system` +
+    `units_display_name` and `FEEDER_AUDIT_DETAILS.other_details` arrive in
+    nsv2 `RM/Release-1.1.0`; `ENTRY.workflow_id` (inherited by ACTION,
+    ADMIN_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION) is declared by EVERY
+    nsv2 RM release folder including `Release-1.0.2` and is absent from the
+    nsv1 flat bundle entirely — so nsv1 is not even an RM-1.0.2-complete
+    packaging. `FOLDER.details` is the wire-visible instance the CDR actually
+    serves: RM common `master05-directory_package.adoc` §Overview — "Any
+    individual Folder may contain meta-data in its `details` attribute (type
+    `ITEM_STRUCTURE`)".
+    (2c) THE nsv2 LINEAGE DOES NOT COMPILE. `BASE/latest/BaseTypes.xsd`
+    (`xs:simpleType archetypeNodeId`) carries a Perl-flavoured `pattern` facet
+    built from `(?:…)` non-capturing groups, with an upstream comment linking
+    to regex101. XML Schema Part 2 Appendix F
+    (<https://www.w3.org/TR/xmlschema-2/#regexs>) defines the pattern-facet
+    language, and its `atom` production admits only a character, a character
+    class, or a parenthesised `regExp` — there is no `(?…)` construct, so the
+    facet is not a valid XSD regular expression and libxml2 refuses the
+    schema. The same defective facet appears in `BASE/Release-1.1.0`,
+    `BASE/Release-1.2.0` and the nsv2 `RM/Release-1.0.2` + `RM/Release-1.0.3`
+    local `BaseTypes.xsd`, and every nsv2 RM release folder includes one of
+    them, so the whole lineage is affected. The nsv1 bundle's own
+    `archetypeNodeId` facet is plain XSD regex and compiles.
+    (2d) TWO DIVERGENCES SURVIVE AGAINST nsv2 `latest` AND ARE THE XSDs'
+    DEFECT, NOT AN AGE EFFECT: `EHR.tags`, which RM
+    `UML/classes/org.openehr.rm.ehr.ehr.adoc` declares ("Optional list of tags
+    associated with this EHR") and `RM/latest/Ehr.xsd` does not; and a
+    spelling conflict on the EHR-Extract flags, where both lineages spell them
+    `includes_multimedia` / `includes_revision_history` / `includes_data`
+    while RM `ehr_extract/master04-common_package.adoc` and
+    `UML/classes/org.openehr.rm.ehr_extract.extract_{spec,version_spec}.adoc`
+    spell them `include_multimedia` / `include_revision_history` /
+    `include_data`.
+    (3) OURS, RECORDED HONESTLY — two further divergences the same sweep finds
+    are defects on OUR side, not upstream's, and are registered here so the
+    pinned list stays complete: `TRANSLATION_DETAILS.accreditaton` and
+    `RESOURCE_DESCRIPTION_ITEM.copyright`. Both come from the RM BMM's stale
+    in-component copy of the resource package. BASE
+    `resource/master00-amendment_record.adoc` records SPECPUB-6, "Correct
+    spelling error in `TRANSLATION_DETAILS._accreditation_`", and BASE
+    `UML/classes/org.openehr.base.resource.resource_description.adoc` places
+    `copyright` on RESOURCE_DESCRIPTION; `openehr-base` (generated from the
+    BASE 1.3.0 BMM) is correct on both counts, while
+    `openehr_rm::common::resource` reproduces the pre-correction shapes. These
+    classes are AUTHORED_RESOURCE metadata and are not part of any RM document
+    the CDR serves on the ITS-REST wire.
+  handling: >-
+    Fixed handling — the served wire is UNCHANGED, and the boundary is
+    recorded instead of papered over.
+    (a) THE SERVED DEFAULT STAYS v1. Nothing released assigns a lineage
+    (AMB-169), the schema repository still presents `Release-1.0.2` as the
+    STABLE release and marks 2.0.0 TRIAL, and the CDR keeps serving v1 by
+    default with v2 available through the `version` media-type parameter. A
+    party that would rather be judged against the newer schemas already has
+    that switch. Re-opening the default is an owner decision, not a
+    consequence of this entry.
+    (b) THE CODEC KEEPS WRITING THE FULL RM 1.2.0 MODEL. Suppressing
+    `FOLDER.details` (or any other member) to make a v1 document validate
+    would silently DROP CLINICAL CONTENT the RM mandates and the canonical
+    JSON carries — a data-loss defect far worse than a schema-age divergence,
+    and a fork of the spec model at the serializer. The RM is the authority
+    for WHAT is written; the XSD bundle is a validation artifact of a given
+    release, not a content filter.
+    (c) THE DIVERGENCE SET IS PINNED, NOT ASSUMED. `xml_xsd_validity.rs`
+    re-derives the absent-class set and the attribute delta from the generated
+    RM model against the vendored XSD text on every run and fails if either
+    changes, and it drives real serialized documents through `xmllint
+    --schema` so each pinned divergence is proven at the wire rather than
+    asserted. A NEW divergence — from an RM pin bump, an emitter change or a
+    re-vendored bundle — fails the build and must be adjudicated here before
+    the list may grow.
+    (d) THE nsv2 HALF IS PINNED AS UNCOMPILABLE. The gate asserts the compile
+    failure and its cause, so the day upstream fixes the facet (or the bundle
+    is re-vendored) the test fails and the nsv2 expectations are promoted from
+    "uncompilable" to real per-document validation.
+    (e) FIXTURE VERDICTS. `cnf.directory.v2.xml` stays `verdict: valid` — it
+    is a correct RM 1.2.0 FOLDER and a correct canonical-XML serialization of
+    one; its manifest entry cites this register entry so the v1-XSD
+    divergence it carries is visible where the verdict is, not buried.
+    (f) TWO UPSTREAM DEFECTS ARE WORTH REPORTING and are named above rather
+    than absorbed: the invalid `archetypeNodeId` pattern facet (2c) and the
+    XSD-vs-RM-text `include*` spelling conflict plus the missing `EHR.tags`
+    (2d). They do not change our behaviour, which is why this entry is
+    `fixed_handling` rather than `report_only`.
+    (g) OUR OWN TWO (3) ARE DEFECTS TO FIX IN THE GENERATOR'S INPUTS, not
+    workarounds to add in a consumer: the RM BMM's stale copy of the resource
+    package is the wrong source for classes BASE now owns. Until that is
+    resolved they are pinned here so the sweep stays green honestly instead of
+    being filtered out.
+  disposition: fixed_handling
+AMB-186:
+  ambiguity: >-
+    THE RELEASED COMMIT SCHEMA NARROWS `FOLDER.items` REFERENCE IDS TO TWO OF
+    THE SIX SUBTYPES THE MODEL ADMITS THERE. The RM types the slot at its
+    abstract root: `FOLDER.items` is `List<OBJECT_REF>` (0..1) and
+    `OBJECT_REF.id` is `OBJECT_ID` (1..1) — whose concrete family has SIX
+    members, each naming `OBJECT_ID` (directly, or through `UID_BASED_ID`) in
+    its own class table's *Inherit* row: HIER_OBJECT_ID, OBJECT_VERSION_ID,
+    ARCHETYPE_ID, TEMPLATE_ID, TERMINOLOGY_ID, GENERIC_ID. The ITS-JSON RM
+    schema types the same slot the same way, enumerating exactly those six
+    `_type` values under `OBJECT_REF.id`. The released OAS admits two: the
+    `items` array of `Folder.yaml` `$ref`s `UObjectRefOfUidBasedId.yaml`,
+    which overrides `id` with `UUidBasedId.yaml` — a `oneOf` of
+    `UMHierObjectId` and `UMObjectVersionId` with a `_type` discriminator
+    mapping naming only those two. So a folder reference to anything
+    identified outside the UID lineage — a terminology-, archetype-,
+    template- or foreign-scheme-identified target, the last of which
+    GENERIC_ID exists for ("identifiers whose format is otherwise unknown to
+    openEHR") — is a representable RM instance with no released commit shape.
+    Nothing released PROHIBITS the wide form: the narrowing is an absence in
+    one schema file, not a stated constraint, and the OAS's own generic
+    `ObjectRef.yaml` keeps `id` at `UObjectId` while its `example` pins a
+    version-addressed COMPOSITION ref.
+  source: >-
+    ALL SOURCES READ FIRST-HAND, in the oracle order.
+    (1) DOCS TEXT — ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §"openehr-version and openehr-audit-details" names FOLDER in the sentence
+    that assigns the commit semantics to the RM: "for all change-controlled
+    resources (e.g. COMPOSITION, EHR_STATUS, FOLDER, etc.) the services are
+    [performing versioning] under the hood. The 'native' way of committing is
+    to use a [CONTRIBUTION] and wrap the content as a [VERSION]", both links
+    pointing at the RM common change-control package, and the following
+    sentences make the direct `PUT`/`POST`/`DELETE` methods a convenience over
+    it: "services MUST also allow `PUT`, `POST` and `DELETE` methods directly
+    on these change-controlled resources. However, these operations MUST
+    internally be executed using the 'native' way." The docs text states
+    nothing about which OBJECT_ID subtype a folder reference may carry.
+    (2) THE MODEL — RM common
+    UML/classes/org.openehr.rm.common.folder.adoc §Attributes (`items`:
+    `List<OBJECT_REF>` 0..1, "The list of references to other (usually)
+    versioned objects logically in this folder"); BASE base_types
+    UML/classes/org.openehr.base.base_types.object_ref.adoc §Attributes
+    (`namespace`/`type`/`id` each 1..1; `id`: `OBJECT_ID`, "Globally unique id
+    of an object, regardless of where it is stored"; and the `type` row's own
+    "The type name `ANY` can be used to indicate that any type is accepted");
+    the six concrete OBJECT_ID subtypes' class tables
+    (…base_types.{hier_object_id,object_version_id,archetype_id,template_id,
+    terminology_id,generic_id}.adoc §Inherit); ITS-JSON
+    crates/openehr-its/schemas/json/openehr_rm_1.1.0_all.json,
+    `definitions.OBJECT_REF.properties.id` — the same six `_type` values.
+    (3) THE RELEASED OAS, cited AS THE OAS — ITS-REST
+    specifications/schemas/ehr/Folder.yaml (`items.items` `$ref`
+    ../base_types/UObjectRefOfUidBasedId.yaml),
+    specifications/schemas/base_types/UObjectRefOfUidBasedId.yaml (overrides
+    `id` with ../base_types/UUidBasedId.yaml),
+    specifications/schemas/base_types/UUidBasedId.yaml (`oneOf`
+    UMHierObjectId | UMObjectVersionId, discriminator mapping HIER_OBJECT_ID /
+    OBJECT_VERSION_ID) and specifications/schemas/base_types/ObjectRef.yaml
+    (`id`: ../base_types/UObjectId.yaml; `example` `{id: {_type:
+    OBJECT_VERSION_ID, value: 'fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1'},
+    namespace: local, type: COMPOSITION}`). Read as an offer, never as a
+    presence requirement.
+  handling: >-
+    Fixed handling: this server follows the RM, exactly as it does for the
+    commit audit the same released schema set cannot express (AMB-179). A
+    `FOLDER.items` member is accepted with `id` of ANY of the six concrete
+    OBJECT_ID subtypes, decoded typed, stored and served verbatim in the
+    canonical fragment — including the three-part OBJECT_VERSION_ID form (the
+    version-pinned reference, which the OAS admits and its own `ObjectRef`
+    example uses) and the foreign-scheme GENERIC_ID form (which it does not).
+    The refusals that stand on this slot are the ones the RM states: a member
+    that is not an OBJECT_REF at all — content by value — is refused 422
+    (cnf.directory.invalid.items_by_value), as is a member missing any of the
+    three 1..1 attributes. Truncating a version-pinned reference to its
+    leading object_id, or coercing a foreign identifier into a UID-shaped one,
+    would DELETE clinical addressing the RM mandates and the canonical JSON
+    carries — the same data-loss reasoning as AMB-185(b): the RM is the
+    authority for WHAT may be written; a narrower schema file is a validation
+    artifact of one release, not a content filter. The wide acceptance is
+    ASSERTED, not incidental: create_directory-versioned_id_items pins the
+    three-part form through a create + read-equivalence round trip, and
+    create_directory-wide_id_items pins the GENERIC_ID form the OAS reading
+    would refuse. The outbound ask — widen `Folder.yaml`'s `items` id to the
+    OBJECT_ID family the RM and the ITS-JSON schema both state, as
+    `ObjectRef.yaml` already does — is reported upstream (#1667).
+  disposition: fixed_handling
+  upstream_issue: 1667

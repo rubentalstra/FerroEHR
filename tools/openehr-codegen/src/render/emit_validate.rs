@@ -4,8 +4,9 @@
 //! call for every mechanically-shaped RM class invariant.
 //!
 //! The cores' bodies are fixed spec logic (one `pub(crate) fn <name>_core` per
-//! invariant group, each preserving the archie-style violation message verbatim
-//! — see [`CORES`]); what the emitter derives from the vendored inputs is (a)
+//! invariant group, each emitting the workspace's uniform violation message
+//! shape verbatim — see [`CORES`]); what the emitter derives from the vendored
+//! inputs is (a)
 //! the `PROPORTION_KIND` codes, read from the RM BMM enumeration, (b) the
 //! **emittable-invariant realization register** — every invariant the
 //! assertion-dialect classifier ([`crate::analyze::invariants`]) marks
@@ -230,8 +231,13 @@ fn pending_register(own_schema: &BmmSchema) -> String {
 const MODULE_DOC_INTRO: &str = "\
 //! RM class-invariant cores — the single source both the typed `Validate` impls
 //! (`*_impl.rs`) and the allocation-free fast path (`validate::fast`) call. Each
-//! core preserves the archie-style violation message (`Invariant <Name> failed
-//! on type <RM_TYPE>`) so a failure is identifiable by its BMM invariant name.
+//! core emits this workspace's uniform violation message (`Invariant <Name>
+//! failed on type <RM_TYPE>`) so a failure is identifiable by its BMM invariant
+//! name.
+//!
+//! NOTE: no openEHR spec governs the wording of a violation message — that
+//! message shape is our own convention (it originated in openEHR's reference
+//! implementation, which is prior art only, never the ground).
 //!
 //! # Emitted cores
 //!
