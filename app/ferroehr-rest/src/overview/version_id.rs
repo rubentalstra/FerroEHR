@@ -72,7 +72,7 @@ pub(crate) fn parse_version_uid(raw: &str) -> Result<ObjectVersionId, ApiError> 
 pub(crate) fn object_id_uuid(ovid: &ObjectVersionId) -> Option<Uuid> {
     use openehr_base::prelude::Uid;
     match ovid.object_id() {
-        Uid::Uuid(u) => Some(u.value),
+        Uid::Uuid(u) => Some(*u.value()),
         _ => None,
     }
 }
@@ -141,8 +141,8 @@ mod tests {
         // must parse to the same OBJECT_VERSION_ID.
         let weak = require_if_match(&format!("W/\"{UID}\"")).expect("weak");
         let bare = require_if_match(&format!("\"{UID}\"")).expect("bare");
-        assert_eq!(weak.value, UID);
-        assert_eq!(bare.value, UID);
+        assert_eq!(weak.value(), UID);
+        assert_eq!(bare.value(), UID);
     }
 
     #[test]

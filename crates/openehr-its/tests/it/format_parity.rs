@@ -79,7 +79,7 @@ fn corpus_verdicts_agree_across_canonical_formats() {
                  the JSON route: {}",
                 path.display()
             );
-            inexpressible.push(path.display().to_string());
+            inexpressible.push(crate::common::corpus_rel(&path));
             continue;
         };
         assert_eq!(
@@ -91,13 +91,45 @@ fn corpus_verdicts_agree_across_canonical_formats() {
         checked += 1;
     }
     assert!(checked > 20, "expected a real corpus, checked {checked}");
-    // The known structurally-defective vendor entries only — growth here means
-    // a decode regression, shrinkage means a fixture started decoding and the
-    // list needs re-adjudication.
+    // The adjudicated typed-undecodable set, named EXACTLY rather than counted:
+    // growth means a decode regression, shrinkage means a fixture started
+    // decoding and needs re-adjudication. Every entry is refused on BOTH
+    // routes (asserted above), which is what parity means here.
+    //
+    // The `feeder_audit` / placeholder-`OBJECT_VERSION_ID` / FHIR-reference /
+    // bare-UUID-`OBJECT_VERSION_ID` entries are the defective vendored halves
+    // of the fixture twins (`common::excluded` carries the per-file
+    // adjudication with its spec citation; the corrected halves live in
+    // `tests/fixtures/twins/` and decode on both routes).
+    let mut inexpressible = inexpressible;
+    inexpressible.sort();
+    let expected: Vec<String> = [
+        "openehr_sdk/composition/canonical_json/all_types_systematic_tests_feeder_audit.json",
+        "openehr_sdk/composition/canonical_json/alternative_types.json",
+        "openehr_sdk/composition/canonical_json/composition_with_dvinterval_composite.json",
+        "openehr_sdk/composition/canonical_json/duration_tests.json",
+        "openehr_sdk/composition/canonical_json/invalid.json",
+        "openehr_sdk/composition/canonical_json/laboratory_report.json",
+        "openehr_sdk/composition/canonical_json/laboratory_report_no_content.json",
+        "openehr_sdk/composition/canonical_json/minimal_admin.json",
+        "openehr_sdk/composition/canonical_json/minimal_evaluation_item_tree_name.json",
+        "openehr_sdk/composition/canonical_json/minimal_observation.json",
+        "openehr_sdk/composition/canonical_json/minimal_persistent.json",
+        "openehr_sdk/composition/canonical_json/nested.json",
+        "openehr_sdk/composition/canonical_json/obs_admin.json",
+        "openehr_sdk/composition/canonical_json/obs_admin_null_flavour.json",
+        "openehr_sdk/composition/canonical_json/obs_eva.json",
+        "openehr_sdk/composition/canonical_json/obs_inst.json",
+        "openehr_sdk/composition/canonical_json/rawdb_composition.json",
+        "openehr_sdk/composition/canonical_json/simple_composition_dvinterval.json",
+        "openehr_sdk/composition/canonical_json/time_series.json",
+    ]
+    .iter()
+    .map(|s| (*s).to_owned())
+    .collect();
     assert_eq!(
-        inexpressible.len(),
-        3,
-        "unexpected typed-undecodable corpus set: {inexpressible:?}"
+        inexpressible, expected,
+        "the typed-undecodable corpus set changed"
     );
 }
 

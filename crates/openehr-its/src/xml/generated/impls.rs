@@ -480,7 +480,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::HierObjectId {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.value.write_xml(w, "value", Some("String"))?;
+        self.value().write_xml(w, "value", Some("String"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -509,10 +509,10 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::HierObjectId {
                 }
             }
         }
-        Ok(openehr_base::prelude::HierObjectId {
-            value: __value.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element value".into())
-            })?,
+        let __a0: String = __value
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element value".into()))?;
+        openehr_base::prelude::HierObjectId::new(__a0).map_err(|__e| {
+            crate::xml::runtime::XmlError::Parse(::std::format!("HIER_OBJECT_ID: {__e}").into())
         })
     }
 }
@@ -538,7 +538,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::InternetId {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.value.write_xml(w, "value", Some("String"))?;
+        self.value().write_xml(w, "value", Some("String"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -567,10 +567,10 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::InternetId {
                 }
             }
         }
-        Ok(openehr_base::prelude::InternetId {
-            value: __value.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element value".into())
-            })?,
+        let __a0: String = __value
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element value".into()))?;
+        openehr_base::prelude::InternetId::new(__a0).map_err(|__e| {
+            crate::xml::runtime::XmlError::Parse(::std::format!("INTERNET_ID: {__e}").into())
         })
     }
 }
@@ -596,7 +596,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::IsoOid {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.value.write_xml(w, "value", Some("String"))?;
+        self.value().write_xml(w, "value", Some("String"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -625,10 +625,10 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::IsoOid {
                 }
             }
         }
-        Ok(openehr_base::prelude::IsoOid {
-            value: __value.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element value".into())
-            })?,
+        let __a0: String = __value
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element value".into()))?;
+        openehr_base::prelude::IsoOid::new(__a0).map_err(|__e| {
+            crate::xml::runtime::XmlError::Parse(::std::format!("ISO_OID: {__e}").into())
         })
     }
 }
@@ -1416,7 +1416,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ObjectVersionId {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.value.write_xml(w, "value", Some("String"))?;
+        self.value().write_xml(w, "value", Some("String"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -1445,10 +1445,10 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ObjectVersionId {
                 }
             }
         }
-        Ok(openehr_base::prelude::ObjectVersionId {
-            value: __value.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element value".into())
-            })?,
+        let __a0: String = __value
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element value".into()))?;
+        openehr_base::prelude::ObjectVersionId::new(__a0).map_err(|__e| {
+            crate::xml::runtime::XmlError::Parse(::std::format!("OBJECT_VERSION_ID: {__e}").into())
         })
     }
 }
@@ -2688,7 +2688,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::Uuid {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.value.write_xml(w, "value", Some("String"))?;
+        self.value().write_xml(w, "value", Some("String"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -2717,11 +2717,9 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::Uuid {
                 }
             }
         }
-        Ok(openehr_base::prelude::Uuid {
-            value: __value.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element value".into())
-            })?,
-        })
+        let __a0: uuid::Uuid = __value
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element value".into()))?;
+        Ok(openehr_base::prelude::Uuid::new(__a0))
     }
 }
 
@@ -2788,7 +2786,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::VersionTreeId {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.value.write_xml(w, "value", Some("String"))?;
+        self.value().write_xml(w, "value", Some("String"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -2817,10 +2815,10 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::VersionTreeId {
                 }
             }
         }
-        Ok(openehr_base::prelude::VersionTreeId {
-            value: __value.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element value".into())
-            })?,
+        let __a0: String = __value
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element value".into()))?;
+        openehr_base::prelude::VersionTreeId::new(__a0).map_err(|__e| {
+            crate::xml::runtime::XmlError::Parse(::std::format!("VERSION_TREE_ID: {__e}").into())
         })
     }
 }

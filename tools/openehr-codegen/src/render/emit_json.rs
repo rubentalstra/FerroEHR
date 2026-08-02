@@ -11,9 +11,10 @@
 //! the parity gate in `openehr-its/tests/json_codec_parity.rs` proves the
 //! equivalence in both directions.
 //!
-//! The read side reproduces the retired derive's tolerance rules verbatim:
-//! unknown wire keys ignored (a deliberate superset of the ITS-JSON schema's
-//! `additionalProperties: false` — RM-version skew), out-of-order members,
+//! The read side is STRICT over the generated RM model at our pin: an undeclared
+//! wire key is a refusal naming the path and the offending key (see
+//! `emit_struct_from_json` for the released grounding). It keeps the derive's
+//! remaining tolerance rules verbatim: out-of-order members,
 //! present-but-wrong `_type` = error, absent `_type` accepted on a concrete slot,
 //! `Option`/`Vec` defaulting, the `Interval` `*_included`/`*_unbounded` literal
 //! defaults, and `_type`-keyed polymorphic-slot dispatch (abstract slots reject a
@@ -21,6 +22,7 @@
 
 use crate::analyze::Model;
 use crate::load::bmm::BmmSchema;
+use crate::plan::construction;
 use crate::plan::{JsonEnumDispatch, JsonField, JsonFieldKind, JsonType};
 use std::fmt::Write as _;
 
@@ -138,6 +140,12 @@ const GENERIC_FILL: &str = "::serde_json::Value";
 /// the emitted header, never dropped silently.
 pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
     let mut arms: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    // `spec class -> its sorted declared wire keys`, the SAME closure the
+    // reader's `deny_unknown_fields` call is emitted from — so the
+    // validation dispatcher can answer "is this key declared?" without a
+    // decode, and can never disagree with the reader.
+    let mut declared: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
     let mut shadowed: Vec<(String, String, String)> = Vec::new();
     let mut skipped: Vec<(String, &'static str)> = Vec::new();
     for s in schemas {
@@ -153,8 +161,14 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
                     spec,
                     rust,
                     generics,
-                    ..
-                } => (spec, rust, generics),
+                    fields,
+                } => {
+                    let mut keys: Vec<String> =
+                        fields.iter().map(|f| f.wire_name.clone()).collect();
+                    keys.sort();
+                    declared.entry(spec.clone()).or_insert(keys);
+                    (spec, rust, generics)
+                }
                 JsonType::Enum { rust, .. } => {
                     skipped.push((
                         rust.clone(),
@@ -273,6 +287,34 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
         );
     }
     b.push_str("_ => ::core::option::Option::None,\n}\n}\n");
+
+    // The declared-key table.
+    b.push_str(
+        "\n/// The wire keys the spec class `ty` declares, sorted, or `None` when\n\
+         /// `ty` names no emitted struct.\n\
+         ///\n\
+         /// Emitted from the SAME field view as the reader's undeclared-key refusal\n\
+         /// (`deny_unknown_fields`), so a caller that must answer \"is this key\n\
+         /// declared?\" WITHOUT decoding — the validation dispatcher's allocation-free\n\
+         /// fast path — can never disagree with the reader that would decode it.\n\
+         /// `_type` is the canonical discriminator, not a modelled attribute, and is\n\
+         /// never listed.\n\
+         #[must_use]\n\
+         pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static str]> {\n    \
+         match ty {\n",
+    );
+    for (spec, keys) in &declared {
+        let list = keys
+            .iter()
+            .map(|k| format!("{k:?}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = writeln!(
+            b,
+            "{spec:?} => ::core::option::Option::Some(&[{list}]),"
+        );
+    }
+    b.push_str("_ => ::core::option::Option::None,\n}\n}\n");
     b
 }
 
@@ -321,7 +363,7 @@ fn emit_to_json(b: &mut String, ty: &JsonType, prelude: &str) {
                  w.field_str(\"_type\", \"{spec}\");\n"
             );
             for f in fields {
-                emit_write_field(b, f);
+                emit_write_field(b, f, construction::is_validated(spec));
             }
             b.push_str("w.end_object();\n}\n}\n\n");
         }
@@ -377,14 +419,29 @@ fn emit_to_json(b: &mut String, ty: &JsonType, prelude: &str) {
 
 /// Emit the write call for one struct field, per its omission kind (mirroring the
 /// derive: `None`/empty-`Vec` omitted, everything else always written).
-fn emit_write_field(b: &mut String, f: &JsonField) {
-    let (wire, rust) = (&f.wire_name, &f.rust_name);
+fn emit_write_field(b: &mut String, f: &JsonField, validated: bool) {
+    let wire = &f.wire_name;
+    // A validated class's fields are `pub(crate)`, so the codec (a different
+    // crate) reads them through the emitted accessor.
+    let rust = if validated {
+        format!("{}()", f.rust_name)
+    } else {
+        f.rust_name.clone()
+    };
+    let rust = &rust;
     match f.kind {
         // `Plain` and `NonEmptyContainer` share a body deliberately: a `1..*`
         // container is non-empty by construction, so like a mandatory scalar it
         // is always written — there is no omit-when-empty branch to emit.
         JsonFieldKind::Plain | JsonFieldKind::NonEmptyContainer => {
-            let _ = writeln!(b, "w.field(\"{wire}\", &self.{rust});");
+            // `&self.x` for a field, `self.x()` for an accessor (which already
+            // returns the reference `JsonWriter::field` wants).
+            let arg = if validated {
+                format!("self.{rust}")
+            } else {
+                format!("&self.{rust}")
+            };
+            let _ = writeln!(b, "w.field(\"{wire}\", {arg});");
         }
         JsonFieldKind::Optional => {
             let _ = writeln!(
@@ -482,14 +539,48 @@ fn emit_struct_from_json(
     prelude: &str,
 ) {
     let (hdr, args) = generic_header(generics, FROM_JSON);
+    // The STRICT reader: a key this class does not declare is a refusal, not a
+    // silently ignored member. Grounded on the RELEASED artifacts, in this
+    // order:
+    //
+    // * `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+    //   L75 (XML) — the ITS-XML schemas are wildcard-free, so an undeclared
+    //   element cannot validate; L87 (JSON) — "SHOULD" for the JSON encoding.
+    // * The openEHR-published ITS-JSON schemas close 128 of their 134 object
+    //   definitions with `additionalProperties: false`, i.e. the wire model is
+    //   closed BY DESIGN, not by omission.
+    //
+    // The closure is over the GENERATED RM MODEL at our pin, never over the
+    // vendored ITS-JSON 1.1.0 schema, which is stale in both directions (it
+    // declares `property`/`reverse_relationships`, removed in RM 1.2.0, and
+    // lacks `EHR.tags`). NOTE: refusing where the released text says SHOULD is
+    // OUR decision at a SHOULD anchor — it is the only reading under which the
+    // JSON and XML encodings share one data model, and nothing released
+    // requires tolerance. The two-artifact upstream contradiction it exposes is
+    // reported as issue #1696.
+    let mut known: Vec<&str> = fields.iter().map(|f| f.wire_name.as_str()).collect();
+    known.sort_unstable();
+    let known_list = known
+        .iter()
+        .map(|k| format!("{k:?}"))
+        .collect::<Vec<_>>()
+        .join(", ");
     let _ = write!(
         b,
         "impl{hdr} {FROM_JSON} for {prelude}::{rust}{args} {{\n\
          fn from_json<__N: {NODE}>(node: &__N) -> ::core::result::Result<Self, {ERR}> {{\n\
          runtime::expect_object(node, \"{spec}\")?;\n\
          runtime::check_type(node, \"{spec}\")?;\n\
-         ::core::result::Result::Ok(Self {{\n"
+         runtime::deny_unknown_fields(node, \"{spec}\", &[{known_list}])?;\n"
     );
+    // A class with a validating construction door builds through its
+    // hand-written constructor (`plan::construction`), so a malformed
+    // identifier refuses at PARSE, path-named, in every document position.
+    let door = construction::validated_ctor(spec);
+    if door.is_none() {
+        b.push_str("::core::result::Result::Ok(Self {\n");
+    }
+    let mut ctor_args: Vec<String> = Vec::new();
     for f in fields {
         let (wire, rust_name) = (&f.wire_name, &f.rust_name);
         let read = match (&f.kind, &f.default) {
@@ -511,9 +602,44 @@ fn emit_struct_from_json(
                 format!("runtime::optional_container_field(node, \"{wire}\")?")
             }
         };
-        let _ = writeln!(b, "{rust_name}: {read},");
+        if door.is_some() {
+            ctor_args.push(read);
+        } else {
+            let _ = writeln!(b, "{rust_name}: {read},");
+        }
     }
-    b.push_str("})\n}\n}\n\n");
+    if let Some((params, fallible)) = door {
+        assert_eq!(
+            params.len(),
+            ctor_args.len(),
+            "construction map declares {} constructor parameter(s) for {spec}, but the \
+             canonical-JSON field view has {} field(s)",
+            params.len(),
+            ctor_args.len()
+        );
+        // Each decoded field binds to a local of the constructor's DECLARED
+        // parameter type first: `new(value: impl Into<String>)` would otherwise
+        // leave the generic read's target type ambiguous.
+        let mut locals = String::new();
+        let mut names = Vec::new();
+        for (i, (ty, read)) in params.iter().zip(&ctor_args).enumerate() {
+            let _ = writeln!(locals, "let __a{i}: {ty} = {read};");
+            names.push(format!("__a{i}"));
+        }
+        let tail = if fallible {
+            format!("__built.map_err(|__e| {ERR}::custom(::std::format!(\"{spec}: {{__e}}\")))")
+        } else {
+            "::core::result::Result::Ok(__built)".to_owned()
+        };
+        let _ = write!(
+            b,
+            "{locals}let __built = {prelude}::{rust}::new({});\n{tail}\n",
+            names.join(", ")
+        );
+        b.push_str("}\n}\n\n");
+    } else {
+        b.push_str("})\n}\n}\n\n");
+    }
 }
 
 /// Emit `impl FromJson` for a closed-subtype-set / polymorphic enum, reproducing

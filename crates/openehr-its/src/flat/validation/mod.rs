@@ -518,6 +518,22 @@ struct Validator {
     bindings: Vec<ConstraintBindingCheck>,
 }
 
+/// Does the generated RM model declare an attribute named `attr` on ANY class?
+///
+/// Name-only by design: an OPT constrains attributes at several RM levels and
+/// the walker does not carry the declaring class here, while the defect this
+/// answers — a constraint on an attribute NO RM class declares — is fully
+/// decided by the name.
+fn rm_declares_attribute(attr: &str) -> bool {
+    static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&'static str>> =
+        std::sync::LazyLock::new(|| {
+            openehr_rm::model::classes()
+                .flat_map(|c| c.attributes.iter().map(|a| a.name))
+                .collect()
+        });
+    DECLARED.contains(attr)
+}
+
 impl Validator {
     fn push(&mut self, path: impl Into<String>, message: impl Into<String>, kind: ValidationKind) {
         self.out.push(ValidationMessage {
@@ -771,6 +787,20 @@ impl Validator {
             let Some((last, intermediate)) = segments.split_last() else {
                 continue;
             };
+            // An existence constraint on an attribute the RM does not declare
+            // cannot be satisfied by a conformant instance, so it is not
+            // enforceable. The deployed OPT 1.4 corpus carries such constraints
+            // (`EVENT.offset` and `DV_PROPORTION.is_integral` are computed
+            // FUNCTIONS in RM 1.2.0 —
+            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.event.adoc`
+            // §Functions — that RM-1.0.x-era tooling emitted as constrainable
+            // stored attributes; `ELEMENT.null_flavor` is the US spelling of
+            // `null_flavour`). Requiring them would demand a member the
+            // canonical reader refuses, so the constraint is skipped rather
+            // than the instance blamed. The generated RM model is the oracle.
+            if !rm_declares_attribute(&last.attribute) {
+                continue;
+            }
             // Navigate the intermediate segments to the container node(s).
             let containers = rmpath::navigate(&[instance], intermediate);
             for container in &containers {

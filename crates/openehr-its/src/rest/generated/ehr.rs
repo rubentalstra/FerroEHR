@@ -93,7 +93,11 @@ pub struct Error {
 
 /// The `UpdateItemTag` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
+///
+/// The OAS declares this schema `additionalProperties: false`, so an
+/// undeclared member is refused rather than silently ignored.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UpdateItemTag {
     /// The `key` property of `UpdateItemTag`.
     pub key: String,

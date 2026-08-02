@@ -12,6 +12,7 @@
 use crate::analyze::Model;
 use crate::load::bmm::BmmSchema;
 use crate::load::xsd::XsdModel;
+use crate::plan::construction;
 use crate::plan::overrides::xml_bmm_only_allowed;
 use crate::plan::{XmlField, XmlType};
 use std::collections::{BTreeMap, BTreeSet};
@@ -253,19 +254,30 @@ pub(crate) fn emit_to_xml(
             for f in bmm_only_fields(spec, fields, xsd) {
                 elems.push(f.wire_name.clone());
             }
+            // A validated class's fields are `pub(crate)` (the construction-door
+            // scheme), so this codec — a different crate — reads them through the
+            // emitted accessor.
+            let validated = construction::is_validated(spec);
+            let read = |f: &XmlField| {
+                if validated {
+                    format!("{}()", f.rust_name)
+                } else {
+                    f.rust_name.clone()
+                }
+            };
             for aname in &attrs {
                 if let Some(f) = by_wire.get(aname.as_str()) {
                     if f.optional {
                         let _ = writeln!(
                             b,
                             "if let Some(v) = &self.{} {{ __attrs.push((\"{}\", v.to_string())); }}",
-                            f.rust_name, f.wire_name
+                            read(f), f.wire_name
                         );
                     } else {
                         let _ = writeln!(
                             b,
                             "__attrs.push((\"{}\", self.{}.to_string()));",
-                            f.wire_name, f.rust_name
+                            f.wire_name, read(f)
                         );
                     }
                 } else {
@@ -277,7 +289,7 @@ pub(crate) fn emit_to_xml(
             b.push_str("w.write_start(__e)?;\n");
             for ename in &elems {
                 match by_wire.get(ename.as_str()) {
-                    Some(f) => emit_write_field(b, f),
+                    Some(f) => emit_write_field(b, f, validated),
                     None => unmatched.push((spec.clone(), ename.clone())),
                 }
             }
@@ -340,13 +352,23 @@ pub(crate) fn emit_to_xml(
     }
 }
 
-fn emit_write_field(b: &mut String, f: &XmlField) {
+fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
+    // A validated class reads its `pub(crate)` fields through the emitted
+    // accessor (see the construction-door scheme in `plan::construction`).
+    let accessor = |name: &str| {
+        if validated {
+            format!("{name}()")
+        } else {
+            name.to_owned()
+        }
+    };
     // `Hash` (RM `Hash<String,String>`, → `BTreeMap`) and `OrderedDict` (the OPT
     // `StringDictionaryItem` group, → `IndexMap`) share the same
     // `<name id="key">value</name>` wire shape; only the map container differs,
     // and both iterate as `(k, v)` here.
     if f.target == "Hash" || f.target == "OrderedDict" {
-        let (name, rust) = (&f.wire_name, &f.rust_name);
+        let rust = accessor(&f.rust_name);
+        let (name, rust) = (&f.wire_name, &rust);
         if f.map_value.as_deref() == Some("String") {
             // `Hash<String, String>` → repeated `<name id="key">value</name>`
             // (the openEHR `StringDictionaryItem` shape).
@@ -373,7 +395,8 @@ fn emit_write_field(b: &mut String, f: &XmlField) {
         }
         return;
     }
-    let (name, rust, target) = (&f.wire_name, &f.rust_name, &f.target);
+    let rust = accessor(&f.rust_name);
+    let (name, rust, target) = (&f.wire_name, &rust, &f.target);
     if f.multiple && f.optional {
         // An optional container (`Option<Vec<T>>`). Canonical XML has no
         // representation for "the attribute is present but holds zero members"
@@ -481,70 +504,97 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
             b.push_str("crate::xml::runtime::XmlEvent::Text(_) => {}\n");
             b.push_str("crate::xml::runtime::XmlEvent::Eof => return Err(crate::xml::runtime::XmlError::Parse(\"unexpected EOF\".into())),\n");
             b.push_str("} }\n");
-            // Construct.
-            let _ = writeln!(b, "Ok({prelude}::{rust} {{");
+            // Construct. Each field's value expression is built first, so a
+            // class with a validating construction door (`plan::construction`)
+            // can hand the same expressions to its constructor instead of a
+            // struct literal — one read path, one grammar.
+            let mut values: Vec<(String, String)> = Vec::new();
             for f in fields {
                 let fname = &f.rust_name;
-                if is_attr(f) {
+                let expr = if is_attr(f) {
                     if f.optional {
-                        let _ = writeln!(
-                            b,
-                            "{fname}: start.attr(\"{}\").map(|s| s.to_string()),",
-                            f.wire_name
-                        );
+                        format!("start.attr(\"{}\").map(|s| s.to_string())", f.wire_name)
                     } else {
-                        let _ = writeln!(
-                            b,
-                            "{fname}: start.attr(\"{}\").ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing attribute {}\".into()))?.to_string(),",
+                        format!(
+                            "start.attr(\"{}\").ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing attribute {}\".into()))?.to_string()",
                             f.wire_name, f.wire_name
-                        );
+                        )
                     }
                 } else if is_cplx_hash(f) {
-                    let _ = writeln!(b, "{fname}: Default::default(),");
+                    "Default::default()".to_owned()
                 } else if is_str_hash(f) {
                     let var = acc_var(fname);
                     if f.optional {
-                        let _ = writeln!(
-                            b,
-                            "{fname}: if {var}.is_empty() {{ None }} else {{ Some({var}) }},"
-                        );
+                        format!("if {var}.is_empty() {{ None }} else {{ Some({var}) }}")
                     } else {
-                        let _ = writeln!(b, "{fname}: {var},");
+                        var
                     }
                 } else if f.multiple && f.optional {
                     // Zero occurrences of a repeated element is indistinguishable
                     // from the attribute's absence in XML, so it reads back as
                     // `None` (see `emit_write_field`).
                     let var = acc_var(fname);
-                    let _ = writeln!(
-                        b,
-                        "{fname}: if {var}.is_empty() {{ None }} else {{ Some({var}) }},"
-                    );
+                    format!("if {var}.is_empty() {{ None }} else {{ Some({var}) }}")
                 } else if f.nonempty {
                     // A `1..*` container goes through its own constructor, so a
                     // document with zero occurrences is refused at parse.
-                    let var = acc_var(fname);
-                    let _ = writeln!(
-                        b,
-                        "{fname}: openehr_base::containers::NonEmptyVec::new({var}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {}: {{__e}}\", ).into()))?,",
+                    format!(
+                        "openehr_base::containers::NonEmptyVec::new({}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {}: {{__e}}\", ).into()))?",
+                        acc_var(fname),
                         f.wire_name
-                    );
+                    )
                 } else if f.multiple || f.optional {
-                    let _ = writeln!(b, "{fname}: {},", acc_var(fname));
+                    acc_var(fname)
                 } else if let Some(default) = &f.default {
                     // Mandatory field archie omits at its default (Interval flags):
                     // use the default when the element is absent.
-                    let _ = writeln!(b, "{fname}: {}.unwrap_or({default}),", acc_var(fname));
+                    format!("{}.unwrap_or({default})", acc_var(fname))
                 } else {
-                    let _ = writeln!(
-                        b,
-                        "{fname}: {}.ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing element {}\".into()))?,",
+                    format!(
+                        "{}.ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing element {}\".into()))?",
                         acc_var(fname),
                         f.wire_name
+                    )
+                };
+                values.push((fname.clone(), expr));
+            }
+            match construction::validated_ctor(spec) {
+                Some((params, fallible)) => {
+                    assert_eq!(
+                        params.len(),
+                        values.len(),
+                        "construction map declares {} constructor parameter(s) for {spec}, \
+                         but the XML field view has {} field(s)",
+                        params.len(),
+                        values.len()
                     );
+                    // Bind each read to a local of the constructor's DECLARED
+                    // parameter type, so an `impl Into<String>` parameter has no
+                    // inference ambiguity.
+                    let mut names = Vec::new();
+                    for (i, (ty, (_, expr))) in params.iter().zip(&values).enumerate() {
+                        let _ = writeln!(b, "let __a{i}: {ty} = {expr};");
+                        names.push(format!("__a{i}"));
+                    }
+                    let args = names.join(", ");
+                    if fallible {
+                        let _ = writeln!(
+                            b,
+                            "{prelude}::{rust}::new({args}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"{spec}: {{__e}}\").into()))"
+                        );
+                    } else {
+                        let _ = writeln!(b, "Ok({prelude}::{rust}::new({args}))");
+                    }
+                }
+                None => {
+                    let _ = writeln!(b, "Ok({prelude}::{rust} {{");
+                    for (fname, expr) in &values {
+                        let _ = writeln!(b, "{fname}: {expr},");
+                    }
+                    b.push_str("})\n");
                 }
             }
-            b.push_str("})\n}\n}\n\n");
+            b.push_str("}\n}\n\n");
         }
         XmlType::Enum {
             spec,

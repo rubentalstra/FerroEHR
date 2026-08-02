@@ -8,7 +8,7 @@
 
 use std::collections::BTreeMap;
 
-use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_base::prelude::{ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
 use openehr_rm::prelude::ItemTag;
 use serde_json::Value;
 
@@ -19,6 +19,7 @@ use crate::service::ehr::tags::tag_target_tail;
 use crate::service::error::ServiceError;
 use crate::service::status::CallStatusType;
 use crate::storage::tag_repo;
+use crate::versioning::object_version_id::{VersionIdError, hier_object_id};
 
 impl FerroEhrService {
     /// All demographic tags (ehr-less), optionally filtered by key/value/path.
@@ -30,7 +31,10 @@ impl FerroEhrService {
     ) -> Result<Vec<Value>, ServiceError> {
         let rows = tag_repo::list_tags(&self.pool, None, None, key, value, target_path).await?;
         let sid = self.effective_system_id();
-        Ok(rows.iter().map(|r| party_tag_json(&sid, r)).collect())
+        rows.iter()
+            .map(|r| party_tag_json(&sid, r))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     /// The tags on one party target — the `VERSIONED_PARTY` container
@@ -54,7 +58,10 @@ impl FerroEhrService {
         )
         .await?;
         let sid = self.effective_system_id();
-        Ok(rows.iter().map(|r| party_tag_json(&sid, r)).collect())
+        rows.iter()
+            .map(|r| party_tag_json(&sid, r))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     /// The demographic tag-target guard, mirroring the EHR side
@@ -91,7 +98,7 @@ impl FerroEhrService {
             {
                 return Err(ServiceError::sm(
                     CallStatusType::ObjectVersionDoesNotExist,
-                    format!("tag target version {}", version.value),
+                    format!("tag target version {}", version.value()),
                 ));
             }
         }
@@ -219,19 +226,21 @@ impl FerroEhrService {
 /// `schemas/demographic/ItemTagOf<T>.yaml` example; no demographic class
 /// declares a `tags` containment, so the EHR side's `EHR.tags` anchor has no
 /// analogue here — the register carries the fixed handling).
-fn party_tag_json(system_id: &str, row: &tag_repo::TagRow) -> Value {
+///
+/// # Errors
+/// [`VersionIdError`] when the configured `system_id` or the stored tag target
+/// is not a well-formed BASE identifier.
+fn party_tag_json(system_id: &str, row: &tag_repo::TagRow) -> Result<Value, VersionIdError> {
     let tag = ItemTag {
         key: row.key.clone(),
         value: row.value.clone(),
-        target: crate::service::ehr::tags::tag_target(row),
+        target: crate::service::ehr::tags::tag_target(row)?,
         target_path: row.target_path.clone(),
         owner_id: ObjectRef::ObjectRef(ObjectRefData {
             namespace: "local".to_owned(),
             r#type: "SYSTEM".to_owned(),
-            id: ObjectId::HierObjectId(HierObjectId {
-                value: system_id.to_owned(),
-            }),
+            id: ObjectId::HierObjectId(hier_object_id(system_id)?),
         }),
     };
-    openehr_its::json::to_canonical_value(&tag)
+    Ok(openehr_its::json::to_canonical_value(&tag))
 }

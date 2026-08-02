@@ -7,7 +7,7 @@
 //! operation), and a route table `(method, path, operationId)`. RM payload
 //! schemas resolve to the generated `openehr_rm`/`openehr_base` crates rather
 //! than being re-emitted. `ferroehr-rest` implements the trait and wires axum
-//! (the handler logic is the ported `EHRbase` behaviour — not generatable).
+//! (the handler logic is hand-written application code, not generatable).
 
 use crate::load::oas::{Oas, Operation};
 use crate::render::naming;
@@ -334,11 +334,32 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
             .filter_map(Value::as_str)
             .filter(|f| crate::plan::overrides::rest_optional_override(&ty_name, f).is_none())
             .collect();
+        // A schema that declares `additionalProperties: false` is CLOSED by the
+        // released OAS, and a closed object must refuse an undeclared member —
+        // otherwise the generated DTO silently accepts payloads the
+        // specification's own computable artifact rejects. serde's
+        // `deny_unknown_fields` is the exact realization
+        // (<https://serde.rs/container-attrs.html#deny_unknown_fields>), and it
+        // is mutually exclusive with the `#[serde(flatten)]` extension map by
+        // construction: that map is emitted only when `additionalProperties` is
+        // present and NOT `false`.
+        let closed = schema.get("additionalProperties") == Some(&Value::Bool(false));
+        let (deny_doc, deny_attr) = if closed {
+            (
+                "///\n\
+                 /// The OAS declares this schema `additionalProperties: false`, so an\n\
+                 /// undeclared member is refused rather than silently ignored.\n",
+                "#[serde(deny_unknown_fields)]\n",
+            )
+        } else {
+            ("", "")
+        };
         let _ = write!(
             b,
             "/// The `{name}` transport DTO of this API group (an ITS-REST OAS\n\
              /// component schema).\n\
-             #[derive(Debug, Clone, Serialize, Deserialize)]\npub struct {ty_name} {{\n"
+             {deny_doc}#[derive(Debug, Clone, Serialize, Deserialize)]\n\
+             {deny_attr}pub struct {ty_name} {{\n"
         );
         for (pname, pschema) in props {
             let ident = field_id(pname);

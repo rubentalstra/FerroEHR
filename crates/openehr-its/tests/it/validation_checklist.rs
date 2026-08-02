@@ -130,7 +130,7 @@ fn web_templates() -> BTreeMap<String, WebTemplate> {
 }
 
 fn load_composition(name: &str) -> Value {
-    let text = std::fs::read_to_string(composition_dir().join(name))
+    let text = std::fs::read_to_string(crate::common::twinned(&composition_dir().join(name)))
         .unwrap_or_else(|e| panic!("read {name}: {e}"));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {name}: {e}"))
 }

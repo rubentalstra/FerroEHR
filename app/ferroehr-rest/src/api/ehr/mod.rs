@@ -188,13 +188,17 @@ pub(crate) fn committer_proxy() -> PartyProxy {
 /// `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal request headers the
 /// client supplied — the ITS-REST MUST (overview §"openEHR-VERSION and
 /// openEHR-AUDIT_DETAILS"; `crate::overview::committal`).
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a committal header carries a malformed
+/// identifier (`crate::overview::committal::build_committer`).
 pub(super) fn mk_update_version(
     headers: &HeaderMap,
     data: Value,
     change_code: &str,
     description: &str,
     preceding: Option<ObjectVersionId>,
-) -> UpdateVersion {
+) -> Result<UpdateVersion, ApiError> {
     let mut uv = UpdateVersion {
         preceding_version_uid: preceding,
         lifecycle_state: term(LIFECYCLE_COMPLETE),
@@ -208,8 +212,8 @@ pub(super) fn mk_update_version(
         },
         signature: None,
     };
-    crate::overview::committal::merge_committal_headers(&mut uv, headers);
-    uv
+    crate::overview::committal::merge_committal_headers(&mut uv, headers)?;
+    Ok(uv)
 }
 
 /// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid,
@@ -241,10 +245,10 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
     let vo = crate::overview::version_id::object_id_uuid(ovid).ok_or_else(|| {
         ApiError::BadRequest(format!(
             "OBJECT_VERSION_ID object_id is not a UUID: {}",
-            ovid.value
+            ovid.value()
         ))
     })?;
-    Ok((vo, ovid.version_tree_id().value.clone()))
+    Ok((vo, ovid.version_tree_id().value().to_owned()))
 }
 
 /// Apply the `openehr-item-tag` / `openehr-version-item-tag` write-wrapper
@@ -290,12 +294,19 @@ pub(super) async fn apply_item_tag_headers(
     // through the BASE accessor (`base_types` §Functions `object_id`;
     // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`)
     // rather than a local `::` split.
-    let container_uid = ObjectVersionId {
-        value: version_uid.to_owned(),
-    }
-    .object_id()
-    .value()
-    .into_owned();
+    // The just-committed version uid is server-minted through the BASE
+    // construction door, so it parses; a value that does not is a server fault,
+    // never a client one.
+    let container_uid = ObjectVersionId::new(version_uid)
+        .map_err(|e| {
+            ApiError::Internal(format!(
+                "the committed version uid {version_uid:?} is not a well-formed \
+                 OBJECT_VERSION_ID: {e}"
+            ))
+        })?
+        .object_id()
+        .value()
+        .into_owned();
     let mut stored = StoredItemTags::default();
     if let Some(entries) = object_tags {
         let tags = entries.iter().map(entry_to_value).collect();

@@ -127,6 +127,39 @@ impl ObjectVersionId {
     }
 }
 
+impl ObjectVersionId {
+    /// Compose an `OBJECT_VERSION_ID` from its three **typed** parts.
+    ///
+    /// Total, and total by grammar rather than by convention: §Syntaxes defines
+    /// `object_version_id = object_id, '::', creating_system_id, '::',
+    /// version_tree_id` with `object_id = uid`, `creating_system_id = uid`, and
+    /// the third part a `VERSION_TREE_ID` — so three values of those types,
+    /// joined by `::`, are a well-formed `object_version_id` with nothing left
+    /// to reject. (`extension = ? any string ?` does not apply here: the
+    /// three-part form has no extension slot, and no part may itself contain
+    /// `::` because [`Uid`] and [`VersionTreeId`] both refuse it.)
+    ///
+    /// This is the door for a version id the CDR **mints** — where the parts are
+    /// already typed and a fallible constructor would force a caller to handle
+    /// an outcome the type system has already excluded. Parsing a version id
+    /// off the wire is [`ObjectVersionId::new`].
+    #[must_use]
+    pub fn compose(
+        object_id: &Uid,
+        creating_system_id: &Uid,
+        version_tree_id: &VersionTreeId,
+    ) -> Self {
+        Self {
+            value: format!(
+                "{}::{}::{}",
+                object_id.value(),
+                creating_system_id.value(),
+                version_tree_id.value()
+            ),
+        }
+    }
+}
+
 /// One `uid`-typed component of an `OBJECT_VERSION_ID`: present, and a legal
 /// `uid` (BASE `master05-identification_package.adoc` §Syntaxes,
 /// `object_id = uid` / `creating_system_id = uid`).

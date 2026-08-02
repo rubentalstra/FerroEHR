@@ -26,6 +26,7 @@ mod corpus;
 mod example_rm_validity;
 mod example_stub;
 mod fidelity;
+mod fixture_twins;
 mod flat;
 mod format_parity;
 mod json_codec_parity;

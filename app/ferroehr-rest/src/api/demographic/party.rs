@@ -54,7 +54,7 @@ pub(super) async fn run(
                     crate::overview::committal::committal_audit(
                         h,
                         crate::api::ehr::committer_proxy(),
-                    ),
+                    )?,
                 )
                 .await?;
             // the incoming `openehr-item-tag` request header (person_create.yaml)
@@ -103,7 +103,7 @@ pub(super) async fn run(
                     crate::overview::committal::committal_audit(
                         h,
                         crate::api::ehr::committer_proxy(),
-                    ),
+                    )?,
                 )
                 .await
             {
@@ -175,12 +175,19 @@ async fn persist_request_tags(
     // the BASE accessor (`base_types` §Functions `object_id`;
     // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`)
     // rather than a local `::` split.
-    let container_uid = ObjectVersionId {
-        value: version_uid.clone(),
-    }
-    .object_id()
-    .value()
-    .into_owned();
+    // The just-committed version uid is server-minted through the BASE
+    // construction door, so it parses; a value that does not is a server fault,
+    // never a client one.
+    let container_uid = ObjectVersionId::new(version_uid.clone())
+        .map_err(|e| {
+            ApiError::Internal(format!(
+                "the committed version uid {version_uid:?} is not a well-formed \
+                 OBJECT_VERSION_ID: {e}"
+            ))
+        })?
+        .object_id()
+        .value()
+        .into_owned();
     if let Some(entries) = object_entries {
         let tags = params::item_tags_from_header_entries(&entries);
         let stored = state
@@ -240,7 +247,7 @@ async fn run_delete(
             kind,
             preceding.clone(),
             super::if_match_of(h),
-            crate::overview::committal::committal_audit(h, crate::api::ehr::committer_proxy()),
+            crate::overview::committal::committal_audit(h, crate::api::ehr::committer_proxy())?,
         )
         .await
     {

@@ -123,7 +123,7 @@ impl FerroEhrService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(self.version_response(ehr_id, vo_id, read))
+        Ok(self.version_response(ehr_id, vo_id, read)?)
     }
 
     /// A COMPOSITION as it was at an instant (time-travel), with its `uid`
@@ -151,7 +151,7 @@ impl FerroEhrService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(self.version_response(ehr_id, vo_id, read))
+        Ok(self.version_response(ehr_id, vo_id, read)?)
     }
 
     /// The `VERSIONED_OBJECT` for a COMPOSITION (verifies EHR ownership).
@@ -523,10 +523,10 @@ impl FerroEhrService {
             &current.creating_system_id,
             current_tree,
         );
-        if !composite_ids_equal(&latest_uid, &a_version_uid.value) {
+        if !composite_ids_equal(&latest_uid, a_version_uid.value()) {
             return Err(ServiceError::Conflict(format!(
                 "preceding_version_uid names version {}, latest is {latest_uid}",
-                a_version_uid.value
+                a_version_uid.value()
             )));
         }
         let _ = expected;

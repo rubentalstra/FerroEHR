@@ -664,7 +664,7 @@ fn app_b_standardised_items_convert_to_their_aom2_homes() {
 
     // `build_uid` is a GUID string → the archetype's typed `build_uid`.
     assert_eq!(
-        archetype.build_uid.value,
+        *archetype.build_uid.value(),
         uuid::Uuid::parse_str("3076af96-e1dd-4f9b-abf2-23913fcf52b1").expect("a valid GUID")
     );
 
@@ -805,7 +805,7 @@ fn malformed_build_uid_stays_in_other_details() {
     let converted = convert_source(&src);
     let archetype = authored(&converted);
     assert!(
-        archetype.build_uid.value.is_nil(),
+        archetype.build_uid.value().is_nil(),
         "a non-GUID build_uid is not converted"
     );
     let other = archetype

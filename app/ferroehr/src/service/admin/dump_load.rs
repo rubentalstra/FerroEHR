@@ -642,7 +642,7 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
             v.signature.clone(),
         )
     };
-    Ok(build_original_version(&OriginalVersionParts {
+    build_original_version(&OriginalVersionParts {
         creating_system_id: &v.creating_system_id,
         vo_id: v.vo_id,
         tree,
@@ -656,7 +656,8 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         // can render an `attestations` list (module docs).
         attestations: &[],
         signature: signature.as_deref(),
-    }))
+    })
+    .map_err(Into::into)
 }
 
 /// Serialize an `ORIGINAL_VERSION` envelope as a canonical-XML document under

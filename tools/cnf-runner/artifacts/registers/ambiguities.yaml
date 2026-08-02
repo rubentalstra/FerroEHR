@@ -8267,3 +8267,39 @@ AMB-191:
     impossible until upstream defines the split; the SIG-VERSION at-committal
     case gates the direction that is verifiable.
   disposition: fixed_handling
+AMB-192:
+  ambiguity: >-
+    PROSE-vs-SCHEMA CONTRADICTION on what a client-supplied `ehr_id` may be.
+    The released `PUT /ehr/{ehr_id}` operation text admits the whole
+    `HIER_OBJECT_ID` grammar at MUST strength with UUID only RECOMMENDED,
+    while the `ehr_id` path parameter that same operation `$ref`s declares
+    `type: string, format: uuid` — UUID-only, which an OAS-validating client
+    or server enforces. Two conformant implementations therefore disagree
+    about a `PUT /ehr/{oid-root}` request: one accepts an ISO-OID or
+    internet-id rooted id, the other rejects it before dispatch.
+  source: >-
+    ITS-REST specifications/operations/ehr_create_with_id.yaml §description
+    ("The value of the `ehr_id` unique identifier MUST be valid
+    HIER_OBJECT_ID value. It is strongly RECOMMENDED that an UUID always be
+    used for this.") contrasted with
+    specifications/parameters/path/ehr_id.yaml §schema (`type: string`,
+    `format: uuid`) — the same UUID-only shape in the bundled
+    ehr-codegen.openapi.yaml §components.parameters.ehr_id and
+    query-codegen.openapi.yaml §components.parameters.ehr_id_Query. The
+    `HIER_OBJECT_ID` grammar the prose invokes is BASE
+    base_types/master05-identification_package.adoc §Syntaxes
+    (`hier_object_id = uid_based_id`, `root = uid`,
+    `uid = iso_oid | uuid | internet_id`). All read first-hand.
+  handling: >-
+    Fixed handling: the PARAMETER SCHEMA reading is implemented — an `ehr_id`
+    is UUID-only. The schema is the computable artifact that binds EVERY
+    ehr_id-carrying operation rather than this one description, and the
+    narrowing is independently grounded on how this CDR mints (uuidv7) and
+    stores (PostgreSQL `uuid` columns) the value; a non-UUID id would enter a
+    store and an AQL surface that cannot represent it. The choice is cited at
+    the type that carries it (`app/ferroehr/src/ids.rs`), not left implicit,
+    and the contradiction is reported upstream rather than silently resolved.
+    Note the narrowing is real only for a CLIENT-supplied id on
+    `PUT /ehr/{ehr_id}`: a server-minted id is a UUID either way.
+  disposition: fixed_handling
+  upstream_issue: 1711

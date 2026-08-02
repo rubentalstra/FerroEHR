@@ -177,18 +177,52 @@ fn typed_literal_enum_including_other() {
 /// A minimal `DV_QUANTITY` JSON (mandatory fields only).
 const QTY: &str = r#"{"_type":"DV_QUANTITY","magnitude":5,"units":"mm"}"#;
 
-/// Tolerance rule 1 — **unknown wire keys are ignored** (the deliberate superset
-/// of the ITS-JSON schema's `additionalProperties: false`).
+/// **Strictness rule 1 — an undeclared wire key is REFUSED**, naming the key and
+/// the class that does not declare it.
+///
+/// This reverses the reader's former tolerance, by adjudication:
+/// `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// requires an XML payload to validate against the ITS-XML schemas, which are
+/// wildcard-free — an undeclared element cannot validate — and states the same
+/// for the JSON encoding at SHOULD strength; openEHR's own published ITS-JSON
+/// schemas close 128 of their 134 object definitions with
+/// `additionalProperties: false`. Refusing is the only reading under which the
+/// JSON and XML encodings share ONE data model. Enforcing at a SHOULD anchor is
+/// OUR decision (the upstream two-artifact contradiction is reported as issue
+/// #1696), and the closure is over the GENERATED RM model at our pin — never
+/// over the vendored ITS-JSON 1.1.0 schema, which is stale in both directions.
 #[test]
-fn tolerance_unknown_keys_ignored() {
+fn undeclared_keys_are_refused() {
     let base: DvQuantity = from_json_str(QTY).unwrap();
-    let with_extra: DvQuantity = from_json_str(
+    assert_eq!(base.units, "mm");
+    let err = from_json_str::<DvQuantity>(
         r#"{"_type":"DV_QUANTITY","magnitude":5,"units":"mm","not_a_field":42,"another":{"x":[1,2]}}"#,
     )
-    .unwrap();
-    assert_eq!(
-        base, with_extra,
-        "unknown keys must be ignored, not rejected"
+    .expect_err("an undeclared key must be refused, not ignored");
+    let text = err.to_string();
+    assert!(
+        text.contains("unknown field `not_a_field`"),
+        "the refusal names the FIRST offending key in member order, got: {text}"
+    );
+    assert!(
+        text.contains("DV_QUANTITY"),
+        "the refusal names the class that does not declare it, got: {text}"
+    );
+}
+
+/// The refusal names the **path** to the offending node, not just the key, so a
+/// client can locate it in a deep document (the reader builds the path as it
+/// unwinds — `JsonParseError::in_field` / `in_index`).
+#[test]
+fn an_undeclared_key_refusal_names_its_path() {
+    let err = from_json_str::<DvInterval<DvQuantity>>(
+        r#"{"_type":"DV_INTERVAL","lower":{"_type":"DV_QUANTITY","magnitude":1,"units":"mm","bogus":1}}"#,
+    )
+    .expect_err("an undeclared key inside a nested slot must be refused");
+    let text = err.to_string();
+    assert!(
+        text.contains("unknown field `bogus`") && text.contains("$.lower"),
+        "the refusal names the key AND the path, got: {text}"
     );
 }
 

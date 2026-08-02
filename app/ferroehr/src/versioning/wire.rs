@@ -27,7 +27,7 @@ use crate::service::status::CallStatusType;
 use crate::versioning::audit::{AuditInput, OPENEHR};
 use crate::versioning::integrity;
 use crate::versioning::lifecycle::lifecycle_rubric;
-use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::object_version_id::{TreeId, VersionIdError, version_id};
 use crate::versioning::read::{VersionRead, WrappedOriginal};
 use crate::versioning::signature::signer::Signer;
 
@@ -92,13 +92,11 @@ pub(crate) async fn revision_history(
             audits.push(stored_attestation(&stored)?);
         }
         items.push(RevisionHistoryItem {
-            version_id: ObjectVersionId {
-                value: object_version_id(
-                    vo_id,
-                    &row.creating_system_id,
-                    TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
-                ),
-            },
+            version_id: version_id(
+                vo_id,
+                &row.creating_system_id,
+                TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
+            )?,
             audits,
         });
     }
@@ -204,15 +202,14 @@ pub(crate) async fn versioned_object(
                     format!("versioned object {vo_id}"),
                 )
             })?;
-    let uid = HierObjectId {
-        value: vo_id.to_string(),
-    };
+    // Both keys are UUIDs by type, so the conversions are total (BASE
+    // `master05-identification_package.adoc` §Syntaxes:
+    // `uid = iso_oid | uuid | internet_id`).
+    let uid = HierObjectId::from(vo_id.0);
     let owner_id = ObjectRef::ObjectRef(ObjectRefData {
         namespace: "local".to_owned(),
         r#type: "EHR".to_owned(),
-        id: ObjectId::HierObjectId(HierObjectId {
-            value: ehr_id.to_string(),
-        }),
+        id: ObjectId::HierObjectId(HierObjectId::from(ehr_id.0)),
     });
     let time_created = crate::versioning::audit::dv_date_time(&time_created);
     let container = match rm_type {
@@ -353,7 +350,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
         data: &read.canonical,
         attestations: &read.attestations_at_committal,
         signature: read.signature.as_deref(),
-    });
+    })?;
     integrity::verify_on_read(
         signer,
         &ov,
@@ -420,7 +417,7 @@ fn build_wrapped_original(
             read.vo_id
         )));
     }
-    Ok(build_original_version(&OriginalVersionParts {
+    build_original_version(&OriginalVersionParts {
         creating_system_id: &read.creating_system_id,
         vo_id: read.vo_id,
         tree: read.tree,
@@ -432,7 +429,8 @@ fn build_wrapped_original(
         data: &read.canonical,
         attestations: &read.attestations_at_committal,
         signature: wrapped.signature.as_deref(),
-    }))
+    })
+    .map_err(Into::into)
 }
 
 /// Build the `IMPORTED_VERSION` wrapper JSON from the LOCAL act of committal
@@ -476,10 +474,17 @@ pub(crate) fn build_imported_version(
 /// One `OBJECT_VERSION_ID` reference as canonical JSON — the `uid`,
 /// `preceding_version_uid` and `other_input_version_uids` slots of a
 /// `VERSION` (RM common master06 §Version and its Subtypes).
-fn object_version_ref(value: &str) -> Value {
-    openehr_its::json::to_canonical_value(&ObjectVersionId {
-        value: value.to_owned(),
-    })
+///
+/// # Errors
+/// [`VersionIdError`] when `value` is not a well-formed `OBJECT_VERSION_ID` —
+/// the reference goes through the BASE construction door, so a malformed one
+/// never reaches the wire.
+fn object_version_ref(value: &str) -> Result<Value, VersionIdError> {
+    let uid = ObjectVersionId::new(value).map_err(|source| VersionIdError::Malformed {
+        raw: value.to_owned(),
+        source,
+    })?;
+    Ok(openehr_its::json::to_canonical_value(&uid))
 }
 
 /// The `VERSION.contribution` `OBJECT_REF` naming a CONTRIBUTION held by THIS
@@ -490,9 +495,8 @@ pub(crate) fn contribution_ref(contribution_id: Uuid) -> Value {
     openehr_its::json::to_canonical_value(&ObjectRef::ObjectRef(ObjectRefData {
         namespace: "local".to_owned(),
         r#type: "CONTRIBUTION".to_owned(),
-        id: ObjectId::HierObjectId(HierObjectId {
-            value: contribution_id.to_string(),
-        }),
+        // A contribution id is a UUID by type, so the conversion is total.
+        id: ObjectId::HierObjectId(HierObjectId::from(contribution_id)),
     }))
 }
 
@@ -538,7 +542,16 @@ pub(crate) struct OriginalVersionParts<'a> {
 /// ([`super::integrity::sign_version`]) and the import path
 /// ([`super::import`]), so the bytes signed at commit/import and served at read
 /// are identical.
-pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value {
+///
+/// # Errors
+/// [`VersionIdError`] when any of the version identifiers this envelope carries
+/// (`uid`, `preceding_version_uid`, `other_input_version_uids`) is not a
+/// well-formed `OBJECT_VERSION_ID`: they go through the BASE construction door
+/// rather than a struct literal, so a malformed identifier is refused before it
+/// is signed and served.
+pub(crate) fn build_original_version(
+    parts: &OriginalVersionParts<'_>,
+) -> Result<Value, VersionIdError> {
     // NOTE: the ENVELOPE stays a JSON literal on purpose. `contribution`,
     // `commit_audit`, `data` and `attestations` arrive as already-canonical
     // fragments — stored bytes, some of them client-authored — and
@@ -549,11 +562,11 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
     // builder SYNTHESIZES is built from its generated type below.
     let mut ov = json!({
         "_type": "ORIGINAL_VERSION",
-        "uid": object_version_ref(&object_version_id(
+        "uid": openehr_its::json::to_canonical_value(&version_id(
             parts.vo_id,
             parts.creating_system_id,
             parts.tree,
-        )),
+        )?),
         "contribution": parts.contribution.clone(),
         "commit_audit": parts.commit_audit.clone(),
         "lifecycle_state": openehr_its::json::to_canonical_value(&DvText::DvCodedText(
@@ -591,7 +604,7 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
         if let Some(preceding) = parts.preceding_version_uid {
             map.insert(
                 "preceding_version_uid".to_owned(),
-                object_version_ref(preceding),
+                object_version_ref(preceding)?,
             );
         }
         // other_input_version_uids: merge provenance (master06 §Version
@@ -605,7 +618,7 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
                         .other_input_version_uids
                         .iter()
                         .map(|uid| object_version_ref(uid))
-                        .collect(),
+                        .collect::<Result<Vec<_>, _>>()?,
                 ),
             );
         }
@@ -627,5 +640,5 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
             map.insert("signature".to_owned(), Value::String(sig.to_owned()));
         }
     }
-    ov
+    Ok(ov)
 }

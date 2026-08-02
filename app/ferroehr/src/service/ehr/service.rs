@@ -23,6 +23,7 @@ use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::{Change, commit_contribution};
+use crate::versioning::object_version_id::{VersionIdError, hier_object_id};
 
 use super::status_for_subject;
 
@@ -351,14 +352,16 @@ impl FerroEhrService {
 /// §References: `OBJECT_REF.id` is the "Globally unique id of an object"), and
 /// `namespace` is `"local"` (same section: `"local"` is the namespace of the
 /// containing system).
-fn container_ref(rm_type: &str, vo_id: &str) -> ObjectRef {
-    ObjectRef::ObjectRef(ObjectRefData {
+///
+/// # Errors
+/// [`VersionIdError`] when the stored container key is not a well-formed
+/// `HIER_OBJECT_ID` (BASE `master05-identification_package.adoc` §Syntaxes).
+fn container_ref(rm_type: &str, vo_id: &str) -> Result<ObjectRef, VersionIdError> {
+    Ok(ObjectRef::ObjectRef(ObjectRefData {
         namespace: "local".to_owned(),
         r#type: rm_type.to_owned(),
-        id: ObjectId::HierObjectId(HierObjectId {
-            value: vo_id.to_owned(),
-        }),
-    })
+        id: ObjectId::HierObjectId(hier_object_id(vo_id)?),
+    }))
 }
 
 /// Assemble the canonical RM `EHR` wire body from the identities that make it
@@ -381,7 +384,9 @@ fn container_ref(rm_type: &str, vo_id: &str) -> ObjectRef {
 ///
 /// # Errors
 /// [`ServiceError::Internal`] when `status_vo` or `access_vo` is absent — an
-/// EHR without either is RM-invalid and cannot be represented.
+/// EHR without either is RM-invalid and cannot be represented; a
+/// [`VersionIdError`]-derived error when a stored container key or the
+/// configured `system_id` is not a well-formed BASE identifier.
 fn ehr_object(
     system_id: &str,
     ehr_id: EhrId,
@@ -395,8 +400,12 @@ fn ehr_object(
     // "VERSIONED_EHR_STATUS")` (RM ehr `ehr.adoc` invariants, normative). The
     // non-normative ITS-REST example instead shows `type: EHR_STATUS` with an
     // OBJECT_VERSION_ID id; the RM wins this real conflict on both counts.
-    let ehr_status = status_vo.map(|vo| container_ref("VERSIONED_EHR_STATUS", vo));
-    let ehr_access = access_vo.map(|vo| container_ref("VERSIONED_EHR_ACCESS", vo));
+    let ehr_status = status_vo
+        .map(|vo| container_ref("VERSIONED_EHR_STATUS", vo))
+        .transpose()?;
+    let ehr_access = access_vo
+        .map(|vo| container_ref("VERSIONED_EHR_ACCESS", vo))
+        .transpose()?;
     let (Some(ehr_status), Some(ehr_access)) = (ehr_status, ehr_access) else {
         return Err(ServiceError::Internal(format!(
             "EHR {ehr_id} has no EHR_STATUS or no EHR_ACCESS version; both are \
@@ -409,14 +418,11 @@ fn ehr_object(
     let folders: Vec<ObjectRef> = folder_vos
         .iter()
         .map(|vo| container_ref("VERSIONED_FOLDER", vo))
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
     let ehr = Ehr {
-        system_id: HierObjectId {
-            value: system_id.to_owned(),
-        },
-        ehr_id: HierObjectId {
-            value: ehr_id.to_string(),
-        },
+        system_id: hier_object_id(system_id)?,
+        // The EHR id is a UUID by type, so the conversion is total.
+        ehr_id: HierObjectId::from(ehr_id.0),
         contributions: openehr_base::containers::present(Vec::new()),
         ehr_status,
         ehr_access,

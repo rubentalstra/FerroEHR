@@ -16,7 +16,6 @@
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use openehr_base::prelude::ObjectVersionId;
 use openehr_rm::prelude::{DvIdentifier, PartyIdentified, PartyIdentifiedData, PartyProxy};
 use serde_json::Value;
 
@@ -24,7 +23,7 @@ use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::{AuditInput, description_fragment};
-use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::object_version_id::{TreeId, VersionIdError, object_version_id, version_id};
 use crate::versioning::read::VersionRead;
 
 /// The `DV_IDENTIFIER.issuer` stamped on a committer whose credential this
@@ -133,27 +132,33 @@ impl FerroEhrService {
         vo_id: VoId,
         creating_system_id: &str,
         version: TreeId,
-    ) -> Value {
+    ) -> Result<Value, VersionIdError> {
         if let Value::Object(map) = &mut canonical {
             map.insert(
                 "uid".to_owned(),
-                openehr_its::json::to_canonical_value(&ObjectVersionId {
-                    value: object_version_id(vo_id, creating_system_id, version),
-                }),
+                openehr_its::json::to_canonical_value(&version_id(
+                    vo_id,
+                    creating_system_id,
+                    version,
+                )?),
             );
         }
-        canonical
+        Ok(canonical)
     }
 
     /// A [`ServiceResponse`] for a loaded versioned object: its canonical body
     /// with the `uid` injected, plus the resource metadata for the wire
     /// headers.
+    ///
+    /// # Errors
+    /// [`VersionIdError`] when the stored `creating_system_id` does not compose
+    /// into a well-formed `OBJECT_VERSION_ID` (see [`Self::with_uid`]).
     pub(in crate::service) fn version_response(
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
         read: VersionRead,
-    ) -> ServiceResponse {
+    ) -> Result<ServiceResponse, VersionIdError> {
         let meta = self.version_meta(
             ehr_id,
             vo_id,
@@ -161,10 +166,10 @@ impl FerroEhrService {
             read.tree,
             read.time_committed,
         );
-        ServiceResponse::new(
-            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
+        Ok(ServiceResponse::new(
+            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree)?,
             meta,
-        )
+        ))
     }
 
     /// The current version metadata of an EHR-owned object of `kind` (the

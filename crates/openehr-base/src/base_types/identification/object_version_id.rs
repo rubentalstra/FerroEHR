@@ -10,5 +10,21 @@
 pub struct ObjectVersionId {
     // inherited: OBJECT_ID
     /// The value of the id in the form defined below.
-    pub value: String,
+    pub(crate) value: String,
+}
+
+/// Read access to the `pub(crate)` fields of [`ObjectVersionId`].
+///
+/// The fields are not `pub`: this class has a released **lexical form**, so
+/// construction runs a grammar and is the only door — docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc §Syntaxes: `object_version_id = object_id, '::', creating_system_id, '::', version_tree_id` with `object_id = uid` and `creating_system_id = uid`.
+///
+/// The validating constructor lives in the hand-written `*_impl.rs` sibling
+/// (the generator never writes into it); every generated codec builds this
+/// type through that constructor.
+impl ObjectVersionId {
+    /// The validated `value` this identifier was constructed from.
+    #[must_use]
+    pub fn value(&self) -> &str {
+        &self.value
+    }
 }

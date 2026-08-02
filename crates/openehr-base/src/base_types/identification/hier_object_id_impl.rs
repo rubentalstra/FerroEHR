@@ -13,16 +13,18 @@
 //! `FromStr` run the §Syntaxes grammar, so an identifier built through them is
 //! well-formed by construction.
 //!
-//! NOTE (scope of the guarantee): the generated struct's `value` field is
-//! public, so a caller can still build the struct literally — the guarantee is
-//! "construction through this door is validated", not yet "the type cannot hold
-//! a malformed value". Field privacy is a generated-shape change and is not
-//! made here; the wire door is closed separately by the reader.
+//! Scope of the guarantee: the generated struct's `value` field is `pub(crate)`
+//! (the emitter's construction-door scheme), so outside `openehr-base` this
+//! constructor and the total [`From<Uid>`] conversion are the ONLY ways to
+//! obtain a `HIER_OBJECT_ID` — the type cannot hold a malformed value anywhere
+//! in the model, and the canonical-JSON/XML readers build through this door
+//! too.
 
 use std::str::FromStr;
 
 use super::hier_object_id::HierObjectId;
 use super::lexical::{IdComponent, IdError, IdProduction, is_uid};
+use super::uid::Uid;
 use super::uid_based_id_impl::root_str;
 
 impl HierObjectId {
@@ -54,6 +56,47 @@ impl HierObjectId {
             });
         }
         Ok(Self { value })
+    }
+}
+
+impl From<Uid> for HierObjectId {
+    /// A bare `UID` **is** a `HIER_OBJECT_ID` — total by grammar, not by
+    /// convention: BASE `master05-identification_package.adoc` §Syntaxes gives
+    /// `hier_object_id = uid_based_id`, `uid_based_id = root, [ '::',
+    /// extension ]` and `root = uid`, so the extension-less form of the
+    /// production is exactly a `uid`, which the [`Uid`] type already carries a
+    /// grammar-checked value of.
+    ///
+    /// This is the conversion every derived-identifier accessor uses (e.g. RM
+    /// `VERSION.owner_id`, extracted from the version id's `object_id`), so a
+    /// derivation can never need a fallible constructor for a value the model
+    /// has already validated.
+    ///
+    /// The rendered value is [`Uid::value`], which normalises a `UUID` to the
+    /// RFC 4122 lower-case form. That is a *rendering*, not a re-identification:
+    /// master05 §"Composite Identifiers and Case" makes two identifiers
+    /// differing only in case the same identifier. The case-PRESERVING half of
+    /// the same section binds a *stored* value, which this conversion does not
+    /// touch.
+    fn from(uid: Uid) -> Self {
+        Self {
+            value: uid.value().into_owned(),
+        }
+    }
+}
+
+impl From<uuid::Uuid> for HierObjectId {
+    /// A UUID **is** a `HIER_OBJECT_ID` — total by grammar: §Syntaxes chains
+    /// `hier_object_id = uid_based_id`, `root = uid` and
+    /// `uid = iso_oid | uuid | internet_id`, so the extension-less form of a
+    /// parsed UUID is a legal `hier_object_id` with nothing left to check.
+    ///
+    /// The rendering is the RFC 4122 lower-case hyphenated form — exactly the
+    /// `uuid` production §Syntaxes gives.
+    fn from(value: uuid::Uuid) -> Self {
+        Self {
+            value: value.to_string(),
+        }
     }
 }
 

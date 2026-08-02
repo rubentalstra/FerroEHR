@@ -56,15 +56,34 @@ fn primitive(name: &str) -> Option<Value> {
 /// A deterministic value for an attribute whose *class* constrains the value
 /// space more tightly than the BMM primitive type it is declared with.
 ///
-/// `UUID.value` is declared `String`, but the class is "Model of the DCE
-/// Universal Unique Identifier or UUID which takes the form of hexadecimal
-/// integers separated by hyphens, following the pattern 8-4-4-4-12"
-/// (`BASE docs/UML/classes/org.openehr.base.base_types.uuid.adoc §UUID Class`),
-/// so an arbitrary string is NOT an instance of the class — the generated Rust
-/// field is a real `uuid::Uuid` and the codec rightly refuses anything else.
+/// Every openEHR **identifier** class is such a case: BASE
+/// `docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`
+/// §Syntaxes gives each one an EBNF lexical form over its `value` string, so an
+/// arbitrary string is NOT an instance of the class. Construction runs that
+/// grammar (the construction-door scheme), and the codec rightly refuses
+/// anything else — the generator must therefore emit a grammar-conformant
+/// example, exactly as it already does for `UUID` (whose generated field is a
+/// real `uuid::Uuid`).
 fn constrained_attribute(class: &str, attr: &str) -> Option<Value> {
+    // A UUID in the canonical 8-4-4-4-12 hyphenated form the `uuid` production
+    // names, reused wherever a `uid` is required.
+    const UID: &str = "0191a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b";
     match (class, attr) {
-        ("UUID", "value") => Some(json!("0191a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b")),
+        // `uuid = hex-number, '-', … (five groups)`.
+        ("UUID", "value") => Some(json!(UID)),
+        // `iso_oid = number, { '.', number }`.
+        ("ISO_OID", "value") => Some(json!("1.2.840.113554")),
+        // `internet_id = subdomain`, `subdomain = label | subdomain, '.', label`.
+        ("INTERNET_ID", "value") => Some(json!("openehr.org")),
+        // `hier_object_id = uid_based_id`, `uid_based_id = root, [ '::',
+        // extension ]`, `root = uid` — the extension-less form.
+        ("HIER_OBJECT_ID", "value") => Some(json!(UID)),
+        // `object_version_id = object_id, '::', creating_system_id, '::',
+        // version_tree_id`, all three parts required.
+        ("OBJECT_VERSION_ID", "value") => Some(json!(format!("{UID}::openehr.org::1"))),
+        // `version_tree_id = trunk_version, [ '.', branch_number, '.',
+        // branch_version ]`, every part starting at 1.
+        ("VERSION_TREE_ID", "value") => Some(json!("1")),
         _ => None,
     }
 }

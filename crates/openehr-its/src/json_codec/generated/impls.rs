@@ -33,6 +33,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::AccessGroup
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ACCESS_GROUP_REF")?;
         runtime::check_type(node, "ACCESS_GROUP_REF")?;
+        runtime::deny_unknown_fields(node, "ACCESS_GROUP_REF", &["id", "namespace", "type"])?;
         ::core::result::Result::Ok(Self {
             namespace: runtime::required_field(node, "namespace", "ACCESS_GROUP_REF")?,
             r#type: runtime::required_field(node, "type", "ACCESS_GROUP_REF")?,
@@ -59,6 +60,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ArchetypeId
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_ID")?;
         runtime::check_type(node, "ARCHETYPE_ID")?;
+        runtime::deny_unknown_fields(node, "ARCHETYPE_ID", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "ARCHETYPE_ID")?,
         })
@@ -98,6 +100,18 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::AuthoredRes
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AUTHORED_RESOURCE")?;
         runtime::check_type(node, "AUTHORED_RESOURCE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AUTHORED_RESOURCE",
+            &[
+                "annotations",
+                "description",
+                "is_controlled",
+                "original_language",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(
@@ -135,6 +149,11 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::CodePhrase 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CODE_PHRASE")?;
         runtime::check_type(node, "CODE_PHRASE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CODE_PHRASE",
+            &["code_string", "preferred_term", "terminology_id"],
+        )?;
         ::core::result::Result::Ok(Self {
             terminology_id: runtime::required_field(node, "terminology_id", "CODE_PHRASE")?,
             code_string: runtime::required_field(node, "code_string", "CODE_PHRASE")?,
@@ -163,6 +182,11 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Cardinality
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Cardinality")?;
         runtime::check_type(node, "Cardinality")?;
+        runtime::deny_unknown_fields(
+            node,
+            "Cardinality",
+            &["interval", "is_ordered", "is_unique"],
+        )?;
         ::core::result::Result::Ok(Self {
             interval: runtime::required_field(node, "interval", "Cardinality")?,
             is_ordered: runtime::required_field(node, "is_ordered", "Cardinality")?,
@@ -190,6 +214,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::GenericId {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "GENERIC_ID")?;
         runtime::check_type(node, "GENERIC_ID")?;
+        runtime::deny_unknown_fields(node, "GENERIC_ID", &["scheme", "value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "GENERIC_ID")?,
             scheme: runtime::required_field(node, "scheme", "GENERIC_ID")?,
@@ -204,7 +229,7 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::HierObjectId 
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "HIER_OBJECT_ID");
-        w.field("value", &self.value);
+        w.field("value", self.value());
         w.end_object();
     }
 }
@@ -215,8 +240,13 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::HierObjectI
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "HIER_OBJECT_ID")?;
         runtime::check_type(node, "HIER_OBJECT_ID")?;
-        ::core::result::Result::Ok(Self {
-            value: runtime::required_field(node, "value", "HIER_OBJECT_ID")?,
+        runtime::deny_unknown_fields(node, "HIER_OBJECT_ID", &["value"])?;
+        let __a0: String = runtime::required_field(node, "value", "HIER_OBJECT_ID")?;
+        let __built = openehr_base::prelude::HierObjectId::new(__a0);
+        __built.map_err(|__e| {
+            crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                "HIER_OBJECT_ID: {__e}"
+            ))
         })
     }
 }
@@ -228,7 +258,7 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::InternetId {
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "INTERNET_ID");
-        w.field("value", &self.value);
+        w.field("value", self.value());
         w.end_object();
     }
 }
@@ -239,8 +269,11 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::InternetId 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "INTERNET_ID")?;
         runtime::check_type(node, "INTERNET_ID")?;
-        ::core::result::Result::Ok(Self {
-            value: runtime::required_field(node, "value", "INTERNET_ID")?,
+        runtime::deny_unknown_fields(node, "INTERNET_ID", &["value"])?;
+        let __a0: String = runtime::required_field(node, "value", "INTERNET_ID")?;
+        let __built = openehr_base::prelude::InternetId::new(__a0);
+        __built.map_err(|__e| {
+            crate::json_codec::runtime::JsonParseError::custom(::std::format!("INTERNET_ID: {__e}"))
         })
     }
 }
@@ -252,7 +285,7 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::IsoOid {
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "ISO_OID");
-        w.field("value", &self.value);
+        w.field("value", self.value());
         w.end_object();
     }
 }
@@ -263,8 +296,11 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::IsoOid {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ISO_OID")?;
         runtime::check_type(node, "ISO_OID")?;
-        ::core::result::Result::Ok(Self {
-            value: runtime::required_field(node, "value", "ISO_OID")?,
+        runtime::deny_unknown_fields(node, "ISO_OID", &["value"])?;
+        let __a0: String = runtime::required_field(node, "value", "ISO_OID")?;
+        let __built = openehr_base::prelude::IsoOid::new(__a0);
+        __built.map_err(|__e| {
+            crate::json_codec::runtime::JsonParseError::custom(::std::format!("ISO_OID: {__e}"))
         })
     }
 }
@@ -334,6 +370,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Iso8601Date
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Iso8601_date")?;
         runtime::check_type(node, "Iso8601_date")?;
+        runtime::deny_unknown_fields(node, "Iso8601_date", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "Iso8601_date")?,
         })
@@ -358,6 +395,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Iso8601Date
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Iso8601_date_time")?;
         runtime::check_type(node, "Iso8601_date_time")?;
+        runtime::deny_unknown_fields(node, "Iso8601_date_time", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "Iso8601_date_time")?,
         })
@@ -382,6 +420,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Iso8601Dura
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Iso8601_duration")?;
         runtime::check_type(node, "Iso8601_duration")?;
+        runtime::deny_unknown_fields(node, "Iso8601_duration", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "Iso8601_duration")?,
         })
@@ -406,6 +445,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Iso8601Time
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Iso8601_time")?;
         runtime::check_type(node, "Iso8601_time")?;
+        runtime::deny_unknown_fields(node, "Iso8601_time", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "Iso8601_time")?,
         })
@@ -430,6 +470,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Iso8601Time
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Iso8601_timezone")?;
         runtime::check_type(node, "Iso8601_timezone")?;
+        runtime::deny_unknown_fields(node, "Iso8601_timezone", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "Iso8601_timezone")?,
         })
@@ -514,6 +555,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::LocatableRe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "LOCATABLE_REF")?;
         runtime::check_type(node, "LOCATABLE_REF")?;
+        runtime::deny_unknown_fields(node, "LOCATABLE_REF", &["id", "namespace", "path", "type"])?;
         ::core::result::Result::Ok(Self {
             namespace: runtime::required_field(node, "namespace", "LOCATABLE_REF")?,
             r#type: runtime::required_field(node, "type", "LOCATABLE_REF")?,
@@ -550,6 +592,18 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Multiplicit
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Multiplicity_interval")?;
         runtime::check_type(node, "Multiplicity_interval")?;
+        runtime::deny_unknown_fields(
+            node,
+            "Multiplicity_interval",
+            &[
+                "lower",
+                "lower_included",
+                "lower_unbounded",
+                "upper",
+                "upper_included",
+                "upper_unbounded",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             lower: runtime::optional_field(node, "lower")?,
             upper: runtime::optional_field(node, "upper")?,
@@ -641,6 +695,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ObjectRefDa
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "OBJECT_REF")?;
         runtime::check_type(node, "OBJECT_REF")?;
+        runtime::deny_unknown_fields(node, "OBJECT_REF", &["id", "namespace", "type"])?;
         ::core::result::Result::Ok(Self {
             namespace: runtime::required_field(node, "namespace", "OBJECT_REF")?,
             r#type: runtime::required_field(node, "type", "OBJECT_REF")?,
@@ -704,7 +759,7 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::ObjectVersion
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "OBJECT_VERSION_ID");
-        w.field("value", &self.value);
+        w.field("value", self.value());
         w.end_object();
     }
 }
@@ -715,8 +770,13 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ObjectVersi
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "OBJECT_VERSION_ID")?;
         runtime::check_type(node, "OBJECT_VERSION_ID")?;
-        ::core::result::Result::Ok(Self {
-            value: runtime::required_field(node, "value", "OBJECT_VERSION_ID")?,
+        runtime::deny_unknown_fields(node, "OBJECT_VERSION_ID", &["value"])?;
+        let __a0: String = runtime::required_field(node, "value", "OBJECT_VERSION_ID")?;
+        let __built = openehr_base::prelude::ObjectVersionId::new(__a0);
+        __built.map_err(|__e| {
+            crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                "OBJECT_VERSION_ID: {__e}"
+            ))
         })
     }
 }
@@ -741,6 +801,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::PartyRef {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PARTY_REF")?;
         runtime::check_type(node, "PARTY_REF")?;
+        runtime::deny_unknown_fields(node, "PARTY_REF", &["id", "namespace", "type"])?;
         ::core::result::Result::Ok(Self {
             namespace: runtime::required_field(node, "namespace", "PARTY_REF")?,
             r#type: runtime::required_field(node, "type", "PARTY_REF")?,
@@ -780,6 +841,18 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Point_interval")?;
         runtime::check_type(node, "Point_interval")?;
+        runtime::deny_unknown_fields(
+            node,
+            "Point_interval",
+            &[
+                "lower",
+                "lower_included",
+                "lower_unbounded",
+                "upper",
+                "upper_included",
+                "upper_unbounded",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             lower: runtime::optional_field(node, "lower")?,
             upper: runtime::optional_field(node, "upper")?,
@@ -822,6 +895,18 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Proper_interval")?;
         runtime::check_type(node, "Proper_interval")?;
+        runtime::deny_unknown_fields(
+            node,
+            "Proper_interval",
+            &[
+                "lower",
+                "lower_included",
+                "lower_unbounded",
+                "upper",
+                "upper_included",
+                "upper_unbounded",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             lower: runtime::optional_field(node, "lower")?,
             upper: runtime::optional_field(node, "upper")?,
@@ -893,6 +978,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ResourceAnn
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RESOURCE_ANNOTATIONS")?;
         runtime::check_type(node, "RESOURCE_ANNOTATIONS")?;
+        runtime::deny_unknown_fields(node, "RESOURCE_ANNOTATIONS", &["documentation"])?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::required_field(node, "documentation", "RESOURCE_ANNOTATIONS")?,
         })
@@ -962,6 +1048,28 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ResourceDes
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RESOURCE_DESCRIPTION")?;
         runtime::check_type(node, "RESOURCE_DESCRIPTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "RESOURCE_DESCRIPTION",
+            &[
+                "conversion_details",
+                "copyright",
+                "custodian_namespace",
+                "custodian_organisation",
+                "details",
+                "ip_acknowledgements",
+                "licence",
+                "lifecycle_state",
+                "original_author",
+                "original_namespace",
+                "original_publisher",
+                "other_contributors",
+                "other_details",
+                "references",
+                "resource_package_uri",
+                "title",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             title: runtime::optional_field(node, "title")?,
             original_author: runtime::required_field(
@@ -1027,6 +1135,19 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ResourceDes
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RESOURCE_DESCRIPTION_ITEM")?;
         runtime::check_type(node, "RESOURCE_DESCRIPTION_ITEM")?;
+        runtime::deny_unknown_fields(
+            node,
+            "RESOURCE_DESCRIPTION_ITEM",
+            &[
+                "keywords",
+                "language",
+                "misuse",
+                "original_resource_uri",
+                "other_details",
+                "purpose",
+                "use",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             language: runtime::required_field(node, "language", "RESOURCE_DESCRIPTION_ITEM")?,
             purpose: runtime::required_field(node, "purpose", "RESOURCE_DESCRIPTION_ITEM")?,
@@ -1057,6 +1178,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::TemplateId 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TEMPLATE_ID")?;
         runtime::check_type(node, "TEMPLATE_ID")?;
+        runtime::deny_unknown_fields(node, "TEMPLATE_ID", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "TEMPLATE_ID")?,
         })
@@ -1081,6 +1203,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Terminology
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TERMINOLOGY_ID")?;
         runtime::check_type(node, "TERMINOLOGY_ID")?;
+        runtime::deny_unknown_fields(node, "TERMINOLOGY_ID", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "TERMINOLOGY_ID")?,
         })
@@ -1120,6 +1243,18 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Translation
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TRANSLATION_DETAILS")?;
         runtime::check_type(node, "TRANSLATION_DETAILS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "TRANSLATION_DETAILS",
+            &[
+                "accreditation",
+                "author",
+                "language",
+                "other_contributors",
+                "other_details",
+                "version_last_translated",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             language: runtime::required_field(node, "language", "TRANSLATION_DETAILS")?,
             author: runtime::required_field(node, "author", "TRANSLATION_DETAILS")?,
@@ -1156,6 +1291,16 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Terminology
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Terminology_code")?;
         runtime::check_type(node, "Terminology_code")?;
+        runtime::deny_unknown_fields(
+            node,
+            "Terminology_code",
+            &[
+                "code_string",
+                "terminology_id",
+                "terminology_version",
+                "uri",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             terminology_id: runtime::required_field(node, "terminology_id", "Terminology_code")?,
             terminology_version: runtime::optional_field(node, "terminology_version")?,
@@ -1184,6 +1329,7 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Terminology
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "Terminology_term")?;
         runtime::check_type(node, "Terminology_term")?;
+        runtime::deny_unknown_fields(node, "Terminology_term", &["concept", "text"])?;
         ::core::result::Result::Ok(Self {
             concept: runtime::required_field(node, "concept", "Terminology_term")?,
             text: runtime::required_field(node, "text", "Terminology_term")?,
@@ -1283,7 +1429,7 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::Uuid {
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "UUID");
-        w.field("value", &self.value);
+        w.field("value", self.value());
         w.end_object();
     }
 }
@@ -1294,9 +1440,10 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Uuid {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "UUID")?;
         runtime::check_type(node, "UUID")?;
-        ::core::result::Result::Ok(Self {
-            value: runtime::required_field(node, "value", "UUID")?,
-        })
+        runtime::deny_unknown_fields(node, "UUID", &["value"])?;
+        let __a0: uuid::Uuid = runtime::required_field(node, "value", "UUID")?;
+        let __built = openehr_base::prelude::Uuid::new(__a0);
+        ::core::result::Result::Ok(__built)
     }
 }
 
@@ -1341,7 +1488,7 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::VersionTreeId
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         w.begin_object();
         w.field_str("_type", "VERSION_TREE_ID");
-        w.field("value", &self.value);
+        w.field("value", self.value());
         w.end_object();
     }
 }
@@ -1352,8 +1499,13 @@ impl crate::json_codec::runtime::FromJson for openehr_base::prelude::VersionTree
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VERSION_TREE_ID")?;
         runtime::check_type(node, "VERSION_TREE_ID")?;
-        ::core::result::Result::Ok(Self {
-            value: runtime::required_field(node, "value", "VERSION_TREE_ID")?,
+        runtime::deny_unknown_fields(node, "VERSION_TREE_ID", &["value"])?;
+        let __a0: String = runtime::required_field(node, "value", "VERSION_TREE_ID")?;
+        let __built = openehr_base::prelude::VersionTreeId::new(__a0);
+        __built.map_err(|__e| {
+            crate::json_codec::runtime::JsonParseError::custom(::std::format!(
+                "VERSION_TREE_ID: {__e}"
+            ))
         })
     }
 }
@@ -1375,6 +1527,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::AccessControl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ACCESS_CONTROL_SETTINGS")?;
         runtime::check_type(node, "ACCESS_CONTROL_SETTINGS")?;
+        runtime::deny_unknown_fields(node, "ACCESS_CONTROL_SETTINGS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -1438,6 +1591,30 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Action {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ACTION")?;
         runtime::check_type(node, "ACTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ACTION",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "description",
+                "encoding",
+                "feeder_audit",
+                "guideline_id",
+                "instruction_details",
+                "ism_transition",
+                "language",
+                "links",
+                "name",
+                "other_participations",
+                "protocol",
+                "provider",
+                "subject",
+                "time",
+                "uid",
+                "workflow_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ACTION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ACTION")?,
@@ -1499,6 +1676,21 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Activity {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ACTIVITY")?;
         runtime::check_type(node, "ACTIVITY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ACTIVITY",
+            &[
+                "action_archetype_id",
+                "archetype_details",
+                "archetype_node_id",
+                "description",
+                "feeder_audit",
+                "links",
+                "name",
+                "timing",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ACTIVITY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ACTIVITY")?,
@@ -1597,6 +1789,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Address {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ADDRESS")?;
         runtime::check_type(node, "ADDRESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ADDRESS",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "details",
+                "feeder_audit",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ADDRESS")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ADDRESS")?,
@@ -1633,6 +1838,17 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::AddressedMess
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ADDRESSED_MESSAGE")?;
         runtime::check_type(node, "ADDRESSED_MESSAGE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ADDRESSED_MESSAGE",
+            &[
+                "addressees",
+                "message",
+                "sender",
+                "sender_reference",
+                "urgency",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             sender: runtime::required_field(node, "sender", "ADDRESSED_MESSAGE")?,
             sender_reference: runtime::required_field(
@@ -1695,6 +1911,25 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::AdminEntry {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ADMIN_ENTRY")?;
         runtime::check_type(node, "ADMIN_ENTRY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ADMIN_ENTRY",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "data",
+                "encoding",
+                "feeder_audit",
+                "language",
+                "links",
+                "name",
+                "other_participations",
+                "provider",
+                "subject",
+                "uid",
+                "workflow_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ADMIN_ENTRY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ADMIN_ENTRY")?,
@@ -1770,6 +2005,24 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Agent {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AGENT")?;
         runtime::check_type(node, "AGENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AGENT",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "contacts",
+                "details",
+                "feeder_audit",
+                "identities",
+                "languages",
+                "links",
+                "name",
+                "relationships",
+                "roles",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "AGENT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "AGENT")?,
@@ -1809,6 +2062,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Archetyped {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPED")?;
         runtime::check_type(node, "ARCHETYPED")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPED",
+            &["archetype_id", "rm_version", "template_id"],
+        )?;
         ::core::result::Result::Ok(Self {
             archetype_id: runtime::required_field(node, "archetype_id", "ARCHETYPED")?,
             template_id: runtime::optional_field(node, "template_id")?,
@@ -1854,6 +2112,22 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Attestation {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ATTESTATION")?;
         runtime::check_type(node, "ATTESTATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ATTESTATION",
+            &[
+                "attested_view",
+                "change_type",
+                "committer",
+                "description",
+                "is_pending",
+                "items",
+                "proof",
+                "reason",
+                "system_id",
+                "time_committed",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             system_id: runtime::required_field(node, "system_id", "ATTESTATION")?,
             time_committed: runtime::required_field(node, "time_committed", "ATTESTATION")?,
@@ -1893,6 +2167,17 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::AuditDetailsD
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AUDIT_DETAILS")?;
         runtime::check_type(node, "AUDIT_DETAILS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AUDIT_DETAILS",
+            &[
+                "change_type",
+                "committer",
+                "description",
+                "system_id",
+                "time_committed",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             system_id: runtime::required_field(node, "system_id", "AUDIT_DETAILS")?,
             time_committed: runtime::required_field(node, "time_committed", "AUDIT_DETAILS")?,
@@ -1971,6 +2256,17 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::AuthoredResou
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AUTHORED_RESOURCE")?;
         runtime::check_type(node, "AUTHORED_RESOURCE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AUTHORED_RESOURCE",
+            &[
+                "description",
+                "is_controlled",
+                "original_language",
+                "revision_history",
+                "translations",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             original_language: runtime::required_field(
                 node,
@@ -2022,6 +2318,20 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Capability {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CAPABILITY")?;
         runtime::check_type(node, "CAPABILITY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CAPABILITY",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "credentials",
+                "feeder_audit",
+                "links",
+                "name",
+                "time_validity",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "CAPABILITY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "CAPABILITY")?,
@@ -2119,6 +2429,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Cluster {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CLUSTER")?;
         runtime::check_type(node, "CLUSTER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CLUSTER",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "CLUSTER")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "CLUSTER")?,
@@ -2153,6 +2476,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::CodePhrase {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CODE_PHRASE")?;
         runtime::check_type(node, "CODE_PHRASE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CODE_PHRASE",
+            &["code_string", "preferred_term", "terminology_id"],
+        )?;
         ::core::result::Result::Ok(Self {
             terminology_id: runtime::required_field(node, "terminology_id", "CODE_PHRASE")?,
             code_string: runtime::required_field(node, "code_string", "CODE_PHRASE")?,
@@ -2178,6 +2506,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::CodeSetAccess
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CODE_SET_ACCESS")?;
         runtime::check_type(node, "CODE_SET_ACCESS")?;
+        runtime::deny_unknown_fields(node, "CODE_SET_ACCESS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -2227,6 +2556,24 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Composition {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "COMPOSITION")?;
         runtime::check_type(node, "COMPOSITION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "COMPOSITION",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "category",
+                "composer",
+                "content",
+                "context",
+                "feeder_audit",
+                "language",
+                "links",
+                "name",
+                "territory",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "COMPOSITION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "COMPOSITION")?,
@@ -2281,6 +2628,20 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Contact {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CONTACT")?;
         runtime::check_type(node, "CONTACT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CONTACT",
+            &[
+                "addresses",
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "links",
+                "name",
+                "time_validity",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "CONTACT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "CONTACT")?,
@@ -2379,6 +2740,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Contribution 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CONTRIBUTION")?;
         runtime::check_type(node, "CONTRIBUTION")?;
+        runtime::deny_unknown_fields(node, "CONTRIBUTION", &["audit", "uid", "versions"])?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "CONTRIBUTION")?,
             versions: runtime::required_field(node, "versions", "CONTRIBUTION")?,
@@ -2695,6 +3057,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvBoolean {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_BOOLEAN")?;
         runtime::check_type(node, "DV_BOOLEAN")?;
+        runtime::deny_unknown_fields(node, "DV_BOOLEAN", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_BOOLEAN")?,
         })
@@ -2737,6 +3100,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvCodedText {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_CODED_TEXT")?;
         runtime::check_type(node, "DV_CODED_TEXT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_CODED_TEXT",
+            &[
+                "defining_code",
+                "encoding",
+                "formatting",
+                "hyperlink",
+                "language",
+                "mappings",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_CODED_TEXT")?,
             hyperlink: runtime::optional_field(node, "hyperlink")?,
@@ -2787,6 +3163,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvCount {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_COUNT")?;
         runtime::check_type(node, "DV_COUNT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_COUNT",
+            &[
+                "accuracy",
+                "accuracy_is_percent",
+                "magnitude",
+                "magnitude_status",
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -2837,6 +3226,18 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvDate {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_DATE")?;
         runtime::check_type(node, "DV_DATE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_DATE",
+            &[
+                "accuracy",
+                "magnitude_status",
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -2886,6 +3287,18 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvDateTime {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_DATE_TIME")?;
         runtime::check_type(node, "DV_DATE_TIME")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_DATE_TIME",
+            &[
+                "accuracy",
+                "magnitude_status",
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -2938,6 +3351,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvDuration {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_DURATION")?;
         runtime::check_type(node, "DV_DURATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_DURATION",
+            &[
+                "accuracy",
+                "accuracy_is_percent",
+                "magnitude_status",
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -2971,6 +3397,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvEhrUri {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_EHR_URI")?;
         runtime::check_type(node, "DV_EHR_URI")?;
+        runtime::deny_unknown_fields(node, "DV_EHR_URI", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_EHR_URI")?,
         })
@@ -3035,6 +3462,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvGeneralTime
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_GENERAL_TIME_SPECIFICATION")?;
         runtime::check_type(node, "DV_GENERAL_TIME_SPECIFICATION")?;
+        runtime::deny_unknown_fields(node, "DV_GENERAL_TIME_SPECIFICATION", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_GENERAL_TIME_SPECIFICATION")?,
         })
@@ -3068,6 +3496,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvIdentifier 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_IDENTIFIER")?;
         runtime::check_type(node, "DV_IDENTIFIER")?;
+        runtime::deny_unknown_fields(node, "DV_IDENTIFIER", &["assigner", "id", "issuer", "type"])?;
         ::core::result::Result::Ok(Self {
             issuer: runtime::optional_field(node, "issuer")?,
             assigner: runtime::optional_field(node, "assigner")?,
@@ -3108,6 +3537,18 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_INTERVAL")?;
         runtime::check_type(node, "DV_INTERVAL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_INTERVAL",
+            &[
+                "lower",
+                "lower_included",
+                "lower_unbounded",
+                "upper",
+                "upper_included",
+                "upper_unbounded",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             lower: runtime::optional_field(node, "lower")?,
             upper: runtime::optional_field(node, "upper")?,
@@ -3165,6 +3606,23 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvMultimedia 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_MULTIMEDIA")?;
         runtime::check_type(node, "DV_MULTIMEDIA")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_MULTIMEDIA",
+            &[
+                "alternate_text",
+                "charset",
+                "compression_algorithm",
+                "data",
+                "integrity_check",
+                "integrity_check_algorithm",
+                "language",
+                "media_type",
+                "size",
+                "thumbnail",
+                "uri",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             charset: runtime::optional_field(node, "charset")?,
             language: runtime::optional_field(node, "language")?,
@@ -3286,6 +3744,17 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvOrdinal {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_ORDINAL")?;
         runtime::check_type(node, "DV_ORDINAL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_ORDINAL",
+            &[
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+                "symbol",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -3317,6 +3786,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvParagraph {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_PARAGRAPH")?;
         runtime::check_type(node, "DV_PARAGRAPH")?;
+        runtime::deny_unknown_fields(node, "DV_PARAGRAPH", &["items"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::required_field(node, "items", "DV_PARAGRAPH")?,
         })
@@ -3348,6 +3818,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvParsable {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_PARSABLE")?;
         runtime::check_type(node, "DV_PARSABLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_PARSABLE",
+            &["charset", "formalism", "language", "value"],
+        )?;
         ::core::result::Result::Ok(Self {
             charset: runtime::optional_field(node, "charset")?,
             language: runtime::optional_field(node, "language")?,
@@ -3375,6 +3850,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvPeriodicTim
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_PERIODIC_TIME_SPECIFICATION")?;
         runtime::check_type(node, "DV_PERIODIC_TIME_SPECIFICATION")?;
+        runtime::deny_unknown_fields(node, "DV_PERIODIC_TIME_SPECIFICATION", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_PERIODIC_TIME_SPECIFICATION")?,
         })
@@ -3424,6 +3900,22 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvProportion 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_PROPORTION")?;
         runtime::check_type(node, "DV_PROPORTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_PROPORTION",
+            &[
+                "accuracy",
+                "accuracy_is_percent",
+                "denominator",
+                "magnitude_status",
+                "normal_range",
+                "normal_status",
+                "numerator",
+                "other_reference_ranges",
+                "precision",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -3555,6 +4047,23 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvQuantity {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_QUANTITY")?;
         runtime::check_type(node, "DV_QUANTITY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_QUANTITY",
+            &[
+                "accuracy",
+                "accuracy_is_percent",
+                "magnitude",
+                "magnitude_status",
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+                "precision",
+                "units",
+                "units_display_name",
+                "units_system",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -3604,6 +4113,17 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvScale {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_SCALE")?;
         runtime::check_type(node, "DV_SCALE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_SCALE",
+            &[
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+                "symbol",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -3636,6 +4156,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvState {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_STATE")?;
         runtime::check_type(node, "DV_STATE")?;
+        runtime::deny_unknown_fields(node, "DV_STATE", &["is_terminal", "value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_STATE")?,
             is_terminal: runtime::required_field(node, "is_terminal", "DV_STATE")?,
@@ -3723,6 +4244,18 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvTextData {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_TEXT")?;
         runtime::check_type(node, "DV_TEXT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_TEXT",
+            &[
+                "encoding",
+                "formatting",
+                "hyperlink",
+                "language",
+                "mappings",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_TEXT")?,
             hyperlink: runtime::optional_field(node, "hyperlink")?,
@@ -3807,6 +4340,18 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvTime {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_TIME")?;
         runtime::check_type(node, "DV_TIME")?;
+        runtime::deny_unknown_fields(
+            node,
+            "DV_TIME",
+            &[
+                "accuracy",
+                "magnitude_status",
+                "normal_range",
+                "normal_status",
+                "other_reference_ranges",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             normal_status: runtime::optional_field(node, "normal_status")?,
             normal_range: runtime::optional_field(node, "normal_range")?,
@@ -3891,6 +4436,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvUriData {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "DV_URI")?;
         runtime::check_type(node, "DV_URI")?;
+        runtime::deny_unknown_fields(node, "DV_URI", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "DV_URI")?,
         })
@@ -3980,6 +4526,22 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Ehr {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EHR")?;
         runtime::check_type(node, "EHR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EHR",
+            &[
+                "compositions",
+                "contributions",
+                "directory",
+                "ehr_access",
+                "ehr_id",
+                "ehr_status",
+                "folders",
+                "system_id",
+                "tags",
+                "time_created",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             system_id: runtime::required_field(node, "system_id", "EHR")?,
             ehr_id: runtime::required_field(node, "ehr_id", "EHR")?,
@@ -4031,6 +4593,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::EhrAccess {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EHR_ACCESS")?;
         runtime::check_type(node, "EHR_ACCESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EHR_ACCESS",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "links",
+                "name",
+                "settings",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EHR_ACCESS")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EHR_ACCESS")?,
@@ -4082,6 +4657,22 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::EhrStatus {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EHR_STATUS")?;
         runtime::check_type(node, "EHR_STATUS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EHR_STATUS",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "is_modifiable",
+                "is_queryable",
+                "links",
+                "name",
+                "other_details",
+                "subject",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EHR_STATUS")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EHR_STATUS")?,
@@ -4139,6 +4730,21 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Element {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ELEMENT")?;
         runtime::check_type(node, "ELEMENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ELEMENT",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "links",
+                "name",
+                "null_flavour",
+                "null_reason",
+                "uid",
+                "value",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ELEMENT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ELEMENT")?,
@@ -4262,6 +4868,27 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Evaluation {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EVALUATION")?;
         runtime::check_type(node, "EVALUATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EVALUATION",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "data",
+                "encoding",
+                "feeder_audit",
+                "guideline_id",
+                "language",
+                "links",
+                "name",
+                "other_participations",
+                "protocol",
+                "provider",
+                "subject",
+                "uid",
+                "workflow_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EVALUATION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EVALUATION")?,
@@ -4362,6 +4989,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::EventContext 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EVENT_CONTEXT")?;
         runtime::check_type(node, "EVENT_CONTEXT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EVENT_CONTEXT",
+            &[
+                "end_time",
+                "health_care_facility",
+                "location",
+                "other_context",
+                "participations",
+                "setting",
+                "start_time",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             start_time: runtime::required_field(node, "start_time", "EVENT_CONTEXT")?,
             end_time: runtime::optional_field(node, "end_time")?,
@@ -4426,6 +5066,25 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Extract {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT")?;
         runtime::check_type(node, "EXTRACT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "chapters",
+                "feeder_audit",
+                "links",
+                "name",
+                "participations",
+                "request_id",
+                "sequence_nr",
+                "specification",
+                "system_id",
+                "time_created",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EXTRACT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "EXTRACT")?,
@@ -4477,6 +5136,20 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractAction
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_ACTION_REQUEST")?;
         runtime::check_type(node, "EXTRACT_ACTION_REQUEST")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_ACTION_REQUEST",
+            &[
+                "action",
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "links",
+                "name",
+                "request_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EXTRACT_ACTION_REQUEST")?,
             archetype_node_id: runtime::required_field(
@@ -4532,6 +5205,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractChapte
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_CHAPTER")?;
         runtime::check_type(node, "EXTRACT_CHAPTER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_CHAPTER",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EXTRACT_CHAPTER")?,
             archetype_node_id: runtime::required_field(
@@ -4665,6 +5351,20 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractEntity
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_ENTITY_CHAPTER")?;
         runtime::check_type(node, "EXTRACT_ENTITY_CHAPTER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_ENTITY_CHAPTER",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "extract_id_key",
+                "feeder_audit",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EXTRACT_ENTITY_CHAPTER")?,
             archetype_node_id: runtime::required_field(
@@ -4720,6 +5420,17 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractEntity
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_ENTITY_MANIFEST")?;
         runtime::check_type(node, "EXTRACT_ENTITY_MANIFEST")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_ENTITY_MANIFEST",
+            &[
+                "ehr_id",
+                "extract_id_key",
+                "item_list",
+                "other_ids",
+                "subject_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             extract_id_key: runtime::required_field(
                 node,
@@ -4755,6 +5466,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractError 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_ERROR")?;
         runtime::check_type(node, "EXTRACT_ERROR")?;
+        runtime::deny_unknown_fields(node, "EXTRACT_ERROR", &["reason", "request_id"])?;
         ::core::result::Result::Ok(Self {
             request_id: runtime::optional_field(node, "request_id")?,
             reason: runtime::required_field(node, "reason", "EXTRACT_ERROR")?,
@@ -4800,6 +5512,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractFolder
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_FOLDER")?;
         runtime::check_type(node, "EXTRACT_FOLDER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_FOLDER",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EXTRACT_FOLDER")?,
             archetype_node_id: runtime::required_field(
@@ -4879,6 +5604,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractManife
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_MANIFEST")?;
         runtime::check_type(node, "EXTRACT_MANIFEST")?;
+        runtime::deny_unknown_fields(node, "EXTRACT_MANIFEST", &["entities"])?;
         ::core::result::Result::Ok(Self {
             entities: runtime::required_field(node, "entities", "EXTRACT_MANIFEST")?,
         })
@@ -4910,6 +5636,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractPartic
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_PARTICIPATION")?;
         runtime::check_type(node, "EXTRACT_PARTICIPATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_PARTICIPATION",
+            &["function", "mode", "performer", "time"],
+        )?;
         ::core::result::Result::Ok(Self {
             time: runtime::optional_field(node, "time")?,
             function: runtime::required_field(node, "function", "EXTRACT_PARTICIPATION")?,
@@ -4954,6 +5685,20 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractReques
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_REQUEST")?;
         runtime::check_type(node, "EXTRACT_REQUEST")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_REQUEST",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "extract_spec",
+                "feeder_audit",
+                "links",
+                "name",
+                "uid",
+                "update_spec",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "EXTRACT_REQUEST")?,
             archetype_node_id: runtime::required_field(
@@ -5004,6 +5749,20 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractSpec {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_SPEC")?;
         runtime::check_type(node, "EXTRACT_SPEC")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_SPEC",
+            &[
+                "criteria",
+                "extract_type",
+                "include_multimedia",
+                "link_depth",
+                "manifest",
+                "other_details",
+                "priority",
+                "version_spec",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             version_spec: runtime::optional_field(node, "version_spec")?,
             manifest: runtime::required_field(node, "manifest", "EXTRACT_SPEC")?,
@@ -5048,6 +5807,16 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractUpdate
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_UPDATE_SPEC")?;
         runtime::check_type(node, "EXTRACT_UPDATE_SPEC")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_UPDATE_SPEC",
+            &[
+                "persist_in_server",
+                "repeat_period",
+                "trigger_events",
+                "update_method",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             persist_in_server: runtime::required_field(
                 node,
@@ -5084,6 +5853,16 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractVersio
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTRACT_VERSION_SPEC")?;
         runtime::check_type(node, "EXTRACT_VERSION_SPEC")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTRACT_VERSION_SPEC",
+            &[
+                "commit_time_interval",
+                "include_all_versions",
+                "include_data",
+                "include_revision_history",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             include_all_versions: runtime::required_field(
                 node,
@@ -5135,6 +5914,17 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::FeederAudit {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "FEEDER_AUDIT")?;
         runtime::check_type(node, "FEEDER_AUDIT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "FEEDER_AUDIT",
+            &[
+                "feeder_system_audit",
+                "feeder_system_item_ids",
+                "original_content",
+                "originating_system_audit",
+                "originating_system_item_ids",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             originating_system_item_ids: runtime::optional_container_field(
                 node,
@@ -5191,6 +5981,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::FeederAuditDe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "FEEDER_AUDIT_DETAILS")?;
         runtime::check_type(node, "FEEDER_AUDIT_DETAILS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "FEEDER_AUDIT_DETAILS",
+            &[
+                "location",
+                "other_details",
+                "provider",
+                "subject",
+                "system_id",
+                "time",
+                "version_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             system_id: runtime::required_field(node, "system_id", "FEEDER_AUDIT_DETAILS")?,
             location: runtime::optional_field(node, "location")?,
@@ -5249,6 +6052,21 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Folder {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "FOLDER")?;
         runtime::check_type(node, "FOLDER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "FOLDER",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "details",
+                "feeder_audit",
+                "folders",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "FOLDER")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "FOLDER")?,
@@ -5339,6 +6157,33 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::GenericConten
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "GENERIC_CONTENT_ITEM")?;
         runtime::check_type(node, "GENERIC_CONTENT_ITEM")?;
+        runtime::deny_unknown_fields(
+            node,
+            "GENERIC_CONTENT_ITEM",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "author",
+                "authorisation_time",
+                "authoriser",
+                "creation_time",
+                "feeder_audit",
+                "is_changed",
+                "is_masked",
+                "is_primary",
+                "item",
+                "item_status",
+                "item_type",
+                "item_type_version",
+                "links",
+                "name",
+                "other_details",
+                "system_id",
+                "uid",
+                "version_id",
+                "version_set_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "GENERIC_CONTENT_ITEM")?,
             archetype_node_id: runtime::required_field(
@@ -5403,6 +6248,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::GenericEntry 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "GENERIC_ENTRY")?;
         runtime::check_type(node, "GENERIC_ENTRY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "GENERIC_ENTRY",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "data",
+                "feeder_audit",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "GENERIC_ENTRY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "GENERIC_ENTRY")?,
@@ -5472,6 +6330,24 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Group {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "GROUP")?;
         runtime::check_type(node, "GROUP")?;
+        runtime::deny_unknown_fields(
+            node,
+            "GROUP",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "contacts",
+                "details",
+                "feeder_audit",
+                "identities",
+                "languages",
+                "links",
+                "name",
+                "relationships",
+                "roles",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "GROUP")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "GROUP")?,
@@ -5541,6 +6417,23 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "HISTORY")?;
         runtime::check_type(node, "HISTORY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "HISTORY",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "duration",
+                "events",
+                "feeder_audit",
+                "links",
+                "name",
+                "origin",
+                "period",
+                "summary",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "HISTORY")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "HISTORY")?,
@@ -5584,6 +6477,11 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "IMPORTED_VERSION")?;
         runtime::check_type(node, "IMPORTED_VERSION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "IMPORTED_VERSION",
+            &["commit_audit", "contribution", "item", "signature"],
+        )?;
         ::core::result::Result::Ok(Self {
             contribution: runtime::required_field(node, "contribution", "IMPORTED_VERSION")?,
             signature: runtime::optional_field(node, "signature")?,
@@ -5658,6 +6556,30 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Instruction {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "INSTRUCTION")?;
         runtime::check_type(node, "INSTRUCTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "INSTRUCTION",
+            &[
+                "activities",
+                "archetype_details",
+                "archetype_node_id",
+                "encoding",
+                "expiry_time",
+                "feeder_audit",
+                "guideline_id",
+                "language",
+                "links",
+                "name",
+                "narrative",
+                "other_participations",
+                "protocol",
+                "provider",
+                "subject",
+                "uid",
+                "wf_definition",
+                "workflow_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "INSTRUCTION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "INSTRUCTION")?,
@@ -5703,6 +6625,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::InstructionDe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "INSTRUCTION_DETAILS")?;
         runtime::check_type(node, "INSTRUCTION_DETAILS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "INSTRUCTION_DETAILS",
+            &["activity_id", "instruction_id", "wf_details"],
+        )?;
         ::core::result::Result::Ok(Self {
             instruction_id: runtime::required_field(node, "instruction_id", "INSTRUCTION_DETAILS")?,
             activity_id: runtime::required_field(node, "activity_id", "INSTRUCTION_DETAILS")?,
@@ -5758,6 +6685,24 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "INTERVAL_EVENT")?;
         runtime::check_type(node, "INTERVAL_EVENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "INTERVAL_EVENT",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "data",
+                "feeder_audit",
+                "links",
+                "math_function",
+                "name",
+                "sample_count",
+                "state",
+                "time",
+                "uid",
+                "width",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "INTERVAL_EVENT")?,
             archetype_node_id: runtime::required_field(
@@ -5808,6 +6753,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::IsmTransition
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ISM_TRANSITION")?;
         runtime::check_type(node, "ISM_TRANSITION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ISM_TRANSITION",
+            &["careflow_step", "current_state", "reason", "transition"],
+        )?;
         ::core::result::Result::Ok(Self {
             current_state: runtime::required_field(node, "current_state", "ISM_TRANSITION")?,
             transition: runtime::optional_field(node, "transition")?,
@@ -5895,6 +6845,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemList {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ITEM_LIST")?;
         runtime::check_type(node, "ITEM_LIST")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ITEM_LIST",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ITEM_LIST")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_LIST")?,
@@ -5941,6 +6904,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemSingle {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ITEM_SINGLE")?;
         runtime::check_type(node, "ITEM_SINGLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ITEM_SINGLE",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "item",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ITEM_SINGLE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_SINGLE")?,
@@ -6041,6 +7017,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemTable {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ITEM_TABLE")?;
         runtime::check_type(node, "ITEM_TABLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ITEM_TABLE",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "links",
+                "name",
+                "rows",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ITEM_TABLE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_TABLE")?,
@@ -6079,6 +7068,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemTag {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ITEM_TAG")?;
         runtime::check_type(node, "ITEM_TAG")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ITEM_TAG",
+            &["key", "owner_id", "target", "target_path", "value"],
+        )?;
         ::core::result::Result::Ok(Self {
             key: runtime::required_field(node, "key", "ITEM_TAG")?,
             value: runtime::optional_field(node, "value")?,
@@ -6127,6 +7121,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemTree {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ITEM_TREE")?;
         runtime::check_type(node, "ITEM_TREE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ITEM_TREE",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ITEM_TREE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ITEM_TREE")?,
@@ -6159,6 +7166,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Link {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "LINK")?;
         runtime::check_type(node, "LINK")?;
+        runtime::deny_unknown_fields(node, "LINK", &["meaning", "target", "type"])?;
         ::core::result::Result::Ok(Self {
             meaning: runtime::required_field(node, "meaning", "LINK")?,
             r#type: runtime::required_field(node, "type", "LINK")?,
@@ -6407,6 +7415,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::MeasurementSe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "MEASUREMENT_SERVICE")?;
         runtime::check_type(node, "MEASUREMENT_SERVICE")?;
+        runtime::deny_unknown_fields(node, "MEASUREMENT_SERVICE", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -6434,6 +7443,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Message {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "MESSAGE")?;
         runtime::check_type(node, "MESSAGE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "MESSAGE",
+            &["audit", "author", "content", "signature"],
+        )?;
         ::core::result::Result::Ok(Self {
             audit: runtime::required_field(node, "audit", "MESSAGE")?,
             author: runtime::required_field(node, "author", "MESSAGE")?,
@@ -6540,6 +7554,28 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Observation {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "OBSERVATION")?;
         runtime::check_type(node, "OBSERVATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "OBSERVATION",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "data",
+                "encoding",
+                "feeder_audit",
+                "guideline_id",
+                "language",
+                "links",
+                "name",
+                "other_participations",
+                "protocol",
+                "provider",
+                "state",
+                "subject",
+                "uid",
+                "workflow_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "OBSERVATION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "OBSERVATION")?,
@@ -6578,6 +7614,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::OpenehrCodeSe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "OPENEHR_CODE_SET_IDENTIFIERS")?;
         runtime::check_type(node, "OPENEHR_CODE_SET_IDENTIFIERS")?;
+        runtime::deny_unknown_fields(node, "OPENEHR_CODE_SET_IDENTIFIERS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -6675,6 +7712,22 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::OpenehrConten
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "OPENEHR_CONTENT_ITEM")?;
         runtime::check_type(node, "OPENEHR_CONTENT_ITEM")?;
+        runtime::deny_unknown_fields(
+            node,
+            "OPENEHR_CONTENT_ITEM",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "is_changed",
+                "is_masked",
+                "is_primary",
+                "item",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "OPENEHR_CONTENT_ITEM")?,
             archetype_node_id: runtime::required_field(
@@ -6715,6 +7768,7 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS")?;
         runtime::check_type(node, "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS")?;
+        runtime::deny_unknown_fields(node, "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -6822,6 +7876,24 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Organisation 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ORGANISATION")?;
         runtime::check_type(node, "ORGANISATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ORGANISATION",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "contacts",
+                "details",
+                "feeder_audit",
+                "identities",
+                "languages",
+                "links",
+                "name",
+                "relationships",
+                "roles",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ORGANISATION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ORGANISATION")?,
@@ -6883,6 +7955,21 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ORIGINAL_VERSION")?;
         runtime::check_type(node, "ORIGINAL_VERSION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ORIGINAL_VERSION",
+            &[
+                "attestations",
+                "commit_audit",
+                "contribution",
+                "data",
+                "lifecycle_state",
+                "other_input_version_uids",
+                "preceding_version_uid",
+                "signature",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             contribution: runtime::required_field(node, "contribution", "ORIGINAL_VERSION")?,
             signature: runtime::optional_field(node, "signature")?,
@@ -6925,6 +8012,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Participation
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PARTICIPATION")?;
         runtime::check_type(node, "PARTICIPATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "PARTICIPATION",
+            &["function", "mode", "performer", "time"],
+        )?;
         ::core::result::Result::Ok(Self {
             function: runtime::required_field(node, "function", "PARTICIPATION")?,
             mode: runtime::optional_field(node, "mode")?,
@@ -7017,6 +8109,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyIdentifi
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PARTY_IDENTIFIED")?;
         runtime::check_type(node, "PARTY_IDENTIFIED")?;
+        runtime::deny_unknown_fields(
+            node,
+            "PARTY_IDENTIFIED",
+            &["external_ref", "identifiers", "name"],
+        )?;
         ::core::result::Result::Ok(Self {
             external_ref: runtime::optional_field(node, "external_ref")?,
             name: runtime::optional_field(node, "name")?,
@@ -7097,6 +8194,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyIdentity
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PARTY_IDENTITY")?;
         runtime::check_type(node, "PARTY_IDENTITY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "PARTY_IDENTITY",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "details",
+                "feeder_audit",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "PARTY_IDENTITY")?,
             archetype_node_id: runtime::required_field(
@@ -7185,6 +8295,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyRelated 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PARTY_RELATED")?;
         runtime::check_type(node, "PARTY_RELATED")?;
+        runtime::deny_unknown_fields(
+            node,
+            "PARTY_RELATED",
+            &["external_ref", "identifiers", "name", "relationship"],
+        )?;
         ::core::result::Result::Ok(Self {
             external_ref: runtime::optional_field(node, "external_ref")?,
             name: runtime::optional_field(node, "name")?,
@@ -7235,6 +8350,22 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyRelation
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PARTY_RELATIONSHIP")?;
         runtime::check_type(node, "PARTY_RELATIONSHIP")?;
+        runtime::deny_unknown_fields(
+            node,
+            "PARTY_RELATIONSHIP",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "details",
+                "feeder_audit",
+                "links",
+                "name",
+                "source",
+                "target",
+                "time_validity",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "PARTY_RELATIONSHIP")?,
             archetype_node_id: runtime::required_field(
@@ -7274,6 +8405,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartySelf {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PARTY_SELF")?;
         runtime::check_type(node, "PARTY_SELF")?;
+        runtime::deny_unknown_fields(node, "PARTY_SELF", &["external_ref"])?;
         ::core::result::Result::Ok(Self {
             external_ref: runtime::optional_field(node, "external_ref")?,
         })
@@ -7575,6 +8707,24 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Person {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "PERSON")?;
         runtime::check_type(node, "PERSON")?;
+        runtime::deny_unknown_fields(
+            node,
+            "PERSON",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "contacts",
+                "details",
+                "feeder_audit",
+                "identities",
+                "languages",
+                "links",
+                "name",
+                "relationships",
+                "roles",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "PERSON")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "PERSON")?,
@@ -7634,6 +8784,21 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "POINT_EVENT")?;
         runtime::check_type(node, "POINT_EVENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "POINT_EVENT",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "data",
+                "feeder_audit",
+                "links",
+                "name",
+                "state",
+                "time",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "POINT_EVENT")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "POINT_EVENT")?,
@@ -7689,6 +8854,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ReferenceRang
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "REFERENCE_RANGE")?;
         runtime::check_type(node, "REFERENCE_RANGE")?;
+        runtime::deny_unknown_fields(node, "REFERENCE_RANGE", &["meaning", "range"])?;
         ::core::result::Result::Ok(Self {
             meaning: runtime::required_field(node, "meaning", "REFERENCE_RANGE")?,
             range: runtime::required_field(node, "range", "REFERENCE_RANGE")?,
@@ -7727,6 +8893,18 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ResourceDescr
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RESOURCE_DESCRIPTION")?;
         runtime::check_type(node, "RESOURCE_DESCRIPTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "RESOURCE_DESCRIPTION",
+            &[
+                "details",
+                "lifecycle_state",
+                "original_author",
+                "other_contributors",
+                "other_details",
+                "resource_package_uri",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             original_author: runtime::required_field(
                 node,
@@ -7785,6 +8963,20 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ResourceDescr
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RESOURCE_DESCRIPTION_ITEM")?;
         runtime::check_type(node, "RESOURCE_DESCRIPTION_ITEM")?;
+        runtime::deny_unknown_fields(
+            node,
+            "RESOURCE_DESCRIPTION_ITEM",
+            &[
+                "copyright",
+                "keywords",
+                "language",
+                "misuse",
+                "original_resource_uri",
+                "other_details",
+                "purpose",
+                "use",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             language: runtime::required_field(node, "language", "RESOURCE_DESCRIPTION_ITEM")?,
             purpose: runtime::required_field(node, "purpose", "RESOURCE_DESCRIPTION_ITEM")?,
@@ -7816,6 +9008,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::RevisionHisto
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "REVISION_HISTORY")?;
         runtime::check_type(node, "REVISION_HISTORY")?;
+        runtime::deny_unknown_fields(node, "REVISION_HISTORY", &["items"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::required_field(node, "items", "REVISION_HISTORY")?,
         })
@@ -7841,6 +9034,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::RevisionHisto
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "REVISION_HISTORY_ITEM")?;
         runtime::check_type(node, "REVISION_HISTORY_ITEM")?;
+        runtime::deny_unknown_fields(node, "REVISION_HISTORY_ITEM", &["audits", "version_id"])?;
         ::core::result::Result::Ok(Self {
             version_id: runtime::required_field(node, "version_id", "REVISION_HISTORY_ITEM")?,
             audits: runtime::required_field(node, "audits", "REVISION_HISTORY_ITEM")?,
@@ -7904,6 +9098,25 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Role {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ROLE")?;
         runtime::check_type(node, "ROLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ROLE",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "capabilities",
+                "contacts",
+                "details",
+                "feeder_audit",
+                "identities",
+                "links",
+                "name",
+                "performer",
+                "relationships",
+                "time_validity",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ROLE")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "ROLE")?,
@@ -7960,6 +9173,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Section {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "SECTION")?;
         runtime::check_type(node, "SECTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "SECTION",
+            &[
+                "archetype_details",
+                "archetype_node_id",
+                "feeder_audit",
+                "items",
+                "links",
+                "name",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "SECTION")?,
             archetype_node_id: runtime::required_field(node, "archetype_node_id", "SECTION")?,
@@ -7995,6 +9221,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::SyncExtract {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "SYNC_EXTRACT")?;
         runtime::check_type(node, "SYNC_EXTRACT")?;
+        runtime::deny_unknown_fields(node, "SYNC_EXTRACT", &["items", "specification"])?;
         ::core::result::Result::Ok(Self {
             specification: runtime::required_field(node, "specification", "SYNC_EXTRACT")?,
             items: runtime::optional_container_field(node, "items")?,
@@ -8020,6 +9247,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::SyncExtractRe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "SYNC_EXTRACT_REQUEST")?;
         runtime::check_type(node, "SYNC_EXTRACT_REQUEST")?;
+        runtime::deny_unknown_fields(node, "SYNC_EXTRACT_REQUEST", &["specification"])?;
         ::core::result::Result::Ok(Self {
             specification: runtime::required_field(node, "specification", "SYNC_EXTRACT_REQUEST")?,
         })
@@ -8055,6 +9283,16 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::SyncExtractSp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "SYNC_EXTRACT_SPEC")?;
         runtime::check_type(node, "SYNC_EXTRACT_SPEC")?;
+        runtime::deny_unknown_fields(
+            node,
+            "SYNC_EXTRACT_SPEC",
+            &[
+                "all_contributions",
+                "contribution_list",
+                "contributions_since",
+                "includes_versions",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             includes_versions: runtime::required_field(
                 node,
@@ -8085,6 +9323,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::TerminologyAc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TERMINOLOGY_ACCESS")?;
         runtime::check_type(node, "TERMINOLOGY_ACCESS")?;
+        runtime::deny_unknown_fields(node, "TERMINOLOGY_ACCESS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -8106,6 +9345,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::TerminologySe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TERMINOLOGY_SERVICE")?;
         runtime::check_type(node, "TERMINOLOGY_SERVICE")?;
+        runtime::deny_unknown_fields(node, "TERMINOLOGY_SERVICE", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -8132,6 +9372,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::TermMapping {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TERM_MAPPING")?;
         runtime::check_type(node, "TERM_MAPPING")?;
+        runtime::deny_unknown_fields(node, "TERM_MAPPING", &["match", "purpose", "target"])?;
         ::core::result::Result::Ok(Self {
             r#match: runtime::required_field(node, "match", "TERM_MAPPING")?,
             purpose: runtime::optional_field(node, "purpose")?,
@@ -8165,6 +9406,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::TranslationDe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TRANSLATION_DETAILS")?;
         runtime::check_type(node, "TRANSLATION_DETAILS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "TRANSLATION_DETAILS",
+            &["accreditaton", "author", "language", "other_details"],
+        )?;
         ::core::result::Result::Ok(Self {
             language: runtime::required_field(node, "language", "TRANSLATION_DETAILS")?,
             author: runtime::required_field(node, "author", "TRANSLATION_DETAILS")?,
@@ -8238,6 +9484,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::VersionedComp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VERSIONED_COMPOSITION")?;
         runtime::check_type(node, "VERSIONED_COMPOSITION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "VERSIONED_COMPOSITION",
+            &["owner_id", "time_created", "uid"],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "VERSIONED_COMPOSITION")?,
             owner_id: runtime::required_field(node, "owner_id", "VERSIONED_COMPOSITION")?,
@@ -8266,6 +9517,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::VersionedEhrA
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VERSIONED_EHR_ACCESS")?;
         runtime::check_type(node, "VERSIONED_EHR_ACCESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "VERSIONED_EHR_ACCESS",
+            &["owner_id", "time_created", "uid"],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "VERSIONED_EHR_ACCESS")?,
             owner_id: runtime::required_field(node, "owner_id", "VERSIONED_EHR_ACCESS")?,
@@ -8294,6 +9550,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::VersionedEhrS
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VERSIONED_EHR_STATUS")?;
         runtime::check_type(node, "VERSIONED_EHR_STATUS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "VERSIONED_EHR_STATUS",
+            &["owner_id", "time_created", "uid"],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "VERSIONED_EHR_STATUS")?,
             owner_id: runtime::required_field(node, "owner_id", "VERSIONED_EHR_STATUS")?,
@@ -8322,6 +9583,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::VersionedFold
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VERSIONED_FOLDER")?;
         runtime::check_type(node, "VERSIONED_FOLDER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "VERSIONED_FOLDER",
+            &["owner_id", "time_created", "uid"],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "VERSIONED_FOLDER")?,
             owner_id: runtime::required_field(node, "owner_id", "VERSIONED_FOLDER")?,
@@ -8350,6 +9616,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::VersionedObje
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VERSIONED_OBJECT")?;
         runtime::check_type(node, "VERSIONED_OBJECT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "VERSIONED_OBJECT",
+            &["owner_id", "time_created", "uid"],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "VERSIONED_OBJECT")?,
             owner_id: runtime::required_field(node, "owner_id", "VERSIONED_OBJECT")?,
@@ -8436,6 +9707,11 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::VersionedPart
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VERSIONED_PARTY")?;
         runtime::check_type(node, "VERSIONED_PARTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "VERSIONED_PARTY",
+            &["owner_id", "time_created", "uid"],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "VERSIONED_PARTY")?,
             owner_id: runtime::required_field(node, "owner_id", "VERSIONED_PARTY")?,
@@ -8468,6 +9744,7 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XContribution
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "X_CONTRIBUTION")?;
         runtime::check_type(node, "X_CONTRIBUTION")?;
+        runtime::deny_unknown_fields(node, "X_CONTRIBUTION", &["audit", "uid", "versions"])?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_CONTRIBUTION")?,
             audit: runtime::required_field(node, "audit", "X_CONTRIBUTION")?,
@@ -8506,6 +9783,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedCom
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "X_VERSIONED_COMPOSITION")?;
         runtime::check_type(node, "X_VERSIONED_COMPOSITION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "X_VERSIONED_COMPOSITION",
+            &[
+                "extract_version_count",
+                "owner_id",
+                "revision_history",
+                "time_created",
+                "total_version_count",
+                "uid",
+                "versions",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_VERSIONED_COMPOSITION")?,
             owner_id: runtime::required_field(node, "owner_id", "X_VERSIONED_COMPOSITION")?,
@@ -8556,6 +9846,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedEhr
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "X_VERSIONED_EHR_ACCESS")?;
         runtime::check_type(node, "X_VERSIONED_EHR_ACCESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "X_VERSIONED_EHR_ACCESS",
+            &[
+                "extract_version_count",
+                "owner_id",
+                "revision_history",
+                "time_created",
+                "total_version_count",
+                "uid",
+                "versions",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_VERSIONED_EHR_ACCESS")?,
             owner_id: runtime::required_field(node, "owner_id", "X_VERSIONED_EHR_ACCESS")?,
@@ -8606,6 +9909,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedEhr
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "X_VERSIONED_EHR_STATUS")?;
         runtime::check_type(node, "X_VERSIONED_EHR_STATUS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "X_VERSIONED_EHR_STATUS",
+            &[
+                "extract_version_count",
+                "owner_id",
+                "revision_history",
+                "time_created",
+                "total_version_count",
+                "uid",
+                "versions",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_VERSIONED_EHR_STATUS")?,
             owner_id: runtime::required_field(node, "owner_id", "X_VERSIONED_EHR_STATUS")?,
@@ -8656,6 +9972,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedFol
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "X_VERSIONED_FOLDER")?;
         runtime::check_type(node, "X_VERSIONED_FOLDER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "X_VERSIONED_FOLDER",
+            &[
+                "extract_version_count",
+                "owner_id",
+                "revision_history",
+                "time_created",
+                "total_version_count",
+                "uid",
+                "versions",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_VERSIONED_FOLDER")?,
             owner_id: runtime::required_field(node, "owner_id", "X_VERSIONED_FOLDER")?,
@@ -8710,6 +10039,19 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "X_VERSIONED_OBJECT")?;
         runtime::check_type(node, "X_VERSIONED_OBJECT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "X_VERSIONED_OBJECT",
+            &[
+                "extract_version_count",
+                "owner_id",
+                "revision_history",
+                "time_created",
+                "total_version_count",
+                "uid",
+                "versions",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_VERSIONED_OBJECT")?,
             owner_id: runtime::required_field(node, "owner_id", "X_VERSIONED_OBJECT")?,
@@ -8822,6 +10164,19 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::XVersionedPar
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "X_VERSIONED_PARTY")?;
         runtime::check_type(node, "X_VERSIONED_PARTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "X_VERSIONED_PARTY",
+            &[
+                "extract_version_count",
+                "owner_id",
+                "revision_history",
+                "time_created",
+                "total_version_count",
+                "uid",
+                "versions",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::required_field(node, "uid", "X_VERSIONED_PARTY")?,
             owner_id: runtime::required_field(node, "owner_id", "X_VERSIONED_PARTY")?,
@@ -8866,6 +10221,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::Assertion {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ASSERTION")?;
         runtime::check_type(node, "ASSERTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ASSERTION",
+            &["expression", "string_expression", "tag"],
+        )?;
         ::core::result::Result::Ok(Self {
             tag: runtime::optional_field(node, "tag")?,
             string_expression: runtime::optional_field(node, "string_expression")?,
@@ -8893,6 +10253,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::Assignment 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ASSIGNMENT")?;
         runtime::check_type(node, "ASSIGNMENT")?;
+        runtime::deny_unknown_fields(node, "ASSIGNMENT", &["source", "target"])?;
         ::core::result::Result::Ok(Self {
             target: runtime::required_field(node, "target", "ASSIGNMENT")?,
             source: runtime::required_field(node, "source", "ASSIGNMENT")?,
@@ -8937,6 +10298,22 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_class
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CLASS")?;
         runtime::check_type(node, "BMM_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CLASS",
+            &[
+                "ancestors",
+                "documentation",
+                "immediate_descendants",
+                "is_abstract",
+                "is_override",
+                "is_primitive_type",
+                "name",
+                "package",
+                "properties",
+                "source_schema_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_CLASS")?,
@@ -9122,6 +10499,20 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "BMM_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONTAINER_PROPERTY",
+            &[
+                "cardinality",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_CONTAINER_PROPERTY")?,
@@ -9161,6 +10552,11 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONTAINER_TYPE")?;
         runtime::check_type(node, "BMM_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONTAINER_TYPE",
+            &["base_type", "container_type", "documentation"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             container_type: runtime::required_field(node, "container_type", "BMM_CONTAINER_TYPE")?,
@@ -9234,6 +10630,7 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_DEFINITIONS")?;
         runtime::check_type(node, "BMM_DEFINITIONS")?;
+        runtime::deny_unknown_fields(node, "BMM_DEFINITIONS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -9450,6 +10847,25 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION")?;
         runtime::check_type(node, "BMM_ENUMERATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION",
+            &[
+                "ancestors",
+                "documentation",
+                "immediate_descendants",
+                "is_abstract",
+                "is_override",
+                "is_primitive_type",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "properties",
+                "source_schema_id",
+                "underlying_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_ENUMERATION")?,
@@ -9590,6 +11006,25 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION_INTEGER")?;
         runtime::check_type(node, "BMM_ENUMERATION_INTEGER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION_INTEGER",
+            &[
+                "ancestors",
+                "documentation",
+                "immediate_descendants",
+                "is_abstract",
+                "is_override",
+                "is_primitive_type",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "properties",
+                "source_schema_id",
+                "underlying_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_INTEGER")?,
@@ -9675,6 +11110,25 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION_STRING")?;
         runtime::check_type(node, "BMM_ENUMERATION_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION_STRING",
+            &[
+                "ancestors",
+                "documentation",
+                "immediate_descendants",
+                "is_abstract",
+                "is_override",
+                "is_primitive_type",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "properties",
+                "source_schema_id",
+                "underlying_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_STRING")?,
@@ -9750,6 +11204,23 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_CLASS")?;
         runtime::check_type(node, "BMM_GENERIC_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_CLASS",
+            &[
+                "ancestors",
+                "documentation",
+                "generic_parameters",
+                "immediate_descendants",
+                "is_abstract",
+                "is_override",
+                "is_primitive_type",
+                "name",
+                "package",
+                "properties",
+                "source_schema_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_GENERIC_CLASS")?,
@@ -9808,6 +11279,16 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericP
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_PARAMETER")?;
         runtime::check_type(node, "BMM_GENERIC_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_PARAMETER",
+            &[
+                "conforms_to_type",
+                "documentation",
+                "inheritance_precursor",
+                "name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_GENERIC_PARAMETER")?,
@@ -9845,6 +11326,11 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_TYPE")?;
         runtime::check_type(node, "BMM_GENERIC_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_TYPE",
+            &["base_class", "documentation", "generic_parameters"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             generic_parameters: runtime::container_field(node, "generic_parameters")?,
@@ -9875,6 +11361,7 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INCLUDE_SPEC")?;
         runtime::check_type(node, "BMM_INCLUDE_SPEC")?;
+        runtime::deny_unknown_fields(node, "BMM_INCLUDE_SPEC", &["id"])?;
         ::core::result::Result::Ok(Self {
             id: runtime::required_field(node, "id", "BMM_INCLUDE_SPEC")?,
         })
@@ -9908,6 +11395,11 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INDEXED_CONTAINER_TYPE")?;
         runtime::check_type(node, "BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INDEXED_CONTAINER_TYPE",
+            &["base_type", "container_type", "documentation", "index_type"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             container_type: runtime::required_field(
@@ -9973,6 +11465,27 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_model
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_MODEL")?;
         runtime::check_type(node, "BMM_MODEL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_MODEL",
+            &[
+                "archetype_data_value_parent_class",
+                "archetype_parent_class",
+                "archetype_rm_closure_packages",
+                "archetype_visualise_descendants_of",
+                "class_definitions",
+                "documentation",
+                "packages",
+                "rm_publisher",
+                "rm_release",
+                "schema_author",
+                "schema_contributors",
+                "schema_description",
+                "schema_lifecycle_state",
+                "schema_name",
+                "schema_revision",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL")?,
@@ -10159,6 +11672,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmOpenType
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_OPEN_TYPE")?;
         runtime::check_type(node, "BMM_OPEN_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_OPEN_TYPE",
+            &["documentation", "generic_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             generic_constraint: runtime::required_field(
@@ -10199,6 +11717,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::bmm::core::bmm_packa
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PACKAGE")?;
         runtime::check_type(node, "BMM_PACKAGE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PACKAGE",
+            &["classes", "documentation", "name", "packages"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             packages: runtime::optional_field(node, "packages")?,
@@ -10235,6 +11758,11 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PACKAGE_CONTAINER")?;
         runtime::check_type(node, "BMM_PACKAGE_CONTAINER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PACKAGE_CONTAINER",
+            &["documentation", "packages"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             packages: runtime::optional_field(node, "packages")?,
@@ -10327,6 +11855,19 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROPERTY")?;
         runtime::check_type(node, "BMM_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PROPERTY",
+            &[
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "BMM_PROPERTY")?,
@@ -10430,6 +11971,24 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaCo
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SCHEMA_CORE")?;
         runtime::check_type(node, "BMM_SCHEMA_CORE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SCHEMA_CORE",
+            &[
+                "archetype_data_value_parent_class",
+                "archetype_parent_class",
+                "archetype_rm_closure_packages",
+                "archetype_visualise_descendants_of",
+                "rm_publisher",
+                "rm_release",
+                "schema_author",
+                "schema_contributors",
+                "schema_description",
+                "schema_lifecycle_state",
+                "schema_name",
+                "schema_revision",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA_CORE")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA_CORE")?,
@@ -10532,6 +12091,7 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SIMPLE_TYPE")?;
         runtime::check_type(node, "BMM_SIMPLE_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_SIMPLE_TYPE", &["base_class", "documentation"])?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             base_class: runtime::required_field(node, "base_class", "BMM_SIMPLE_TYPE")?,
@@ -10745,6 +12305,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprBinaryO
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_BINARY_OPERATOR")?;
         runtime::check_type(node, "EXPR_BINARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_BINARY_OPERATOR",
+            &[
+                "left_operand",
+                "operator",
+                "precedence_overridden",
+                "right_operand",
+                "symbol",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             operator: runtime::required_field(node, "operator", "EXPR_BINARY_OPERATOR")?,
@@ -10781,6 +12352,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprForAll 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_FOR_ALL")?;
         runtime::check_type(node, "EXPR_FOR_ALL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_FOR_ALL",
+            &[
+                "condition",
+                "operand",
+                "operator",
+                "precedence_overridden",
+                "symbol",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             operator: runtime::required_field(node, "operator", "EXPR_FOR_ALL")?,
@@ -10816,6 +12398,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprFunctio
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_FUNCTION_CALL")?;
         runtime::check_type(node, "EXPR_FUNCTION_CALL")?;
+        runtime::deny_unknown_fields(node, "EXPR_FUNCTION_CALL", &["arguments", "item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
             arguments: runtime::optional_container_field(node, "arguments")?,
@@ -10891,6 +12474,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprLiteral
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_LITERAL")?;
         runtime::check_type(node, "EXPR_LITERAL")?;
+        runtime::deny_unknown_fields(node, "EXPR_LITERAL", &["item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::required_field(node, "item", "EXPR_LITERAL")?,
         })
@@ -11054,6 +12638,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprUnaryOp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_UNARY_OPERATOR")?;
         runtime::check_type(node, "EXPR_UNARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_UNARY_OPERATOR",
+            &["operand", "operator", "precedence_overridden", "symbol"],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             operator: runtime::required_field(node, "operator", "EXPR_UNARY_OPERATOR")?,
@@ -11153,6 +12742,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprValueRe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_VALUE_REF")?;
         runtime::check_type(node, "EXPR_VALUE_REF")?;
+        runtime::deny_unknown_fields(node, "EXPR_VALUE_REF", &["item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
         })
@@ -11177,6 +12767,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprVariabl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_VARIABLE_REF")?;
         runtime::check_type(node, "EXPR_VARIABLE_REF")?;
+        runtime::deny_unknown_fields(node, "EXPR_VARIABLE_REF", &["item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::required_field(node, "item", "EXPR_VARIABLE_REF")?,
         })
@@ -11207,6 +12798,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExternalQue
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXTERNAL_QUERY")?;
         runtime::check_type(node, "EXTERNAL_QUERY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXTERNAL_QUERY",
+            &["context", "query_args", "query_id"],
+        )?;
         ::core::result::Result::Ok(Self {
             context: runtime::required_field(node, "context", "EXTERNAL_QUERY")?,
             query_id: runtime::required_field(node, "query_id", "EXTERNAL_QUERY")?,
@@ -11334,6 +12930,26 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmClassDa
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CLASS")?;
         runtime::check_type(node, "P_BMM_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CLASS",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CLASS")?,
@@ -11429,6 +13045,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmConstan
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CONSTANT")?;
         runtime::check_type(node, "P_BMM_CONSTANT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CONSTANT",
+            &["documentation", "name", "type", "value"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CONSTANT")?,
@@ -11468,6 +13089,17 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CONTAINER_FUNCTION_PARAMETER")?;
         runtime::check_type(node, "P_BMM_CONTAINER_FUNCTION_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CONTAINER_FUNCTION_PARAMETER",
+            &[
+                "cardinality",
+                "documentation",
+                "is_nullable",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CONTAINER_FUNCTION_PARAMETER")?,
@@ -11524,6 +13156,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmContain
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "P_BMM_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CONTAINER_PROPERTY",
+            &[
+                "bmm_property",
+                "cardinality",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CONTAINER_PROPERTY")?,
@@ -11613,6 +13260,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmContain
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CONTAINER_TYPE")?;
         runtime::check_type(node, "P_BMM_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CONTAINER_TYPE",
+            &["bmm_type", "container_type", "type", "type_def"],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             container_type: runtime::required_field(
@@ -11742,6 +13394,29 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_ENUMERATION")?;
         runtime::check_type(node, "P_BMM_ENUMERATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_ENUMERATION",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "item_documentations",
+                "item_names",
+                "item_values",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION")?,
@@ -11885,6 +13560,29 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_ENUMERATION_INTEGER")?;
         runtime::check_type(node, "P_BMM_ENUMERATION_INTEGER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_ENUMERATION_INTEGER",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "item_documentations",
+                "item_names",
+                "item_values",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_INTEGER")?,
@@ -11983,6 +13681,29 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumera
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_ENUMERATION_STRING")?;
         runtime::check_type(node, "P_BMM_ENUMERATION_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_ENUMERATION_STRING",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "item_documentations",
+                "item_names",
+                "item_values",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_STRING")?,
@@ -12051,6 +13772,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmFunctio
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_FUNCTION")?;
         runtime::check_type(node, "P_BMM_FUNCTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_FUNCTION",
+            &[
+                "aliases",
+                "documentation",
+                "is_abstract",
+                "is_nullable",
+                "name",
+                "parameters",
+                "post_conditions",
+                "pre_conditions",
+                "result",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_FUNCTION")?,
@@ -12164,6 +13900,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmGeneric
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_FUNCTION_PARAMETER")?;
         runtime::check_type(node, "P_BMM_GENERIC_FUNCTION_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_FUNCTION_PARAMETER",
+            &["documentation", "is_nullable", "name", "type_def"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_GENERIC_FUNCTION_PARAMETER")?,
@@ -12204,6 +13945,16 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmGeneric
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_PARAMETER")?;
         runtime::check_type(node, "P_BMM_GENERIC_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_PARAMETER",
+            &[
+                "bmm_generic_parameter",
+                "conforms_to_type",
+                "documentation",
+                "name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_GENERIC_PARAMETER")?,
@@ -12252,6 +14003,20 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmGeneric
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_PROPERTY")?;
         runtime::check_type(node, "P_BMM_GENERIC_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_PROPERTY",
+            &[
+                "bmm_property",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_GENERIC_PROPERTY")?,
@@ -12297,6 +14062,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmGeneric
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_TYPE")?;
         runtime::check_type(node, "P_BMM_GENERIC_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_TYPE",
+            &[
+                "bmm_type",
+                "generic_parameter_defs",
+                "generic_parameters",
+                "root_type",
+                "value_constraint",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             value_constraint: runtime::optional_field(node, "value_constraint")?,
@@ -12349,6 +14125,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmIndexed
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_INDEXED_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "P_BMM_INDEXED_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_INDEXED_CONTAINER_PROPERTY",
+            &[
+                "bmm_property",
+                "cardinality",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_INDEXED_CONTAINER_PROPERTY")?,
@@ -12391,6 +14182,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmIndexed
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_INDEXED_CONTAINER_TYPE")?;
         runtime::check_type(node, "P_BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_INDEXED_CONTAINER_TYPE",
+            &[
+                "bmm_type",
+                "container_type",
+                "index_type",
+                "type",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             container_type: runtime::required_field(
@@ -12433,6 +14235,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmInterfa
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_INTERFACE")?;
         runtime::check_type(node, "P_BMM_INTERFACE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_INTERFACE",
+            &["documentation", "functions", "name"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_INTERFACE")?,
@@ -12607,6 +14414,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmOpenTyp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_OPEN_TYPE")?;
         runtime::check_type(node, "P_BMM_OPEN_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_OPEN_TYPE",
+            &["bmm_type", "type", "value_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             value_constraint: runtime::optional_field(node, "value_constraint")?,
@@ -12645,6 +14457,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmPackage
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_PACKAGE")?;
         runtime::check_type(node, "P_BMM_PACKAGE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_PACKAGE",
+            &[
+                "bmm_package_definition",
+                "classes",
+                "documentation",
+                "name",
+                "packages",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -12673,6 +14496,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmPackage
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_PACKAGE_CONTAINER")?;
         runtime::check_type(node, "P_BMM_PACKAGE_CONTAINER")?;
+        runtime::deny_unknown_fields(node, "P_BMM_PACKAGE_CONTAINER", &["packages"])?;
         ::core::result::Result::Ok(Self {
             packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE_CONTAINER")?,
         })
@@ -12839,6 +14663,29 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSchema 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SCHEMA")?;
         runtime::check_type(node, "P_BMM_SCHEMA")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SCHEMA",
+            &[
+                "archetype_data_value_parent_class",
+                "archetype_parent_class",
+                "archetype_rm_closure_packages",
+                "archetype_visualise_descendants_of",
+                "bmm_version",
+                "class_definitions",
+                "includes",
+                "packages",
+                "primitive_types",
+                "rm_publisher",
+                "rm_release",
+                "schema_author",
+                "schema_contributors",
+                "schema_description",
+                "schema_lifecycle_state",
+                "schema_name",
+                "schema_revision",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             packages: runtime::required_field(node, "packages", "P_BMM_SCHEMA")?,
             rm_publisher: runtime::required_field(node, "rm_publisher", "P_BMM_SCHEMA")?,
@@ -12911,6 +14758,18 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSchemaD
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SCHEMA_DESCRIPTOR")?;
         runtime::check_type(node, "P_BMM_SCHEMA_DESCRIPTOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SCHEMA_DESCRIPTOR",
+            &[
+                "bmm_schema",
+                "includes",
+                "meta_data",
+                "p_schema",
+                "schema",
+                "schema_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             p_schema: runtime::optional_field(node, "p_schema")?,
             schema: runtime::optional_field(node, "schema")?,
@@ -12946,6 +14805,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSimpleT
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SIMPLE_TYPE")?;
         runtime::check_type(node, "P_BMM_SIMPLE_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SIMPLE_TYPE",
+            &["bmm_type", "type", "value_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             value_constraint: runtime::optional_field(node, "value_constraint")?,
@@ -12979,6 +14843,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSingleF
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SINGLE_FUNCTION_PARAMETER")?;
         runtime::check_type(node, "P_BMM_SINGLE_FUNCTION_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SINGLE_FUNCTION_PARAMETER",
+            &["documentation", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_SINGLE_FUNCTION_PARAMETER")?,
@@ -13015,6 +14884,11 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN")?;
         runtime::check_type(node, "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN",
+            &["documentation", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN")?,
@@ -13069,6 +14943,22 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSingleP
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SINGLE_PROPERTY")?;
         runtime::check_type(node, "P_BMM_SINGLE_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SINGLE_PROPERTY",
+            &[
+                "bmm_property",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type",
+                "type_def",
+                "type_ref",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_SINGLE_PROPERTY")?,
@@ -13129,6 +15019,22 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmSingleP
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SINGLE_PROPERTY_OPEN")?;
         runtime::check_type(node, "P_BMM_SINGLE_PROPERTY_OPEN")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SINGLE_PROPERTY_OPEN",
+            &[
+                "bmm_property",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type",
+                "type_def",
+                "type_ref",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_SINGLE_PROPERTY_OPEN")?,
@@ -13227,6 +15133,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ReferenceMo
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "REFERENCE_MODEL_ACCESS")?;
         runtime::check_type(node, "REFERENCE_MODEL_ACCESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "REFERENCE_MODEL_ACCESS",
+            &["all_schemas", "schema_directories", "valid_models"],
+        )?;
         ::core::result::Result::Ok(Self {
             schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
@@ -13265,6 +15176,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::SchemaDescr
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "SCHEMA_DESCRIPTOR")?;
         runtime::check_type(node, "SCHEMA_DESCRIPTOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "SCHEMA_DESCRIPTOR",
+            &["includes", "meta_data", "p_schema", "schema", "schema_id"],
+        )?;
         ::core::result::Result::Ok(Self {
             p_schema: runtime::optional_field(node, "p_schema")?,
             schema: runtime::optional_field(node, "schema")?,
@@ -13383,6 +15299,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::StatementSe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "STATEMENT_SET")?;
         runtime::check_type(node, "STATEMENT_SET")?;
+        runtime::deny_unknown_fields(node, "STATEMENT_SET", &["name", "statement"])?;
         ::core::result::Result::Ok(Self {
             statement: runtime::optional_container_field(node, "statement")?,
             name: runtime::optional_field(node, "name")?,
@@ -13409,6 +15326,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefBool
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_BOOLEAN")?;
         runtime::check_type(node, "TYPE_DEF_BOOLEAN")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_BOOLEAN", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_BOOLEAN")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_BOOLEAN")?,
@@ -13435,6 +15353,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefDate
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_DATE")?;
         runtime::check_type(node, "TYPE_DEF_DATE")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_DATE", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_DATE")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_DATE")?,
@@ -13461,6 +15380,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefDate
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_DATE_TIME")?;
         runtime::check_type(node, "TYPE_DEF_DATE_TIME")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_DATE_TIME", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_DATE_TIME")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_DATE_TIME")?,
@@ -13487,6 +15407,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefDura
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_DURATION")?;
         runtime::check_type(node, "TYPE_DEF_DURATION")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_DURATION", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_DURATION")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_DURATION")?,
@@ -13513,6 +15434,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefInte
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_INTEGER")?;
         runtime::check_type(node, "TYPE_DEF_INTEGER")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_INTEGER", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_INTEGER")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_INTEGER")?,
@@ -13539,6 +15461,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefObje
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_OBJECT_REF")?;
         runtime::check_type(node, "TYPE_DEF_OBJECT_REF")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_OBJECT_REF", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_OBJECT_REF")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_OBJECT_REF")?,
@@ -13565,6 +15488,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefReal
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_REAL")?;
         runtime::check_type(node, "TYPE_DEF_REAL")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_REAL", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_REAL")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_REAL")?,
@@ -13591,6 +15515,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefStri
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_STRING")?;
         runtime::check_type(node, "TYPE_DEF_STRING")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_STRING", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_STRING")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_STRING")?,
@@ -13617,6 +15542,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefTerm
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_TERMINOLOGY_CODE")?;
         runtime::check_type(node, "TYPE_DEF_TERMINOLOGY_CODE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "TYPE_DEF_TERMINOLOGY_CODE",
+            &["type_anchor", "type_name"],
+        )?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_TERMINOLOGY_CODE")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_TERMINOLOGY_CODE")?,
@@ -13643,6 +15573,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefTime
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_TIME")?;
         runtime::check_type(node, "TYPE_DEF_TIME")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_TIME", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_TIME")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_TIME")?,
@@ -13669,6 +15600,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::TypeDefUri 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TYPE_DEF_URI")?;
         runtime::check_type(node, "TYPE_DEF_URI")?;
+        runtime::deny_unknown_fields(node, "TYPE_DEF_URI", &["type_anchor", "type_name"])?;
         ::core::result::Result::Ok(Self {
             type_name: runtime::required_field(node, "type_name", "TYPE_DEF_URI")?,
             type_anchor: runtime::required_field(node, "type_anchor", "TYPE_DEF_URI")?,
@@ -13695,6 +15627,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::VariableDec
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VARIABLE_DECLARATION")?;
         runtime::check_type(node, "VARIABLE_DECLARATION")?;
+        runtime::deny_unknown_fields(node, "VARIABLE_DECLARATION", &["name", "type"])?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "VARIABLE_DECLARATION")?,
             r#type: runtime::required_field(node, "type", "VARIABLE_DECLARATION")?,
@@ -13719,6 +15652,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmActionDe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ACTION_DECISION_TABLE")?;
         runtime::check_type(node, "BMM_ACTION_DECISION_TABLE")?;
+        runtime::deny_unknown_fields(node, "BMM_ACTION_DECISION_TABLE", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -13741,6 +15675,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmActionTa
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ACTION_TABLE")?;
         runtime::check_type(node, "BMM_ACTION_TABLE")?;
+        runtime::deny_unknown_fields(node, "BMM_ACTION_TABLE", &["decision_table"])?;
         ::core::result::Result::Ok(Self {
             decision_table: runtime::required_field(node, "decision_table", "BMM_ACTION_TABLE")?,
         })
@@ -13768,6 +15703,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmAssertio
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ASSERTION")?;
         runtime::check_type(node, "BMM_ASSERTION")?;
+        runtime::deny_unknown_fields(node, "BMM_ASSERTION", &["expression", "tag"])?;
         ::core::result::Result::Ok(Self {
             expression: runtime::required_field(node, "expression", "BMM_ASSERTION")?,
             tag: runtime::optional_field(node, "tag")?,
@@ -13794,6 +15730,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmAssignme
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ASSIGNMENT")?;
         runtime::check_type(node, "BMM_ASSIGNMENT")?;
+        runtime::deny_unknown_fields(node, "BMM_ASSIGNMENT", &["source", "target"])?;
         ::core::result::Result::Ok(Self {
             target: runtime::required_field(node, "target", "BMM_ASSIGNMENT")?,
             source: runtime::required_field(node, "source", "BMM_ASSIGNMENT")?,
@@ -13824,6 +15761,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmBooleanV
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_BOOLEAN_VALUE")?;
         runtime::check_type(node, "BMM_BOOLEAN_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_BOOLEAN_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_BOOLEAN_VALUE")?,
             value: runtime::required_field(node, "value", "BMM_BOOLEAN_VALUE")?,
@@ -13977,6 +15919,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmConstant
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONSTANT")?;
         runtime::check_type(node, "BMM_CONSTANT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONSTANT",
+            &[
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "generator",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_CONSTANT")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -14040,6 +15997,24 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContaine
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "BMM_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONTAINER_PROPERTY",
+            &[
+                "cardinality",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_composition",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_CONTAINER_PROPERTY")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -14128,6 +16103,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContaine
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONTAINER_TYPE")?;
         runtime::check_type(node, "BMM_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONTAINER_TYPE",
+            &["container_class", "is_ordered", "is_unique", "item_type"],
+        )?;
         ::core::result::Result::Ok(Self {
             container_class: runtime::required_field(
                 node,
@@ -14208,6 +16188,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContaine
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONTAINER_VALUE")?;
         runtime::check_type(node, "BMM_CONTAINER_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONTAINER_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_CONTAINER_VALUE")?,
             value: runtime::optional_field(node, "value")?,
@@ -14237,6 +16222,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDeclarat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_DECLARATION")?;
         runtime::check_type(node, "BMM_DECLARATION")?;
+        runtime::deny_unknown_fields(node, "BMM_DECLARATION", &["name", "result", "type"])?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_DECLARATION")?,
             result: runtime::required_field(node, "result", "BMM_DECLARATION")?,
@@ -14262,6 +16248,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefiniti
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_DEFINITIONS")?;
         runtime::check_type(node, "BMM_DEFINITIONS")?;
+        runtime::deny_unknown_fields(node, "BMM_DEFINITIONS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -14434,6 +16421,33 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION")?;
         runtime::check_type(node, "BMM_ENUMERATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_ENUMERATION")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -14590,6 +16604,33 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION_INTEGER")?;
         runtime::check_type(node, "BMM_ENUMERATION_INTEGER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION_INTEGER",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_INTEGER")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -14707,6 +16748,33 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumerat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION_STRING")?;
         runtime::check_type(node, "BMM_ENUMERATION_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION_STRING",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_STRING")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -14761,6 +16829,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmExternal
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_EXTERNAL_ROUTINE")?;
         runtime::check_type(node, "BMM_EXTERNAL_ROUTINE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_EXTERNAL_ROUTINE",
+            &["argument_mapping", "meta_data"],
+        )?;
         ::core::result::Result::Ok(Self {
             meta_data: runtime::required_field(node, "meta_data", "BMM_EXTERNAL_ROUTINE")?,
             argument_mapping: runtime::optional_field(node, "argument_mapping")?,
@@ -14850,6 +16923,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeatureE
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_FEATURE_EXTENSION")?;
         runtime::check_type(node, "BMM_FEATURE_EXTENSION")?;
+        runtime::deny_unknown_fields(node, "BMM_FEATURE_EXTENSION", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -14881,6 +16955,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeatureG
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_FEATURE_GROUP")?;
         runtime::check_type(node, "BMM_FEATURE_GROUP")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_FEATURE_GROUP",
+            &["features", "name", "properties", "visibility"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_FEATURE_GROUP")?,
             properties: runtime::required_field(node, "properties", "BMM_FEATURE_GROUP")?,
@@ -15034,6 +17113,26 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFunction
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_FUNCTION")?;
         runtime::check_type(node, "BMM_FUNCTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_FUNCTION",
+            &[
+                "definition",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "operator_definition",
+                "parameters",
+                "post_conditions",
+                "pre_conditions",
+                "result",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_FUNCTION")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -15074,6 +17173,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFunction
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_FUNCTION_TYPE")?;
         runtime::check_type(node, "BMM_FUNCTION_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_FUNCTION_TYPE",
+            &["argument_types", "result_type"],
+        )?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_FUNCTION_TYPE")?,
             argument_types: runtime::optional_field(node, "argument_types")?,
@@ -15156,6 +17260,32 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericC
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_CLASS")?;
         runtime::check_type(node, "BMM_GENERIC_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_CLASS",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "generic_parameters",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_GENERIC_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -15214,6 +17344,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmGenericT
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_TYPE")?;
         runtime::check_type(node, "BMM_GENERIC_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_TYPE",
+            &["base_class", "generic_parameters", "value_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_constraint: runtime::optional_field(node, "value_constraint")?,
             base_class: runtime::required_field(node, "base_class", "BMM_GENERIC_TYPE")?,
@@ -15244,6 +17379,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIncludeS
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INCLUDE_SPEC")?;
         runtime::check_type(node, "BMM_INCLUDE_SPEC")?;
+        runtime::deny_unknown_fields(node, "BMM_INCLUDE_SPEC", &["id"])?;
         ::core::result::Result::Ok(Self {
             id: runtime::required_field(node, "id", "BMM_INCLUDE_SPEC")?,
         })
@@ -15299,6 +17435,24 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedC
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INDEXED_CONTAINER_PROPERTY",
+            &[
+                "cardinality",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_composition",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_INDEXED_CONTAINER_PROPERTY")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -15342,6 +17496,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedC
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INDEXED_CONTAINER_TYPE")?;
         runtime::check_type(node, "BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INDEXED_CONTAINER_TYPE",
+            &[
+                "container_class",
+                "index_type",
+                "is_ordered",
+                "is_unique",
+                "item_type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             container_class: runtime::required_field(
                 node,
@@ -15381,6 +17546,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIndexedC
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INDEXED_CONTAINER_VALUE")?;
         runtime::check_type(node, "BMM_INDEXED_CONTAINER_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INDEXED_CONTAINER_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(
                 node,
@@ -15478,6 +17648,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmIntegerV
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INTEGER_VALUE")?;
         runtime::check_type(node, "BMM_INTEGER_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INTEGER_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_INTEGER_VALUE")?,
             value: runtime::required_field(node, "value", "BMM_INTEGER_VALUE")?,
@@ -15512,6 +17687,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmInterval
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INTERVAL_VALUE")?;
         runtime::check_type(node, "BMM_INTERVAL_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INTERVAL_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_INTERVAL_VALUE")?,
             value: runtime::optional_field(node, "value")?,
@@ -15612,6 +17792,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLocal {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_LOCAL")?;
         runtime::check_type(node, "BMM_LOCAL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_LOCAL",
+            &["documentation", "extensions", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_LOCAL")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -15645,6 +17830,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLocalRou
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_LOCAL_ROUTINE")?;
         runtime::check_type(node, "BMM_LOCAL_ROUTINE")?;
+        runtime::deny_unknown_fields(node, "BMM_LOCAL_ROUTINE", &["body", "locals"])?;
         ::core::result::Result::Ok(Self {
             locals: runtime::optional_container_field(node, "locals")?,
             body: runtime::required_field(node, "body", "BMM_LOCAL_ROUTINE")?,
@@ -15692,6 +17878,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModel {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_MODEL")?;
         runtime::check_type(node, "BMM_MODEL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_MODEL",
+            &[
+                "class_definitions",
+                "documentation",
+                "extensions",
+                "modules",
+                "name",
+                "packages",
+                "rm_publisher",
+                "rm_release",
+                "used_models",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_MODEL")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -15737,6 +17938,16 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelAcc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_MODEL_ACCESS")?;
         runtime::check_type(node, "BMM_MODEL_ACCESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_MODEL_ACCESS",
+            &[
+                "all_schemas",
+                "bmm_models",
+                "matching_bmm_models",
+                "schema_directories",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
@@ -15879,6 +18090,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelMet
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_MODEL_METADATA")?;
         runtime::check_type(node, "BMM_MODEL_METADATA")?;
+        runtime::deny_unknown_fields(node, "BMM_MODEL_METADATA", &["rm_publisher", "rm_release"])?;
         ::core::result::Result::Ok(Self {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL_METADATA")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL_METADATA")?,
@@ -16033,6 +18245,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmOperator
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_OPERATOR")?;
         runtime::check_type(node, "BMM_OPERATOR")?;
+        runtime::deny_unknown_fields(node, "BMM_OPERATOR", &["name", "position", "symbols"])?;
         ::core::result::Result::Ok(Self {
             position: runtime::required_field(node, "position", "BMM_OPERATOR")?,
             symbols: runtime::required_field(node, "symbols", "BMM_OPERATOR")?,
@@ -16090,6 +18303,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackage 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PACKAGE")?;
         runtime::check_type(node, "BMM_PACKAGE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PACKAGE",
+            &["documentation", "extensions", "members", "name", "packages"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PACKAGE")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -16171,6 +18389,18 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParamete
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PARAMETER")?;
         runtime::check_type(node, "BMM_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PARAMETER",
+            &[
+                "direction",
+                "documentation",
+                "extensions",
+                "is_nullable",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PARAMETER")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -16223,6 +18453,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmParamete
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PARAMETER_TYPE")?;
         runtime::check_type(node, "BMM_PARAMETER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PARAMETER_TYPE",
+            &["inheritance_precursor", "name", "type_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PARAMETER_TYPE")?,
             type_constraint: runtime::optional_field(node, "type_constraint")?,
@@ -16256,6 +18491,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPrimitiv
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PRIMITIVE_VALUE")?;
         runtime::check_type(node, "BMM_PRIMITIVE_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PRIMITIVE_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_PRIMITIVE_VALUE")?,
             value: runtime::optional_field(node, "value")?,
@@ -16368,6 +18608,24 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedur
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROCEDURE")?;
         runtime::check_type(node, "BMM_PROCEDURE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PROCEDURE",
+            &[
+                "definition",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "parameters",
+                "post_conditions",
+                "pre_conditions",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PROCEDURE")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -16403,6 +18661,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedur
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROCEDURE_CALL")?;
         runtime::check_type(node, "BMM_PROCEDURE_CALL")?;
+        runtime::deny_unknown_fields(node, "BMM_PROCEDURE_CALL", &["agent"])?;
         ::core::result::Result::Ok(Self {
             agent: runtime::required_field(node, "agent", "BMM_PROCEDURE_CALL")?,
         })
@@ -16432,6 +18691,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProcedur
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROCEDURE_TYPE")?;
         runtime::check_type(node, "BMM_PROCEDURE_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PROCEDURE_TYPE",
+            &["argument_types", "result_type"],
+        )?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::optional_field(node, "result_type")?,
             argument_types: runtime::optional_field(node, "argument_types")?,
@@ -16502,6 +18766,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmProperty
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROPERTY_TYPE")?;
         runtime::check_type(node, "BMM_PROPERTY_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_PROPERTY_TYPE", &["result_type"])?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_PROPERTY_TYPE")?,
         })
@@ -16576,6 +18841,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmResult {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_RESULT")?;
         runtime::check_type(node, "BMM_RESULT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_RESULT",
+            &["documentation", "extensions", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_RESULT")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -16689,6 +18959,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineT
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ROUTINE_TYPE")?;
         runtime::check_type(node, "BMM_ROUTINE_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_ROUTINE_TYPE", &["argument_types", "result_type"])?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_ROUTINE_TYPE")?,
             argument_types: runtime::optional_field(node, "argument_types")?,
@@ -16779,6 +19050,25 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchema {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SCHEMA")?;
         runtime::check_type(node, "BMM_SCHEMA")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SCHEMA",
+            &[
+                "bmm_model",
+                "bmm_version",
+                "includes",
+                "model_name",
+                "rm_publisher",
+                "rm_release",
+                "schema_author",
+                "schema_contributors",
+                "schema_description",
+                "schema_lifecycle_state",
+                "schema_name",
+                "schema_revision",
+                "state",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA")?,
@@ -16831,6 +19121,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaDe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SCHEMA_DESCRIPTOR")?;
         runtime::check_type(node, "BMM_SCHEMA_DESCRIPTOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SCHEMA_DESCRIPTOR",
+            &[
+                "bmm_model",
+                "bmm_schema",
+                "includes",
+                "meta_data",
+                "schema_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_schema: runtime::optional_field(node, "bmm_schema")?,
             bmm_model: runtime::optional_field(node, "bmm_model")?,
@@ -16903,6 +19204,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSelf {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SELF")?;
         runtime::check_type(node, "BMM_SELF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SELF",
+            &["documentation", "extensions", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_SELF")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -16931,6 +19237,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSignatur
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SIGNATURE")?;
         runtime::check_type(node, "BMM_SIGNATURE")?;
+        runtime::deny_unknown_fields(node, "BMM_SIGNATURE", &["result_type"])?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_SIGNATURE")?,
         })
@@ -17060,6 +19367,31 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleCl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SIMPLE_CLASS")?;
         runtime::check_type(node, "BMM_SIMPLE_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SIMPLE_CLASS",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_SIMPLE_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -17206,6 +19538,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleTy
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SIMPLE_TYPE")?;
         runtime::check_type(node, "BMM_SIMPLE_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_SIMPLE_TYPE", &["base_class", "value_constraint"])?;
         ::core::result::Result::Ok(Self {
             value_constraint: runtime::optional_field(node, "value_constraint")?,
             base_class: runtime::required_field(node, "base_class", "BMM_SIMPLE_TYPE")?,
@@ -17251,6 +19584,21 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSingleto
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SINGLETON")?;
         runtime::check_type(node, "BMM_SINGLETON")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SINGLETON",
+            &[
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "generator",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_SINGLETON")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -17342,6 +19690,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatemen
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_STATEMENT_BLOCK")?;
         runtime::check_type(node, "BMM_STATEMENT_BLOCK")?;
+        runtime::deny_unknown_fields(node, "BMM_STATEMENT_BLOCK", &["items"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::optional_container_field(node, "items")?,
         })
@@ -17465,6 +19814,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatusTy
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_STATUS_TYPE")?;
         runtime::check_type(node, "BMM_STATUS_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_STATUS_TYPE", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -17492,6 +19842,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStringVa
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_STRING_VALUE")?;
         runtime::check_type(node, "BMM_STRING_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_STRING_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_STRING_VALUE")?,
             value: runtime::required_field(node, "value", "BMM_STRING_VALUE")?,
@@ -17519,6 +19874,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmTupleTyp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_TUPLE_TYPE")?;
         runtime::check_type(node, "BMM_TUPLE_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_TUPLE_TYPE", &["item_types"])?;
         ::core::result::Result::Ok(Self {
             item_types: runtime::required_field(node, "item_types", "BMM_TUPLE_TYPE")?,
         })
@@ -17653,6 +20009,23 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryP
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_UNITARY_PROPERTY")?;
         runtime::check_type(node, "BMM_UNITARY_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_UNITARY_PROPERTY",
+            &[
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_composition",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_UNITARY_PROPERTY")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -17804,6 +20177,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmValueSet
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_VALUE_SET_SPEC")?;
         runtime::check_type(node, "BMM_VALUE_SET_SPEC")?;
+        runtime::deny_unknown_fields(node, "BMM_VALUE_SET_SPEC", &["resource_id", "value_set_id"])?;
         ::core::result::Result::Ok(Self {
             resource_id: runtime::required_field(node, "resource_id", "BMM_VALUE_SET_SPEC")?,
             value_set_id: runtime::required_field(node, "value_set_id", "BMM_VALUE_SET_SPEC")?,
@@ -17878,6 +20252,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmVisibili
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_VISIBILITY")?;
         runtime::check_type(node, "BMM_VISIBILITY")?;
+        runtime::deny_unknown_fields(node, "BMM_VISIBILITY", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -18020,6 +20395,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAttached 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_ATTACHED")?;
         runtime::check_type(node, "EL_ATTACHED")?;
+        runtime::deny_unknown_fields(node, "EL_ATTACHED", &["operand"])?;
         ::core::result::Result::Ok(Self {
             operand: runtime::required_field(node, "operand", "EL_ATTACHED")?,
         })
@@ -18052,6 +20428,17 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElBinaryOpe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_BINARY_OPERATOR")?;
         runtime::check_type(node, "EL_BINARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_BINARY_OPERATOR",
+            &[
+                "call",
+                "left_operand",
+                "precedence_overridden",
+                "right_operand",
+                "symbol",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             symbol: runtime::optional_field(node, "symbol")?,
@@ -18080,6 +20467,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElBooleanEx
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_BOOLEAN_EXPRESSION")?;
         runtime::check_type(node, "EL_BOOLEAN_EXPRESSION")?;
+        runtime::deny_unknown_fields(node, "EL_BOOLEAN_EXPRESSION", &["base_expression"])?;
         ::core::result::Result::Ok(Self {
             base_expression: runtime::required_field(
                 node,
@@ -18113,6 +20501,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CASE")?;
         runtime::check_type(node, "EL_CASE")?;
+        runtime::deny_unknown_fields(node, "EL_CASE", &["result", "value_constraint"])?;
         ::core::result::Result::Ok(Self {
             result: runtime::required_field(node, "result", "EL_CASE")?,
             value_constraint: runtime::required_field(node, "value_constraint", "EL_CASE")?,
@@ -18144,6 +20533,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CASE_TABLE")?;
         runtime::check_type(node, "EL_CASE_TABLE")?;
+        runtime::deny_unknown_fields(node, "EL_CASE_TABLE", &["else", "items", "test_value"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::required_field(node, "items", "EL_CASE_TABLE")?,
             r#else: runtime::required_field(node, "else", "EL_CASE_TABLE")?,
@@ -18175,6 +20565,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CONDITIONAL_EXPRESSION")?;
         runtime::check_type(node, "EL_CONDITIONAL_EXPRESSION")?;
+        runtime::deny_unknown_fields(node, "EL_CONDITIONAL_EXPRESSION", &["condition", "result"])?;
         ::core::result::Result::Ok(Self {
             result: runtime::required_field(node, "result", "EL_CONDITIONAL_EXPRESSION")?,
             condition: runtime::required_field(node, "condition", "EL_CONDITIONAL_EXPRESSION")?,
@@ -18205,6 +20596,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CONDITION_CHAIN")?;
         runtime::check_type(node, "EL_CONDITION_CHAIN")?;
+        runtime::deny_unknown_fields(node, "EL_CONDITION_CHAIN", &["else", "items"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::required_field(node, "items", "EL_CONDITION_CHAIN")?,
             r#else: runtime::required_field(node, "else", "EL_CONDITION_CHAIN")?,
@@ -18357,6 +20749,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElDefined {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_DEFINED")?;
         runtime::check_type(node, "EL_DEFINED")?;
+        runtime::deny_unknown_fields(node, "EL_DEFINED", &["operand"])?;
         ::core::result::Result::Ok(Self {
             operand: runtime::required_field(node, "operand", "EL_DEFINED")?,
         })
@@ -18566,6 +20959,18 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFunctionA
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_FUNCTION_AGENT")?;
         runtime::check_type(node, "EL_FUNCTION_AGENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_FUNCTION_AGENT",
+            &[
+                "closed_args",
+                "definition",
+                "is_writable",
+                "name",
+                "open_args",
+                "scoper",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_AGENT")?,
             name: runtime::required_field(node, "name", "EL_FUNCTION_AGENT")?,
@@ -18600,6 +21005,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFunctionC
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_FUNCTION_CALL")?;
         runtime::check_type(node, "EL_FUNCTION_CALL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_FUNCTION_CALL",
+            &["agent", "is_writable", "name", "scoper"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_CALL")?,
             name: runtime::required_field(node, "name", "EL_FUNCTION_CALL")?,
@@ -18627,6 +21037,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElLiteral {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_LITERAL")?;
         runtime::check_type(node, "EL_LITERAL")?;
+        runtime::deny_unknown_fields(node, "EL_LITERAL", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "EL_LITERAL")?,
         })
@@ -18746,6 +21157,18 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElProcedure
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_PROCEDURE_AGENT")?;
         runtime::check_type(node, "EL_PROCEDURE_AGENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_PROCEDURE_AGENT",
+            &[
+                "closed_args",
+                "definition",
+                "is_writable",
+                "name",
+                "open_args",
+                "scoper",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_PROCEDURE_AGENT")?,
             name: runtime::required_field(node, "name", "EL_PROCEDURE_AGENT")?,
@@ -18780,6 +21203,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElPropertyR
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_PROPERTY_REF")?;
         runtime::check_type(node, "EL_PROPERTY_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_PROPERTY_REF",
+            &["definition", "is_writable", "name", "scoper"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_PROPERTY_REF")?,
             name: runtime::required_field(node, "name", "EL_PROPERTY_REF")?,
@@ -18809,6 +21237,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElReadonlyV
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_READONLY_VARIABLE")?;
         runtime::check_type(node, "EL_READONLY_VARIABLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_READONLY_VARIABLE",
+            &["definition", "is_writable", "name"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_READONLY_VARIABLE")?,
             name: runtime::required_field(node, "name", "EL_READONLY_VARIABLE")?,
@@ -18925,6 +21358,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElStaticRef
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_STATIC_REF")?;
         runtime::check_type(node, "EL_STATIC_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_STATIC_REF",
+            &["definition", "is_writable", "name", "scoper"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_STATIC_REF")?,
             name: runtime::required_field(node, "name", "EL_STATIC_REF")?,
@@ -19052,6 +21490,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTuple {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_TUPLE")?;
         runtime::check_type(node, "EL_TUPLE")?;
+        runtime::deny_unknown_fields(node, "EL_TUPLE", &["items", "type"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::optional_container_field(node, "items")?,
             r#type: runtime::required_field(node, "type", "EL_TUPLE")?,
@@ -19082,6 +21521,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTupleItem
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_TUPLE_ITEM")?;
         runtime::check_type(node, "EL_TUPLE_ITEM")?;
+        runtime::deny_unknown_fields(node, "EL_TUPLE_ITEM", &["item", "name"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
             name: runtime::optional_field(node, "name")?,
@@ -19110,6 +21550,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTypeRef {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_TYPE_REF")?;
         runtime::check_type(node, "EL_TYPE_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_TYPE_REF",
+            &["is_mutable", "is_writable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_TYPE_REF")?,
             name: runtime::required_field(node, "name", "EL_TYPE_REF")?,
@@ -19144,6 +21589,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElUnaryOper
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_UNARY_OPERATOR")?;
         runtime::check_type(node, "EL_UNARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_UNARY_OPERATOR",
+            &["call", "operand", "precedence_overridden", "symbol"],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             symbol: runtime::optional_field(node, "symbol")?,
@@ -19283,6 +21733,11 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElWritableV
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_WRITABLE_VARIABLE")?;
         runtime::check_type(node, "EL_WRITABLE_VARIABLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_WRITABLE_VARIABLE",
+            &["definition", "is_writable", "name"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_WRITABLE_VARIABLE")?,
             name: runtime::required_field(node, "name", "EL_WRITABLE_VARIABLE")?,
@@ -19339,6 +21794,25 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE")?;
         runtime::check_type(node, "ARCHETYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE",
+            &[
+                "adl_version",
+                "annotations",
+                "archetype_id",
+                "concept",
+                "definition",
+                "description",
+                "invariants",
+                "is_controlled",
+                "ontology",
+                "original_language",
+                "parent_archetype_id",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             uid: runtime::optional_field(node, "uid")?,
             original_language: runtime::required_field(node, "original_language", "ARCHETYPE")?,
@@ -19470,6 +21944,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_INTERNAL_REF")?;
         runtime::check_type(node, "ARCHETYPE_INTERNAL_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE_INTERNAL_REF",
+            &["node_id", "occurrences", "rm_type_name", "target_path"],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "ARCHETYPE_INTERNAL_REF")?,
             occurrences: runtime::required_field(node, "occurrences", "ARCHETYPE_INTERNAL_REF")?,
@@ -19505,6 +21984,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_ONTOLOGY")?;
         runtime::check_type(node, "ARCHETYPE_ONTOLOGY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE_ONTOLOGY",
+            &[
+                "constraint_codes",
+                "specialisation_depth",
+                "term_attribute_names",
+                "term_codes",
+                "terminologies_available",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             term_codes: runtime::required_field(node, "term_codes", "ARCHETYPE_ONTOLOGY")?,
             constraint_codes: runtime::required_field(
@@ -19560,6 +22050,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_SLOT")?;
         runtime::check_type(node, "ARCHETYPE_SLOT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE_SLOT",
+            &[
+                "excludes",
+                "includes",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "ARCHETYPE_SLOT")?,
             occurrences: runtime::required_field(node, "occurrences", "ARCHETYPE_SLOT")?,
@@ -19591,6 +22092,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_TERM")?;
         runtime::check_type(node, "ARCHETYPE_TERM")?;
+        runtime::deny_unknown_fields(node, "ARCHETYPE_TERM", &["code", "items"])?;
         ::core::result::Result::Ok(Self {
             code: runtime::required_field(node, "code", "ARCHETYPE_TERM")?,
             items: runtime::optional_field(node, "items")?,
@@ -19627,6 +22129,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Asserti
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ASSERTION")?;
         runtime::check_type(node, "ASSERTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ASSERTION",
+            &["expression", "string_expression", "tag", "variables"],
+        )?;
         ::core::result::Result::Ok(Self {
             tag: runtime::optional_field(node, "tag")?,
             string_expression: runtime::optional_field(node, "string_expression")?,
@@ -19655,6 +22162,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Asserti
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ASSERTION_VARIABLE")?;
         runtime::check_type(node, "ASSERTION_VARIABLE")?;
+        runtime::deny_unknown_fields(node, "ASSERTION_VARIABLE", &["definition", "name"])?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "ASSERTION_VARIABLE")?,
             definition: runtime::required_field(node, "definition", "ASSERTION_VARIABLE")?,
@@ -19682,6 +22190,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Cardina
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CARDINALITY")?;
         runtime::check_type(node, "CARDINALITY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CARDINALITY",
+            &["interval", "is_ordered", "is_unique"],
+        )?;
         ::core::result::Result::Ok(Self {
             interval: runtime::required_field(node, "interval", "CARDINALITY")?,
             is_ordered: runtime::required_field(node, "is_ordered", "CARDINALITY")?,
@@ -19711,6 +22224,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Constra
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CONSTRAINT_REF")?;
         runtime::check_type(node, "CONSTRAINT_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CONSTRAINT_REF",
+            &["node_id", "occurrences", "reference", "rm_type_name"],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "CONSTRAINT_REF")?,
             occurrences: runtime::required_field(node, "occurrences", "CONSTRAINT_REF")?,
@@ -19782,6 +22300,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CBoolea
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_BOOLEAN")?;
         runtime::check_type(node, "C_BOOLEAN")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_BOOLEAN",
+            &["assumed_value", "false_valid", "true_valid"],
+        )?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             true_valid: runtime::required_field(node, "true_valid", "C_BOOLEAN")?,
@@ -19820,6 +22343,19 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CCodedT
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_CODED_TEXT")?;
         runtime::check_type(node, "C_CODED_TEXT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_CODED_TEXT",
+            &[
+                "assumed_value",
+                "code_list",
+                "node_id",
+                "occurrences",
+                "reference",
+                "rm_type_name",
+                "terminology",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_CODED_TEXT")?,
             occurrences: runtime::required_field(node, "occurrences", "C_CODED_TEXT")?,
@@ -19860,6 +22396,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CComple
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_COMPLEX_OBJECT")?;
         runtime::check_type(node, "C_COMPLEX_OBJECT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_COMPLEX_OBJECT",
+            &[
+                "assumed_value",
+                "attributes",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_COMPLEX_OBJECT")?,
             occurrences: runtime::required_field(node, "occurrences", "C_COMPLEX_OBJECT")?,
@@ -19899,6 +22446,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CDate {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_DATE")?;
         runtime::check_type(node, "C_DATE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_DATE",
+            &["assumed_value", "day_validity", "month_validity", "range"],
+        )?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             day_validity: runtime::optional_field(node, "day_validity")?,
@@ -19952,6 +22504,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CDateTi
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_DATE_TIME")?;
         runtime::check_type(node, "C_DATE_TIME")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_DATE_TIME",
+            &[
+                "assumed_value",
+                "day_validity",
+                "hour_validity",
+                "millisecond_validity",
+                "minute_validity",
+                "month_validity",
+                "range",
+                "second_validity",
+                "timezone_validity",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             month_validity: runtime::optional_field(node, "month_validity")?,
@@ -20113,6 +22680,22 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CDurati
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_DURATION")?;
         runtime::check_type(node, "C_DURATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_DURATION",
+            &[
+                "assumed_value",
+                "days_allowed",
+                "fractional_seconds_allowed",
+                "hours_allowed",
+                "minutes_allowed",
+                "months_allowed",
+                "range",
+                "seconds_allowed",
+                "weeks_allowed",
+                "years_allowed",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             years_allowed: runtime::optional_field(node, "years_allowed")?,
@@ -20159,6 +22742,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CIntege
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_INTEGER")?;
         runtime::check_type(node, "C_INTEGER")?;
+        runtime::deny_unknown_fields(node, "C_INTEGER", &["assumed_value", "list", "range"])?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             list: runtime::optional_container_field(node, "list")?,
@@ -20192,6 +22776,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CMultip
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_MULTIPLE_ATTRIBUTE")?;
         runtime::check_type(node, "C_MULTIPLE_ATTRIBUTE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_MULTIPLE_ATTRIBUTE",
+            &["cardinality", "children", "existence", "rm_attribute_name"],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_attribute_name: runtime::required_field(
                 node,
@@ -20303,6 +22892,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::COrdina
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_ORDINAL")?;
         runtime::check_type(node, "C_ORDINAL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_ORDINAL",
+            &[
+                "assumed_value",
+                "list",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_ORDINAL")?,
             occurrences: runtime::required_field(node, "occurrences", "C_ORDINAL")?,
@@ -20407,6 +23007,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CPrimit
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_PRIMITIVE_OBJECT")?;
         runtime::check_type(node, "C_PRIMITIVE_OBJECT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_PRIMITIVE_OBJECT",
+            &[
+                "assumed_value",
+                "item",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_PRIMITIVE_OBJECT")?,
             occurrences: runtime::required_field(node, "occurrences", "C_PRIMITIVE_OBJECT")?,
@@ -20446,6 +23057,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CQuanti
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_QUANTITY")?;
         runtime::check_type(node, "C_QUANTITY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_QUANTITY",
+            &[
+                "assumed_value",
+                "list",
+                "node_id",
+                "occurrences",
+                "property",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "C_QUANTITY")?,
             occurrences: runtime::required_field(node, "occurrences", "C_QUANTITY")?,
@@ -20478,6 +23101,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CQuanti
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_QUANTITY_ITEM")?;
         runtime::check_type(node, "C_QUANTITY_ITEM")?;
+        runtime::deny_unknown_fields(node, "C_QUANTITY_ITEM", &["magnitude", "units"])?;
         ::core::result::Result::Ok(Self {
             magnitude: runtime::required_field(node, "magnitude", "C_QUANTITY_ITEM")?,
             units: runtime::optional_field(node, "units")?,
@@ -20513,6 +23137,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CReal {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_REAL")?;
         runtime::check_type(node, "C_REAL")?;
+        runtime::deny_unknown_fields(node, "C_REAL", &["assumed_value", "list", "range"])?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             list: runtime::optional_container_field(node, "list")?,
@@ -20592,6 +23217,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CSingle
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_SINGLE_ATTRIBUTE")?;
         runtime::check_type(node, "C_SINGLE_ATTRIBUTE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_SINGLE_ATTRIBUTE",
+            &["children", "existence", "rm_attribute_name"],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_attribute_name: runtime::required_field(
                 node,
@@ -20633,6 +23263,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CString
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_STRING")?;
         runtime::check_type(node, "C_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_STRING",
+            &["assumed_value", "list", "list_open", "pattern"],
+        )?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             pattern: runtime::optional_field(node, "pattern")?,
@@ -20677,6 +23312,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CTime {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_TIME")?;
         runtime::check_type(node, "C_TIME")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_TIME",
+            &[
+                "assumed_value",
+                "millisecond_validity",
+                "minute_validity",
+                "range",
+                "second_validity",
+                "timezone_validity",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             assumed_value: runtime::optional_field(node, "assumed_value")?,
             minute_validity: runtime::optional_field(node, "minute_validity")?,
@@ -20712,6 +23359,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::ExprBin
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_BINARY_OPERATOR")?;
         runtime::check_type(node, "EXPR_BINARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_BINARY_OPERATOR",
+            &[
+                "left_operand",
+                "operator",
+                "precedence_overridden",
+                "right_operand",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             r#type: runtime::required_field(node, "type", "EXPR_BINARY_OPERATOR")?,
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
@@ -20787,6 +23445,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::ExprLea
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_LEAF")?;
         runtime::check_type(node, "EXPR_LEAF")?;
+        runtime::deny_unknown_fields(node, "EXPR_LEAF", &["item", "reference_type", "type"])?;
         ::core::result::Result::Ok(Self {
             r#type: runtime::required_field(node, "type", "EXPR_LEAF")?,
             reference_type: runtime::required_field(node, "reference_type", "EXPR_LEAF")?,
@@ -20858,6 +23517,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::ExprUna
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_UNARY_OPERATOR")?;
         runtime::check_type(node, "EXPR_UNARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_UNARY_OPERATOR",
+            &["operand", "operator", "precedence_overridden", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             r#type: runtime::required_field(node, "type", "EXPR_UNARY_OPERATOR")?,
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
@@ -20903,6 +23567,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::Ordinal
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ORDINAL")?;
         runtime::check_type(node, "ORDINAL")?;
+        runtime::deny_unknown_fields(node, "ORDINAL", &["symbol", "value"])?;
         ::core::result::Result::Ok(Self {
             symbol: runtime::required_field(node, "symbol", "ORDINAL")?,
             value: runtime::required_field(node, "value", "ORDINAL")?,
@@ -20927,6 +23592,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::AdlCode
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ADL_CODE_DEFINITIONS")?;
         runtime::check_type(node, "ADL_CODE_DEFINITIONS")?;
+        runtime::deny_unknown_fields(node, "ADL_CODE_DEFINITIONS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -21079,6 +23745,20 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::AomProf
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AOM_PROFILE")?;
         runtime::check_type(node, "AOM_PROFILE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AOM_PROFILE",
+            &[
+                "aom_lifecycle_mappings",
+                "aom_rm_type_mappings",
+                "aom_rm_type_substitutions",
+                "archetype_data_value_parent_class",
+                "archetype_parent_class",
+                "archetype_visualise_descendants_of",
+                "profile_name",
+                "rm_primitive_type_equivalences",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             profile_name: runtime::required_field(node, "profile_name", "AOM_PROFILE")?,
             archetype_parent_class: runtime::optional_field(node, "archetype_parent_class")?,
@@ -21120,6 +23800,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::AomProp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AOM_PROPERTY_MAPPING")?;
         runtime::check_type(node, "AOM_PROPERTY_MAPPING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AOM_PROPERTY_MAPPING",
+            &["source_property_name", "target_property_name"],
+        )?;
         ::core::result::Result::Ok(Self {
             source_property_name: runtime::required_field(
                 node,
@@ -21157,6 +23842,15 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::AomType
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AOM_TYPE_MAPPING")?;
         runtime::check_type(node, "AOM_TYPE_MAPPING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AOM_TYPE_MAPPING",
+            &[
+                "property_mappings",
+                "source_class_name",
+                "target_class_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             source_class_name: runtime::required_field(
                 node,
@@ -21350,6 +24044,20 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_HRID")?;
         runtime::check_type(node, "ARCHETYPE_HRID")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE_HRID",
+            &[
+                "build_count",
+                "concept_id",
+                "namespace",
+                "release_version",
+                "rm_class",
+                "rm_package",
+                "rm_publisher",
+                "version_status",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             namespace: runtime::optional_field(node, "namespace")?,
             rm_publisher: runtime::required_field(node, "rm_publisher", "ARCHETYPE_HRID")?,
@@ -21381,6 +24089,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_ID_CONSTRAINT")?;
         runtime::check_type(node, "ARCHETYPE_ID_CONSTRAINT")?;
+        runtime::deny_unknown_fields(node, "ARCHETYPE_ID_CONSTRAINT", &["constraint"])?;
         ::core::result::Result::Ok(Self {
             constraint: runtime::required_field(node, "constraint", "ARCHETYPE_ID_CONSTRAINT")?,
         })
@@ -21437,6 +24146,23 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_SLOT")?;
         runtime::check_type(node, "ARCHETYPE_SLOT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE_SLOT",
+            &[
+                "alternative_ids",
+                "excludes",
+                "includes",
+                "is_closed",
+                "is_deprecated",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -21476,6 +24202,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_TERM")?;
         runtime::check_type(node, "ARCHETYPE_TERM")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE_TERM",
+            &["code", "description", "other_items", "text"],
+        )?;
         ::core::result::Result::Ok(Self {
             code: runtime::required_field(node, "code", "ARCHETYPE_TERM")?,
             text: runtime::required_field(node, "text", "ARCHETYPE_TERM")?,
@@ -21515,6 +24246,19 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Archety
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ARCHETYPE_TERMINOLOGY")?;
         runtime::check_type(node, "ARCHETYPE_TERMINOLOGY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ARCHETYPE_TERMINOLOGY",
+            &[
+                "concept_code",
+                "is_differential",
+                "original_language",
+                "term_bindings",
+                "term_definitions",
+                "terminology_extracts",
+                "value_sets",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             is_differential: runtime::required_field(
                 node,
@@ -21563,6 +24307,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Asserti
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ASSERTION")?;
         runtime::check_type(node, "ASSERTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "ASSERTION",
+            &["expression", "string_expression", "tag"],
+        )?;
         ::core::result::Result::Ok(Self {
             tag: runtime::optional_field(node, "tag")?,
             string_expression: runtime::optional_field(node, "string_expression")?,
@@ -21590,6 +24339,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Assignm
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "ASSIGNMENT")?;
         runtime::check_type(node, "ASSIGNMENT")?;
+        runtime::deny_unknown_fields(node, "ASSIGNMENT", &["source", "target"])?;
         ::core::result::Result::Ok(Self {
             target: runtime::required_field(node, "target", "ASSIGNMENT")?,
             source: runtime::required_field(node, "source", "ASSIGNMENT")?,
@@ -21652,6 +24402,30 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Authore
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "AUTHORED_ARCHETYPE")?;
         runtime::check_type(node, "AUTHORED_ARCHETYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "AUTHORED_ARCHETYPE",
+            &[
+                "adl_version",
+                "annotations",
+                "archetype_id",
+                "build_uid",
+                "definition",
+                "description",
+                "is_controlled",
+                "is_differential",
+                "is_generated",
+                "original_language",
+                "other_meta_data",
+                "parent_archetype_id",
+                "rm_overlay",
+                "rm_release",
+                "rules",
+                "terminology",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
             archetype_id: runtime::required_field(node, "archetype_id", "AUTHORED_ARCHETYPE")?,
@@ -21809,6 +24583,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmAsse
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ASSERTION")?;
         runtime::check_type(node, "BMM_ASSERTION")?;
+        runtime::deny_unknown_fields(node, "BMM_ASSERTION", &["expression", "tag"])?;
         ::core::result::Result::Ok(Self {
             expression: runtime::required_field(node, "expression", "BMM_ASSERTION")?,
             tag: runtime::optional_field(node, "tag")?,
@@ -21835,6 +24610,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmAssi
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ASSIGNMENT")?;
         runtime::check_type(node, "BMM_ASSIGNMENT")?;
+        runtime::deny_unknown_fields(node, "BMM_ASSIGNMENT", &["source", "target"])?;
         ::core::result::Result::Ok(Self {
             target: runtime::required_field(node, "target", "BMM_ASSIGNMENT")?,
             source: runtime::required_field(node, "source", "BMM_ASSIGNMENT")?,
@@ -21865,6 +24641,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmBool
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_BOOLEAN_VALUE")?;
         runtime::check_type(node, "BMM_BOOLEAN_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_BOOLEAN_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_BOOLEAN_VALUE")?,
             value: runtime::required_field(node, "value", "BMM_BOOLEAN_VALUE")?,
@@ -22053,6 +24834,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmCons
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONSTANT")?;
         runtime::check_type(node, "BMM_CONSTANT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONSTANT",
+            &[
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "generator",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_CONSTANT")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -22116,6 +24912,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmCont
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "BMM_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONTAINER_PROPERTY",
+            &[
+                "cardinality",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_composition",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_CONTAINER_PROPERTY")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -22206,6 +25020,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmCont
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_CONTAINER_TYPE")?;
         runtime::check_type(node, "BMM_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_CONTAINER_TYPE",
+            &["container_class", "is_ordered", "is_unique", "item_type"],
+        )?;
         ::core::result::Result::Ok(Self {
             container_class: runtime::required_field(
                 node,
@@ -22283,6 +25102,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmDecl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_DECLARATION")?;
         runtime::check_type(node, "BMM_DECLARATION")?;
+        runtime::deny_unknown_fields(node, "BMM_DECLARATION", &["name", "result", "type"])?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_DECLARATION")?,
             result: runtime::required_field(node, "result", "BMM_DECLARATION")?,
@@ -22308,6 +25128,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmDefi
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_DEFINITIONS")?;
         runtime::check_type(node, "BMM_DEFINITIONS")?;
+        runtime::deny_unknown_fields(node, "BMM_DEFINITIONS", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -22511,6 +25332,33 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION")?;
         runtime::check_type(node, "BMM_ENUMERATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_ENUMERATION")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -22671,6 +25519,33 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION_INTEGER")?;
         runtime::check_type(node, "BMM_ENUMERATION_INTEGER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION_INTEGER",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_INTEGER")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -22788,6 +25663,33 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmEnum
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ENUMERATION_STRING")?;
         runtime::check_type(node, "BMM_ENUMERATION_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_ENUMERATION_STRING",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "item_names",
+                "item_values",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_ENUMERATION_STRING")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -22913,6 +25815,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFeat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_FEATURE_GROUP")?;
         runtime::check_type(node, "BMM_FEATURE_GROUP")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_FEATURE_GROUP",
+            &["features", "name", "properties", "visibility"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_FEATURE_GROUP")?,
             properties: runtime::required_field(node, "properties", "BMM_FEATURE_GROUP")?,
@@ -23070,6 +25977,26 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFunc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_FUNCTION")?;
         runtime::check_type(node, "BMM_FUNCTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_FUNCTION",
+            &[
+                "definition",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "operator_definition",
+                "parameters",
+                "post_conditions",
+                "pre_conditions",
+                "result",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_FUNCTION")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -23110,6 +26037,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFunc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_FUNCTION_TYPE")?;
         runtime::check_type(node, "BMM_FUNCTION_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_FUNCTION_TYPE",
+            &["argument_types", "result_type"],
+        )?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_FUNCTION_TYPE")?,
             argument_types: runtime::optional_field(node, "argument_types")?,
@@ -23192,6 +26124,32 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGene
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_CLASS")?;
         runtime::check_type(node, "BMM_GENERIC_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_CLASS",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "generic_parameters",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_GENERIC_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -23258,6 +26216,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGene
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_PARAMETER")?;
         runtime::check_type(node, "BMM_GENERIC_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_PARAMETER",
+            &[
+                "conforms_to_type",
+                "documentation",
+                "extensions",
+                "inheritance_precursor",
+                "name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_GENERIC_PARAMETER")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -23290,6 +26259,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmGene
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_GENERIC_TYPE")?;
         runtime::check_type(node, "BMM_GENERIC_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_GENERIC_TYPE",
+            &["base_class", "generic_parameters", "value_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_constraint: runtime::optional_field(node, "value_constraint")?,
             base_class: runtime::required_field(node, "base_class", "BMM_GENERIC_TYPE")?,
@@ -23353,6 +26327,24 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "BMM_INDEXED_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INDEXED_CONTAINER_PROPERTY",
+            &[
+                "cardinality",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_composition",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_INDEXED_CONTAINER_PROPERTY")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -23396,6 +26388,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmInde
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INDEXED_CONTAINER_TYPE")?;
         runtime::check_type(node, "BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INDEXED_CONTAINER_TYPE",
+            &[
+                "container_class",
+                "index_type",
+                "is_ordered",
+                "is_unique",
+                "item_type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             container_class: runtime::required_field(
                 node,
@@ -23498,6 +26501,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmInte
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_INTEGER_VALUE")?;
         runtime::check_type(node, "BMM_INTEGER_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_INTEGER_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_INTEGER_VALUE")?,
             value: runtime::required_field(node, "value", "BMM_INTEGER_VALUE")?,
@@ -23600,6 +26608,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmLoca
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_LOCAL")?;
         runtime::check_type(node, "BMM_LOCAL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_LOCAL",
+            &["documentation", "extensions", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_LOCAL")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -23633,6 +26646,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmLoca
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_LOCAL_ROUTINE")?;
         runtime::check_type(node, "BMM_LOCAL_ROUTINE")?;
+        runtime::deny_unknown_fields(node, "BMM_LOCAL_ROUTINE", &["body", "locals"])?;
         ::core::result::Result::Ok(Self {
             locals: runtime::optional_container_field(node, "locals")?,
             body: runtime::required_field(node, "body", "BMM_LOCAL_ROUTINE")?,
@@ -23680,6 +26694,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmMode
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_MODEL")?;
         runtime::check_type(node, "BMM_MODEL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_MODEL",
+            &[
+                "class_definitions",
+                "documentation",
+                "extensions",
+                "modules",
+                "name",
+                "packages",
+                "rm_publisher",
+                "rm_release",
+                "used_models",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_MODEL")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -23725,6 +26754,16 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmMode
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_MODEL_ACCESS")?;
         runtime::check_type(node, "BMM_MODEL_ACCESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_MODEL_ACCESS",
+            &[
+                "all_schemas",
+                "bmm_models",
+                "matching_bmm_models",
+                "schema_directories",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
@@ -23876,6 +26915,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmMode
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_MODEL_METADATA")?;
         runtime::check_type(node, "BMM_MODEL_METADATA")?;
+        runtime::deny_unknown_fields(node, "BMM_MODEL_METADATA", &["rm_publisher", "rm_release"])?;
         ::core::result::Result::Ok(Self {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_MODEL_METADATA")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_MODEL_METADATA")?,
@@ -24028,6 +27068,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmOpen
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_OPEN_TYPE")?;
         runtime::check_type(node, "BMM_OPEN_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_OPEN_TYPE", &["generic_constraint"])?;
         ::core::result::Result::Ok(Self {
             generic_constraint: runtime::required_field(
                 node,
@@ -24070,6 +27111,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPack
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PACKAGE")?;
         runtime::check_type(node, "BMM_PACKAGE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PACKAGE",
+            &["documentation", "extensions", "members", "name", "packages"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PACKAGE")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -24151,6 +27197,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPara
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PARAMETER")?;
         runtime::check_type(node, "BMM_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PARAMETER",
+            &[
+                "direction",
+                "documentation",
+                "extensions",
+                "is_nullable",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PARAMETER")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -24186,6 +27244,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPara
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PARAMETER_TYPE")?;
         runtime::check_type(node, "BMM_PARAMETER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PARAMETER_TYPE",
+            &["inheritance_precursor", "name", "type_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PARAMETER_TYPE")?,
             type_constraint: runtime::optional_field(node, "type_constraint")?,
@@ -24219,6 +27282,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmPrim
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PRIMITIVE_VALUE")?;
         runtime::check_type(node, "BMM_PRIMITIVE_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PRIMITIVE_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_PRIMITIVE_VALUE")?,
             value: runtime::optional_field(node, "value")?,
@@ -24333,6 +27401,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROCEDURE")?;
         runtime::check_type(node, "BMM_PROCEDURE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PROCEDURE",
+            &[
+                "definition",
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "parameters",
+                "post_conditions",
+                "pre_conditions",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_PROCEDURE")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -24368,6 +27454,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROCEDURE_CALL")?;
         runtime::check_type(node, "BMM_PROCEDURE_CALL")?;
+        runtime::deny_unknown_fields(node, "BMM_PROCEDURE_CALL", &["agent"])?;
         ::core::result::Result::Ok(Self {
             agent: runtime::required_field(node, "agent", "BMM_PROCEDURE_CALL")?,
         })
@@ -24397,6 +27484,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROCEDURE_TYPE")?;
         runtime::check_type(node, "BMM_PROCEDURE_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_PROCEDURE_TYPE",
+            &["argument_types", "result_type"],
+        )?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::optional_field(node, "result_type")?,
             argument_types: runtime::optional_field(node, "argument_types")?,
@@ -24467,6 +27559,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmProp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_PROPERTY_TYPE")?;
         runtime::check_type(node, "BMM_PROPERTY_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_PROPERTY_TYPE", &["result_type"])?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_PROPERTY_TYPE")?,
         })
@@ -24541,6 +27634,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmResu
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_RESULT")?;
         runtime::check_type(node, "BMM_RESULT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_RESULT",
+            &["documentation", "extensions", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_RESULT")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -24658,6 +27756,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmRout
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_ROUTINE_TYPE")?;
         runtime::check_type(node, "BMM_ROUTINE_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_ROUTINE_TYPE", &["argument_types", "result_type"])?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_ROUTINE_TYPE")?,
             argument_types: runtime::optional_field(node, "argument_types")?,
@@ -24748,6 +27847,25 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSche
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SCHEMA")?;
         runtime::check_type(node, "BMM_SCHEMA")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SCHEMA",
+            &[
+                "bmm_model",
+                "bmm_version",
+                "includes",
+                "model_name",
+                "rm_publisher",
+                "rm_release",
+                "schema_author",
+                "schema_contributors",
+                "schema_description",
+                "schema_lifecycle_state",
+                "schema_name",
+                "schema_revision",
+                "state",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA")?,
@@ -24813,6 +27931,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSche
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SCHEMA_CORE")?;
         runtime::check_type(node, "BMM_SCHEMA_CORE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SCHEMA_CORE",
+            &[
+                "archetype_data_value_parent_class",
+                "archetype_parent_class",
+                "archetype_rm_closure_packages",
+                "archetype_visualise_descendants_of",
+                "rm_publisher",
+                "rm_release",
+                "schema_author",
+                "schema_contributors",
+                "schema_description",
+                "schema_lifecycle_state",
+                "schema_name",
+                "schema_revision",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_publisher: runtime::required_field(node, "rm_publisher", "BMM_SCHEMA_CORE")?,
             rm_release: runtime::required_field(node, "rm_release", "BMM_SCHEMA_CORE")?,
@@ -24915,6 +28051,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSche
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SCHEMA_DESCRIPTOR")?;
         runtime::check_type(node, "BMM_SCHEMA_DESCRIPTOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SCHEMA_DESCRIPTOR",
+            &[
+                "bmm_model",
+                "bmm_schema",
+                "includes",
+                "meta_data",
+                "schema_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_schema: runtime::optional_field(node, "bmm_schema")?,
             bmm_model: runtime::optional_field(node, "bmm_model")?,
@@ -24953,6 +28100,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSelf
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SELF")?;
         runtime::check_type(node, "BMM_SELF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SELF",
+            &["documentation", "extensions", "is_nullable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_SELF")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -24981,6 +28133,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSign
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SIGNATURE")?;
         runtime::check_type(node, "BMM_SIGNATURE")?;
+        runtime::deny_unknown_fields(node, "BMM_SIGNATURE", &["result_type"])?;
         ::core::result::Result::Ok(Self {
             result_type: runtime::required_field(node, "result_type", "BMM_SIGNATURE")?,
         })
@@ -25110,6 +28263,31 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SIMPLE_CLASS")?;
         runtime::check_type(node, "BMM_SIMPLE_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SIMPLE_CLASS",
+            &[
+                "ancestors",
+                "converters",
+                "creators",
+                "documentation",
+                "extensions",
+                "feature_groups",
+                "features",
+                "functions",
+                "immediate_descendants",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "is_primitive",
+                "name",
+                "package",
+                "procedures",
+                "properties",
+                "source_schema_id",
+                "static_properties",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_SIMPLE_CLASS")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -25258,6 +28436,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimp
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SIMPLE_TYPE")?;
         runtime::check_type(node, "BMM_SIMPLE_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_SIMPLE_TYPE", &["base_class", "value_constraint"])?;
         ::core::result::Result::Ok(Self {
             value_constraint: runtime::optional_field(node, "value_constraint")?,
             base_class: runtime::required_field(node, "base_class", "BMM_SIMPLE_TYPE")?,
@@ -25303,6 +28482,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSing
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_SINGLETON")?;
         runtime::check_type(node, "BMM_SINGLETON")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_SINGLETON",
+            &[
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "generator",
+                "group",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_SINGLETON")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -25394,6 +28588,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_STATEMENT_BLOCK")?;
         runtime::check_type(node, "BMM_STATEMENT_BLOCK")?;
+        runtime::deny_unknown_fields(node, "BMM_STATEMENT_BLOCK", &["items"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::optional_container_field(node, "items")?,
         })
@@ -25523,6 +28718,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStri
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_STRING_VALUE")?;
         runtime::check_type(node, "BMM_STRING_VALUE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_STRING_VALUE",
+            &["syntax", "type", "value", "value_literal"],
+        )?;
         ::core::result::Result::Ok(Self {
             value_literal: runtime::required_field(node, "value_literal", "BMM_STRING_VALUE")?,
             value: runtime::required_field(node, "value", "BMM_STRING_VALUE")?,
@@ -25550,6 +28750,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmTupl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_TUPLE_TYPE")?;
         runtime::check_type(node, "BMM_TUPLE_TYPE")?;
+        runtime::deny_unknown_fields(node, "BMM_TUPLE_TYPE", &["item_types"])?;
         ::core::result::Result::Ok(Self {
             item_types: runtime::required_field(node, "item_types", "BMM_TUPLE_TYPE")?,
         })
@@ -25724,6 +28925,23 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmUnit
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "BMM_UNITARY_PROPERTY")?;
         runtime::check_type(node, "BMM_UNITARY_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "BMM_UNITARY_PROPERTY",
+            &[
+                "documentation",
+                "extensions",
+                "feature_extensions",
+                "group",
+                "is_composition",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_nullable",
+                "is_synthesised_generic",
+                "name",
+                "type",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "BMM_UNITARY_PROPERTY")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -26021,6 +29239,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CArchet
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_ARCHETYPE_ROOT")?;
         runtime::check_type(node, "C_ARCHETYPE_ROOT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_ARCHETYPE_ROOT",
+            &[
+                "alternative_ids",
+                "archetype_ref",
+                "attribute_tuples",
+                "attributes",
+                "default_value",
+                "is_deprecated",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26077,6 +29313,20 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CAttrib
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_ATTRIBUTE")?;
         runtime::check_type(node, "C_ATTRIBUTE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_ATTRIBUTE",
+            &[
+                "cardinality",
+                "children",
+                "differential_path",
+                "existence",
+                "is_multiple",
+                "parent",
+                "rm_attribute_name",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26117,6 +29367,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CAttrib
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_ATTRIBUTE_TUPLE")?;
         runtime::check_type(node, "C_ATTRIBUTE_TUPLE")?;
+        runtime::deny_unknown_fields(node, "C_ATTRIBUTE_TUPLE", &["members", "tuples"])?;
         ::core::result::Result::Ok(Self {
             members: runtime::optional_container_field(node, "members")?,
             tuples: runtime::optional_container_field(node, "tuples")?,
@@ -26177,6 +29428,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CBoolea
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_BOOLEAN")?;
         runtime::check_type(node, "C_BOOLEAN")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_BOOLEAN",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26249,6 +29518,23 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CComple
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_COMPLEX_OBJECT")?;
         runtime::check_type(node, "C_COMPLEX_OBJECT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_COMPLEX_OBJECT",
+            &[
+                "alternative_ids",
+                "attribute_tuples",
+                "attributes",
+                "default_value",
+                "is_deprecated",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26343,6 +29629,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CComple
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_COMPLEX_OBJECT_PROXY")?;
         runtime::check_type(node, "C_COMPLEX_OBJECT_PROXY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_COMPLEX_OBJECT_PROXY",
+            &[
+                "alternative_ids",
+                "is_deprecated",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+                "target_path",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26413,6 +29714,25 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDate {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_DATE")?;
         runtime::check_type(node, "C_DATE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_DATE",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "pattern_constraint",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26490,6 +29810,25 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDateTi
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_DATE_TIME")?;
         runtime::check_type(node, "C_DATE_TIME")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_DATE_TIME",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "pattern_constraint",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26650,6 +29989,25 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDurati
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_DURATION")?;
         runtime::check_type(node, "C_DURATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_DURATION",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "pattern_constraint",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26724,6 +30082,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CIntege
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_INTEGER")?;
         runtime::check_type(node, "C_INTEGER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_INTEGER",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -26990,6 +30366,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CPrimit
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_PRIMITIVE_TUPLE")?;
         runtime::check_type(node, "C_PRIMITIVE_TUPLE")?;
+        runtime::deny_unknown_fields(node, "C_PRIMITIVE_TUPLE", &["members"])?;
         ::core::result::Result::Ok(Self {
             members: runtime::required_field(node, "members", "C_PRIMITIVE_TUPLE")?,
         })
@@ -27049,6 +30426,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CReal {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_REAL")?;
         runtime::check_type(node, "C_REAL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_REAL",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -27162,6 +30557,24 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CString
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_STRING")?;
         runtime::check_type(node, "C_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_STRING",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -27273,6 +30686,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CTempor
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_TEMPORAL_DEFINITIONS")?;
         runtime::check_type(node, "C_TEMPORAL_DEFINITIONS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_TEMPORAL_DEFINITIONS",
+            &[
+                "valid_date_constraint_patterns",
+                "valid_date_constraint_replacements",
+                "valid_date_time_constraint_patterns",
+                "valid_date_time_constraint_replacements",
+                "valid_time_constraint_patterns",
+                "valid_time_constraint_replacements",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             valid_date_constraint_patterns: runtime::required_field(
                 node,
@@ -27360,6 +30785,25 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CTermin
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_TERMINOLOGY_CODE")?;
         runtime::check_type(node, "C_TERMINOLOGY_CODE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_TERMINOLOGY_CODE",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "constraint_status",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -27437,6 +30881,25 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CTime {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "C_TIME")?;
         runtime::check_type(node, "C_TIME")?;
+        runtime::deny_unknown_fields(
+            node,
+            "C_TIME",
+            &[
+                "alternative_ids",
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "node_id",
+                "occurrences",
+                "parent",
+                "pattern_constraint",
+                "rm_type_name",
+                "sibling_order",
+                "soc_parent",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent: runtime::optional_field(node, "parent")?,
             soc_parent: runtime::optional_field(node, "soc_parent")?,
@@ -27556,6 +31019,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElAttac
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_ATTACHED")?;
         runtime::check_type(node, "EL_ATTACHED")?;
+        runtime::deny_unknown_fields(node, "EL_ATTACHED", &["operand"])?;
         ::core::result::Result::Ok(Self {
             operand: runtime::required_field(node, "operand", "EL_ATTACHED")?,
         })
@@ -27588,6 +31052,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElBinar
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_BINARY_OPERATOR")?;
         runtime::check_type(node, "EL_BINARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_BINARY_OPERATOR",
+            &[
+                "call",
+                "left_operand",
+                "precedence_overridden",
+                "right_operand",
+                "symbol",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             symbol: runtime::optional_field(node, "symbol")?,
@@ -27616,6 +31091,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElBoole
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_BOOLEAN_EXPRESSION")?;
         runtime::check_type(node, "EL_BOOLEAN_EXPRESSION")?;
+        runtime::deny_unknown_fields(node, "EL_BOOLEAN_EXPRESSION", &["base_expression"])?;
         ::core::result::Result::Ok(Self {
             base_expression: runtime::required_field(
                 node,
@@ -27649,6 +31125,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CASE")?;
         runtime::check_type(node, "EL_CASE")?;
+        runtime::deny_unknown_fields(node, "EL_CASE", &["result", "value_constraint"])?;
         ::core::result::Result::Ok(Self {
             result: runtime::required_field(node, "result", "EL_CASE")?,
             value_constraint: runtime::required_field(node, "value_constraint", "EL_CASE")?,
@@ -27680,6 +31157,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CASE_TABLE")?;
         runtime::check_type(node, "EL_CASE_TABLE")?;
+        runtime::deny_unknown_fields(node, "EL_CASE_TABLE", &["else", "items", "test_value"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::required_field(node, "items", "EL_CASE_TABLE")?,
             r#else: runtime::required_field(node, "else", "EL_CASE_TABLE")?,
@@ -27711,6 +31189,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CONDITIONAL_EXPRESSION")?;
         runtime::check_type(node, "EL_CONDITIONAL_EXPRESSION")?;
+        runtime::deny_unknown_fields(node, "EL_CONDITIONAL_EXPRESSION", &["condition", "result"])?;
         ::core::result::Result::Ok(Self {
             result: runtime::required_field(node, "result", "EL_CONDITIONAL_EXPRESSION")?,
             condition: runtime::required_field(node, "condition", "EL_CONDITIONAL_EXPRESSION")?,
@@ -27741,6 +31220,7 @@ impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJs
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_CONDITION_CHAIN")?;
         runtime::check_type(node, "EL_CONDITION_CHAIN")?;
+        runtime::deny_unknown_fields(node, "EL_CONDITION_CHAIN", &["else", "items"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::required_field(node, "items", "EL_CONDITION_CHAIN")?,
             r#else: runtime::required_field(node, "else", "EL_CONDITION_CHAIN")?,
@@ -27895,6 +31375,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElDefin
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_DEFINED")?;
         runtime::check_type(node, "EL_DEFINED")?;
+        runtime::deny_unknown_fields(node, "EL_DEFINED", &["operand"])?;
         ::core::result::Result::Ok(Self {
             operand: runtime::required_field(node, "operand", "EL_DEFINED")?,
         })
@@ -28104,6 +31585,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElFunct
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_FUNCTION_AGENT")?;
         runtime::check_type(node, "EL_FUNCTION_AGENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_FUNCTION_AGENT",
+            &[
+                "closed_args",
+                "definition",
+                "is_writable",
+                "name",
+                "open_args",
+                "scoper",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_AGENT")?,
             name: runtime::required_field(node, "name", "EL_FUNCTION_AGENT")?,
@@ -28138,6 +31631,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElFunct
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_FUNCTION_CALL")?;
         runtime::check_type(node, "EL_FUNCTION_CALL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_FUNCTION_CALL",
+            &["agent", "is_writable", "name", "scoper"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_FUNCTION_CALL")?,
             name: runtime::required_field(node, "name", "EL_FUNCTION_CALL")?,
@@ -28165,6 +31663,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElLiter
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_LITERAL")?;
         runtime::check_type(node, "EL_LITERAL")?;
+        runtime::deny_unknown_fields(node, "EL_LITERAL", &["value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "EL_LITERAL")?,
         })
@@ -28284,6 +31783,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElProce
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_PROCEDURE_AGENT")?;
         runtime::check_type(node, "EL_PROCEDURE_AGENT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_PROCEDURE_AGENT",
+            &[
+                "closed_args",
+                "definition",
+                "is_writable",
+                "name",
+                "open_args",
+                "scoper",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_PROCEDURE_AGENT")?,
             name: runtime::required_field(node, "name", "EL_PROCEDURE_AGENT")?,
@@ -28318,6 +31829,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElPrope
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_PROPERTY_REF")?;
         runtime::check_type(node, "EL_PROPERTY_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_PROPERTY_REF",
+            &["definition", "is_writable", "name", "scoper"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_PROPERTY_REF")?,
             name: runtime::required_field(node, "name", "EL_PROPERTY_REF")?,
@@ -28347,6 +31863,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElReado
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_READONLY_VARIABLE")?;
         runtime::check_type(node, "EL_READONLY_VARIABLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_READONLY_VARIABLE",
+            &["definition", "is_writable", "name"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_READONLY_VARIABLE")?,
             name: runtime::required_field(node, "name", "EL_READONLY_VARIABLE")?,
@@ -28463,6 +31984,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElStati
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_STATIC_REF")?;
         runtime::check_type(node, "EL_STATIC_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_STATIC_REF",
+            &["definition", "is_writable", "name", "scoper"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_STATIC_REF")?,
             name: runtime::required_field(node, "name", "EL_STATIC_REF")?,
@@ -28590,6 +32116,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElTuple
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_TUPLE")?;
         runtime::check_type(node, "EL_TUPLE")?;
+        runtime::deny_unknown_fields(node, "EL_TUPLE", &["items", "type"])?;
         ::core::result::Result::Ok(Self {
             items: runtime::optional_container_field(node, "items")?,
             r#type: runtime::required_field(node, "type", "EL_TUPLE")?,
@@ -28620,6 +32147,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElTuple
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_TUPLE_ITEM")?;
         runtime::check_type(node, "EL_TUPLE_ITEM")?;
+        runtime::deny_unknown_fields(node, "EL_TUPLE_ITEM", &["item", "name"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
             name: runtime::optional_field(node, "name")?,
@@ -28648,6 +32176,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElTypeR
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_TYPE_REF")?;
         runtime::check_type(node, "EL_TYPE_REF")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_TYPE_REF",
+            &["is_mutable", "is_writable", "name", "type"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_TYPE_REF")?,
             name: runtime::required_field(node, "name", "EL_TYPE_REF")?,
@@ -28682,6 +32215,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElUnary
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_UNARY_OPERATOR")?;
         runtime::check_type(node, "EL_UNARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_UNARY_OPERATOR",
+            &["call", "operand", "precedence_overridden", "symbol"],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             symbol: runtime::optional_field(node, "symbol")?,
@@ -28825,6 +32363,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElWrita
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EL_WRITABLE_VARIABLE")?;
         runtime::check_type(node, "EL_WRITABLE_VARIABLE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EL_WRITABLE_VARIABLE",
+            &["definition", "is_writable", "name"],
+        )?;
         ::core::result::Result::Ok(Self {
             is_writable: runtime::required_field(node, "is_writable", "EL_WRITABLE_VARIABLE")?,
             name: runtime::required_field(node, "name", "EL_WRITABLE_VARIABLE")?,
@@ -28929,6 +32472,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprArc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_ARCHETYPE_ID_CONSTRAINT")?;
         runtime::check_type(node, "EXPR_ARCHETYPE_ID_CONSTRAINT")?;
+        runtime::deny_unknown_fields(node, "EXPR_ARCHETYPE_ID_CONSTRAINT", &["item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::required_field(node, "item", "EXPR_ARCHETYPE_ID_CONSTRAINT")?,
         })
@@ -28954,6 +32498,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprArc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_ARCHETYPE_REF")?;
         runtime::check_type(node, "EXPR_ARCHETYPE_REF")?;
+        runtime::deny_unknown_fields(node, "EXPR_ARCHETYPE_REF", &["item", "path"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::required_field(node, "item", "EXPR_ARCHETYPE_REF")?,
             path: runtime::required_field(node, "path", "EXPR_ARCHETYPE_REF")?,
@@ -28987,6 +32532,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprBin
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_BINARY_OPERATOR")?;
         runtime::check_type(node, "EXPR_BINARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_BINARY_OPERATOR",
+            &[
+                "left_operand",
+                "operator",
+                "precedence_overridden",
+                "right_operand",
+                "symbol",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             operator: runtime::required_field(node, "operator", "EXPR_BINARY_OPERATOR")?,
@@ -29015,6 +32571,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprCon
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_CONSTRAINT")?;
         runtime::check_type(node, "EXPR_CONSTRAINT")?;
+        runtime::deny_unknown_fields(node, "EXPR_CONSTRAINT", &["item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::required_field(node, "item", "EXPR_CONSTRAINT")?,
         })
@@ -29091,6 +32648,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprFor
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_FOR_ALL")?;
         runtime::check_type(node, "EXPR_FOR_ALL")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_FOR_ALL",
+            &[
+                "condition",
+                "operand",
+                "operator",
+                "precedence_overridden",
+                "symbol",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             operator: runtime::required_field(node, "operator", "EXPR_FOR_ALL")?,
@@ -29126,6 +32694,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprFun
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_FUNCTION_CALL")?;
         runtime::check_type(node, "EXPR_FUNCTION_CALL")?;
+        runtime::deny_unknown_fields(node, "EXPR_FUNCTION_CALL", &["arguments", "item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
             arguments: runtime::optional_container_field(node, "arguments")?,
@@ -29266,6 +32835,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprUna
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_UNARY_OPERATOR")?;
         runtime::check_type(node, "EXPR_UNARY_OPERATOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "EXPR_UNARY_OPERATOR",
+            &["operand", "operator", "precedence_overridden", "symbol"],
+        )?;
         ::core::result::Result::Ok(Self {
             precedence_overridden: runtime::optional_field(node, "precedence_overridden")?,
             operator: runtime::required_field(node, "operator", "EXPR_UNARY_OPERATOR")?,
@@ -29378,6 +32952,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprVal
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "EXPR_VALUE_REF")?;
         runtime::check_type(node, "EXPR_VALUE_REF")?;
+        runtime::deny_unknown_fields(node, "EXPR_VALUE_REF", &["item"])?;
         ::core::result::Result::Ok(Self {
             item: runtime::optional_field(node, "item")?,
         })
@@ -29483,6 +33058,32 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Operati
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "OPERATIONAL_TEMPLATE")?;
         runtime::check_type(node, "OPERATIONAL_TEMPLATE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "OPERATIONAL_TEMPLATE",
+            &[
+                "adl_version",
+                "annotations",
+                "archetype_id",
+                "build_uid",
+                "component_terminologies",
+                "definition",
+                "description",
+                "is_controlled",
+                "is_differential",
+                "is_generated",
+                "original_language",
+                "other_meta_data",
+                "parent_archetype_id",
+                "rm_overlay",
+                "rm_release",
+                "rules",
+                "terminology",
+                "terminology_extracts",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
             archetype_id: runtime::required_field(node, "archetype_id", "OPERATIONAL_TEMPLATE")?,
@@ -29668,6 +33269,20 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PArchet
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_ARCHETYPE_HRID")?;
         runtime::check_type(node, "P_ARCHETYPE_HRID")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_ARCHETYPE_HRID",
+            &[
+                "build_count",
+                "concept_id",
+                "namespace",
+                "release_version",
+                "rm_class",
+                "rm_package",
+                "rm_publisher",
+                "version_status",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             namespace: runtime::optional_field(node, "namespace")?,
             rm_publisher: runtime::required_field(node, "rm_publisher", "P_ARCHETYPE_HRID")?,
@@ -29717,6 +33332,19 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PArchet
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_ARCHETYPE_SLOT")?;
         runtime::check_type(node, "P_ARCHETYPE_SLOT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_ARCHETYPE_SLOT",
+            &[
+                "excludes",
+                "includes",
+                "is_closed",
+                "is_deprecated",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "P_ARCHETYPE_SLOT")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
@@ -29755,6 +33383,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PArchet
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_ARCHETYPE_TERMINOLOGY")?;
         runtime::check_type(node, "P_ARCHETYPE_TERMINOLOGY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_ARCHETYPE_TERMINOLOGY",
+            &[
+                "is_differential",
+                "original_language",
+                "term_bindings",
+                "term_definitions",
+                "value_sets",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             is_differential: runtime::required_field(
                 node,
@@ -29831,6 +33470,29 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PAuthor
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_AUTHORED_ARCHETYPE")?;
         runtime::check_type(node, "P_AUTHORED_ARCHETYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_AUTHORED_ARCHETYPE",
+            &[
+                "adl_version",
+                "annotations",
+                "archetype_id",
+                "build_uid",
+                "definition",
+                "description",
+                "is_controlled",
+                "is_differential",
+                "is_generated",
+                "original_language",
+                "other_meta_data",
+                "parent_archetype_id",
+                "rm_release",
+                "rules",
+                "terminology",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
             archetype_id: runtime::required_field(node, "archetype_id", "P_AUTHORED_ARCHETYPE")?,
@@ -30059,6 +33721,26 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmCla
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CLASS")?;
         runtime::check_type(node, "P_BMM_CLASS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CLASS",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CLASS")?,
@@ -30161,6 +33843,17 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CONTAINER_FUNCTION_PARAMETER")?;
         runtime::check_type(node, "P_BMM_CONTAINER_FUNCTION_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CONTAINER_FUNCTION_PARAMETER",
+            &[
+                "cardinality",
+                "documentation",
+                "is_nullable",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CONTAINER_FUNCTION_PARAMETER")?,
@@ -30217,6 +33910,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmCon
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "P_BMM_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CONTAINER_PROPERTY",
+            &[
+                "bmm_property",
+                "cardinality",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_CONTAINER_PROPERTY")?,
@@ -30306,6 +34014,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmCon
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_CONTAINER_TYPE")?;
         runtime::check_type(node, "P_BMM_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_CONTAINER_TYPE",
+            &["bmm_type", "container_type", "type", "type_def"],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             container_type: runtime::required_field(
@@ -30437,6 +34150,29 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_ENUMERATION")?;
         runtime::check_type(node, "P_BMM_ENUMERATION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_ENUMERATION",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "item_documentations",
+                "item_names",
+                "item_values",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION")?,
@@ -30586,6 +34322,29 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_ENUMERATION_INTEGER")?;
         runtime::check_type(node, "P_BMM_ENUMERATION_INTEGER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_ENUMERATION_INTEGER",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "item_documentations",
+                "item_names",
+                "item_values",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_INTEGER")?,
@@ -30684,6 +34443,29 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmEnu
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_ENUMERATION_STRING")?;
         runtime::check_type(node, "P_BMM_ENUMERATION_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_ENUMERATION_STRING",
+            &[
+                "ancestor_defs",
+                "ancestors",
+                "bmm_class",
+                "constants",
+                "documentation",
+                "functions",
+                "generic_parameter_defs",
+                "invariants",
+                "is_abstract",
+                "is_override",
+                "item_documentations",
+                "item_names",
+                "item_values",
+                "name",
+                "properties",
+                "source_schema_id",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_ENUMERATION_STRING")?,
@@ -30752,6 +34534,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmFun
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_FUNCTION")?;
         runtime::check_type(node, "P_BMM_FUNCTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_FUNCTION",
+            &[
+                "aliases",
+                "documentation",
+                "is_abstract",
+                "is_nullable",
+                "name",
+                "parameters",
+                "post_conditions",
+                "pre_conditions",
+                "result",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_FUNCTION")?,
@@ -30869,6 +34666,11 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_FUNCTION_PARAMETER")?;
         runtime::check_type(node, "P_BMM_GENERIC_FUNCTION_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_FUNCTION_PARAMETER",
+            &["documentation", "is_nullable", "name", "type_def"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_GENERIC_FUNCTION_PARAMETER")?,
@@ -30909,6 +34711,16 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmGen
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_PARAMETER")?;
         runtime::check_type(node, "P_BMM_GENERIC_PARAMETER")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_PARAMETER",
+            &[
+                "bmm_generic_parameter",
+                "conforms_to_type",
+                "documentation",
+                "name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_GENERIC_PARAMETER")?,
@@ -30957,6 +34769,20 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmGen
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_PROPERTY")?;
         runtime::check_type(node, "P_BMM_GENERIC_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_PROPERTY",
+            &[
+                "bmm_property",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_GENERIC_PROPERTY")?,
@@ -31002,6 +34828,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmGen
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_GENERIC_TYPE")?;
         runtime::check_type(node, "P_BMM_GENERIC_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_GENERIC_TYPE",
+            &[
+                "bmm_type",
+                "generic_parameter_defs",
+                "generic_parameters",
+                "root_type",
+                "value_constraint",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             value_constraint: runtime::optional_field(node, "value_constraint")?,
@@ -31058,6 +34895,21 @@ impl crate::json_codec::runtime::FromJson
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_INDEXED_CONTAINER_PROPERTY")?;
         runtime::check_type(node, "P_BMM_INDEXED_CONTAINER_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_INDEXED_CONTAINER_PROPERTY",
+            &[
+                "bmm_property",
+                "cardinality",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_INDEXED_CONTAINER_PROPERTY")?,
@@ -31100,6 +34952,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmInd
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_INDEXED_CONTAINER_TYPE")?;
         runtime::check_type(node, "P_BMM_INDEXED_CONTAINER_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_INDEXED_CONTAINER_TYPE",
+            &[
+                "bmm_type",
+                "container_type",
+                "index_type",
+                "type",
+                "type_def",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             container_type: runtime::required_field(
@@ -31142,6 +35005,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmInt
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_INTERFACE")?;
         runtime::check_type(node, "P_BMM_INTERFACE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_INTERFACE",
+            &["documentation", "functions", "name"],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_INTERFACE")?,
@@ -31328,6 +35196,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmOpe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_OPEN_TYPE")?;
         runtime::check_type(node, "P_BMM_OPEN_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_OPEN_TYPE",
+            &["bmm_type", "type", "value_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             value_constraint: runtime::optional_field(node, "value_constraint")?,
@@ -31366,6 +35239,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmPac
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_PACKAGE")?;
         runtime::check_type(node, "P_BMM_PACKAGE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_PACKAGE",
+            &[
+                "bmm_package_definition",
+                "classes",
+                "documentation",
+                "name",
+                "packages",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE")?,
             documentation: runtime::optional_field(node, "documentation")?,
@@ -31394,6 +35278,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmPac
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_PACKAGE_CONTAINER")?;
         runtime::check_type(node, "P_BMM_PACKAGE_CONTAINER")?;
+        runtime::deny_unknown_fields(node, "P_BMM_PACKAGE_CONTAINER", &["packages"])?;
         ::core::result::Result::Ok(Self {
             packages: runtime::required_field(node, "packages", "P_BMM_PACKAGE_CONTAINER")?,
         })
@@ -31564,6 +35449,29 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSch
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SCHEMA")?;
         runtime::check_type(node, "P_BMM_SCHEMA")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SCHEMA",
+            &[
+                "archetype_data_value_parent_class",
+                "archetype_parent_class",
+                "archetype_rm_closure_packages",
+                "archetype_visualise_descendants_of",
+                "bmm_version",
+                "class_definitions",
+                "includes",
+                "packages",
+                "primitive_types",
+                "rm_publisher",
+                "rm_release",
+                "schema_author",
+                "schema_contributors",
+                "schema_description",
+                "schema_lifecycle_state",
+                "schema_name",
+                "schema_revision",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             packages: runtime::required_field(node, "packages", "P_BMM_SCHEMA")?,
             rm_publisher: runtime::required_field(node, "rm_publisher", "P_BMM_SCHEMA")?,
@@ -31636,6 +35544,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSch
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SCHEMA_DESCRIPTOR")?;
         runtime::check_type(node, "P_BMM_SCHEMA_DESCRIPTOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SCHEMA_DESCRIPTOR",
+            &[
+                "bmm_schema",
+                "includes",
+                "meta_data",
+                "p_schema",
+                "schema",
+                "schema_id",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             p_schema: runtime::optional_field(node, "p_schema")?,
             schema: runtime::optional_field(node, "schema")?,
@@ -31671,6 +35591,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSim
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SIMPLE_TYPE")?;
         runtime::check_type(node, "P_BMM_SIMPLE_TYPE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SIMPLE_TYPE",
+            &["bmm_type", "type", "value_constraint"],
+        )?;
         ::core::result::Result::Ok(Self {
             bmm_type: runtime::optional_field(node, "bmm_type")?,
             value_constraint: runtime::optional_field(node, "value_constraint")?,
@@ -31724,6 +35649,22 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSin
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SINGLE_PROPERTY")?;
         runtime::check_type(node, "P_BMM_SINGLE_PROPERTY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SINGLE_PROPERTY",
+            &[
+                "bmm_property",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type",
+                "type_def",
+                "type_ref",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_SINGLE_PROPERTY")?,
@@ -31784,6 +35725,22 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PBmmSin
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_BMM_SINGLE_PROPERTY_OPEN")?;
         runtime::check_type(node, "P_BMM_SINGLE_PROPERTY_OPEN")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_BMM_SINGLE_PROPERTY_OPEN",
+            &[
+                "bmm_property",
+                "documentation",
+                "is_computed",
+                "is_im_infrastructure",
+                "is_im_runtime",
+                "is_mandatory",
+                "name",
+                "type",
+                "type_def",
+                "type_ref",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             documentation: runtime::optional_field(node, "documentation")?,
             name: runtime::required_field(node, "name", "P_BMM_SINGLE_PROPERTY_OPEN")?,
@@ -31894,6 +35851,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCArche
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_ARCHETYPE_ROOT")?;
         runtime::check_type(node, "P_C_ARCHETYPE_ROOT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_C_ARCHETYPE_ROOT",
+            &[
+                "archetype_ref",
+                "attribute_tuples",
+                "attributes",
+                "default_value",
+                "is_deprecated",
+                "is_frozen",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "P_C_ARCHETYPE_ROOT")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
@@ -31941,6 +35913,18 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCAttri
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_ATTRIBUTE")?;
         runtime::check_type(node, "P_C_ATTRIBUTE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_C_ATTRIBUTE",
+            &[
+                "cardinality",
+                "children",
+                "differential_path",
+                "existence",
+                "is_multiple",
+                "rm_attribute_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_attribute_name: runtime::required_field(node, "rm_attribute_name", "P_C_ATTRIBUTE")?,
             existence: runtime::optional_field(node, "existence")?,
@@ -31974,6 +35958,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCAttri
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_ATTRIBUTE_TUPLE")?;
         runtime::check_type(node, "P_C_ATTRIBUTE_TUPLE")?;
+        runtime::deny_unknown_fields(node, "P_C_ATTRIBUTE_TUPLE", &["members"])?;
         ::core::result::Result::Ok(Self {
             members: runtime::optional_container_field(node, "members")?,
         })
@@ -32020,6 +36005,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCBoole
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_BOOLEAN")?;
         runtime::check_type(node, "P_C_BOOLEAN")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_C_BOOLEAN",
+            &[
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "is_frozen",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "P_C_BOOLEAN")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
@@ -32076,6 +36076,20 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCCompl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_COMPLEX_OBJECT")?;
         runtime::check_type(node, "P_C_COMPLEX_OBJECT")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_C_COMPLEX_OBJECT",
+            &[
+                "attribute_tuples",
+                "attributes",
+                "default_value",
+                "is_deprecated",
+                "is_frozen",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "P_C_COMPLEX_OBJECT")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
@@ -32153,6 +36167,17 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCCompl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_COMPLEX_OBJECT_PROXY")?;
         runtime::check_type(node, "P_C_COMPLEX_OBJECT_PROXY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_C_COMPLEX_OBJECT_PROXY",
+            &[
+                "is_deprecated",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+                "target_path",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(
                 node,
@@ -32184,6 +36209,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCDate 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_DATE")?;
         runtime::check_type(node, "P_C_DATE")?;
+        runtime::deny_unknown_fields(node, "P_C_DATE", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -32205,6 +36231,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCDateT
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_DATE_TIME")?;
         runtime::check_type(node, "P_C_DATE_TIME")?;
+        runtime::deny_unknown_fields(node, "P_C_DATE_TIME", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -32279,6 +36306,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCDurat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_DURATION")?;
         runtime::check_type(node, "P_C_DURATION")?;
+        runtime::deny_unknown_fields(node, "P_C_DURATION", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -32300,6 +36328,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCInteg
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_INTEGER")?;
         runtime::check_type(node, "P_C_INTEGER")?;
+        runtime::deny_unknown_fields(node, "P_C_INTEGER", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -32431,6 +36460,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCReal 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_REAL")?;
         runtime::check_type(node, "P_C_REAL")?;
+        runtime::deny_unknown_fields(node, "P_C_REAL", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -32471,6 +36501,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCStrin
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_STRING")?;
         runtime::check_type(node, "P_C_STRING")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_C_STRING",
+            &[
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "is_frozen",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "P_C_STRING")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
@@ -32524,6 +36569,21 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCTermi
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_TERMINOLOGY_CODE")?;
         runtime::check_type(node, "P_C_TERMINOLOGY_CODE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_C_TERMINOLOGY_CODE",
+            &[
+                "assumed_value",
+                "constraint",
+                "default_value",
+                "is_deprecated",
+                "is_enumerated_type_constraint",
+                "is_frozen",
+                "node_id",
+                "occurrences",
+                "rm_type_name",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             rm_type_name: runtime::required_field(node, "rm_type_name", "P_C_TERMINOLOGY_CODE")?,
             occurrences: runtime::optional_field(node, "occurrences")?,
@@ -32558,6 +36618,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCTime 
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_C_TIME")?;
         runtime::check_type(node, "P_C_TIME")?;
+        runtime::deny_unknown_fields(node, "P_C_TIME", &[])?;
         ::core::result::Result::Ok(Self {})
     }
 }
@@ -32622,6 +36683,31 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::POperat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_OPERATIONAL_TEMPLATE")?;
         runtime::check_type(node, "P_OPERATIONAL_TEMPLATE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_OPERATIONAL_TEMPLATE",
+            &[
+                "adl_version",
+                "annotations",
+                "archetype_id",
+                "build_uid",
+                "component_terminologies",
+                "definition",
+                "description",
+                "is_controlled",
+                "is_differential",
+                "is_generated",
+                "original_language",
+                "other_meta_data",
+                "parent_archetype_id",
+                "rm_release",
+                "rules",
+                "terminology",
+                "terminology_extracts",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
             archetype_id: runtime::required_field(node, "archetype_id", "P_OPERATIONAL_TEMPLATE")?,
@@ -32712,6 +36798,29 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PTempla
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "P_TEMPLATE")?;
         runtime::check_type(node, "P_TEMPLATE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "P_TEMPLATE",
+            &[
+                "adl_version",
+                "annotations",
+                "archetype_id",
+                "build_uid",
+                "definition",
+                "description",
+                "is_controlled",
+                "is_differential",
+                "is_generated",
+                "original_language",
+                "other_meta_data",
+                "parent_archetype_id",
+                "rm_release",
+                "rules",
+                "terminology",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
             archetype_id: runtime::required_field(node, "archetype_id", "P_TEMPLATE")?,
@@ -32762,6 +36871,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Referen
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "REFERENCE_MODEL_ACCESS")?;
         runtime::check_type(node, "REFERENCE_MODEL_ACCESS")?;
+        runtime::deny_unknown_fields(
+            node,
+            "REFERENCE_MODEL_ACCESS",
+            &["all_schemas", "schema_directories", "valid_models"],
+        )?;
         ::core::result::Result::Ok(Self {
             schema_directories: runtime::optional_container_field(node, "schema_directories")?,
             all_schemas: runtime::optional_field(node, "all_schemas")?,
@@ -32833,6 +36947,28 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Resourc
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RESOURCE_DESCRIPTION")?;
         runtime::check_type(node, "RESOURCE_DESCRIPTION")?;
+        runtime::deny_unknown_fields(
+            node,
+            "RESOURCE_DESCRIPTION",
+            &[
+                "conversion_details",
+                "copyright",
+                "custodian_namespace",
+                "custodian_organisation",
+                "details",
+                "ip_acknowledgements",
+                "licence",
+                "lifecycle_state",
+                "original_author",
+                "original_namespace",
+                "original_publisher",
+                "other_contributors",
+                "other_details",
+                "references",
+                "resource_package_uri",
+                "title",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             title: runtime::optional_field(node, "title")?,
             original_author: runtime::required_field(
@@ -32885,6 +37021,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::RmAttri
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RM_ATTRIBUTE_VISIBILITY")?;
         runtime::check_type(node, "RM_ATTRIBUTE_VISIBILITY")?;
+        runtime::deny_unknown_fields(node, "RM_ATTRIBUTE_VISIBILITY", &["alias", "visibility"])?;
         ::core::result::Result::Ok(Self {
             visibility: runtime::optional_field(node, "visibility")?,
             alias: runtime::optional_field(node, "alias")?,
@@ -32912,6 +37049,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::RmOverl
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "RM_OVERLAY")?;
         runtime::check_type(node, "RM_OVERLAY")?;
+        runtime::deny_unknown_fields(node, "RM_OVERLAY", &["rm_visibility"])?;
         ::core::result::Result::Ok(Self {
             rm_visibility: runtime::optional_field(node, "rm_visibility")?,
         })
@@ -32948,6 +37086,11 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::SchemaD
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "SCHEMA_DESCRIPTOR")?;
         runtime::check_type(node, "SCHEMA_DESCRIPTOR")?;
+        runtime::deny_unknown_fields(
+            node,
+            "SCHEMA_DESCRIPTOR",
+            &["includes", "meta_data", "p_schema", "schema", "schema_id"],
+        )?;
         ::core::result::Result::Ok(Self {
             p_schema: runtime::optional_field(node, "p_schema")?,
             schema: runtime::optional_field(node, "schema")?,
@@ -33017,6 +37160,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Sibling
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "SIBLING_ORDER")?;
         runtime::check_type(node, "SIBLING_ORDER")?;
+        runtime::deny_unknown_fields(node, "SIBLING_ORDER", &["is_before", "sibling_node_id"])?;
         ::core::result::Result::Ok(Self {
             is_before: runtime::required_field(node, "is_before", "SIBLING_ORDER")?,
             sibling_node_id: runtime::required_field(node, "sibling_node_id", "SIBLING_ORDER")?,
@@ -33094,6 +37238,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Stateme
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "STATEMENT_SET")?;
         runtime::check_type(node, "STATEMENT_SET")?;
+        runtime::deny_unknown_fields(node, "STATEMENT_SET", &["name", "statement"])?;
         ::core::result::Result::Ok(Self {
             statement: runtime::optional_container_field(node, "statement")?,
             name: runtime::optional_field(node, "name")?,
@@ -33161,6 +37306,31 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Templat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TEMPLATE")?;
         runtime::check_type(node, "TEMPLATE")?;
+        runtime::deny_unknown_fields(
+            node,
+            "TEMPLATE",
+            &[
+                "adl_version",
+                "annotations",
+                "archetype_id",
+                "build_uid",
+                "definition",
+                "description",
+                "is_controlled",
+                "is_differential",
+                "is_generated",
+                "original_language",
+                "other_meta_data",
+                "overlays",
+                "parent_archetype_id",
+                "rm_overlay",
+                "rm_release",
+                "rules",
+                "terminology",
+                "translations",
+                "uid",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
             archetype_id: runtime::required_field(node, "archetype_id", "TEMPLATE")?,
@@ -33217,6 +37387,19 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Templat
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TEMPLATE_OVERLAY")?;
         runtime::check_type(node, "TEMPLATE_OVERLAY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "TEMPLATE_OVERLAY",
+            &[
+                "archetype_id",
+                "definition",
+                "is_differential",
+                "parent_archetype_id",
+                "rm_overlay",
+                "rules",
+                "terminology",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             parent_archetype_id: runtime::optional_field(node, "parent_archetype_id")?,
             archetype_id: runtime::required_field(node, "archetype_id", "TEMPLATE_OVERLAY")?,
@@ -33283,6 +37466,7 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ValueSe
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "VALUE_SET")?;
         runtime::check_type(node, "VALUE_SET")?;
+        runtime::deny_unknown_fields(node, "VALUE_SET", &["id", "members"])?;
         ::core::result::Result::Ok(Self {
             id: runtime::required_field(node, "id", "VALUE_SET")?,
             members: runtime::required_field(node, "members", "VALUE_SET")?,
@@ -33331,6 +37515,7 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::Code {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CODE")?;
         runtime::check_type(node, "CODE")?;
+        runtime::deny_unknown_fields(node, "CODE", &["description", "status", "value"])?;
         ::core::result::Result::Ok(Self {
             value: runtime::required_field(node, "value", "CODE")?,
             description: runtime::optional_field(node, "description")?,
@@ -33370,6 +37555,18 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::CodeSet {
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "CODE_SET")?;
         runtime::check_type(node, "CODE_SET")?;
+        runtime::deny_unknown_fields(
+            node,
+            "CODE_SET",
+            &[
+                "codes",
+                "external_id",
+                "issuer",
+                "name",
+                "openehr_id",
+                "status",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "CODE_SET")?,
             openehr_id: runtime::required_field(node, "openehr_id", "CODE_SET")?,
@@ -33416,6 +37613,18 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::Terminology
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TERMINOLOGY")?;
         runtime::check_type(node, "TERMINOLOGY")?;
+        runtime::deny_unknown_fields(
+            node,
+            "TERMINOLOGY",
+            &[
+                "code_sets",
+                "date",
+                "language",
+                "name",
+                "version",
+                "vocabularies",
+            ],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "TERMINOLOGY")?,
             language: runtime::required_field(node, "language", "TERMINOLOGY")?,
@@ -33449,6 +37658,7 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::Terminology
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TERMINOLOGY_CONCEPT")?;
         runtime::check_type(node, "TERMINOLOGY_CONCEPT")?;
+        runtime::deny_unknown_fields(node, "TERMINOLOGY_CONCEPT", &["id", "rubric", "status"])?;
         ::core::result::Result::Ok(Self {
             id: runtime::required_field(node, "id", "TERMINOLOGY_CONCEPT")?,
             rubric: runtime::required_field(node, "rubric", "TERMINOLOGY_CONCEPT")?,
@@ -33484,6 +37694,11 @@ impl crate::json_codec::runtime::FromJson for openehr_term::prelude::Terminology
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
         runtime::expect_object(node, "TERMINOLOGY_GROUP")?;
         runtime::check_type(node, "TERMINOLOGY_GROUP")?;
+        runtime::deny_unknown_fields(
+            node,
+            "TERMINOLOGY_GROUP",
+            &["concepts", "name", "openehr_id", "status"],
+        )?;
         ::core::result::Result::Ok(Self {
             name: runtime::required_field(node, "name", "TERMINOLOGY_GROUP")?,
             concepts: runtime::optional_container_field(node, "concepts")?,

@@ -104,7 +104,7 @@ fn compositions() -> Vec<(String, String, Value)> {
         if path.extension().is_none_or(|e| e != "json") {
             continue;
         }
-        let Ok(text) = std::fs::read_to_string(&path) else {
+        let Ok(text) = std::fs::read_to_string(crate::common::twinned(&path)) else {
             continue;
         };
         let Ok(value) = serde_json::from_str::<Value>(&text) else {
@@ -244,7 +244,7 @@ fn golden_flat(comp_file: &str, template_id: &str, snap: &str) {
     let wt = wts
         .get(template_id)
         .unwrap_or_else(|| panic!("no web template for {template_id:?}"));
-    let text = std::fs::read_to_string(composition_dir().join(comp_file))
+    let text = std::fs::read_to_string(crate::common::twinned(&composition_dir().join(comp_file)))
         .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     let comp: Value =
         serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"));
@@ -274,7 +274,9 @@ fn golden_minimal_observation_flat() {
 fn demo_vitals_flat_key_shape() {
     let wts = web_templates();
     let wt = wts.get("Demo Vitals").expect("Demo Vitals web template");
-    let text = std::fs::read_to_string(composition_dir().join("demo_vitals_352.json")).unwrap();
+    let text =
+        std::fs::read_to_string(crate::common::twinned(&composition_dir().join("demo_vitals_352.json")))
+            .unwrap();
     let comp: Value = serde_json::from_str(&text).unwrap();
     let flat = composition_to_flat(&comp, wt).expect("to_flat");
 
@@ -306,7 +308,7 @@ fn demo_vitals_flat_key_shape() {
 // ── closed-gap assertions ─────────────────────────────────────────────────────
 
 fn load(comp_file: &str) -> Value {
-    let text = std::fs::read_to_string(composition_dir().join(comp_file))
+    let text = std::fs::read_to_string(crate::common::twinned(&composition_dir().join(comp_file)))
         .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"))
 }
@@ -798,11 +800,19 @@ fn wt_action_careflows(
     }
 }
 
-/// Stamp the i-th composition ACTION's ism_transition (document pre-order, the
-/// same order as [`wt_action_careflows`]) with the matching careflow
-/// `archetype_node_id` + a `name` DV_TEXT — so the WT careflow child resolves it
-/// and a `name` exists to (previously) be lost, exactly as the CKM skeleton
-/// generator stamps a name on every node.
+/// Stamp the i-th composition ACTION's `ism_transition.careflow_step` (document
+/// pre-order, the same order as [`wt_action_careflows`]) with the WT careflow
+/// child's name as a `DV_CODED_TEXT` — the leaf that must survive the round
+/// trip.
+///
+/// It is `careflow_step` and NOT `name`/`archetype_node_id`: `ISM_TRANSITION`
+/// inherits `PATHABLE`, not `LOCATABLE`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
+/// §Inherit), so it declares neither of those attributes and a document
+/// carrying them is not a conformant instance — the strict canonical reader
+/// refuses it. `careflow_step` is the class's own `0..1 DV_CODED_TEXT`
+/// (same file §Attributes), which is exactly the datum the careflow
+/// specialization identifies.
 fn stamp_careflow(v: &mut Value, careflows: &[Option<(String, String)>], idx: &mut usize) {
     match v {
         Value::Object(m) => {
@@ -811,12 +821,16 @@ fn stamp_careflow(v: &mut Value, careflows: &[Option<(String, String)>], idx: &m
                     && let Some(ism) = m.get_mut("ism_transition").and_then(Value::as_object_mut)
                 {
                     ism.insert(
-                        "archetype_node_id".to_owned(),
-                        Value::String(cf_nid.clone()),
-                    );
-                    ism.insert(
-                        "name".to_owned(),
-                        serde_json::json!({"_type": "DV_TEXT", "value": cf_name}),
+                        "careflow_step".to_owned(),
+                        serde_json::json!({
+                            "_type": "DV_CODED_TEXT",
+                            "value": cf_name,
+                            "defining_code": {
+                                "_type": "CODE_PHRASE",
+                                "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
+                                "code_string": cf_nid,
+                            },
+                        }),
                     );
                 }
                 *idx += 1;
@@ -879,10 +893,10 @@ fn action_careflow_ism_transition_wins_over_direct_path() {
 
     let flat = composition_to_flat(&comp, wt).unwrap();
     // No DV leaf is lost: for every ACTION whose careflow child resolved the
-    // ism_transition, its careflow `name` DV_TEXT survives because the WT-child
-    // build wins (the direct path no longer over-emits nor overwrites it). At
-    // least three of the four IPS ACTIONs resolve, so a shadowing regression
-    // drops ≥3 DV_TEXT leaves and trips this equality.
+    // ism_transition, its `careflow_step` DV_CODED_TEXT survives because the
+    // WT-child build wins (the direct path no longer over-emits nor overwrites
+    // it). At least three of the four IPS ACTIONs resolve, so a shadowing
+    // regression drops >= 3 leaves and trips this equality.
     let rebuilt = composition_from_flat(&flat, wt, NOW).unwrap();
     assert_eq!(
         before,

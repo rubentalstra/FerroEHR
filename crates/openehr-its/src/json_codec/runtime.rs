@@ -507,6 +507,22 @@ impl JsonParseError {
         Self::custom(format!("missing field `{field}` on `{ty}`"))
     }
 
+    /// An undeclared wire key on a concrete type (the strict reader — see
+    /// [`deny_unknown_fields`]). The message names the offending key and the
+    /// keys the type does declare, so a client can fix the payload without
+    /// reading the model.
+    #[must_use]
+    pub fn unknown_field(field: &str, ty: &str, known: &[&str]) -> Self {
+        Self::custom(format!(
+            "unknown field `{field}` on `{ty}` (declared: {})",
+            if known.is_empty() {
+                "none".to_owned()
+            } else {
+                known.join(", ")
+            }
+        ))
+    }
+
     /// A present-but-wrong `_type` discriminator on a concrete type.
     #[must_use]
     pub fn type_mismatch(expected: &str, found: &str) -> Self {
@@ -1073,9 +1089,8 @@ impl<'a> Tokenizer<'a> {
 // ── the FromJson trait + primitive/leaf impls ─────────────────────────────────
 
 /// A value that deserializes from a canonical-JSON [`JsonNode`]. Generated impls
-/// read each known field by key (unknown keys ignored; members may be out of
-/// order) and validate/dispatch on `_type` — mirroring, verbatim, the tolerance
-/// rules of the retired `#[derive(OpenEhrType)]` reader.
+/// read each declared field by key (members may be out of order), refuse any
+/// UNDECLARED key ([`deny_unknown_fields`]), and validate/dispatch on `_type`.
 pub trait FromJson: Sized {
     /// # Errors
     /// Returns a [`JsonParseError`] if `node` is not a valid encoding of `Self`.
@@ -1249,6 +1264,55 @@ pub fn check_type<N: JsonNode>(node: &N, expected: &str) -> Result<(), JsonParse
         && found != expected
     {
         return Err(JsonParseError::type_mismatch(expected, found));
+    }
+    Ok(())
+}
+
+/// Refuse any member of `node` that `ty` does not declare — the strict reader.
+///
+/// `known` is the sorted set of wire keys the generated type declares; `_type`
+/// is always additionally allowed (it is the canonical-JSON discriminator, not a
+/// modelled attribute). The refusal names the offending key, and the path to the
+/// containing node is filled in by [`JsonParseError::in_field`] /
+/// [`JsonParseError::in_index`] as the error propagates out.
+///
+/// # Why refusal rather than tolerance
+///
+/// * `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+///   L75 (XML): the payload must validate against the ITS-XML schemas, which
+///   are wildcard-free — an undeclared element cannot validate. L87 (JSON): the
+///   same paragraph for the JSON encoding, at SHOULD strength.
+/// * openEHR's own published ITS-JSON schemas close 128 of their 134 object
+///   definitions with `additionalProperties: false` — the wire model is closed
+///   by design, not by omission.
+///
+/// NOTE: enforcing at a SHOULD anchor is OUR decision — no released text
+/// *requires* the JSON reader to refuse. It is taken because it is the only
+/// reading under which the JSON and XML encodings share one data model, and
+/// nothing released requires tolerance. The two-artifact upstream contradiction
+/// it exposes (the XML MUST versus the JSON SHOULD) is reported as issue #1696.
+///
+/// The known-key closure is taken over the **generated RM model at our pin**,
+/// never over the vendored ITS-JSON 1.1.0 schema — that schema is stale in both
+/// directions (it declares `property` and `reverse_relationships`, which RM
+/// 1.2.0 removed, and lacks `EHR.tags`).
+///
+/// # Errors
+/// Returns a [`JsonParseError`] naming the first undeclared key (in the node's
+/// own member order, so the message is stable for a given document).
+pub fn deny_unknown_fields<N: JsonNode>(
+    node: &N,
+    ty: &str,
+    known: &[&str],
+) -> Result<(), JsonParseError> {
+    let Some(entries) = node.object_entries() else {
+        return Ok(());
+    };
+    for (key, _) in entries {
+        if key == "_type" || known.binary_search(&key).is_ok() {
+            continue;
+        }
+        return Err(JsonParseError::unknown_field(key, ty, known));
     }
     Ok(())
 }

@@ -41,12 +41,12 @@ impl Printer {
         if let Some(uid) = parts.uid
             && !is_nil(uid)
         {
-            push_meta(&mut meta, &format!("uid={}", uid.value));
+            push_meta(&mut meta, &format!("uid={}", uid.value()));
         }
         if let Some(build) = parts.build_uid
             && !is_nil(build)
         {
-            push_meta(&mut meta, &format!("build_uid={}", build.value));
+            push_meta(&mut meta, &format!("build_uid={}", build.value()));
         }
         if parts.is_generated {
             push_meta(&mut meta, "generated");
@@ -274,5 +274,5 @@ fn push_meta(meta: &mut String, item: &str) {
 /// Whether a UUID is the nil UUID — the absent-value spelling the assembler
 /// stores for a missing `uid`/`build_uid`, which never prints.
 fn is_nil(u: &Uuid) -> bool {
-    u.value.is_nil()
+    u.value().is_nil()
 }

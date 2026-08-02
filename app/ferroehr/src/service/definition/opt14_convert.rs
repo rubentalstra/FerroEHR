@@ -226,9 +226,7 @@ pub(crate) fn convert_opt_to_archetypes(
             annotations: None,
             translations: None,
             adl_version: Some("1.4".to_owned()),
-            build_uid: Uuid {
-                value: uuid::Uuid::nil(),
-            },
+            build_uid: Uuid::new(uuid::Uuid::nil()),
             rm_release: String::new(),
             is_generated: true,
             other_meta_data: BTreeMap::new(),

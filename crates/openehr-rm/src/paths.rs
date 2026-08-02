@@ -1063,7 +1063,7 @@ impl VersionLocator {
         match self {
             VersionLocator::VersionedObject(s) => Uuid::parse_str(s).ok(),
             VersionLocator::Version(ovid) => match ovid.object_id() {
-                Uid::Uuid(u) => Some(u.value),
+                Uid::Uuid(u) => Some(*u.value()),
                 Uid::InternetId(_) | Uid::IsoOid(_) => None,
             },
         }
@@ -1074,7 +1074,7 @@ impl fmt::Display for VersionLocator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             VersionLocator::VersionedObject(s) => f.write_str(s),
-            VersionLocator::Version(ovid) => f.write_str(&ovid.value),
+            VersionLocator::Version(ovid) => f.write_str(ovid.value()),
         }
     }
 }
@@ -1806,7 +1806,7 @@ mod tests {
         match loc.object.unwrap() {
             VersionLocator::Version(ovid) => {
                 assert_eq!(
-                    ovid.value,
+                    ovid.value(),
                     "031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
                 );
             }

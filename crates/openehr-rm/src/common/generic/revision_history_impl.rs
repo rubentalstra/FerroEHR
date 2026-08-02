@@ -36,7 +36,7 @@ impl RevisionHistory {
     /// cannot express (see the module docs).
     #[must_use]
     pub fn most_recent_version(&self) -> Option<&str> {
-        self.items.last().map(|i| i.version_id.value.as_str())
+        self.items.last().map(|i| i.version_id.value())
     }
 
     /// `REVISION_HISTORY.most_recent_version_time_committed`: the commit
@@ -136,9 +136,8 @@ mod tests {
 
     fn item(version_id: &str, audits: Vec<AuditDetails>) -> RevisionHistoryItem {
         RevisionHistoryItem {
-            version_id: ObjectVersionId {
-                value: version_id.to_owned(),
-            },
+            version_id: ObjectVersionId::new(version_id.to_owned())
+                .expect("a well-formed identifier"),
             audits: openehr_base::containers::NonEmptyVec::new(audits)
                 .expect("a fixture container declared 1..* must have members"),
         }
@@ -173,7 +172,7 @@ mod tests {
         let h = history();
         assert_eq!(
             h.most_recent_version(),
-            h.items.last().map(|i| i.version_id.value.as_str())
+            h.items.last().map(|i| i.version_id.value())
         );
         assert_eq!(
             h.most_recent_version(),

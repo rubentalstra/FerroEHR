@@ -518,7 +518,9 @@ fn resolve_target(principal: &Principal, uid: &str) -> Result<(String, Option<St
     match parse_uid_based_id(uid) {
         Ok(decoded) => Ok((
             decoded.vo_id.to_string(),
-            decoded.version.map(|ovid| ovid.version_tree_id().value),
+            decoded
+                .version
+                .map(|ovid| ovid.version_tree_id().value().to_owned()),
         )),
         Err(e) => Err(forbidden(
             principal,

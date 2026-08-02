@@ -107,7 +107,7 @@ pub(super) async fn run(
                 super::CHANGE_CREATION,
                 "COMPOSITION creation",
                 None,
-            );
+            )?;
             let committed = state
                 .backend()
                 .create_composition(ehr_id, uv)
@@ -233,9 +233,12 @@ pub(super) async fn run(
                 // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`).
                 // Anything whose object_id is not this CDR's UUID key cannot
                 // name the addressed object, so it fails the comparison.
-                let body_vo = object_id_uuid(&ObjectVersionId {
-                    value: body_uid.to_owned(),
-                });
+                // A body `uid` that is not a well-formed OBJECT_VERSION_ID
+                // certainly does not identify the addressed object, so it takes
+                // the same refusal as one naming a different object.
+                let body_vo = ObjectVersionId::new(body_uid)
+                    .ok()
+                    .and_then(|ovid| object_id_uuid(&ovid));
                 if body_vo != Some(uid.vo_id.0) {
                     return Err(ApiError::Unprocessable(format!(
                         "the body COMPOSITION.uid {body_uid:?} does not identify the \
@@ -251,7 +254,7 @@ pub(super) async fn run(
                 super::CHANGE_MODIFICATION,
                 "COMPOSITION update",
                 Some(require_if_match(&p.if_match)?),
-            );
+            )?;
             match state
                 .backend()
                 .update_composition(ehr_id, uid.vo_id, uv)
@@ -312,7 +315,7 @@ pub(super) async fn run(
             // §"openehr-version and openehr-audit-details": PUT, POST and
             // DELETE).
             let update_audit =
-                crate::overview::committal::committal_audit(h, super::committer_proxy());
+                crate::overview::committal::committal_audit(h, super::committer_proxy())?;
             match state
                 .backend()
                 .delete_composition(ehr_id, &ovid, update_audit.as_ref())

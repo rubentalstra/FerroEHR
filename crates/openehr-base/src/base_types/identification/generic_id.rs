@@ -5,6 +5,7 @@
 
 /// Generic identifier type for identifiers whose format is otherwise unknown to openEHR. Includes an attribute for naming the identification scheme (which may well be local).
 #[doc(alias = "GENERIC_ID")]
+// NOTE: the fields stay public deliberately: the release states no constraint over this class's field values, so a validating construction door would check nothing — docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.generic_id.adoc: “Generic identifier type for identifiers whose format is otherwise unknown to openEHR”; master05 §“Generic and External Identifiers”: “The names of schemes are not currently controlled.” Both the value and the scheme are unconstrained by the release.
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenericId {
     // inherited: OBJECT_ID

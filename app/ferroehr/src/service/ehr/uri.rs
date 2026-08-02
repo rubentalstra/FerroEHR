@@ -186,7 +186,7 @@ impl FerroEhrService {
                 format!("versioned object {vo_id} is deleted"),
             ));
         }
-        Ok(self.version_response(ehr_id, vo_id, read).body)
+        Ok(self.version_response(ehr_id, vo_id, read)?.body)
     }
 }
 

@@ -82,7 +82,7 @@ pub(crate) fn sign_version(
         data,
         attestations,
         signature: None,
-    });
+    })?;
     sign_canonical(ctx, &ov)
 }
 

@@ -6,9 +6,12 @@
 //! emit-xml BMM-only allowlist — lives as declarative const tables in
 //! [`overrides`], each entry carrying its spec citation; the crate → schema
 //! merge table lives in [`composition`]. This stage makes decisions only — the
-//! text is produced in [`crate::render`].
+//! text is produced in [`crate::render`]. The construction-door decisions (which
+//! classes hide their fields behind a validating constructor) live in
+//! [`construction`], on the same declarative, spec-cited pattern.
 
 pub(crate) mod composition;
+pub(crate) mod construction;
 pub(crate) mod overrides;
 
 use crate::analyze::Model;

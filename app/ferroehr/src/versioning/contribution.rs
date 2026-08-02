@@ -10,7 +10,7 @@
 //! `audit_change_type` group and stored **verbatim** (never narrowed), while
 //! the storage branch collapses to create / modify / delete / attest.
 
-use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -1053,13 +1053,11 @@ pub(crate) async fn get_contribution(
                 &ObjectRef::ObjectRef(ObjectRefData {
                     namespace: "local".to_owned(),
                     r#type: kind.clone(),
-                    id: ObjectId::ObjectVersionId(ObjectVersionId {
-                        value: object_version_id::object_version_id(
-                            vo_id,
-                            &creating_system_id,
-                            tree,
-                        ),
-                    }),
+                    id: ObjectId::ObjectVersionId(object_version_id::version_id(
+                        vo_id,
+                        &creating_system_id,
+                        tree,
+                    )?),
                 }),
             ));
         }
@@ -1081,9 +1079,7 @@ pub(crate) async fn get_contribution(
     // fragments only to re-encode them would gain nothing.
     Ok(json!({
         "_type": "CONTRIBUTION",
-        "uid": openehr_its::json::to_canonical_value(&HierObjectId {
-            value: contribution_id.to_string(),
-        }),
+        "uid": openehr_its::json::to_canonical_value(&HierObjectId::from(contribution_id)),
         "audit": audit_details,
         "versions": versions
     }))

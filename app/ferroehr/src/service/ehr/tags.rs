@@ -23,7 +23,7 @@ use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
-use crate::versioning::object_version_id::parse_uid_based_id;
+use crate::versioning::object_version_id::{VersionIdError, parse_uid_based_id};
 
 impl FerroEhrService {
     /// All tags in an EHR, optionally filtered by key / value / target path.
@@ -50,7 +50,10 @@ impl FerroEhrService {
             target_path,
         )
         .await?;
-        Ok(rows.iter().map(|r| Self::tag_json(ehr_id, r)).collect())
+        rows.iter()
+            .map(|r| Self::tag_json(ehr_id, r))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     /// Tags on one target object (a COMPOSITION or `EHR_STATUS`). The caller
@@ -75,7 +78,10 @@ impl FerroEhrService {
             None,
         )
         .await?;
-        Ok(rows.iter().map(|r| Self::tag_json(ehr_id, r)).collect())
+        rows.iter()
+            .map(|r| Self::tag_json(ehr_id, r))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     /// Replace the **whole** tag collection of a target with the posted set,
@@ -197,7 +203,7 @@ impl FerroEhrService {
             {
                 return Err(ServiceError::sm(
                     CallStatusType::ObjectVersionDoesNotExist,
-                    format!("tag target version {}", version.value),
+                    format!("tag target version {}", version.value()),
                 ));
             }
         }
@@ -257,21 +263,22 @@ impl FerroEhrService {
     /// forbids it on a concrete standalone type); the released OAS `ItemTag`
     /// schema disagrees with the RM on `target`'s shape — the RM is the
     /// RELEASED component and wins (owner ruling 2026-07-24).
-    fn tag_json(ehr_id: EhrId, row: &crate::storage::tag_repo::TagRow) -> Value {
+    fn tag_json(
+        ehr_id: EhrId,
+        row: &crate::storage::tag_repo::TagRow,
+    ) -> Result<Value, VersionIdError> {
         let tag = ItemTag {
             key: row.key.clone(),
             value: row.value.clone(),
-            target: tag_target(row),
+            target: tag_target(row)?,
             target_path: row.target_path.clone(),
             owner_id: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "EHR".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId {
-                    value: ehr_id.to_string(),
-                }),
+                id: ObjectId::HierObjectId(HierObjectId::from(ehr_id.0)),
             }),
         };
-        openehr_its::json::to_canonical_value(&tag)
+        Ok(openehr_its::json::to_canonical_value(&tag))
     }
 }
 
@@ -282,16 +289,27 @@ impl FerroEhrService {
 /// container's `HIER_OBJECT_ID`. Shared with the demographic tag surface
 /// (`crate::service::demographic::tags`), which tags the same rows under a
 /// different owner.
-pub(in crate::service) fn tag_target(row: &crate::storage::tag_repo::TagRow) -> UidBasedId {
+///
+/// # Errors
+/// [`VersionIdError`] when the stored `target_version` tail does not compose
+/// with the target key into a well-formed `OBJECT_VERSION_ID` (BASE
+/// `master05-identification_package.adoc` §Syntaxes) — the identifier is
+/// refused rather than served malformed.
+pub(in crate::service) fn tag_target(
+    row: &crate::storage::tag_repo::TagRow,
+) -> Result<UidBasedId, VersionIdError> {
     let target_vo_id = row.target_vo_id;
-    match &row.target_version {
-        Some(tail) => UidBasedId::ObjectVersionId(ObjectVersionId {
-            value: format!("{target_vo_id}::{tail}"),
-        }),
-        None => UidBasedId::HierObjectId(HierObjectId {
-            value: target_vo_id.to_string(),
-        }),
-    }
+    Ok(match &row.target_version {
+        Some(tail) => {
+            let raw = format!("{target_vo_id}::{tail}");
+            UidBasedId::ObjectVersionId(ObjectVersionId::new(raw.clone()).map_err(|source| {
+                VersionIdError::Malformed { raw, source }
+            })?)
+        }
+        // A bare container key is a UUID by type, so the conversion is total
+        // (BASE §Syntaxes: `uid = iso_oid | uuid | internet_id`).
+        None => UidBasedId::HierObjectId(HierObjectId::from(target_vo_id.0)),
+    })
 }
 
 // ── The ITS-REST tags call surface ────────────────────────────────────────────

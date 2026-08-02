@@ -813,7 +813,6 @@
           },
           "ism_transition": {
             "_type": "ISM_TRANSITION",
-            "archetype_node_id": "at0007",
             "careflow_step": {
               "_type": "DV_CODED_TEXT",
               "defining_code": {
@@ -837,10 +836,6 @@
                 }
               },
               "value": "completed"
-            },
-            "name": {
-              "_type": "DV_TEXT",
-              "value": "Completed"
             }
           },
           "language": {
@@ -1910,7 +1905,6 @@
           },
           "ism_transition": {
             "_type": "ISM_TRANSITION",
-            "archetype_node_id": "at0006",
             "careflow_step": {
               "_type": "DV_CODED_TEXT",
               "defining_code": {
@@ -1934,10 +1928,6 @@
                 }
               },
               "value": "active"
-            },
-            "name": {
-              "_type": "DV_TEXT",
-              "value": "Dose administered"
             }
           },
           "language": {
@@ -2112,7 +2102,6 @@
           },
           "ism_transition": {
             "_type": "ISM_TRANSITION",
-            "archetype_node_id": "at0043",
             "careflow_step": {
               "_type": "DV_CODED_TEXT",
               "defining_code": {
@@ -2136,10 +2125,6 @@
                 }
               },
               "value": "completed"
-            },
-            "name": {
-              "_type": "DV_TEXT",
-              "value": "Completed"
             }
           },
           "language": {
@@ -5043,7 +5028,6 @@
           },
           "ism_transition": {
             "_type": "ISM_TRANSITION",
-            "archetype_node_id": "at0013",
             "careflow_step": {
               "_type": "DV_CODED_TEXT",
               "defining_code": {
@@ -5067,10 +5051,6 @@
                 }
               },
               "value": "completed"
-            },
-            "name": {
-              "_type": "DV_TEXT",
-              "value": "Care Plan Completed"
             }
           },
           "language": {

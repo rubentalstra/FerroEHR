@@ -91,12 +91,12 @@ fn ensure_addressed_version(
     addressed: &openehr_base::prelude::ObjectVersionId,
     served_uid: &str,
 ) -> Result<(), crate::service::error::ServiceError> {
-    if composite_ids_equal(served_uid, &addressed.value) {
+    if composite_ids_equal(served_uid, addressed.value()) {
         Ok(())
     } else {
         Err(crate::service::error::ServiceError::sm(
             crate::service::status::CallStatusType::ObjectVersionDoesNotExist,
-            format!("version {}", addressed.value),
+            format!("version {}", addressed.value()),
         ))
     }
 }
@@ -117,11 +117,11 @@ fn ensure_if_match(
         // Composite identifiers compare case-INsensitively (BASE
         // base_types master05 §"Composite Identifiers and Case": two
         // identifiers identical apart from case identify the same thing).
-        Some(meta) if composite_ids_equal(&meta.uid, &pre.value) => Ok(()),
+        Some(meta) if composite_ids_equal(&meta.uid, pre.value()) => Ok(()),
         Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(
             format!(
                 "If-Match {:?} does not match the current latest version {:?}",
-                pre.value, meta.uid
+                pre.value(), meta.uid
             ),
         )),
         None => Ok(()),

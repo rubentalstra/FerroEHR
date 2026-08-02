@@ -37,27 +37,7 @@
 use serde_json::Value;
 
 use crate::common::change_control::version::Version;
-use openehr_base::prelude::{HierObjectId, ObjectVersionId, Uid};
-
-/// The `value` string of whichever concrete `UID` subtype this is — the
-/// `_uid.value_` the `VERSION` postconditions below compare against.
-///
-/// NOTE: the `UUID` arm renders from the strong `uuid::Uuid` the BASE model
-/// gives `UUID.value`, so a hexadecimal id comes back in the canonical
-/// lower-case hyphenated form regardless of the case it was written in. That is
-/// the intended reading of BASE `base_types`
-/// `master05-identification_package.adoc` §"Composite Identifiers and Case",
-/// whose second rule is that "two identifiers identical apart from case are
-/// considered to be identical, and therefore to identify the same thing" — so
-/// the rendering never denotes a different object. The case-PRESERVING rule
-/// binds the stored `value`, which this function does not touch.
-fn uid_value(id: &Uid) -> String {
-    match id {
-        Uid::InternetId(internet_id) => internet_id.value.clone(),
-        Uid::IsoOid(iso_oid) => iso_oid.value.clone(),
-        Uid::Uuid(uuid) => uuid.value.to_string(),
-    }
-}
+use openehr_base::prelude::{HierObjectId, ObjectVersionId};
 
 impl<T> Version<T> {
     /// `VERSION.uid`: the version's own three-part identifier.
@@ -85,9 +65,7 @@ impl<T> Version<T> {
     /// second one here.
     #[must_use]
     pub fn owner_id(&self) -> HierObjectId {
-        HierObjectId {
-            value: uid_value(&self.uid().object_id()),
-        }
+        HierObjectId::from(self.uid().object_id())
     }
 
     /// `VERSION.is_branch`: "True if this Version represents a branch. Derived
@@ -249,9 +227,8 @@ mod tests {
             contribution: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "CONTRIBUTION".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId {
-                    value: "11111111-1111-4111-8111-111111111111".to_owned(),
-                }),
+                id: ObjectId::HierObjectId(HierObjectId::new("11111111-1111-4111-8111-111111111111".to_owned())
+                .expect("a well-formed identifier")),
             }),
             signature: None,
             commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
@@ -268,9 +245,8 @@ mod tests {
                 description: None,
                 committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             }),
-            uid: ObjectVersionId {
-                value: value.to_owned(),
-            },
+            uid: ObjectVersionId::new(value.to_owned())
+                .expect("a well-formed identifier"),
             preceding_version_uid: None,
             other_input_version_uids: openehr_base::containers::present(Vec::new()),
             lifecycle_state: coded("532", "complete"),
@@ -308,12 +284,12 @@ mod tests {
     fn owner_id_is_the_uids_object_id() {
         let version = typed_version("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2.1.1");
         assert_eq!(
-            version.owner_id().value,
+            version.owner_id().value(),
             "8849182c-82ad-4088-a07f-48ead4180515"
         );
         assert_eq!(
-            version.owner_id().value,
-            uid_value(&version.uid().object_id()),
+            version.owner_id(),
+            HierObjectId::from(version.uid().object_id()),
             "Owner_id_valid"
         );
     }
@@ -342,9 +318,8 @@ mod tests {
             contribution: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "CONTRIBUTION".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId {
-                    value: "22222222-2222-4222-8222-222222222222".to_owned(),
-                }),
+                id: ObjectId::HierObjectId(HierObjectId::new("22222222-2222-4222-8222-222222222222".to_owned())
+                .expect("a well-formed identifier")),
             }),
             signature: Some("local-wrapper-signature".to_owned()),
             commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
@@ -364,11 +339,11 @@ mod tests {
             item,
         });
         assert_eq!(
-            wrapper.uid().value,
+            wrapper.uid().value(),
             "8849182c-82ad-4088-a07f-48ead4180515::remote.example::3.2.1"
         );
         assert_eq!(
-            wrapper.owner_id().value,
+            wrapper.owner_id().value(),
             "8849182c-82ad-4088-a07f-48ead4180515"
         );
         assert!(wrapper.is_branch());

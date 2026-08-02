@@ -35,6 +35,7 @@ use crate::load::bmm::{
 };
 use crate::load::impls::SiblingImpls;
 use crate::plan::composition::Composed;
+use crate::plan::construction;
 use crate::plan::overrides::{back_reference, class_binding, type_override, untyped_field};
 use crate::plan::{Emission, decide};
 use crate::render::naming;
@@ -612,8 +613,32 @@ fn render_struct_def(
     // No serde/`_type` derive: canonical-JSON (de)serialization is provided by
     // the emitted `ToJson`/`FromJson` impls in `openehr-its` (`emit-json`), not by
     // a per-struct derive. The type is a plain data record.
+    //
+    // A class the construction map records as staying a plain record although a
+    // reader might expect a validating door carries that adjudication here, at
+    // the public fields it is about — silence over an unguarded identifier type
+    // is indistinguishable from an oversight.
+    if let Some(note) = construction::plain_record_note(&class.name) {
+        b.push_str(&format!("// NOTE: {note}\n"));
+    }
     b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
     b.push_str(&format!("pub struct {struct_ty}{gen_decl} {{\n"));
+
+    // A class with a validating construction door (`plan::construction`) emits
+    // its fields `pub(crate)` instead of `pub`: outside this crate the only way
+    // to obtain a value is the hand-written `*_impl.rs` constructor, which runs
+    // the released grammar. `pub(crate)` rather than fully private because the
+    // grammar itself is hand-written spec behaviour in a sibling module of the
+    // same crate, and the generator never writes into `*_impl.rs`.
+    let field_vis = if construction::is_validated(&class.name) {
+        "pub(crate)"
+    } else {
+        "pub"
+    };
+    // `(ident, rust_type)` for each emitted field, in emission order — the read
+    // accessors a validated class needs, and the parameter order its constructor
+    // is called in by the generated codecs.
+    let mut emitted: Vec<(String, String)> = Vec::new();
 
     let props = model.flattened_props(class);
     let mut prev_owner: Option<&str> = None;
@@ -672,9 +697,72 @@ fn render_struct_def(
                 adj.citation, adj.reason
             ));
         }
-        b.push_str(&format!("    pub {ident}: {rust_ty},\n"));
+        b.push_str(&format!("    {field_vis} {ident}: {rust_ty},\n"));
+        emitted.push((ident, rust_ty));
     }
 
+    b.push_str("}\n");
+    if let Some(citation) = construction::validated_citation(&class.name) {
+        b.push_str(&render_accessors(
+            &class.name,
+            struct_ty,
+            &emitted,
+            citation,
+        ));
+    }
+    b
+}
+
+/// The read accessors + door NOTE for a class whose fields are `pub(crate)`
+/// behind a validating constructor (`plan::construction`).
+///
+/// Emitting the accessors here rather than hand-writing one per class keeps the
+/// scheme mechanical: a field added to a validated class by a spec bump gains
+/// its reader automatically, and the accessor set can never drift from the field
+/// set. `String` reads back as `&str` (the idiomatic borrow); every other type
+/// reads back by reference.
+fn render_accessors(
+    spec_name: &str,
+    struct_ty: &str,
+    fields: &[(String, String)],
+    citation: &str,
+) -> String {
+    let arity = construction::validated_ctor(spec_name).map_or(0, |(p, _)| p.len());
+    assert_eq!(
+        arity,
+        fields.len(),
+        "construction map declares arity {arity} for {spec_name}, but the BMM \
+         emits {} field(s): the hand-written constructor and the generated \
+         codec calls would disagree",
+        fields.len()
+    );
+    let mut b = String::new();
+    b.push_str(&format!(
+        "\n/// Read access to the `pub(crate)` fields of [`{struct_ty}`].\n\
+         ///\n\
+         /// The fields are not `pub`: this class has a released **lexical form**, so\n\
+         /// construction runs a grammar and is the only door \u{2014} {citation}\n\
+         ///\n\
+         /// The validating constructor lives in the hand-written `*_impl.rs` sibling\n\
+         /// (the generator never writes into it); every generated codec builds this\n\
+         /// type through that constructor.\n\
+         impl {struct_ty} {{\n"
+    ));
+    for (i, (ident, rust_ty)) in fields.iter().enumerate() {
+        if i > 0 {
+            b.push('\n');
+        }
+        let (ret, expr) = if rust_ty == "String" {
+            ("&str".to_owned(), format!("&self.{ident}"))
+        } else {
+            (format!("&{rust_ty}"), format!("&self.{ident}"))
+        };
+        b.push_str(&format!(
+            "    /// The validated `{ident}` this identifier was constructed from.\n    \
+             #[must_use]\n    \
+             pub fn {ident}(&self) -> {ret} {{\n        {expr}\n    }}\n"
+        ));
+    }
     b.push_str("}\n");
     b
 }

@@ -24,7 +24,7 @@ use crate::storage::row::NodeRow;
 use crate::versioning::attestation::{self, PendingAttest};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle::{self, resolve_lifecycle, validate_transition};
-use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::object_version_id::{TreeId, VersionIdError, object_version_id};
 use crate::versioning::{Kind, SigningCtx, integrity};
 
 /// The outcome of a versioned-object write: the object id, the new version's
@@ -447,15 +447,26 @@ struct ResolvedWrite {
 /// overwrite at bare read) served two shapes for one object. The EHR Extract
 /// import path does NOT run through here (foreign versions keep their
 /// carried bytes verbatim).
-fn stamp_version_uid(canonical: &mut Value, version_uid: &str) {
+///
+/// # Errors
+/// [`VersionIdError`] when `version_uid` is not a well-formed
+/// `OBJECT_VERSION_ID` — the stamped identity goes through the BASE
+/// construction door, so a malformed one is refused before it is written,
+/// signed and served.
+fn stamp_version_uid(canonical: &mut Value, version_uid: &str) -> Result<(), VersionIdError> {
     if let Value::Object(map) = canonical {
+        let uid = ObjectVersionId::new(version_uid).map_err(|source| {
+            VersionIdError::Malformed {
+                raw: version_uid.to_owned(),
+                source,
+            }
+        })?;
         map.insert(
             "uid".to_owned(),
-            openehr_its::json::to_canonical_value(&ObjectVersionId {
-                value: version_uid.to_owned(),
-            }),
+            openehr_its::json::to_canonical_value(&uid),
         );
     }
+    Ok(())
 }
 
 #[expect(
@@ -503,7 +514,7 @@ async fn apply_change(
             stamp_version_uid(
                 &mut canonical,
                 &object_version_id(vo_id, &ctx.system_id, TreeId::trunk(1)),
-            );
+            )?;
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
                 Some(ts) => ts,
@@ -552,7 +563,7 @@ async fn apply_change(
             stamp_version_uid(
                 &mut canonical,
                 &object_version_id(vo_id, &ctx.system_id, next.tree),
-            );
+            )?;
             let rows = decompose(canonical)?;
             ResolvedWrite {
                 kind,

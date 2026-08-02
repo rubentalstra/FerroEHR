@@ -22,7 +22,7 @@ use serde_json::Value;
 
 use openehr_base::validate::{InvariantViolation, Validate};
 
-use crate::json_codec::generated::structural::structural_check;
+use crate::json_codec::generated::structural::{declared_fields, structural_check};
 use crate::json_codec::runtime::{FromJson, JsonParseError, from_json_value};
 
 /// Record a typed-deserialize failure as a validation violation.
@@ -186,9 +186,38 @@ pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) 
 /// `_type`-reading
 /// wrapper stays for callers with no declaration context.
 pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    // The strict reader refuses an undeclared wire key, so a node carrying one
+    // is not a conformant instance — and the FAST path never decodes, so it
+    // would not see it. Checking here, against the generated declared-key table
+    // (`declared_fields`, emitted from the SAME field view as the reader's own
+    // refusal), keeps the two tiers byte-identical without paying for a decode.
+    if let Some(violation) = undeclared_key(ty, value) {
+        out.push(violation);
+        return;
+    }
     if !openehr_rm::validate::try_fast_validate(ty, value, out) {
         validate_rm_value_typed(ty, value, out);
     }
+}
+
+/// The violation for the first undeclared member of `value` under class `ty`,
+/// or `None` when every member is declared (or `ty` names no emitted struct).
+///
+/// Byte-identical to what the typed tier reports for the same node: it builds
+/// the reader's own error and runs it through [`record_type_mismatch`].
+fn undeclared_key(ty: &str, value: &Value) -> Option<InvariantViolation> {
+    let members = value.as_object()?;
+    let declared = declared_fields(ty)?;
+    let offending = members
+        .keys()
+        .find(|k| k.as_str() != "_type" && declared.binary_search(&k.as_str()).is_err())?;
+    let mut out = Vec::new();
+    record_type_mismatch(
+        ty,
+        &JsonParseError::unknown_field(offending, ty, declared),
+        &mut out,
+    );
+    out.pop()
 }
 
 /// Run **all** RM class invariants for a single canonical-JSON node — the core

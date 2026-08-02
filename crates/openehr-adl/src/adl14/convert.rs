@@ -741,7 +741,7 @@ impl<'a> Converter<'a> {
         // stays in `other_details` verbatim rather than being guessed at — and
         // an already-populated `build_uid` (a 1.4 header `build_uid=` meta
         // item) is never overwritten by the meta-data section.
-        if data.build_uid.value.is_nil()
+        if data.build_uid.value().is_nil()
             && let Some(other) = data
                 .description
                 .as_mut()
@@ -750,7 +750,7 @@ impl<'a> Converter<'a> {
                 .get("build_uid")
                 .and_then(|raw| uuid::Uuid::parse_str(raw.trim()).ok())
         {
-            data.build_uid = openehr_base::prelude::Uuid { value };
+            data.build_uid = openehr_base::prelude::Uuid::new(value);
             other.remove("build_uid");
         }
 

@@ -413,7 +413,7 @@ async fn commit_import_scoped(
                     attestations: &version.attestations,
                     signature: version.signature.as_deref(),
                 },
-            );
+            )?;
             let signature = crate::versioning::integrity::sign_imported_version(
                 ctx,
                 contribution_id,

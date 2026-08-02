@@ -433,7 +433,7 @@ fn corpus_equivalence_valid_nodes() {
     let mut total = 0usize;
     let mut fast = 0usize;
     for path in corpus_files() {
-        let text = std::fs::read_to_string(&path).expect("read corpus file");
+        let text = std::fs::read_to_string(crate::common::twinned(&path)).expect("read corpus file");
         let Ok(doc) = serde_json::from_str::<Value>(&text) else {
             continue; // non-RM json (e.g. web templates) — skip unparseable
         };
@@ -477,7 +477,7 @@ fn corpus_equivalence_mutated_nodes() {
     let mut seen = std::collections::HashSet::new();
     let mut checked = 0usize;
     for path in corpus_files() {
-        let text = std::fs::read_to_string(&path).expect("read corpus file");
+        let text = std::fs::read_to_string(crate::common::twinned(&path)).expect("read corpus file");
         let Ok(doc) = serde_json::from_str::<Value>(&text) else {
             continue;
         };
@@ -632,7 +632,7 @@ fn corpus_terminology_audit_is_clean() {
     let mut total = 0usize;
     let mut findings: Vec<String> = Vec::new();
     for path in corpus_files() {
-        let text = std::fs::read_to_string(&path).expect("read corpus file");
+        let text = std::fs::read_to_string(crate::common::twinned(&path)).expect("read corpus file");
         let Ok(doc) = serde_json::from_str::<Value>(&text) else {
             continue;
         };

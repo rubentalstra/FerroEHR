@@ -123,16 +123,14 @@ mod tests {
         ObjectRef::ObjectRef(ObjectRefData {
             namespace: "local".to_owned(),
             r#type: "CONTRIBUTION".to_owned(),
-            id: ObjectId::HierObjectId(HierObjectId {
-                value: id.to_owned(),
-            }),
+            id: ObjectId::HierObjectId(HierObjectId::new(id.to_owned())
+                .expect("a well-formed identifier")),
         })
     }
 
     fn version_id(value: &str) -> ObjectVersionId {
-        ObjectVersionId {
-            value: value.to_owned(),
-        }
+        ObjectVersionId::new(value.to_owned())
+                .expect("a well-formed identifier")
     }
 
     /// The wrapped original: version 2 of a container created on
@@ -170,7 +168,7 @@ mod tests {
         let iv = imported(item.clone());
         assert_eq!(iv.uid(), &item.uid);
         assert_eq!(
-            iv.uid().value,
+            iv.uid().value(),
             "8849182c-82ad-4088-a07f-48ead4180515::remote.example::2"
         );
     }

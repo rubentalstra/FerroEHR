@@ -169,7 +169,7 @@ impl FerroEhrService {
         support::record_commit();
 
         match repr_body {
-            Some(canonical) => Ok(support::committed_response(canonical, &committed)),
+            Some(canonical) => Ok(support::committed_response(canonical, &committed)?),
             None => {
                 self.read_party(kind, committed.vo_id, Some(committed.tree), None)
                     .await
@@ -193,7 +193,7 @@ impl FerroEhrService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(support::version_response(vo_id, read))
+        Ok(support::version_response(vo_id, read)?)
     }
 
     /// Resolve the current version of a party of the routed [`PartyKind`] in ONE
@@ -289,7 +289,7 @@ impl FerroEhrService {
         support::record_commit();
 
         match repr_body {
-            Some(canonical) => Ok(support::committed_response(canonical, &committed)),
+            Some(canonical) => Ok(support::committed_response(canonical, &committed)?),
             None => {
                 self.read_party(kind, committed.vo_id, Some(committed.tree), None)
                     .await
