@@ -6,16 +6,23 @@
 # needed). .robot/.xml/.opt are included for the executable CNF suite +
 # canonical examples.
 #
-# ONE exception, and it is pinned like everything else: the UML CLASS-DIAGRAM
-# SVGs the vendored chapters reference by `image::{uml_diagrams_uri}/<name>.svg`.
-# The attribute is defined in openEHR/specifications-AA_GLOBAL
-# docs/boilerplate/global_vars.adoc as `:uml_diagrams_uri: UML/diagrams` — a
-# path relative to each component's docs/ root — and every referenced file
-# exists under docs/UML/diagrams/ in the component repo AT THE PINNED COMMIT,
-# so the vendored mirror keeps that layout and the references resolve. Exactly
-# the referenced files are copied (never the whole diagram directory), from the
-# same pinned checkout the text comes from; a reference with no file at the pin
-# fails the run.
+# ONE exception, and it is pinned like everything else: the FIGURES the
+# vendored chapters actually reference. openEHR/specifications-AA_GLOBAL
+# docs/boilerplate/global_vars.adoc defines three figure attributes, all
+# resolved relative to a component's docs/ root:
+#
+#   :uml_diagrams_uri: UML/diagrams      -> docs/UML/diagrams/<file>
+#   :diagrams_uri: {doc_name}/diagrams   -> docs/<doc_name>/diagrams/<file>
+#   :images_uri:   {doc_name}/images     -> docs/<doc_name>/images/<file>
+#
+# `{doc_name}` is the document directory the referencing chapter lives in
+# (docs/common, docs/AOM2, docs/bmm, …), which is why the per-document sets are
+# derived per directory rather than globally. Every referenced file exists at
+# the PINNED COMMIT of its component, so the vendored mirror keeps the upstream
+# layout and the references resolve as published. Exactly the referenced files
+# are copied (never a whole figure directory), from the same pinned checkout
+# the text comes from; a reference with no file at the pin fails the run.
+# Figures are copied byte-for-byte — never re-encoded, never optimized.
 #
 # This is REFERENCE DOCUMENTATION for spec-adherence checks. It is NOT a build
 # input: codegen consumes tools/openehr-codegen/vendor/** (BMM/XSD/OAS) and
@@ -93,6 +100,30 @@ for entry in "${COMPONENTS[@]}"; do
     done <<<"$refs"
   fi
 
+  # The per-document figure sets (see the header note): `{diagrams_uri}` and
+  # `{images_uri}` expand to `<doc_name>/diagrams` and `<doc_name>/images`, so
+  # the file list is derived per document directory from that directory's own
+  # chapter text, then taken out of the same pinned checkout.
+  figures=0
+  for docdir in "$out"/docs/*/; do
+    [ -d "$docdir" ] || continue
+    doc="$(basename "$docdir")"
+    for kind in diagrams images; do
+      frefs="$(grep -rhoE --include='*.adoc' "\{${kind}_uri\}/[A-Za-z0-9._-]+" "$docdir" | sed 's|.*/||' | sort -u || true)"
+      [ -n "$frefs" ] || continue
+      mkdir -p "$out/docs/$doc/$kind"
+      while IFS= read -r fig; do
+        [ -n "$fig" ] || continue
+        if [ ! -f "$src/docs/$doc/$kind/$fig" ]; then
+          echo "ERROR: $name references $doc/$kind/$fig, which does not exist at $sha" >&2
+          exit 1
+        fi
+        cp "$src/docs/$doc/$kind/$fig" "$out/docs/$doc/$kind/$fig"
+        figures=$((figures + 1))
+      done <<<"$frefs"
+    done
+  done
+
   if [ "$diagrams" -gt 0 ]; then
     diagram_note="- Plus the $diagrams UML class-diagram SVG(s) under \`docs/UML/diagrams/\` that
   the vendored chapters reference as \`image::{uml_diagrams_uri}/<name>.svg\`,
@@ -102,6 +133,18 @@ for entry in "${COMPONENTS[@]}"; do
     diagram_note="- No UML class-diagram SVGs: the vendored chapters of this component
   reference none."
   fi
+
+  if [ "$figures" -gt 0 ]; then
+    figure_note="- Plus the $figures per-document figure(s) under
+  \`docs/<doc_name>/diagrams/\` and \`docs/<doc_name>/images/\` that the vendored
+  chapters reference as \`image::{diagrams_uri}/<name>\` /
+  \`image::{images_uri}/<name>\`, taken byte-for-byte from the same pinned
+  commit. Referenced files only — the upstream figure directories are not
+  mirrored wholesale."
+  else
+    figure_note="- No per-document figures: the vendored chapters of this component
+  reference no \`{diagrams_uri}\`/\`{images_uri}\` file."
+  fi
   cat >"$out/PROVENANCE.md" <<EOF
 # Vendored openEHR spec docs: $name
 
@@ -110,12 +153,13 @@ for entry in "${COMPONENTS[@]}"; do
 - Commit: \`$sha\`
 - Vendored by: \`scripts/vendor-spec-docs.sh\` (text formats only: ${INCLUDE_EXT[*]})
 $diagram_note
-- Other images, UML \`.xmi\`/\`.mdzip\`, XSDs and binaries excluded — fetch from
-  the repo at the pinned commit.
+$figure_note
+- Unreferenced figures, UML \`.xmi\`/\`.mdzip\`, XSDs and other binaries
+  excluded — fetch from the repo at the pinned commit.
 
 Do not hand-edit files under this directory; re-run the script instead.
 EOF
-  echo "    $(find "$out" -type f | wc -l | tr -d ' ') files ($diagrams UML diagram(s))"
+  echo "    $(find "$out" -type f | wc -l | tr -d ' ') files ($diagrams UML diagram(s), $figures document figure(s))"
 done
 
 # Requirements-level reference documents published outside the git spec repos

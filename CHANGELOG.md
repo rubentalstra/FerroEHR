@@ -175,13 +175,16 @@ workflow refuses a tag that has no matching section here.
   the published `<version>` root), so a committed JSON fixture can be the
   codec's own output rather than a hand-typed approximation of it.
 
-- **The UML class diagrams the vendored specs reference are now vendored
-  too.** `scripts/vendor-spec-docs.sh` additionally fetches, from the same
-  pinned commits, exactly the 129 SVG diagrams the vendored chapters
-  reference (`docs/specs/openehr/<COMPONENT>/docs/UML/diagrams/`), so a spec
-  chapter's class and package diagrams are readable offline instead of being
-  dangling links. A referenced diagram missing at the pin now fails the
-  vendoring run.
+- **Every figure the vendored specs reference is now vendored too.**
+  `scripts/vendor-spec-docs.sh` additionally fetches, from the same pinned
+  commits, exactly the figures the vendored chapters reference: the 129 UML
+  class-diagram SVGs (`{uml_diagrams_uri}`, under
+  `docs/specs/openehr/<COMPONENT>/docs/UML/diagrams/`) plus the 200
+  per-document diagrams and images (`{diagrams_uri}` / `{images_uri}`, under
+  `<COMPONENT>/docs/<doc_name>/diagrams/` and `.../images/`). Spec chapters
+  are now readable offline with their figures intact instead of carrying
+  dangling links. Only referenced files are taken, byte-for-byte; a referenced
+  figure missing at the pin fails the vendoring run.
 
 ### Fixed
 

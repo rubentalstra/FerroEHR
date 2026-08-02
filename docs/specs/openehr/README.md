@@ -10,18 +10,26 @@ prior art; these documents are the oracle.
 - Vendored by `scripts/vendor-spec-docs.sh` (re-run to refresh; pins live in
   the script — keep `docs/VERSIONS.md` in sync).
 - Text formats only (`.adoc`, `.md`, `.txt`, `.csv`, `.json`, `.yaml`,
-  `.robot`, `.xml`, `.opt`), **plus the UML class-diagram SVGs the chapters
-  reference** — the 129 files under `<COMPONENT>/docs/UML/diagrams/` that the
-  vendored text names as `image::{uml_diagrams_uri}/<name>.svg` (BASE 15,
-  RM 33, AM 27, LANG 31, SM 22, TERM 1; the other components reference none).
-  The upstream attribute is `:uml_diagrams_uri: UML/diagrams`
-  (`openEHR/specifications-AA_GLOBAL`, `docs/boilerplate/global_vars.adoc`),
-  relative to each component's `docs/` root, so the mirrored layout resolves
-  the references as published. Only referenced files are vendored, from the
-  same pinned commit as the text — a reference with no file at the pin fails
-  the vendoring run. Other images, UML `.xmi`/`.mdzip`, XSDs and PDFs are
-  excluded — see each component's `PROVENANCE.md` for the pinned commit to
-  fetch them from.
+  `.robot`, `.xml`, `.opt`), **plus every figure the chapters actually
+  reference**. The three figure attributes are defined in
+  `openEHR/specifications-AA_GLOBAL`, `docs/boilerplate/global_vars.adoc`, all
+  resolved relative to a component's `docs/` root, and the vendored mirror
+  keeps that layout so the references resolve as published:
+
+  | Attribute | Expands to | Vendored files |
+  |---|---|---|
+  | `:uml_diagrams_uri: UML/diagrams` | `docs/UML/diagrams/<name>.svg` | **129** — BASE 15, RM 33, AM 27, LANG 31, SM 22, TERM 1 |
+  | `:diagrams_uri: {doc_name}/diagrams` | `docs/<doc_name>/diagrams/<name>` | **200** together with `images` — RM 70, AM 44, LANG 38, BASE 34, CNF 6, ITS-REST 4, SM 3, TERM 1 |
+  | `:images_uri: {doc_name}/images` | `docs/<doc_name>/images/<name>` | (as above) |
+
+  `{doc_name}` is the document directory the referencing chapter lives in
+  (`docs/common`, `docs/AOM2`, `docs/bmm`, …), so the per-document sets are
+  derived per directory. Components not listed reference none. Only referenced
+  files are vendored, byte-for-byte from the same pinned commit as the text —
+  a reference with no file at the pin fails the vendoring run, and there are
+  currently no such dangling references. Unreferenced figures, UML
+  `.xmi`/`.mdzip`, XSDs and PDFs are excluded — see each component's
+  `PROVENANCE.md` for the pinned commit to fetch them from.
 - **Not a build input.** Codegen consumes `tools/openehr-codegen/vendor/**`
   (BMM/XSD/OAS) and `crates/openehr-its/schemas/**`; those stay authoritative
   for generation. This tree is for *reading and conformance-checking*.
@@ -63,4 +71,6 @@ at `tools/openehr-codegen/vendor/bmm/` as the codegen input.
    the exact requests, status codes, and payloads a conformant server must
    produce.
 4. Cite the spec section (file + heading) in the PR/commit description for any
-   conformance-relevant decision; record deliberate gaps with `// PORT NOTE:`.
+   conformance-relevant decision; record a settled deliberate deviation with a
+   `// NOTE:` carrying that citation, and anything still missing with a
+   `// TODO:`.
