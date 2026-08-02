@@ -145,6 +145,25 @@ workflow refuses a tag that has no matching section here.
   schema changes with this: `description` becomes `jsonb` (the whole
   `DV_TEXT`) and a nullable `attestation` column is added.
 
+- **A coded description on an attestation keeps its code.** The
+  `666|attestation|` commit path completed a submitted `UPDATE_ATTESTATION`
+  by reducing its `description` to the plain text of a `DV_TEXT`, so a
+  `DV_CODED_TEXT` description lost its `defining_code` permanently at
+  committal — while the same attribute on a version's own `commit_audit`
+  was already kept whole. An attestation's description is now stored and
+  served back exactly as submitted (`_type`, display `value` and
+  `defining_code`), and a `description` that is neither a string nor a valid
+  `DV_TEXT` is refused with **422** instead of being dropped.
+
+- **A simplified-format `ctx` participation without a function is now
+  refused.** `ctx/participation_*` keys build `EVENT_CONTEXT.participations`,
+  whose `function` the Reference Model requires; a FLAT/STRUCTURED commit that
+  began a participation at some index (a name, an id, a mode or identifiers)
+  but supplied no `ctx/participation_function:<i>` used to be completed with
+  an empty function, committing a participation whose mandatory attribute
+  carried no information. It is now rejected with an error naming the exact
+  missing key (e.g. `ctx/participation_function:0 is required`).
+
 - **The FLAT `_link:i` builder now reports a missing mandatory suffix instead
   of inventing an empty value.** `|meaning`, `|type` and `|target` are all
   required on a simplified-format `_link:i` datum; a submission omitting one

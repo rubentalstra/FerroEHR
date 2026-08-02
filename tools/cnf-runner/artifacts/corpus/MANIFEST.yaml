@@ -2126,6 +2126,17 @@ cnf.sf.flat.participation_expanded:
   template_id: "cnf.vitals"
   provenance: "authored 2026-07-22 from the ITS-REST simplified_formats master06 §Participation example — the EXPANDED (non-compact) participation_identifiers form (one indexed key per component: |issuer:j / |assigner:j / |id:j / |type:j). Carries the same identifier data as cnf.sf.flat.participation_compact so both forms must resolve to identical EVENT_CONTEXT.participations"
 
+cnf.sf.flat.participation_no_function:
+  source: fixtures/sf/flat.participation_no_function.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a ctx participation is begun at index 0 (participation_name + participation_identifiers) with no ctx/participation_function:0, so the mandatory PARTICIPATION.function cannot be populated"
+    spec_ref: "RM common §participation (PARTICIPATION.function: DV_TEXT 1..1); ITS-REST simplified_formats master06 §Participation (participation_function is supplied in every example of the chapter)"
+  template_id: "cnf.vitals"
+  provenance: "authored 2026-08-02 as the invalid twin of cnf.sf.flat.participation_compact: the identical compact-identifier participation with ctx/participation_function:0 removed, so the refusal localizes to the 1..1 multiplicity of PARTICIPATION.function. A server that silently substitutes an empty DV_TEXT commits a participation whose mandatory attribute carries no information"
+
 cnf.sf.flat.other_closed_list:
   source: fixtures/sf/flat.other_closed_list.json
   format: wt-flat
@@ -2569,6 +2580,12 @@ cnf.attestation.signed:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-08-02 as the SECOND object of that pattern — \"When signing occurs, it will cause a new ATTESTATION object to be added to the VERSION.attestations list, this time with is_pending set to False, and the appropriate proof supplied\" (RM common master04 §Attestation) — with reason coded 240|signed| and a NON-EMPTY items list, the accepting twin of cnf.attestation.invalid.empty_items (ATTESTATION.Items_valid: `items /= Void implies not items.is_empty`). The item is a DV_EHR_URI in the four-part form of RM data_types master10-uri_package.adoc §DV_EHR_URI Syntax; the class table explicitly admits fine-grained items \"attested in some other system\""
+cnf.attestation.description_coded:
+  source: fixtures/attestation/description_coded.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 as the CODED-description twin of cnf.attestation.witnessed: an ATTESTATION inherits AUDIT_DETAILS.description, which RM common UML/classes/org.openehr.rm.common.audit_details.adoc §Attributes types DV_TEXT (0..1) and which org.openehr.rm.common.attestation.adoc inherits unchanged, so the DV_CODED_TEXT subtype with its defining_code is a representable value there too (ITS-REST schemas/common/UpdateAttestation.yaml extends UpdateAudit, whose description is UDvText: oneOf DV_TEXT, DV_CODED_TEXT). The code is archetype-local (terminology_id `local`) — no openEHR terminology group binds this attribute, so only the SURVIVAL of the whole coded value is asserted, never membership. Its reason stays the group-bound 648|witnessed| the sibling valid fixtures carry, so a refusal can only be about the description"
 cnf.attestation.invalid.no_reason:
   source: fixtures/attestation/invalid.no_reason.json
   format: canonical-json

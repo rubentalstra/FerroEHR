@@ -439,8 +439,9 @@ pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError>
 /// # Errors
 /// [`ServiceError::Unprocessable`] when either enforced invariant fails:
 ///
-/// - `AUDIT_DETAILS.System_id_valid`: `not system_id.is_empty` (RM common
-///   master04 §Audit Details). Without this guard an empty client-supplied
+/// - `AUDIT_DETAILS.System_id_valid`: `not system_id.is_empty` (RM
+///   `UML/classes/org.openehr.rm.common.audit_details.adoc` §Invariants).
+///   Without this guard an empty client-supplied
 ///   `system_id` reaches the DB `System_id_valid` CHECK and surfaces as a
 ///   `500` — a validation failure must be `422`, not an internal error.
 /// - the committer `PARTY_PROXY`'s own `PARTY_IDENTIFIED`/`PARTY_RELATED`

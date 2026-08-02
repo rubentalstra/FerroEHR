@@ -1648,7 +1648,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.common.revision_history_item.adoc",
-        reason: "the revision-history audit chain, owned by the versioning layer's commit path.",
+        reason: "`not audits.is_empty`: satisfied by construction. A REVISION_HISTORY is a read-only derived resource — no operation accepts one as a request body — and every builder of an item pushes that version's commit audit as the first audit before any attestation, which is what §Attributes means by \"there will always be at least one commit audit\".",
     },
     InvariantRealization {
         class: "DV_ORDERED",

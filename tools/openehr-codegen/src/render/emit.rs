@@ -33,6 +33,7 @@ use crate::analyze::{External, Model, class_paths};
 use crate::load::bmm::{
     BmmClass, BmmConstant, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType,
 };
+use crate::load::impls::SiblingImpls;
 use crate::plan::composition::Composed;
 use crate::plan::overrides::{back_reference, class_binding, type_override, untyped_field};
 use crate::plan::{Emission, decide};
@@ -121,7 +122,13 @@ impl<'a> Shape<'a> {
 /// Emit one schema version under `prefix` (empty for a single-version crate).
 /// Produces the type files, the `mod.rs` tree, and a `prelude.rs`; the caller
 /// assembles `lib.rs`.
-fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &External) -> Version {
+fn emit_version(
+    model: &Model,
+    schema: &BmmSchema,
+    prefix: &str,
+    external: &External,
+    impls: &SiblingImpls,
+) -> Version {
     struct Planned<'a> {
         class: &'a BmmClass,
         shape: Shape<'a>,
@@ -186,16 +193,33 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
 
     let mut files = Vec::new();
     for p in &planned {
+        let has_sibling = impls.has_sibling(&p.chain);
         let body = match &p.shape {
-            Shape::Struct => emit_struct(model, p.class, &index, &local, external),
-            Shape::Enum(variants) => {
-                emit_enum(model, p.class, variants, false, &index, &local, external)
+            Shape::Struct => emit_struct(model, p.class, &index, &local, external, has_sibling),
+            Shape::Enum(variants) => emit_enum(
+                model,
+                p.class,
+                variants,
+                false,
+                &index,
+                &local,
+                external,
+                has_sibling,
+            ),
+            Shape::PolyEnum(variants) => emit_enum(
+                model,
+                p.class,
+                variants,
+                true,
+                &index,
+                &local,
+                external,
+                has_sibling,
+            ),
+            Shape::EnumLiterals(enumeration) => {
+                emit_enum_literals(p.class, enumeration, has_sibling)
             }
-            Shape::PolyEnum(variants) => {
-                emit_enum(model, p.class, variants, true, &index, &local, external)
-            }
-            Shape::EnumLiterals(enumeration) => emit_enum_literals(p.class, enumeration),
-            Shape::Newtype(prim) => emit_newtype(p.class, prim),
+            Shape::Newtype(prim) => emit_newtype(p.class, prim, has_sibling),
         };
         files.push(GenFile {
             path: format!("{}.rs", p.chain.join("/")),
@@ -259,6 +283,7 @@ pub(crate) fn emit_crate(
     schema: &BmmSchema,
     external: &External,
     crate_doc: &str,
+    impls: &SiblingImpls,
 ) -> Vec<GenFile> {
     emit_generations(
         &[CrateGeneration {
@@ -268,6 +293,7 @@ pub(crate) fn emit_crate(
         }],
         external,
         crate_doc,
+        impls,
     )
 }
 
@@ -318,6 +344,7 @@ pub(crate) fn emit_generations(
     generations: &[CrateGeneration<'_>],
     external: &External,
     crate_doc: &str,
+    impls: &SiblingImpls,
 ) -> Vec<GenFile> {
     let mut files: Vec<GenFile> = Vec::new();
     let mut top: BTreeSet<String> = BTreeSet::new();
@@ -325,7 +352,7 @@ pub(crate) fn emit_generations(
     let mut paths: BTreeSet<String> = BTreeSet::new();
     let mut idents: BTreeSet<String> = BTreeSet::new();
     for g in generations {
-        let v = emit_version(g.model, g.schema, "", external);
+        let v = emit_version(g.model, g.schema, "", external, impls);
         for f in &v.files {
             assert!(
                 paths.insert(f.path.clone()),
@@ -365,11 +392,12 @@ pub(crate) fn emit_multi_crate(
     versions: &[(&str, &Model, &BmmSchema)],
     external: &External,
     crate_doc: &str,
+    impls: &SiblingImpls,
 ) -> Vec<GenFile> {
     let mut files = Vec::new();
     let mut top: BTreeSet<String> = BTreeSet::new();
     for (prefix, model, schema) in versions {
-        let v = emit_version(model, schema, prefix, external);
+        let v = emit_version(model, schema, prefix, external, impls);
         files.extend(v.files);
         top.extend(v.top);
     }
@@ -528,6 +556,7 @@ fn emit_struct(
     index: &BTreeMap<String, Vec<String>>,
     local: &BTreeSet<String>,
     external: &External,
+    has_sibling: bool,
 ) -> String {
     let ty = naming::type_name(&class.name);
     let generics = struct_generics(model, class);
@@ -535,7 +564,7 @@ fn emit_struct(
 
     let mut b = String::new();
     let imports = import_lines(model, class, &generics, &subst, &ty, index, external);
-    struct_header(&mut b, &class.name, &imports);
+    struct_header(&mut b, &class.name, &imports, has_sibling);
     b.push_str(&render_struct_def(
         model, class, &ty, &generics, &subst, local, external,
     ));
@@ -866,6 +895,14 @@ fn field_type(
     }
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the enum renderer needs the class, its variant set, both shape \
+              flags (own-instances struct, hand-written sibling) and all three \
+              per-version resolution tables (ident index, local class set, \
+              external preludes); bundling the tables would hide which of them \
+              each renderer actually reads"
+)]
 fn emit_enum(
     model: &Model,
     class: &BmmClass,
@@ -874,6 +911,7 @@ fn emit_enum(
     index: &BTreeMap<String, Vec<String>>,
     local: &BTreeSet<String>,
     external: &External,
+    has_sibling: bool,
 ) -> String {
     let ty = naming::type_name(&class.name);
     // The enum is generic over the abstract class's declared params that any
@@ -1008,7 +1046,7 @@ fn emit_enum(
     // base type) is emitted as a native `FromJson` impl in `openehr-its`
     // (`emit-json`), and serialization as a native `ToJson` impl there. This
     // enum is a plain closed subtype set with no derive/serde attributes.
-    file_header(&mut b, &class.name, self_data);
+    file_header(&mut b, &class.name, has_sibling);
     write_uses(&mut b, &[], &imports);
 
     // The `{Name}Data` struct (the class's own instances) precedes the enum.
@@ -1051,10 +1089,10 @@ fn emit_enum(
     b
 }
 
-fn emit_newtype(class: &BmmClass, prim: &str) -> String {
+fn emit_newtype(class: &BmmClass, prim: &str, has_sibling: bool) -> String {
     let ty = naming::type_name(&class.name);
     let mut b = String::new();
-    file_header(&mut b, &class.name, false);
+    file_header(&mut b, &class.name, has_sibling);
     doc_block_or(
         &mut b,
         class.documentation.as_deref(),
@@ -1125,7 +1163,7 @@ fn enum_literals(enumeration: &BmmEnumeration) -> Vec<EnumLit> {
 /// from_value`) is the identity for every input, the round-trip preserves every
 /// byte. A strict `TryFrom` seam alongside rejects out-of-set values with a
 /// per-enum typed error and never yields `Other`.
-fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration) -> String {
+fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_sibling: bool) -> String {
     let ty = naming::type_name(&class.name);
     let spec = &class.name;
     let is_int = enumeration.underlying_type == "INTEGER";
@@ -1138,7 +1176,7 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration) -> String 
     };
 
     let mut b = String::new();
-    file_header(&mut b, spec, false);
+    file_header(&mut b, spec, has_sibling);
     doc_block_or(
         &mut b,
         class.documentation.as_deref(),
@@ -1322,8 +1360,8 @@ fn add_import(
     }
 }
 
-fn struct_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
-    file_header(b, class, true);
+fn struct_header(b: &mut String, class: &str, imports: &BTreeSet<String>, has_sibling: bool) {
+    file_header(b, class, has_sibling);
     write_uses(b, &[], imports);
 }
 
@@ -1331,12 +1369,14 @@ fn struct_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
 /// file IS a module, and `missing_docs` checks modules, so the file carries an
 /// inner `//!` summary naming the spec class it realizes (an out-of-line
 /// module's inner docs satisfy the lint at the `pub mod` declaration site).
-/// `impl_note` adds the sibling-`*_impl.rs` banner line.
-fn file_header(b: &mut String, class: &str, impl_note: bool) {
+/// `has_sibling` adds the sibling-`*_impl.rs` banner line — emitted for exactly
+/// the classes that HAVE one on disk (`crate::load::impls::SiblingImpls`), so
+/// the banner never points a reader at a file that does not exist.
+fn file_header(b: &mut String, class: &str, has_sibling: bool) {
     b.push_str(&format!(
         "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n"
     ));
-    if impl_note {
+    if has_sibling {
         b.push_str("// Hand-written spec functions/invariants live in the sibling `*_impl.rs`.\n");
     }
     b.push_str(&format!(
