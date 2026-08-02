@@ -865,11 +865,26 @@ fn field_type(
                     "Option<String>".to_string()
                 };
             }
-            // A container property is `Vec<T>` regardless of its BMM
-            // optionality: absent and empty are the same JSON array on the
-            // canonical wire, and the codec omits an empty vector. That
-            // convention is settled (root `CLAUDE.md` §Conventions), and it is
-            // lossless everywhere the Void state carries no meaning.
+            // NOTE: a container property is `Vec<T>` regardless of its BMM
+            // optionality. This is the ONE decision point of the
+            // Vec-for-optional-container convention, so the adjudication lives
+            // here.
+            //
+            // The RM DOES distinguish Void from empty on a `0..1 List<T>`
+            // attribute. FOLDER is the exemplar: RM common
+            // `UML/classes/org.openehr.rm.common.folder.adoc` §Attributes
+            // types BOTH `items` ("The list of references to other (usually)
+            // versioned objects logically in this folder") and `folders`
+            // ("Sub-folders of this Folder") at 0..1, so "no items attribute"
+            // and "an empty items list" are two distinct model states.
+            //
+            // No released sentence picks a wire form for that distinction —
+            // the ITS-REST docs text and the released OAS are both silent on
+            // absent-versus-empty arrays — so this is OUR OWN DESIGN /
+            // EXTENSION: no openEHR spec governs it. The codec emits
+            // absent-for-empty and reads absent as empty, collapsing the two
+            // states in one direction only, which is lossless everywhere the
+            // Void state carries no meaning of its own.
             //
             // TODO(#1450): `EL_AGENT.open_args` is the one known site where it IS
             // lossy — the attribute is `0..1` and its Void state is normatively

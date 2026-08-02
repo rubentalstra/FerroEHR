@@ -39,11 +39,9 @@ master04 generic chapter, the directory diagram IS vendored
   an invariant RM 1.2.0 does not have (BMM `FOLDER` = ancestors [LOCATABLE],
   properties [items, folders, details], zero invariants; the class table
   agrees). No RM citation at all in that file.
-- `VERSIONED_FOLDER` container bodies are hand-built `serde_json::json!`
-  (`app/ferroehr/src/versioning/wire.rs:184`) while the generated
-  `openehr_rm::prelude::VersionedFolder` + its ToJson/ToXml codecs are never
-  constructed by the app — same never-re-serialize defect class as the
-  master04 REVISION_HISTORY/AUDIT_DETAILS finding.
+- ~~`VERSIONED_FOLDER` container bodies are hand-built `serde_json::json!`~~
+  **FIXED in #1658** — `versioning/wire.rs:217` now builds the generated
+  `VersionedObject::VersionedFolder` and serializes through the codec.
 
 **Register status (do NOT re-report as new):** AMB-81 already fixes the
 handling of the ITS-REST `path` query param (root-implicit, folders-only,

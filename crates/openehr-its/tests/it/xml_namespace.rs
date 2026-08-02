@@ -8,14 +8,25 @@
 )]
 //! The two published ITS-XML wire lineages over ONE generated codec.
 //!
-//! `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions" states
-//! the whole delta: the `Release-2.0.0` restructure is "a major version" whose
-//! change to the documents is that "the internal namespace used in the schemas
-//! is also changed to `http://schemas.openehr.org/v2`", with the older STABLE
-//! bundle still published at `Release-1.0.2`. This gate pins exactly that: the
-//! default entry point emits v1, the namespace-parameterized entry point emits
-//! whichever lineage it is handed, the two documents are byte-identical apart
-//! from the root `xmlns`, and the reader accepts both.
+//! `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions"
+//! describes the `Release-2.0.0` change to the DOCUMENTS: it is "a major
+//! version" in which "the internal namespace used in the schemas is also
+//! changed to `http://schemas.openehr.org/v2`", with the older STABLE bundle
+//! still published at `Release-1.0.2`. This gate pins exactly that much and no
+//! more: our SERIALIZER's two outputs are byte-identical apart from the root
+//! `xmlns`, the default entry point emits v1, the parameterized one emits
+//! whichever lineage it is handed, and the reader accepts both.
+//!
+//! **That is a statement about the codec, NOT about the schemas.** The two
+//! published XSD bundles do NOT differ by namespace alone: the same 2.0.0
+//! release restructured the repository into per-component, per-RM-release
+//! folders and the flat `Release-1.0.2v2` bundle was never re-issued against a
+//! newer RM, so it is frozen at an RM generation older than the RM 1.2.0 model
+//! this codec writes — 50 concrete RM classes have no complexType there at all
+//! and 23 attributes over 17 more are undeclared, `FOLDER.details` among them.
+//! The sweep, its per-attribute adjudications and the wire proof live in
+//! `xml_xsd_validity` (register `AMB-185`); the assertions below deliberately
+//! stay scoped to the serializer, which is all they ever proved.
 
 use openehr_its::xml::{Namespace, from_canonical_xml, to_canonical_xml, to_canonical_xml_ns};
 use openehr_rm::prelude::Composition;
@@ -43,8 +54,10 @@ fn default_entry_point_still_emits_the_v1_lineage() {
     );
 }
 
-/// The v2 selection changes the root namespace and NOTHING else — the
-/// README's own statement of the 2.0.0 delta.
+/// The v2 selection changes the SERIALIZED DOCUMENT's root namespace and
+/// nothing else — the README's own statement of the 2.0.0 delta, applied to
+/// our output. (What the two bundles' SCHEMAS accept differs; see the module
+/// docs and `xml_xsd_validity`.)
 #[test]
 fn v2_selection_changes_only_the_root_namespace() {
     let v1 = to_canonical_xml_ns(&fixture(), "composition", Namespace::V1).expect("serialize v1");
