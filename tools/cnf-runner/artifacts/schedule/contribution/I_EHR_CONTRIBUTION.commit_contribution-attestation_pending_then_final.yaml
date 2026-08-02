@@ -1,31 +1,34 @@
-# The TWO-OBJECT attestation pattern, on the wire.
+# Two POST-COMMITTAL attestations of one version — the RETENTION fact.
 #
-# RM common master04-generic_package.adoc §Attestation states it as a single
-# sequence, verbatim: "the `_is_pending_` flag will be set to True to indicate
-# that the committed information needs to be signed by another person. When
-# signing occurs, it will cause a new `ATTESTATION` object to be added to the
-# `VERSION._attestations_` list, this time with `_is_pending_` set to False,
-# and the appropriate proof supplied. Thus, the common situation in which
-# content is committed to the record and needs later review and signing by a
-# senior person will cause the creation of **two** `ATTESTATION` objects."
+# Both members here are `666|attestation|`, so neither commits a version: each
+# appends a new ATTESTATION to an EXISTING ORIGINAL_VERSION's attestations list
+# (RM common master06-change_control_package.adoc §Contributions: "all logical
+# changes … are achieved by physically committing new Versions, or for
+# attestations, new Attestation objects to existing Versions"; §Attestation:
+# "Post-committal signing: data committed with an Attestation in the is_pending
+# state is reviewed and signed at a later point in time … This action will cause
+# an `ATTESTATION` to be added to the `ORIGINAL_VERSION._attestations_` list").
+# The sibling attestation_commit_audit case carries the OTHER half of master04
+# §Attestation's two-object pattern — the version committed WITH a commit_audit
+# of type ATTESTATION — which this case does not exercise.
 #
-# So the fact under test is RETENTION: the pending object is not replaced,
-# amended or superseded by the completed one — both stay in the list, in
-# committal order, because each "records the witnessing of exactly the content
-# displayed at the time of witnessing" (master04 §Attestation) and an
-# `ORIGINAL_VERSION` is indelible (master06 §Contributions: a versioned
-# repository "is by definition indelible").
+# The fact under test is RETENTION: the pending object is not replaced, amended
+# or superseded by the completed one — both stay in the list, in committal
+# order, because the repository is indelible (master06 §Contributions: a
+# versioned repository "is by definition indelible") and because each
+# attestation "records the witnessing of exactly the content displayed at the
+# time of witnessing" (master04 §Attestation), so an earlier one is not made
+# obsolete by a later one.
 #
-# Both members are `666|attestation|`, so neither commits a version (the
-# sibling attestation_only case carries that ground and its member shape); this
-# case adds only the second attestation and the retention assertions. The
+# The sibling attestation_only case carries the 666 member shape and its ground;
+# this case adds only the second attestation and the retention assertions. The
 # revision history is re-read for the same reason it is read there: it is the
 # machine proof that TWO attestation commits still leave ONE version.
 #
 # The pending attestation carries no `proof` — `ATTESTATION.proof` is 0..1 (RM
 # common UML/classes/org.openehr.rm.common.attestation.adoc §Attributes) and
 # the signing that produces it has not happened yet; the completed one carries
-# it, which is what "the appropriate proof supplied" asserts.
+# it.
 id: I_EHR_CONTRIBUTION.commit_contribution-attestation_pending_then_final
 kind: functional
 component: EHR_CONTRIBUTION
@@ -34,16 +37,15 @@ capabilities: [ChangeSets]
 exercises: [Versioning, CompositionOps]
 profiles: [CORE]
 test_purpose: >-
-  A pending attestation (is_pending true) followed by a completed one
-  (is_pending false, with proof) on the same COMPOSITION version leaves BOTH
-  ATTESTATION objects on that version, in committal order, and still one
-  version.
+  A post-committal pending attestation (is_pending true) followed by a
+  completed one (is_pending false, with proof) on the same COMPOSITION version
+  leaves BOTH ATTESTATION objects on that version, in committal order, and
+  still one version.
 description: "Commit CONTRIBUTION attesting pending then final on one version"
 spec_refs:
   - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
-  - "RM common §generic (master04 §Attestation — the pending-then-signed two-object pattern)"
   - "RM common §attestation (ATTESTATION.is_pending / proof / items; Items_valid)"
-  - "RM common §change_control (master06 §Contributions — an indelible repository; attestations add no Version)"
+  - "RM common §change_control (master06 §Contributions — an indelible repository; attestations add no Version; §Attestation — post-committal signing)"
   - "TERM SupportTerminology §attestation reason (648 witnessed, 240 signed)"
 applies: { rm: ">=1.0.2" }
 formats: [canonical-json]

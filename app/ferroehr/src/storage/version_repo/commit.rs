@@ -16,18 +16,24 @@ use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
 /// The `AUDIT_DETAILS` fields to persist (master04 §Audit Details). `committer`
-/// is the canonical `PARTY_PROXY` JSON; `change_type` is the numeric
-/// `audit_change_type` group code, never a rubric (`Change_type_valid`).
+/// and `description` are canonical RM fragments (`PARTY_PROXY` / `DV_TEXT`);
+/// `change_type` is the numeric `audit_change_type` group code, never a rubric
+/// (`Change_type_valid`).
 #[derive(Debug)]
 pub struct AuditRow<'a> {
     /// `AUDIT_DETAILS.system_id`.
     pub system_id: &'a str,
     /// The numeric `audit_change_type` group code.
     pub change_type: &'a str,
-    /// `AUDIT_DETAILS.description`, when the committer supplied one.
-    pub description: Option<&'a str>,
+    /// The canonical `DV_TEXT` fragment of `AUDIT_DETAILS.description`, when
+    /// the committer supplied one.
+    pub description: Option<&'a Value>,
     /// The canonical `PARTY_PROXY` JSON of the committer.
     pub committer: &'a Value,
+    /// The canonical fragment of the `ATTESTATION`-declared attributes when
+    /// this commit audit is an `ATTESTATION` (master06 §Attestation), else
+    /// `None`.
+    pub attestation: Option<&'a Value>,
 }
 
 /// One `vo_version` row's content columns for a local (non-import) write with
@@ -107,13 +113,14 @@ pub async fn insert_audit(
     audit: &AuditRow<'_>,
 ) -> Result<(Uuid, jiff::Timestamp), StorageError> {
     let row = sqlx::query(
-        "INSERT INTO audit (system_id, change_type, description, committer) \
-         VALUES ($1, $2, $3, $4) RETURNING id, time_committed",
+        "INSERT INTO audit (system_id, change_type, description, committer, attestation) \
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed",
     )
     .bind(audit.system_id)
     .bind(audit.change_type)
     .bind(audit.description)
     .bind(audit.committer)
+    .bind(audit.attestation)
     .fetch_one(&mut *tx)
     .await?;
     let id: Uuid = row.try_get("id")?;
@@ -135,13 +142,15 @@ pub async fn insert_audit_at(
     time_committed: jiff::Timestamp,
 ) -> Result<Uuid, StorageError> {
     Ok(sqlx::query_scalar(
-        "INSERT INTO audit (system_id, change_type, description, committer, time_committed) \
-         VALUES ($1, $2, $3, $4, $5::timestamptz) RETURNING id",
+        "INSERT INTO audit \
+           (system_id, change_type, description, committer, attestation, time_committed) \
+         VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING id",
     )
     .bind(audit.system_id)
     .bind(audit.change_type)
     .bind(audit.description)
     .bind(audit.committer)
+    .bind(audit.attestation)
     .bind(time_committed.to_string())
     .fetch_one(&mut *tx)
     .await?)
@@ -207,11 +216,11 @@ pub async fn write_contribution(
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
     let row = sqlx::query(
         "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer) \
-             VALUES ($1, $2, $3, $4) RETURNING id, time_committed \
+             INSERT INTO audit (system_id, change_type, description, committer, attestation) \
+             VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed \
          ), c AS ( \
              INSERT INTO contribution (id, ehr_id, audit_id) \
-             SELECT COALESCE($5, uuidv7()), $6, a.id FROM a \
+             SELECT COALESCE($6, uuidv7()), $7, a.id FROM a \
              ON CONFLICT (id) DO NOTHING \
              RETURNING id \
          ) \
@@ -222,6 +231,7 @@ pub async fn write_contribution(
     .bind(audit.change_type)
     .bind(audit.description)
     .bind(audit.committer)
+    .bind(audit.attestation)
     .bind(supplied)
     .bind(ehr_id)
     .fetch_one(&mut *tx)
@@ -338,11 +348,11 @@ pub async fn commit_new_version(
     let other_input = optional_json_array(v.other_input_version_uids);
     let row = sqlx::query(
         "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer) \
-             VALUES ($1, $2, $3, $4) RETURNING id, time_committed \
+             INSERT INTO audit (system_id, change_type, description, committer, attestation) \
+             VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed \
          ), c AS ( \
              INSERT INTO contribution (id, ehr_id, audit_id) \
-             SELECT COALESCE($5, uuidv7()), $6, a.id FROM a \
+             SELECT COALESCE($6, uuidv7()), $7, a.id FROM a \
              ON CONFLICT (id) DO NOTHING \
              RETURNING id \
          ), v AS ( \
@@ -351,8 +361,8 @@ pub async fn commit_new_version(
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                 other_input_version_uids, contribution_id, audit_id, template_id, signature, \
                 signature_client_supplied) \
-             SELECT $7, $8, $6, $9, $10, $11, $12, tstzrange(now(), NULL, '[)'), \
-                    $13, $14, $15, $16::jsonb, c.id, a.id, $17, $18, $19 \
+             SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange(now(), NULL, '[)'), \
+                    $14, $15, $16, $17::jsonb, c.id, a.id, $18, $19, $20 \
              FROM a, c \
              RETURNING 1 \
          ) \
@@ -363,6 +373,7 @@ pub async fn commit_new_version(
     .bind(audit.change_type)
     .bind(audit.description)
     .bind(audit.committer)
+    .bind(audit.attestation)
     .bind(supplied)
     .bind(v.ehr_id)
     .bind(v.vo_id)
@@ -411,16 +422,16 @@ pub async fn commit_version_into(
     let other_input = optional_json_array(v.other_input_version_uids);
     let row = sqlx::query(
         "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer) \
-             VALUES ($1, $2, $3, $4) RETURNING id, time_committed \
+             INSERT INTO audit (system_id, change_type, description, committer, attestation) \
+             VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed \
          ), v AS ( \
              INSERT INTO vo_version \
                (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                 other_input_version_uids, contribution_id, audit_id, template_id, signature, \
                 signature_client_supplied) \
-             SELECT $5, $6, $7, $8, $9, $10, $11, tstzrange(now(), NULL, '[)'), \
-                    $12, $13, $14, $15::jsonb, $16, a.id, $17, $18, $19 \
+             SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange(now(), NULL, '[)'), \
+                    $13, $14, $15, $16::jsonb, $17, a.id, $18, $19, $20 \
              FROM a \
              RETURNING 1 \
          ) \
@@ -430,6 +441,7 @@ pub async fn commit_version_into(
     .bind(audit.change_type)
     .bind(audit.description)
     .bind(audit.committer)
+    .bind(audit.attestation)
     .bind(v.vo_id)
     .bind(v.kind)
     .bind(v.ehr_id)

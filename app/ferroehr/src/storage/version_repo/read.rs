@@ -52,10 +52,14 @@ pub struct StoredVersion {
     pub audit_system_id: String,
     /// The version audit's numeric `audit_change_type` group code.
     pub audit_change_type: String,
-    /// The version audit's description, when the committer supplied one.
-    pub audit_description: Option<String>,
+    /// The canonical `DV_TEXT` fragment of the version audit's description,
+    /// when the committer supplied one.
+    pub audit_description: Option<Value>,
     /// Canonical `PARTY_PROXY` of the committer.
     pub audit_committer: Value,
+    /// The canonical fragment of the `ATTESTATION`-declared attributes when the
+    /// commit audit is an `ATTESTATION` (RM common master06 §Attestation).
+    pub audit_attestation: Option<Value>,
     /// Server-computed commit time (master06 §Committal).
     pub time_committed: jiff::Timestamp,
     /// The OPT `template_id` a COMPOSITION was committed against (else `None`).
@@ -91,7 +95,8 @@ macro_rules! version_select {
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
             "v.signature_client_supplied, ",
-            "a.system_id, a.change_type, a.description, a.committer, a.time_committed, ",
+            "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
+            "a.time_committed, ",
             "att.attestations ",
             "FROM vo_version v JOIN audit a ON a.id = v.audit_id ",
             "LEFT JOIN LATERAL (",
@@ -143,6 +148,7 @@ async fn stored_version(
         audit_change_type: row.try_get("change_type")?,
         audit_description: row.try_get("description")?,
         audit_committer: row.try_get("committer")?,
+        audit_attestation: row.try_get("attestation")?,
         time_committed: row
             .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
             .to_jiff(),

@@ -141,6 +141,188 @@ pub(crate) async fn insert_accompanying_attestations(
     Ok(())
 }
 
+/// The attributes `ATTESTATION` declares on top of the `AUDIT_DETAILS` it
+/// inherits from — `attested_view`, `proof`, `items`, `reason`, `is_pending`
+/// (RM common `UML/classes/org.openehr.rm.common.attestation.adoc`
+/// §Attributes) — each decoded into the RM type its class table gives it.
+///
+/// This is the ONLY part of an attestation a client supplies: the inherited
+/// `system_id` / `time_committed` / `change_type` are the server's (ITS-REST
+/// overview `Requests_and_responses.md` §"openehr-version and
+/// openehr-audit-details": "The `time_committed` attribute is always set by
+/// the server"), and `committer` / `description` are shared with every audit.
+#[derive(Debug, Clone)]
+pub(crate) struct AttestationParts {
+    /// `ATTESTATION.attested_view` (0..1).
+    pub(crate) attested_view: Option<DvMultimedia>,
+    /// `ATTESTATION.proof` (0..1).
+    pub(crate) proof: Option<String>,
+    /// `ATTESTATION.items` (0..1; empty ≙ absent — `Items_valid` forbids a
+    /// present-but-empty list).
+    pub(crate) items: Vec<DvEhrUri>,
+    /// `ATTESTATION.reason` (1..1).
+    pub(crate) reason: DvText,
+    /// `ATTESTATION.is_pending` (1..1).
+    pub(crate) is_pending: bool,
+}
+
+impl AttestationParts {
+    /// Decode + invariant-check the `ATTESTATION`-declared attributes of a
+    /// client-supplied attestation payload — a wire `UPDATE_ATTESTATION`, an
+    /// RM `ATTESTATION` used as a version's `commit_audit`, or the canonical
+    /// fragment [`Self::fragment`] stored for one (the three carry the same
+    /// attribute names in the same encodings, so one decoder serves all).
+    ///
+    /// # Errors
+    /// [`ServiceError::Unprocessable`] when an RM invariant fails:
+    /// - `reason` absent (mandatory, 1..1), or a coded `reason` whose
+    ///   `defining_code` is not in the openEHR `attestation reason` group
+    ///   (`ATTESTATION.Reason_valid`);
+    /// - `is_pending` absent or not a `Boolean` (mandatory, 1..1);
+    /// - `items` present but not a non-empty list (`ATTESTATION.Items_valid`);
+    /// - `reason` / `attested_view` / `proof` / `items` present but not
+    ///   decodable as the RM type the class table gives them (`DV_TEXT`,
+    ///   `DV_MULTIMEDIA`, `String`, `List<DV_EHR_URI>` — RM common
+    ///   `UML/classes/org.openehr.rm.common.attestation.adoc` §Attributes).
+    pub(crate) fn decode(partial: &Value) -> Result<Self, ServiceError> {
+        // reason (1..1)
+        let reason = partial.get("reason").ok_or_else(|| {
+            ServiceError::Unprocessable("ATTESTATION.reason is required (1..1)".to_owned())
+        })?;
+        // Reason_valid: a coded reason's defining_code must be a member of the
+        // openEHR `attestation reason` group.
+        if reason.get("_type").and_then(Value::as_str) == Some("DV_CODED_TEXT") {
+            let code = reason
+                .pointer("/defining_code/code_string")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            if !openehr_term::bundle::openehr().is_valid_attestation_reason(code) {
+                return Err(ServiceError::Unprocessable(format!(
+                    "ATTESTATION.reason.defining_code {code:?} is not in the openEHR \
+                     `attestation reason` group (ATTESTATION.Reason_valid)"
+                )));
+            }
+        }
+        // is_pending (1..1, Boolean)
+        let is_pending = partial
+            .get("is_pending")
+            .and_then(Value::as_bool)
+            .ok_or_else(|| {
+                ServiceError::Unprocessable(
+                    "ATTESTATION.is_pending is required (1..1 Boolean)".to_owned(),
+                )
+            })?;
+        // items (0..1); Items_valid: non-empty when present.
+        //
+        // NOTE: the spec's two statements of `items` SCOPE conflict, and this
+        // decoder deliberately enforces the class-model one. RM common
+        // master04-generic_package.adoc §Attestation requires every member to
+        // resolve inside the attested object ("otherwise the list must contain
+        // a set of paths to items within the item to which the attestation is
+        // attached"), while the class table for the same attribute admits the
+        // opposite ("Although not recommended, these may include fine-grained
+        // items which have been attested in some other system" —
+        // UML/classes/org.openehr.rm.common.attestation.adoc §Attributes), and
+        // master04 itself later calls fine granularity unrecommended rather
+        // than invalid ("there is nothing stopping it including fine-grained
+        // items"). The class model is the machine-readable reading and the only
+        // one either source gives a checkable predicate for, so we enforce
+        // exactly that: `List<DV_EHR_URI>` typing plus `Items_valid`, and NO
+        // containment check — a cross-system path is accepted verbatim.
+        // Register entry AMB-180.
+        let items = partial.get("items");
+        if let Some(items) = items
+            && items.as_array().is_none_or(Vec::is_empty)
+        {
+            return Err(ServiceError::Unprocessable(
+                "ATTESTATION.items must be a non-empty list when present \
+                 (ATTESTATION.Items_valid)"
+                    .to_owned(),
+            ));
+        }
+        Ok(Self {
+            attested_view: partial
+                .get("attested_view")
+                .filter(|v| !v.is_null())
+                .map(|v| decode(v, "ATTESTATION.attested_view", "DV_MULTIMEDIA"))
+                .transpose()?,
+            // NOTE: `proof` is an OPAQUE CLIENT FACT — accepted as the `String`
+            // its class table declares, stored and served byte-for-byte, never
+            // parsed and never verified server-side. RM common
+            // master04-generic_package.adoc §Attestation defines the openPGP
+            // process over "the entire Attestation object (note that the proof
+            // attribute will be Void at this point)" and then withdraws the
+            // definition — "[.tbd] *To Be Determined*: The exact serialisation
+            // is not yet defined by openEHR" — so there is no canonical form to
+            // recompute against; and the inherited `AUDIT_DETAILS` attributes
+            // are re-minted here at completion (`system_id`, `time_committed`,
+            // `change_type` are the server's), so the stored object is not the
+            // object the client signed in any case. This is NOT the VERSION
+            // `signature` mechanism, which this server does generate and verify
+            // for its own signatures (master06 §Digital Signature —
+            // `crate::versioning::integrity`); there the server owns both the
+            // canonicalisation and the key. Register entry AMB-181.
+            proof: partial
+                .get("proof")
+                .filter(|v| !v.is_null())
+                .map(|v| {
+                    v.as_str().map(str::to_owned).ok_or_else(|| {
+                        ServiceError::Unprocessable(
+                            "ATTESTATION.proof must be a String (0..1)".to_owned(),
+                        )
+                    })
+                })
+                .transpose()?,
+            items: match items {
+                None => Vec::new(),
+                Some(items) => items
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .enumerate()
+                    .map(|(i, v)| decode(v, &format!("ATTESTATION.items[{i}]"), "DV_EHR_URI"))
+                    .collect::<Result<_, _>>()?,
+            },
+            reason: decode(reason, "ATTESTATION.reason", "DV_TEXT")?,
+            is_pending,
+        })
+    }
+
+    /// These attributes as a canonical JSON fragment — the storage form of a
+    /// commit audit that is an `ATTESTATION` (`audit.attestation`), each
+    /// attribute in the encoding `openehr-its` gives its RM type and absent
+    /// optionals omitted. Round-trips through [`Self::decode`].
+    pub(crate) fn fragment(&self) -> Value {
+        let mut map = serde_json::Map::new();
+        if let Some(attested_view) = &self.attested_view {
+            map.insert(
+                "attested_view".to_owned(),
+                openehr_its::json::to_canonical_value(attested_view),
+            );
+        }
+        if let Some(proof) = &self.proof {
+            map.insert("proof".to_owned(), Value::String(proof.clone()));
+        }
+        if !self.items.is_empty() {
+            map.insert(
+                "items".to_owned(),
+                Value::Array(
+                    self.items
+                        .iter()
+                        .map(openehr_its::json::to_canonical_value)
+                        .collect(),
+                ),
+            );
+        }
+        map.insert(
+            "reason".to_owned(),
+            openehr_its::json::to_canonical_value(&self.reason),
+        );
+        map.insert("is_pending".to_owned(), Value::Bool(self.is_pending));
+        Value::Object(map)
+    }
+}
+
 /// Complete a wire `UPDATE_ATTESTATION` partial into a full canonical RM
 /// `ATTESTATION` (RM common master04 §Attestation; ITS-REST
 /// `UpdateAttestation`). The server supplies the inherited `AUDIT_DETAILS`
@@ -156,98 +338,32 @@ pub(crate) async fn insert_accompanying_attestations(
 /// decoded into its RM type rather than passed through unread.
 ///
 /// # Errors
-/// [`ServiceError::Unprocessable`] when an RM invariant fails:
-/// - `reason` absent (mandatory, 1..1), or a coded `reason` whose
-///   `defining_code` is not in the openEHR `attestation reason` group
-///   (`ATTESTATION.Reason_valid`);
-/// - `is_pending` absent or not a `Boolean` (mandatory, 1..1);
-/// - `items` present but not a non-empty list (`ATTESTATION.Items_valid`);
-/// - `reason` / `attested_view` / `proof` / `items` present but not decodable
-///   as the RM type the class table gives them (`DV_TEXT`, `DV_MULTIMEDIA`,
-///   `String`, `List<DV_EHR_URI>` — RM common
-///   `UML/classes/org.openehr.rm.common.attestation.adoc` §Attributes);
-/// - `committer` not a canonical `PARTY_PROXY`.
+/// The [`AttestationParts::decode`] rejections, and
+/// [`ServiceError::Unprocessable`] when `committer` is not a canonical
+/// `PARTY_PROXY`.
 pub(crate) fn complete_attestation(
     partial: &Value,
     system_id: &str,
     committer_fallback: &Value,
     now: jiff::Timestamp,
 ) -> Result<Value, ServiceError> {
-    // reason (1..1)
-    let reason = partial.get("reason").cloned().ok_or_else(|| {
-        ServiceError::Unprocessable("ATTESTATION.reason is required (1..1)".to_owned())
-    })?;
-    // Reason_valid: a coded reason's defining_code must be a member of the
-    // openEHR `attestation reason` group.
-    if reason.get("_type").and_then(Value::as_str) == Some("DV_CODED_TEXT") {
-        let code = reason
-            .pointer("/defining_code/code_string")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        if !openehr_term::bundle::openehr().is_valid_attestation_reason(code) {
-            return Err(ServiceError::Unprocessable(format!(
-                "ATTESTATION.reason.defining_code {code:?} is not in the openEHR \
-                 `attestation reason` group (ATTESTATION.Reason_valid)"
-            )));
-        }
-    }
-    // is_pending (1..1, Boolean)
-    let is_pending = partial
-        .get("is_pending")
-        .and_then(Value::as_bool)
-        .ok_or_else(|| {
-            ServiceError::Unprocessable(
-                "ATTESTATION.is_pending is required (1..1 Boolean)".to_owned(),
-            )
-        })?;
-    // items (0..1); Items_valid: non-empty when present.
-    let items = partial.get("items");
-    if let Some(items) = items
-        && items.as_array().is_none_or(Vec::is_empty)
-    {
-        return Err(ServiceError::Unprocessable(
-            "ATTESTATION.items must be a non-empty list when present \
-             (ATTESTATION.Items_valid)"
-                .to_owned(),
-        ));
-    }
+    let parts = AttestationParts::decode(partial)?;
     // committer: from the partial if present, else the CONTRIBUTION committer.
     let committer = partial
         .get("committer")
         .cloned()
         .unwrap_or_else(|| committer_fallback.clone());
-    // description: UPDATE_AUDIT.description is a plain string or DV_TEXT.
+    // description: the inherited AUDIT_DETAILS.description (0..1). ITS-REST
+    // types it `UDvText` — `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`]
+    // (`specifications/schemas/data_types/UDvText.yaml`) — while SM
+    // `UPDATE_AUDIT.description` is `String [0..1]`
+    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes); both spellings are
+    // read, reduced to the `DV_TEXT.value` they share, because the completed
+    // ATTESTATION below rebuilds it as a plain `DV_TEXT`.
     let description = partial.get("description").and_then(|d| {
         d.as_str()
             .or_else(|| d.get("value").and_then(Value::as_str))
     });
-    // The ATTESTATION-specific attributes, each decoded into the RM type the
-    // class table gives it rather than carried through as an opaque value.
-    let reason: DvText = decode(&reason, "ATTESTATION.reason", "DV_TEXT")?;
-    let attested_view: Option<DvMultimedia> = partial
-        .get("attested_view")
-        .filter(|v| !v.is_null())
-        .map(|v| decode(v, "ATTESTATION.attested_view", "DV_MULTIMEDIA"))
-        .transpose()?;
-    let proof: Option<String> = partial
-        .get("proof")
-        .filter(|v| !v.is_null())
-        .map(|v| {
-            v.as_str().map(str::to_owned).ok_or_else(|| {
-                ServiceError::Unprocessable("ATTESTATION.proof must be a String (0..1)".to_owned())
-            })
-        })
-        .transpose()?;
-    let items: Vec<DvEhrUri> = match items {
-        None => Vec::new(),
-        Some(items) => items
-            .as_array()
-            .into_iter()
-            .flatten()
-            .enumerate()
-            .map(|(i, v)| decode(v, &format!("ATTESTATION.items[{i}]"), "DV_EHR_URI"))
-            .collect::<Result<_, _>>()?,
-    };
     // The inherited AUDIT_DETAILS fields are the server's, exactly as any
     // audit's; `openehr-its` writes the whole ATTESTATION in BMM order.
     Ok(openehr_its::json::to_canonical_value(&Attestation {
@@ -259,11 +375,11 @@ pub(crate) fn complete_attestation(
         ),
         description: description.map(dv_text),
         committer: party_proxy(&committer)?,
-        attested_view,
-        proof,
-        items,
-        reason,
-        is_pending,
+        attested_view: parts.attested_view,
+        proof: parts.proof,
+        items: parts.items,
+        reason: parts.reason,
+        is_pending: parts.is_pending,
     }))
 }
 

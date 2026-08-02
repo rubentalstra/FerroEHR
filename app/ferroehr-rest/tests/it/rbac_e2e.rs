@@ -301,6 +301,71 @@ async fn admin_scope_alias_migrates_via_scope_role() {
     );
 }
 
+/// An OAuth2 principal's committer identifier names the TOKEN ISSUER as its
+/// `DV_IDENTIFIER.issuer`, not this server: the subject was minted by the
+/// identity provider, and `DV_IDENTIFIER.issuer` is the "authority which issues
+/// the kind of id used in the id field of this object" (RM `data_types`
+/// `UML/classes/org.openehr.rm.data_types.dv_identifier.adoc` §Attributes).
+/// The concrete string is spec-silent — our own design/extension; what this
+/// pins is that a federated subject is not attributed to the local product.
+#[tokio::test]
+async fn oauth2_committer_identifier_names_the_token_issuer() {
+    let (_pg, app) = app(true, None).await;
+
+    // Create an EHR as a Bearer principal, no committal headers.
+    let resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("{BASE}/ehr"))
+                .header("authorization", bearer("USER"))
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(resp.status(), StatusCode::CREATED);
+    let ehr_id = resp
+        .headers()
+        .get("ETag")
+        .and_then(|v| v.to_str().ok())
+        .expect("ETag")
+        .trim_matches(['W', '/', '"'])
+        .to_owned();
+
+    // The EHR_STATUS's stored commit audit carries the issuer.
+    let resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!(
+                    "{BASE}/ehr/{ehr_id}/versioned_ehr_status/revision_history"
+                ))
+                .header("authorization", bearer("USER"))
+                .header("accept", "application/json")
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("body");
+    let history: Value = serde_json::from_slice(&bytes).expect("json");
+    let identifier = &history["items"][0]["audits"][0]["committer"]["identifiers"][0];
+    assert_eq!(
+        identifier["type"], "oauth2",
+        "identifier records the mechanism: {history}"
+    );
+    assert_eq!(
+        identifier["issuer"], ISSUER,
+        "a federated subject's issuer is the token issuer, not the product name"
+    );
+}
+
 #[tokio::test]
 async fn rbac_deny_is_audited() {
     // A 403 from the RBAC gate carries the Principal, so the ATNA audit layer

@@ -53,10 +53,14 @@ pub enum Audit {
     SystemId,
     /// `change_type` — the `audit_change_type` terminology-group code.
     ChangeType,
-    /// `description` — `AUDIT_DETAILS.description`, optional free text.
+    /// `description` — the canonical `DV_TEXT` fragment of
+    /// `AUDIT_DETAILS.description` (0..1), as JSONB.
     Description,
     /// `committer` — the canonical `PARTY_PROXY` of the committer, as JSONB.
     Committer,
+    /// `attestation` — the `ATTESTATION`-declared attributes as JSONB when the
+    /// commit audit is an `ATTESTATION`, else NULL.
+    Attestation,
 }
 
 /// `contribution` — the change-set envelope.

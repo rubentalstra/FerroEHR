@@ -7347,3 +7347,180 @@ AMB-178:
     withdraws that lineage.
   disposition: report_only
   upstream_issue: 1615
+
+AMB-179:
+  ambiguity: >-
+    THE RELEASED COMMIT SCHEMA NARROWS THE COMMIT AUDIT TO ONE OF THE TWO RM
+    CLASSES THE RM ADMITS THERE. The RM makes a VERSION's `commit_audit` an
+    `AUDIT_DETAILS` "or its subtype `ATTESTATION`", and gives the subtype form
+    a named, motivated use: committing content that must be signed or reviewed
+    ("`ORIGINAL_VERSION._commit_audit_` is of type `ATTESTATION` rather than
+    `AUDIT_DETAILS`", with `is_pending` True for the review case), which
+    master04 calls "the most common scenario" when an attestation is required.
+    The released OAS admits only the flat class: `UpdateAudit.yaml`'s own
+    description enumerates the acceptable discriminators as `UPDATE_AUDIT`,
+    `AUDIT_DETAILS`, or an omitted `_type`, and `UpdateVersion.commit_audit`
+    `$ref`s that schema alone — while `UpdateAttestation.yaml`, the commit DTO
+    of exactly the ATTESTATION attributes, is reachable from `attestations[]`
+    only. So the pending-at-committal case the RM states in prose has no
+    released commit shape. The same narrowing applies to
+    `AUDIT_DETAILS.description`: the RM types it `DV_TEXT` and the released
+    `UDvText` admits the `DV_CODED_TEXT` subtype, so a coded description is a
+    representable value whose `defining_code` a flat-string store would drop.
+  source: >-
+    RM common master06-change_control_package.adoc §Committal and Audits
+    ("`AUDIT_DETAILS` ... or its subtype `ATTESTATION`, which adds a number of
+    other attributes") + §Attestation ("Signing content at committal ... In
+    this case, `ORIGINAL_VERSION._commit_audit_` is of type `ATTESTATION`
+    rather than `AUDIT_DETAILS`"; "Marking content for review and signing ...
+    the Attestation will have its `_is_pending_` flag set True") + master04
+    §Attestation ("the most common scenario will be that a Composition Version
+    will be committed with a `_commit_audit_` of type `ATTESTATION`, rather
+    than just `AUDIT_DETAILS`; the `_is_pending_` flag will be set to True") +
+    UML/classes/org.openehr.rm.common.{attestation,audit_details}.adoc
+    §Attributes; ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §"openehr-version and openehr-audit-details" ("The 'native' way of
+    committing is to use a CONTRIBUTION and wrap the content as a VERSION",
+    linking the RM change-control package and VERSION class) vs
+    specifications/schemas/common/{UpdateAudit,UpdateAttestation,UDvText}.yaml
+    and schemas/ehr/UpdateVersion.yaml — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server follows the RM, exactly as it does for the
+    deletion member the same released schema cannot express (AMB-85). A
+    version's `commit_audit` is accepted with `_type` `AUDIT_DETAILS` /
+    `UPDATE_AUDIT` / an omitted `_type` (the plain class) or `ATTESTATION` /
+    `UPDATE_ATTESTATION` (the subtype — both spellings, so the RM class and its
+    released commit DTO pair symmetrically with the flat pair above); any other
+    `_type` is refused 422. An accepted ATTESTATION commit audit has its own
+    attributes decoded typed and invariant-checked (`Reason_valid`,
+    `Items_valid`, `reason`/`is_pending` 1..1) and is stored and served AS an
+    `ATTESTATION` — on the version envelope, in the revision history, in a
+    CONTRIBUTION rendering and in an EHR-Extract export alike. `description` is
+    likewise kept as the whole `DV_TEXT`/`DV_CODED_TEXT` value. The narrowing
+    is a released-OAS silence about a released-RM shape, not a prohibition: no
+    released sentence says a commit audit may not be an ATTESTATION, and the
+    docs text points the native commit at the RM that says it may. The outbound
+    ask — give the commit schema an ATTESTATION variant for `commit_audit`, as
+    `attestations[]` already has one, and let `description` carry the released
+    `UDvText` rather than a flat string — is reported upstream.
+  disposition: fixed_handling
+  upstream_issue: 1641
+
+AMB-180:
+  ambiguity: >-
+    THE PROSE AND THE CLASS MODEL DISAGREE ON THE SCOPE OF `ATTESTATION.items`.
+    master04 §Attestation states the scope narrowly: "if this list is empty, the
+    attestation is for the entire object (usually the content of an
+    `ORIGINAL_VERSION`) to which the attestation is attached, otherwise the list
+    must contain a set of paths to items WITHIN the item to which the
+    attestation is attached" — i.e. every member is required to resolve inside
+    the attested object. The class table for the same attribute admits the
+    opposite: "Items attested, expressed as fully qualified runtime paths to the
+    items in question. Although not recommended, these may include fine-grained
+    items which have been ATTESTED IN SOME OTHER SYSTEM." A path to an item
+    attested in another system is by definition not within the object the
+    attestation is attached to. master04's own closing paragraph on the subject
+    leans the same way as the class table — "Normally the list of items being
+    attested should be a single Entry or Composition, but there is nothing
+    stopping it including fine-grained items" — describing granularity as
+    unrecommended rather than invalid. Nothing in either source gives a
+    containment predicate a server could evaluate, and the only machine-readable
+    constraint on the attribute is the invariant, which says nothing about
+    scope.
+  source: >-
+    RM common master04-generic_package.adoc §Attestation (the "paths to items
+    within the item" sentence in the contents list, and the later "nothing
+    stopping it including fine-grained items" paragraph) +
+    UML/classes/org.openehr.rm.common.attestation.adoc §Attributes (`items`:
+    `List<DV_EHR_URI>` 0..1, "attested in some other system") and §Invariants
+    (`Items_valid`: `items /= Void implies not items.is_empty` — the ONLY
+    declared constraint) — all three read first-hand.
+  handling: >-
+    Fixed handling: this server enforces the CLASS-MODEL reading, which is the
+    machine-readable one. `items` is decoded as `List<DV_EHR_URI>` — each member
+    must be a canonical `DV_EHR_URI`, so `DV_EHR_URI.Scheme_valid` still forces
+    an `ehr://` target — and `Items_valid` is enforced (a present list must be
+    non-empty). NO scope check is applied: a member is not required to resolve
+    within the attested object, and a cross-system path is accepted and stored
+    verbatim. Enforcing the prose reading instead would refuse exactly the
+    cross-system case the class table names as permitted, and would require a
+    containment predicate neither source defines. The refusals that ARE pinned
+    (empty list, non-`DV_EHR_URI` member) trace to the invariant and the
+    attribute type, not to the disputed sentence.
+  disposition: editorial
+  upstream_issue: 1634
+
+AMB-181:
+  ambiguity: >-
+    `ATTESTATION.proof` HAS NO DEFINED SERIALISATION, SO NO SERVER CAN VERIFY
+    ONE. master04 §Attestation defines the proof as an openPGP signature over
+    "the entire Attestation object (note that the proof attribute will be Void
+    at this point)" serialised "into an agreed XML, openEHR ODIN or other text
+    format" — and then withdraws the definition: "[.tbd] *To Be Determined*: The
+    exact serialisation is not yet defined by openEHR, but dADL might be
+    preferred". Two facts compound the gap on the server side. First, "an agreed
+    ... format" is agreement between the signing parties, not a wire contract a
+    repository is party to. Second, the inherited `AUDIT_DETAILS` attributes of
+    an attestation are SERVER-MINTED at completion — `system_id`,
+    `time_committed` and the `666|attestation|` `change_type` are the server's,
+    never the client's (ITS-REST overview `Requests_and_responses.md`
+    §"openehr-version and openehr-audit-details": "The `time_committed`
+    attribute is always set by the server") — so the object the server ends up
+    holding is NOT byte-identical to the object the client signed, whatever
+    serialisation either used. A stored proof is therefore never
+    server-verifiable even in principle.
+  source: >-
+    RM common master04-generic_package.adoc §Attestation (the openPGP process
+    paragraphs, the "proof attribute will be Void at this point" serialisation
+    rule, and the `[.tbd]` block) +
+    UML/classes/org.openehr.rm.common.attestation.adoc §Attributes (`proof`:
+    `String` 0..1, "Proof of attestation" — no format, no invariant); ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §"openehr-version and
+    openehr-audit-details" — read first-hand.
+  handling: >-
+    Fixed handling: `proof` is an OPAQUE CLIENT FACT. It is accepted only as the
+    `String` its class table declares (a non-string is refused 422), stored
+    byte-for-byte, and served back byte-for-byte; it is never parsed, never
+    recomputed, and never verified — at commit or at read. This is distinct from
+    the VERSION `signature` mechanism, which this server DOES generate and
+    verify for its own signatures (RM common master06 §Digital Signature): there
+    the server owns both the canonicalisation and the key, so a digest is
+    checkable; here it owns neither. Nothing gates on a proof's value or
+    presence, so the TBD costs no coverage: the attestation cases assert the
+    round trip, not a cryptographic outcome. This flips to a gating expectation
+    only if openEHR resolves the TBD with a canonical serialisation AND a rule
+    for the server-minted inherited attributes.
+  disposition: fixed_handling
+
+AMB-182:
+  ambiguity: >-
+    `REVISION_HISTORY` IS BOUND TO A PROPERTY BASE HAS SINCE REMOVED. RM common
+    master04 §Revision History states the classes' purpose as covering two
+    holders: "These classes provide an interoperable definition of revision
+    history for the `VERSIONED_OBJECT` and `AUTHORED_RESOURCE` classes." The
+    second holder no longer has the property: the BASE resource package's own
+    amendment record carries "Re-engineer `AUTHORED_RESOURCE` classes according
+    to AOM2 requirements. Remove `_revision_history_` property", and the current
+    `AUTHORED_RESOURCE` class table declares no such attribute. So the RM
+    sentence describes a binding one of its two named holders no longer has,
+    and the only surviving holder is `VERSIONED_OBJECT`.
+  source: >-
+    RM common master04-generic_package.adoc §Revision History (the
+    "`VERSIONED_OBJECT` and `AUTHORED_RESOURCE`" sentence) + BASE
+    docs/resource/master00-amendment_record.adoc ("Remove `_revision_history_`
+    property", the AOM2 re-engineering row) + BASE resource
+    UML/classes/org.openehr.base.resource.authored_resource.adoc §Attributes
+    (no `revision_history`) — read first-hand.
+  handling: >-
+    Report only, no gate. Our posture already matches the post-removal reality
+    and needs no change: `REVISION_HISTORY` is built and served for
+    `VERSIONED_OBJECT` alone (the `versioned_*/revision_history` reads), and the
+    authored-resource surfaces carry no revision history because the generated
+    `openehr-base` model — emitted from the vendored BASE BMM — declares none.
+    No case asserts a revision history on an authored resource, and none should:
+    the removal is the released state of BASE, so a case built on the RM
+    sentence would test a property that does not exist. The entry exists so the
+    stale cross-reference is reported rather than silently absorbed, and so a
+    future reader does not "restore" the binding from the RM sentence alone.
+  disposition: report_only
+  upstream_issue: 1635

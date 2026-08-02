@@ -233,6 +233,16 @@ each describe a change (the RM object, its `change_type`, and per-version
 **201** with the contribution id in `ETag`, or **400**/**404**/**409** on
 invalid input, unknown EHR, or a uid conflict.
 
+A `commit_audit` may instead be an **`ATTESTATION`** — set its `_type` to
+`ATTESTATION` (or the wire form `UPDATE_ATTESTATION`) and add `reason` (required)
+plus `is_pending` (required), and optionally `proof`, `items` and
+`attested_view`. This is how content is committed already signed, or marked as
+awaiting signature (`is_pending: true`). The attestation is stored as part of that
+version's commit audit and read back on the version envelope, in the revision
+history, and in exports. Any other `_type` is rejected with **422**. A
+`description` may be a plain string, a `DV_TEXT`, or a `DV_CODED_TEXT` — a coded
+description keeps its `defining_code`.
+
 `GET /ehr/{ehr_id}/contribution/{contribution_uid}` returns **200** with the
 contribution, or **404**.
 

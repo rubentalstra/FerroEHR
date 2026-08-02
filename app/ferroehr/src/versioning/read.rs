@@ -85,6 +85,7 @@ fn version_read(stored: crate::storage::version_repo::read::StoredVersion) -> Ve
             change_type: stored.audit_change_type,
             description: stored.audit_description,
             committer: stored.audit_committer,
+            attestation: stored.audit_attestation,
         },
         time_committed: stored.time_committed,
         signature: stored.signature,

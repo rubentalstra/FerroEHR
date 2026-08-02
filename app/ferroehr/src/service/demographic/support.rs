@@ -13,7 +13,7 @@
 //! ehr-less `VersionMeta` rows into the wire shape itself.
 
 use openehr_base::prelude::ObjectVersionId;
-use openehr_rm::prelude::{AuditDetails, RevisionHistory, RevisionHistoryItem};
+use openehr_rm::prelude::{RevisionHistory, RevisionHistoryItem};
 use serde_json::{Value, json};
 
 use crate::ids::VoId;
@@ -24,7 +24,7 @@ use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
 use crate::service::version_update::UpdateAudit;
 use crate::storage::version_repo;
-use crate::versioning::audit::{AuditInput, audit_details_typed};
+use crate::versioning::audit::{AuditInput, description_fragment};
 use crate::versioning::change::Committed;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::{VersionRead, read_current, read_version, version_at};
@@ -167,13 +167,7 @@ fn revision_history_item(
         version_id: ObjectVersionId {
             value: object_version_id(vo_id, &meta.creating_system_id, tree),
         },
-        audits: vec![AuditDetails::AuditDetails(audit_details_typed(
-            &meta.audit_system_id,
-            &meta.audit_change_type,
-            meta.audit_description.as_deref(),
-            &meta.audit_committer,
-            &meta.time_committed,
-        )?)],
+        audits: vec![AuditInput::from_meta(meta).typed(&meta.time_committed)?],
     })
 }
 
@@ -206,8 +200,9 @@ impl FerroEhrService {
             None => Ok(AuditInput {
                 system_id: self.effective_system_id(),
                 change_type: change_type.to_owned(),
-                description: Some(description.to_owned()),
+                description: Some(description_fragment(description)),
                 committer: CommitEnv::default_committer(self),
+                attestation: None,
             }),
         }
     }

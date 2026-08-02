@@ -185,8 +185,14 @@ struct AuditRow {
     time_committed: String,
     system_id: String,
     change_type: String,
-    description: Option<String>,
+    /// The canonical `DV_TEXT` fragment of `AUDIT_DETAILS.description` (0..1).
+    description: Option<Value>,
     committer: Value,
+    /// The `ATTESTATION`-declared attributes when the audit is an `ATTESTATION`
+    /// (RM common master06 §Attestation), else absent — so an archive
+    /// round-trips the concrete audit class.
+    #[serde(default)]
+    attestation: Option<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -592,6 +598,7 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
             change_type: audit.change_type.clone(),
             description: audit.description.clone(),
             committer: audit.committer.clone(),
+            attestation: audit.attestation.clone(),
         },
         &time_committed,
         &v.lifecycle_state,
@@ -1066,7 +1073,7 @@ impl FerroEhrService {
         // Every audit referenced by this EHR's contributions or versions.
         let audit_rows = sqlx::query(
             "SELECT id, time_committed, system_id, change_type, \
-             description, committer FROM audit \
+             description, committer, attestation FROM audit \
              WHERE id IN (SELECT audit_id FROM contribution WHERE ehr_id = $1 \
                           UNION SELECT audit_id FROM vo_version WHERE ehr_id = $1) \
              ORDER BY id",
@@ -1086,6 +1093,7 @@ impl FerroEhrService {
                 change_type: r.try_get("change_type")?,
                 description: r.try_get("description")?,
                 committer: r.try_get("committer")?,
+                attestation: r.try_get("attestation")?,
             });
         }
 
@@ -1223,7 +1231,7 @@ impl FerroEhrService {
         for a in &record.audits {
             sqlx::query(
                 "INSERT INTO audit (id, time_committed, system_id, change_type, description, \
-                 committer) VALUES ($1, $2::timestamptz, $3, $4, $5, $6)",
+                 committer, attestation) VALUES ($1, $2::timestamptz, $3, $4, $5, $6, $7)",
             )
             .bind(a.id)
             .bind(&a.time_committed)
@@ -1231,6 +1239,7 @@ impl FerroEhrService {
             .bind(&a.change_type)
             .bind(&a.description)
             .bind(&a.committer)
+            .bind(&a.attestation)
             .execute(&mut *tx)
             .await?;
         }

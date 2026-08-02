@@ -42,10 +42,14 @@ pub struct VersionMeta {
     pub audit_system_id: String,
     /// The version audit's numeric `audit_change_type` group code.
     pub audit_change_type: String,
-    /// The version audit's description, when the committer supplied one.
-    pub audit_description: Option<String>,
+    /// The canonical `DV_TEXT` fragment of the version audit's description,
+    /// when the committer supplied one.
+    pub audit_description: Option<Value>,
     /// The canonical `PARTY_PROXY` JSON of the committer.
     pub audit_committer: Value,
+    /// The canonical fragment of the `ATTESTATION`-declared attributes when the
+    /// commit audit is an `ATTESTATION` (RM common master06 §Attestation).
+    pub audit_attestation: Option<Value>,
     /// The audit's server-computed commit instant.
     pub time_committed: jiff::Timestamp,
 }
@@ -61,7 +65,8 @@ pub async fn all_version_meta(
     let rows = sqlx::query(
         "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
          v.branch_version, v.creating_system_id, v.lifecycle_state, \
-         a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+         a.system_id, a.change_type, a.description, a.committer, a.attestation, \
+         a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 ORDER BY v.sys_version",
     )
@@ -83,6 +88,7 @@ pub async fn all_version_meta(
                 audit_change_type: row.try_get("change_type")?,
                 audit_description: row.try_get("description")?,
                 audit_committer: row.try_get("committer")?,
+                audit_attestation: row.try_get("attestation")?,
                 time_committed: row
                     .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
                     .to_jiff(),
