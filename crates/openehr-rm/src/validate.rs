@@ -180,8 +180,9 @@ pub fn check_mandatory_containers(ty: &str, value: &Value, out: &mut Vec<Invaria
 }
 
 /// The `x /= Void implies not x.is_empty` invariant family for one node: every
-/// rule of the generated table [`generated::NONEMPTY_LIST_RULES`] that applies
-/// to `ty`, evaluated against the node's own attributes.
+/// rule of the generated `NONEMPTY_LIST_RULES` table (in the private
+/// `generated` module) that applies to `ty`, evaluated against the node's own
+/// attributes.
 ///
 /// The rule table is READ FROM THE BMM (every class invariant with that exact
 /// assertion shape over a container attribute), and a rule applies to its

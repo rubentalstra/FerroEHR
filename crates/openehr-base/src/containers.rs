@@ -79,7 +79,8 @@ mod tests {
 /// ([`NonEmptyVec::new`]), which the canonical-JSON and canonical-XML readers
 /// both go through.
 ///
-/// Reads behave exactly like a slice ([`Deref`]/[`DerefMut`] to `[T]`, plus
+/// Reads behave exactly like a slice ([`core::ops::Deref`]/[`core::ops::DerefMut`]
+/// to `[T]`, plus
 /// [`IntoIterator`] in all three forms), so `iter()`, `len()`, `first()`,
 /// indexing and `for` loops need no adaptation. Only CONSTRUCTION is
 /// restricted, and only length-preserving or length-GROWING mutation is
