@@ -109,8 +109,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   `disallowed-methods`/`disallowed-types`, owner rulings 2026-07-30):
   `std::time::SystemTime::now` (wall-clock comes from jiff; `Instant` stays
   fine for latency), `std::env::var`/`var_os` (config flows through the
-  config tree), `uuid::Uuid::new_v4` (DB keys are uuidv7), and the
-  `chrono::*` types (jiff is the one time library). A legitimate exception
+  config tree), `uuid::Uuid::new_v4` (DB keys are uuidv7), the
+  `chrono::*` types (jiff is the one time library), and
+  `Option::as_slice`/`as_mut_slice` (on an `Option<Vec<T>>` receiver they
+  yield `&[Vec<T>]` — a slice of 0-or-1 *vectors*, not `&[T]` — and keep
+  compiling after a field's shape flips between `Vec<T>` and
+  `Option<Vec<T>>`; spell it `.as_deref().unwrap_or_default()` or match on
+  the `Option` — added 2026-08-02, issue #1718; `Vec::as_slice` stays
+  fine). A legitimate exception
   site carries a scoped `#[expect(clippy::disallowed_methods, reason)]`.
 - **Errors are types, not strings, at every boundary that branches**
   (C-GOOD-ERR): a caller that needs to distinguish outcomes gets an enum
