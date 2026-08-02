@@ -192,10 +192,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 
-- **C-SERDE — waived by design**: the openEHR spec types carry no serde;
-  canonical JSON is the emitted native `ToJson`/`FromJson` codec
-  (root `CLAUDE.md` §Code generation). The wire contract is pinned by the
-  canonical-output gates instead.
+- **C-SERDE — satisfied via emitted MANUAL impls (waiver retired by the
+  foundation-phase rewrite, #1702)**: the spec types implement
+  `serde::Serialize`/`Deserialize` through explicit generated code
+  (per-crate `json_serde.rs` from `emit-json`), never derives and never
+  serde attributes — the manual form is what lets the strict reader,
+  `_type` dispatch, and validated-constructor parsing live in auditable
+  code (root `CLAUDE.md` §Code generation). The wire contract stays pinned
+  by the canonical-output gates.
 - **C-PERMISSIVE — MIT for the project's own code** (owner decision
   2026-07-31, superseding the earlier Apache-2.0-only ruling): the project
   relicensed to MIT with the rename; vendored openEHR machine-readable
