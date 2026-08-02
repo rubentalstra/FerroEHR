@@ -26,7 +26,7 @@ use crate::versioning::change::{Change, CommittedContribution};
 use crate::versioning::lifecycle::{lifecycle_state_code, state};
 use crate::versioning::object_version_id::{self, TreeId};
 use crate::versioning::signature::signer::Signer;
-use crate::versioning::wire::original_version;
+use crate::versioning::wire::version_envelope;
 use crate::versioning::{CommitEnv, Kind, change, read};
 
 /// An optional `(lower, upper)` inclusive commit-time window — the simple
@@ -138,6 +138,14 @@ fn classify(
             // preceding_version_uid (master06 §Contributions;
             // VERSIONED_OBJECT.commit_attestation pre has_version_id). Absent →
             // the request cannot name its target: a 400, not a 422.
+            //
+            // NOTE (register AMB-190): the same §Contributions row spells the
+            // code's home `ATTESTATION._commit_audit_._change_type_`, a path
+            // ATTESTATION cannot have — it IS an AUDIT_DETAILS subtype
+            // (`…org.openehr.rm.common.attestation.adoc` §Inherit) and owns
+            // `change_type` directly, while `commit_audit` belongs to VERSION.
+            // The repaired reading — `ATTESTATION.change_type` — is what this
+            // route stamps.
             if !has_preceding {
                 return Err(ServiceError::BadRequest(
                     "change_type 666|attestation| requires preceding_version_uid to \
@@ -799,12 +807,59 @@ fn parse_audit(
     })
 }
 
-/// The CONTRIBUTION-level aggregate change type when the client supplied none
-/// (master06 §Contributions): the shared code when every member version has the
-/// same change type, else `251|modification|` ("accommodates … a mixture").
+/// The CONTRIBUTION-level aggregate change type when the client supplied none.
+///
+/// RM common `master06-change_control_package.adoc` §Contributions gives the
+/// rule as a list of "typical values", in this order:
+///
+/// * "any code: when all member versions have the same change type, that change
+///   type may be used for the Contribution as well" — the uniform case;
+/// * "`250|amendment|`: corresponds to a mixture of amendments and deletions
+///   that logically constitute a correction to the content" — the one NAMED
+///   mixture, and therefore the one mixture that does not fall to the general
+///   rule below;
+/// * "`251|modification|`: this accommodates cases where there is a mixture of
+///   creation, deletion, modification that constitute a change of content" —
+///   the general mixture.
+///
+/// (`666|attestation|` — "used when the only changes are attestation of one or
+/// more of the member versions" — is the uniform case of the first bullet: an
+/// attestation-only change set has no member version codes other than 666.)
+///
+/// NOTE: the same section states its own limit — the aggregate "may sometimes
+/// be approximate, and is not expected to be used as a computable value" — so
+/// this derivation is a best statement of the change set, never a datum a
+/// caller may reason over. A client-supplied `CONTRIBUTION.audit.change_type`
+/// always wins (the caller's own account of its change set); this runs only
+/// when none was supplied.
+///
+/// NOTE (why this is not asserted on the wire): on the ITS-REST contribution
+/// route it is unreachable from a conformant request. The released schema makes
+/// the change set's audit mandatory and its change type a required member —
+/// `specifications/schemas/ehr/NewContribution.yaml` (`required: [versions,
+/// audit]`) over `specifications/schemas/common/UpdateAudit.yaml` (`required:
+/// [change_type, committer]`) — so a conformant client always states the
+/// aggregate itself and this fallback never fires. On the direct
+/// resource routes the server does supply the default (ITS-REST overview
+/// `Requests_and_responses.md` §"openehr-version and openehr-audit-details":
+/// "None of these headers are mandatory, but whatever is provided it MUST be
+/// merged with the default VERSION and `VERSION.audit_details` attributes on
+/// commit runtime"), but each such write is a single-version change set, so
+/// only the uniform arm can be reached there. The mixture arms are therefore
+/// pinned by the unit tests below rather than by a CNF case.
 fn aggregate_change_type(version_codes: &[String]) -> String {
     match version_codes.split_first() {
         Some((first, rest)) if rest.iter().all(|c| c == first) => first.clone(),
+        // The named amendment/deletion mixture: every member is an amendment or
+        // a deletion, and (by the arm above) they are not all the same code, so
+        // both kinds are present — "a mixture of amendments and deletions".
+        Some(_)
+            if version_codes
+                .iter()
+                .all(|c| c == change_type::AMENDMENT || c == change_type::DELETED) =>
+        {
+            change_type::AMENDMENT.to_owned()
+        }
         _ => change_type::MODIFICATION.to_owned(),
     }
 }
@@ -941,7 +996,7 @@ fn attestation_partials(version: &Value) -> Vec<Value> {
 /// # Errors
 /// [`ServiceError::NotFound`] when the CONTRIBUTION does not exist in `ehr_id`,
 /// or (under `resolve_refs`) a referenced version row is gone; the storage read
-/// errors; the [`original_version`] verification error under `resolve_refs`.
+/// errors; the [`version_envelope`] verification error under `resolve_refs`.
 pub(crate) async fn get_contribution(
     pool: &sqlx::PgPool,
     signer: &Signer,
@@ -985,7 +1040,13 @@ pub(crate) async fn get_contribution(
                         format!("VERSION {vo_id}::{tree}"),
                     )
                 })?;
-            versions.push(original_version(&loaded, signer)?);
+            // The resolved object is the VERSION the CONTRIBUTION lists
+            // (`CONTRIBUTION.versions`, master06 §Contributions: "a
+            // CONTRIBUTION object will be created, listing the affected
+            // VERSION objects"), so an imported member resolves to its
+            // IMPORTED_VERSION — the version that actually sits in the
+            // container — not to the ORIGINAL_VERSION it wraps.
+            versions.push(version_envelope(&loaded, signer)?);
         } else {
             versions.push(json!({
                 "_type": "OBJECT_REF",
@@ -1327,12 +1388,40 @@ mod tests {
         assert_eq!((action, code.as_str()), (Action::Modify, "251"));
     }
 
+    /// The three aggregate outcomes RM common master06 §Contributions lists,
+    /// each on the shape its own sentence describes.
     #[test]
     fn contribution_aggregate_change_type() {
+        // "any code: when all member versions have the same change type, that
+        // change type may be used for the Contribution as well"
         let same = vec!["250".to_owned(), "250".to_owned()];
         assert_eq!(aggregate_change_type(&same), "250");
+        assert_eq!(
+            aggregate_change_type(&["666".to_owned(), "666".to_owned()]),
+            "666",
+            "an attestation-only change set is the uniform case"
+        );
+        // "251|modification|: this accommodates cases where there is a mixture
+        // of creation, deletion, modification that constitute a change of
+        // content"
         let mixed = vec!["249".to_owned(), "523".to_owned()];
         assert_eq!(aggregate_change_type(&mixed), "251");
         assert_eq!(aggregate_change_type(&[]), "251");
+        // "250|amendment|: corresponds to a mixture of amendments and
+        // deletions that logically constitute a correction to the content"
+        assert_eq!(
+            aggregate_change_type(&["250".to_owned(), "523".to_owned()]),
+            "250"
+        );
+        assert_eq!(
+            aggregate_change_type(&["523".to_owned(), "250".to_owned(), "523".to_owned()]),
+            "250"
+        );
+        // …but only that mixture: add any other kind and the general mixture
+        // rule applies again.
+        assert_eq!(
+            aggregate_change_type(&["250".to_owned(), "523".to_owned(), "249".to_owned()]),
+            "251"
+        );
     }
 }

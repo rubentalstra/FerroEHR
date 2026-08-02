@@ -85,12 +85,18 @@ impl VersionSelection {
 
 /// The concrete RM versioned-object class per stored `kind` (RM ehr master04:
 /// `VERSIONED_COMPOSITION` / `VERSIONED_EHR_STATUS` / `VERSIONED_FOLDER`).
+///
+/// EHR-scoped kinds only: the one caller resolves `kind` from an EHR-filtered
+/// read (`ehr_versioned_objects` / `ehr_vo_kind`, both `WHERE ehr_id = $1`), and
+/// demographic parties are not EHR-owned — the extract's demographics chapter
+/// builds their `X_VERSIONED_PARTY` itself, with the system-scoped `owner_id` a
+/// party container carries (`master09-semantics.adoc` §Creation Semantics:
+/// "Create a demographics `EXTRACT_CHAPTER` and write the `PARTYs` in").
 fn versioned_rm_type(kind: &str) -> &'static str {
     match kind {
         "COMPOSITION" => "VERSIONED_COMPOSITION",
         "EHR_STATUS" => "VERSIONED_EHR_STATUS",
         "FOLDER" => "VERSIONED_FOLDER",
-        "AGENT" | "GROUP" | "ORGANISATION" | "PERSON" | "ROLE" => "VERSIONED_PARTY",
         _ => "VERSIONED_OBJECT",
     }
 }

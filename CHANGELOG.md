@@ -188,6 +188,76 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A version's digital signature now covers the attestations it was
+  committed with.** openEHR signs "the entire Version object", excluding only
+  the `signature` attribute itself, so an attestation supplied on the commit
+  (`attestations` on the committed VERSION) belongs inside the signed form.
+  It previously did not: such an attestation could be altered in the database
+  without any signature check noticing. It is now part of the signed
+  canonical form at commit and at read, in both the local-commit and the
+  EHR-Extract-import paths, so tampering with it is caught by strict
+  read-time verification and the served version verifies for an external
+  reader that recomputes the digest itself. Attestations added *after*
+  committal (a `666|attestation|` contribution) keep their existing
+  behaviour: they post-date the signature by definition, and are served
+  outside it. Versions committed before this change are unaffected — nothing
+  is re-signed — unless they carried commit-time attestations, in which case
+  their stored signature no longer matches and a `strict` `verify_on_read`
+  deployment will report them; re-commit or set `verify_on_read = warn` while
+  auditing.
+
+- **An attestation whose optional `items` is sent as JSON `null` is no longer
+  rejected.** A null optional means absent, and the sibling optional
+  attributes (`proof`, `attested_view`, `description`) were already read that
+  way; `items` alone treated it as a malformed list and returned `422`. That
+  made commit-time attestations unusable through the typed API, which emits
+  `null` for an omitted list. A present-but-*empty* list (`[]`) is still
+  refused, which is what the RM invariant actually forbids.
+
+- **A contribution mixing amendments and deletions now reports the amendment
+  aggregate.** When a client sends no contribution-level change type, the
+  server derives one; openEHR names `250|amendment|` for "a mixture of
+  amendments and deletions that logically constitute a correction", which
+  previously fell through to the general `251|modification|`. Uniform change
+  sets and every other mixture are unchanged.
+
+- **Versions received from another system are now served as
+  `IMPORTED_VERSION`s, and imported records report their local chronology.**
+  openEHR wraps a copied version: an EHR Extract import commits the received
+  `ORIGINAL_VERSION` inside an `IMPORTED_VERSION` whose own contribution and
+  commit audit record *this* server's act of importing, while the wrapped
+  original keeps the source system's contribution reference, commit audit and
+  signature. This server had never materialised the wrapper — it wrote the
+  foreign commit audit as the version's own and discarded the received
+  contribution reference entirely. Four visible changes:
+  - A `VERSION` read of an imported version
+    (`…/versioned_composition/{uid}/version/{version_uid}`,
+    `…/versioned_ehr_status/version[/{version_uid}]`, and a `resolve_refs`
+    contribution read) now returns `"_type": "IMPORTED_VERSION"` with the
+    received original under `item`. An `IMPORTED_VERSION` carries no `uid` of
+    its own — it shares the wrapped version's identity — so read the version
+    id from `item.uid.value`; the `ETag` is unchanged, so `If-Match` round
+    trips are unaffected. Locally created versions are still
+    `ORIGINAL_VERSION`s.
+  - An imported version container's `VERSIONED_OBJECT.time_created`, its
+    `Last-Modified` header, its revision history and every as-of-instant read
+    now report the **local import** instant instead of the source system's
+    earlier clock, so a query for the record's past state returns what this
+    repository actually held at that time.
+  - Re-exporting imported content now reproduces the received
+    `ORIGINAL_VERSION` verbatim, including its source contribution reference;
+    it previously carried this server's local contribution id under the source
+    version's identity.
+  - With version signing enabled, the import act signs the `IMPORTED_VERSION`
+    wrapper it creates; the wrapped original's own signature is stored and
+    served untouched, and is never re-verified.
+
+  An `ORIGINAL_VERSION` arriving in an extract without the mandatory
+  `contribution` (or with a commit audit that is not a canonical
+  `AUDIT_DETAILS`) is now refused with `400`, instead of being imported with
+  the provenance silently dropped. Content imported before this release keeps
+  the provenance it was stored with.
+
 - **A demographic version container's `owner_id` now names the serving system,
   consistently, everywhere it is emitted.** `VERSIONED_OBJECT.owner_id` is a
   mandatory reference to "the containing EHR or other relevant owning entity",

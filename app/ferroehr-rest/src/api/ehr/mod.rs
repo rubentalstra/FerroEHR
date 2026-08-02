@@ -72,7 +72,10 @@ pub(super) const LIFECYCLE_COMPLETE: &str = "532";
 /// with an `ETag`/`Last-Modified` needs (the version id is the object's own
 /// `uid`).
 ///
-/// When the served body is a VERSION envelope (an `ORIGINAL_VERSION`), its
+/// When the served body is a VERSION envelope (an `ORIGINAL_VERSION`, or an
+/// `IMPORTED_VERSION` whose `uid` is the effected function `item.uid` —
+/// `UML/classes/org.openehr.rm.common.imported_version.adoc` §Functions,
+/// `Post: Result = item.uid`), its
 /// `commit_audit.time_committed` is also read as the `Last-Modified` instant:
 /// ITS-REST overview `Requests_and_responses.md` §"`ETag` and Last-Modified"
 /// — "For openEHR resources, this value should be derived from
@@ -86,8 +89,8 @@ pub(super) const LIFECYCLE_COMPLETE: &str = "532";
 /// row.
 fn resource_meta_from(ehr_id: &str, body: &Value) -> Option<ResourceMeta> {
     let uid = body
-        .get("uid")
-        .and_then(|u| u.get("value"))
+        .pointer("/uid/value")
+        .or_else(|| body.pointer("/item/uid/value"))
         .and_then(Value::as_str)?;
     let meta = ResourceMeta::new(ehr_id.to_owned(), uid.to_owned());
     Some(match commit_instant(body) {
@@ -107,6 +110,18 @@ fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
         .and_then(Value::as_str)?
         .parse::<jiff::Timestamp>()
         .ok()
+}
+
+/// The canonical-XML root tag for a served VERSION envelope, taken from the
+/// body's own `_type` so an `IMPORTED_VERSION` is not announced as an
+/// `ORIGINAL_VERSION` (RM common master06 §Version and its Subtypes; the
+/// version resource is the `_type`-discriminated union ITS-REST 1.1.0 declares
+/// in `schemas/ehr/UVersionOfComposition.yaml` / `UVersionOfEhrStatus.yaml`).
+pub(super) fn version_root_tag(body: &Value) -> &'static str {
+    match body.get("_type").and_then(Value::as_str) {
+        Some("IMPORTED_VERSION") => "imported_version",
+        _ => "original_version",
+    }
 }
 
 /// Wrap a read body as a [`ServiceResponse`], attaching resource metadata drawn

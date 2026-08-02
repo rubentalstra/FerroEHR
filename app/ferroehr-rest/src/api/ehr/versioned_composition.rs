@@ -13,9 +13,10 @@ use openehr_its::rest::generated::ehr::{
     VersionedCompositionVersionGetAtTimeParams, VersionedCompositionVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{Composition, OriginalVersion, RevisionHistory, VersionedComposition};
+use openehr_rm::prelude::{Composition, RevisionHistory, Version, VersionedComposition};
 
 use crate::api::RequestParts;
+use crate::api::ehr::version_root_tag;
 use crate::overview::error::RestError;
 use crate::overview::version_id::{parse_ehr_id, parse_uuid, parse_version_uid};
 use crate::state::AppState;
@@ -88,12 +89,12 @@ pub(super) async fn run(
             // indicate an alternate representation of an existing resource").
             let resp = super::read_resp(&p.ehr_id, body);
             // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML.
-            Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
+            Ok(negotiate::read_rm::<Version<Composition>>(
                 h,
                 &base,
                 None,
                 &resp,
-                "original_version",
+                version_root_tag(&resp.body),
             ))
         }
         "versioned_composition_version_get_by_id" => {
@@ -115,7 +116,7 @@ pub(super) async fn run(
             }
             let body = state
                 .backend()
-                .composition_original_version(ehr_id, ovid)
+                .composition_version_envelope(ehr_id, ovid)
                 .await?;
             // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML, with the
             // version-uid ETag + Last-Modified from the envelope's
@@ -123,12 +124,12 @@ pub(super) async fn run(
             // SHOULD accompany a VERSION response, and Last-Modified is
             // "derived from VERSION.commit_audit.time_committed.value").
             let resp = super::read_resp(&p.ehr_id, body);
-            Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
+            Ok(negotiate::read_rm::<Version<Composition>>(
                 h,
                 &base,
                 None,
                 &resp,
-                "original_version",
+                version_root_tag(&resp.body),
             ))
         }
         other => Err(RestError(ApiError::Internal(format!(

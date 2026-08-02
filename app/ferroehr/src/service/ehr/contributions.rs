@@ -59,8 +59,9 @@ impl FerroEhrService {
     }
 
     /// Retrieve a CONTRIBUTION by id (scoped to the EHR), its `versions` as
-    /// `OBJECT_REF`s, or — with `resolve_refs` — as the resolved
-    /// `ORIGINAL_VERSION` objects (ITS-REST `Prefer: resolve_refs`,
+    /// `OBJECT_REF`s, or — with `resolve_refs` — as the resolved VERSION
+    /// objects (`ORIGINAL_VERSION`, or `IMPORTED_VERSION` for a version this
+    /// repository received from another system) (ITS-REST `Prefer: resolve_refs`,
     /// `Requests_and_responses` §Representation details negotiation).
     ///
     /// # Errors
@@ -121,7 +122,8 @@ impl FerroEhrService {
     }
 
     /// The stored `CONTRIBUTION` with its `versions` resolved to the full
-    /// `ORIGINAL_VERSION` objects (ITS-REST `Prefer: resolve_refs`).
+    /// VERSION objects — `ORIGINAL_VERSION`, or `IMPORTED_VERSION` for a
+    /// version received from another system (ITS-REST `Prefer: resolve_refs`).
     ///
     /// # Errors
     /// [`SmError`] when the CONTRIBUTION does not exist in this EHR

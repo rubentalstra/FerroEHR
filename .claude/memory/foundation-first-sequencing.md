@@ -1,0 +1,31 @@
+---
+name: foundation-first-sequencing
+description: "Owner 2026-08-02 — systemic defects found by audits get a full-repo fix phase BEFORE the program continues; typed-codec sweep #1686 is the live case"
+metadata: 
+  node_type: memory
+  type: feedback
+  originSessionId: af8ec1a8-3953-4ae1-a5d1-355a712f597b
+  modified: 2026-08-02T07:42:04.110Z
+---
+
+Owner ruling 2026-08-02 (during the RM ch.6 audits): when an audit exposes a
+SYSTEMIC defect class (the live case: app code hand-crafting canonical wire
+shapes with `json!` instead of constructing generated `openehr-rm` types
+through the codec, and bare terminology literals instead of `openehr-term`),
+do NOT keep auditing forward and fixing instances opportunistically — finish
+the in-flight section, then run a FULL-REPO sweep as its own phase before the
+next section starts. "Otherwise we are building on a bad foundation."
+
+**Why:** each later audit would keep rediscovering instances of the same
+class, and new code written during the program would copy the bad pattern.
+
+**How to apply:** encode the sequencing as a native blocked-by edge (the next
+audit unit blocked by the sweep issue) + P1; the sweep issue carries the
+ruling in its opening. Missing constructors/constants are emitter or
+openehr-term gaps fixed at the generator (visible), never app literals.
+The phase has THREE legs, all blocking the next audit unit: #1686 (typed
+codec + openehr-term sourcing), #1687 (RM spec logic pushed down into
+*_impl.rs — criterion: realizes-a-spec-definition => crate with citation +
+postcondition tests; app keeps storage/wire/service only), and the
+duplication inventory that scopes both. Related: [[owner-work-style]]
+(no quick fixes, big-bang convergence).

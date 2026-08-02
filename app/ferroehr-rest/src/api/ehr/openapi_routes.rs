@@ -1330,7 +1330,11 @@ pub(crate) async fn versioned_ehr_status_revision_history(
                                       JSON/XML per `Accept`): the version \
                                       identity, its CONTRIBUTION reference, the \
                                       commit audit, the lifecycle state, and the \
-                                      EHR_STATUS itself under `data`. No \
+                                      EHR_STATUS itself under `data`. A version this server received from another system is served as its \
+                                      IMPORTED_VERSION wrapper instead — the \
+                                      local contribution and commit audit, with \
+                                      the received ORIGINAL_VERSION under `item` \
+                                      (RM common master06 §Committal and Audits). No \
                                       `Location`: `Requests_and_responses.md` \
                                       §Location forbids it on a `GET` (\"It MUST \
                                       NOT be used to indicate an alternate \
@@ -1472,7 +1476,11 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
                                       version identity, its CONTRIBUTION \
                                       reference, the commit audit, the lifecycle \
                                       state, and the EHR_STATUS itself under \
-                                      `data`. No `Location`: \
+                                      `data`. A version this server received from another system is served as its \
+                                      IMPORTED_VERSION wrapper instead — the \
+                                      local contribution and commit audit, with \
+                                      the received ORIGINAL_VERSION under `item` \
+                                      (RM common master06 §Committal and Audits). No `Location`: \
                                       `Requests_and_responses.md` §Location \
                                       forbids it on a `GET`.",
          body = serde_json::Value,
@@ -3010,7 +3018,11 @@ pub(crate) async fn versioned_composition_revision_history(
                                       JSON/XML per `Accept`): the version \
                                       identity, its CONTRIBUTION reference, the \
                                       commit audit, the lifecycle state, and the \
-                                      COMPOSITION itself under `data`. A \
+                                      COMPOSITION itself under `data`. A version this server received from another system is served as its \
+                                      IMPORTED_VERSION wrapper instead — the \
+                                      local contribution and commit audit, with \
+                                      the received ORIGINAL_VERSION under `item` \
+                                      (RM common master06 §Committal and Audits). A \
                                       logically deleted version is served here as \
                                       a `200` whose `lifecycle_state` is \
                                       `523|deleted|` and which carries NO `data` \
@@ -3199,7 +3211,11 @@ pub(crate) async fn versioned_composition_version_get_at_time(
                                       version identity, its CONTRIBUTION \
                                       reference, the commit audit, the lifecycle \
                                       state, and the COMPOSITION itself under \
-                                      `data`. A logically deleted version is \
+                                      `data`. A version this server received from another system is served as its \
+                                      IMPORTED_VERSION wrapper instead — the \
+                                      local contribution and commit audit, with \
+                                      the received ORIGINAL_VERSION under `item` \
+                                      (RM common master06 §Committal and Audits). A logically deleted version is \
                                       served here as a `200` whose \
                                       `lifecycle_state` is `523|deleted|` and \
                                       which carries NO `data` (RM common master06 \
@@ -5214,9 +5230,10 @@ pub(crate) async fn contribution_list(
                         be resolved into full or partial representations\" \
                         (`Requests_and_responses.md` §\"Prefer resolving Object \
                         references\"). Each `versions[i]` is then the full \
-                        ORIGINAL_VERSION — envelope, `commit_audit`, \
+                        VERSION — envelope, `commit_audit`, \
                         `lifecycle_state`, `signature`, and the `data` payload \
-                        — instead of a reference. Without the token the members \
+                        — instead of a reference (an IMPORTED_VERSION member \
+                        carries its wrapped ORIGINAL_VERSION under `item`). Without the token the members \
                         stay OBJECT_REFs and carry no `data` at all. That \
                         binding is also what makes a Simplified-Format `Accept` \
                         meaningful on this read: the released operation \

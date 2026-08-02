@@ -39,3 +39,4 @@
 - [Admin UI deprioritized](admin-ui-deprioritized.md) — owner 2026-08-01: UI broken/accepted, server first; compose SUT stacks with explicit service names (`up -d --wait ferroehr`), never bare `up`
 - [Upstream reports are issues](upstream-reports-are-issues.md) — owner 2026-08-01: md ledger deleted; upstream-report label (red), unverified→v3.20.0, confirmed→upstream-confirmed (not blocked-upstream); ambiguities.yaml upstream_issue: N; issue bodies = plain summary + Acceptance criteria (Contract/Exit criteria retired)
 - [Verified commits hard rule](verified-commits-hard-rule.md) — owner 2026-08-01: all commits signed incl. CI — workflows create commits ONLY via the Git Data API (github-actions[bot] Verified), never local git commit+push
+- [Foundation-first sequencing](foundation-first-sequencing.md) — owner 2026-08-02: systemic defect classes get a full-repo sweep phase before the next audit unit (blocked-by edge + P1); typed-codec sweep #1686 is the live case

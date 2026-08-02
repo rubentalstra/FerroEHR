@@ -690,7 +690,7 @@ async fn mixed_snapshot(svc: &FerroEhrService, ehr: EhrId, ovids: &[String]) -> 
     let mut out = vec![status, directory];
     for ovid in ovids {
         let ov = svc
-            .composition_original_version(ehr, ovid.parse().expect("ovid"))
+            .composition_version_envelope(ehr, ovid.parse().expect("ovid"))
             .await
             .expect("composition ORIGINAL_VERSION");
         out.push(serde_json::to_string(&ov).expect("version json"));
@@ -1045,6 +1045,80 @@ async fn load_from_a_truncated_container_is_file_not_writable() {
     assert!(
         !ehr_row_exists(&dst_pool, ehr.into()).await,
         "a refused load commits nothing"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The admin archive is lossless for an `IMPORTED_VERSION` too: a row committed by
+/// an EHR-Extract import carries TWO acts — the local one on the wrapper and
+/// the source system's inside the wrapped `ORIGINAL_VERSION` (RM common
+/// master06 §Committal and Audits) — and a dump/load round trip must reproduce
+/// both. Regression for #1679: before the wrapper existed there was only one
+/// act to carry, so the archive had nothing to lose.
+#[tokio::test]
+async fn an_imported_version_round_trips_through_the_archive() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(src_db.pool());
+    let mid_db = testkit::db().await.expect("testkit database");
+    let middle = FerroEhrService::new(mid_db.pool());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(dst_db.pool());
+
+    // Source → extract → import: the middle repository now holds imported rows.
+    let ehr = seed_full_ehr(&source).await;
+    let extract = {
+        let mut extracts = source.extract_ehrs(ehr).await.expect("export_ehrs");
+        openehr_its::json::from_canonical_value(&extracts.remove(0)).expect("EXTRACT")
+    };
+    middle.import_ehr(None, extract).await.expect("import_ehr");
+
+    // Middle → archive → target.
+    let dir = archive_dir();
+    let export_reports = middle
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(1024))
+        .await
+        .expect("export");
+    assert!(
+        export_reports.is_empty(),
+        "a clean export reports no failures, got {export_reports:?}"
+    );
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert!(
+        load_reports.is_empty(),
+        "loading into an empty repo reports no failures, got {load_reports:?}"
+    );
+
+    // The loaded copy serves the same IMPORTED_VERSION the middle repository
+    // does — wrapper act and wrapped original alike.
+    let status_vo = middle
+        .versioned_ehr_status_response(ehr)
+        .await
+        .expect("VERSIONED_EHR_STATUS");
+    let vo_id: ferroehr::ids::VoId = uid(&status_vo.body).parse().expect("container uid");
+    let version = middle
+        .ehr_status_revision_history(ehr)
+        .await
+        .expect("REVISION_HISTORY")["items"][0]["version_id"]["value"]
+        .as_str()
+        .expect("version id")
+        .rsplit("::")
+        .next()
+        .expect("version_tree_id")
+        .to_owned();
+
+    let before = middle
+        .ehr_status_version_envelope(ehr, vo_id, &version)
+        .await
+        .expect("pre-dump version");
+    let after = target
+        .ehr_status_version_envelope(ehr, vo_id, &version)
+        .await
+        .expect("post-load version");
+    assert_eq!(before["_type"], json!("IMPORTED_VERSION"));
+    assert_eq!(
+        after, before,
+        "the archive must reproduce the IMPORTED_VERSION wrapper AND its wrapped original"
     );
 
     let _ = std::fs::remove_dir_all(&dir);

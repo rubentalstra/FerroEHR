@@ -41,6 +41,8 @@
               fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
+use std::sync::Arc;
+
 use serde_json::{Value, json};
 
 use openehr_base::prelude::TerminologyCode;
@@ -53,6 +55,8 @@ use ferroehr::service::ehr_index::types::SubjectRef;
 use ferroehr::service::status::CallStatusType;
 
 use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
+use ferroehr::versioning::signature::signer::Signer;
 
 fn term(code: &str) -> TerminologyCode {
     TerminologyCode {
@@ -577,4 +581,279 @@ async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
         .await
         .expect_err("re-import of the same version must be rejected");
     assert_eq!(err.status, CallStatusType::CompositionAlreadyExists);
+}
+
+/// The `IMPORTED_VERSION` semantics of RM common master06 §Committal and Audits:
+/// "Both the contribution and `commit_audit` of the latter object correspond to
+/// the local act of committal, while the knowledge of the original Contribution
+/// and committal are retained inside the wrapped `ORIGINAL_VERSION` instance."
+///
+/// So the VERSION resource of an imported version serves an `IMPORTED_VERSION`
+/// whose own contribution/audit are LOCAL and whose `item` is the received
+/// `ORIGINAL_VERSION`, foreign contribution and commit audit intact. Regression
+/// for #1679, where the wrapper never materialised: the foreign audit was
+/// written as the row's own and the foreign contribution reference was dropped.
+#[tokio::test]
+async fn an_imported_version_serves_the_wrapper_and_wrapped_split() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    let source_version = find_by_xtype(&exported[0], "X_VERSIONED_EHR_STATUS")
+        .expect("exported EHR_STATUS")["item"]["versions"][0]
+        .clone();
+    assert_eq!(
+        source_version["_type"],
+        json!("ORIGINAL_VERSION"),
+        "fixture: a locally created source version is an ORIGINAL_VERSION"
+    );
+    let source_uid = source_version["uid"]["value"]
+        .as_str()
+        .expect("source version uid")
+        .to_owned();
+    let (vo_id, version) = {
+        let mut parts = source_uid.splitn(3, "::");
+        let vo: &str = parts.next().expect("object_id");
+        let _system = parts.next().expect("creating_system_id");
+        (
+            ferroehr::ids::VoId(vo.parse().expect("vo uuid")),
+            parts.next().expect("version_tree_id").to_owned(),
+        )
+    };
+
+    target
+        .import_ehr(None, export_one(&source, ehr).await)
+        .await
+        .expect("import_ehr");
+
+    let served = target
+        .ehr_status_version_envelope(ehr, vo_id, &version)
+        .await
+        .expect("the imported version reads back");
+
+    // The wrapper.
+    assert_eq!(
+        served["_type"],
+        json!("IMPORTED_VERSION"),
+        "a copied version is committed as an IMPORTED_VERSION (master06 §Copying), got {served:#}"
+    );
+    assert_eq!(
+        served["commit_audit"]["change_type"]["defining_code"]["code_string"],
+        json!("249"),
+        "master06 §Contributions, import of item: the wrapper's change_type is 249|creation|"
+    );
+    assert_eq!(
+        served["contribution"]["type"],
+        json!("CONTRIBUTION"),
+        "the wrapper names the LOCAL import CONTRIBUTION"
+    );
+
+    // The wrapped original — never modified (master06 §Copying).
+    let item = &served["item"];
+    assert_eq!(item["_type"], json!("ORIGINAL_VERSION"));
+    assert_eq!(item["uid"]["value"], json!(source_uid.clone()));
+    assert_eq!(
+        item["contribution"], source_version["contribution"],
+        "the wrapped original keeps the SOURCE contribution reference"
+    );
+    assert_eq!(
+        item["commit_audit"], source_version["commit_audit"],
+        "the wrapped original keeps the SOURCE commit audit verbatim"
+    );
+    assert_eq!(item["data"], source_version["data"]);
+
+    // The two acts are genuinely distinct.
+    assert_ne!(
+        served["contribution"]["id"]["value"], item["contribution"]["id"]["value"],
+        "the local import CONTRIBUTION is not the source's"
+    );
+    assert_ne!(
+        served["commit_audit"]["time_committed"]["value"],
+        item["commit_audit"]["time_committed"]["value"],
+        "the local committal instant is not the source's"
+    );
+}
+
+/// RM common master06 §Copying: "the commit times always reflect the local
+/// (more recent) act of committal, not the original committal … rather than
+/// giving the illusion that recently copied Versions were there earlier than
+/// the time of local committal." So an imported container's
+/// `VERSIONED_OBJECT.time_created` and its revision history's commit audit are
+/// the LOCAL import act, never the source's clock. Regression for #1679.
+#[tokio::test]
+async fn an_imported_container_reports_the_local_chronology() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    let source_version = find_by_xtype(&exported[0], "X_VERSIONED_EHR_STATUS")
+        .expect("exported EHR_STATUS")["item"]["versions"][0]
+        .clone();
+    let source_instant = source_version["commit_audit"]["time_committed"]["value"]
+        .as_str()
+        .expect("source commit instant")
+        .parse::<jiff::Timestamp>()
+        .expect("ISO 8601 instant");
+
+    let before_import = jiff::Timestamp::now();
+    target
+        .import_ehr(None, export_one(&source, ehr).await)
+        .await
+        .expect("import_ehr");
+
+    let container = target
+        .versioned_ehr_status_response(ehr)
+        .await
+        .expect("VERSIONED_EHR_STATUS");
+    let time_created = container.body["time_created"]["value"]
+        .as_str()
+        .expect("VERSIONED_OBJECT.time_created")
+        .parse::<jiff::Timestamp>()
+        .expect("ISO 8601 instant");
+    assert!(
+        time_created >= before_import,
+        "time_created must be the local import instant ({before_import}), got {time_created}"
+    );
+    assert!(
+        time_created > source_instant,
+        "time_created must not report the source committal ({source_instant}), got {time_created}"
+    );
+
+    // REVISION_HISTORY_ITEM.audits: "there will always be at least one commit
+    // audit" (RM common `revision_history_item.adoc` §Attributes) — the commit
+    // audit of the version IN THIS CONTAINER, which for an imported version is
+    // the IMPORTED_VERSION's own, i.e. the local import act.
+    let history = target
+        .ehr_status_revision_history(ehr)
+        .await
+        .expect("REVISION_HISTORY");
+    let audit = &history["items"][0]["audits"][0];
+    let logged = audit["time_committed"]["value"]
+        .as_str()
+        .expect("commit instant")
+        .parse::<jiff::Timestamp>()
+        .expect("ISO 8601 instant");
+    assert!(
+        logged >= before_import,
+        "the revision history logs the local act ({before_import}), got {logged}"
+    );
+    assert_eq!(
+        audit["change_type"]["defining_code"]["code_string"],
+        json!("249"),
+        "master06 §Contributions, import of item: 249|creation|"
+    );
+}
+
+/// RM `ehr_extract` `x_versioned_object.adoc` §Attributes types
+/// `X_VERSIONED_OBJECT.versions` as `List<ORIGINAL_VERSION<T>>`, and master06
+/// §Copying keeps the received original "a faithful copy of its original, no
+/// matter how many systems it may be copied through" — so re-exporting an
+/// imported EHR reproduces the source's `ORIGINAL_VERSION` exactly, wrapper and
+/// all local bookkeeping stripped. Regression for #1679, where the re-export
+/// carried the LOCAL contribution reference under the source's identity.
+#[tokio::test]
+async fn a_re_export_reproduces_the_wrapped_original_verbatim() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    target
+        .import_ehr(None, export_one(&source, ehr).await)
+        .await
+        .expect("import_ehr");
+    let re_exported = target.extract_ehrs(ehr).await.expect("re-export");
+
+    for xtype in ["X_VERSIONED_EHR_STATUS", "X_VERSIONED_FOLDER"] {
+        let before =
+            find_by_xtype(&exported[0], xtype).expect("source item")["item"]["versions"].clone();
+        let after =
+            find_by_xtype(&re_exported[0], xtype).expect("re-exported item")["item"]["versions"]
+                .clone();
+        assert_eq!(
+            after, before,
+            "{xtype}: the re-exported ORIGINAL_VERSION must equal the received one"
+        );
+    }
+}
+
+/// RM common master06 §Digital Signature: "If the object to be serialised is an
+/// `IMPORTED_VERSION`, the process is the same — all attributes of the object
+/// are serialised and then used to generate a signature. The result will be
+/// that the `IMPORTED_VERSION` instance will carry its own signature which
+/// signifies the act of importing and making available locally an
+/// `ORIGINAL_VERSION` from another system."
+///
+/// So a deployment with signing on signs the wrapper it creates, and the
+/// signature must verify against the wrapper the READ path rebuilds — under
+/// `verify_on_read = strict` a byte drift between the two is a 5xx, which is
+/// exactly what makes this test the proof. The wrapped original's own foreign
+/// signature is stored verbatim and never re-verified.
+#[tokio::test]
+async fn a_signed_import_signs_the_wrapper_and_the_read_verifies_it() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let config = SigningConfig {
+        enabled: true,
+        mode: Mode::Digest,
+        key_path: None,
+        key_passphrase: None,
+        key_passphrase_file: None,
+        verify_on_read: Some(VerifyOnRead::Strict),
+    };
+    let signer = Signer::from_config(&config).expect("digest signer");
+    let target = FerroEhrService::new(target_db.pool()).with_signer(Arc::new(signer));
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    let source_version = find_by_xtype(&exported[0], "X_VERSIONED_EHR_STATUS")
+        .expect("exported EHR_STATUS")["item"]["versions"][0]
+        .clone();
+    let source_uid = source_version["uid"]["value"]
+        .as_str()
+        .expect("source version uid")
+        .to_owned();
+    let (vo_id, version) = {
+        let mut parts = source_uid.splitn(3, "::");
+        let vo: &str = parts.next().expect("object_id");
+        let _system = parts.next().expect("creating_system_id");
+        (
+            ferroehr::ids::VoId(vo.parse().expect("vo uuid")),
+            parts.next().expect("version_tree_id").to_owned(),
+        )
+    };
+
+    target
+        .import_ehr(None, export_one(&source, ehr).await)
+        .await
+        .expect("import_ehr under a signing deployment");
+
+    // The read is the assertion: under `strict`, a wrapper signature that did
+    // not recompute over the served bytes would be an Exception, not a body.
+    let served = target
+        .ehr_status_version_envelope(ehr, vo_id, &version)
+        .await
+        .expect("the signed IMPORTED_VERSION verifies on read");
+    assert_eq!(served["_type"], json!("IMPORTED_VERSION"));
+    assert!(
+        served["signature"].as_str().is_some_and(|s| !s.is_empty()),
+        "the import act signs the wrapper it creates, got {served:#}"
+    );
+    // The wrapped original keeps whatever signature it arrived with — here the
+    // source deployment signed nothing, so it carries none, and it is certainly
+    // not this server's wrapper signature.
+    assert_ne!(
+        served["item"].get("signature"),
+        served.get("signature"),
+        "the wrapper signature must not be copied onto the wrapped original"
+    );
 }

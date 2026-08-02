@@ -8056,3 +8056,214 @@ AMB-187:
     and reads the same inline structure this entry does.
   disposition: fixed_handling
   upstream_issue: 1670
+
+AMB-188:
+  ambiguity: >-
+    THE VERSION SIGNATURE'S SERIALISATION IS EXPLICITLY UNDEFINED, AND THE
+    DIGEST-ONLY DEPTH HAS NO WIRE SPELLING AT ALL. RM common
+    master06-change_control_package.adoc §Digital Signature fixes the PROCESS
+    completely — "a Version object (an `ORIGINAL_VERSION` or
+    `IMPORTED_VERSION`) is serialised into canonical form which is then hashed
+    to produce a digest", the serialisation being "the entire Version object
+    (note that the signature attribute will be Void at this point)", "the
+    result is then radix-64 encoded" — and then withdraws the one thing a
+    second implementation would need to reproduce the bytes: "[.tbd] *To Be
+    Determined*: The exact serialisation is not yet defined by openEHR, but
+    ODIN might be preferred since it has an unambiguous encoding of object
+    structures, whereas different XML libraries can generate different XML from
+    the same objects". `VERSION.canonical_form()` states the same rule
+    abstractly ("created by serialising all attributes except signature") and
+    likewise names no format.
+    A SECOND, NARROWER GAP sits inside the first. The section admits two depths
+    of one mechanism — "If only the hashing step is done, the digest acts as a
+    data integrity check … If the signing step is carried out, it authenticates
+    the user as the author" — but gives a self-description rule for only one of
+    them: "The openPGP standard ensures that the trasformations and algorithms
+    used to create the signature are indicated within it" (upstream's
+    "trasformations" typo quoted verbatim), which BASE
+    architecture_overview/master07-security.adoc §Digital Signature explains as
+    the reason openPGP was chosen at all — "A likely candidate for defining the
+    signature and digest strings in openEHR … due to being an open
+    specification and self-describing". A radix-64 digest carries no such
+    envelope: nothing in either text says how a reader learns which hash
+    algorithm and which encoding produced it.
+  source: >-
+    RM common master06-change_control_package.adoc §Digital Signature (the
+    process paragraphs, the two-depths paragraph, the openPGP self-description
+    sentence, and the `[.tbd]` block) + RM common
+    UML/classes/org.openehr.rm.common.version.adoc §Functions
+    (`canonical_form ()`: "A canonical serial form of this Version, created by
+    serialising all attributes except signature, suitable for generating
+    reliable hashes and signatures") + BASE
+    docs/architecture_overview/master07-security.adoc §Digital Signature (the
+    "open specification and self-describing" sentence) — all read first-hand.
+    The ITS-REST docs text assigns nothing here: it carries `signature` as a
+    VERSION member and never states how it is computed, and the released OAS
+    types it `string` with no format — so both tiers of the wire oracle are
+    silent and this is genuine spec silence.
+  handling: >-
+    Fixed handling, in two parts, both of them OUR OWN EXTENSION — no released
+    openEHR text licenses either.
+    (a) THE CANONICAL FORM is canonical openEHR JSON (the native ITS-JSON
+    encoding this product already serves, `_type`-tagged, absent optionals
+    omitted) with the top-level `signature` member removed, canonicalised per
+    RFC 8785 (JSON Canonicalization Scheme). RFC 8785 supplies exactly what the
+    `[.tbd]` says ODIN was wanted for — a byte-deterministic encoding (key
+    order, number formatting, string escaping all pinned) — over the
+    serialisation the REST wire already carries, so the signed bytes are
+    reproducible by any reader of the served version without a second format in
+    the system. The spec's own choice of ODIN is not taken, because it would
+    mean signing bytes no API consumer ever sees.
+    (b) THE DIGEST FORM is `sha256:` + standard-base64 of the raw digest. The
+    prefix is the digest depth's stand-in for the self-description openPGP
+    gives the signing depth: without it a bare radix-64 string names neither
+    its algorithm nor its encoding, and the "indicated within it" property the
+    spec relies on would simply not hold for the depth it also admits.
+    Both parts are ASSERTED rather than merely declared: SIG-VERSION-verifiable
+    reconstructs the canonical form from the READ-BACK envelope and verifies the
+    stored signature against ixit-declared key material, in whichever mode the
+    deployment runs (SIG-VERSION-verifiable-pgp is the openPGP half), and
+    SIG-VERSION-at_committal_attestation_signed pins WHICH attributes enter the
+    form. Because the posture is declared in the ixit rather than read off the
+    wire, a party running a different canonicalisation records these cases
+    against its own declaration; nothing here is imposed on another
+    implementation, which is the honest consequence of the `[.tbd]`.
+  disposition: fixed_handling
+
+AMB-189:
+  ambiguity: >-
+    `VERSION.Preceding_version_uid_validity` IS UNSATISFIABLE FOR EVERY BRANCH
+    VERSION OFF TRUNK NODE 1. The invariant is
+    `uid.version_tree_id.is_first xor preceding_version_uid /= Void` (RM common
+    UML/classes/org.openehr.rm.common.version.adoc §Invariants, L69). Its left
+    operand is defined by BASE, not by the RM:
+    `VERSION_TREE_ID.Is_first_validity` is `not is_first xor
+    trunk_version.is_equal("1")` (BASE
+    UML/classes/org.openehr.base.base_types.version_tree_id.adoc §Invariants,
+    L64), i.e. `is_first` is TRUE exactly when the TRUNK part is "1" — it says
+    nothing about the branch parts, and the same class's `is_first` function
+    text agrees: "True if this version identifier corresponds to the first
+    version, i.e. `_trunk_version_` is 1".
+    Now take a branch version such as `1.1.1`. Its `trunk_version` is "1", so
+    `is_first` is TRUE. It is also, necessarily, NOT a first version: a branch
+    exists only as a fork FROM an existing trunk node, so it names that node in
+    `preceding_version_uid` — master06 §Version Identification →
+    §Local Versioning describes exactly this shape ("'1.1.1' (first version of
+    first branch from trunk node 1)"), and §Distributed Versioning REQUIRES the
+    form ("to require branching version identifiers to be used when local
+    modifications are made to versions copied from elsewhere"). So both
+    operands are TRUE and the XOR is FALSE, for every version of every branch
+    forked from trunk node 1 — `1.1.1`, `1.1.2`, `1.2.1`, … A conforming
+    instance cannot satisfy the invariant, and no reading of the two texts
+    rescues it: `is_first` is a BASE-defined predicate over the trunk part
+    alone, and the RM invariant consumes it unqualified.
+  source: >-
+    RM common UML/classes/org.openehr.rm.common.version.adoc §Invariants L69
+    (`Preceding_version_uid_validity`: `uid.version_tree_id.is_first xor
+    preceding_version_uid /= Void`) + BASE
+    UML/classes/org.openehr.base.base_types.version_tree_id.adoc §Invariants L64
+    (`Is_first_validity`: `not is_first xor trunk_version.is_equal("1")`) and
+    §Functions (`is_first ()`: "True if this version identifier corresponds to
+    the first version, i.e. `_trunk_version_` is 1") + RM common
+    master06-change_control_package.adoc §Version Identification →
+    §Local Versioning (the "'1.1.1' (first version of first branch from trunk
+    node 1)" example) and §Distributed Versioning (branching identifiers
+    required for modifications to copied versions) — all read first-hand.
+  handling: >-
+    Report only, no gate, and NO relaxation of the stored data. The rule the
+    invariant was written to express is the TRUNK-ONLY one — a version has a
+    predecessor exactly when it is not the first version of the trunk — and
+    that is the sense enforced: a first trunk version is stored with no
+    `preceding_version_uid`, and every other version, TRUNK OR BRANCH, carries
+    the real `OBJECT_VERSION_ID` of the version it was committed against. A
+    branch version therefore always names its fork point, which is the fact the
+    §Distributed Versioning branching rule depends on and which the literal
+    invariant would forbid. Nothing is loosened by this: the branch cases assert
+    the served `preceding_version_uid` positively, so a version that LOST its
+    predecessor fails, and the register entry exists so a future reader does not
+    "fix" the store to satisfy a predicate the spec cannot satisfy either. This
+    flips to an enforceable invariant if openEHR restates it over the whole
+    `VERSION_TREE_ID` rather than over `is_first`.
+  disposition: report_only
+  upstream_issue: 1677
+
+AMB-190:
+  ambiguity: >-
+    A CHANGE-KIND ROW NAMES A PROPERTY ON A CLASS THAT CANNOT HAVE IT. RM common
+    master06-change_control_package.adoc §Contributions lists the attestation
+    change kind as: "attestation of item: a new `ATTESTATION` is added to the
+    attestations list of an existing `ORIGINAL_VERSION`; the
+    `ATTESTATION._commit_audit_._change_type_` is set to the code
+    `666|attestation|`" (L66). There is no such path. `ATTESTATION` has no
+    `commit_audit` property: it IS an `AUDIT_DETAILS`
+    (UML/classes/org.openehr.rm.common.attestation.adoc §Inherit:
+    `AUDIT_DETAILS`), and `change_type` is one of the attributes it inherits
+    from that parent
+    (UML/classes/org.openehr.rm.common.audit_details.adoc §Attributes:
+    `change_type: DV_CODED_TEXT` 1..1). `commit_audit` is a property of
+    `VERSION` — "Audit trail corresponding to the committal of this version to
+    the `VERSIONED_OBJECT`"
+    (UML/classes/org.openehr.rm.common.version.adoc §Attributes) — and is
+    exactly what the four SIBLING rows in the same list correctly write
+    (`ORIGINAL_VERSION._commit_audit_._change_type_` for creation, deletion,
+    amendment/modification; `IMPORTED_VERSION._commit_audit_._change_type_` for
+    import). The attestation row appears to have been written by analogy with
+    them, on a class that has no such attribute to write.
+  source: >-
+    RM common master06-change_control_package.adoc §Contributions L66 (the
+    attestation change-kind row, quoted above) contrasted with the four sibling
+    rows L60–L65 + UML/classes/org.openehr.rm.common.attestation.adoc §Inherit
+    (`AUDIT_DETAILS`) and §Attributes (no `commit_audit`) +
+    UML/classes/org.openehr.rm.common.audit_details.adoc §Attributes
+    (`change_type` 1..1, and the `Change_type_valid` invariant binding it to the
+    openEHR `audit change type` group) +
+    UML/classes/org.openehr.rm.common.version.adoc §Attributes (`commit_audit`
+    is VERSION's) — all read first-hand.
+  handling: >-
+    Editorial, with the repaired reading implemented. The row is read as
+    `ATTESTATION.change_type` — the attribute the class actually has, at the
+    only place a `666` could be recorded on an attestation — and that is what
+    the server writes and serves: the attestation route stamps
+    `666|attestation|` as the completed ATTESTATION's own inherited
+    `change_type`, on both arrival routes (the `666` CONTRIBUTION member and the
+    attestations committed with a version). No other reading is available:
+    there is no attribute the literal path could denote, so treating the row as
+    unimplementable would drop the only change kind the section defines for
+    attestations. The repaired reading is asserted, not assumed — the
+    attestation cases read the served `attestations[…]/change_type` back and
+    require the `666` code — so a server that stopped stamping it fails. This
+    entry exists so the defective path is reported rather than silently
+    absorbed, and so a future reader does not go looking for
+    `ATTESTATION.commit_audit`.
+  disposition: editorial
+  upstream_issue: 1678
+AMB-191:
+  ambiguity: >-
+    SPEC SILENCE on distinguishing at-committal from post-committal
+    attestations on the wire. RM common master06 §Digital Signature signs
+    "the entire Version object" (only `signature` Void at that point), while
+    §Attestation permits adding attestations "at any point in time after
+    committal" — so attestations arriving later are necessarily OUTSIDE the
+    signed form. But ORIGINAL_VERSION.attestations is one undistinguished
+    list: no released attribute marks which members were present at
+    committal, so an external verifier recomputing the canonical form over a
+    post-committal-attested version cannot exclude the later members and
+    will fail on a signature the server itself verifies.
+  source: >-
+    RM common master06-change_control_package.adoc §Digital Signature
+    ("serialising the entire Version object (note that the signature
+    attribute will be Void at this point)") and §Attestation ("at any point
+    in time after committal") vs org.openehr.rm.common.original_version.adoc
+    §Attributes (attestations: List<ATTESTATION> 0..1 — no committal-time
+    discriminator). Confirmed first-hand.
+  handling: >-
+    Fixed handling, our own design where the release is silent: the store
+    keeps a private at_committal discriminator per attestation; the signed
+    canonical form includes exactly the at-committal members (commit-time
+    bytes = served bytes by construction), and post-committal members are
+    appended AFTER verification. The served list remains the released
+    undistinguished shape — the discriminator has no wire counterpart, so
+    external re-verification of post-committal-attested versions stays
+    impossible until upstream defines the split; the SIG-VERSION at-committal
+    case gates the direction that is verifiable.
+  disposition: fixed_handling

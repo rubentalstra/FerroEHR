@@ -19,6 +19,12 @@ use crate::storage::error::StorageError;
 /// (`now()`), equal to the `data.time_committed` stamped by the versioning
 /// layer with the same commit-act time.
 ///
+/// `at_committal` records whether the attestation was on the version at the act
+/// of committal (`true`) or added afterwards (`false`) — the flag that decides
+/// whether it sits inside the version's signed canonical form (RM common
+/// master06 §Digital Signature vs §Attestation; see the column comment in the
+/// baseline migration).
+///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
 pub async fn insert_attestation(
@@ -26,15 +32,17 @@ pub async fn insert_attestation(
     vo_id: VoId,
     sys_version: i32,
     contribution_id: Uuid,
+    at_committal: bool,
     data: &Value,
 ) -> Result<(), StorageError> {
     sqlx::query(
-        "INSERT INTO vo_attestation (vo_id, sys_version, contribution_id, data) \
-         VALUES ($1, $2, $3, $4)",
+        "INSERT INTO vo_attestation (vo_id, sys_version, contribution_id, at_committal, data) \
+         VALUES ($1, $2, $3, $4, $5)",
     )
     .bind(vo_id)
     .bind(sys_version)
     .bind(contribution_id)
+    .bind(at_committal)
     .bind(data)
     .execute(&mut *tx)
     .await?;

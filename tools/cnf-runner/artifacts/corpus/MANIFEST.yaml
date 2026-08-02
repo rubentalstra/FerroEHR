@@ -1650,6 +1650,25 @@ cnf.security.signed_version:
   views:
     signature:
       select: "$.signature"
+cnf.security.attested_version:
+  source: fixtures/security/attested_version.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: >-
+    authored 2026-08-02 as the AT-COMMITTAL-ATTESTATION twin of
+    cnf.security.signed_version: the same ORIGINAL_VERSION<COMPOSITION> over the
+    official Robot minimal_evaluation composition, with the client signature
+    REMOVED (so the server signs it) and an `attestations` list added — the
+    "Signing content at committal" case of RM common
+    master06-change_control_package.adoc §Attestation, carried on the wire by SM
+    UML/classes/update_version.adoc §Attributes (`UPDATE_VERSION.attestations`,
+    List<ATTESTATION> 0..1) and ITS-REST
+    specifications/schemas/common/UpdateVersion.yaml. The member is the same
+    UPDATE_ATTESTATION as cnf.attestation.witnessed (reason coded 648|witnessed|
+    from the openEHR `attestation reason` group ATTESTATION.Reason_valid binds).
+    Used by SIG-VERSION-at_committal_attestation_signed to prove the signature
+    covers the attestations present at committal
 # DEMOGRAPHIC (master10) corpus additions — concatenated into MANIFEST.yaml by
 # the verify harness. Canonical-JSON PERSON / PARTY_RELATIONSHIP payloads for the
 # I_DEMOGRAPHIC_SERVICE / I_PARTY / I_PARTY_RELATIONSHIP cases. master10 defines
@@ -1872,6 +1891,18 @@ cnf.messaging.ehr_extract.v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-29 (#659) as the identity-disjoint sibling of cnf.messaging.ehr_extract.v1 — the same shape under a different source EHR id and a different EHR_STATUS version-container uid. Two cases import a whole EHR successfully in one run (source-id re-use and caller-fixed id), and RM common master06 §Copying keeps the received version container's own identity, so one shared fixture would land the same container twice"
+cnf.messaging.ehr_extract.imported_local_chronology:
+  source: fixtures/messaging/ehr_extract.imported_local_chronology.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 (#1679) as an identity-disjoint sibling of cnf.messaging.ehr_extract.v1 for the local-chronology case (RM common master06 §Copying: 'the commit times always reflect the local (more recent) act of committal'). Its X_VERSIONED_EHR_STATUS.time_created is deliberately 2020-01-02T03:04:05Z — an instant that appears NOWHERE else in the fixture — so a re-export that still reported the SOURCE container creation time would be caught by a single `omits` predicate, while the wrapped original's own 2026-07-28T09:00:00Z committal must still be present"
+cnf.messaging.ehr_extract.imported_reexport:
+  source: fixtures/messaging/ehr_extract.imported_reexport.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 (#1679) as an identity-disjoint sibling of cnf.messaging.ehr_extract.v1 for the re-export case: after import, an export must reproduce the wrapped ORIGINAL_VERSION verbatim (RM ehr_extract x_versioned_object.adoc §Attributes types versions as List<ORIGINAL_VERSION<T>>; master06 §Copying keeps it 'a faithful copy of its original'), so the fixture's SOURCE contribution uid is what the re-export must still carry"
 cnf.messaging.ehr_extract.folder:
   source: fixtures/messaging/ehr_extract.folder.json
   format: canonical-json

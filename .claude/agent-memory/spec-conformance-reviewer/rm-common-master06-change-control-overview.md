@@ -34,21 +34,13 @@ homogeneity is enforced on the one path that could break it (import kind
 mismatch, `versioning/import.rs:258`).
 
 **VERIFIED DEFECTS:**
-- **VERSIONED_PARTY `owner_id` is a THREE-WAY divergence.** Code emits
-  `{_type: OBJECT_REF, namespace: "demographic", type: "PARTY", id: the
-  party's OWN vo_id}` (`service/demographic/support.rs:259-265`); the served
-  OpenAPI documents + exemplifies `{_type: PARTY_REF, namespace: "local",
-  type: "SYSTEM", …}` and asserts "`owner_id` is emitted in the shape that
-  schema's own example uses" (`ferroehr-rest/src/api/demographic/
-  openapi_routes.rs:5373,5398`); register **AMB-69 states "This server emits
-  that shape"** (local/SYSTEM) — false. Released ground:
-  `VersionedParty.owner_id` = `ObjectRefOfHierObjectId`, example
-  `{namespace: local, type: SYSTEM}` (vendored
-  `rest-oas/demographic-html.openapi.yaml`). Undetected because the
-  container_shape CNF case DELIBERATELY does not assert owner_id (AMB-69).
-  Three more owner_id shapes coexist: X_VERSIONED_PARTY export
-  `{demographic, SYSTEM, system_id}` (`service/message/export.rs:481`) and
-  demographic ITEM_TAG `{local, SYSTEM, system_id}` (`demographic/tags.rs:219`).
+- ~~VERSIONED_PARTY `owner_id` three-way divergence~~ — **FIXED as of
+  2026-08-02**: `service/demographic/support.rs:267` now emits
+  `{local, SYSTEM, system_id}`, matching AMB-69, the released OAS example, and
+  `service/message/export.rs:486`. ONE latent contradiction survives:
+  `versioning/wire.rs:222`'s VersionedParty arm still builds
+  `{local, EHR, ehr_id}`, reachable only through `service/message/export.rs:384`
+  (`versioned_rm_type` maps the five party kinds at :93).
 - **PARTY_RELATIONSHIP-as-its-own-version-container is unregistered spec
   tension.** RM demographic master02 §Versioning Semantics: "A Version of a
   PARTY includes all the compositional parts, such as … Party relationships of

@@ -259,7 +259,7 @@ struct NextVersion {
 
 /// Validate an update/delete target (belongs to `ehr_id`, tip is the addressed
 /// open lineage tip) and resolve where the new version sits (RM common master06
-/// §Version tree / §Distributed Versioning):
+/// §The 'Virtual Version Tree' / §Distributed Versioning):
 ///
 /// - the preceding version is the current TRUNK tip when `expected` is absent,
 ///   or exactly the version `expected` names (trunk or branch) — which must be
@@ -654,8 +654,21 @@ async fn commit_resolved(
         ContributionCtx::Existing(cid) => cid,
     };
 
+    // The attestations committed WITH this version, completed ONCE — before the
+    // signature, because they are inside the signed canonical form (master06
+    // §Digital Signature signs "the entire Version object", `signature` alone
+    // excluded), and reused verbatim for the insert below so the signed bytes
+    // and the stored bytes are the same bytes. `r.time_committed` is the
+    // transaction timestamp every row of this transaction stamps.
+    let at_committal_attestations = attestation::complete_accompanying(
+        &r.attestations,
+        &ctx.system_id,
+        committer_fallback,
+        r.time_committed,
+    )?;
+
     let (signature, signature_client_supplied) =
-        version_signature(ctx, audit, contribution_id, &r)?;
+        version_signature(ctx, audit, contribution_id, &r, &at_committal_attestations)?;
 
     let folded = crate::storage::version_repo::commit::FoldedVersion {
         vo_id: r.vo_id,
@@ -706,15 +719,12 @@ async fn commit_resolved(
     {
         crate::storage::version_repo::commit::insert_ehr_folder_rank(tx, ehr_id, r.vo_id).await?;
     }
-    attestation::insert_accompanying_attestations(
+    attestation::insert_at_committal_attestations(
         tx,
         r.vo_id,
         r.ordinal,
         contribution_id,
-        &ctx.system_id,
-        committer_fallback,
-        time_committed,
-        &r.attestations,
+        &at_committal_attestations,
     )
     .await?;
 
@@ -740,7 +750,9 @@ async fn commit_resolved(
 /// signed — a logically deleted version has no nodes → Void (master06 §Logical
 /// Deletion); a content version signs the reassembled served bytes so the digest
 /// recomputes at read time. Reassembly runs only when a signature will actually
-/// be computed.
+/// be computed. `at_committal_attestations` are the completed `ATTESTATION`s
+/// committed with the version, which the signed form includes (master06
+/// §Digital Signature: "the entire Version object").
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
@@ -750,6 +762,7 @@ fn version_signature(
     audit: &AuditInput,
     contribution_id: Uuid,
     r: &ResolvedWrite,
+    at_committal_attestations: &[Value],
 ) -> Result<(Option<String>, bool), ServiceError> {
     if let Some(client) = &r.client_signature {
         return Ok((Some(client.clone()), true));
@@ -773,6 +786,7 @@ fn version_signature(
         contribution_id,
         &r.lifecycle,
         &served,
+        at_committal_attestations,
     )?;
     Ok((signature, false))
 }
