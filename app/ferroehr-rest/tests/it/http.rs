@@ -706,6 +706,14 @@ async fn authenticated_write_attributes_the_default_committer() {
         audit["committer"]["identifiers"][0]["type"], "basic",
         "identifier records the mechanism"
     );
+    // A Basic credential is held by this deployment, so the authority that
+    // issues that kind of id (`DV_IDENTIFIER.issuer` — RM data_types
+    // UML/classes/org.openehr.rm.data_types.dv_identifier.adoc §Attributes) is
+    // the product itself. No openEHR spec governs the concrete string.
+    assert_eq!(
+        audit["committer"]["identifiers"][0]["issuer"], "ferroehr",
+        "a locally-held credential names this deployment as issuer"
+    );
 }
 
 /// The group-9 POST-body disciplines (#481): a stored-query POST accepts `{}`

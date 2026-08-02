@@ -413,6 +413,20 @@ pub(crate) async fn middleware(
                     AuthMethod::Basic => "basic",
                     AuthMethod::Bearer => "oauth2",
                 },
+                // A Bearer principal's subject was minted by the identity
+                // provider, so the issuing authority the audit records is the
+                // validated token issuer (`iss`, checked against the configured
+                // issuer in `jwt.rs` before the claim set is retained), never
+                // this server. Basic credentials are held locally and carry no
+                // external issuer, so the platform stamps its own product name.
+                issuer: match for_audit.method {
+                    AuthMethod::Basic => None,
+                    AuthMethod::Bearer => for_audit
+                        .claims
+                        .get("iss")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::to_owned),
+                },
             };
             let mut resp = REQUEST_PRINCIPAL
                 .scope(

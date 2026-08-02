@@ -25,6 +25,14 @@ use crate::versioning::audit::{AuditInput, description_fragment};
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::VersionRead;
 
+/// The `DV_IDENTIFIER.issuer` stamped on a committer whose credential this
+/// deployment holds itself (Basic auth) — there is no external authority to
+/// name, so the product identifies itself.
+///
+/// NOTE: no openEHR spec governs the value — our own design/extension (see
+/// [`committer`]).
+const LOCAL_ISSUER: &str = "ferroehr";
+
 impl FerroEhrService {
     /// The current version `(vo_id, VERSION_TREE_ID)` of an EHR's object of a
     /// given [`Kind`], if any — the current trunk row (`upper_inf(sys_period)`,
@@ -248,7 +256,20 @@ pub(in crate::service) fn committer() -> Value {
             "identifiers": [{
                 "_type": "DV_IDENTIFIER",
                 "id": identity.subject,
-                "issuer": "ferroehr",
+                // DV_IDENTIFIER.issuer is the "authority which issues the kind
+                // of id used in the id field of this object" (RM data_types
+                // UML/classes/org.openehr.rm.data_types.dv_identifier.adoc
+                // §Attributes). For a federated principal that authority is the
+                // token issuer, not this server, so the identity carries it
+                // through; a locally-held credential (Basic) has no other
+                // authority and takes this deployment's product name.
+                //
+                // NOTE: no openEHR spec governs which string names the issuing
+                // authority — our own design/extension. The RM says only that
+                // an AUDIT_DETAILS committer's identifying information may be
+                // "in the form of a system login identifier" (RM common
+                // master04-generic_package.adoc §Audit Details).
+                "issuer": identity.issuer.unwrap_or_else(|| LOCAL_ISSUER.to_owned()),
                 "type": identity.id_type
             }]
         }),

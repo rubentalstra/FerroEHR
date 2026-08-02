@@ -213,6 +213,23 @@ impl AttestationParts {
                 )
             })?;
         // items (0..1); Items_valid: non-empty when present.
+        //
+        // NOTE: the spec's two statements of `items` SCOPE conflict, and this
+        // decoder deliberately enforces the class-model one. RM common
+        // master04-generic_package.adoc §Attestation requires every member to
+        // resolve inside the attested object ("otherwise the list must contain
+        // a set of paths to items within the item to which the attestation is
+        // attached"), while the class table for the same attribute admits the
+        // opposite ("Although not recommended, these may include fine-grained
+        // items which have been attested in some other system" —
+        // UML/classes/org.openehr.rm.common.attestation.adoc §Attributes), and
+        // master04 itself later calls fine granularity unrecommended rather
+        // than invalid ("there is nothing stopping it including fine-grained
+        // items"). The class model is the machine-readable reading and the only
+        // one either source gives a checkable predicate for, so we enforce
+        // exactly that: `List<DV_EHR_URI>` typing plus `Items_valid`, and NO
+        // containment check — a cross-system path is accepted verbatim.
+        // Register entry AMB-180.
         let items = partial.get("items");
         if let Some(items) = items
             && items.as_array().is_none_or(Vec::is_empty)
@@ -229,6 +246,22 @@ impl AttestationParts {
                 .filter(|v| !v.is_null())
                 .map(|v| decode(v, "ATTESTATION.attested_view", "DV_MULTIMEDIA"))
                 .transpose()?,
+            // NOTE: `proof` is an OPAQUE CLIENT FACT — accepted as the `String`
+            // its class table declares, stored and served byte-for-byte, never
+            // parsed and never verified server-side. RM common
+            // master04-generic_package.adoc §Attestation defines the openPGP
+            // process over "the entire Attestation object (note that the proof
+            // attribute will be Void at this point)" and then withdraws the
+            // definition — "[.tbd] *To Be Determined*: The exact serialisation
+            // is not yet defined by openEHR" — so there is no canonical form to
+            // recompute against; and the inherited `AUDIT_DETAILS` attributes
+            // are re-minted here at completion (`system_id`, `time_committed`,
+            // `change_type` are the server's), so the stored object is not the
+            // object the client signed in any case. This is NOT the VERSION
+            // `signature` mechanism, which this server does generate and verify
+            // for its own signatures (master06 §Digital Signature —
+            // `crate::versioning::integrity`); there the server owns both the
+            // canonicalisation and the key. Register entry AMB-181.
             proof: partial
                 .get("proof")
                 .filter(|v| !v.is_null())
@@ -320,7 +353,13 @@ pub(crate) fn complete_attestation(
         .get("committer")
         .cloned()
         .unwrap_or_else(|| committer_fallback.clone());
-    // description: UPDATE_AUDIT.description is a plain string or DV_TEXT.
+    // description: the inherited AUDIT_DETAILS.description (0..1). ITS-REST
+    // types it `UDvText` — `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`]
+    // (`specifications/schemas/data_types/UDvText.yaml`) — while SM
+    // `UPDATE_AUDIT.description` is `String [0..1]`
+    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes); both spellings are
+    // read, reduced to the `DV_TEXT.value` they share, because the completed
+    // ATTESTATION below rebuilds it as a plain `DV_TEXT`.
     let description = partial.get("description").and_then(|d| {
         d.as_str()
             .or_else(|| d.get("value").and_then(Value::as_str))

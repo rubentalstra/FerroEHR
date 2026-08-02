@@ -18,7 +18,7 @@
 --     (structure children pruned) — no alias compaction, no synthetic
 --     fields; fragments average ~360 B (spike), well under TOAST;
 --   * one temporal `vo_version` table (per-lineage non-overlap held by
---     construction — see the P20 NOTE at the table) instead of current/history
+--     construction — see the NOTE at the table) instead of current/history
 --     pairs; the version tree (trunk + branches, RM common master06) lives in
 --     explicit trunk/branch columns; the current (latest trunk) version is
 --     the upper_inf ∧ branch_number = 0 partial index;
@@ -36,8 +36,9 @@ BEGIN
     -- Graceful degradation (deployment reality): when the migration runs as a
     -- user without CREATEROLE (dev/compose/testcontainers or a managed PG
     -- without role rights), the role architecture is skipped with a NOTICE —
-    -- it is then a deployment-layer setup step (review doc 02 §3.1). When the
-    -- migrator has the privilege (production), roles are created idempotently.
+    -- it is then a deployment-layer setup step (no openEHR spec governs role
+    -- provisioning — our own operational design). When the migrator has the
+    -- privilege (production), roles are created idempotently.
     BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_migrator') THEN
             CREATE ROLE ferroehr_migrator NOLOGIN;
@@ -55,12 +56,17 @@ END $$;
 
 -- ── ehr ──────────────────────────────────────────────────────────────────────
 -- One row per EHR. system_id, ehr_id and time_created are immutable per-EHR
--- values recorded at creation (RM ehr §"EHR object"; review doc 03 req 2.1) —
--- system_id is a stored value, NOT merely the live service config.
+-- values recorded at creation (RM ehr master04-ehr_package.adoc §Root EHR
+-- Object: "The root EHR object records three pieces of information that are
+-- immutable after creation: the identifier of the system in which the EHR was
+-- created, the identifier of the EHR ... and the time of creation of the EHR")
+-- — system_id is a stored value, NOT merely the live service config.
 CREATE TABLE ehr (
     id                uuid NOT NULL,
     -- The system that created this EHR, recorded at creation and never mutated
-    -- (req 2.1). Immutable per-EHR; distinct from a version's creating_system_id.
+    -- (RM ehr master04 §Root EHR Object; §EHR Identifier Allocation: on a cloned
+    -- EHR "the system_id is from the receiving (cloning) system"). Immutable
+    -- per-EHR; distinct from a version's creating_system_id.
     system_id         text NOT NULL,
     time_created      timestamptz NOT NULL DEFAULT now(),
     -- Promoted copy of the current EHR_STATUS `subject.external_ref`
@@ -100,32 +106,41 @@ CREATE TABLE ehr (
     CONSTRAINT pk_ehr PRIMARY KEY (id)
 );
 CREATE INDEX idx_ehr_time_created ON ehr (time_created DESC, id);
--- Subject uniqueness (review doc 03 req 2.8): CNF-hard (master06), RM-soft (a
--- subject MAY legitimately have multiple EHRs in the wild) — enforced only
--- where a complete (id, namespace) pair is present. Named for the service's
--- unique-violation → 409 mapping (vobject.rs).
+-- Subject uniqueness: wire-hard, RM-soft. The wire refuses a second EHR for a
+-- subject (ITS-REST 409_EHR.yaml; CNF platform_test_schedule master06
+-- I_EHR_SERVICE.create_ehr-two_ehrs_same_patient), while the RM explicitly
+-- tolerates it — RM ehr master04-ehr_package.adoc §EHR Identifier Allocation:
+-- "providers routinely create new EHRs for a patient regardless of how many
+-- other EHRs already exist for that patient". Enforced only where a complete
+-- (id, namespace) pair is present. Named for the service's unique-violation →
+-- 409 mapping (vobject.rs).
 CREATE UNIQUE INDEX uq_ehr_subject ON ehr (subject_id, subject_namespace)
     WHERE subject_id IS NOT NULL;
 
-COMMENT ON TABLE ehr IS 'One row per EHR (RM ehr §"EHR object"). system_id/id/time_created are immutable per-EHR values recorded at creation (review doc 03 req 2.1).';
-COMMENT ON COLUMN ehr.system_id IS 'The system that created this EHR, recorded at creation, never mutated (req 2.1). A stored value, not the live service config.';
-COMMENT ON COLUMN ehr.subject_id IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.id.value, synced by the service; backs the one-EHR-per-subject unique index (req 2.8).';
+COMMENT ON TABLE ehr IS 'One row per EHR. system_id/id/time_created are the three values RM ehr master04-ehr_package.adoc §Root EHR Object makes immutable after creation.';
+COMMENT ON COLUMN ehr.system_id IS 'The system that created this EHR, recorded at creation, never mutated (RM ehr master04 §Root EHR Object). A stored value, not the live service config.';
+COMMENT ON COLUMN ehr.subject_id IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.id.value, synced by the service; backs the one-EHR-per-subject unique index (ITS-REST 409_EHR.yaml). Our own storage design.';
 COMMENT ON COLUMN ehr.subject_namespace IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.namespace (see subject_id).';
 COMMENT ON COLUMN ehr.is_queryable IS 'Promoted copy of the current EHR_STATUS.is_queryable (RM ehr master04 §EHR Status), synced by the service; backs the AQL full-population gate (SM I_QUERY_SERVICE, i_query_service.adoc). Our own storage design.';
 COMMENT ON COLUMN ehr.is_modifiable IS 'Promoted copy of the current EHR_STATUS.is_modifiable (RM ehr master04 §EHR Active Status), synced by the service; backs the content-write guard (a deactivated EHR refuses Composition/Folder/content-CONTRIBUTION writes). Our own storage design, symmetric with is_queryable.';
 
 -- ── audit ──────────────────────────────────────────────────────────────────
--- AUDIT_DETAILS of every committed change (RM common master06 §AUDIT_DETAILS;
+-- AUDIT_DETAILS of every committed change (RM common master04-generic_package.adoc
+-- §Audit Details + UML/classes/org.openehr.rm.common.audit_details.adoc:
+-- system_id / time_committed / change_type / committer 1..1, description 0..1;
 -- queryable via AQL VERSION paths).
 CREATE TABLE audit (
     id             uuid NOT NULL DEFAULT uuidv7(),
     time_committed timestamptz NOT NULL DEFAULT now(),
     system_id      text NOT NULL,
-    -- openEHR audit change-type group code (review doc 03 req 1.4.2). The DB
-    -- CHECK restricts to the codes the service commits — 249 creation,
-    -- 250 amendment, 251 modification, 523 deleted, 666 attestation (TERM
-    -- §6); the terminology layer validates the full audit_change_type group at
-    -- the wire edge (service/codes.rs).
+    -- openEHR `audit change type` group code — the code_string of
+    -- AUDIT_DETAILS.change_type (a DV_CODED_TEXT, 1..1;
+    -- `AUDIT_DETAILS.Change_type_valid` binds it to that group, RM common
+    -- UML/classes/org.openehr.rm.common.audit_details.adoc §Invariants). The
+    -- codes are TERM SupportTerminology
+    -- codesets/openehr_terminology-vocabularies.adoc §Audit Change Type; the
+    -- terminology layer validates the group at the wire edge
+    -- (service/codes.rs) and the CHECK below repeats it at the database.
     change_type    text NOT NULL,
     -- AUDIT_DETAILS.description is a DV_TEXT (0..1) whose DV_CODED_TEXT
     -- subtype carries a defining_code (RM common
@@ -153,7 +168,8 @@ CREATE TABLE audit (
     -- data (storage choice — no spec governs compression).
     attestation    jsonb COMPRESSION lz4,
     CONSTRAINT pk_audit PRIMARY KEY (id),
-    -- AUDIT_DETAILS.System_id_valid: system_id is 1..1, non-void (req 1.8).
+    -- AUDIT_DETAILS.System_id_valid: `not system_id.is_empty` (RM common
+    -- UML/classes/org.openehr.rm.common.audit_details.adoc §Invariants).
     CONSTRAINT ck_audit_system_id_nonempty CHECK (system_id <> ''),
     -- DV_TEXT.value is 1..1 (RM data_types
     -- UML/classes/org.openehr.rm.data_types.dv_text.adoc §Attributes), so a
@@ -164,25 +180,32 @@ CREATE TABLE audit (
     -- UML/classes/org.openehr.rm.common.attestation.adoc §Attributes).
     CONSTRAINT ck_audit_attestation_shape CHECK
         (attestation IS NULL OR (attestation ? 'reason' AND attestation ? 'is_pending')),
-    -- The full openEHR audit_change_type group (the service validates the same
-    -- set at the wire edge, service/codes.rs): 249 creation, 250 amendment,
-    -- 251 modification, 252 synthesis, 253 unknown, 523 deleted, 666
-    -- attestation, 816 restoration, 817 format conversion (req 1.4.2 —
-    -- terminology-group-validated, not the master06 prose subset).
+    -- The full openEHR `audit change type` group (the service validates the
+    -- same set at the wire edge, service/codes.rs): 249 creation, 250
+    -- amendment, 251 modification, 252 synthesis, 253 unknown, 523 deleted,
+    -- 666 attestation, 816 restoration, 817 format conversion — TERM
+    -- SupportTerminology codesets/openehr_terminology-vocabularies.adoc
+    -- §Audit Change Type, which is what `Change_type_valid` binds to; NOT the
+    -- narrower subset RM common master06 §Contributions enumerates in prose.
     CONSTRAINT ck_audit_change_type CHECK (change_type IN
         ('249', '250', '251', '252', '253', '523', '666', '816', '817'))
 );
 
-COMMENT ON TABLE audit IS 'AUDIT_DETAILS of every committed change (RM common master06 §AUDIT_DETAILS), including the ATTESTATION subtype a version may be committed with (master06 §Attestation).';
-COMMENT ON COLUMN audit.change_type IS 'audit_change_type group code (AUDIT_DETAILS.Change_type_valid, RM common master04). CHECK validates the full audit_change_type terminology group (aligned with service/codes.rs).';
-COMMENT ON COLUMN audit.time_committed IS 'Server-computed commit instant (req 1.8 — never client-supplied).';
-COMMENT ON COLUMN audit.committer IS 'Canonical PARTY_PROXY of the committer (req 1.8).';
+COMMENT ON TABLE audit IS 'AUDIT_DETAILS of every committed change (RM common master04-generic_package.adoc §Audit Details), including the ATTESTATION subtype a version may be committed with (master06 §Attestation).';
+COMMENT ON COLUMN audit.change_type IS 'openEHR `audit change type` group code (AUDIT_DETAILS.Change_type_valid, RM common UML/classes/org.openehr.rm.common.audit_details.adoc §Invariants). CHECK validates the full group as published in TERM SupportTerminology codesets/openehr_terminology-vocabularies.adoc §Audit Change Type (aligned with service/codes.rs).';
+COMMENT ON COLUMN audit.time_committed IS 'Server-computed commit instant: RM common master06 §Committal and Audits — time_committed "should reflect the time of committal to an EHR server ... It should therefore be computed on the server". Never client-supplied.';
+COMMENT ON COLUMN audit.committer IS 'Canonical PARTY_PROXY of the committer (AUDIT_DETAILS.committer 1..1, RM common UML/classes/org.openehr.rm.common.audit_details.adoc §Attributes).';
 COMMENT ON COLUMN audit.description IS 'Canonical AUDIT_DETAILS.description fragment (DV_TEXT or its DV_CODED_TEXT subtype), stored whole so the concrete _type and defining_code survive (RM common master04 §Audit Details).';
 COMMENT ON COLUMN audit.attestation IS 'The ATTESTATION-declared attributes (attested_view/proof/items/reason/is_pending) when the commit audit is an ATTESTATION, else NULL (RM common master06 §Attestation; master04 §Attestation).';
 
 -- ── contribution ─────────────────────────────────────────────────────────────
--- The change-set envelope (RM common master06 §CONTRIBUTION): one CONTRIBUTION
--- per change set, strictly transactional (req 1.7). ehr_id is nullable: a
+-- The change-set envelope (RM common master06 §Contributions: "a `CONTRIBUTION`
+-- object will be created, listing the affected `VERSION` objects, and including
+-- its own audit object"): one CONTRIBUTION per change set, strictly
+-- transactional (master06 §Committal and Audits: "Contributions are similar to
+-- nested transactions. An attempt to commit a Contribution should only succeed
+-- if each Version and/or Attestation in the Contribution is committed
+-- successfully"). ehr_id is nullable: a
 -- demographic (party) contribution has no owning EHR (NULL = the demographics
 -- repository — RM demographic content is not EHR-owned).
 CREATE TABLE contribution (
@@ -201,11 +224,12 @@ CREATE INDEX idx_contribution_audit_id ON contribution (audit_id);
 -- governs indexing - our own design.
 CREATE INDEX idx_audit_time_committed ON audit (time_committed);
 
-COMMENT ON TABLE contribution IS 'The change-set envelope (RM common master06 §CONTRIBUTION); one per change set, strictly transactional (req 1.7).';
+COMMENT ON TABLE contribution IS 'The change-set envelope (RM common master06 §Contributions); one per change set, strictly transactional (master06 §Committal and Audits: a Contribution commits only if every member Version/Attestation commits).';
 COMMENT ON COLUMN contribution.ehr_id IS 'Owning EHR, or NULL for a demographic (party) contribution (RM demographic content is not EHR-owned).';
 
 -- ── template_store ───────────────────────────────────────────────────────────
--- Operational templates (OPT 1.4 XML; parsed model built at P13/P14).
+-- Operational templates (OPT 1.4 XML); the parsed model is built in the
+-- application, not stored here.
 -- DUAL IDENTITY (SM I_DEFINITION_ADL14 takes a UUID handle; the ITS-REST wire
 -- addresses templates by template_id): the uuid `id` is the
 -- SM's OPT-keyed-by-UUID handle (the SM stores OPTs by UUID), while the unique
@@ -223,7 +247,7 @@ CREATE TABLE template_store (
 );
 
 COMMENT ON TABLE template_store IS 'Operational templates (OPT 1.4 XML). Dual identity: uuid id = the SM UUID handle (SM I_DEFINITION_ADL14); template_id = the ITS-REST wire address. Template versioning is not spec-required — replace-in-place.';
-COMMENT ON COLUMN template_store.id IS 'The SM OPT-by-UUID handle (req 5.1.1).';
+COMMENT ON COLUMN template_store.id IS 'The SM OPT-by-UUID handle (SM openehr_platform master04-definition_package.adoc §Archetypes and Templates: "In ADL 1.4 ... OPTs are identified with UUIDs").';
 -- The ITS-REST TemplateMetadata.version (optional + deprecated) is NOT stored:
 -- it is the `.vN` version axis of template_id (filter_version: "taken from
 -- template_id"), a pure function of the id, so it is derived on read rather than
@@ -274,17 +298,23 @@ CREATE TABLE vo_version (
     branch_number   integer NOT NULL DEFAULT 0,
     branch_version  integer NOT NULL DEFAULT 0,
     -- Validity interval; the current (latest trunk) version is the one with
-    -- upper_inf(sys_period) AND branch_number = 0 (committal time is the only
-    -- server-managed temporal axis, req 2.13).
+    -- upper_inf(sys_period) AND branch_number = 0. Committal time is the only
+    -- server-managed temporal axis (RM common master06 §Committal and Audits:
+    -- time_committed "should reflect the time of committal to an EHR server");
+    -- the interval itself is our own storage design — no openEHR spec governs
+    -- a validity range on a stored version row.
     sys_period      tstzrange NOT NULL,
     -- ORIGINAL_VERSION.lifecycle_state: the numeric version_lifecycle_state code
     -- (532 complete, 553 incomplete, 523 deleted, 800 inactive, 801 abandoned).
-    -- A logical delete writes a content-less version with state 523 (RM
-    -- change_control §"Logical Deletion") — never a physical delete. 553 relaxes
-    -- content validity, so content is never NOT NULL (req 1.5).
+    -- A logical delete writes a content-less version with state 523 (RM common
+    -- master06 §Logical Deletion) — never a physical delete. 553 `incomplete`
+    -- relaxes content validity ("mandatory attributes may be absent ... data may
+    -- be missing, but it may not be wrong" — master06 §Incomplete Content), so
+    -- content is never NOT NULL.
     lifecycle_state text NOT NULL DEFAULT '532',
-    -- The immutable identity of the system that CREATED this version (req 1.2.3):
-    -- the middle segment of the OBJECT_VERSION_ID {object_id, creating_system_id,
+    -- The immutable identity of the system that CREATED this version (RM common
+    -- master06 §Distributed versioning): the middle segment of the
+    -- OBJECT_VERSION_ID {object_id, creating_system_id,
     -- version_tree_id}. Reconstructed from storage, never re-derived from live
     -- config, so a config change cannot mutate a historical uid or invalidate a
     -- signature. Written on every version (local: our system_id; import:
@@ -334,9 +364,9 @@ CREATE TABLE vo_version (
         'AGENT', 'GROUP', 'ORGANISATION', 'PERSON', 'ROLE', 'PARTY_RELATIONSHIP'
     )),
     CONSTRAINT ck_vo_version_lifecycle_state CHECK (lifecycle_state IN ('532', '553', '523', '800', '801')),
-    -- P20 NOTE: two GiST EXCLUDE (temporal non-overlap) constraints were
-    -- REMOVED here after measurement (docs/plans/p20-overhead-checklist.md
-    -- item 21): GiST exclusion inserts serialize under concurrency and were a
+    -- NOTE: two GiST EXCLUDE (temporal non-overlap) constraints were
+    -- REMOVED here after measurement: GiST exclusion inserts serialize under
+    -- concurrency (PostgreSQL 18 docs, "Exclusion Constraints") and were a
     -- prime "everything slows together" contributor on the write path (the
     -- reference implementation's version table pays a plain btree PK). The
     -- non-overlap INVARIANT (master06: one valid version per lineage at any
@@ -375,10 +405,10 @@ COMMENT ON COLUMN vo_version.sys_version IS 'Opaque per-vo commit ordinal (1..n 
 COMMENT ON COLUMN vo_version.trunk_version IS 'VERSION_TREE_ID first part. For a trunk row this is the wire version number; for a branch row the trunk version the branch forks from.';
 COMMENT ON COLUMN vo_version.branch_number IS 'VERSION_TREE_ID second part; 0 = trunk row, >= 1 = branch (numbered per fork point, RM common master06 §Version tree).';
 COMMENT ON COLUMN vo_version.branch_version IS 'VERSION_TREE_ID third part; 0 = trunk row, >= 1 = position on the branch.';
-COMMENT ON COLUMN vo_version.sys_period IS 'Validity interval [committed, superseded); the current trunk version has upper_inf(sys_period) AND branch_number = 0. Committal time is the only server-managed temporal axis (req 2.13).';
+COMMENT ON COLUMN vo_version.sys_period IS 'Validity interval [committed, superseded); the current trunk version has upper_inf(sys_period) AND branch_number = 0. Committal time is the only server-managed temporal axis (RM common master06 §Committal and Audits). The interval itself is our own storage design — no openEHR spec governs it.';
 COMMENT ON COLUMN vo_version.creating_system_id IS 'Immutable per-version creating-system id — the OBJECT_VERSION_ID middle segment (RM common master06 §Distributed versioning). Reconstructed from storage, never live config; never an empty-string sentinel.';
 COMMENT ON COLUMN vo_version.preceding_version_uid IS 'ORIGINAL_VERSION.preceding_version_uid (0..1, full OBJECT_VERSION_ID) — stored at commit from the actual preceding row; preserved verbatim on import; NULL for a first version.';
-COMMENT ON COLUMN vo_version.lifecycle_state IS 'version_lifecycle_state code (req 1.5). 523 = logical delete (content-less version). 553 relaxes content validity.';
+COMMENT ON COLUMN vo_version.lifecycle_state IS 'ORIGINAL_VERSION.lifecycle_state, coded from the openEHR `version lifecycle state` group (RM common master06 §Version Lifecycle: 532 complete, 553 incomplete, 523 deleted, 800 inactive, 801 abandoned). 523 = logical delete (content-less version, §Logical Deletion). 553 relaxes content validity (§Incomplete Content).';
 COMMENT ON COLUMN vo_version.signature IS 'VERSION.signature (0..1), opaque radix-64. Canonicalisation is spec-TBD (master06 marks the exact serialisation "To Be Determined").';
 COMMENT ON COLUMN vo_version.signature_client_supplied IS 'True when signature was supplied verbatim by the committing client or carried by an IMPORTED_VERSION (foreign — never re-verified at read); false for a server-generated signature (RM common master06 §Digital Signature). Our own design (verify-on-read hardening).';
 COMMENT ON COLUMN vo_version.other_input_version_uids IS 'ORIGINAL_VERSION merge provenance (master06 §Version Merging); NULL when not a merge; is_merged = derived (Is_merged_validity).';
@@ -459,8 +489,8 @@ CREATE TABLE node (
     -- Promoted EVENT_CONTEXT.start_time.value on the COMPOSITION root row
     -- (num = 0); NULL elsewhere and for context-less persistent compositions.
     -- Serves the AQL dashboard ORDER BY through the partial index below
-    -- instead of a per-candidate-row jsonb extraction (the measured hot path,
-    -- docs/plans/phase-20-optimization.md). Populated via
+    -- instead of a per-candidate-row jsonb extraction (a measured hot path).
+    -- Populated via
     -- ext.openehr_timestamp; the (rm_type, path)→column registry is
     -- app/ferroehr/src/storage/promoted.rs. Our own storage design — no
     -- openEHR spec governs storage columns.
@@ -501,8 +531,8 @@ CREATE INDEX idx_node_type_archetype ON node (rm_type, archetype);
 CREATE INDEX idx_node_arch_subsume ON node (rm_type, arch_entity, arch_major, arch_concept text_pattern_ops)
     WHERE arch_entity IS NOT NULL;
 CREATE INDEX idx_node_ehr ON node (ehr_id);
--- P20 NOTE: two speculative jsonb indexes were REMOVED here after the measured
--- repricing (docs/plans/p20-overhead-checklist.md item 4): a gin(data
+-- NOTE: two speculative jsonb indexes were REMOVED here after the measured
+-- repricing: a gin(data
 -- jsonb_ops) index (the AQL engine emits no GIN-servable operator — CONTAINS
 -- is the nested-set interval join) and an ext.openehr_magnitude(data->'value')
 -- expression index (the generator never emits that expression verbatim). Both
@@ -529,11 +559,15 @@ COMMENT ON COLUMN node.path IS 'Materialized path from the root; byte-order unde
 COMMENT ON COLUMN node.data IS 'The node''s canonical openEHR JSON fragment verbatim (ITS-JSON encoding), structure children pruned — storage == API, no synthetic fields.';
 
 -- ── vo_attestation ───────────────────────────────────────────────────────────
--- ATTESTATION storage (RM common master06 §Change Control): a new ATTESTATION
--- is appended to an existing ORIGINAL_VERSION's attestations list WITHOUT a new
--- version (req 1.9), committed via a contribution. One row per attestation,
--- canonical RM ATTESTATION verbatim in data (no synthetic fields — the stored
--- value is the canonical ITS-JSON encoding).
+-- ATTESTATION storage (RM common master06 §Attestation; the class is defined in
+-- master04-generic_package.adoc §Attestation): a new ATTESTATION is appended to
+-- an existing ORIGINAL_VERSION's attestations list WITHOUT a new version
+-- ("Attestations can be added at any time after committal of the content being
+-- attested"; master06 §Contributions lists attestation of an item as a change
+-- achieved by "new Attestation objects to existing Versions"), committed via a
+-- contribution. One row per attestation, canonical RM ATTESTATION verbatim in
+-- data (no synthetic fields — the stored value is the canonical ITS-JSON
+-- encoding).
 CREATE TABLE vo_attestation (
     id              uuid NOT NULL DEFAULT uuidv7(),
     vo_id           uuid NOT NULL,
@@ -549,11 +583,17 @@ CREATE TABLE vo_attestation (
 CREATE INDEX idx_vo_attestation_version ON vo_attestation (vo_id, sys_version);
 CREATE INDEX idx_vo_attestation_contribution ON vo_attestation (contribution_id);
 
-COMMENT ON TABLE vo_attestation IS 'ATTESTATION storage (RM common master06 §Change Control): appended to an ORIGINAL_VERSION''s attestations list without a new version (req 1.9); canonical ATTESTATION verbatim in data.';
+COMMENT ON TABLE vo_attestation IS 'ATTESTATION storage (RM common master06 §Attestation; class in master04-generic_package.adoc §Attestation): appended to an ORIGINAL_VERSION''s attestations list without a new version; canonical ATTESTATION verbatim in data.';
 
 -- ── stored_query ─────────────────────────────────────────────────────────────
--- Stored AQL queries (semver-addressed per ITS-REST DEFINITION API; review doc
--- 03 req 5.2): qualified name (namespace default "misc"), formalism, semver.
+-- Stored AQL queries, addressed by qualified name + SEMVER version (ITS-REST
+-- specifications/docs/query/Qualified_query_name.md: "Stored queries are
+-- identified by their name, used as `qualified_query_name`, and an optional
+-- `version` number"; "`[{namespace}::]{query-name}`"; "The `version` identifier
+-- is in the format specified by SEMVER"). Columns: reverse-domain namespace
+-- (default "misc" — the namespace is optional on the wire, so an unqualified
+-- name needs a stored stand-in; no openEHR spec governs the substitute value,
+-- our own design), semantic id, semver, formalism.
 CREATE TABLE stored_query (
     reverse_domain_name text NOT NULL,
     semantic_id         text NOT NULL,
@@ -564,7 +604,7 @@ CREATE TABLE stored_query (
     CONSTRAINT pk_stored_query PRIMARY KEY (reverse_domain_name, semantic_id, semver)
 );
 
-COMMENT ON TABLE stored_query IS 'Stored AQL queries, semver-addressed (ITS-REST DEFINITION API; review doc 03 req 5.2).';
+COMMENT ON TABLE stored_query IS 'Stored AQL queries, addressed by qualified name + SEMVER version (ITS-REST specifications/docs/query/Qualified_query_name.md).';
 
 -- ── item_tag ─────────────────────────────────────────────────────────────────
 -- Item tags (RM common master07-tags.adoc ITEM_TAG; the ITS-REST tags routes).
@@ -677,10 +717,17 @@ CREATE INDEX idx_ehr_index_subject ON ehr_index (subject_id, subject_namespace);
 COMMENT ON TABLE ehr_index IS 'SM-3 EHR Index (I_EHR_INDEX, master07): N:M subject↔EHR associations with duplicate-management metadata; not a versioned object.';
 
 -- ── vo_archive (SM-4, I_ADMIN_ARCHIVE) ────────────────────────────────────────
--- Versioned-object archive MARKERS (review doc 03 req 5.4.3). The SM defines no
--- storage form; actual tier movement is P20. Serving reads never join this table
--- (zero wire drift). Plain marker keyed by vo_id (not a per-version key), so
--- INTENTIONALLY FK-LESS to the composite-keyed vo_version.
+-- Versioned-object archive MARKERS realizing SM I_ADMIN_ARCHIVE
+-- (`archive_ehrs` / `archive_parties`: "Move selected EHRs to archival
+-- storage" — SM openehr_platform master15-admin_service.adoc via
+-- UML/classes/i_admin_archive.adoc). The SM says only "move ... to archival
+-- storage" and defines no storage form; no openEHR spec governs one, so the
+-- marker IS our archival storage — our own design. A marker keeps the archived
+-- object readable and its version chain intact, which the SM neither requires
+-- nor forbids.
+-- Serving reads never join this table (zero wire drift). Plain marker keyed by
+-- vo_id (not a per-version key), so INTENTIONALLY FK-LESS to the
+-- composite-keyed vo_version.
 CREATE TABLE vo_archive (
     vo_id       uuid NOT NULL,
     archived_at timestamptz NOT NULL DEFAULT now(),
@@ -688,12 +735,15 @@ CREATE TABLE vo_archive (
     CONSTRAINT pk_vo_archive PRIMARY KEY (vo_id)
 );
 
-COMMENT ON TABLE vo_archive IS 'SM-4 archive markers (I_ADMIN_ARCHIVE; req 5.4.3). Marker only — serving reads never join it (zero wire drift). Intentionally FK-less (vo_id is not a per-version key).';
+COMMENT ON TABLE vo_archive IS 'Archive markers realizing SM I_ADMIN_ARCHIVE (SM openehr_platform master15-admin_service.adoc); the SM defines no storage form — our own design. Serving reads never join it (zero wire drift). Intentionally FK-less (vo_id is not a per-version key).';
 
 -- ── Subject Proxy Service config stores (SM-6, I_SUBJECT_PROXY_SERVICE) ───────
--- CONFIGURATION only (review doc 03 req 5.5.1): bindings + variable defs, kept
--- for the life of the system, cleared by reset(). Results/data frames are
--- transient — not stored. Plain relational, not versioned objects.
+-- CONFIGURATION only (SM openehr_platform master10-subject_proxy_service.adoc
+-- §Persistence: "the configuration contents (i.e. not data frame or variable
+-- results) of the SPS are persisted for the life of the system ... The SPS
+-- includes a reset() operation that enables all content to be dumped"):
+-- bindings + variable defs, cleared by reset(). Plain relational, not versioned
+-- objects — no openEHR spec governs the storage form, our own design.
 
 -- SUBJECT_PROXY: one proxy per subject.
 CREATE TABLE sp_subject (
@@ -703,7 +753,7 @@ CREATE TABLE sp_subject (
     create_time      timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT pk_sp_subject PRIMARY KEY (subject_id)
 );
-COMMENT ON TABLE sp_subject IS 'SM-6 SUBJECT_PROXY config: one proxy per subject (req 5.5.1).';
+COMMENT ON TABLE sp_subject IS 'SUBJECT_PROXY config: one proxy per subject (SM openehr_platform master10-subject_proxy_service.adoc §Persistence — configuration only, cleared by reset()).';
 
 -- ENV_BINDING: one binding per execution environment.
 CREATE TABLE sp_binding (
@@ -805,7 +855,8 @@ COMMENT ON TABLE sp_sample IS 'SM-6 SAMPLE store: retrieve history per SUBJECT_V
 -- migrator), skipped with a NOTICE otherwise (dev/compose without CREATEROLE).
 DO $$
 BEGIN
-    -- Lock down the public schema (review doc 02 §3.6): no PUBLIC CREATE.
+    -- Lock down the public schema: no PUBLIC CREATE (PostgreSQL 18 docs,
+    -- "Privileges" / CREATE SCHEMA notes on the public schema).
     BEGIN
         REVOKE CREATE ON SCHEMA public FROM PUBLIC;
     EXCEPTION WHEN insufficient_privilege THEN
@@ -817,8 +868,8 @@ BEGIN
         GRANT USAGE ON SCHEMA ehr TO ferroehr_app, ferroehr_reader;
         GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ehr TO ferroehr_app;
         GRANT SELECT ON ALL TABLES IN SCHEMA ehr TO ferroehr_reader;
-        -- Future ehr tables reachable without a manual grant — the
-        -- deploy-outage classic (review doc 02 §3.2).
+        -- Future ehr tables reachable without a manual grant (PostgreSQL 18
+        -- docs, ALTER DEFAULT PRIVILEGES) — the deploy-outage classic.
         ALTER DEFAULT PRIVILEGES IN SCHEMA ehr
             GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ferroehr_app;
         ALTER DEFAULT PRIVILEGES IN SCHEMA ehr

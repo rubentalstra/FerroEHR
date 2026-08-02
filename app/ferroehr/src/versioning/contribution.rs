@@ -754,10 +754,16 @@ fn parse_audit(
     default_system_id: &str,
     attestable: bool,
 ) -> Result<AuditInput, ServiceError> {
-    // AUDIT_DETAILS.description is a DV_TEXT (0..1); the wire `UDvText` admits
-    // the plain string spelling too (ITS-REST `schemas/common/UDvText.yaml`).
-    // The whole fragment is kept: a DV_CODED_TEXT description's defining_code
-    // is part of the committed audit, not decoration.
+    // AUDIT_DETAILS.description is a DV_TEXT (0..1). The two released sources
+    // spell the same attribute differently and BOTH spellings are accepted
+    // here: ITS-REST types it `UDvText`, which is `oneOf` [`DV_TEXT`,
+    // `DV_CODED_TEXT`] discriminated on `_type`
+    // (`specifications/schemas/data_types/UDvText.yaml` — an object, never a
+    // bare string), while SM `UPDATE_AUDIT.description` is `String [0..1]`
+    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes), which is what
+    // grounds the plain-string branch. The whole fragment is kept for the
+    // object spelling: a DV_CODED_TEXT description's defining_code is part of
+    // the committed audit, not decoration.
     let description = audit
         .and_then(|a| a.get("description"))
         .filter(|d| !d.is_null())

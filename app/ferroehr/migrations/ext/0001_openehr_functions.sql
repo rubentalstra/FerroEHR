@@ -2,18 +2,20 @@
 -- (openEHR-semantics helper functions; no openEHR spec governs SQL helpers —
 -- they realize the cited RM/QUERY semantics).
 --
--- Re-authored as the single squashed `ext` baseline (review doc
--- 02 §5.1 — append-only forever after). This migrator runs BEFORE `ehr`
+-- The single squashed `ext` baseline; append-only from here (no openEHR spec
+-- governs migration layout — our own design). This migrator runs BEFORE `ehr`
 -- (db/migrate.rs), so the three application roles are created HERE, ahead of
 -- every GRANT in either schema.
 --
 -- All functions are IMMUTABLE + PARALLEL SAFE so they are legal in btree
--- expression indexes — magnitudes are computed (and
--- indexed on demand for measured hot paths, see the ehr baseline's
--- `idx_node_magnitude`), never stored as synthetic fields inside the canonical
--- data. Runs with search_path = ext.
+-- expression indexes (PostgreSQL 18 docs, "Function Volatility Categories") —
+-- magnitudes are computed on demand, never stored as synthetic fields inside
+-- the canonical data. Runs with search_path = ext.
 --
--- Magnitude semantics follow the openEHR RM spec for DV_ORDERED:
+-- Magnitude semantics realize the DV_ORDERED comparison the RM defines per
+-- subtype (RM data_types master06-quantity_package.adoc + the
+-- UML/classes/org.openehr.rm.data_types.* class tables — e.g. DV_QUANTITY
+-- `less_than`: "Result = magnitude < other.magnitude"):
 --   DV_QUANTITY / DV_COUNT   -> magnitude
 --   DV_ORDINAL / DV_SCALE    -> value
 --   DV_PROPORTION            -> numerator / denominator (NULL for /0)
@@ -26,7 +28,7 @@
 
 -- ── Roles (no openEHR spec governs DB roles — operational design) ────────────
 -- Three NOLOGIN group roles, granted at deploy time to the concrete LOGIN
--- roles (passwords/LOGIN/pg_hba/TLS are deployment-layer, review doc 02 §3.6):
+-- roles (passwords/LOGIN/pg_hba/TLS stay deployment-layer concerns):
 --   * ferroehr_migrator — owns the schema objects and runs DDL (this migration);
 --   * ferroehr_app      — the runtime writer (DML on ehr.*);
 --   * ferroehr_reader   — read-only (SELECT), e.g. reporting/analytics.
@@ -37,8 +39,9 @@ BEGIN
     -- Graceful degradation (deployment reality): when the migration runs as a
     -- user without CREATEROLE (dev/compose/testcontainers or a managed PG
     -- without role rights), the role architecture is skipped with a NOTICE —
-    -- it is then a deployment-layer setup step (review doc 02 §3.1). When the
-    -- migrator has the privilege (production), roles are created idempotently.
+    -- it is then a deployment-layer setup step (no openEHR spec governs role
+    -- provisioning — our own operational design). When the migrator has the
+    -- privilege (production), roles are created idempotently.
     BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_migrator') THEN
             CREATE ROLE ferroehr_migrator NOLOGIN;
@@ -202,12 +205,14 @@ COMMENT ON FUNCTION ext.openehr_date_time_seconds(text) IS
 COMMENT ON FUNCTION ext.openehr_duration_seconds(text) IS
     'Seconds for an ISO-8601 duration using openEHR *nominal* lengths (year = 365.24 d, month = 30.42 d); NULL on unparseable input. IMMUTABLE.';
 COMMENT ON FUNCTION ext.openehr_magnitude(jsonb) IS
-    'The ordered magnitude (numeric) of a canonical DV_ORDERED value, per the RM DV_ORDERED comparison semantics. NULL for non-ordered or unparseable values. IMMUTABLE + PARALLEL SAFE so it is legal in btree expression indexes (see ehr.idx_node_magnitude).';
+    'The ordered magnitude (numeric) of a canonical DV_ORDERED value, per the per-subtype comparison the RM defines (RM data_types master06-quantity_package.adoc + the DV_* class tables). NULL for non-ordered or unparseable values. IMMUTABLE + PARALLEL SAFE so it is legal in btree expression indexes.';
 
 -- ── Grants (no openEHR spec governs DB grants — operational design) ──────────
 -- The `ext` functions are on the READ path (AQL magnitude ordering); the app
 -- and reader roles need USAGE on the schema and EXECUTE on the functions, and
--- nothing more (functions are plain, not SECURITY DEFINER — review doc 02 §3.6).
+-- nothing more (functions are plain, not SECURITY DEFINER — PostgreSQL 18
+-- docs, "Writing SECURITY DEFINER Functions Safely"; the privilege model here
+-- is our own operational design, no openEHR spec governs it).
 -- The migrator owns them. Idempotent by construction (GRANT is a no-op if
 -- already held).
 DO $$
@@ -228,8 +233,9 @@ BEGIN
             ext.openehr_magnitude(jsonb)
             TO ferroehr_app, ferroehr_reader;
         -- Future ext functions we create are reachable without a manual grant
-        -- (doc 02 §3.2); default privileges apply per grantor, so this covers
-        -- exactly the migrator's own future functions.
+        -- (PostgreSQL 18 docs, ALTER DEFAULT PRIVILEGES); default privileges
+        -- apply per grantor, so this covers exactly the migrator's own future
+        -- functions.
         ALTER DEFAULT PRIVILEGES IN SCHEMA ext
             GRANT EXECUTE ON FUNCTIONS TO ferroehr_app, ferroehr_reader;
     ELSE

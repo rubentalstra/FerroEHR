@@ -27,10 +27,22 @@ use openehr_rm::prelude::{DvEhrUri, DvMultimedia, DvText, PartyProxy};
 /// must belong to the openEHR terminology *audit change type* group —
 /// enforced at the service boundary via `openehr-term`, not in this type.
 ///
-/// NOTE (wire): ITS-REST `UpdateAudit.yaml` types `description` as
-/// `UDvText` (plain string or `DV_TEXT`); the SM types it `String [0..1]`.
-/// The native type keeps the SM shape; the adapter coerces a `DV_TEXT`
-/// description to its `value` string.
+/// NOTE (wire): the two released sources spell this attribute differently.
+/// ITS-REST `UpdateAudit.yaml` types `description` as `UDvText`, which is
+/// `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`] discriminated on `_type`
+/// (`specifications/schemas/data_types/UDvText.yaml`) — an object, never a bare
+/// JSON string; SM `UPDATE_AUDIT.description` is `String [0..1]`
+/// (`SM/docs/UML/classes/update_audit.adoc` §Attributes). This native type keeps
+/// the SM shape, and the only channel that fills it is the
+/// `openehr-audit-details` header, whose grammar carries the attribute
+/// pre-flattened as the `description.value` subkey — i.e. the `DV_TEXT.value`
+/// string both `UDvText` branches share — which
+/// [`crate::versioning::audit::AuditInput::from_update`] re-wraps as a plain
+/// `DV_TEXT` fragment. A header therefore cannot express a coded description at
+/// all: `DV_CODED_TEXT.defining_code` has no subkey to travel in. Where a coded
+/// description IS expressible — the native CONTRIBUTION body — the commit does
+/// NOT go through this struct and the whole canonical fragment is kept
+/// (`crate::versioning::contribution`).
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateAudit {
     /// Type of change; coded from the openEHR *audit change type* group.

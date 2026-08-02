@@ -88,6 +88,14 @@ workflow refuses a tag that has no matching section here.
   An `ORIGINAL_VERSION` carrying attestations is also pinned as a
   canonical-JSON/XML serialization vector.
 
+- **A conformance case for the third `PARTY_SELF` referral scheme.** The RM
+  names three ways to refer to the record subject from inside an EHR, and the
+  catalogue only exercised two of them. A COMPOSITION whose interior ENTRY
+  carries a `PARTY_SELF` subject with a complete `external_ref` `PARTY_REF`
+  (id, namespace and type) now round-trips with that reference intact, so a
+  server that dropped or refused a per-instance subject reference — a
+  spec-supported deployment style — no longer passes the catalogue.
+
 - **A canonical-JSON output mode for the corpus fixture generator.** The
   `openehr-its` `canonical_convert` example now emits canonical JSON when the
   output path ends in `.json` (and handles `ORIGINAL_VERSION` documents under
@@ -103,6 +111,16 @@ workflow refuses a tag that has no matching section here.
   vendoring run.
 
 ### Fixed
+
+- **An OAuth2/OIDC committer's identifier now names the token issuer.** Every
+  authenticated write stamps the committing principal into
+  `AUDIT_DETAILS.committer` as a `PARTY_IDENTIFIED` carrying a
+  `DV_IDENTIFIER`, whose `issuer` used to read `ferroehr` for every mechanism
+  — including federated principals, whose subject the identity provider minted
+  rather than this server. A Bearer principal's identifier now carries the
+  validated token issuer (`iss`) as its `issuer`; a Basic principal, whose
+  credential this deployment holds, keeps `ferroehr`. Audits already committed
+  keep the issuer they were written with.
 
 - **`ATTESTATION` commit audits and rich audit descriptions now round-trip
   instead of being silently flattened.** A CONTRIBUTION version whose
