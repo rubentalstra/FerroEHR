@@ -67,6 +67,60 @@ static RM_VALIDATOR: std::sync::LazyLock<Result<jsonschema::Validator, String>> 
         jsonschema::validator_for(&schema).map_err(|e| format!("compile RM schema: {e}"))
     });
 
+/// Refuse the first `_type`-tagged node of `value` that carries a wire key its
+/// class does not declare — the **wire door's** half of the strict reader.
+///
+/// The protocol adapter parses a canonical-JSON body into an untyped
+/// `serde_json::Value` (so a committed document keeps the client's bytes
+/// verbatim) and therefore never runs a typed decode at the door. This walk
+/// gives that door the reader's undeclared-key refusal WITHOUT a decode, using
+/// the generated `declared_fields` table — the same field view the typed reader
+/// refuses from, so the two can never disagree.
+///
+/// Only `_type`-tagged nodes are judged: canonical JSON requires `_type` only
+/// where the declared attribute type is abstract, so an untagged node's class
+/// is not knowable from the value alone here. An undeclared key on such a node
+/// is still refused, one tier later, by the typed dispatch
+/// (`crate::wire_validate`) — this door narrows *which status* a refusal
+/// carries, never *whether* one happens.
+///
+/// # Why the door and not validation
+/// A document the reader cannot READ never converts, so it cannot reach the
+/// convertible-but-semantically-invalid branch: ITS-REST overview
+/// `Requests_and_responses.md` §HTTP status codes defines `400` as content that
+/// "could not be parsed or is invalid" and `422` as content that is
+/// "well-formed but was unable to be followed due to semantic errors".
+///
+/// # Errors
+/// A [`JsonParseError`] naming the offending key, the class that does not
+/// declare it, and the path to the node.
+pub fn reject_undeclared_keys(value: &serde_json::Value) -> Result<(), JsonParseError> {
+    match value {
+        serde_json::Value::Object(map) => {
+            if let Some(ty) = map.get("_type").and_then(serde_json::Value::as_str)
+                && let Some(declared) =
+                    crate::json_codec::generated::structural::declared_fields(ty)
+                && let Some(key) = map
+                    .keys()
+                    .find(|k| k.as_str() != "_type" && declared.binary_search(&k.as_str()).is_err())
+            {
+                return Err(JsonParseError::unknown_field(key, ty, declared));
+            }
+            for (key, child) in map {
+                reject_undeclared_keys(child).map_err(|e| e.in_field(key))?;
+            }
+            Ok(())
+        }
+        serde_json::Value::Array(items) => {
+            for (index, child) in items.iter().enumerate() {
+                reject_undeclared_keys(child).map_err(|e| e.in_index(index))?;
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
 /// Validate a canonical-JSON value against the vendored ITS-JSON RM schema
 /// (`openehr_rm_1.1.0_all.json`). The schema's root dispatches on the top-level
 /// `_type` (draft-07 `if`/`then`) to the matching class definition, so any RM

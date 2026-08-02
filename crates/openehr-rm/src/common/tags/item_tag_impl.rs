@@ -34,14 +34,18 @@ mod tests {
         ItemTag {
             key: key.to_owned(),
             value: value.map(str::to_owned),
-            target: UidBasedId::HierObjectId(HierObjectId::new("87284370-2D4B-4e3d-A3F3-F303D2F4F34B".to_owned())
-                .expect("a well-formed identifier")),
+            target: UidBasedId::HierObjectId(
+                HierObjectId::new("87284370-2D4B-4e3d-A3F3-F303D2F4F34B".to_owned())
+                    .expect("a well-formed identifier"),
+            ),
             target_path: None,
             owner_id: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "EHR".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId::new("b5e19c3a-16c8-4d3e-8b1a-1b1c9dd07f11".to_owned())
-                .expect("a well-formed identifier")),
+                id: ObjectId::HierObjectId(
+                    HierObjectId::new("b5e19c3a-16c8-4d3e-8b1a-1b1c9dd07f11".to_owned())
+                        .expect("a well-formed identifier"),
+                ),
             }),
         }
     }

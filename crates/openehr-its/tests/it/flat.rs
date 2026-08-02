@@ -274,9 +274,10 @@ fn golden_minimal_observation_flat() {
 fn demo_vitals_flat_key_shape() {
     let wts = web_templates();
     let wt = wts.get("Demo Vitals").expect("Demo Vitals web template");
-    let text =
-        std::fs::read_to_string(crate::common::twinned(&composition_dir().join("demo_vitals_352.json")))
-            .unwrap();
+    let text = std::fs::read_to_string(crate::common::twinned(
+        &composition_dir().join("demo_vitals_352.json"),
+    ))
+    .unwrap();
     let comp: Value = serde_json::from_str(&text).unwrap();
     let flat = composition_to_flat(&comp, wt).expect("to_flat");
 

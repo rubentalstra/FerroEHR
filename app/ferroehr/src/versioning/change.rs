@@ -455,12 +455,11 @@ struct ResolvedWrite {
 /// signed and served.
 fn stamp_version_uid(canonical: &mut Value, version_uid: &str) -> Result<(), VersionIdError> {
     if let Value::Object(map) = canonical {
-        let uid = ObjectVersionId::new(version_uid).map_err(|source| {
-            VersionIdError::Malformed {
+        let uid =
+            ObjectVersionId::new(version_uid).map_err(|source| VersionIdError::Malformed {
                 raw: version_uid.to_owned(),
                 source,
-            }
-        })?;
+            })?;
         map.insert(
             "uid".to_owned(),
             openehr_its::json::to_canonical_value(&uid),

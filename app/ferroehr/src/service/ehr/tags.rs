@@ -302,9 +302,10 @@ pub(in crate::service) fn tag_target(
     Ok(match &row.target_version {
         Some(tail) => {
             let raw = format!("{target_vo_id}::{tail}");
-            UidBasedId::ObjectVersionId(ObjectVersionId::new(raw.clone()).map_err(|source| {
-                VersionIdError::Malformed { raw, source }
-            })?)
+            UidBasedId::ObjectVersionId(
+                ObjectVersionId::new(raw.clone())
+                    .map_err(|source| VersionIdError::Malformed { raw, source })?,
+            )
         }
         // A bare container key is a UUID by type, so the conversion is total
         // (BASE §Syntaxes: `uid = iso_oid | uuid | internet_id`).

@@ -6,7 +6,7 @@
 //! §Syntaxes, which gives the lexical form as
 //! `uuid = hex-number, '-', hex-number, '-', hex-number, '-', hex-number, '-',
 //! hex-number` — the canonical `8-4-4-4-12` spelling (see
-//! [`is_uuid`](super::lexical::is_uuid) for why the widths are load-bearing).
+//! [`super::lexical::is_uuid`] for why the widths are load-bearing).
 //!
 //! The generated `value` field carries the pinned [`uuid`] crate's RFC-4122
 //! type, so **parsing is validation**: any `uuid::Uuid` that exists is already a
@@ -51,19 +51,24 @@ impl FromStr for Uuid {
         if s.is_empty() {
             return Err(IdError::Empty);
         }
-        let malformed = || IdError::Malformed {
-            component: IdComponent::Value,
-            expected: IdProduction::Uuid,
-            found: s.to_owned(),
-        };
+        // ONE grammar: `is_uuid` delegates to the same pinned parser this
+        // arm uses, so a value it accepts always parses — but the fallback is
+        // data, never a panic.
         if !is_uuid(s) {
-            return Err(malformed());
+            return Err(IdError::Malformed {
+                component: IdComponent::Value,
+                expected: IdProduction::Uuid,
+                found: s.to_owned(),
+            });
         }
-        s.parse::<uuid::Uuid>().map(Self::new).map_err(|_| {
-            // Unreachable in practice — `is_uuid` delegates to the same parser
-            // — but the fallback is data, not a panic.
-            malformed()
-        })
+        match s.parse::<uuid::Uuid>() {
+            Ok(value) => Ok(Self::new(value)),
+            Err(_unreachable_by_is_uuid) => Err(IdError::Malformed {
+                component: IdComponent::Value,
+                expected: IdProduction::Uuid,
+                found: s.to_owned(),
+            }),
+        }
     }
 }
 

@@ -1171,6 +1171,26 @@ fn empty_item_tree() -> Value {
     })
 }
 
+/// Stamp the two LOCATABLE identity members (`name`, `archetype_node_id`) on a
+/// built node — and ONLY when its class is a LOCATABLE (see [`is_locatable`]).
+fn stamp_locatable_identity(obj: &mut Map<String, Value>, node: &WebTemplateNode, rm_type: &str) {
+    if !is_locatable(rm_type) {
+        return;
+    }
+    obj.entry("name".to_owned()).or_insert_with(|| {
+        let text = node
+            .name
+            .as_deref()
+            .or(node.node_id.as_deref())
+            .unwrap_or(rm_type);
+        name_value(text, node.name_coded.as_ref())
+    });
+    if let Some(nid) = &node.node_id {
+        obj.entry("archetype_node_id".to_owned())
+            .or_insert_with(|| json!(nid));
+    }
+}
+
 /// Fill the mandatory identity/occurrence fields for a built locatable node.
 fn finish_identity(
     obj: &mut Map<String, Value>,
@@ -1221,17 +1241,7 @@ fn finish_identity(
         }
         return;
     }
-    // Only a LOCATABLE carries `name` (see [`is_locatable`]).
-    if is_locatable(rm_type) {
-        obj.entry("name".to_owned()).or_insert_with(|| {
-            let text = node
-                .name
-                .as_deref()
-                .or(node.node_id.as_deref())
-                .unwrap_or(rm_type);
-            name_value(text, node.name_coded.as_ref())
-        });
-    }
+    stamp_locatable_identity(obj, node, rm_type);
     match rm_type {
         "POINT_EVENT" | "INTERVAL_EVENT" => {
             obj.entry("time".to_owned())
@@ -1242,12 +1252,6 @@ fn finish_identity(
                 .or_insert_with(|| dv_date_time(DEFAULT_TIME));
         }
         _ => {}
-    }
-    if let Some(nid) = &node.node_id
-        && is_locatable(rm_type)
-    {
-        obj.entry("archetype_node_id".to_owned())
-            .or_insert_with(|| json!(nid));
     }
     let is_root_arch = node
         .node_id

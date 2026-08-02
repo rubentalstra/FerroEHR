@@ -271,13 +271,15 @@ pub(crate) fn emit_to_xml(
                         let _ = writeln!(
                             b,
                             "if let Some(v) = &self.{} {{ __attrs.push((\"{}\", v.to_string())); }}",
-                            read(f), f.wire_name
+                            read(f),
+                            f.wire_name
                         );
                     } else {
                         let _ = writeln!(
                             b,
                             "__attrs.push((\"{}\", self.{}.to_string()));",
-                            f.wire_name, read(f)
+                            f.wire_name,
+                            read(f)
                         );
                     }
                 } else {
@@ -558,8 +560,8 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                 };
                 values.push((fname.clone(), expr));
             }
-            match construction::validated_ctor(spec) {
-                Some((params, fallible)) => {
+            if let Some((params, fallible)) = construction::validated_ctor(spec) {
+                {
                     assert_eq!(
                         params.len(),
                         values.len(),
@@ -586,13 +588,12 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                         let _ = writeln!(b, "Ok({prelude}::{rust}::new({args}))");
                     }
                 }
-                None => {
-                    let _ = writeln!(b, "Ok({prelude}::{rust} {{");
-                    for (fname, expr) in &values {
-                        let _ = writeln!(b, "{fname}: {expr},");
-                    }
-                    b.push_str("})\n");
+            } else {
+                let _ = writeln!(b, "Ok({prelude}::{rust} {{");
+                for (fname, expr) in &values {
+                    let _ = writeln!(b, "{fname}: {expr},");
                 }
+                b.push_str("})\n");
             }
             b.push_str("}\n}\n\n");
         }

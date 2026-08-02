@@ -69,15 +69,15 @@ fn constrained_attribute(class: &str, attr: &str) -> Option<Value> {
     // names, reused wherever a `uid` is required.
     const UID: &str = "0191a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b";
     match (class, attr) {
-        // `uuid = hex-number, '-', … (five groups)`.
-        ("UUID", "value") => Some(json!(UID)),
+        // `uuid = hex-number, '-', … (five groups)`; and
+        // `hier_object_id = uid_based_id`, `uid_based_id = root, [ '::',
+        // extension ]`, `root = uid` — whose extension-less form is a bare
+        // `uid`, so the same value serves both productions.
+        ("UUID" | "HIER_OBJECT_ID", "value") => Some(json!(UID)),
         // `iso_oid = number, { '.', number }`.
         ("ISO_OID", "value") => Some(json!("1.2.840.113554")),
         // `internet_id = subdomain`, `subdomain = label | subdomain, '.', label`.
         ("INTERNET_ID", "value") => Some(json!("openehr.org")),
-        // `hier_object_id = uid_based_id`, `uid_based_id = root, [ '::',
-        // extension ]`, `root = uid` — the extension-less form.
-        ("HIER_OBJECT_ID", "value") => Some(json!(UID)),
         // `object_version_id = object_id, '::', creating_system_id, '::',
         // version_tree_id`, all three parts required.
         ("OBJECT_VERSION_ID", "value") => Some(json!(format!("{UID}::openehr.org::1"))),

@@ -17,6 +17,39 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **A canonical-JSON payload carrying an attribute the openEHR RM does not
+  declare is now REFUSED with `400`, naming the path and the offending
+  member.** The reader previously ignored an undeclared key. It is refused
+  because that is the only reading under which the JSON and XML encodings of a
+  resource share one data model: `ITS-REST/specifications/docs/overview/
+  Resources.md` requires an XML payload to validate against the ITS-XML
+  schemas, which declare no wildcards — an undeclared element cannot validate —
+  and states the same for the JSON encoding at `SHOULD` strength, while
+  openEHR's own published ITS-JSON schemas close 128 of their 134 object
+  definitions with `additionalProperties: false`. The status is `400` rather
+  than `422` because a document the reader cannot read never converts (the
+  released status table: `400` is content that "could not be parsed or is
+  invalid"; `422` is content that is "well-formed but was unable to be followed
+  due to semantic errors"). The set of accepted attributes is the RM at this
+  server's pinned version, so a payload that is valid openEHR is unaffected;
+  a client sending a private extension member must move it into a modelled slot
+  (for example `ITEM_TREE` `other_details`, or a `FEEDER_AUDIT`).
+- **A malformed identifier is now refused wherever it appears in a document,
+  not only in a request path.** `HIER_OBJECT_ID`, `OBJECT_VERSION_ID`,
+  `VERSION_TREE_ID` and the `UID` family are built through a constructor that
+  runs the released identifier grammar
+  (`BASE/docs/base_types/master05-identification_package.adoc` §Syntaxes), and
+  the canonical JSON and XML readers construct through it — so an identifier
+  such as `PractitionerRole/12345-mock` in a `PARTY_REF`, or a one-part value
+  tagged `OBJECT_VERSION_ID`, is rejected at parse with `400` instead of being
+  stored and served back.
+- **`UpdateItemTag` request bodies reject undeclared members.** The released
+  OAS declares the schema `additionalProperties: false`, so an unexpected
+  member is now a `400` rather than being silently dropped.
+- **A committer `external_ref.id` supplied through the
+  `openehr-audit-details` header must be a well-formed `HIER_OBJECT_ID`.** A
+  malformed value is refused with `400` instead of being written into the
+  commit audit.
 - **`OBJECT_VERSION_ID` values on the wire are now checked against the full
   openEHR identifier grammar.** A version identifier in a request path, an
   `If-Match` header or a `VERSION.uid` previously only had to have three
@@ -29,20 +62,6 @@ workflow refuses a tag that has no matching section here.
   identifier the spec admits is unaffected. The same grammar now backs the
   validating constructors of `HIER_OBJECT_ID`, `OBJECT_VERSION_ID` and the
   `UID` family, so a malformed identifier cannot be built through them.
-
-### Removed
-
-- **The AQL `RESULT_SET` no longer carries a top-level `id`.** Responses from
-  `POST/GET /query/aql` and the stored-query execute routes previously added an
-  `id` field holding a freshly minted UUID. The released ITS-REST `ResultSet`
-  schema declares exactly `meta`, `name`, `q`, `columns` and `rows` with no
-  `additionalProperties`, so the wire has no slot for it and the field was an
-  undeclared property on a closed object schema. Clients that read `id` should
-  use the response's `ETag` header instead — the released ITS-REST text names
-  it "a unique identifier of the resultSet" (`query/Request.md` §"Common
-  Headers and Query Parameters"), and it is unchanged by this removal.
-
-### Changed
 
 - **AQL now rejects an `[archetype_node_id='…']` predicate whose value is
   neither an archetype identifier nor a node code.** `CONTAINS COMPOSITION
@@ -477,6 +496,18 @@ workflow refuses a tag that has no matching section here.
   COMPOSITION. `EHR_ACCESS.settings` is deliberately unaffected — the RM
   leaves that slot's type to the implementation, so it carries no RM rules to
   enforce.
+
+### Removed
+
+- **The AQL `RESULT_SET` no longer carries a top-level `id`.** Responses from
+  `POST/GET /query/aql` and the stored-query execute routes previously added an
+  `id` field holding a freshly minted UUID. The released ITS-REST `ResultSet`
+  schema declares exactly `meta`, `name`, `q`, `columns` and `rows` with no
+  `additionalProperties`, so the wire has no slot for it and the field was an
+  undeclared property on a closed object schema. Clients that read `id` should
+  use the response's `ETag` header instead — the released ITS-REST text names
+  it "a unique identifier of the resultSet" (`query/Request.md` §"Common
+  Headers and Query Parameters"), and it is unchanged by this removal.
 
 ## [3.17.1] - 2026-08-01
 

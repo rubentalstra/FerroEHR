@@ -28,8 +28,10 @@ mod tests {
             instruction_id: LocatableRef {
                 namespace: "local".to_owned(),
                 r#type: "COMPOSITION".to_owned(),
-                id: UidBasedId::ObjectVersionId(ObjectVersionId::new("abc::sys::1".to_owned())
-                .expect("a well-formed identifier")),
+                id: UidBasedId::ObjectVersionId(
+                    ObjectVersionId::new("abc::sys::1".to_owned())
+                        .expect("a well-formed identifier"),
+                ),
                 path: None,
             },
             activity_id: activity_id.to_owned(),

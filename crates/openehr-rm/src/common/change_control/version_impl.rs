@@ -227,8 +227,10 @@ mod tests {
             contribution: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "CONTRIBUTION".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId::new("11111111-1111-4111-8111-111111111111".to_owned())
-                .expect("a well-formed identifier")),
+                id: ObjectId::HierObjectId(
+                    HierObjectId::new("11111111-1111-4111-8111-111111111111".to_owned())
+                        .expect("a well-formed identifier"),
+                ),
             }),
             signature: None,
             commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
@@ -245,8 +247,7 @@ mod tests {
                 description: None,
                 committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             }),
-            uid: ObjectVersionId::new(value.to_owned())
-                .expect("a well-formed identifier"),
+            uid: ObjectVersionId::new(value.to_owned()).expect("a well-formed identifier"),
             preceding_version_uid: None,
             other_input_version_uids: openehr_base::containers::present(Vec::new()),
             lifecycle_state: coded("532", "complete"),
@@ -318,8 +319,10 @@ mod tests {
             contribution: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "CONTRIBUTION".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId::new("22222222-2222-4222-8222-222222222222".to_owned())
-                .expect("a well-formed identifier")),
+                id: ObjectId::HierObjectId(
+                    HierObjectId::new("22222222-2222-4222-8222-222222222222".to_owned())
+                        .expect("a well-formed identifier"),
+                ),
             }),
             signature: Some("local-wrapper-signature".to_owned()),
             commit_audit: AuditDetails::AuditDetails(AuditDetailsData {

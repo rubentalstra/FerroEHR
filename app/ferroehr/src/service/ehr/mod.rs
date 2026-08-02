@@ -121,7 +121,8 @@ fn ensure_if_match(
         Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(
             format!(
                 "If-Match {:?} does not match the current latest version {:?}",
-                pre.value(), meta.uid
+                pre.value(),
+                meta.uid
             ),
         )),
         None => Ok(()),

@@ -603,8 +603,17 @@ pub(crate) fn require_text_plain(headers: &HeaderMap) -> Result<(), ApiError> {
 }
 
 fn parse_json(body: &Bytes) -> Result<serde_json::Value, ApiError> {
-    serde_json::from_slice(body)
-        .map_err(|e| ApiError::BadRequest(format!("invalid JSON body: {e}")))
+    let value: serde_json::Value = serde_json::from_slice(body)
+        .map_err(|e| ApiError::BadRequest(format!("invalid JSON body: {e}")))?;
+    // The strict reader at the door: a wire key the RM class does not declare
+    // is a refusal, and a document the reader cannot READ never converts — so
+    // it is a `400`, not the convertible-but-semantically-invalid `422`
+    // (ITS-REST overview `Requests_and_responses.md` §HTTP status codes: 400 =
+    // content that "could not be parsed or is invalid"; 422 = "well-formed but
+    // was unable to be followed due to semantic errors").
+    openehr_its::json::reject_undeclared_keys(&value)
+        .map_err(|e| ApiError::BadRequest(format!("invalid canonical JSON body: {e}")))?;
+    Ok(value)
 }
 
 /// Render a serializable payload as a JSON response. Used for responses that

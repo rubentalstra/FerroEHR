@@ -44,10 +44,13 @@ pub(crate) fn corpus_files() -> Vec<PathBuf> {
 /// never reach a snapshot manifest or an exclusion lookup.
 pub(crate) fn corpus_rel(path: &Path) -> String {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let rel = [manifest.join("tests/vendor"), manifest.join("tests/fixtures")]
-        .iter()
-        .find_map(|root| path.strip_prefix(root).ok())
-        .unwrap_or(path);
+    let rel = [
+        manifest.join("tests/vendor"),
+        manifest.join("tests/fixtures"),
+    ]
+    .iter()
+    .find_map(|root| path.strip_prefix(root).ok())
+    .unwrap_or(path);
     rel.display().to_string().replace('\\', "/")
 }
 

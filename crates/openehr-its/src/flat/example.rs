@@ -336,18 +336,15 @@ fn is_repeating(node: &WebTemplateNode) -> bool {
 /// Template child may sit several RM levels below its Web Template parent, so
 /// the parent's class is not the right scope to resolve against.
 fn rm_declares(aql_path: &str) -> bool {
-    let tail = aql_path.rsplit('/').next().unwrap_or(aql_path);
-    let attr = tail.split('[').next().unwrap_or(tail);
-    if attr.is_empty() {
-        return true;
-    }
     static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&'static str>> =
         std::sync::LazyLock::new(|| {
             openehr_rm::model::classes()
                 .flat_map(|c| c.attributes.iter().map(|a| a.name))
                 .collect()
         });
-    DECLARED.contains(attr)
+    let tail = aql_path.rsplit('/').next().unwrap_or(aql_path);
+    let attr = tail.split('[').next().unwrap_or(tail);
+    attr.is_empty() || DECLARED.contains(attr)
 }
 
 fn seg_for(node: &WebTemplateNode) -> String {

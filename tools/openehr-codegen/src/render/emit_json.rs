@@ -309,10 +309,7 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
             .map(|k| format!("{k:?}"))
             .collect::<Vec<_>>()
             .join(", ");
-        let _ = writeln!(
-            b,
-            "{spec:?} => ::core::option::Option::Some(&[{list}]),"
-        );
+        let _ = writeln!(b, "{spec:?} => ::core::option::Option::Some(&[{list}]),");
     }
     b.push_str("_ => ::core::option::Option::None,\n}\n}\n");
     b

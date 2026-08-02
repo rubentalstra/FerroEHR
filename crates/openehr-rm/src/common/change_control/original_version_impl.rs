@@ -53,8 +53,10 @@ mod tests {
             contribution: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "CONTRIBUTION".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId::new("11111111-1111-4111-8111-111111111111".to_owned())
-                .expect("a well-formed identifier")),
+                id: ObjectId::HierObjectId(
+                    HierObjectId::new("11111111-1111-4111-8111-111111111111".to_owned())
+                        .expect("a well-formed identifier"),
+                ),
             }),
             signature: None,
             commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
@@ -85,15 +87,22 @@ mod tests {
                 description: None,
                 committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             }),
-            uid: ObjectVersionId::new("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::3".to_owned())
+            uid: ObjectVersionId::new(
+                "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::3".to_owned(),
+            )
+            .expect("a well-formed identifier"),
+            preceding_version_uid: Some(
+                ObjectVersionId::new(
+                    "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2".to_owned(),
+                )
                 .expect("a well-formed identifier"),
-            preceding_version_uid: Some(ObjectVersionId::new("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2".to_owned())
-                .expect("a well-formed identifier")),
+            ),
             other_input_version_uids: openehr_base::containers::present(
                 other_input
                     .into_iter()
-                    .map(|value| ObjectVersionId::new(value.to_owned())
-                .expect("a well-formed identifier"))
+                    .map(|value| {
+                        ObjectVersionId::new(value.to_owned()).expect("a well-formed identifier")
+                    })
                     .collect(),
             ),
             lifecycle_state: DvCodedText {

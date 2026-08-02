@@ -215,10 +215,13 @@ enum Depth {
     /// ([`crate::bmm3::core::entity::bmm_class::BmmClass::all_ancestors`],
     /// `has_ancestor_class`, `flat_features`) see the whole lineage.
     Full,
-    /// A name-bearing stub: no features, no generic parameters, ancestors as
-    /// stubs. Used for the base class of a TYPE, which is where full embedding
-    /// would stop terminating (a property's type resolves to a class whose own
-    /// properties have types …).
+    /// A name-bearing stub: no features, ancestors as stubs. Used for the base
+    /// class of a TYPE, which is where full embedding would stop terminating
+    /// (a property's type resolves to a class whose own properties have
+    /// types …). Formal generic parameters ARE declared even on a stub — a
+    /// `BMM_GENERIC_CLASS` without them is not a valid instance and could not
+    /// generate its fully open type (`BMM_CLASS.type`); their constraint
+    /// chains are cycle-cut in [`build_parameter_type`].
     Stub,
 }
 
@@ -354,7 +357,7 @@ fn build_class(
             // attribute designating them, so no subset can be computed.
             creators: None,
             converters: None,
-            generic_parameters: build_generic_parameters(builder, persisted, depth, visiting)?,
+            generic_parameters: build_generic_parameters(builder, persisted, visiting)?,
         }));
     }
     Ok(BmmClass::BmmSimpleClass(BmmSimpleClass::BmmSimpleClass(
@@ -564,12 +567,15 @@ fn class_as_type(class: BmmClass) -> BmmModelType {
 fn build_generic_parameters(
     builder: &Builder<'_>,
     persisted: &PBmmClass,
-    depth: Depth,
     visiting: &mut BTreeSet<String>,
 ) -> Result<BTreeMap<String, BmmParameterType>, PBmmReadError> {
-    if depth == Depth::Stub {
-        return Ok(BTreeMap::new());
-    }
+    // Built at BOTH depths (no `Depth` parameter): a `BMM_GENERIC_CLASS`
+    // without its formal parameters is not a valid instance of the model (the
+    // parameters are what make it generic,
+    // `org.openehr.lang.bmm3.bmm_generic_class.adoc` §Attributes), and
+    // `class_as_type` must generate the fully open type of a stub. The
+    // parameter NAMES recurse nowhere; the constraint chain is what
+    // [`build_parameter_type`] cycle-cuts.
     let mut out = BTreeMap::new();
     for (key, parameter) in persisted.generic_parameter_defs().into_iter().flatten() {
         out.insert(
@@ -600,18 +606,34 @@ fn build_parameter_type(
     let type_constraint = match constraint {
         None => None,
         Some(constrainer) => {
-            let context = format!("class `{owner}` generic parameter `{name}`");
-            let stub = build_class(
-                builder,
-                builder.entry(&context, constrainer)?,
-                Depth::Stub,
-                visiting,
-            )?;
-            Some(Box::new(
-                crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::from(
-                    class_as_type(stub),
-                ),
-            ))
+            // Constraint chains recurse: the constrainer builds as a stub
+            // whose own formal parameters may be constrained back onto a
+            // class already being built (the model states acyclicity for
+            // inheritance only, `master13-model_semantics.adoc` §Simple
+            // Inheritance — nothing forbids `A<T: B>` with `B<U: A>`).
+            // Re-entering the same owner/parameter edge would not terminate,
+            // so the repeated edge is cut by omitting the OPTIONAL constraint
+            // ("Optional conformance constraint",
+            // `…bmm3.bmm_parameter_type.adoc` §Attributes) — a namespaced key
+            // so the ancestors guard on bare class names is untouched.
+            let edge = format!("parameter-constraint {owner}::{name}");
+            if visiting.insert(edge.clone()) {
+                let context = format!("class `{owner}` generic parameter `{name}`");
+                let stub = build_class(
+                    builder,
+                    builder.entry(&context, constrainer)?,
+                    Depth::Stub,
+                    visiting,
+                )?;
+                visiting.remove(&edge);
+                Some(Box::new(
+                    crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::from(
+                        class_as_type(stub),
+                    ),
+                ))
+            } else {
+                None
+            }
         }
     };
     Ok(BmmParameterType {

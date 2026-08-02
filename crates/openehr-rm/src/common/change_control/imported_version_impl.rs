@@ -123,14 +123,14 @@ mod tests {
         ObjectRef::ObjectRef(ObjectRefData {
             namespace: "local".to_owned(),
             r#type: "CONTRIBUTION".to_owned(),
-            id: ObjectId::HierObjectId(HierObjectId::new(id.to_owned())
-                .expect("a well-formed identifier")),
+            id: ObjectId::HierObjectId(
+                HierObjectId::new(id.to_owned()).expect("a well-formed identifier"),
+            ),
         })
     }
 
     fn version_id(value: &str) -> ObjectVersionId {
-        ObjectVersionId::new(value.to_owned())
-                .expect("a well-formed identifier")
+        ObjectVersionId::new(value.to_owned()).expect("a well-formed identifier")
     }
 
     /// The wrapped original: version 2 of a container created on

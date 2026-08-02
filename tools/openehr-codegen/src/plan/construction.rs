@@ -333,8 +333,7 @@ mod tests {
             "VERSION_TREE_ID",
         ] {
             assert!(is_validated(class), "{class} must construct through a door");
-            let (params, _) =
-                validated_ctor(class).expect("a validated class has a constructor");
+            let (params, _) = validated_ctor(class).expect("a validated class has a constructor");
             assert_eq!(params.len(), 1, "{class}");
         }
         for class in [

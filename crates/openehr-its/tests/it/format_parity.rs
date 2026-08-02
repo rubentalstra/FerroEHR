@@ -59,7 +59,7 @@ fn render(msgs: Vec<openehr_its::rm_instance::ValidationMessage>) -> Vec<String>
 #[test]
 fn corpus_verdicts_agree_across_canonical_formats() {
     let mut checked = 0usize;
-    let mut inexpressible = Vec::new();
+    let mut inexpressible: Vec<String> = Vec::new();
     for path in corpus_files() {
         let text = std::fs::read_to_string(&path).expect("read corpus file");
         let Ok(doc) = serde_json::from_str::<Value>(&text) else {
@@ -101,7 +101,6 @@ fn corpus_verdicts_agree_across_canonical_formats() {
     // of the fixture twins (`common::excluded` carries the per-file
     // adjudication with its spec citation; the corrected halves live in
     // `tests/fixtures/twins/` and decode on both routes).
-    let mut inexpressible = inexpressible;
     inexpressible.sort();
     let expected: Vec<String> = [
         "openehr_sdk/composition/canonical_json/all_types_systematic_tests_feeder_audit.json",
