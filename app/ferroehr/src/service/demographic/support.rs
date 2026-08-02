@@ -219,16 +219,25 @@ impl FerroEhrService {
     }
 
     /// The versioned-object wrapper (`VERSIONED_PARTY` / `VERSIONED_OBJECT`)
-    /// for an ehr-less demographic object. `type_name` is the wire `_type`,
-    /// `ref_type` the `owner_id` ref's `type`, and `label` names the family
-    /// for the `404`. `VERSIONED_OBJECT.time_created` is the commit time of
-    /// the earliest held version (for a locally-created object, v1).
+    /// for an ehr-less demographic object. `type_name` is the wire `_type` and
+    /// `label` names the family for the `404`.
+    /// `VERSIONED_OBJECT.time_created` is the commit time of the earliest held
+    /// version (for a locally-created object, v1).
     ///
-    /// NOTE: `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner
-    /// for a demographic versioned object (no openEHR spec governs the owner
-    /// of an ehr-less demographic versioned object — our own design); we
-    /// reference the object's own versioned-object id (the demographics
-    /// repository owns it).
+    /// NOTE: `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner for a
+    /// demographic versioned object — RM common
+    /// `UML/classes/org.openehr.rm.common.versioned_object.adoc` §Attributes
+    /// types it `OBJECT_REF` 1..1 and says only that it references "the id of
+    /// the containing EHR or other relevant owning entity", while RM
+    /// demographic `master02-demographic_package.adoc` §Versioning Semantics
+    /// keeps parties in their own containers outside any EHR. The one concrete
+    /// released shape is the `VersionedParty` example in the vendored ITS-REST
+    /// OAS (`crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
+    /// `components.schemas.VersionedParty.example`), an `OBJECT_REF`
+    /// `{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}` — the "other
+    /// relevant owning entity" limb read as the serving system. This server
+    /// emits exactly that, with the configured system identifier as the `id`,
+    /// for every ehr-less demographic container (register AMB-69).
     ///
     /// The body is constructed as the generated [`VersionedObject`] subtype and
     /// serialized through the native codec, so it carries `_type` first and the
@@ -242,7 +251,6 @@ impl FerroEhrService {
         &self,
         vo_id: VoId,
         type_name: &str,
-        ref_type: &str,
         label: &str,
     ) -> Result<Value, ServiceError> {
         let time_created = version_repo::meta::time_created(&self.pool, vo_id)
@@ -257,10 +265,10 @@ impl FerroEhrService {
             value: vo_id.to_string(),
         };
         let owner_id = ObjectRef::ObjectRef(ObjectRefData {
-            namespace: "demographic".to_owned(),
-            r#type: ref_type.to_owned(),
+            namespace: "local".to_owned(),
+            r#type: "SYSTEM".to_owned(),
             id: ObjectId::HierObjectId(HierObjectId {
-                value: vo_id.to_string(),
+                value: self.effective_system_id(),
             }),
         });
         let time_created = crate::versioning::audit::dv_date_time(&time_created);

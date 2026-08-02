@@ -13,16 +13,23 @@
 #   * `time_created`: DV_DATE_TIME 1..1 — "Time of initial creation of this
 #     versioned object".
 #
-# `owner_id` IS DELIBERATELY NOT ASSERTED. It is mandatory (OBJECT_REF 1..1) and
-# its wire values are stated by no released sentence — worse here than on the
-# EHR side, because a PARTY has no containing EHR at all (RM demographic
-# master02-demographic_package.adoc §Versioning Semantics says only "Every Party
-# is stored in its own Version container"). The one concrete guidance is the
-# released VERSIONED_PARTY *example* (ITS-REST
-# specifications/schemas/demographic/VersionedParty.yaml `example`: namespace
-# local, type SYSTEM), and an example is illustration, not a rule. Register
-# AMB-69's extended handling pins that no case asserts the tokens, because doing
-# so would resolve the silence privately.
+# `owner_id` is mandatory (OBJECT_REF 1..1) and no released SENTENCE states its
+# wire values — worse here than on the EHR side, because a PARTY has no
+# containing EHR at all (RM demographic master02-demographic_package.adoc
+# §Versioning Semantics says only "Every Party is stored in its own Version
+# container"). The one concrete released guidance is the VERSIONED_PARTY
+# *example* in the released OAS (ITS-REST
+# specifications/schemas/demographic/VersionedParty.yaml `example`, vendored at
+# crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml
+# `components.schemas.VersionedParty.example`): an OBJECT_REF with
+# `namespace: local`, `type: SYSTEM` and a HIER_OBJECT_ID `id`. Register AMB-69's
+# fixed handling adopts exactly those tokens — under the 2026-07-28 oracle order
+# the released OAS grounds behaviour the docs text is silent on — so the two
+# tokens ARE asserted here, exactly as the EHR-side container-shape twins assert
+# their own. What stays unasserted is the `id` VALUE: the RM sentence's "other
+# relevant owning entity" limb fixes no referent for an ehr-less container, and
+# the released example's own id is an opaque UUID, so this case requires only
+# that the mandatory reference carries one.
 #
 # ANCHOR: `I_ITS_REST_VERSIONED_PARTY` is a reserved catalogue pseudo-interface
 # (register AMB-161), not an SM operation — `I_PARTY` declares no container read
@@ -77,6 +84,12 @@ flow:
       # "a UID with no extension" — no `::creating_system_id::version_tree_id`
       - { assert: field, path: "uid/value", equals: "${versioned_object_uid}" }
       - { assert: field, path: "uid/value", matches: "^[^:]+$" }
+      # AMB-69 fixed handling — the serving system, in the released example's
+      # own tokens (OAS demographic VersionedParty `example`). The `id` VALUE is
+      # deliberately only required to be present: see the header.
+      - { assert: field, path: "owner_id/namespace", equals: "local" }
+      - { assert: field, path: "owner_id/type", equals: "SYSTEM" }
+      - { assert: field, path: "owner_id/id/value", exists: true }
       # "Time of initial creation of this versioned object" (1..1)
       - { assert: field, path: "time_created/value", exists: true }
 postconditions:

@@ -1844,28 +1844,61 @@ AMB-69:
     legal values); RM UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants
     (Ehr_status_valid, the reverse direction) — confirmed first-hand.
   handling: >-
-    Fixed handling: this server (and the container-shape cases) serve
-    `owner_id` as `{namespace: "local", type: "EHR", id: HIER_OBJECT_ID of
-    the owning ehr_id}` — the only concrete shape any openEHR artifact
-    shows, and consistent with BASE's namespace vocabulary. Reported
-    upstream (#1513): state the owner_id wire values normatively.
-    SCOPE EXTENDED 2026-07-27 (group-12 audit) to VERSIONED_PARTY, where the
-    silence is worse: a PARTY has NO containing EHR at all. RM demographic
+    Fixed handling, in two halves — one per owner situation, each pinned by
+    its container-shape cases.
+    (a) EHR-OWNED containers (VERSIONED_COMPOSITION / VERSIONED_EHR_STATUS /
+    VERSIONED_EHR_ACCESS / VERSIONED_FOLDER): `owner_id` is
+    `{namespace: "local", type: "EHR", id: HIER_OBJECT_ID of the owning
+    ehr_id}` — the RM sentence's first limb ("the id of the containing EHR")
+    has a concrete referent here, and the namespace token is BASE's. The
+    get_versioned_composition / get_versioned_ehr_status container-shape cases
+    assert all three parts, including the id VALUE against `${ehr_id}`.
+    (b) EHR-LESS DEMOGRAPHIC containers (VERSIONED_PARTY, and the generic
+    VERSIONED_OBJECT this server serves for a PARTY_RELATIONSHIP): a PARTY has
+    NO containing EHR at all — RM demographic
     master02-demographic_package.adoc §Versioning Semantics says only "Every
-    Party is stored in its own Version container", and the whole chapter
-    describes a demographic service that is deliberately separate from the EHR
-    — so the "containing EHR or other relevant owning entity" the RM sentence
-    offers has no referent on this side, and the attribute is mandatory (1..1)
-    regardless. The one concrete guidance that exists is the released
-    VERSIONED_PARTY example, whose `owner_id` is
-    `{id: {_type: HIER_OBJECT_ID, value: …}, namespace: local, type: SYSTEM}`
-    (ITS-REST specifications/schemas/demographic/VersionedParty.yaml `example`)
-    — the "other relevant owning entity" limb read as the serving system, with
-    the same BASE namespace token the EHR side uses. This server emits that
-    shape. As on the EHR side the tokens are NOT asserted by any case: no
-    released SENTENCE fixes them, an example is illustration and not a rule,
-    and pinning them would resolve the silence privately. Reported upstream
-    with the same ask (#1513), now including the no-owning-EHR case.
+    Party is stored in its own Version container", and the chapter describes a
+    demographic service deliberately separate from the EHR, so the RM
+    sentence's first limb has no referent while the attribute stays mandatory
+    (1..1). The concrete released guidance is the VERSIONED_PARTY example —
+    `owner_id` = `{id: {_type: HIER_OBJECT_ID, value: …}, namespace: local,
+    type: SYSTEM}` (ITS-REST
+    specifications/schemas/demographic/VersionedParty.yaml `example`, vendored
+    at crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml
+    `components.schemas.VersionedParty.example`) — the "other relevant owning
+    entity" limb read as the serving system, with the same BASE namespace token
+    the EHR side uses. WHAT THAT EXAMPLE IS WORTH, under the oracle order: the
+    same as AMB-137's five `ItemTagOf<T>` examples — nothing as an assignment.
+    Tier 1, the ITS-REST docs text, never mentions `owner_id`; tier 2, the
+    released OAS, DECLARES the attribute (`VersionedObject` requires it, typed
+    `ObjectRefOfHierObjectId`) but its `example:` block is illustration, not a
+    rule. So the two tokens are OUR OWN REGISTER DECISION — no openEHR spec
+    governs them — INFORMED BY the released example rather than derived from
+    it. They are nevertheless ASSERTED by the versioned_party_get
+    container-shape case, on AMB-137's reasoning applied to the same attribute
+    name: the field is MANDATORY (1..1) with no derivable value, so leaving it
+    unasserted would leave a required wire field entirely unchecked, and
+    asserting the registered convention — labelled as a convention wherever it
+    is asserted — is the honest position. Only the `id` VALUE stays unasserted,
+    because the released example's own id is an opaque UUID that fixes no
+    referent, so the case requires presence alone. This server emits the
+    configured system identifier there, and emits the SAME shape for the
+    X_VERSIONED_PARTY wrapper of an EHR-Extract export and for the demographic
+    ITEM_TAG `owner_id` (register AMB-137), so one owner shape covers the whole
+    ehr-less demographic surface.
+    CORRECTION 2026-08-02 (RM §6.1 audit): before this revision the register
+    asserted "This server emits that shape" while the VERSIONED_PARTY container
+    read actually emitted `{namespace: "demographic", type: <PARTY |
+    PARTY_RELATIONSHIP>, id: the container's OWN uid}` (a self-referential
+    duplicate of `uid`) and the EHR-Extract wrapper emitted
+    `{namespace: "demographic", type: "SYSTEM", …}` — three shapes across two
+    code paths and the served OpenAPI. The statement was false when written;
+    the divergence is now converged onto the released-example shape and the
+    tokens are asserted, so the register describes what is served. The earlier
+    claim that "the tokens are NOT asserted by any case" was likewise stale on
+    the EHR side, where the container-shape cases have always asserted them.
+    Reported upstream (#1513): state the owner_id wire values normatively,
+    including the no-owning-EHR case.
   disposition: fixed_handling
   upstream_issue: 1513
 
@@ -4428,7 +4461,12 @@ AMB-130:
     §Party Relationships: "`PARTY_RELATIONSHIPs` are stored as part of the data
     of the `PARTY` designated as the source"), and `source`/`target` are
     `PARTY_REF`s whose ids denote version CONTAINERS ("`OBJECT_REFs` containing
-    `HIER_OBJECT_IDs` … rather than `OBJECT_VERSION_IDs`"), not versions. The
+    `HIER_OBJECT_IDs` … rather than `OBJECT_VERSION_IDs`"), not versions. That
+    inline reading is now PINNED by a case rather than only stated —
+    create_party-inline_relationships_verbatim — and AMB-187 carries what this
+    entry does not reach: the same by-value structure stands beside the SM's
+    independently-versioned relationship containers, and the two
+    representations are disjoint (neither writes the other). The
     inbound direction is undiscoverable over the released wire — recorded on
     AMB-32. Reported upstream (#1576).
   disposition: editorial
@@ -4810,7 +4848,9 @@ AMB-137:
     `ItemTagOf<T>` schemas require it) but its `example:` blocks are not
     declarations — an example is illustration and not a rule, the exact
     treatment AMB-69 applies one entry over to the VERSIONED_PARTY
-    `owner_id` example on this same attribute name. Both released sources
+    `owner_id` example on this same attribute name (that entry reaches the
+    same shape, `local`/`SYSTEM` over a system-identifier `HIER_OBJECT_ID`,
+    by the same route). Both released sources
     therefore WITHHOLD the value, which is spec silence: the shape below is a
     register decision, not a derivation.
   handling: >-
@@ -4825,11 +4865,14 @@ AMB-137:
     duplicate of `target` and contradict the word "owner", and naming an EHR
     would invent a containment the demographic package does not have.
     THE SHAPE IS UNCHANGED by this restatement, and it stays PINNED by the
-    wire tests — unlike AMB-69, where the register declines to assert the
-    tokens, this attribute is MANDATORY (1..1) with no derivable value at all,
-    so leaving it unasserted would leave a required wire field entirely
+    wire tests: this attribute is MANDATORY (1..1) with no derivable value at
+    all, so leaving it unasserted would leave a required wire field entirely
     unchecked; asserting our registered convention is the honest position, and
-    it is labelled as a convention wherever it is asserted. `target` is
+    it is labelled as a convention wherever it is asserted. AMB-69 asserts the
+    identical two tokens on `VERSIONED_OBJECT.owner_id` for the same ehr-less
+    demographic containers, on this same reasoning (its earlier
+    decline-to-assert wording was retired 2026-08-02, when the three-way
+    divergence in the served shape was converged). `target` is
     unaffected: it stays the bare RM `UID_BASED_ID` (`HIER_OBJECT_ID` for
     the container, `OBJECT_VERSION_ID` for a VERSION) the RM class requires,
     on both families alike. Reported upstream (#1583): state who owns a
@@ -7929,3 +7972,87 @@ AMB-186:
     `ObjectRef.yaml` already does — is reported upstream (#1667).
   disposition: fixed_handling
   upstream_issue: 1667
+
+AMB-187:
+  ambiguity: >-
+    THE RM AND THE SM MODEL A PARTY_RELATIONSHIP AS TWO DIFFERENT THINGS, AND
+    NOTHING RECONCILES THEM. The RM makes a relationship COMPOSITIONAL DATA of
+    its source party: "`PARTY_RELATIONSHIPs` are stored as part of the data of
+    the `PARTY` designated as the source. This means that the relationships
+    attribute is by value, while the `PARTY_RELATIONSHIP._source_` and
+    `_target_` are represented by references" (master02 L44), and "A Version of
+    a `PARTY` includes all the compositional parts, such as identities,
+    contacts, Party relationships of which it is the source. Every Party is
+    stored in its own Version container" (master02 L48). On that reading a
+    relationship has NO container of its own — it is versioned with, and only
+    with, its source party — and the RM demographic package accordingly
+    declares NO `VERSIONED_PARTY_RELATIONSHIP` class beside `VERSIONED_PARTY`
+    (grep-verified: the identifier occurs nowhere in the RM). The SM models the
+    exact opposite: `I_PARTY_RELATIONSHIP` gives a relationship its OWN
+    independently-addressed version container — every one of its six operations
+    takes `a_versioned_party_rel_id`, `update_party_relationship` "Causes
+    server-side creation of a new `ORIGINAL_VERSION` and `CONTRIBUTION`" of its
+    own, `delete_party_relationship` deletes that container, and four
+    operations declare a `versioned_object_does_not_exist` error, which
+    presupposes a versioned object that can fail to exist independently of any
+    party. The two representations of one relationship are therefore BOTH
+    modelled and NOTHING released says how they relate: whether committing an
+    inline `relationships` member must materialize a container, whether
+    creating a container must appear in its source party's list, which of the
+    two is authoritative when they disagree, or whether they are simply
+    disjoint.
+  source: >-
+    RM demographic docs/demographic/master02-demographic_package.adoc §Party
+    Relationships L44 + §Versioning Semantics L48 (both quoted above) + RM
+    demographic UML/classes/org.openehr.rm.demographic.party.adoc §Attributes
+    (`relationships`: `List<PARTY_RELATIONSHIP>` — BY VALUE) and §Invariants
+    (`Relationships_validity`: `relationships /= Void implies (not
+    relationships.is_empty and then relationships.for_all (r | r.source =
+    self)`) + the absence of any `VERSIONED_PARTY_RELATIONSHIP` class in the
+    package (contrast `versioned_party.adoc`, which exists) CONTRASTED with SM
+    UML/classes/i_party_relationship.adoc (all six operations keyed by
+    `a_versioned_party_rel_id: UUID`; `update_party_relationship` "Causes
+    server-side creation of a new `ORIGINAL_VERSION` and `CONTRIBUTION`";
+    `delete_party_relationship` `Post_relationship_deleted`; the
+    `versioned_object_does_not_exist` error on get / get_at_time / update /
+    delete) — ALL CONFIRMED first-hand. The ITS-REST docs text cannot break the
+    tie: it surfaces no PARTY_RELATIONSHIP resource at all (register AMB-32),
+    so tier 1 and tier 2 of the oracle order are both silent on the relation
+    between the two representations.
+  handling: >-
+    Fixed handling: THE TWO REPRESENTATIONS ARE DISJOINT, and the SM drives the
+    service surface.
+    (a) The SERVICE surface follows the SM: `I_PARTY_RELATIONSHIP` and
+    `I_DEMOGRAPHIC_SERVICE.create_party_relationship` are realized as
+    independently-versioned containers of their own, on this product's
+    `/demographic/party_relationship/**` extension routes (no openEHR spec
+    governs those routes — our own extension; register AMB-32 carries the
+    missing released wire). That is the only reading under which the SM's
+    `a_versioned_party_rel_id`, its own ORIGINAL_VERSION/CONTRIBUTION and its
+    `versioned_object_does_not_exist` error mean anything.
+    (b) An inline `relationships` list inside a committed PARTY body is
+    RM-VALID DATA and is treated as such: it is accepted, validated against
+    `PARTY.Relationships_validity` (present-implies-non-empty, and the
+    source-identity arm where the body carries a uid to check it against), and
+    stored and served VERBATIM as part of that party's version content, exactly
+    as master02 L44/L48 require of a by-value compositional part.
+    (c) The two are NOT synchronized in either direction — this is the point
+    the released text leaves open and the register fixes. Committing a party
+    with an inline relationship does NOT mint a relationship container, and
+    creating a relationship container does NOT append to any party's
+    `relationships` list. Auto-synchronizing would invent server behaviour no
+    released sentence asks for, and would silently rewrite client-submitted
+    party content; leaving each representation to carry exactly what its own
+    writer wrote is the conservative reading. A deployment that wants one view
+    of both reads the party for the by-value half and the relationship routes
+    for the container half.
+    The disjointness is ASSERTED, not merely stated: the inline half is pinned
+    by I_DEMOGRAPHIC_SERVICE.create_party-inline_relationships_verbatim (an
+    inline list survives a commit + read-back byte-for-byte, and no
+    relationship container appears), and the container half by the
+    create_party_relationship battery. Register AMB-32 carries the missing
+    released wire for the container half and the undiscoverable inbound
+    direction; AMB-130 carries the two defective PARTY_RELATIONSHIP invariants
+    and reads the same inline structure this entry does.
+  disposition: fixed_handling
+  upstream_issue: 1670

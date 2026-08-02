@@ -1927,7 +1927,7 @@ impl HttpDriver<'_> {
     /// Remember the newest `version_uid` a SUCCESS outcome's binding capture
     /// yields on this row — the `latest-version-uid` header matcher's
     /// comparison source. Only success-class outcomes advance it (an error
-    /// commits no version — RM common master06 §Change Control).
+    /// commits no version — RM common master06 §Committal and Audits).
     fn track_latest_version_uid(
         &mut self,
         binding: &OperationBinding,

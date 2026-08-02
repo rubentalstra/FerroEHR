@@ -5371,11 +5371,15 @@ pub(crate) async fn role_delete(
                                       schema \
                                       `schemas/demographic/VersionedParty.yaml`). \
                                       `owner_id` is emitted in the shape that \
-                                      schema's own example uses — a `PARTY_REF` \
-                                      with `namespace: local` and `type: SYSTEM` \
-                                      — because a demographic party has no \
-                                      containing EHR to own it and no released \
-                                      text names another referent.",
+                                      schema's own example uses — the plain \
+                                      `OBJECT_REF` the released \
+                                      `ObjectRefOfHierObjectId` schema titles, \
+                                      with `namespace: local`, `type: SYSTEM` \
+                                      and a `HIER_OBJECT_ID` id — because a \
+                                      demographic party has no containing EHR \
+                                      to own it and no released text names \
+                                      another referent; the id carries this \
+                                      server's configured system identifier.",
          body = serde_json::Value,
          headers(
              ("ETag" = String,
@@ -5396,10 +5400,10 @@ pub(crate) async fn role_delete(
              "_type": "VERSIONED_PARTY",
              "uid": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
              "owner_id": {
-                 "_type": "PARTY_REF",
+                 "_type": "OBJECT_REF",
                  "namespace": "local",
                  "type": "SYSTEM",
-                 "id": { "_type": "HIER_OBJECT_ID", "value": "7d44b88c-4199-4bad-97dc-d78268e01398" }
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" }
              },
              "time_created": { "_type": "DV_DATE_TIME", "value": "2015-01-20T19:30:22.765+01:00" }
          })),

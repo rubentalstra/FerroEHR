@@ -752,11 +752,26 @@ async fn versioned_party_relationship_is_mounted() {
     let (status, _h, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::OK, "body: {body}");
     let v: Value = serde_json::from_str(&body).expect("json body");
-    // The ehr-less relationship version spine serves the base RM `VERSIONED_OBJECT`
-    // (owner_id references the relationship's own versioned object) — the
-    // extension route's own design (the `owner_id` NOTE in relationship.rs).
+    // The ehr-less relationship version spine serves the base RM
+    // `VERSIONED_OBJECT` — no `VERSIONED_PARTY_RELATIONSHIP` class exists in
+    // the RM demographic package — and its mandatory `owner_id` names the
+    // SERVING SYSTEM, the same shape every ehr-less demographic container
+    // carries: an `OBJECT_REF` `{namespace: local, type: SYSTEM}` over a
+    // `HIER_OBJECT_ID`, per the released `VersionedParty` example (vendored
+    // ITS-REST OAS
+    // `crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
+    // `components.schemas.VersionedParty.example`; register AMB-69). It is NOT
+    // a self-reference to the relationship's own container, which would merely
+    // duplicate the sibling `uid`.
     assert_eq!(v["_type"], "VERSIONED_OBJECT");
-    assert_eq!(v["owner_id"]["type"], "PARTY_RELATIONSHIP");
+    assert_eq!(v["owner_id"]["_type"], "OBJECT_REF");
+    assert_eq!(v["owner_id"]["namespace"], "local");
+    assert_eq!(v["owner_id"]["type"], "SYSTEM");
+    assert_eq!(v["owner_id"]["id"]["_type"], "HIER_OBJECT_ID");
+    assert_ne!(
+        v["owner_id"]["id"]["value"], v["uid"]["value"],
+        "owner_id must name the owning system, never re-state the container uid"
+    );
 }
 
 /// The ITS-REST overview committal-header merge requirement holds on the

@@ -166,7 +166,7 @@ fn assert_phi_free(envelope: &Value) {
             .collect();
         keys.sort_unstable();
         // `version_tree_id` joined the envelope with version-tree branching
-        // (RM common master06 §Version tree) — identity metadata, PHI-free.
+        // (RM common master06 §The 'Virtual Version Tree') — identity metadata, PHI-free.
         assert_eq!(
             keys,
             [

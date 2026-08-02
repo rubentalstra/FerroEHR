@@ -5,7 +5,7 @@
 //! takes the per-vo advisory lock first and then calls these reads.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage); the version tree realized is RM common master06 §Version tree.
+//! §Storage); the version tree realized is RM common master06 §The 'Virtual Version Tree'.
 
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, Row};

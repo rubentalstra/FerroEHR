@@ -510,7 +510,7 @@ fn vo_id_of(uid: &str) -> Option<String> {
 /// The trailing version number of an `OBJECT_VERSION_ID`, if present.
 fn version_of(uid: &str) -> Option<String> {
     // The VERSION_TREE_ID lexical form: `N` or `N.B.V` (trunk or branch —
-    // RM common master06 §Version tree). Anything else carries no version.
+    // RM common master06 §The 'Virtual Version Tree'). Anything else carries no version.
     let tail = uid.rsplit("::").next()?;
     let mut parts = tail.split('.');
     let is_number = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
