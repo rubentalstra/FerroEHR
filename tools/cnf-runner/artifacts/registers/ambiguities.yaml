@@ -2235,7 +2235,10 @@ AMB-81:
     sibling with the exact name value, navigates folders only (never
     items), and answers 404 for an unresolved path (the declared trigger).
     Path cases pin this grammar. Reported upstream (#1525): define the
-    grammar normatively.
+    grammar normatively. The RM-layer twin of this collision — master05's
+    name-based bare brackets and parenthesised uniqueness modifiers against
+    BASE master11's archetype_node_id shortcut, which is what the RM path
+    engine implements — is AMB-183.
   disposition: fixed_handling
   upstream_issue: 1525
 
@@ -7524,3 +7527,89 @@ AMB-182:
     future reader does not "restore" the binding from the RM sentence alone.
   disposition: report_only
   upstream_issue: 1635
+
+AMB-183:
+  ambiguity: >-
+    TWO INCOMPATIBLE BARE-BRACKET PREDICATE GRAMMARS FOR THE SAME PATH SYNTAX.
+    RM common master05-directory_package.adoc §Paths states directory paths as
+    NAME-based: "Directory paths are built using the `_name_` attribute values
+    inherited from `LOCATABLE` into each `FOLDER` object" (l.15), with worked
+    examples whose bare brackets hold a name value, not a node id —
+    `/folders[hospital episodes]/items[1]` (l.18) — and it adds a uniqueness
+    modifier form found in no other openEHR path text: "Uniqueness modifiers
+    are appended in brackets" (l.23), `[hospital episodes]` vs
+    `[hospital episodes(car accident Aug 1998)]` (ll.26-27). BASE
+    architecture_overview/master11-paths.adoc §Archetype path Predicate assigns
+    the SAME bare-bracket slot the opposite meaning: "The shortcut form allows
+    the archetype code to be included on its own as the predicate, e.g.
+    `[at0003]`" (l.68), "the `[atNNNN]` predicates are a shortcut for
+    `[@archetype_node_id = 'atNNNN']` in standard Xpath" (l.74). A name is
+    reached in master11 only through the explicit `name/value='…'` predicate
+    (§Name-based Predicate) or its comma shortcut — never a bare bracket. So a
+    bare `[hospital episodes]` means "the FOLDER named 'hospital episodes'"
+    under master05 and "the node whose archetype_node_id is
+    'hospital episodes'" under master11, and the parenthesised uniqueness
+    modifier has no meaning at all under master11, which defines no
+    parenthesis production outside boolean predicate grouping.
+  source: >-
+    RM common master05-directory_package.adoc §Paths ll.15, 18, 23, 26-27; BASE
+    docs/architecture_overview/master11-paths.adoc §Archetype path Predicate
+    ll.68, 74 + §Name-based Predicate — read first-hand.
+  handling: >-
+    Fixed handling: the path engine implements master11, BASE's formal path
+    grammar chapter, for every path in the system — a bare bracket token binds
+    to `archetype_node_id`, and a name is matched only through the explicit
+    `name/value` predicate. master05's name-form therefore binds NOTHING: a
+    directory path written the master05 way (`/folders[hospital episodes]`)
+    parses, binds its token as an archetype_node_id, and matches no node, which
+    is the correct master11 answer and is left unchanged. The parenthesised
+    uniqueness modifier is a DIFFERENT case and is not silently mis-bound: a
+    bare token containing `(`…`)` is refused as an unsupported predicate
+    (`PathError::UnsupportedPredicate`) rather than binding the whole literal —
+    including the parentheses — as an archetype_node_id that could never match.
+    Refusing loudly keeps the two grammars from being silently conflated. This
+    is the RM-LAYER twin of AMB-81, which registers the same collision one
+    level up on the ITS-REST directory `path` query parameter (that parameter's
+    own one-sentence grammar references neither chapter); AMB-81 governs the
+    REST parameter's segment resolution, this entry governs the RM path
+    predicate grammar the engine implements.
+  disposition: report_only
+  upstream_issue: 1650
+
+AMB-184:
+  ambiguity: >-
+    RM NAMES A DEMOGRAPHIC FOLDER THE RELEASED SERVICE SURFACES CANNOT ADDRESS.
+    RM common master05-directory_package.adoc §Overview states that
+    `VERSIONED_FOLDER` "provides a means of versioning `FOLDER` structures over
+    time, which is useful in the EHR, Demographics service or anywhere else
+    where Folders are used". Nothing in the released service or wire
+    specifications realises the Demographics half: SM
+    UML/classes/i_demographic_service.adoc declares exactly four functions —
+    `create_party`, `create_party_relationship`, `i_party`,
+    `i_party_relationship` — none of them folder- or directory-bearing, and
+    there is no `I_DEMOGRAPHIC_DIRECTORY` interface to parallel
+    `I_EHR_DIRECTORY`; the ITS-REST demographic API defines no folder or
+    directory path, every `directory_*` operation being mounted EHR-scoped at
+    `/ehr/{ehr_id}/directory` (specifications/ehr.openapi.yaml). So the RM
+    sentence describes a use the released service model and REST API give no
+    operation for.
+  source: >-
+    RM common master05-directory_package.adoc §Overview (the "EHR, Demographics
+    service or anywhere else" sentence); SM
+    docs/UML/classes/i_demographic_service.adoc §Functions (the complete
+    four-function table); ITS-REST specifications/ehr.openapi.yaml
+    (`/ehr/{ehr_id}/directory`, `/ehr/{ehr_id}/directory/{version_uid}`) +
+    specifications/demographic.openapi.yaml (no folder path) — read first-hand.
+  handling: >-
+    Fixed handling: FOLDER is an EHR-scoped kind, both ways. A demographic
+    CONTRIBUTION carrying a FOLDER version is refused, and an EHR CONTRIBUTION
+    carrying a demographic version is refused (the contribution kind-scope
+    check). The released scoping is the reality to implement: master05's
+    sentence is a statement about where the CLASS is reusable, not a service
+    definition, and no released operation exists to create, address, read or
+    version a demographic folder. Nothing is registered as unassigned here and
+    no upstream report is filed — the specifications are not in conflict, the
+    RM merely describes a possibility its service layer never exposed. This
+    flips only if a released SM interface or ITS-REST path introduces a
+    demographic directory resource.
+  disposition: fixed_handling

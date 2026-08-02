@@ -808,6 +808,21 @@ cnf.directory.invalid.link_missing_meaning:
     defect: "RM: a LINK without its meaning — LINK.meaning is 1..1"
     spec_ref: "RM common UML/classes/org.openehr.rm.common.link.adoc §Attributes (meaning: DV_TEXT, 1..1)"
   provenance: "derived 2026-08-01 from cnf.directory.root_with_link by removing the mandatory LINK.meaning, leaving the payload well-formed JSON with exactly ONE defect — the invalid twin of the accepted LINK"
+# The FOLDER.details slot twins. `details` is typed ITEM_STRUCTURE (abstract;
+# concrete subtypes ITEM_TREE / ITEM_LIST / ITEM_SINGLE / ITEM_TABLE), so a
+# DATA_VALUE in that slot is not a FOLDER. The ACCEPTING twin already exists as
+# cnf.directory.v2 (its details is a populated ITEM_TREE, read back by the
+# update/get cases' `equivalent` assertions); this is the invalid twin that
+# pins the refusal a lenient server would skip.
+cnf.directory.invalid.details_not_item_structure:
+  source: fixtures/directory/details_not_item_structure.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM: a FOLDER whose details is a DV_TEXT — FOLDER.details is typed ITEM_STRUCTURE"
+    spec_ref: "RM common UML/classes/org.openehr.rm.common.folder.adoc §Attributes (details: ITEM_STRUCTURE, 0..1); RM common master05-directory_package.adoc §Overview"
+  provenance: "derived 2026-08-01 from cnf.directory.root_only by adding a `details` carrying a DV_TEXT instead of one of the four concrete ITEM_STRUCTURE subtypes, leaving the payload well-formed JSON with exactly ONE defect — the invalid twin of cnf.directory.v2's populated ITEM_TREE details"
 # Corpus additions for the CNF master17.3 (content, quantity data types)
 # schedule cases. Same entry schema as MANIFEST.yaml; the validate harness
 # concatenates this into MANIFEST.yaml at integration (never edit

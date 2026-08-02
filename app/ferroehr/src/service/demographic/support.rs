@@ -12,9 +12,11 @@
 //! `versioned_object` builders are EHR-scoped, so this chapter maps the
 //! ehr-less `VersionMeta` rows into the wire shape itself.
 
-use openehr_base::prelude::ObjectVersionId;
-use openehr_rm::prelude::{RevisionHistory, RevisionHistoryItem};
-use serde_json::{Value, json};
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_rm::prelude::{
+    RevisionHistory, RevisionHistoryItem, VersionedObject, VersionedObjectData, VersionedParty,
+};
+use serde_json::Value;
 
 use crate::ids::VoId;
 use crate::service::FerroEhrService;
@@ -228,6 +230,10 @@ impl FerroEhrService {
     /// reference the object's own versioned-object id (the demographics
     /// repository owns it).
     ///
+    /// The body is constructed as the generated [`VersionedObject`] subtype and
+    /// serialized through the native codec, so it carries `_type` first and the
+    /// BMM's own attribute order rather than a hand-built literal's.
+    ///
     /// # Errors
     /// - [`ServiceError::NotFound`] — the object holds no versions (`label`
     ///   names the family in the message).
@@ -247,17 +253,33 @@ impl FerroEhrService {
                     format!("{label} {vo_id}"),
                 )
             })?;
-        Ok(json!({
-            "_type": type_name,
-            "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
-            "owner_id": {
-                "_type": "OBJECT_REF",
-                "namespace": "demographic",
-                "type": ref_type,
-                "id": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() }
-            },
-            "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
-        }))
+        let uid = HierObjectId {
+            value: vo_id.to_string(),
+        };
+        let owner_id = ObjectRef::ObjectRef(ObjectRefData {
+            namespace: "demographic".to_owned(),
+            r#type: ref_type.to_owned(),
+            id: ObjectId::HierObjectId(HierObjectId {
+                value: vo_id.to_string(),
+            }),
+        });
+        let time_created = crate::versioning::audit::dv_date_time(&time_created);
+        let container = match type_name {
+            "VERSIONED_PARTY" => VersionedObject::VersionedParty(VersionedParty {
+                uid,
+                owner_id,
+                time_created,
+            }),
+            // The generic container of RM common master06 §Versioned Objects,
+            // for a demographic kind with no dedicated `VERSIONED_*` binding
+            // (`PARTY_RELATIONSHIP`).
+            _ => VersionedObject::VersionedObject(VersionedObjectData {
+                uid,
+                owner_id,
+                time_created,
+            }),
+        };
+        Ok(openehr_its::json::to_canonical_value(&container))
     }
 
     /// The `REVISION_HISTORY` of an ehr-less demographic object: one item per

@@ -1,7 +1,12 @@
-//! Hand-written RM class invariant for `FOLDER`.
+//! Hand-written RM class invariants for `FOLDER`.
 //!
-//! Only the inherited LOCATABLE `Archetype_node_id_valid`. archie's own
-//! `Folder.Folders_valid` is `ignored`.
+//! `FOLDER` declares NO invariants of its own in RM 1.2.0: its class table
+//! (`RM/docs/UML/classes/org.openehr.rm.common.folder.adoc`) carries
+//! Description / Inherit / Attributes rows and no Invariants section, and the
+//! vendored BMM class definition likewise has no `invariants` member. So the
+//! only invariant that applies to a `FOLDER` is the one it inherits from
+//! `LOCATABLE` — `Archetype_node_id_valid`
+//! (`…common.locatable.adoc` §Invariants) — and that is all this impl runs.
 
 use crate::common::directory::folder::Folder;
 use crate::validate::{InvariantViolation, Validate};

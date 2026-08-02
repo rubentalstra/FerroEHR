@@ -130,6 +130,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A path predicate carrying a parenthesised uniqueness modifier is now
+  refused instead of silently matching nothing.** The Reference Model's
+  directory chapter shows folder paths written with a name and a bracketed
+  uniqueness modifier (`/folders[hospital episodes(car accident Aug 1998)]`),
+  a form the formal openEHR path grammar this server implements does not
+  define. Such a predicate used to be accepted and bound whole as an
+  archetype node id, so the path quietly resolved to nothing; it is now a
+  loud unsupported-predicate error. Plain node-id and archetype-id
+  predicates (`[at0003]`, `[openEHR-EHR-COMPOSITION.x.v1]`) and bare name
+  tokens are unaffected.
+
 - **An OAuth2/OIDC committer's identifier now names the token issuer.** Every
   authenticated write stamps the committing principal into
   `AUDIT_DETAILS.committer` as a `PARTY_IDENTIFIED` carrying a
