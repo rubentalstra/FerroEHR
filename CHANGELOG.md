@@ -88,6 +88,14 @@ workflow refuses a tag that has no matching section here.
   An `ORIGINAL_VERSION` carrying attestations is also pinned as a
   canonical-JSON/XML serialization vector.
 
+- **A conformance case for the third `PARTY_SELF` referral scheme.** The RM
+  names three ways to refer to the record subject from inside an EHR, and the
+  catalogue only exercised two of them. A COMPOSITION whose interior ENTRY
+  carries a `PARTY_SELF` subject with a complete `external_ref` `PARTY_REF`
+  (id, namespace and type) now round-trips with that reference intact, so a
+  server that dropped or refused a per-instance subject reference — a
+  spec-supported deployment style — no longer passes the catalogue.
+
 - **A canonical-JSON output mode for the corpus fixture generator.** The
   `openehr-its` `canonical_convert` example now emits canonical JSON when the
   output path ends in `.json` (and handles `ORIGINAL_VERSION` documents under
@@ -103,6 +111,39 @@ workflow refuses a tag that has no matching section here.
   vendoring run.
 
 ### Fixed
+
+- **An OAuth2/OIDC committer's identifier now names the token issuer.** Every
+  authenticated write stamps the committing principal into
+  `AUDIT_DETAILS.committer` as a `PARTY_IDENTIFIED` carrying a
+  `DV_IDENTIFIER`, whose `issuer` used to read `ferroehr` for every mechanism
+  — including federated principals, whose subject the identity provider minted
+  rather than this server. A Bearer principal's identifier now carries the
+  validated token issuer (`iss`) as its `issuer`; a Basic principal, whose
+  credential this deployment holds, keeps `ferroehr`. Audits already committed
+  keep the issuer they were written with.
+
+- **`ATTESTATION` commit audits and rich audit descriptions now round-trip
+  instead of being silently flattened.** A CONTRIBUTION version whose
+  `commit_audit` is an `ATTESTATION` — the openEHR way of committing content
+  that is already signed, or that is marked as awaiting signature
+  (`is_pending: true`) — used to be stored as a plain `AUDIT_DETAILS`: the
+  concrete type and every attestation attribute (`reason`, `is_pending`,
+  `proof`, `items`, `attested_view`) were dropped without an error, on the
+  REST commit and on EHR-Extract import alike. They are now decoded,
+  validated against the RM invariants, stored, and served back as an
+  `ATTESTATION` on the version envelope, in the revision history, in the
+  CONTRIBUTION rendering, and in exports/archives. A `commit_audit` whose
+  `_type` names neither `AUDIT_DETAILS` (`UPDATE_AUDIT`) nor `ATTESTATION`
+  (`UPDATE_ATTESTATION`) is now refused with **422** instead of being read as
+  a plain audit. `AUDIT_DETAILS.description` is likewise kept whole: a
+  `DV_CODED_TEXT` description keeps its `defining_code` instead of being
+  reduced to its display string, and AQL can now address
+  `commit_audit/description/value`,
+  `commit_audit/description/defining_code/code_string` and
+  `.../defining_code/terminology_id/value` as distinct fields (a coded
+  description could previously never match). The `audit` table's baseline
+  schema changes with this: `description` becomes `jsonb` (the whole
+  `DV_TEXT`) and a nullable `attestation` column is added.
 
 - **The FLAT `_link:i` builder now reports a missing mandatory suffix instead
   of inventing an empty value.** `|meaning`, `|type` and `|target` are all

@@ -17,9 +17,10 @@ use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::service::list::Page;
 use crate::service::status::CallStatusType;
-use crate::versioning::attestation::PendingAttest;
+use crate::versioning::attestation::{AttestationParts, PendingAttest};
 use crate::versioning::audit::{
-    AuditInput, audit_details, change_type, change_type_code, validate_commit_audit,
+    AuditInput, change_type, change_type_code, decode_description, description_fragment,
+    validate_commit_audit,
 };
 use crate::versioning::change::{Change, CommittedContribution};
 use crate::versioning::lifecycle::{lifecycle_state_code, state};
@@ -315,12 +316,16 @@ pub(crate) async fn commit_version_set(
         // m4: default committer/system_id from the CONTRIBUTION audit when the
         // version item omits them (a "should be copied", so an explicit
         // per-version value is honoured — NOTE: SHOULD, not MUST).
+        // A `666|attestation|` member's commit_audit is the ATTESTATION it
+        // attaches, not that member's own commit audit (master06
+        // §Contributions) — the attestation path owns it.
         let audit = parse_audit(
             version.get("commit_audit"),
             code,
             &contrib_committer,
             &contrib_system_id,
-        );
+            action != Action::Attest,
+        )?;
         let lifecycle_state = lifecycle_of(version);
         // A `553|incomplete|` version gets relaxed content validation
         // (master06 §Incomplete Content).
@@ -560,7 +565,8 @@ pub(crate) async fn commit_version_set(
         contribution_code,
         &contrib_committer,
         &contrib_system_id,
-    );
+        true,
+    )?;
     validate_commit_audit(&contribution_audit)?;
 
     // Cross-area commit hooks — the single site of truth for the CONTRIBUTION
@@ -689,23 +695,93 @@ async fn reject_duplicate_singleton(
     Ok(())
 }
 
-/// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`) and the
+/// The concrete `_type` values a commit audit may carry on the native
+/// CONTRIBUTION wire, and whether each one commits an `ATTESTATION`.
+///
+/// The ITS-REST docs text points the native commit at the RM: "The 'native' way
+/// of committing is to use a CONTRIBUTION and wrap the content as a VERSION"
+/// (overview `Requests_and_responses.md` §"openehr-version and
+/// openehr-audit-details", linking the RM change-control package), and the RM
+/// makes `ATTESTATION` an admissible `VERSION.commit_audit` — master06
+/// §Committal and Audits ("`AUDIT_DETAILS` … or its subtype `ATTESTATION`"),
+/// §Attestation ("`ORIGINAL_VERSION._commit_audit_` is of type `ATTESTATION`
+/// rather than `AUDIT_DETAILS`"), and master04 §Attestation, which calls it
+/// "the most common scenario" when an attestation is required. The released OAS
+/// enumerates only `UPDATE_AUDIT` / `AUDIT_DETAILS` / an omitted `_type` for
+/// this attribute (`schemas/common/UpdateAudit.yaml` description), so the two
+/// sources disagree and the docs text wins (the ITS-REST oracle order). The
+/// `UPDATE_*` spellings are the released commit DTOs of the same two RM
+/// classes (`UpdateAudit.yaml` / `UpdateAttestation.yaml`), accepted for each
+/// alike so the wire pairing stays symmetric.
+///
+/// Anything else is refused: a `_type` naming another class is not a commit
+/// audit at all.
+fn commit_audit_is_attestation(audit: &Value) -> Result<bool, ServiceError> {
+    match audit.get("_type").and_then(Value::as_str) {
+        None | Some("UPDATE_AUDIT" | "AUDIT_DETAILS") => Ok(false),
+        Some("UPDATE_ATTESTATION" | "ATTESTATION") => Ok(true),
+        Some(other) => Err(ServiceError::Unprocessable(format!(
+            "VERSION.commit_audit _type {other:?} is not an AUDIT_DETAILS or its \
+             ATTESTATION subtype (RM common master06 §Committal and Audits)"
+        ))),
+    }
+}
+
+/// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`,
+/// `UpdateAttestation`, or the RM class either partials) and the
 /// already-resolved numeric `audit_change_type` code, defaulting the
 /// `committer`/`system_id` to the supplied fallbacks. Used both for the
 /// CONTRIBUTION's own audit and for each VERSION's `commit_audit` — for the
 /// latter the fallbacks are the enclosing CONTRIBUTION audit's values (master06
 /// §Committal copy rule, m4).
+///
+/// `attestable` is false for a `666|attestation|` member, whose `commit_audit`
+/// IS the `ATTESTATION` being attached to an existing version rather than that
+/// member's own commit audit (master06 §Contributions — such a member commits
+/// no version, so it writes no audit row); the attestation path
+/// ([`crate::versioning::attestation::complete_attestation`]) owns it there.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the `_type` names neither
+/// `AUDIT_DETAILS` nor its `ATTESTATION` subtype, when `description` is neither
+/// a string nor a canonical `DV_TEXT`, or when the `ATTESTATION`-declared
+/// attributes fail their RM invariants
+/// ([`crate::versioning::attestation::AttestationParts::decode`]).
 fn parse_audit(
     audit: Option<&Value>,
     change_type: String,
     default_committer: &Value,
     default_system_id: &str,
-) -> AuditInput {
+    attestable: bool,
+) -> Result<AuditInput, ServiceError> {
+    // AUDIT_DETAILS.description is a DV_TEXT (0..1). The two released sources
+    // spell the same attribute differently and BOTH spellings are accepted
+    // here: ITS-REST types it `UDvText`, which is `oneOf` [`DV_TEXT`,
+    // `DV_CODED_TEXT`] discriminated on `_type`
+    // (`specifications/schemas/data_types/UDvText.yaml` — an object, never a
+    // bare string), while SM `UPDATE_AUDIT.description` is `String [0..1]`
+    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes), which is what
+    // grounds the plain-string branch. The whole fragment is kept for the
+    // object spelling: a DV_CODED_TEXT description's defining_code is part of
+    // the committed audit, not decoration.
     let description = audit
         .and_then(|a| a.get("description"))
-        .and_then(|d| d.get("value"))
-        .and_then(Value::as_str)
-        .map(str::to_owned);
+        .filter(|d| !d.is_null())
+        .map(|d| match d {
+            Value::String(s) => Ok(description_fragment(s)),
+            other => {
+                decode_description(other).map(|text| openehr_its::json::to_canonical_value(&text))
+            }
+        })
+        .transpose()?;
+    let attestation = match audit {
+        // The `_type` is checked for EVERY commit audit, attestable or not — an
+        // unknown class is refused wherever it appears.
+        Some(a) if commit_audit_is_attestation(a)? && attestable => {
+            Some(AttestationParts::decode(a)?.fragment())
+        }
+        _ => None,
+    };
     let committer = audit
         .and_then(|a| a.get("committer"))
         .cloned()
@@ -714,12 +790,13 @@ fn parse_audit(
         .and_then(|a| a.get("system_id"))
         .and_then(Value::as_str)
         .map_or_else(|| default_system_id.to_owned(), str::to_owned);
-    AuditInput {
+    Ok(AuditInput {
         system_id,
         change_type,
         description,
         committer,
-    }
+        attestation,
+    })
 }
 
 /// The CONTRIBUTION-level aggregate change type when the client supplied none
@@ -907,13 +984,14 @@ pub(crate) async fn get_contribution(
         }
     }
 
-    let audit_details = audit_details(
-        &audit.system_id,
-        &audit.change_type,
-        audit.description.as_deref(),
-        &audit.committer,
-        &time_committed,
-    )?;
+    let audit_details = AuditInput {
+        system_id: audit.system_id,
+        change_type: audit.change_type,
+        description: audit.description,
+        committer: audit.committer,
+        attestation: audit.attestation,
+    }
+    .canonical(&time_committed)?;
     Ok(json!({
         "_type": "CONTRIBUTION",
         "uid": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() },
@@ -1001,6 +1079,176 @@ fn body_target_not_found_is_bad_request(e: ServiceError) -> ServiceError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A commit audit that IS an `ATTESTATION` round-trips whole: the wire
+    /// `_type`, the coded `reason`, `is_pending` and `proof` survive the
+    /// parse → store → rebuild path and come back on an `ATTESTATION`-typed
+    /// `AUDIT_DETAILS`.
+    ///
+    /// Spec: RM common `master04-generic_package.adoc` §Attestation ("a
+    /// Composition Version will be committed with a `commit_audit` of type
+    /// `ATTESTATION`, rather than just `AUDIT_DETAILS`; the `is_pending` flag
+    /// will be set to True") + `master06-change_control_package.adoc`
+    /// §Attestation / §Committal and Audits ("`AUDIT_DETAILS` … or its subtype
+    /// `ATTESTATION`").
+    #[test]
+    fn attestation_commit_audit_round_trips() {
+        let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let wire = json!({
+            "_type": "ATTESTATION",
+            "system_id": "sysA.example.org",
+            "committer": committer,
+            "change_type": { "_type": "DV_CODED_TEXT", "value": "modification",
+                "defining_code": { "_type": "CODE_PHRASE", "code_string": "251",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" } } },
+            // 648|witnessed| is an `attestation reason` group member
+            // (ATTESTATION.Reason_valid).
+            "reason": { "_type": "DV_CODED_TEXT", "value": "witnessed",
+                "defining_code": { "_type": "CODE_PHRASE", "code_string": "648",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" } } },
+            "is_pending": true,
+            "proof": "-----BEGIN PGP SIGNATURE-----",
+            "items": [{ "_type": "DV_EHR_URI", "value": "ehr://x/y" }]
+        });
+        let audit = parse_audit(
+            Some(&wire),
+            change_type::MODIFICATION.to_owned(),
+            &committer,
+            "fallback.system",
+            true,
+        )
+        .expect("an ATTESTATION commit audit is a valid commit audit");
+        let now: jiff::Timestamp = "2026-08-02T10:11:12Z"
+            .parse()
+            .expect("the literal is a valid RFC 3339 instant");
+        let rebuilt = audit.canonical(&now).expect("the stored audit rebuilds");
+        assert_eq!(
+            rebuilt.get("_type").and_then(Value::as_str),
+            Some("ATTESTATION")
+        );
+        assert_eq!(rebuilt.get("is_pending"), Some(&Value::Bool(true)));
+        assert_eq!(
+            rebuilt.get("proof").and_then(Value::as_str),
+            Some("-----BEGIN PGP SIGNATURE-----")
+        );
+        assert_eq!(
+            rebuilt
+                .pointer("/reason/defining_code/code_string")
+                .and_then(Value::as_str),
+            Some("648")
+        );
+        assert_eq!(
+            rebuilt.pointer("/items/0/value").and_then(Value::as_str),
+            Some("ehr://x/y")
+        );
+        assert_eq!(
+            rebuilt.get("system_id").and_then(Value::as_str),
+            Some("sysA.example.org")
+        );
+    }
+
+    /// A `DV_CODED_TEXT` `AUDIT_DETAILS.description` round-trips with its
+    /// `defining_code` intact — the attribute is a `DV_TEXT` (RM common
+    /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes),
+    /// whose coded subtype carries a code a bare string would discard.
+    #[test]
+    fn coded_description_round_trips() {
+        let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let wire = json!({
+            "_type": "UPDATE_AUDIT",
+            "committer": committer,
+            "description": { "_type": "DV_CODED_TEXT", "value": "amended after review",
+                "defining_code": { "_type": "CODE_PHRASE", "code_string": "at0007",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" } } }
+        });
+        let audit = parse_audit(
+            Some(&wire),
+            change_type::MODIFICATION.to_owned(),
+            &committer,
+            "fallback.system",
+            true,
+        )
+        .expect("a coded description is a valid DV_TEXT");
+        let now: jiff::Timestamp = "2026-08-02T10:11:12Z"
+            .parse()
+            .expect("the literal is a valid RFC 3339 instant");
+        let rebuilt = audit.canonical(&now).expect("the stored audit rebuilds");
+        assert_eq!(
+            rebuilt
+                .pointer("/description/_type")
+                .and_then(Value::as_str),
+            Some("DV_CODED_TEXT")
+        );
+        assert_eq!(
+            rebuilt
+                .pointer("/description/defining_code/code_string")
+                .and_then(Value::as_str),
+            Some("at0007")
+        );
+        assert_eq!(
+            rebuilt
+                .pointer("/description/defining_code/terminology_id/value")
+                .and_then(Value::as_str),
+            Some("local")
+        );
+        // The plain-string spelling of the wire `UDvText` still becomes a
+        // DV_TEXT.
+        let plain = parse_audit(
+            Some(&json!({ "committer": committer, "description": "free text" })),
+            change_type::MODIFICATION.to_owned(),
+            &committer,
+            "fallback.system",
+            true,
+        )
+        .expect("a plain-string description is accepted")
+        .canonical(&now)
+        .expect("the stored audit rebuilds");
+        assert_eq!(
+            plain.pointer("/description/_type").and_then(Value::as_str),
+            Some("DV_TEXT")
+        );
+        assert_eq!(
+            plain.pointer("/description/value").and_then(Value::as_str),
+            Some("free text")
+        );
+    }
+
+    /// A `commit_audit` `_type` naming neither `AUDIT_DETAILS` nor its
+    /// `ATTESTATION` subtype is refused (422), never stored as if it were an
+    /// audit (RM common master06 §Committal and Audits).
+    #[test]
+    fn unknown_commit_audit_type_is_refused() {
+        let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        for bad in ["COMPOSITION", "REVISION_HISTORY_ITEM", "UPDATE_VERSION"] {
+            let err = parse_audit(
+                Some(&json!({ "_type": bad, "committer": committer })),
+                change_type::MODIFICATION.to_owned(),
+                &committer,
+                "fallback.system",
+                true,
+            )
+            .expect_err("an unknown commit_audit class must be refused");
+            assert!(
+                matches!(&err, ServiceError::Unprocessable(m) if m.contains(bad)),
+                "{bad}: got {err:?}"
+            );
+        }
+        // An ATTESTATION missing its mandatory attributes is refused too — the
+        // subtype's own invariants apply wherever it appears
+        // (ATTESTATION.reason 1..1, is_pending 1..1).
+        let err = parse_audit(
+            Some(&json!({ "_type": "ATTESTATION", "committer": committer })),
+            change_type::MODIFICATION.to_owned(),
+            &committer,
+            "fallback.system",
+            true,
+        )
+        .expect_err("an ATTESTATION without reason must be refused");
+        assert!(
+            matches!(&err, ServiceError::Unprocessable(m) if m.contains("ATTESTATION.reason")),
+            "got {err:?}"
+        );
+    }
 
     fn classify_err(token: Option<&str>, has_preceding: bool, has_data: bool) -> String {
         match classify(token, has_preceding, has_data) {

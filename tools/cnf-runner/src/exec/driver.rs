@@ -1397,6 +1397,25 @@ impl HttpDriver<'_> {
                                 "code_string": code } }
                     }
                 });
+                // A case-supplied `commit_audit:` merges OVER the generated
+                // one, attribute by attribute, so a case can state the commit
+                // audit's concrete class and any attribute of it while the
+                // runner still fills the parts every client always sends
+                // (`system_id`, `committer`, and the `change_type` the
+                // member's own token already fixed). The member's
+                // `change_type` token stays authoritative: it is what the case
+                // declares the change to BE.
+                if let Some(supplied) = member.get("commit_audit").and_then(Value::as_object)
+                    && let Some(audit) = version
+                        .get_mut("commit_audit")
+                        .and_then(Value::as_object_mut)
+                {
+                    for (key, value) in supplied {
+                        if key != "change_type" {
+                            audit.insert(key.clone(), value.clone());
+                        }
+                    }
+                }
                 if let Some(data) = member.get("data")
                     && !data.is_null()
                     && let Some(map) = version.as_object_mut()

@@ -580,6 +580,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-subject_external_ref",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_member",
       "status": "passed",
       "rows_driven": 1,
@@ -1829,6 +1835,13 @@
       "rows_total": 8
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_commit_audit",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_empty_items",
       "format": "canonical-json",
       "status": "passed",
@@ -1858,6 +1871,13 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_reason_out_of_group",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_description_coded",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,

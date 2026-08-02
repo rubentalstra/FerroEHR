@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::service::status::CallStatusType;
-use crate::versioning::audit::{AuditInput, OPENEHR, audit_details, audit_details_typed};
+use crate::versioning::audit::{AuditInput, OPENEHR};
 use crate::versioning::integrity;
 use crate::versioning::lifecycle::lifecycle_rubric;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
@@ -84,13 +84,7 @@ pub(crate) async fn revision_history(
         // "there will always be at least one commit audit … there may also be
         // further attestations" — the commit audit first, then the version's
         // attestations in commit order (master04 §Revision History).
-        let mut audits = vec![AuditDetails::AuditDetails(audit_details_typed(
-            &row.audit_system_id,
-            &row.audit_change_type,
-            row.audit_description.as_deref(),
-            &row.audit_committer,
-            &row.time_committed,
-        )?)];
+        let mut audits = vec![AuditInput::from_meta(row).typed(&row.time_committed)?];
         for stored in attestations.remove(&row.sys_version).unwrap_or_default() {
             audits.push(stored_attestation(&stored)?);
         }
@@ -243,8 +237,8 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
 /// (RM common master06 §Version subtypes).
 ///
 /// # Errors
-/// The [`audit_details`] rejection when `audit.committer` is not a canonical
-/// `PARTY_PROXY`.
+/// The [`AuditInput::canonical`] rejection when `audit.committer` is not a
+/// canonical `PARTY_PROXY`.
 #[expect(
     clippy::too_many_arguments,
     reason = "the ORIGINAL_VERSION's own attributes; a parameter struct would \
@@ -263,13 +257,7 @@ pub(crate) fn build_original_version(
     canonical_data: &Value,
     signature: Option<&str>,
 ) -> Result<Value, ServiceError> {
-    let commit_audit = audit_details(
-        &audit.system_id,
-        &audit.change_type,
-        audit.description.as_deref(),
-        &audit.committer,
-        time_committed,
-    )?;
+    let commit_audit = audit.canonical(time_committed)?;
     let mut ov = json!({
         "_type": "ORIGINAL_VERSION",
         "uid": {

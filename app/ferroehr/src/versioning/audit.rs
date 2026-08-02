@@ -15,12 +15,14 @@
 
 use openehr_base::prelude::TerminologyId;
 use openehr_rm::prelude::{
-    AuditDetailsData, CodePhrase, DvCodedText, DvDateTime, DvText, DvTextData, PartyProxy,
+    Attestation, AuditDetails, AuditDetailsData, CodePhrase, DvCodedText, DvDateTime, DvText,
+    DvTextData, PartyProxy,
 };
 use openehr_term::bundle::openehr;
 use serde_json::Value;
 
 use crate::service::error::ServiceError;
+use crate::versioning::attestation::AttestationParts;
 
 /// The openEHR internal terminology id (`Terminology_id_openehr`).
 pub(crate) const OPENEHR: &str = "openehr";
@@ -151,7 +153,14 @@ pub(crate) fn change_type_rubric(code: &str) -> String {
 
 /// What an audit row records about a committed change — the `AUDIT_DETAILS`
 /// attributes the service owns at write time (RM common master04 §Audit
-/// Details).
+/// Details), plus the `ATTESTATION`-declared attributes when the commit audit
+/// is of that subtype (master06 §Attestation: "`ORIGINAL_VERSION._commit_audit_`
+/// is of type `ATTESTATION` rather than `AUDIT_DETAILS`").
+///
+/// This is the ONE commit-audit carrier: the write paths build it, storage
+/// persists it ([`Self::row`]), and the read paths rebuild the served
+/// `AUDIT_DETAILS` from it ([`Self::typed`] / [`Self::canonical`]) — so what a
+/// client commits is what a reader gets back.
 #[derive(Debug, Clone)]
 pub(crate) struct AuditInput {
     /// `AUDIT_DETAILS.system_id` (1..1, non-empty — `System_id_valid`).
@@ -159,10 +168,19 @@ pub(crate) struct AuditInput {
     /// The numeric `audit_change_type` group code (`249`/`251`/`523`/…) — never
     /// a rubric string (`AUDIT_DETAILS.Change_type_valid`).
     pub(crate) change_type: String,
-    /// `AUDIT_DETAILS.description` (0..1).
-    pub(crate) description: Option<String>,
+    /// `AUDIT_DETAILS.description` (0..1) as its canonical `DV_TEXT` fragment —
+    /// whole, because the attribute's `DV_CODED_TEXT` subtype carries a
+    /// `defining_code` a bare string would discard (RM common
+    /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes).
+    pub(crate) description: Option<Value>,
     /// Canonical `PARTY_PROXY` of the committer (`AUDIT_DETAILS.committer`, 1..1).
     pub(crate) committer: Value,
+    /// The canonical fragment of the `ATTESTATION`-declared attributes
+    /// ([`crate::versioning::attestation::AttestationParts::fragment`]) when
+    /// this commit audit is an `ATTESTATION`, else `None`. `ATTESTATION` is the
+    /// only `AUDIT_DETAILS` subtype RM 1.2.0 declares, so presence IS the
+    /// concrete class.
+    pub(crate) attestation: Option<Value>,
 }
 
 impl AuditInput {
@@ -207,15 +225,36 @@ impl AuditInput {
                 .filter(|s| !s.is_empty())
                 .unwrap_or_else(|| fallback_system_id.to_owned()),
             change_type,
-            description: Some(
+            description: Some(description_fragment(
                 update
                     .description
-                    .clone()
+                    .as_deref()
                     .filter(|d| !d.is_empty())
-                    .unwrap_or_else(|| default_description.to_owned()),
-            ),
+                    .unwrap_or(default_description),
+            )),
             committer,
+            // NOTE: an `UPDATE_AUDIT` cannot express an `ATTESTATION` commit
+            // audit, and the routes that build one need no such expression: on
+            // a direct `PUT`/`POST`/`DELETE` the committal metadata comes from
+            // the `openehr-audit-details` header, whose released attribute list
+            // is exactly `change_type`, `description`, `committer`, `system_id`
+            // (ITS-REST overview `Requests_and_responses.md` §"openehr-version
+            // and openehr-audit-details"). An `ATTESTATION` commit audit is a
+            // CONTRIBUTION-body shape, parsed at the native commit seam
+            // (`versioning::contribution`).
+            attestation: None,
         })
+    }
+
+    /// The commit audit of a stored version-metadata row.
+    pub(crate) fn from_meta(meta: &crate::storage::version_repo::meta::VersionMeta) -> Self {
+        Self {
+            system_id: meta.audit_system_id.clone(),
+            change_type: meta.audit_change_type.clone(),
+            description: meta.audit_description.clone(),
+            committer: meta.audit_committer.clone(),
+            attestation: meta.audit_attestation.clone(),
+        }
     }
 
     /// The borrowed storage row shape ([`crate::storage::version_repo::commit::AuditRow`])
@@ -224,10 +263,103 @@ impl AuditInput {
         crate::storage::version_repo::commit::AuditRow {
             system_id: &self.system_id,
             change_type: &self.change_type,
-            description: self.description.as_deref(),
+            description: self.description.as_ref(),
             committer: &self.committer,
+            attestation: self.attestation.as_ref(),
         }
     }
+
+    /// This commit audit as its typed RM value at the recorded commit instant:
+    /// an [`AuditDetails::Attestation`] when the audit carries the
+    /// `ATTESTATION`-declared attributes (RM common master06 §Attestation),
+    /// else a plain [`AuditDetails::AuditDetails`]. `change_type` is the stored
+    /// numeric `audit_change_type` group code; the `DV_CODED_TEXT` carries it as
+    /// `defining_code.code_string` (`AUDIT_DETAILS.Change_type_valid`) with the
+    /// group rubric — resolved from the `openehr-term` bundle — as its `value`.
+    ///
+    /// # Errors
+    /// The [`party_proxy`] rejection when `committer` is not a canonical
+    /// `PARTY_PROXY`; [`ServiceError::Unprocessable`] when the stored
+    /// `description` is not a canonical `DV_TEXT` or the stored attestation
+    /// attributes do not decode
+    /// ([`crate::versioning::attestation::AttestationParts::decode`]).
+    pub(crate) fn typed(
+        &self,
+        time_committed: &jiff::Timestamp,
+    ) -> Result<AuditDetails, ServiceError> {
+        let system_id = self.system_id.clone();
+        let time_committed = dv_date_time(time_committed);
+        let change_type =
+            openehr_coded_text(&self.change_type, change_type_rubric(&self.change_type));
+        let description = self
+            .description
+            .as_ref()
+            .map(decode_description)
+            .transpose()?;
+        let committer = party_proxy(&self.committer)?;
+        match &self.attestation {
+            None => Ok(AuditDetails::AuditDetails(AuditDetailsData {
+                system_id,
+                time_committed,
+                change_type,
+                description,
+                committer,
+            })),
+            Some(fragment) => {
+                let parts = AttestationParts::decode(fragment)?;
+                Ok(AuditDetails::Attestation(Attestation {
+                    system_id,
+                    time_committed,
+                    change_type,
+                    description,
+                    committer,
+                    attested_view: parts.attested_view,
+                    proof: parts.proof,
+                    items: parts.items,
+                    reason: parts.reason,
+                    is_pending: parts.is_pending,
+                }))
+            }
+        }
+    }
+
+    /// The canonical-JSON form of [`Self::typed`], serialized through the
+    /// native codec so the wire body carries `_type` first — `ATTESTATION` when
+    /// the version was committed with one — and the BMM's own attribute order.
+    ///
+    /// # Errors
+    /// The [`Self::typed`] rejections.
+    pub(crate) fn canonical(
+        &self,
+        time_committed: &jiff::Timestamp,
+    ) -> Result<Value, ServiceError> {
+        Ok(openehr_its::json::to_canonical_value(
+            &self.typed(time_committed)?,
+        ))
+    }
+}
+
+/// A plain-string `AUDIT_DETAILS.description` as the canonical `DV_TEXT`
+/// fragment stored for it — the shape a server default, an
+/// `openehr-audit-details` header value, or an SM `String` description takes
+/// (RM common master04 §Audit Details: `description` is a `DV_TEXT`).
+pub(crate) fn description_fragment(value: &str) -> Value {
+    openehr_its::json::to_canonical_value(&dv_text(value))
+}
+
+/// Decode a stored/wire `AUDIT_DETAILS.description` fragment into its RM type,
+/// so a `DV_CODED_TEXT` description returns as one.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the value is not a canonical `DV_TEXT`
+/// (RM common `UML/classes/org.openehr.rm.common.audit_details.adoc`
+/// §Attributes).
+pub(crate) fn decode_description(fragment: &Value) -> Result<DvText, ServiceError> {
+    openehr_its::json::from_canonical_value::<DvText>(fragment).map_err(|e| {
+        ServiceError::Unprocessable(format!(
+            "AUDIT_DETAILS.description is not a canonical DV_TEXT: {e}"
+        ))
+    })
 }
 
 /// An openEHR-terminology `DV_CODED_TEXT`: the group `code` as
@@ -296,53 +428,6 @@ pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError>
             "AUDIT_DETAILS.committer is not a canonical PARTY_PROXY: {e}"
         ))
     })
-}
-
-/// Build a typed `AUDIT_DETAILS` from stored audit columns. `change_type` is
-/// the numeric `audit_change_type` group code stored in the `audit` row; the
-/// `DV_CODED_TEXT` carries the code as `defining_code.code_string` (RM common
-/// master04 `AUDIT_DETAILS.Change_type_valid`) and the group rubric — resolved
-/// from the `openehr-term` bundle — as its `value`.
-///
-/// # Errors
-/// The [`party_proxy`] rejection when `committer` is not a canonical
-/// `PARTY_PROXY`.
-pub(crate) fn audit_details_typed(
-    system_id: &str,
-    change_type: &str,
-    description: Option<&str>,
-    committer: &Value,
-    time_committed: &jiff::Timestamp,
-) -> Result<AuditDetailsData, ServiceError> {
-    Ok(AuditDetailsData {
-        system_id: system_id.to_owned(),
-        time_committed: dv_date_time(time_committed),
-        change_type: openehr_coded_text(change_type, change_type_rubric(change_type)),
-        description: description.map(dv_text),
-        committer: party_proxy(committer)?,
-    })
-}
-
-/// The canonical-JSON `AUDIT_DETAILS` of [`audit_details_typed`], serialized
-/// through the native codec so the wire body carries `_type` first and the
-/// BMM's own attribute order.
-///
-/// # Errors
-/// The [`audit_details_typed`] rejection.
-pub(crate) fn audit_details(
-    system_id: &str,
-    change_type: &str,
-    description: Option<&str>,
-    committer: &Value,
-    time_committed: &jiff::Timestamp,
-) -> Result<Value, ServiceError> {
-    Ok(openehr_its::json::to_canonical_value(&audit_details_typed(
-        system_id,
-        change_type,
-        description,
-        committer,
-        time_committed,
-    )?))
 }
 
 /// Validate a client-supplied commit `AUDIT_DETAILS`' non-terminology RM
@@ -588,6 +673,7 @@ mod tests {
             change_type: change_type::CREATION.to_owned(),
             description: None,
             committer,
+            attestation: None,
         }
     }
 

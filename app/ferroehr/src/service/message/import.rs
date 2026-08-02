@@ -56,8 +56,11 @@ use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
 use crate::versioning::Kind;
+use crate::versioning::attestation::AttestationParts;
 use crate::versioning::audit::AuditInput;
-use crate::versioning::audit::{change_type, change_type_code};
+use crate::versioning::audit::{
+    change_type, change_type_code, decode_description, description_fragment,
+};
 use crate::versioning::import::{
     ImportContainer, ImportVersion, commit_demographic_import, commit_import,
 };
@@ -522,7 +525,11 @@ fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> 
         })
         .unwrap_or_default();
 
-    // commit_audit (VERSION.commit_audit 1..1) preserved verbatim.
+    // commit_audit (VERSION.commit_audit 1..1) preserved verbatim — including
+    // its concrete class: a version committed elsewhere with an ATTESTATION
+    // commit_audit keeps that class and its own attributes here (RM common
+    // master06 §Attestation; §Copying: "the received instance is never
+    // modified"), so a re-export renders what was imported.
     let audit = ov
         .get("commit_audit")
         .ok_or_else(|| SmError::precondition("imported ORIGINAL_VERSION has no commit_audit"))?;
@@ -547,10 +554,36 @@ fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> 
     let committer = audit.get("committer").cloned().ok_or_else(|| {
         SmError::precondition("imported commit_audit.committer is required (AUDIT_DETAILS 1..1)")
     })?;
+    // The whole DV_TEXT fragment, so a DV_CODED_TEXT description keeps its
+    // defining_code (RM common master04 §Audit Details).
     let description = audit
-        .pointer("/description/value")
-        .and_then(Value::as_str)
-        .map(str::to_owned);
+        .get("description")
+        .filter(|d| !d.is_null())
+        .map(|d| match d {
+            Value::String(s) => Ok(description_fragment(s)),
+            other => {
+                decode_description(other).map(|text| openehr_its::json::to_canonical_value(&text))
+            }
+        })
+        .transpose()
+        .map_err(|e: ServiceError| SmError::precondition(e.to_string()))?;
+    // ATTESTATION is the only AUDIT_DETAILS subtype (RM common master06
+    // §Committal and Audits: "AUDIT_DETAILS ... or its subtype ATTESTATION");
+    // its own attributes are decoded typed and kept.
+    let attestation = match audit.get("_type").and_then(Value::as_str) {
+        None | Some("AUDIT_DETAILS") => None,
+        Some("ATTESTATION") => Some(
+            AttestationParts::decode(audit)
+                .map_err(|e| SmError::precondition(e.to_string()))?
+                .fragment(),
+        ),
+        Some(other) => {
+            return Err(SmError::precondition(format!(
+                "imported commit_audit _type {other:?} is not an AUDIT_DETAILS or its \
+                 ATTESTATION subtype (RM common master06 §Committal and Audits)"
+            )));
+        }
+    };
     let time_str = audit
         .pointer("/time_committed/value")
         .and_then(Value::as_str)
@@ -621,6 +654,7 @@ fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> 
                 change_type,
                 description,
                 committer,
+                attestation,
             },
             commit_time,
             data,

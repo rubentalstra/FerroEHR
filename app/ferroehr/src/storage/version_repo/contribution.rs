@@ -19,10 +19,14 @@ pub struct ContributionAudit {
     pub system_id: String,
     /// The numeric `audit_change_type` group code of the change set.
     pub change_type: String,
-    /// `AUDIT_DETAILS.description`, when the committer supplied one.
-    pub description: Option<String>,
+    /// The canonical `DV_TEXT` fragment of `AUDIT_DETAILS.description`, when
+    /// the committer supplied one.
+    pub description: Option<Value>,
     /// The canonical `PARTY_PROXY` JSON of the committer.
     pub committer: Value,
+    /// The canonical fragment of the `ATTESTATION`-declared attributes when the
+    /// change-set audit is an `ATTESTATION` (RM common master06 §Attestation).
+    pub attestation: Option<Value>,
     /// The server-computed commit instant.
     pub time_committed: jiff::Timestamp,
 }
@@ -39,7 +43,8 @@ pub async fn contribution_audit(
     ehr_id: Option<EhrId>,
 ) -> Result<Option<ContributionAudit>, StorageError> {
     let Some(row) = sqlx::query(
-        "SELECT a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+        "SELECT a.system_id, a.change_type, a.description, a.committer, a.attestation, \
+         a.time_committed \
          FROM contribution c JOIN audit a ON a.id = c.audit_id \
          WHERE c.id = $1 AND c.ehr_id IS NOT DISTINCT FROM $2",
     )
@@ -55,6 +60,7 @@ pub async fn contribution_audit(
         change_type: row.try_get("change_type")?,
         description: row.try_get("description")?,
         committer: row.try_get("committer")?,
+        attestation: row.try_get("attestation")?,
         time_committed: row
             .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
             .to_jiff(),

@@ -19,6 +19,22 @@ pub struct CommitterIdentity {
     /// The `DV_IDENTIFIER.type` discriminator for the identity's origin
     /// (`"basic"` / `"oauth2"`).
     pub id_type: &'static str,
+    /// Who issued [`Self::subject`], when the authenticating party is not this
+    /// server — the validated token issuer for an OAuth2/OIDC principal
+    /// (`iss`). `None` for a locally-held credential (Basic), whose issuer IS
+    /// this deployment.
+    ///
+    /// NOTE: no openEHR spec governs the value — our own design/extension.
+    /// `AUDIT_DETAILS.committer` is a `PARTY_PROXY` and the RM only says the
+    /// identifying information may be "in the form of a system login
+    /// identifier" (RM common `master04-generic_package.adoc` §Audit Details);
+    /// `DV_IDENTIFIER.issuer` is the "authority which issues the kind of id
+    /// used in the id field of this object" (RM `data_types`
+    /// `UML/classes/org.openehr.rm.data_types.dv_identifier.adoc`
+    /// §Attributes) — for a subject minted by an identity provider that
+    /// authority is the provider, not this CDR. Which concrete string names it
+    /// is spec-silent.
+    pub issuer: Option<String>,
 }
 
 task_local! {
