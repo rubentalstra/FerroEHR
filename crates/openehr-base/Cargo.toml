@@ -14,8 +14,15 @@ categories.workspace = true
 publish = false
 
 [dependencies]
-# No serde: the spec types are plain data records; canonical-JSON
-# (de)serialization is the native `ToJson`/`FromJson` codec in `openehr-its`.
+# Canonical-JSON (de)serialization is EMITTED serde impls (`openehr-codegen --
+# emit-json`) on the spec types themselves — the standard traits, in manual
+# form, never a derive: the wire contract (`_type` first, BMM declaration
+# order, absent-not-null, `_type`-keyed polymorphic dispatch) is not
+# expressible with serde's built-in representations. `serde_support` is the
+# small hand-written runtime those impls share; `serde_json` backs its
+# out-of-order `_type` buffering.
+serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 

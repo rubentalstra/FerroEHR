@@ -5210,6 +5210,7 @@ version = "2.4.0"
 dependencies = [
  "openehr-base",
  "openehr-lang",
+ "serde",
  "serde_json",
 ]
 
@@ -5217,6 +5218,8 @@ dependencies = [
 name = "openehr-base"
 version = "1.3.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "thiserror 2.0.18",
  "uuid",
 ]
@@ -5240,7 +5243,6 @@ dependencies = [
  "http",
  "indexmap 2.14.0",
  "insta",
- "itoa",
  "jsonschema",
  "moka",
  "openehr-adl",
@@ -5251,9 +5253,9 @@ dependencies = [
  "openehr-term",
  "quick-xml 0.41.0",
  "regex",
- "ryu",
  "serde",
  "serde_json",
+ "serde_path_to_error",
  "sha2 0.11.0",
  "thiserror 2.0.18",
  "tokio",
@@ -5269,6 +5271,7 @@ dependencies = [
  "indexmap 2.14.0",
  "logos",
  "openehr-base",
+ "serde",
  "serde_json",
  "thiserror 2.0.18",
 ]
@@ -5291,6 +5294,7 @@ dependencies = [
  "openehr-base",
  "openehr-its",
  "openehr-term",
+ "serde",
  "serde_jcs",
  "serde_json",
  "thiserror 2.0.18",
@@ -5303,6 +5307,7 @@ version = "3.1.0"
 dependencies = [
  "openehr-base",
  "roxmltree",
+ "serde",
  "thiserror 2.0.18",
 ]
 

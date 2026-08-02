@@ -50,14 +50,12 @@ use crate::versioning::lifecycle;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateAudit {
     /// Type of change; coded from the openEHR *audit change type* group.
-    #[serde(with = "crate::codec_serde::spec")]
     pub change_type: TerminologyCode,
     /// Reason for committal.
     #[serde(default)]
     pub description: Option<String>,
     /// Identity (and optional identity-management reference) of the
     /// committing user.
-    #[serde(with = "crate::codec_serde::spec")]
     pub committer: PartyProxy,
     /// System that committed the change. A client MAY supply this through the
     /// `openehr-audit-details` request header's `system_id` value (ITS-REST
@@ -86,25 +84,22 @@ pub struct UpdateAudit {
 pub struct UpdateAttestation {
     /// Type of change; coded from the openEHR *audit change type* group
     /// (`666|attestation|` for attestations).
-    #[serde(with = "crate::codec_serde::spec")]
     pub change_type: TerminologyCode,
     /// Reason for committal (inherited from the `UpdateAudit` base).
     #[serde(default)]
     pub description: Option<String>,
     /// The attesting party.
-    #[serde(with = "crate::codec_serde::spec")]
     pub committer: PartyProxy,
     /// Optional visual representation of what was attested.
-    #[serde(default, with = "crate::codec_serde::spec_opt")]
+    #[serde(default)]
     pub attested_view: Option<DvMultimedia>,
     /// Proof of attestation.
     #[serde(default)]
     pub proof: Option<String>,
     /// Items attested, as EHR URIs.
-    #[serde(default, with = "crate::codec_serde::spec_opt")]
+    #[serde(default)]
     pub items: Option<Vec<DvEhrUri>>,
     /// Reason of this attestation.
-    #[serde(with = "crate::codec_serde::spec")]
     pub reason: DvText,
     /// True if this attestation is outstanding.
     pub is_pending: bool,
@@ -136,10 +131,9 @@ pub struct UpdateAttestation {
 pub struct UpdateVersion<T = Value> {
     /// Current version in the service for which this version is an update.
     /// `None` only for a first version.
-    #[serde(default, with = "crate::codec_serde::spec_opt")]
+    #[serde(default)]
     pub preceding_version_uid: Option<ObjectVersionId>,
     /// Lifecycle state of the content item in this version.
-    #[serde(with = "crate::codec_serde::spec")]
     pub lifecycle_state: TerminologyCode,
     /// Attestations relating to this version (wire-partial form; see
     /// [`UpdateAttestation`]).

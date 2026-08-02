@@ -6,9 +6,9 @@ Know which half you are touching before editing anything:
 | Part | Status | To change it |
 |---|---|---|
 | `src/xml/generated/` (`ToXml`/`FromXml`) | **GENERATED** (`emit-xml`, from the XSDs + BMM) | edit the emitter, regenerate |
-| `src/json_codec/generated/` (`ToJson`/`FromJson` in `impls.rs`; the `_type` → decode `structural_check` dispatch in `structural.rs`) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
+| `src/json_codec/generated/structural.rs` (the `_type` → decode dispatch + the declared-key table) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
 | `src/rest/generated/` (ITS-REST DTOs, server traits, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
-| `xml/runtime.rs`, `json_codec/runtime.rs`, `rest/runtime.rs`, `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
+| `xml/runtime.rs`, `rest/runtime.rs`, `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
 | `src/flat/` — Simplified Formats (FLAT / STRUCTURED / Web Template / TDD) | hand-written (BMM has no simplified-format model) | edit normally, with spec citations |
 | `src/rest/smart_scopes.rs` — the SMART on openEHR scope grammar (master08 resource scopes + master07/09 launch contexts) | hand-written (an ITS-REST sub-spec with no machine-readable model) | edit normally, with spec citations — the ONE grammar the CDR's scope gate AND scope-previewing REST clients (the admin console) parse with |
 
@@ -21,12 +21,22 @@ grammar the CDR's gate enforces instead of a second parser. Keep that island
 dependency-free: nothing under `rest::smart_scopes` may reach for serde, axum, a
 spec crate, or any other dep.
 
-The native canonical-JSON codec (`json_codec`) is THE canonical-JSON
-(de)serialization for every spec type (all five crates) — the emitted
-`ToJson`/`FromJson` impls over a hand-written writer/reader runtime. The spec
-types carry NO serde derive (the `#[derive(OpenEhrType)]` proc-macro is deleted);
-`json::to_canonical_json`/`from_canonical_json`/`from_canonical_value` ARE the
-codec entry points, and `wire_validate::validate_rm_value` is the wire-boundary
+**Canonical JSON is EMITTED `serde` impls on the spec types themselves, and
+they do NOT live in this crate.** `serde::Serialize`/`Deserialize` and the spec
+types are both foreign here, so an impl in `openehr-its` would break the orphan
+rule: `emit-json` writes one `json_serde` module into EACH spec crate
+(`openehr-base/rm/am/term/lang`), over the shared hand-written runtime
+`openehr_base::serde_support`. They are MANUAL long-form impls (a field
+identifier enum + a visitor, <https://serde.rs/deserialize-struct.html>) — never
+a derive, because serde's four enum representations cannot express the
+canonical `_type` discriminator (context-dependent presence, deep-descendant
+dispatch, closed key set). What stays here is `json_codec::generated::structural`
+— the `_type` → `Deserialize` dispatch and the declared-key table, which span
+every spec crate at once.
+`json::to_canonical_json`/`to_canonical_value`/`from_canonical_json`/
+`from_canonical_value` ARE the entry points (reads wrapped once in
+`serde_path_to_error`, so every refusal carries the JSON path);
+`json::JsonParseError` is the refusal type. `wire_validate::validate_rm_value` is the wire-boundary
 RM class-invariant DISPATCH LAYER that drives the reader — its hand-written
 table holds the invariant-bearing classes, and everything else falls through to
 the generated `structural_check` dispatch, so the codec is the
@@ -38,7 +48,7 @@ the JSON-level per-node checks, the terminology binding table) is defined in
 `rm_instance` (`validate_rm_and_terminology{,_as}`, the composed
 `validate_composition`); `flat::validation` holds ONLY the template-driven
 archetype-conformance pass. Proven by
-`tests/it/json_codec_parity.rs` (byte hazards + `FromJson` tolerance) +
+`tests/it/json_codec_parity.rs` (byte hazards + reader tolerance) +
 `tests/it/canonical_contract.rs` (the R0 determinism manifest).
 
 - **NEVER hand-edit anything under a `generated/` directory** — the
@@ -78,8 +88,9 @@ archetype-conformance pass. Proven by
   `vendor/rest-oas/` — pinned to the same commit as the spec text under
   `docs/specs/openehr/ITS-REST/` (a reconciliation guard enforces this).
   Never edit vendored files; re-vendor on a pin bump.
-- Canonical-JSON `_type` self-tagging comes from the emitted `ToJson`/`FromJson`
-  codec (`emit-json`) — no per-struct tag fields, no serde derive on spec types.
+- Canonical-JSON `_type` self-tagging comes from the emitted manual `serde`
+  impls (`emit-json`, in each spec crate's `json_serde`) — no per-struct tag
+  fields, and never a serde DERIVE on a spec type.
 - XML: one impl set serves both namespaces (v1/v2 differ only by root
   `xmlns`); `xsi:type` emitted iff concrete type ≠ declared slot type.
 - **The fidelity gates in `tests/` are the crate's acceptance instrument**

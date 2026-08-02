@@ -4,7 +4,13 @@ The single deterministic generator behind the whole spec layer. Lives under
 `tools/*` (dev tooling; nothing ships it). Subcommands (`src/cli.rs`):
 
 - `emit` — BMM → `openehr-base/rm/am/term/lang` (incl. the `openehr-rm` model).
-- `emit-json` — BMM → the canonical-JSON `ToJson`/`FromJson` codec in `openehr-its`.
+- `emit-json` — BMM → the canonical-JSON `serde::Serialize`/`Deserialize`
+  impls, as MANUAL long-form impls (a field-identifier enum + a visitor,
+  <https://serde.rs/deserialize-struct.html>), one `src/json_serde.rs` per SPEC
+  CRATE — they must live where the types are defined (orphan rule) — plus the
+  `_type` dispatch + declared-key table in `openehr-its`. Never a serde derive:
+  none of serde's four enum representations expresses the canonical `_type`
+  discriminator. Shared runtime: hand-written `openehr_base::serde_support`.
 - `emit-xml` — XSD + BMM → `ToXml`/`FromXml` in `openehr-its`.
 - `emit-rest` — the vendored OAS → the ITS-REST contract in `openehr-its`.
 - `emit-opt` — the OPT 1.4 model + XML codec (`openehr-its` `opt14`).

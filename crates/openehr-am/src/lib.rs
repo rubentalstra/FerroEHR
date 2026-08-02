@@ -27,3 +27,6 @@ pub mod am24;
 /// implement (`docs/VERSIONS.md` §Product and crate versioning), so
 /// consumers read the pin from the package, never from a hand-typed literal.
 pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+// canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:
+mod json_serde;

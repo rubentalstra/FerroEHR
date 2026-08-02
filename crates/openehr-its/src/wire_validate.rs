@@ -2,10 +2,10 @@
 //! typed dispatch tier.
 //!
 //! This is a wire-boundary operation: it consumes a canonical-JSON node and
-//! *deserializes* it into its concrete RM type via the native canonical-JSON
-//! codec ([`crate::json_codec::runtime::from_json_value`]), then runs that type's
+//! *deserializes* it into its concrete RM type through the emitted canonical-JSON
+//! `serde` impls ([`crate::json::from_canonical_value`]), then runs that type's
 //! RM class invariants. It lives in `openehr-its` (not `openehr-rm`) because it
-//! drives the codec, which is defined here; the `Validate` trait and the
+//! drives the codec's entry points, which are defined here; the `Validate` trait and the
 //! invariant impls (`*_impl.rs`) stay in `openehr-rm`/`openehr-base` as pure RM
 //! model semantics. The two-tier entry point [`validate_rm_value`] calls the
 //! allocation-free fast path ([`openehr_rm::validate::try_fast_validate`]) first
@@ -22,8 +22,10 @@ use serde_json::Value;
 
 use openehr_base::validate::{InvariantViolation, Validate};
 
+use serde::de::DeserializeOwned;
+
+use crate::json::{JsonParseError, from_canonical_value};
 use crate::json_codec::generated::structural::{declared_fields, structural_check};
-use crate::json_codec::runtime::{FromJson, JsonParseError, from_json_value};
 
 /// Record a typed-deserialize failure as a validation violation.
 ///
@@ -38,14 +40,14 @@ use crate::json_codec::runtime::{FromJson, JsonParseError, from_json_value};
 /// corpus deserializes cleanly at every node, so this never rejects a valid
 /// input; if it ever did, that would expose a codegen field-optionality bug to
 /// fix in the emitter.)
-fn record_type_mismatch(ty: &str, err: &JsonParseError, out: &mut Vec<InvariantViolation>) {
+fn record_type_mismatch(ty: &str, err: &dyn std::fmt::Display, out: &mut Vec<InvariantViolation>) {
     out.push(InvariantViolation::here(format!(
         "does not conform to RM type {ty}: {err}"
     )));
 }
 
-fn run<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
-    match from_json_value::<T>(value) {
+fn run<T: DeserializeOwned + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    match from_canonical_value::<T>(value) {
         Ok(v) => v.validate_invariants(out),
         Err(e) => record_type_mismatch(ty, &e, out),
     }
@@ -85,8 +87,12 @@ fn run<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantV
 /// byte-identical, and the ITS-JSON schema gate remains the exhaustive
 /// structural oracle where one is required (this pass is the RM class-invariant
 /// check, not a schema validator — `422_COMPOSITION.yaml`).
-fn run_shallow<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
-    match from_json_value::<T>(&prune_child_nodes(value)) {
+fn run_shallow<T: DeserializeOwned + Validate>(
+    ty: &str,
+    value: &Value,
+    out: &mut Vec<InvariantViolation>,
+) {
+    match from_canonical_value::<T>(&prune_child_nodes(value)) {
         Ok(v) => v.validate_invariants(out),
         Err(e) => record_type_mismatch(ty, &e, out),
     }
@@ -214,7 +220,7 @@ fn undeclared_key(ty: &str, value: &Value) -> Option<InvariantViolation> {
     let mut out = Vec::new();
     record_type_mismatch(
         ty,
-        &JsonParseError::unknown_field(offending, ty, declared),
+        &JsonParseError::unknown_field(offending, ty, declared).in_field(offending),
         &mut out,
     );
     out.pop()
@@ -286,6 +292,18 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// classes whose evaluator already calls the same core, so both tiers report
 /// the same single violation.
 pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    // The undeclared-key refusal is raised here too, ahead of the decode, so
+    // this tier's verdict does not depend on WHERE the offending member sits in
+    // the object: the reader streams members in document order (it never
+    // materializes the whole object first), so a node that is BOTH structurally
+    // defective and carries an undeclared key would otherwise report whichever
+    // defect the writer happened to put first. The tier above
+    // ([`validate_rm_invariants_as`]) applies the same check, so on that path
+    // this one never fires.
+    if let Some(violation) = undeclared_key(ty, value) {
+        out.push(violation);
+        return;
+    }
     let before = out.len();
     dispatch_typed(ty, value, out);
     if let Some(v) = openehr_rm::validate::locatable_node_id_violation(ty, value)
@@ -385,7 +403,7 @@ fn dispatch_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
         // Limits_consistent ordering invariant runs; fall back to
         // Value elements (boundary flags only) for non-DV_ORDERED payloads.
         "DV_INTERVAL" => {
-            if let Ok(v) = from_json_value::<DvInterval<DvOrdered>>(value) {
+            if let Ok(v) = from_canonical_value::<DvInterval<DvOrdered>>(value) {
                 v.validate_invariants(out);
             } else {
                 run::<DvInterval<Value>>(ty, value, out);

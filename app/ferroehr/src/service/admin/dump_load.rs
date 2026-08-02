@@ -100,9 +100,9 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use openehr_its::json_codec::runtime::{FromJson, ToJson};
 use openehr_its::xml::{FromXml, Namespace, ToXml};
 use openehr_rm::prelude::{Composition, EhrAccess, EhrStatus, Folder, OriginalVersion};
+use serde::de::DeserializeOwned;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
@@ -667,7 +667,9 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
 /// # Errors
 /// [`ServiceError::Internal`] when the envelope does not read back as a typed
 /// `ORIGINAL_VERSION<T>`, or the XML writer fails.
-fn version_document_of<T: FromJson + ToXml>(envelope: &Value) -> Result<String, ServiceError> {
+fn version_document_of<T: DeserializeOwned + ToXml>(
+    envelope: &Value,
+) -> Result<String, ServiceError> {
     let typed: OriginalVersion<T> = openehr_its::json::from_canonical_value(envelope)
         .map_err(|e| ServiceError::Internal(format!("typing the ORIGINAL_VERSION: {e}")))?;
     openehr_its::xml::to_canonical_xml_declared(
@@ -705,7 +707,7 @@ fn version_document(kind: &str, envelope: &Value) -> Result<String, ServiceError
 /// # Errors
 /// The parse failure as a human-readable message; the caller turns it into the
 /// record's [`DumpLoadFailReport`].
-fn version_payload_of<T: FromXml + ToJson>(xml: &str) -> Result<Value, String> {
+fn version_payload_of<T: FromXml + Serialize>(xml: &str) -> Result<Value, String> {
     let typed: OriginalVersion<T> =
         openehr_its::xml::from_canonical_xml(xml).map_err(|e| e.to_string())?;
     let data = typed

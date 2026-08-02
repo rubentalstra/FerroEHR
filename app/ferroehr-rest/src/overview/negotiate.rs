@@ -61,9 +61,10 @@ use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 
-use openehr_its::json_codec::runtime::{FromJson, ToJson};
 use openehr_its::rest::runtime::ApiError;
 use openehr_its::xml::{FromXml, Namespace, ToXml};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use ferroehr::service::response::{ResourceMeta, ServiceResponse};
 
@@ -504,7 +505,7 @@ pub(crate) fn text_body(body: &Bytes) -> Result<String, ApiError> {
 /// [`require_known_xml_lineage`]).
 pub(crate) fn rm_value<T>(headers: &HeaderMap, body: &Bytes) -> Result<serde_json::Value, ApiError>
 where
-    T: FromXml + ToJson,
+    T: FromXml + Serialize,
 {
     match content_type_format(headers) {
         Some(WireFormat::CanonicalJson) => parse_json(body),
@@ -528,7 +529,7 @@ pub(crate) fn optional_rm_value<T>(
     body: &Bytes,
 ) -> Result<Option<serde_json::Value>, ApiError>
 where
-    T: FromXml + ToJson,
+    T: FromXml + Serialize,
 {
     if body.is_empty() {
         return Ok(None);
@@ -621,7 +622,7 @@ fn parse_json(body: &Bytes) -> Result<serde_json::Value, ApiError> {
 /// item tags, terminology/query results). If the client's `Accept` cannot be
 /// satisfied by canonical JSON, this returns `406` (those payloads have no
 /// spec-defined canonical-XML shape). Spec-typed RM objects use [`respond_rm`].
-pub(crate) fn respond<T: serde::Serialize>(
+pub(crate) fn respond<T: Serialize>(
     headers: &HeaderMap,
     status: StatusCode,
     value: &T,
@@ -666,7 +667,7 @@ pub(crate) fn respond_rm<T>(
     root_tag: &str,
 ) -> Response
 where
-    T: FromJson + ToXml,
+    T: DeserializeOwned + ToXml,
 {
     match resolve_accept(headers, CANONICAL, WireFormat::CanonicalJson) {
         Some(WireFormat::CanonicalJson) => json_response(status, value),
@@ -982,7 +983,7 @@ pub(crate) fn write_rm<T>(
     root_tag: &str,
 ) -> Response
 where
-    T: FromJson + ToXml,
+    T: DeserializeOwned + ToXml,
 {
     let mut out = write_negotiated(
         headers,
@@ -1051,7 +1052,7 @@ pub(crate) fn read_rm<T>(
     root_tag: &str,
 ) -> Response
 where
-    T: FromJson + ToXml,
+    T: DeserializeOwned + ToXml,
 {
     let _ = (base_path, segment);
     let mut out = respond_rm::<T>(headers, StatusCode::OK, &resp.body, root_tag);
@@ -1128,7 +1129,7 @@ fn xml_body_ns(status: StatusCode, xml: String, ns: Namespace) -> Response {
     resp
 }
 
-fn json_response<T: ToJson>(status: StatusCode, value: &T) -> Response {
+fn json_response<T: Serialize>(status: StatusCode, value: &T) -> Response {
     // The native codec serializes canonical JSON infallibly.
     let json = openehr_its::json::to_canonical_json(value);
     let mut resp = (status, json).into_response();

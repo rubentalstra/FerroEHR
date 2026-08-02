@@ -28,7 +28,6 @@ use openehr_rm::demographic::person::Person;
 use openehr_rm::demographic::role::Role;
 use openehr_rm::ehr::ehr_status::EhrStatus;
 
-use openehr_its::json_codec::runtime::{FromJson, ToJson};
 use openehr_its::xml::{Namespace, ToXml};
 
 /// The serialization the run emits, with the XML root the RM class documents
@@ -50,7 +49,7 @@ enum Form<'a> {
     Json,
 }
 
-fn emit<T: FromJson + ToJson + ToXml>(
+fn emit<T: serde::de::DeserializeOwned + serde::Serialize + ToXml>(
     value: &serde_json::Value,
     form: &Form<'_>,
 ) -> Result<String, Box<dyn Error>> {

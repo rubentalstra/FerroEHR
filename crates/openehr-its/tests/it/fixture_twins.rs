@@ -1,5 +1,6 @@
-//! **Fixture twins** for the two defective documents in the vendored
-//! `openehr_sdk` canonical-JSON corpus.
+//! **Fixture twins** for the defective documents the strict canonical-JSON
+//! reader refuses — the two in the vendored `openehr_sdk` corpus, plus the
+//! repo-authored pair for the repeated-member refusal.
 //!
 //! Both were latent negatives: they only ever read because the canonical-JSON
 //! reader was tolerant. Under the strict reader (an undeclared wire key is a
@@ -20,7 +21,7 @@
 //! silent.
 
 use openehr_its::json::from_canonical_json;
-use openehr_rm::prelude::Composition;
+use openehr_rm::prelude::{Composition, DvQuantity};
 use std::path::{Path, PathBuf};
 
 /// The vendored corpus file `rel` (relative to `tests/vendor/`).
@@ -34,6 +35,20 @@ fn vendored(rel: &str) -> PathBuf {
 fn twin(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/twins")
+        .join(name)
+}
+
+/// A half of the repeated-member pair (under `tests/fixtures/repeated_member/`).
+///
+/// Deliberately NOT under `tests/fixtures/twins/`: that directory has a
+/// documented contract (`common::corpus_files` walks it as corpus — it holds
+/// the repo-authored VALID half of an adjudicated defective VENDORED document,
+/// and every member must be a canonical RM root). This pair is repo-authored on
+/// BOTH halves and is a `DV_QUANTITY` fragment, so it lives beside the corpus
+/// rather than inside it, and is asserted only here.
+fn repeated(name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/repeated_member")
         .join(name)
 }
 
@@ -139,6 +154,64 @@ fn corrected_alternative_types_twin_reads_and_round_trips() {
         .expect("the re-encoded twin must read back");
     assert_eq!(
         composition, again,
+        "the corrected twin must round-trip through the canonical codec"
+    );
+}
+
+/// **Invalid half.** A repeated object member.
+///
+/// RFC 8259 §4 says the names within an object "SHOULD be unique" and that
+/// "when the names within an object are not unique, the behavior of software
+/// that receives such an object is unpredictable"
+/// (<https://www.rfc-editor.org/rfc/rfc8259#section-4>). No canonical openEHR
+/// writer emits one — every attribute is written once, in BMM declaration order
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §JSON Format) — so a repeated member is not a shape any conformant producer
+/// can have meant. The reader refuses it rather than silently letting one
+/// occurrence win, which is the never-lax reading of an undefined behaviour.
+///
+/// Unlike the two vendored twins above, BOTH halves of this pair are
+/// repo-authored (`tests/fixtures/repeated_member/`): the refusal is ours to
+/// introduce, so there is no external document to keep verbatim.
+#[test]
+fn a_repeated_member_is_refused() {
+    let src = read(&repeated("duplicate_member.invalid.json"));
+    let err = from_canonical_json::<DvQuantity>(&src)
+        .expect_err("a repeated object member must be refused");
+    let text = err.to_string();
+    assert!(
+        text.contains("duplicate field `magnitude`"),
+        "the refusal must name the repeated member, got: {text}"
+    );
+}
+
+/// **Invalid half.** A repeated `_type` discriminator — the same refusal, on
+/// the one member that is not a modelled attribute (see
+/// [`a_repeated_member_is_refused`] for the grounding).
+#[test]
+fn a_repeated_type_discriminator_is_refused() {
+    let src = read(&repeated("duplicate_type_discriminator.invalid.json"));
+    let err = from_canonical_json::<DvQuantity>(&src)
+        .expect_err("a repeated `_type` discriminator must be refused");
+    let text = err.to_string();
+    assert!(
+        text.contains("duplicate field `_type`"),
+        "the refusal must name the repeated discriminator, got: {text}"
+    );
+}
+
+/// **Valid half.** The same document with the member written once — it reads
+/// and round-trips, proving the refusal is about the repetition and nothing
+/// else.
+#[test]
+fn the_single_member_twin_reads_and_round_trips() {
+    let src = read(&repeated("duplicate_member.valid.json"));
+    let quantity = from_canonical_json::<DvQuantity>(&src).expect("the corrected twin must read");
+    let re_encoded = openehr_its::json::to_canonical_json(&quantity);
+    let again =
+        from_canonical_json::<DvQuantity>(&re_encoded).expect("the re-encoded twin must read back");
+    assert_eq!(
+        quantity, again,
         "the corrected twin must round-trip through the canonical codec"
     );
 }

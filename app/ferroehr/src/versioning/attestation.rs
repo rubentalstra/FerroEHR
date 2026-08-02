@@ -444,7 +444,7 @@ pub(crate) fn complete_attestation(
 
 /// Decode one client-supplied `ATTESTATION` attribute into its RM type,
 /// reporting the attribute by name so a `422` says which field was wrong.
-fn decode<T: openehr_its::json_codec::runtime::FromJson>(
+fn decode<T: serde::de::DeserializeOwned>(
     value: &Value,
     attribute: &str,
     rm_type: &str,

@@ -200,6 +200,27 @@ impl<'a, T> IntoIterator for &'a mut NonEmptyVec<T> {
     }
 }
 
+/// A `1..*` container writes exactly like the `Vec` it wraps — the bound is a
+/// model constraint, not a wire distinction.
+impl<T: serde::Serialize> serde::Serialize for NonEmptyVec<T> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(serializer)
+    }
+}
+
+/// Reading a `1..*` container goes through [`NonEmptyVec::new`], so a
+/// present-but-EMPTY array is refused at PARSE rather than surviving into the
+/// model — the structural realization of a BMM cardinality lower bound of 1
+/// (e.g. `CLUSTER.items`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+/// §Attributes).
+impl<'de, T: serde::Deserialize<'de>> serde::Deserialize<'de> for NonEmptyVec<T> {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let members = Vec::<T>::deserialize(deserializer)?;
+        Self::new(members).map_err(serde::de::Error::custom)
+    }
+}
+
 #[cfg(test)]
 mod nonempty_tests {
     use super::{EmptyContainer, NonEmptyVec};

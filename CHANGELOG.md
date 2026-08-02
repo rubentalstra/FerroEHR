@@ -17,6 +17,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **A canonical-JSON object that repeats a member name is now REFUSED with
+  `400`, naming the repeated member.** The reader previously let the last
+  occurrence win. RFC 8259 §4 says object member names "SHOULD be unique" and
+  that "when the names within an object are not unique, the behavior of
+  software that receives such an object is unpredictable", and no conformant
+  openEHR writer emits a repeated member — every attribute is written once, in
+  model declaration order — so a repeated member is refused rather than
+  silently resolved to one of its values. This applies to the `_type`
+  discriminator as well as to modelled attributes.
+- **Canonical-JSON refusal messages now carry the full JSON path to the
+  offending node** (for example `(at $.content[0].data.items[2].value)`), so a
+  client can locate the defect in a large document without bisecting it. The
+  refusal wording itself is unchanged in kind: the offending member, the class
+  that does not declare it, and the members that class does declare.
+- **The canonical-JSON lexeme for a REAL in exponent form now writes a signed
+  exponent** (`1e+21` rather than `1e21`). No openEHR specification governs the
+  rendering of a REAL — both forms denote the same value and RFC 8259 §6 admits
+  both — and the new form is what the reference JSON encoder produces. Only
+  magnitudes outside the plain-decimal window (roughly `1e-5` to `1e16`) are
+  affected; no clinical quantity in the conformance corpus changes by a single
+  byte.
 - **A canonical-JSON payload carrying an attribute the openEHR RM does not
   declare is now REFUSED with `400`, naming the path and the offending
   member.** The reader previously ignored an undeclared key. It is refused

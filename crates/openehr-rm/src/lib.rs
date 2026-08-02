@@ -40,3 +40,6 @@ pub mod model;
 // hand-written modules (spec behaviour), auto-declared:
 pub mod paths;
 pub mod validate;
+
+// canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:
+mod json_serde;
