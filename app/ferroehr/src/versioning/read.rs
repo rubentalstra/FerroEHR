@@ -12,7 +12,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::versioning::Kind;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle;
@@ -46,10 +46,13 @@ impl WrappedOriginal {
     fn decode(vo_id: VoId, fragment: &Value) -> Result<Self, ServiceError> {
         let field = |name: &str| {
             fragment.get(name).cloned().ok_or_else(|| {
-                ServiceError::Unprocessable(format!(
-                    "the wrapped ORIGINAL_VERSION stored for versioned object {vo_id} carries \
-                     no {name}"
-                ))
+                ServiceError::Unprocessable(
+                    Violation::new(format!(
+                        "is missing from the wrapped ORIGINAL_VERSION stored for \
+                         versioned object {vo_id}"
+                    ))
+                    .with_path(format!("ORIGINAL_VERSION.{name}")),
+                )
             })
         };
         Ok(Self {

@@ -16,7 +16,7 @@ use serde_json::Value;
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::datetime::parse_at_time;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::UpdateVersion;
@@ -359,10 +359,13 @@ impl FerroEhrService {
             (stored_template, composition_template_id(&composition))
             && stored != incoming
         {
-            return Err(ServiceError::Unprocessable(format!(
-                "update COMPOSITION references template {incoming}, but the stored \
-                 composition was committed against template {stored} (template_id mismatch)"
-            )));
+            return Err(ServiceError::Unprocessable(
+                Violation::new(format!(
+                    "is {incoming} on the update, but the stored composition was \
+                     committed against template {stored} (template_id mismatch)"
+                ))
+                .with_path("COMPOSITION.archetype_details.template_id"),
+            ));
         }
         self.validate_composition_for_commit(&composition, incomplete)
             .await?;

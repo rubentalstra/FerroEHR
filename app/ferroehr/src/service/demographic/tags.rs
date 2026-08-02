@@ -16,7 +16,7 @@ use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::demographic::types::PartyKind;
 use crate::service::ehr::tags::tag_target_tail;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::status::CallStatusType;
 use crate::storage::tag_repo;
 use crate::versioning::object_version_id::{VersionIdError, hier_object_id};
@@ -131,22 +131,29 @@ impl FerroEhrService {
         // `ORDER BY key` read-back order on the leading component.
         let mut deduped: BTreeMap<(String, Option<String>), Option<String>> = BTreeMap::new();
         for tag in &tags {
-            let key = tag
-                .get("key")
-                .and_then(Value::as_str)
-                .ok_or_else(|| ServiceError::Unprocessable("item tag requires a key".to_owned()))?;
+            let key = tag.get("key").and_then(Value::as_str).ok_or_else(|| {
+                ServiceError::Unprocessable(
+                    Violation::new("is required on an item tag").with_path("ITEM_TAG.key"),
+                )
+            })?;
             // RM ITEM_TAG Inv_key_valid: non-empty, no leading/trailing whitespace.
             if key.is_empty() || key.trim() != key {
-                return Err(ServiceError::Unprocessable(format!(
-                    "item tag key {key:?} must be non-empty without leading/trailing whitespace"
-                )));
+                return Err(ServiceError::Unprocessable(
+                    Violation::new(format!(
+                        "{key:?} must be non-empty without leading/trailing whitespace"
+                    ))
+                    .with_path("ITEM_TAG.key")
+                    .with_invariant("ITEM_TAG.Inv_key_valid"),
+                ));
             }
             let value = tag.get("value").and_then(Value::as_str);
             // RM ITEM_TAG Inv_value_valid: `value /= Void implies not value.is_empty`.
             if value == Some("") {
-                return Err(ServiceError::Unprocessable(format!(
-                    "item tag {key:?}: a value, if set, may not be empty"
-                )));
+                return Err(ServiceError::Unprocessable(
+                    Violation::new(format!("of item tag {key:?}, if set, may not be empty"))
+                        .with_path("ITEM_TAG.value")
+                        .with_invariant("ITEM_TAG.Inv_value_valid"),
+                ));
             }
             let target_path = tag.get("target_path").and_then(Value::as_str);
             deduped.insert(

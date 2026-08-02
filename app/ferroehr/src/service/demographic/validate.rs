@@ -22,7 +22,7 @@ use openehr_base::validate::Validate;
 use serde_json::Value;
 
 use crate::service::demographic::types::PartyKind;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::versioning::Kind;
 
 /// The RM `_type` a `PARTY_RELATIONSHIP` versioned object stores.
@@ -44,14 +44,21 @@ const RELATIONSHIP_RM_TYPE: &str = "PARTY_RELATIONSHIP";
 /// §Attributes), which a partial hand check cannot see.
 fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceError> {
     let typed = openehr_its::json::from_canonical_value::<PartyRef>(reference).map_err(|e| {
-        ServiceError::Unprocessable(format!("{context}: not a well-formed PARTY_REF: {e}"))
+        ServiceError::Unprocessable(
+            Violation::new("is not a well-formed PARTY_REF")
+                .with_path(context)
+                .with_decode_failure(&e),
+        )
     })?;
     let violations = typed.invariants();
-    if let Some(first) = violations.first() {
-        return Err(ServiceError::Unprocessable(format!(
-            "{context}: {}",
-            first.message
-        )));
+    if !violations.is_empty() {
+        // The class's own `InvariantViolation`s travel on as data; only the
+        // first is rendered, exactly as before.
+        return Err(ServiceError::Unprocessable(
+            Violation::new("fails its BASE class invariants")
+                .with_path(context)
+                .with_causes(violations.into_iter().take(1).collect()),
+        ));
     }
     Ok(())
 }
@@ -70,13 +77,16 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
         "PERSON" => openehr_its::json::from_canonical_value::<Person>(data).map(drop),
         "ROLE" => openehr_its::json::from_canonical_value::<Role>(data).map(drop),
         other => {
-            return Err(ServiceError::Unprocessable(format!(
-                "not a demographic party type: {other:?}"
-            )));
+            return Err(ServiceError::Unprocessable(
+                Violation::new(format!("not a demographic party type: {other:?}"))
+                    .with_path("_type"),
+            ));
         }
     };
     typed.map_err(|e| {
-        ServiceError::Unprocessable(format!("body does not validate as {rm_type}: {e}"))
+        ServiceError::Unprocessable(
+            Violation::new(format!("body does not validate as {rm_type}")).with_decode_failure(&e),
+        )
     })?;
 
     // PARTY is unconditionally an archetype root (`demographic.party.adoc`
@@ -90,17 +100,13 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
         crate::service::ehr::validation::validate_root_locatable(obj, rm_type)?;
     }
 
-    // PARTY invariant `Identities_valid`: `not identities.is_empty`
-    // (`demographic.party.adoc`).
-    let has_identities = data
-        .get("identities")
-        .and_then(Value::as_array)
-        .is_some_and(|a| !a.is_empty());
-    if !has_identities {
-        return Err(ServiceError::Unprocessable(format!(
-            "{rm_type} violates PARTY invariant Identities_valid: identities must be non-empty"
-        )));
-    }
+    // NOTE: `PARTY.Identities_valid` ("not identities.is_empty",
+    // `demographic.party.adoc` §Invariants) needs NO check here. The generated
+    // party types type `identities` as
+    // `openehr_base::containers::NonEmptyVec<PARTY_IDENTITY>` (the 1..* bound
+    // made structural), so the decode above already refuses an absent or empty
+    // list — the Rust Book ch9.3 custom-validation-type pattern, where a value
+    // that exists is a value that satisfied the rule.
 
     // "Present implies non-empty" list invariants — only checkable on the raw
     // JSON (post-deserialize an absent and a present-empty list are the same
@@ -117,10 +123,11 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
             .and_then(Value::as_array)
             .is_some_and(Vec::is_empty)
         {
-            return Err(ServiceError::Unprocessable(format!(
-                "{rm_type}.{attr} is present but empty — a present list must be \
-                 non-empty ({invariant})"
-            )));
+            return Err(ServiceError::Unprocessable(
+                Violation::new("is present but empty — a present list must be non-empty")
+                    .with_path(format!("{rm_type}.{attr}"))
+                    .with_invariant(invariant),
+            ));
         }
     }
 
@@ -135,11 +142,14 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
         for (i, rel) in relationships.iter().enumerate() {
             let source = rel.pointer("/source/id/value").and_then(Value::as_str);
             if source.is_some_and(|s| !composite_ids_equal(s, uid)) {
-                return Err(ServiceError::Unprocessable(format!(
-                    "{rm_type}.relationships[{i}].source must reference this party \
-                     (uid {uid}) — relationships are stored under their source \
-                     (PARTY.Relationships_validity)"
-                )));
+                return Err(ServiceError::Unprocessable(
+                    Violation::new(format!(
+                        "must reference this party (uid {uid}) — relationships are \
+                         stored under their source"
+                    ))
+                    .with_path(format!("{rm_type}.relationships[{i}].source"))
+                    .with_invariant("PARTY.Relationships_validity"),
+                ));
             }
         }
     }
@@ -174,38 +184,47 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
 /// `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
 /// injects it on read, mirroring the PARTY / COMPOSITION services.
 fn relationship_check(data: &Value) -> Result<(), ServiceError> {
+    use openehr_base::prelude::ObjectId;
     use openehr_rm::prelude::PartyRelationship;
-    // `source`/`target` are mandatory `PARTY_REF`s on the RM type, so a missing
-    // one already fails deserialization; the explicit checks below give a
-    // relationship-specific `422` message (and guard against a future optionality
-    // change in the generated type).
-    openehr_its::json::from_canonical_value::<PartyRelationship>(data).map_err(|e| {
-        ServiceError::Unprocessable(format!("body does not validate as PARTY_RELATIONSHIP: {e}"))
-    })?;
-    for field in ["source", "target"] {
-        let Some(reference) = data.get(field).filter(|v| !v.is_null()) else {
-            return Err(ServiceError::Unprocessable(format!(
-                "PARTY_RELATIONSHIP requires a {field} PARTY_REF"
-            )));
-        };
+    // The decode is the validating ACT, and its result is the carrier the two
+    // ref rules below are judged on — `source`/`target` are mandatory
+    // `PARTY_REF`s on the RM type, so once this succeeds their PRESENCE and
+    // their `PARTY_REF` SHAPE are facts of the type, not things to re-check
+    // (the Rust Book ch9.3 custom-validation-type pattern: a downstream
+    // function "wouldn't need to do any additional checks in its body").
+    let typed =
+        openehr_its::json::from_canonical_value::<PartyRelationship>(data).map_err(|e| {
+            ServiceError::Unprocessable(
+                Violation::new("body does not validate as PARTY_RELATIONSHIP")
+                    .with_decode_failure(&e),
+            )
+        })?;
+    for (field, reference) in [("source", &typed.source), ("target", &typed.target)] {
         // The refs denote the Version CONTAINER of a Party — an OBJECT_REF
         // carrying a HIER_OBJECT_ID (the continuant), never an
         // OBJECT_VERSION_ID (one particular version) — RM demographic
         // master02 §Modelling of Parties and Relationships.
-        if reference
-            .pointer("/id/_type")
-            .and_then(Value::as_str)
-            .is_some_and(|t| t == "OBJECT_VERSION_ID")
-        {
-            return Err(ServiceError::Unprocessable(format!(
-                "PARTY_RELATIONSHIP.{field}.id must identify the party's version \
-                 container (HIER_OBJECT_ID), not one version (OBJECT_VERSION_ID) \
-                 — RM demographic master02"
-            )));
+        if matches!(reference.id, ObjectId::ObjectVersionId(_)) {
+            return Err(ServiceError::Unprocessable(
+                Violation::new(
+                    "must identify the party's version container (HIER_OBJECT_ID), \
+                     not one version (OBJECT_VERSION_ID)",
+                )
+                .with_path(format!("PARTY_RELATIONSHIP.{field}.id"))
+                .with_invariant("RM demographic master02"),
+            ));
         }
         // PARTY_REF.Type_validity + OBJECT_REF.namespace (BASE
-        // `party_ref.adoc` / `object_ref.adoc`).
-        validate_party_ref(reference, &format!("PARTY_RELATIONSHIP.{field}"))?;
+        // `party_ref.adoc` / `object_ref.adoc`), run on the ALREADY-DECODED
+        // ref: no second decode, so no second way to answer the same question.
+        let violations = reference.invariants();
+        if !violations.is_empty() {
+            return Err(ServiceError::Unprocessable(
+                Violation::new("fails its BASE class invariants")
+                    .with_path(format!("PARTY_RELATIONSHIP.{field}"))
+                    .with_causes(violations.into_iter().take(1).collect()),
+            ));
+        }
     }
     // `PARTY_RELATIONSHIP` is a LOCATABLE too
     // (`RM/docs/UML/classes/org.openehr.rm.demographic.party_relationship.adoc`),
@@ -219,12 +238,15 @@ fn relationship_check(data: &Value) -> Result<(), ServiceError> {
 pub(super) fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), ServiceError> {
     let declared = body.get("_type").and_then(Value::as_str);
     if declared != Some(kind.rm_type()) {
-        return Err(ServiceError::Unprocessable(format!(
-            "party _type mismatch: the {} endpoint requires _type {:?}, got {:?}",
-            kind.segment(),
-            kind.rm_type(),
-            declared.unwrap_or("<none>"),
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "party _type mismatch: the {} endpoint requires _type {:?}, got {:?}",
+                kind.segment(),
+                kind.rm_type(),
+                declared.unwrap_or("<none>"),
+            ))
+            .with_path("_type"),
+        ));
     }
     party_check(kind.rm_type(), body)
 }
@@ -234,10 +256,13 @@ pub(super) fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), S
 pub(super) fn validate_relationship_body(body: &Value) -> Result<(), ServiceError> {
     let declared = body.get("_type").and_then(Value::as_str);
     if declared != Some(RELATIONSHIP_RM_TYPE) {
-        return Err(ServiceError::Unprocessable(format!(
-            "party_relationship _type mismatch: requires {RELATIONSHIP_RM_TYPE:?}, got {:?}",
-            declared.unwrap_or("<none>"),
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "party_relationship _type mismatch: requires {RELATIONSHIP_RM_TYPE:?}, got {:?}",
+                declared.unwrap_or("<none>"),
+            ))
+            .with_path("_type"),
+        ));
     }
     relationship_check(body)
 }
@@ -324,10 +349,10 @@ mod tests {
             .unwrap()
             .remove("archetype_details");
         let msg = match party_check("PERSON", &no_details) {
-            Err(ServiceError::Unprocessable(m)) => m,
+            Err(ServiceError::Unprocessable(v)) => v,
             other => panic!("expected Unprocessable, got {other:?}"),
         };
-        assert!(msg.contains("archetype_details"), "got {msg}");
+        assert_eq!(msg.path(), Some("PERSON.archetype_details"));
 
         // The root-identity half is the whole-instance pass's
         // (`openehr_rm::validate::check_archetyped_valid`), so it
@@ -342,11 +367,21 @@ mod tests {
         );
     }
 
+    /// `PARTY.Identities_valid` is enforced BY THE DECODE — `identities` is
+    /// `NonEmptyVec<PARTY_IDENTITY>` on the generated party types, so an empty
+    /// or absent list has no representation. The refusal is asserted here (it
+    /// must not weaken); the service carries no second check of the same rule.
     #[test]
     fn identities_valid_is_enforced() {
-        // Empty / absent identities violate PARTY.Identities_valid.
-        assert!(party_check("PERSON", &person(&json!([]))).is_err());
-        assert!(party_check("PERSON", &json!({ "_type": "PERSON" })).is_err());
+        for bad in [person(&json!([])), json!({ "_type": "PERSON" })] {
+            match party_check("PERSON", &bad) {
+                Err(ServiceError::Unprocessable(v)) => assert!(
+                    v.detail().contains("does not validate as PERSON"),
+                    "the decode is the enforcement point, got {v}"
+                ),
+                other => panic!("empty identities must be 422, got {other:?}"),
+            }
+        }
         party_check("PERSON", &person(&json!([identity()])))
             .expect("a party with one identity is valid");
     }
@@ -356,10 +391,12 @@ mod tests {
         let mut body = person(&json!([identity()]));
         body["contacts"] = json!([]);
         let msg = match party_check("PERSON", &body) {
-            Err(ServiceError::Unprocessable(m)) => m,
+            Err(ServiceError::Unprocessable(v)) => v,
             other => panic!("expected Unprocessable, got {other:?}"),
         };
-        assert!(msg.contains("Contacts_valid"), "got {msg}");
+        // The invariant name is DATA on the violation, not a substring.
+        assert_eq!(msg.invariant(), Some("Contacts_valid"));
+        assert_eq!(msg.path(), Some("PERSON.contacts"));
     }
 
     /// a `PARTY_REF` whose `type` is outside the legal set is a `422`
@@ -375,7 +412,13 @@ mod tests {
         let bad_type = json!({ "_type": "PARTY_REF", "namespace": "demographic",
             "type": "COMPOSITION", "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
         match validate_party_ref(&bad_type, "ctx") {
-            Err(ServiceError::Unprocessable(m)) => assert!(m.contains("Type_validity"), "got {m}"),
+            Err(ServiceError::Unprocessable(v)) => assert!(
+                v.causes()
+                    .iter()
+                    .any(|c| c.message.contains("Type_validity")),
+                "causes must carry Type_validity, got {:?}",
+                v.causes()
+            ),
             other => panic!("expected Type_validity 422, got {other:?}"),
         }
     }
@@ -401,8 +444,14 @@ mod tests {
         let bad_ns = json!({ "_type": "PARTY_REF", "namespace": "1nope",
             "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
         match validate_party_ref(&bad_ns, "ctx") {
-            Err(ServiceError::Unprocessable(m)) => {
-                assert!(m.contains("Namespace_valid"), "got {m}");
+            Err(ServiceError::Unprocessable(v)) => {
+                assert!(
+                    v.causes()
+                        .iter()
+                        .any(|c| c.message.contains("Namespace_valid")),
+                    "causes must carry Namespace_valid, got {:?}",
+                    v.causes()
+                );
             }
             other => panic!("expected namespace 422, got {other:?}"),
         }
@@ -447,7 +496,13 @@ mod tests {
         };
         party_check("ROLE", &role("PERSON")).expect("a legal performer ref is accepted");
         match party_check("ROLE", &role("COMPOSITION")) {
-            Err(ServiceError::Unprocessable(m)) => assert!(m.contains("Type_validity"), "got {m}"),
+            Err(ServiceError::Unprocessable(v)) => assert!(
+                v.causes()
+                    .iter()
+                    .any(|c| c.message.contains("Type_validity")),
+                "causes must carry Type_validity, got {:?}",
+                v.causes()
+            ),
             other => panic!("expected performer Type_validity 422, got {other:?}"),
         }
     }

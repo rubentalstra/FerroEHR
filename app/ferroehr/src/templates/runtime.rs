@@ -32,7 +32,7 @@ use serde_json::Value;
 
 use super::identity;
 use crate::service::FerroEhrService;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 
 impl FerroEhrService {
     /// Resolve the (cached) [`WebTemplate`] for a stored operational template,
@@ -178,9 +178,9 @@ impl FerroEhrService {
             })
             .await
             .map_err(|e| {
-                ServiceError::Unprocessable(format!(
+                ServiceError::Unprocessable(Violation::new(format!(
                     "operational template {template_id} could not be built into a WebTemplate: {e}"
-                ))
+                )))
             })
     }
 }

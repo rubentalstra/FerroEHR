@@ -21,7 +21,7 @@ use openehr_rm::prelude::{
 use openehr_term::bundle::openehr;
 use serde_json::Value;
 
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::versioning::attestation::AttestationParts;
 
 /// The openEHR internal terminology id (`Terminology_id_openehr`).
@@ -105,10 +105,13 @@ fn merged_change_type(supplied: &str, operation: &str) -> Result<String, Service
         return Ok(operation.to_owned());
     }
     let code = change_type_code(token).ok_or_else(|| {
-        ServiceError::Unprocessable(format!(
-            "change_type {token:?} is not a code in the openEHR audit_change_type group \
-             (AUDIT_DETAILS.Change_type_valid)"
-        ))
+        ServiceError::Unprocessable(
+            Violation::new(format!(
+                "{token:?} is not a code in the openEHR audit_change_type group"
+            ))
+            .with_path("change_type")
+            .with_invariant("AUDIT_DETAILS.Change_type_valid"),
+        )
     })?;
     let compatible = match operation {
         change_type::CREATION => code == change_type::CREATION,
@@ -356,9 +359,11 @@ pub(crate) fn description_fragment(value: &str) -> Value {
 /// §Attributes).
 pub(crate) fn decode_description(fragment: &Value) -> Result<DvText, ServiceError> {
     openehr_its::json::from_canonical_value::<DvText>(fragment).map_err(|e| {
-        ServiceError::Unprocessable(format!(
-            "AUDIT_DETAILS.description is not a canonical DV_TEXT: {e}"
-        ))
+        ServiceError::Unprocessable(
+            Violation::new("is not a canonical DV_TEXT")
+                .with_path("AUDIT_DETAILS.description")
+                .with_decode_failure(&e),
+        )
     })
 }
 
@@ -424,9 +429,11 @@ pub(crate) fn dv_text(value: &str) -> DvText {
 /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes).
 pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError> {
     openehr_its::json::from_canonical_value::<PartyProxy>(committer).map_err(|e| {
-        ServiceError::Unprocessable(format!(
-            "AUDIT_DETAILS.committer is not a canonical PARTY_PROXY: {e}"
-        ))
+        ServiceError::Unprocessable(
+            Violation::new("is not a canonical PARTY_PROXY")
+                .with_path("AUDIT_DETAILS.committer")
+                .with_decode_failure(&e),
+        )
     })
 }
 
@@ -454,9 +461,9 @@ pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError>
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
         return Err(ServiceError::Unprocessable(
-            "AUDIT_DETAILS.system_id is mandatory and non-void \
-             (AUDIT_DETAILS.System_id_valid)"
-                .to_owned(),
+            Violation::new("is mandatory and non-void")
+                .with_path("AUDIT_DETAILS.system_id")
+                .with_invariant("AUDIT_DETAILS.System_id_valid"),
         ));
     }
     validate_committer(&audit.committer)
@@ -492,14 +499,13 @@ fn validate_committer(committer: &Value) -> Result<(), ServiceError> {
     if violations.is_empty() {
         return Ok(());
     }
-    let detail = violations
-        .iter()
-        .map(|v| v.message.as_str())
-        .collect::<Vec<_>>()
-        .join("; ");
-    Err(ServiceError::Unprocessable(format!(
-        "AUDIT_DETAILS.committer is not a valid PARTY_PROXY: {detail}"
-    )))
+    // The dispatcher's own `InvariantViolation`s travel on as DATA — the
+    // service never flattens them into a sentence here.
+    Err(ServiceError::Unprocessable(
+        Violation::new("is not a valid PARTY_PROXY")
+            .with_path("AUDIT_DETAILS.committer")
+            .with_causes(violations),
+    ))
 }
 
 #[cfg(test)]
@@ -565,11 +571,19 @@ mod tests {
     #[test]
     fn merged_change_type_rejects_out_of_group_as_unprocessable() {
         for token in ["999", "banana", "creation-x"] {
-            let err = merged_change_type(token, change_type::MODIFICATION).unwrap_err();
-            assert!(
-                matches!(err, ServiceError::Unprocessable(_)),
-                "{token}: {err:?}"
-            );
+            match merged_change_type(token, change_type::MODIFICATION) {
+                // The refusal is asserted as DATA: the attribute path and the
+                // named RM invariant, not a fragment of the sentence.
+                Err(ServiceError::Unprocessable(v)) => {
+                    assert_eq!(v.path(), Some("change_type"), "{token}");
+                    assert_eq!(
+                        v.invariant(),
+                        Some("AUDIT_DETAILS.Change_type_valid"),
+                        "{token}"
+                    );
+                }
+                other => panic!("{token}: expected Unprocessable, got {other:?}"),
+            }
         }
     }
 
@@ -648,10 +662,10 @@ mod tests {
             json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
         );
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("System_id_valid"),
-                "should cite System_id_valid, got {msg}"
-            ),
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("AUDIT_DETAILS.system_id"));
+                assert_eq!(v.invariant(), Some("AUDIT_DETAILS.System_id_valid"));
+            }
             other => panic!("expected Unprocessable(System_id_valid), got {other:?}"),
         }
     }
@@ -660,10 +674,18 @@ mod tests {
     fn commit_audit_rejects_committer_without_identity() {
         let audit = audit_input("ferroehr.local", json!({ "_type": "PARTY_IDENTIFIED" }));
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("Basic_validity"),
-                "should cite Basic_validity, got {msg}"
-            ),
+            // The nested dispatcher violations survive as DATA: the causes
+            // list is asserted, not a substring of the rendered message.
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("AUDIT_DETAILS.committer"));
+                assert!(
+                    v.causes()
+                        .iter()
+                        .any(|c| c.message.contains("Basic_validity")),
+                    "causes must carry the PARTY_IDENTIFIED invariant, got {:?}",
+                    v.causes()
+                );
+            }
             other => panic!("expected Unprocessable(Basic_validity), got {other:?}"),
         }
     }
@@ -675,9 +697,10 @@ mod tests {
             json!({ "_type": "PARTY_IDENTIFIED", "name": "" }),
         );
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("Name_valid"),
-                "should cite Name_valid, got {msg}"
+            Err(ServiceError::Unprocessable(v)) => assert!(
+                v.causes().iter().any(|c| c.message.contains("Name_valid")),
+                "causes must carry Name_valid, got {:?}",
+                v.causes()
             ),
             other => panic!("expected Unprocessable(Name_valid), got {other:?}"),
         }
@@ -697,8 +720,15 @@ mod tests {
             audit_input("sys", c)
         };
         match validate_commit_audit(&related(Value::Null)) {
-            Err(ServiceError::Unprocessable(msg)) => {
-                assert!(msg.contains("relationship"), "got {msg}");
+            Err(ServiceError::Unprocessable(v)) => {
+                assert!(
+                    v.causes()
+                        .iter()
+                        .any(|c| c.message.contains("relationship")
+                            || c.path.contains("relationship")),
+                    "causes must name the missing attribute, got {:?}",
+                    v.causes()
+                );
             }
             other => panic!("missing relationship must be Unprocessable, got {other:?}"),
         }
@@ -715,8 +745,14 @@ mod tests {
         // The refusal is produced by the generated `PARTY_RELATED` core, whose
         // violation message names the invariant, not the rejected code.
         match validate_commit_audit(&bad) {
-            Err(ServiceError::Unprocessable(msg)) => {
-                assert!(msg.contains("Relationship_valid"), "got {msg}");
+            Err(ServiceError::Unprocessable(v)) => {
+                assert!(
+                    v.causes()
+                        .iter()
+                        .any(|c| c.message.contains("Relationship_valid")),
+                    "causes must carry Relationship_valid, got {:?}",
+                    v.causes()
+                );
             }
             other => panic!("non-member relationship code must be 422, got {other:?}"),
         }

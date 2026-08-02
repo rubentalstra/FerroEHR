@@ -17,6 +17,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **`422 Unprocessable Content` messages now follow one uniform shape** —
+  `<RM attribute path> <what is wrong> (<invariant name>)`, for example
+  `ATTESTATION.items must be a non-empty list when present
+  (ATTESTATION.Items_valid)`. Internally the service layer carries every such
+  refusal as structured data (the attribute path, the named openEHR invariant,
+  and the nested class-invariant violations a validation pass produced) instead
+  of a pre-formatted sentence, and renders it into the response body exactly
+  once, at the REST edge. Most messages are byte-identical to before; the
+  remainder were reworded into the uniform shape (chiefly the CONTRIBUTION
+  version rules, item-tag rules, operational-template rules, `PARTY_REF`
+  refusals, and the `VERSIONED_COMPOSITION` cross-version invariants, where an
+  attribute is now written `COMPOSITION.category` rather than `COMPOSITION
+  category`). A `PARTY_RELATIONSHIP` with an absent `source`/`target`, and a
+  party with an empty `identities` list, are now reported by the RM decoder
+  that already refuses them rather than by a second hand-written check — same
+  `422`, different wording. Response body SHAPE, status codes and all
+  `validationErrors[]` contents are unchanged, and the `422` body is spec-silent
+  (`responses/422_COMPOSITION.yaml` declares no schema), so no declared contract
+  changes.
 - **A canonical-JSON object that repeats a member name is now REFUSED with
   `400`, naming the repeated member.** The reader previously let the last
   occurrence win. RFC 8259 §4 says object member names "SHOULD be unique" and

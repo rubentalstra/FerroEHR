@@ -53,8 +53,11 @@ use crate::service::error::ServiceError;
 ///   does not decode as an OPT 1.4 `OPERATIONAL_TEMPLATE` document.
 pub(crate) fn parse_opt(xml: &str) -> Result<OperationalTemplate, ServiceError> {
     require_well_formed_xml(xml)?;
-    openehr_its::opt14::from_xml(xml)
-        .map_err(|e| ServiceError::Unprocessable(format!("invalid OPT 1.4 XML: {e}")))
+    openehr_its::opt14::from_xml(xml).map_err(|e| {
+        ServiceError::Unprocessable(crate::service::error::Violation::new(format!(
+            "invalid OPT 1.4 XML: {e}"
+        )))
+    })
 }
 
 /// The well-formedness gate ahead of the OPT decode: scan the document with a

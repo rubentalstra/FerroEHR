@@ -22,7 +22,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::status::CallStatusType;
 use crate::versioning::audit::{AuditInput, OPENEHR};
 use crate::versioning::integrity;
@@ -151,9 +151,10 @@ pub(crate) async fn revision_history(
 /// `AUDIT_DETAILS` / `ATTESTATION`.
 fn stored_attestation(stored: &Value) -> Result<AuditDetails, ServiceError> {
     openehr_its::json::from_canonical_value::<AuditDetails>(stored).map_err(|e| {
-        ServiceError::Unprocessable(format!(
-            "a stored attestation is not a canonical ATTESTATION: {e}"
-        ))
+        ServiceError::Unprocessable(
+            Violation::new("a stored attestation is not a canonical ATTESTATION")
+                .with_decode_failure(&e),
+        )
     })
 }
 
@@ -411,11 +412,14 @@ fn build_wrapped_original(
     wrapped: &WrappedOriginal,
 ) -> Result<Value, ServiceError> {
     if !wrapped.commit_audit.is_object() {
-        return Err(ServiceError::Unprocessable(format!(
-            "the wrapped ORIGINAL_VERSION stored for versioned object {} carries a \
-             non-object commit_audit",
-            read.vo_id
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "of the wrapped ORIGINAL_VERSION stored for versioned object {} is not \
+                 an object",
+                read.vo_id
+            ))
+            .with_path("ORIGINAL_VERSION.commit_audit"),
+        ));
     }
     build_original_version(&OriginalVersionParts {
         creating_system_id: &read.creating_system_id,

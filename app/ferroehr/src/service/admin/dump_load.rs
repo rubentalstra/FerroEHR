@@ -1393,9 +1393,11 @@ impl FerroEhrService {
         .fetch_one(&mut *tx)
         .await?;
         if overlap {
-            return Err(ServiceError::Unprocessable(format!(
-                "archive for EHR {ehr_id} carries overlapping version validity periods"
-            )));
+            return Err(ServiceError::Unprocessable(
+                crate::service::error::Violation::new(format!(
+                    "archive for EHR {ehr_id} carries overlapping version validity periods"
+                )),
+            ));
         }
 
         tx.commit().await?;

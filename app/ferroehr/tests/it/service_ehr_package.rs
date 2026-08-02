@@ -112,10 +112,14 @@ async fn versioned_composition_cannot_switch_archetype() {
         .await
         .expect_err("switching archetype across versions must be rejected");
     match err {
-        ServiceError::Unprocessable(message) => assert!(
-            message.contains("Archetype_node_id_valid"),
-            "should cite the invariant, got: {message}"
-        ),
+        // The invariant is DATA on the violation, not a substring of prose.
+        ServiceError::Unprocessable(v) => {
+            assert_eq!(v.path(), Some("COMPOSITION.archetype_node_id"));
+            assert_eq!(
+                v.invariant(),
+                Some("VERSIONED_COMPOSITION.Archetype_node_id_valid")
+            );
+        }
         other => panic!("expected ContentInvalid, got {other:?}"),
     }
 
@@ -156,10 +160,13 @@ async fn versioned_composition_cannot_flip_persistence() {
         .await
         .expect_err("flipping is_persistent across versions must be rejected");
     match err {
-        ServiceError::Unprocessable(message) => assert!(
-            message.contains("Persistent_validity"),
-            "should cite the invariant, got: {message}"
-        ),
+        ServiceError::Unprocessable(v) => {
+            assert_eq!(v.path(), Some("COMPOSITION.category"));
+            assert_eq!(
+                v.invariant(),
+                Some("VERSIONED_COMPOSITION.Persistent_validity")
+            );
+        }
         other => panic!("expected ContentInvalid, got {other:?}"),
     }
 }

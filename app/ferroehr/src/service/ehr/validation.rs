@@ -26,7 +26,7 @@ use sqlx::PgConnection;
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::ehr::category::code;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::versioning::read::read_current;
 use crate::versioning::{Kind, lifecycle};
 
@@ -322,11 +322,13 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
     if let (Some(stored), Some(incoming)) = (first_ani.as_deref(), incoming_ani)
         && stored != incoming
     {
-        return Err(ServiceError::Unprocessable(format!(
-            "COMPOSITION archetype_node_id {incoming:?} differs from the versioned \
-             object's first version {stored:?} \
-             (VERSIONED_COMPOSITION.Archetype_node_id_valid)"
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "{incoming:?} differs from the versioned object's first version {stored:?}"
+            ))
+            .with_path("COMPOSITION.archetype_node_id")
+            .with_invariant("VERSIONED_COMPOSITION.Archetype_node_id_valid"),
+        ));
     }
     let incoming_category = canonical
         .pointer("/category/defining_code/code_string")
@@ -334,11 +336,14 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
     if let (Some(stored), Some(incoming)) = (first_category.as_deref(), incoming_category)
         && (stored == code::PERSISTENT) != (incoming == code::PERSISTENT)
     {
-        return Err(ServiceError::Unprocessable(format!(
-            "COMPOSITION category {incoming} changes the persistence of the versioned \
-             object (first version: {stored}) — is_persistent is fixed across versions \
-             (VERSIONED_COMPOSITION.Persistent_validity)"
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "{incoming} changes the persistence of the versioned object \
+                 (first version: {stored}) — is_persistent is fixed across versions"
+            ))
+            .with_path("COMPOSITION.category")
+            .with_invariant("VERSIONED_COMPOSITION.Persistent_validity"),
+        ));
     }
     Ok(())
 }
@@ -382,16 +387,18 @@ pub(in crate::service) fn validate_root_locatable(
     obj: &serde_json::Map<String, Value>,
     kind: &str,
 ) -> Result<(), ServiceError> {
-    let unproc = ServiceError::Unprocessable;
     let details = obj
         .get("archetype_details")
         .filter(|v| v.is_object())
         .ok_or_else(|| {
-            unproc(format!(
-                "{kind}.archetype_details is mandatory: {kind} is an archetype \
-                 root (Is_archetype_root) and a root without ARCHETYPED \
-                 violates LOCATABLE.Archetyped_valid"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new(format!(
+                    "is mandatory: {kind} is an archetype root (Is_archetype_root), \
+                     and a root without ARCHETYPED is invalid"
+                ))
+                .with_path(format!("{kind}.archetype_details"))
+                .with_invariant("LOCATABLE.Archetyped_valid"),
+            )
         })?;
     details
         .get("archetype_id")
@@ -399,10 +406,11 @@ pub(in crate::service) fn validate_root_locatable(
         .and_then(Value::as_str)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| {
-            unproc(format!(
-                "{kind}.archetype_details.archetype_id.value is mandatory \
-                 (ARCHETYPED.archetype_id 1..1)"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new("is mandatory")
+                    .with_path(format!("{kind}.archetype_details.archetype_id.value"))
+                    .with_invariant("ARCHETYPED.archetype_id 1..1"),
+            )
         })?;
     Ok(())
 }
@@ -437,7 +445,7 @@ pub(in crate::service) fn validate_root_locatable(
 /// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
 /// (both → 422).
 pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
-    let unproc = |m: String| ServiceError::Unprocessable(m);
+    let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
     let obj = status
         .as_object()
         .ok_or_else(|| unproc("EHR_STATUS must be a JSON object".to_owned()))?;
@@ -479,7 +487,7 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
 /// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
 /// found below the root (both → 422).
 pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
-    let unproc = |m: String| ServiceError::Unprocessable(m);
+    let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
     let obj = access
         .as_object()
         .ok_or_else(|| unproc("EHR_ACCESS must be a JSON object".to_owned()))?;
@@ -555,7 +563,7 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 /// RM-invariant violations found anywhere in the tree (both → 422).
 pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
     fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
-        let unproc = |m: String| ServiceError::Unprocessable(m);
+        let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
         let obj = node
             .as_object()
             .ok_or_else(|| unproc(format!("{path}: FOLDER must be a JSON object")))?;
