@@ -5290,6 +5290,7 @@ dependencies = [
  "jsonschema",
  "openehr-base",
  "openehr-its",
+ "openehr-term",
  "serde_jcs",
  "serde_json",
  "thiserror 2.0.18",

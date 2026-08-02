@@ -194,7 +194,7 @@ impl Ctx<'_> {
         if let Some(name) = Oas::ref_name(schema) {
             // RM/BASE spec types are opaque canonical-JSON payloads at the REST
             // boundary: the application exchanges `serde_json::Value` bodies and
-            // validates them via the native codec + `openehr_its::rm_validate`.
+            // validates them via the native codec + `openehr_its::wire_validate`.
             // The spec types carry no serde derive (the codec owns the wire), so
             // the contract DTOs carry any RM/BASE payload as an untyped `Value`
             // rather than the typed spec struct.

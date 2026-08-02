@@ -529,7 +529,7 @@ impl FerroEhrService {
     /// Example generation is not spec-mandated (a convenience surface); a
     /// generated example is self-consistent with its `WebTemplate` by construction
     /// and validated by the template-independent RM-invariant + terminology pass
-    /// ([`openehr_its::flat::validation::validate_rm_and_terminology`]).
+    /// ([`openehr_its::rm_instance::validate_rm_and_terminology`]).
     ///
     /// # Errors
     ///

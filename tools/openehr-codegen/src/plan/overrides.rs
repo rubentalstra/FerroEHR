@@ -1172,7 +1172,11 @@ pub(crate) enum InvariantVenue {
     /// A generated invariant core in `openehr-rm`'s `validate/generated.rs`
     /// (`site` = the core function name).
     Core,
-    /// A hand-written `*_impl.rs` `Validate` realization (`site` = the file).
+    /// A hand-written realization in `openehr-rm` (`site` = the file): either a
+    /// typed `Validate` impl in a `*_impl.rs` sibling, or one of the JSON-level
+    /// per-node checks in `validate.rs` that exist precisely because the typed
+    /// model cannot express the rule (a BMM `List` emits as a `Vec`, so absent
+    /// and present-but-empty collapse to one value once deserialized).
     Impl,
     /// The wire boundary in `openehr-its` (`site` = the file) — a rule whose
     /// inputs the wire walker holds and a per-node RM core does not.
@@ -1199,7 +1203,7 @@ impl InvariantVenue {
     pub(crate) fn heading(self) -> &'static str {
         match self {
             Self::Core => "Realized by a generated core in this file",
-            Self::Impl => "Realized in a hand-written `*_impl.rs`",
+            Self::Impl => "Realized in hand-written `openehr-rm` code",
             Self::Wire => "Realized at the wire boundary (`openehr-its`)",
             Self::App => "Realized at the application write boundary (`app/`)",
             Self::Excluded => "Adjudicated out of the per-node invariant layer",
@@ -1533,74 +1537,74 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "COMPOSITION",
         name: "Content_valid",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.composition.composition.adoc",
-        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+        reason: "the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty.",
     },
     InvariantRealization {
         class: "EVENT_CONTEXT",
         name: "Participations_validity",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.composition.event_context.adoc",
-        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+        reason: "the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty.",
     },
     InvariantRealization {
         class: "SECTION",
         name: "Items_valid",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.composition.section.adoc",
-        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+        reason: "the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty.",
     },
     InvariantRealization {
         class: "ENTRY",
         name: "Other_participations_valid",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.composition.entry.adoc",
-        reason: "enforced per concrete ENTRY subtype at the wire boundary.",
+        reason: "enforced per concrete ENTRY subtype on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty.",
     },
     InvariantRealization {
         class: "INSTRUCTION",
         name: "Activities_valid",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.composition.instruction.adoc",
-        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+        reason: "the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty.",
     },
     InvariantRealization {
         class: "DV_TEXT",
         name: "Mappings_valid",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.data_types.dv_text.adoc",
-        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+        reason: "the present-but-empty optional-list family, attribute-keyed on the JSON value (`check_nonempty_lists`).",
     },
     InvariantRealization {
         class: "DV_ORDERED",
         name: "Other_reference_ranges_validity",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.data_types.dv_ordered.adoc",
-        reason: "the present-but-empty optional-list family, attribute-keyed at the wire boundary.",
+        reason: "the present-but-empty optional-list family, attribute-keyed on the JSON value (`check_nonempty_lists`).",
     },
     InvariantRealization {
         class: "LOCATABLE",
         name: "Links_valid",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.common.locatable.adoc",
-        reason: "inherited by every LOCATABLE; keyed on the `links` attribute rather than the RM type.",
+        reason: "inherited by every LOCATABLE; keyed on the `links` attribute rather than the RM type (`check_nonempty_lists`).",
     },
     InvariantRealization {
         class: "LOCATABLE",
         name: "Archetyped_valid",
-        venue: InvariantVenue::Wire,
-        site: "crates/openehr-its/src/flat/validation/mod.rs",
+        venue: InvariantVenue::Impl,
+        site: "crates/openehr-rm/src/validate.rs",
         spec_file: "org.openehr.rm.common.locatable.adoc",
-        reason: "the archetype-root XOR needs the node's archetype-root context, which the wire walker holds.",
+        reason: "the enforceable arm reads the node's own `archetype_node_id` + `archetype_details` off the JSON value (`check_archetyped_valid`).",
     },
     InvariantRealization {
         class: "EHR",

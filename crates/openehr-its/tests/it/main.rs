@@ -23,7 +23,6 @@ mod constraint_binding_capture;
 mod content_constraint_capture;
 mod content_existence_capture;
 mod corpus;
-mod enforcement_reach;
 mod example_rm_validity;
 mod example_stub;
 mod fidelity;

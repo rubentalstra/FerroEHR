@@ -96,8 +96,11 @@ impl FerroEhrService {
     /// stay at full strictness ("data may be missing, but it may not be
     /// wrong").
     ///
-    /// The template lookup goes through `web_template_for` and the passes
-    /// through `openehr_its::flat::validation::validate_*`.
+    /// The template lookup goes through `web_template_for`; the
+    /// template-independent passes run through
+    /// `openehr_its::rm_instance::validate_rm_and_terminology` and the
+    /// archetype-conformance pass through
+    /// `openehr_its::flat::validation::validate_archetype_conformance*`.
     ///
     /// # Errors
     /// [`ServiceError::ValidationFailed`] carrying every RM/terminology/
@@ -113,7 +116,7 @@ impl FerroEhrService {
         composition: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError> {
-        let mut messages = openehr_its::flat::validation::validate_rm_and_terminology(composition);
+        let mut messages = openehr_its::rm_instance::validate_rm_and_terminology(composition);
         let rm_terminology_failures = messages.len();
         let mut template_failures = 0;
         let mut binding_failures = 0;
@@ -254,7 +257,7 @@ pub(in crate::service) fn validate_rm_invariants_for_commit(
     data: &Value,
     declared: &str,
 ) -> Result<(), ServiceError> {
-    let messages = openehr_its::flat::validation::validate_rm_and_terminology_as(data, declared);
+    let messages = openehr_its::rm_instance::validate_rm_and_terminology_as(data, declared);
     if messages.is_empty() {
         return Ok(());
     }
@@ -373,7 +376,7 @@ fn is_persistent(composition: &Value) -> bool {
 /// (a term-coded node must NOT carry `archetype_details`) and the root-identity
 /// rule (`archetype_node_id` equals the stringified
 /// `archetype_details.archetype_id`) are the whole-instance pass's
-/// (`openehr_its::flat::validation`, `check_archetyped_valid`), as is
+/// (`openehr_rm::validate::check_archetyped_valid`), as is
 /// `LOCATABLE.Links_valid`, which it applies to every node carrying `links`.
 pub(in crate::service) fn validate_root_locatable(
     obj: &serde_json::Map<String, Value>,

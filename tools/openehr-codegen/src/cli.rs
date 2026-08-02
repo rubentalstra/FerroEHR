@@ -315,7 +315,7 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     // `RESOURCE_DESCRIPTION`, `AUTHORED_RESOURCE`, the `BMM_*` family) resolves
     // by SCHEMA PRIORITY, and this is the priority order: RM first, then BASE,
     // then the archetype/meta components. Rationale: the dispatch's caller is
-    // the RM wire-boundary validator (`openehr_its::rm_validate`), and the
+    // the RM wire-boundary validator (`openehr_its::wire_validate`), and the
     // same-named twins differ materially (RM's `RESOURCE_DESCRIPTION_ITEM.language`
     // is a `CODE_PHRASE`, BASE's a `Terminology_code`), so decoding an RM wire
     // node with another component's shape would be wrong. No openEHR spec

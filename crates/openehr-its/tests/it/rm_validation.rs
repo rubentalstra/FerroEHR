@@ -7,7 +7,7 @@
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! The **wire-boundary RM class-invariant dispatcher** gate
-//! (`openehr_its::rm_validate`).
+//! (`openehr_its::wire_validate`).
 //!
 //! These tests moved here with the typed dispatcher (from `openehr-rm`'s
 //! `validate.rs`/`validate/fast.rs`): the fast path (`openehr_rm::validate::
@@ -20,10 +20,10 @@
 //! otherwise).
 
 use openehr_base::validate::InvariantViolation;
-use openehr_its::rm_terminology::validate_rm_terminology;
-use openehr_its::rm_validate::{
+use openehr_its::wire_validate::{
     validate_rm_invariants, validate_rm_value, validate_rm_value_typed,
 };
+use openehr_rm::validate::terminology::validate_rm_terminology;
 use openehr_rm::validate::try_fast_validate;
 use serde_json::{Value, json};
 
@@ -587,10 +587,11 @@ fn ips_nodes_ride_the_fast_path() {
     );
 }
 
-// ── terminology-backed invariants (INV-UNIFY) ────────────────────────────────
+// ── terminology-backed invariants ────────────────────────────────────────────
 //
-// The dispatcher-level terminology hook (`rm_terminology::validate_rm_terminology`,
-// run by `validate_rm_value` as a post-core check). Two properties: the
+// The terminology binding table
+// (`openehr_rm::validate::terminology::validate_rm_terminology`, run by
+// `validate_rm_value` as a post-core check). Two properties: the
 // corpus-audit safety property (no valid corpus document is newly rejected) and
 // the per-vocabulary enforcement property (an out-of-vocabulary code IS
 // rejected). Spec: the RM class invariants under

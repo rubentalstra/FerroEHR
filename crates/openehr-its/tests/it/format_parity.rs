@@ -17,7 +17,7 @@
 //! the canonical-XML round-trip (typed decode → `ToXml` → `FromXml` → the
 //! canonical value the XML wire arm validates).
 
-use openehr_its::flat::validation::validate_rm_and_terminology;
+use openehr_its::rm_instance::validate_rm_and_terminology;
 use openehr_rm::composition::composition::Composition;
 use serde_json::Value;
 
@@ -45,7 +45,7 @@ fn xml_route(doc: &Value) -> Option<Vec<String>> {
     Some(render(validate_rm_and_terminology(&value)))
 }
 
-fn render(msgs: Vec<openehr_its::flat::validation::ValidationMessage>) -> Vec<String> {
+fn render(msgs: Vec<openehr_its::rm_instance::ValidationMessage>) -> Vec<String> {
     let mut out: Vec<String> = msgs
         .into_iter()
         .map(|m| format!("{}|{:?}|{}", m.path, m.kind, m.message))

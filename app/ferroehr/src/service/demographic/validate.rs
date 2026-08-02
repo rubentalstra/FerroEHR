@@ -330,7 +330,7 @@ mod tests {
         assert!(msg.contains("archetype_details"), "got {msg}");
 
         // The root-identity half is the whole-instance pass's
-        // (`openehr_its::flat::validation`, `check_archetyped_valid`), so it
+        // (`openehr_rm::validate::check_archetyped_valid`), so it
         // surfaces as the structured `ValidationFailed` report.
         let mut mismatched = person(&json!([identity()]));
         mismatched["archetype_node_id"] = json!("openEHR-DEMOGRAPHIC-PERSON.other.v1");

@@ -56,10 +56,11 @@ use openehr_its::flat::convert::{composition_from_flat, flat_to_structured, stru
 use openehr_its::flat::error::FlatError;
 use openehr_its::flat::path::FlatKey;
 use openehr_its::flat::sim::flat::{emit_flat, parse_flat};
-use openehr_its::flat::validation::{ValidationKind, validate_context, validate_flat_other};
+use openehr_its::flat::validation::{validate_context, validate_flat_other};
 use openehr_its::flat::webtemplate::{
     WebTemplate, WebTemplateCodedValue, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
 };
+use openehr_its::rm_instance::ValidationKind;
 
 // ── fixed inputs ─────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
-//! The **terminology-backed RM class-invariant hook** — the seam that realizes
-//! the RM invariants the pure `openehr-rm` core layer defers because it needs a
-//! terminology-service or code-set lookup (`openehr-rm` has no `openehr-term`
-//! dependency; this crate does).
+//! The **terminology-backed RM class invariants** — the RM invariants whose
+//! evaluation needs a terminology-group or code-set membership lookup, which
+//! the generated invariant cores cannot express mechanically (the BMM
+//! assertion dialect calls out to `terminology (…)` / `code_set (…)`).
 //!
 //! Two families of terminology binding are enforced, both properties of the RM
 //! instance value alone (independent of any archetype / template):
@@ -20,11 +20,11 @@
 //! This module is the single source of the slot → vocabulary binding table
 //! ([`slots_for`]) plus the membership decisions ([`Group`]/[`CodeSet`], backed
 //! by [`openehr_term::bundle`], TERM 3.1.0). Two presentation adapters consume
-//! it: [`validate_rm_terminology`] (this crate's dispatcher — the authoritative
-//! enforcement point, emitting archie-style [`InvariantViolation`]s) and the
-//! `openehr_its::flat` composition validator's terminology pass (its own
-//! `ValidationKind::Terminology` message rendering). Neither re-derives the
-//! bindings.
+//! it: [`validate_rm_terminology`] (the core form, emitting
+//! [`InvariantViolation`]s — what the `openehr-its` wire-boundary dispatcher
+//! runs as a post-core check) and the `openehr-its` RM-instance terminology
+//! pass (its own `ValidationKind::Terminology` message rendering). Neither
+//! re-derives the bindings.
 //!
 //! # Spec
 //!
@@ -93,7 +93,8 @@ impl Group {
         }
     }
 
-    /// A human-readable label for the group (the `openehr_its::flat` message text).
+    /// A human-readable label for the group (the `openehr-its` RM-instance
+    /// terminology pass's message text).
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
@@ -155,7 +156,8 @@ impl CodeSet {
         }
     }
 
-    /// A human-readable label for the code set (the `openehr_its::flat` message text).
+    /// A human-readable label for the code set (the `openehr-its` RM-instance
+    /// terminology pass's message text).
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
@@ -204,9 +206,9 @@ pub struct Slot {
 }
 
 /// The coded slots fixed by an owning RM `_type`, with the invariant + vocabulary
-/// each realizes. The single source of the terminology binding table; both this
-/// crate's [`validate_rm_terminology`] and the `openehr_its::flat` terminology pass
-/// resolve against it.
+/// each realizes. The single source of the terminology binding table; both
+/// [`validate_rm_terminology`] and the `openehr-its` RM-instance terminology
+/// pass resolve against it.
 ///
 /// Scoping follows the BMM: `null_flavour` is `ELEMENT`-scoped and `normal_status`
 /// is scoped to the concrete `DV_ORDERED` descendants (the invariants are declared
@@ -450,10 +452,10 @@ pub fn slot_is_violated(slot: &Slot, node: &Value) -> bool {
 /// [`InvariantViolation`] per violated coded slot, keyed to the offending
 /// attribute path. A node whose `_type` binds no coded slot appends nothing.
 ///
-/// This is the authoritative dispatcher-level enforcement of the RM
-/// terminology/code-set invariants ([`crate::rm_validate::validate_rm_value`]
-/// runs it as a post-core check); the `openehr_its::flat` composition validator
-/// resolves the same [`slots_for`] table for its own message rendering.
+/// This is the core form of the RM terminology/code-set invariants; the
+/// `openehr-its` wire-boundary dispatcher runs it as a post-core check, and the
+/// `openehr-its` RM-instance terminology pass resolves the same [`slots_for`]
+/// table for its own message rendering.
 pub fn validate_rm_terminology(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     for slot in slots_for(ty) {
         let Some(node) = value.get(slot.field) else {

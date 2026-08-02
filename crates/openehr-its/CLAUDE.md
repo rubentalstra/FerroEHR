@@ -8,7 +8,7 @@ Know which half you are touching before editing anything:
 | `src/xml/generated/` (`ToXml`/`FromXml`) | **GENERATED** (`emit-xml`, from the XSDs + BMM) | edit the emitter, regenerate |
 | `src/json_codec/generated/` (`ToJson`/`FromJson` in `impls.rs`; the `_type` → decode `structural_check` dispatch in `structural.rs`) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
 | `src/rest/generated/` (ITS-REST DTOs, server traits, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
-| `xml/runtime.rs`, `json_codec/runtime.rs`, `rest/runtime.rs`, `json` + `rm_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
+| `xml/runtime.rs`, `json_codec/runtime.rs`, `rest/runtime.rs`, `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
 | `src/flat/` — Simplified Formats (FLAT / STRUCTURED / Web Template / TDD) | hand-written (BMM has no simplified-format model) | edit normally, with spec citations |
 | `src/rest/smart_scopes.rs` — the SMART on openEHR scope grammar (master08 resource scopes + master07/09 launch contexts) | hand-written (an ITS-REST sub-spec with no machine-readable model) | edit normally, with spec citations — the ONE grammar the CDR's scope gate AND scope-previewing REST clients (the admin console) parse with |
 
@@ -26,12 +26,18 @@ The native canonical-JSON codec (`json_codec`) is THE canonical-JSON
 `ToJson`/`FromJson` impls over a hand-written writer/reader runtime. The spec
 types carry NO serde derive (the `#[derive(OpenEhrType)]` proc-macro is deleted);
 `json::to_canonical_json`/`from_canonical_json`/`from_canonical_value` ARE the
-codec entry points, and `rm_validate::validate_rm_value` is the wire-boundary
-RM class-invariant dispatcher that drives the reader — its hand-written table
-holds the invariant-bearing classes, and everything else falls through to the
-generated `structural_check` dispatch, so the codec is the structural-conformance
-authority for EVERY emitted class (a defective node of a class with no invariant
-is refused too). Proven by
+codec entry points, and `wire_validate::validate_rm_value` is the wire-boundary
+RM class-invariant DISPATCH LAYER that drives the reader — its hand-written
+table holds the invariant-bearing classes, and everything else falls through to
+the generated `structural_check` dispatch, so the codec is the
+structural-conformance authority for EVERY emitted class (a defective node of a
+class with no invariant is refused too). It only ROUTES: every value-level
+decision (the fast path, the invariant cores, the mandatory-container bounds,
+the JSON-level per-node checks, the terminology binding table) is defined in
+`openehr_rm::validate`. The template-independent whole-instance passes live in
+`rm_instance` (`validate_rm_and_terminology{,_as}`, the composed
+`validate_composition`); `flat::validation` holds ONLY the template-driven
+archetype-conformance pass. Proven by
 `tests/it/json_codec_parity.rs` (byte hazards + `FromJson` tolerance) +
 `tests/it/canonical_contract.rs` (the R0 determinism manifest).
 

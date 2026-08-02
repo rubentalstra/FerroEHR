@@ -10,10 +10,9 @@
 //!   `party_identified_impl`).
 //! - `Relationship_valid`: `terminology (Terminology_id_openehr)
 //!   .has_code_for_group_id (Group_id_subject_relationship,
-//!   relationship.defining_code)` — terminology-bound, so it needs a lookup
-//!   this pure-RM crate cannot perform; realized at the wire-boundary
-//!   dispatcher (`openehr-its` `rm_terminology`) against the `openehr-term`
-//!   bundle.
+//!   relationship.defining_code)` — terminology-bound, so it needs a bundle
+//!   lookup rather than a typed-node property; realized by the binding table in
+//!   [`crate::validate::terminology`] against the `openehr-term` bundle.
 
 use crate::common::generic::party_related::PartyRelated;
 use crate::validate::{InvariantViolation, Validate};

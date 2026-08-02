@@ -552,6 +552,24 @@ pub fn attributes(class: &str) -> impl Iterator<Item = &'static RmAttribute> {
     find(class).map_or(EMPTY, |c| c.attributes).iter()
 }
 
+/// The declared RM type of `field` on `parent_type` when that type is
+/// concrete, else `None`.
+///
+/// This is the effective-type rule for an UNTAGGED canonical-JSON node: the
+/// ITS-JSON schema requires `_type` only on polymorphic slots, so a node under
+/// a concretely-declared attribute (`COMPOSITION.context` -> `EVENT_CONTEXT`,
+/// `EVENT_CONTEXT.participations` -> `PARTICIPATION`, ...) may legally omit it
+/// — and a validation walk that dispatches on the wire tag alone would skip
+/// every RM invariant on such a node. An abstract declared type yields `None`
+/// (there the wire MUST tag, and an untagged node is unreadable rather than
+/// silently valid).
+#[must_use]
+pub fn declared_concrete_type(parent_type: &str, field: &str) -> Option<&'static str> {
+    let attr = attribute(parent_type, field)?;
+    let class = class(attr.declared_type)?;
+    (!class.is_abstract).then_some(class.name)
+}
+
 /// The transitive concrete descendants of `class` (empty for an unknown class).
 #[must_use]
 pub fn descendants(class: &str) -> &'static [&'static str] {

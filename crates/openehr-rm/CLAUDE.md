@@ -11,6 +11,17 @@ BMM** by `openehr-codegen -- emit`. Versioned by the spec
   siblings, each citing its RM spec section
   (`docs/specs/openehr/RM/docs/`). Behavioural back-references
   (`PATHABLE.parent()`) use `Weak`/index, never an owning reference.
+- **`src/validate.rs` is the hand-written value-level validation layer** (the
+  one non-`*_impl.rs` exception): the allocation-free fast path, the shared
+  invariant helpers, and the JSON-level per-node checks the typed model cannot
+  express (`check_mandatory_containers`, `check_nonempty_lists`,
+  `check_archetyped_valid`, `check_data_structure_shapes` — a `Vec` collapses
+  absent and present-but-empty, the raw JSON does not). Its sibling
+  `validate/terminology.rs` is the openEHR terminology-group / code-set binding
+  table over the `openehr-term` bundle — **this crate DOES depend on
+  `openehr-term`** (`openehr-term` reaches only `openehr-base`, so there is no
+  cycle). Every RM decision belongs here; `openehr-its` only dispatches, walks
+  instances, and prefixes paths.
 - Emission conventions are settled — do not re-litigate per class: closed
   subtype sets → untagged enums; recursion → `Box`; `_type` via
   the native `ToJson`/`FromJson` codec in `openehr-its` (no serde on the spec

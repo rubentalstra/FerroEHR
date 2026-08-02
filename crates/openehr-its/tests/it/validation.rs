@@ -31,11 +31,11 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use indexmap::IndexMap;
-use openehr_its::flat::validation::{
-    ValidationKind, ValidationMessage, validate_composition, validate_rm_and_terminology,
-};
 use openehr_its::flat::webtemplate::{WebTemplate, WebTemplateNode, build_web_template};
 use openehr_its::opt14;
+use openehr_its::rm_instance::{
+    ValidationKind, ValidationMessage, validate_composition, validate_rm_and_terminology,
+};
 use serde_json::{Value, json};
 
 fn manifest_dir() -> PathBuf {

@@ -1,7 +1,7 @@
 //! The allocation-free fast path of the RM class-invariant check (hand-written),
 //! exposed via [`super::try_fast_validate`]. The wire-boundary two-tier entry
 //! point that calls it then falls back to the typed dispatch lives in
-//! `openehr_its::rm_validate::validate_rm_value`.
+//! `openehr_its::wire_validate::validate_rm_value`.
 //!
 //! No openEHR spec governs this module — it is our own performance design; the
 //! *semantics* it realizes are exactly those of the typed dispatch in
@@ -56,7 +56,7 @@
 //!   [`fast_spec`], the `Interval` default-able bound flags) → fall back.
 //!
 //! **Shallow mode** mirrors the typed dispatcher's `prune_child_nodes` (in
-//! `openehr_its::rm_validate`) for the structural container classes the typed
+//! `openehr_its::wire_validate`) for the structural container classes the typed
 //! path checks via `run_shallow`: a child
 //! *collection* is vouched without descending iff it is empty or contains at
 //! least one object (exactly the arrays the prune empties before the typed
@@ -88,7 +88,7 @@ pub(super) fn try_validate(ty: &str, value: &Value, out: &mut Vec<InvariantViola
     // Dispatch mode: which classes have a fast invariant evaluator, and
     // whether the typed path would deserialize them shallowly (`run_shallow`)
     // or in full (`run`). Must stay in lockstep with the typed dispatch table
-    // in `openehr_its::rm_validate` (`validate_rm_value_typed`).
+    // in `openehr_its::wire_validate` (`validate_rm_value_typed`).
     let shallow = match ty {
         // `run_shallow` classes (structural containers, scalar-only invariants).
         "CLUSTER" | "POINT_EVENT" | "INTERVAL_EVENT" | "COMPOSITION" | "EVENT_CONTEXT"

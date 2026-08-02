@@ -15,6 +15,10 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
+# The terminology-backed RM class invariants (`validate::terminology`) resolve
+# openEHR terminology groups + code sets against the vendored TERM 3.1.0 bundle.
+# `openehr-term` itself depends only on `openehr-base`, so this is acyclic.
+openehr-term = { path = "../openehr-term" }
 # No serde derive on the spec types (the native codec in `openehr-its` owns the
 # wire). `serde_json` is kept for the untyped `Value` RM representation used by
 # the hand-written path/validation helpers; `serde_jcs` canonicalises the

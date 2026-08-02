@@ -85,28 +85,25 @@
 //! - `PARTY_IDENTIFIED.Name_valid` — `party_identified_core`: shared by PARTY_IDENTIFIED and PARTY_RELATED. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
 //! - `TERM_MAPPING.Match_valid` — `term_mapping_core`: the match code is one of `< = > ?`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.term_mapping.adoc §Invariants).
 //!
-//! ## Realized in a hand-written `*_impl.rs`
+//! ## Realized in hand-written `openehr-rm` code
 //!
 //! - `AUDIT_DETAILS.System_id_valid` — `crates/openehr-rm/src/common/generic/audit_details_impl.rs`: re-stated on the ATTESTATION subtype impl for its own RM type name. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.audit_details.adoc §Invariants).
+//! - `COMPOSITION.Content_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
 //! - `DV_MULTIMEDIA.Integrity_check_validity` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: an integrity check requires its algorithm. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
 //! - `DV_MULTIMEDIA.Not_empty` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: inline data or an external URI must be present. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
 //! - `DV_MULTIMEDIA.Size_valid` — `crates/openehr-rm/src/data_types/encapsulated/dv_multimedia_impl.rs`: a negative encapsulated size is refused. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc §Invariants).
+//! - `DV_ORDERED.Other_reference_ranges_validity` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family, attribute-keyed on the JSON value (`check_nonempty_lists`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
+//! - `DV_TEXT.Mappings_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family, attribute-keyed on the JSON value (`check_nonempty_lists`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
+//! - `ENTRY.Other_participations_valid` — `crates/openehr-rm/src/validate.rs`: enforced per concrete ENTRY subtype on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
+//! - `EVENT_CONTEXT.Participations_validity` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
 //! - `FEEDER_AUDIT_DETAILS.System_id_valid` — `crates/openehr-rm/src/common/archetyped/feeder_audit_details_impl.rs`: the FEEDER_AUDIT_DETAILS system id is checked on its own type. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.feeder_audit_details.adoc §Invariants).
+//! - `INSTRUCTION.Activities_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction.adoc §Invariants).
 //! - `INSTRUCTION_DETAILS.Activity_path_valid` — `crates/openehr-rm/src/composition/content/entry/instruction_details_impl.rs`: the activity id must be non-empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction_details.adoc §Invariants).
 //! - `ITEM_TAG.Inv_value_valid` — `crates/openehr-rm/src/common/tags/item_tag_impl.rs`: a present tag value must be non-empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants).
+//! - `LOCATABLE.Archetyped_valid` — `crates/openehr-rm/src/validate.rs`: the enforceable arm reads the node's own `archetype_node_id` + `archetype_details` off the JSON value (`check_archetyped_valid`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
+//! - `LOCATABLE.Links_valid` — `crates/openehr-rm/src/validate.rs`: inherited by every LOCATABLE; keyed on the `links` attribute rather than the RM type (`check_nonempty_lists`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
 //! - `REFERENCE_RANGE.Range_is_simple` — `crates/openehr-rm/src/data_types/quantity/reference_range_impl.rs`: each present interval limit must itself be simple (no nested reference ranges). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.reference_range.adoc §Invariants).
-//!
-//! ## Realized at the wire boundary (`openehr-its`)
-//!
-//! - `COMPOSITION.Content_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
-//! - `DV_ORDERED.Other_reference_ranges_validity` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
-//! - `DV_TEXT.Mappings_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_text.adoc §Invariants).
-//! - `ENTRY.Other_participations_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: enforced per concrete ENTRY subtype at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
-//! - `EVENT_CONTEXT.Participations_validity` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
-//! - `INSTRUCTION.Activities_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction.adoc §Invariants).
-//! - `LOCATABLE.Archetyped_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the archetype-root XOR needs the node's archetype-root context, which the wire walker holds. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
-//! - `LOCATABLE.Links_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: inherited by every LOCATABLE; keyed on the `links` attribute rather than the RM type. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
-//! - `SECTION.Items_valid` — `crates/openehr-its/src/flat/validation/mod.rs`: the present-but-empty optional-list family, attribute-keyed at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.section.adoc §Invariants).
+//! - `SECTION.Items_valid` — `crates/openehr-rm/src/validate.rs`: the present-but-empty optional-list family: decidable only on the JSON value (`check_nonempty_lists`), since the typed `Vec` collapses absent and empty. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.section.adoc §Invariants).
 //!
 //! ## Realized at the application write boundary (`app/`)
 //!
@@ -161,47 +158,48 @@
 //! - `RESOURCE_DESCRIPTION_ITEM.copyright_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
 //! - `RESOURCE_DESCRIPTION_ITEM.misuse_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
 //!
-//! # Terminology-backed invariants (enforced at the dispatcher, openEHR-its)
+//! # Terminology-backed invariants (enforced in `validate::terminology`)
 //!
 //! These BMM class invariants bind a coded value to an openEHR terminology
-//! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`).
-//! The pure `openehr-rm` core defers them (it has no `openehr-term`
-//! dependency); they are realized at the wire-boundary dispatcher —
-//! `openehr-its` `rm_terminology::validate_rm_terminology`, run by
-//! `validate_rm_value` as a post-core check over the openEHR terminology
-//! bundle (TERM 3.1.0). Enforcement was audited clean against the whole
-//! corpus first, so none newly rejects previously-accepted data:
+//! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`),
+//! so no generated core below can evaluate them mechanically. They are
+//! realized instead by the sibling binding table —
+//! `crate::validate::terminology::validate_rm_terminology`, over the openEHR
+//! terminology bundle (TERM 3.1.0) — which the `openehr-its` wire-boundary
+//! dispatcher runs as a post-core check. Enforcement was audited clean
+//! against the whole corpus first, so none newly rejects previously-accepted
+//! data:
 //!
-//! - `ATTESTATION.Reason_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `AUDIT_DETAILS.Change_type_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `AUTHORED_RESOURCE.Original_language_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `COMPOSITION.Category_validity` — enforced at the dispatcher (openEHR terminology service).
-//! - `COMPOSITION.Language_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `COMPOSITION.Territory_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_ENCAPSULATED.Charset_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_ENCAPSULATED.Language_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_MULTIMEDIA.Compression_algorithm_validity` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_MULTIMEDIA.Integrity_check_algorithm_validity` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_MULTIMEDIA.Media_type_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_ORDERED.Normal_status_validity` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_TEXT.Encoding_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `DV_TEXT.Language_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `ELEMENT.Inv_null_flavour_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `ENTRY.Encoding_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `ENTRY.Language_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `EVENT_CONTEXT.Setting_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `EXTRACT_PARTICIPATION.Function_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `EXTRACT_PARTICIPATION.Mode_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `INTERVAL_EVENT.Math_function_validity` — enforced at the dispatcher (openEHR terminology service).
-//! - `ISM_TRANSITION.Current_state_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `ISM_TRANSITION.Transition_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `PARTICIPATION.Function_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `PARTICIPATION.Mode_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `PARTY_RELATED.Relationship_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `RESOURCE_DESCRIPTION_ITEM.Language_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `TERM_MAPPING.Purpose_valid` — enforced at the dispatcher (openEHR terminology service).
-//! - `TRANSLATION_DETAILS.Language_valid` — enforced at the dispatcher (openEHR code-set access).
-//! - `VERSION.Lifecycle_state_ valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `ATTESTATION.Reason_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `AUDIT_DETAILS.Change_type_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `AUTHORED_RESOURCE.Original_language_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `COMPOSITION.Category_validity` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `COMPOSITION.Language_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `COMPOSITION.Territory_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_ENCAPSULATED.Charset_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_ENCAPSULATED.Language_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_MULTIMEDIA.Compression_algorithm_validity` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_MULTIMEDIA.Integrity_check_algorithm_validity` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_MULTIMEDIA.Media_type_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_ORDERED.Normal_status_validity` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_TEXT.Encoding_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `DV_TEXT.Language_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `ELEMENT.Inv_null_flavour_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `ENTRY.Encoding_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `ENTRY.Language_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `EVENT_CONTEXT.Setting_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `EXTRACT_PARTICIPATION.Function_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `EXTRACT_PARTICIPATION.Mode_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `INTERVAL_EVENT.Math_function_validity` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `ISM_TRANSITION.Current_state_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `ISM_TRANSITION.Transition_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `PARTICIPATION.Function_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `PARTICIPATION.Mode_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `PARTY_RELATED.Relationship_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `RESOURCE_DESCRIPTION_ITEM.Language_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `TERM_MAPPING.Purpose_valid` — enforced in `validate::terminology` (openEHR terminology service).
+//! - `TRANSLATION_DETAILS.Language_valid` — enforced in `validate::terminology` (openEHR code-set access).
+//! - `VERSION.Lifecycle_state_ valid` — enforced in `validate::terminology` (openEHR terminology service).
 //!
 //! # Pending adjudication (runtime-hook-missing)
 //!

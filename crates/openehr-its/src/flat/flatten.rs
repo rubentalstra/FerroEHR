@@ -239,7 +239,7 @@ fn occurrences_of<'a>(
                 // `RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)
                 // makes exactly one of `value` / `null_flavour` present, and
                 // the commit choke point runs that invariant unconditionally
-                // (`crate::flat::validation::validate_rm_and_terminology`), so
+                // (`crate::rm_instance::validate_rm_and_terminology`), so
                 // such a COMPOSITION is rejected 422 before it can be stored
                 // and re-flattened. The flattener therefore does not
                 // second-guess it: there is no datum and no null flavour to

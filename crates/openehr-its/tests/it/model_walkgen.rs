@@ -28,7 +28,7 @@
 
 use std::collections::BTreeSet;
 
-use openehr_its::rm_validate::validate_rm_value;
+use openehr_its::wire_validate::validate_rm_value;
 use serde_json::{Map, Value, json};
 
 /// Deterministic scalar for a primitive/foundation type name the static model
@@ -312,7 +312,7 @@ fn dropped_mandatory_attributes_are_refused() {
 /// `org.openehr.rm.data_structures.cluster.adoc` §Attributes).
 #[test]
 fn mandatory_container_lower_bound_is_enforced() {
-    use openehr_its::rm_validate::validate_rm_value;
+    use openehr_its::wire_validate::validate_rm_value;
     let mk = |items: Option<Value>| {
         let mut c = json!({
             "_type": "CLUSTER",
@@ -355,7 +355,7 @@ fn cluster_no_items_fixture_is_refused() {
     )
     .expect("fixture exists");
     let doc: Value = serde_json::from_str(&text).expect("fixture parses");
-    let violations = openehr_its::flat::validation::validate_rm_and_terminology(&doc);
+    let violations = openehr_its::rm_instance::validate_rm_and_terminology(&doc);
     assert!(
         violations
             .iter()

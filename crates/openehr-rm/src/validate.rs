@@ -3,21 +3,34 @@
 //! the generator's `declare_hand_written_modules` keeps it and `lib.rs`
 //! auto-declares `pub mod validate;`).
 //!
-//! Two things live here:
+//! Everything here judges a canonical-JSON RM node **as a value** — no codec,
+//! no template, no wire context — and reports [`InvariantViolation`]s relative
+//! to that node:
 //!
 //! 1. **The allocation-free fast-path RM class-invariant check**
 //!    ([`try_fast_validate`] → the private `fast` path) over a live canonical-JSON node, plus
 //!    the **shared invariant helpers** used by the sibling `*_impl.rs`
 //!    behaviour files (the DV_AMOUNT / DV_QUANTIFIED accuracy + magnitude-status
 //!    rules, the LOCATABLE `Archetype_node_id_valid` rule, ISO-8601 value
-//!    checks). These are pure RM model semantics.
-//! 2. The typed-dispatch tier that *deserializes* a node into its concrete RM
-//!    type — the wire-boundary operation — lives in `openehr-its`
-//!    (`openehr_its::rm_validate`), because it drives the native canonical-JSON
-//!    codec (`from_json_value`), which is defined downstream in that crate. The
-//!    `Validate` trait and the invariant impls (`*_impl.rs`) stay here as model
-//!    semantics; the two-tier entry point `openehr_its::rm_validate::validate_rm_value`
-//!    calls [`try_fast_validate`] then falls back to its typed dispatch.
+//!    checks).
+//! 2. **The JSON-level per-node checks the typed model cannot express** —
+//!    [`check_mandatory_containers`] (model-driven container lower bounds),
+//!    [`check_nonempty_lists`] (the `x /= Void implies not x.is_empty` family),
+//!    [`check_archetyped_valid`] and [`check_data_structure_shapes`]. Each is a
+//!    pure function returning its violations; the typed model collapses "absent"
+//!    and "present but empty" into one `Vec`, so these are only decidable on the
+//!    JSON value.
+//! 3. **The terminology-backed invariants**, in the sibling [`terminology`]
+//!    module (they need the openEHR terminology bundle, not just the node).
+//!
+//! Kept OUT of this crate, in `openehr-its`: the typed-dispatch tier that
+//! *deserializes* a node into its concrete RM type, because it drives the
+//! native canonical-JSON codec (`from_json_value`) defined downstream there,
+//! and the walkers that recurse an instance and prefix absolute RM paths. The
+//! `Validate` trait and the invariant impls (`*_impl.rs`) stay here as model
+//! semantics; the wire-boundary entry point
+//! `openehr_its::wire_validate::validate_rm_value` calls [`try_fast_validate`]
+//! then falls back to its typed dispatch.
 //!
 //! # Fidelity to the reference implementation (archie)
 //!
@@ -28,13 +41,16 @@
 //! message verbatim (see `invariant_failed`) so a violation is identifiable
 //! by archie's own invariant name.
 //!
-//! What we deliberately do **not** implement here (`// NOTE:`):
+//! What we deliberately do **not** implement in the *core/typed* tiers
+//! (`// NOTE:`):
 //! - **Terminology-bound invariants** (archie's `Language_valid`,
 //!   `Encoding_valid`, `Category_validity`, `Setting_valid`, `Change_type_valid`,
 //!   `Normal_status_validity`, `Media_type_valid`, `Current_state_valid`, …).
-//!   `openehr-rm` has no `openehr-term` dependency; these belong to the
-//! composition validator + terminology binding, which resolves
-//!   codes against the openEHR terminology bundle.
+//!   They resolve a code against the openEHR terminology bundle rather than
+//!   inspecting the node alone, so they live in the sibling
+//!   [`terminology`] module (over `openehr-term`) and are run as a separate
+//!   post-core layer — never inside the fast/typed pair, whose equivalence
+//!   property is defined over the core invariants only.
 //! - **archie's `ignored = true` invariants** (never executed by archie —
 //!   implementing them would over-reject relative to the reference).
 //! - **Cross-child recursion**: each `Validate` impl checks only its own class
@@ -53,13 +69,17 @@ mod fast;
 /// the cores call (`invariant_failed`, the ISO-8601 validators, the dialect
 /// predicates) stay hand-written below.
 pub(crate) mod generated;
+// The terminology-backed RM class invariants (its own `//!` module docs carry
+// the detail — an outer doc attribute here would force rustdoc to resolve the
+// module's intra-doc links in THIS module's scope instead of its own).
+pub mod terminology;
 
 /// Run the allocation-free fast-path RM class-invariant check for a single
 /// canonical-JSON node, dispatching on its `_type`. Returns `true` when the fast
 /// path vouched for (fully handled) the node — nothing is appended on `false`.
 ///
 /// This is the public seam the wire-boundary two-tier dispatcher
-/// (`openehr_its::rm_validate::validate_rm_value`) calls before falling back to
+/// (`openehr_its::wire_validate::validate_rm_value`) calls before falling back to
 /// the typed deserialize path. Kept here because the fast path is untyped
 /// (walks `&serde_json::Value` against the generated RM model) and needs no
 /// canonical-JSON codec — pure RM model semantics.
@@ -91,7 +111,7 @@ pub fn try_fast_validate(ty: &str, value: &Value, out: &mut Vec<InvariantViolati
 /// reported by the decode/mandatory-attribute layer instead — reporting it here
 /// too would double-report the same defect.
 ///
-/// The wire-boundary dispatcher (`openehr_its::rm_validate`) runs this for
+/// The wire-boundary dispatcher (`openehr_its::wire_validate`) runs this for
 /// every node after its class-invariant tier, appending only what that tier did
 /// not already report (the concrete LOCATABLEs with a typed `Validate` impl
 /// realize the inherited invariant themselves).
@@ -108,6 +128,301 @@ pub fn locatable_node_id_violation(ty: &str, value: &Value) -> Option<InvariantV
     let mut out = Vec::with_capacity(1);
     generated::archetype_node_id_core(ty, "", &mut out);
     out.pop()
+}
+
+/// The model-driven mandatory-container lower-bound check: every attribute the
+/// static RM model declares as a MANDATORY container must be present, and one
+/// whose BMM cardinality has a lower bound ≥ 1 must be non-empty — e.g.
+/// `CLUSTER.items: List<ITEM>` is `1..*`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+/// §Attributes), so a CLUSTER with an absent or empty `items` does not conform.
+///
+/// This is a distinct mechanism from the codec decode: the canonical-JSON
+/// reader deliberately treats an absent array as an empty `Vec` (wire
+/// tolerance), so the omission is invisible to typed decoding — the lower bound
+/// is enforced HERE, from the model, for every class uniformly. The
+/// optional-attribute family (`x /= Void implies not x.is_empty`, e.g.
+/// `COMPOSITION.content`) stays with [`check_nonempty_lists`] — this function
+/// only judges MANDATORY containers, so the two never double-report.
+/// `List<Octet>` is exempt by shape: canonical JSON renders it as an inline
+/// base64 string, which presence-checks as a non-array member.
+///
+/// Kept OUTSIDE the fast/typed core pair (the caller runs it as its own layer),
+/// so the fast-vs-typed equivalence property stays exactly the core property.
+pub fn check_mandatory_containers(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    for attr in crate::model::attributes(ty) {
+        if !attr.is_mandatory
+            || matches!(attr.container, crate::model::Container::None)
+            || attr.declared_type == "Octet"
+        {
+            continue;
+        }
+        match value.get(attr.name) {
+            None | Some(Value::Null) => {
+                out.push(InvariantViolation::here(format!(
+                    "does not conform to RM type {ty}: mandatory container `{}` is absent",
+                    attr.name
+                )));
+            }
+            Some(Value::Array(a))
+                if a.is_empty() && attr.cardinality.is_some_and(|c| c.lower >= 1) =>
+            {
+                out.push(InvariantViolation::here(format!(
+                    "does not conform to RM type {ty}: mandatory container `{}` is empty \
+                     (cardinality lower bound 1)",
+                    attr.name
+                )));
+            }
+            _ => {}
+        }
+    }
+}
+
+/// The present-but-empty state of the attribute-keyed RM list invariants, read
+/// once from a node's entries by the caller and handed to
+/// [`check_nonempty_lists`] (an absent list and a present-empty list are
+/// indistinguishable after typed deserialize, so the distinction only exists at
+/// the JSON level).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct NonEmptyListFlags {
+    /// `DV_TEXT.mappings` is present as an empty array (`Mappings_valid`).
+    pub mappings_empty: bool,
+    /// `DV_ORDERED.other_reference_ranges` is present as an empty array
+    /// (`Other_reference_ranges_validity`).
+    pub reference_ranges_empty: bool,
+    /// `LOCATABLE.links` is present as an empty array (`Links_valid`).
+    pub links_empty: bool,
+}
+
+/// `LOCATABLE.Archetyped_valid`: `is_archetype_root xor archetype_details =
+/// Void` (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants). The enforceable arm on an instance is: a **non-root**
+/// node — one whose `archetype_node_id` is an `at`/`id` term code
+/// ([`crate::paths::archetype_node_id_is_term_code`]), which per the
+/// node-id format can never be the root of an archetyped structure — must
+/// NOT carry `archetype_details`.
+///
+/// NOTE: the converse arm ("an archetype-HRID node must carry
+/// `archetype_details`") is NOT enforced, because the invariant's own
+/// operand is undefined: `locatable.adoc` §Functions gives
+/// `is_archetype_root ()` a Meaning sentence only ("True if this node is
+/// the root of an archetyped structure") — no postcondition, no derivation
+/// expression. Under the reference-object-model reading, where
+/// `is_archetype_root` IS the presence of `archetype_details`, the
+/// invariant is a tautology and the converse arm asserts nothing; only
+/// under the node-id reading would it mandate `archetype_details` on every
+/// archetype-HRID node, and the released text does not choose between the
+/// two. An arm that is underivable from the released text is not
+/// enforceable, so it is registered rather than gated (ambiguity register
+/// AMB-177, `disposition: report_only`). Corroboration, not the ground:
+/// the CNF valid data sets and the canonical-JSON corpus systematically
+/// omit `archetype_details` on nested archetype roots. The COMPOSITION
+/// root arm stays separately enforced (`composition_impl.rs`
+/// `Is_archetype_root`).
+///
+/// The second arm is the root node-id **identity** rule: a node that DOES
+/// carry `archetype_details` is an archetype root, and
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Attributes (`archetype_node_id`) fixes its value verbatim — "At an
+/// archetype root point, the value of this attribute is always the
+/// stringified form of the `archetype_id` found in the `archetype_details`
+/// object" (restated in
+/// `docs/specs/openehr/RM/docs/common/master03-archetyped_package.adoc`
+/// §The LOCATABLE Class: "the only exception is at archetype root points in
+/// data, where `archetype_node_id` carries the archetype identifier in
+/// string form"). A root whose two archetype identities disagree names no
+/// resolvable generating archetype.
+///
+/// Both violations are reported on the node itself (an empty
+/// [`InvariantViolation::path`]); the caller prefixes the absolute RM path.
+#[must_use]
+pub fn check_archetyped_valid(
+    node_id: Option<&str>,
+    has_archetype_details: bool,
+    details_archetype_id: Option<&str>,
+) -> Vec<InvariantViolation> {
+    let mut out = Vec::new();
+    let Some(node_id) = node_id else {
+        return out;
+    };
+    if crate::paths::archetype_node_id_is_term_code(node_id) && has_archetype_details {
+        out.push(InvariantViolation::here(format!(
+            "node {node_id:?} is not an archetype root (at/id term code) and must \
+             not carry archetype_details (LOCATABLE.Archetyped_valid)"
+        )));
+    }
+    if let Some(archetype_id) = details_archetype_id
+        && archetype_id != node_id
+    {
+        out.push(InvariantViolation::here(format!(
+            "archetype root archetype_node_id {node_id:?} is not the stringified \
+             archetype_details.archetype_id {archetype_id:?} — at an archetype root \
+             the two are always the same value (LOCATABLE.archetype_node_id)"
+        )));
+    }
+    out
+}
+
+/// The RM's "present implies non-empty" list invariants, checkable only at
+/// the JSON level (after typed deserialize an absent list and a
+/// present-empty list are both an empty `Vec`):
+///
+/// - `COMPOSITION.Content_valid`: `content /= Void implies not
+///   content.is_empty` (`composition.adoc`);
+/// - `EVENT_CONTEXT.Participations_validity` (`event_context.adoc`);
+/// - `SECTION.Items_valid` (`section.adoc`);
+/// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
+///   ENTRY subtype);
+/// - `INSTRUCTION.Activities_valid` (`instruction.adoc`);
+/// - `LOCATABLE.Links_valid` (`locatable.adoc`), attribute-keyed.
+///
+/// All under `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.*`
+/// §Invariants. `ty` is the node's effective RM type (`None` when the wire
+/// carries no `_type` and the parent attribute declares an abstract one); the
+/// attribute-keyed rules still apply then, the class-keyed ones cannot.
+/// Every violation is reported on the node itself (an empty
+/// [`InvariantViolation::path`]); the caller prefixes the absolute RM path.
+#[must_use]
+pub fn check_nonempty_lists(
+    obj: &serde_json::Map<String, Value>,
+    ty: Option<&str>,
+    flags: NonEmptyListFlags,
+) -> Vec<InvariantViolation> {
+    const RULES: &[(&str, &str, &str)] = &[
+        ("COMPOSITION", "content", "Content_valid"),
+        ("EVENT_CONTEXT", "participations", "Participations_validity"),
+        ("SECTION", "items", "Items_valid"),
+        (
+            "OBSERVATION",
+            "other_participations",
+            "Other_participations_valid",
+        ),
+        (
+            "EVALUATION",
+            "other_participations",
+            "Other_participations_valid",
+        ),
+        (
+            "INSTRUCTION",
+            "other_participations",
+            "Other_participations_valid",
+        ),
+        (
+            "ACTION",
+            "other_participations",
+            "Other_participations_valid",
+        ),
+        (
+            "ADMIN_ENTRY",
+            "other_participations",
+            "Other_participations_valid",
+        ),
+        (
+            "GENERIC_ENTRY",
+            "other_participations",
+            "Other_participations_valid",
+        ),
+        ("INSTRUCTION", "activities", "Activities_valid"),
+    ];
+    let mut out = Vec::new();
+    // Attribute-keyed rules that apply on ANY node carrying the attribute
+    // (like the terminology binding table's null_flavour handling):
+    // `DV_TEXT.Mappings_valid`, `DV_ORDERED.Other_reference_ranges_validity`
+    // and `LOCATABLE.Links_valid` (`links /= Void implies not
+    // links.is_empty` — `locatable.adoc` §Invariants; every archetyped RM
+    // node inherits it, so it is keyed on the attribute rather than on a
+    // class list) — no other RM attribute shares these names.
+    for (attr, invariant, is_empty) in [
+        ("mappings", "Mappings_valid", flags.mappings_empty),
+        (
+            "other_reference_ranges",
+            "Other_reference_ranges_validity",
+            flags.reference_ranges_empty,
+        ),
+        ("links", "Links_valid", flags.links_empty),
+    ] {
+        if is_empty {
+            out.push(InvariantViolation::here(format!(
+                "{attr} is present but empty — a present list must be \
+                 non-empty ({invariant})"
+            )));
+        }
+    }
+    let Some(ty) = ty else {
+        return out;
+    };
+    for (rule_ty, attr, invariant) in RULES {
+        if *rule_ty == ty
+            && obj
+                .get(*attr)
+                .and_then(Value::as_array)
+                .is_some_and(Vec::is_empty)
+        {
+            out.push(InvariantViolation::here(format!(
+                "{ty}.{attr} is present but empty — a present list must be \
+                 non-empty ({ty}.{invariant})"
+            )));
+        }
+    }
+    out
+}
+
+/// JSON-level data-structure shape duties the typed model cannot express:
+///
+/// - `CLUSTER.items` is 1..1 (RM `data_structures` `cluster.adoc`; the
+///   ITS-JSON CLUSTER schema lists `items` as required) — after
+///   deserialize an absent list collapses into an empty `Vec`, so
+///   presence is only checkable here;
+/// - one `HISTORY`'s events all carry the SAME `ITEM_STRUCTURE` subtype
+///   in `data` — "A History of type `HISTORY<ITEM_LIST>` … constrains the
+///   type of the data at each Event to be of type `ITEM_LIST` and nothing
+///   else" (`docs/specs/openehr/RM/docs/data_structures/master06-history_package.adoc`;
+///   `history.adoc` generic parameter) — the monomorphized runtime type
+///   cannot see `T`.
+///
+/// The CLUSTER violation is reported on the node itself; a HISTORY violation
+/// carries the `events[i]` sub-path of the offending event. The caller
+/// prefixes the absolute RM path onto both.
+#[must_use]
+pub fn check_data_structure_shapes(
+    obj: &serde_json::Map<String, Value>,
+    ty: Option<&str>,
+) -> Vec<InvariantViolation> {
+    let mut out = Vec::new();
+    let Some(ty) = ty else {
+        return out;
+    };
+    if ty == "CLUSTER" && obj.get("items").and_then(Value::as_array).is_none() {
+        out.push(InvariantViolation::here(
+            "CLUSTER.items is mandatory (1..1 List<ITEM>, cluster.adoc)",
+        ));
+    }
+    if ty == "HISTORY"
+        && let Some(events) = obj.get("events").and_then(Value::as_array)
+    {
+        let mut first: Option<&str> = None;
+        for (i, event) in events.iter().enumerate() {
+            let Some(data_ty) = event.pointer("/data/_type").and_then(Value::as_str) else {
+                continue;
+            };
+            match first {
+                None => first = Some(data_ty),
+                Some(locked) if locked != data_ty => {
+                    out.push(InvariantViolation::at(
+                        format!("events[{i}]"),
+                        format!(
+                            "HISTORY events must all carry the same ITEM_STRUCTURE \
+                             subtype in data — the history is HISTORY<{locked}> but \
+                             this event carries {data_ty} (RM data_structures \
+                             master06 §History)"
+                        ),
+                    ));
+                }
+                Some(_) => {}
+            }
+        }
+    }
+    out
 }
 
 /// Build a class-invariant violation in this workspace's uniform message

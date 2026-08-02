@@ -159,16 +159,15 @@ fn realization_register(own_schema: &BmmSchema) -> String {
 /// The class-invariant runtime-hook register, split by adjudication verdict.
 ///
 /// Every RM class invariant the assertion-dialect classifier marks
-/// `runtime-hook-missing` needs a runtime lookup the pure `openehr-rm` core
-/// cannot perform (no `openehr-term` dependency). Since the INV-UNIFY wiring the
-/// terminology/code-set family is **enforced at the wire-boundary dispatcher**
-/// (`openehr-its` `rm_terminology::validate_rm_terminology`, run by
-/// `validate_rm_value` as a post-core check, backed by the openEHR terminology
-/// bundle, TERM 3.1.0), audited clean against the whole corpus before
-/// enforcement. Only the versioned-object aggregate invariants stay unrealized
-/// (they are a versioning/service-layer concern, not a property of one node).
-/// Both groups are named here so nothing the classifier flagged is silently
-/// dropped, sorted `(class, name)`.
+/// `runtime-hook-missing` needs a runtime lookup no generated core can express
+/// mechanically. The terminology/code-set family is **enforced by the sibling
+/// binding table** (`openehr-rm` `validate::terminology::validate_rm_terminology`,
+/// over the openEHR terminology bundle, TERM 3.1.0), which the `openehr-its`
+/// wire-boundary dispatcher runs as a post-core check — audited clean against
+/// the whole corpus before enforcement. Only the versioned-object aggregate
+/// invariants stay unrealized (they are a versioning/service-layer concern, not
+/// a property of one node). Both groups are named here so nothing the classifier
+/// flagged is silently dropped, sorted `(class, name)`.
 fn pending_register(own_schema: &BmmSchema) -> String {
     let mut enforced: Vec<(String, String, &'static str)> = Vec::new();
     let mut aggregate: Vec<(String, String, &'static str)> = Vec::new();
@@ -176,8 +175,8 @@ fn pending_register(own_schema: &BmmSchema) -> String {
         for (name, expr) in &def.invariants {
             if let Bucket::RuntimeHookMissing(reason) = classify(expr) {
                 // The versioned-object aggregate invariants stay pending; the
-                // terminology-service / code-set family is now enforced at the
-                // dispatcher.
+                // terminology-service / code-set family is enforced by the
+                // sibling `validate::terminology` binding table.
                 if reason == "versioned-object aggregate model" {
                     aggregate.push((class.clone(), name.clone(), reason));
                 } else {
@@ -191,21 +190,22 @@ fn pending_register(own_schema: &BmmSchema) -> String {
 
     let mut b = String::from(
         "//!\n\
-         //! # Terminology-backed invariants (enforced at the dispatcher, openEHR-its)\n\
+         //! # Terminology-backed invariants (enforced in `validate::terminology`)\n\
          //!\n\
          //! These BMM class invariants bind a coded value to an openEHR terminology\n\
-         //! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`).\n\
-         //! The pure `openehr-rm` core defers them (it has no `openehr-term`\n\
-         //! dependency); they are realized at the wire-boundary dispatcher —\n\
-         //! `openehr-its` `rm_terminology::validate_rm_terminology`, run by\n\
-         //! `validate_rm_value` as a post-core check over the openEHR terminology\n\
-         //! bundle (TERM 3.1.0). Enforcement was audited clean against the whole\n\
-         //! corpus first, so none newly rejects previously-accepted data:\n\
+         //! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`),\n\
+         //! so no generated core below can evaluate them mechanically. They are\n\
+         //! realized instead by the sibling binding table —\n\
+         //! `crate::validate::terminology::validate_rm_terminology`, over the openEHR\n\
+         //! terminology bundle (TERM 3.1.0) — which the `openehr-its` wire-boundary\n\
+         //! dispatcher runs as a post-core check. Enforcement was audited clean\n\
+         //! against the whole corpus first, so none newly rejects previously-accepted\n\
+         //! data:\n\
          //!\n",
     );
     for (class, name, reason) in &enforced {
         b.push_str(&format!(
-            "//! - `{class}.{name}` — enforced at the dispatcher ({reason}).\n"
+            "//! - `{class}.{name}` — enforced in `validate::terminology` ({reason}).\n"
         ));
     }
     b.push_str(

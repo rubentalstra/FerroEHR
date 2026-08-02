@@ -470,12 +470,12 @@ pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceErr
 /// structural conformance of the concrete `PARTY_PROXY` subtype.
 ///
 /// The rules are NOT restated here: the value goes through the unified
-/// dispatcher [`openehr_its::rm_validate::validate_rm_value`], the same one the
+/// dispatcher [`openehr_its::wire_validate::validate_rm_value`], the same one the
 /// whole-instance commit pass runs on every node of a committed RM document
-/// (`openehr_its::flat::validation::validate_rm_and_terminology_as`). That
-/// dispatcher is where the generated structural check, the typed invariant
+/// (`openehr_its::rm_instance::validate_rm_and_terminology_as`). That
+/// dispatcher is what runs the generated structural check, the typed invariant
 /// cores, the model-driven mandatory-container bounds and the
-/// terminology-backed invariants all live.
+/// terminology-backed invariants (all defined in `openehr_rm::validate`).
 ///
 /// It has to be invoked EXPLICITLY here because a commit audit is not part of
 /// any committed RM document: the `AUDIT_DETAILS` is written to its own row and
@@ -488,7 +488,7 @@ pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceErr
 /// dispatcher treats an untagged node anywhere else.
 fn validate_committer(committer: &Value) -> Result<(), ServiceError> {
     let mut violations = Vec::new();
-    openehr_its::rm_validate::validate_rm_value(committer, &mut violations);
+    openehr_its::wire_validate::validate_rm_value(committer, &mut violations);
     if violations.is_empty() {
         return Ok(());
     }
