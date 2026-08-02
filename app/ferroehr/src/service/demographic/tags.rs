@@ -8,8 +8,9 @@
 
 use std::collections::BTreeMap;
 
-use openehr_base::prelude::ObjectVersionId;
-use serde_json::{Value, json};
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_rm::prelude::ItemTag;
+use serde_json::Value;
 
 use crate::ids::VoId;
 use crate::service::FerroEhrService;
@@ -219,37 +220,18 @@ impl FerroEhrService {
 /// declares a `tags` containment, so the EHR side's `EHR.tags` anchor has no
 /// analogue here — the register carries the fixed handling).
 fn party_tag_json(system_id: &str, row: &tag_repo::TagRow) -> Value {
-    let target_vo_id = row.target_vo_id;
-    let target = match &row.target_version {
-        Some(tail) => json!({
-            "_type": "OBJECT_VERSION_ID",
-            "value": format!("{target_vo_id}::{tail}")
-        }),
-        None => json!({
-            "_type": "HIER_OBJECT_ID",
-            "value": target_vo_id.to_string()
+    let tag = ItemTag {
+        key: row.key.clone(),
+        value: row.value.clone(),
+        target: crate::service::ehr::tags::tag_target(row),
+        target_path: row.target_path.clone(),
+        owner_id: ObjectRef::ObjectRef(ObjectRefData {
+            namespace: "local".to_owned(),
+            r#type: "SYSTEM".to_owned(),
+            id: ObjectId::HierObjectId(HierObjectId {
+                value: system_id.to_owned(),
+            }),
         }),
     };
-    let mut tag = json!({
-        "_type": "ITEM_TAG",
-        "key": row.key.as_str(),
-        "target": target,
-        "owner_id": {
-            "_type": "OBJECT_REF",
-            "namespace": "local",
-            "type": "SYSTEM",
-            "id": { "_type": "HIER_OBJECT_ID", "value": system_id }
-        },
-    });
-    // `tag` is the object literal above, so the optional fields go in through
-    // its own map rather than a panicking index-assign.
-    if let Some(obj) = tag.as_object_mut() {
-        if let Some(value) = &row.value {
-            obj.insert("value".to_owned(), json!(value.as_str()));
-        }
-        if let Some(path) = &row.target_path {
-            obj.insert("target_path".to_owned(), json!(path.as_str()));
-        }
-    }
-    tag
+    openehr_its::json::to_canonical_value(&tag)
 }

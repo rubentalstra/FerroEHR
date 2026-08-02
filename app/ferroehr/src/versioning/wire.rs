@@ -10,10 +10,13 @@
 //! [`super::read`]; the residual SQL (first-version time, all-version metadata)
 //! is delegated to `crate::storage::version_repo`.
 
-use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_base::prelude::{
+    HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, TerminologyId,
+};
 use openehr_rm::prelude::{
-    AuditDetails, RevisionHistory, RevisionHistoryItem, VersionedComposition, VersionedEhrAccess,
-    VersionedEhrStatus, VersionedFolder, VersionedObject, VersionedObjectData,
+    AuditDetails, CodePhrase, DvCodedText, DvText, RevisionHistory, RevisionHistoryItem,
+    VersionedComposition, VersionedEhrAccess, VersionedEhrStatus, VersionedFolder, VersionedObject,
+    VersionedObjectData,
 };
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -436,6 +439,12 @@ pub(crate) fn build_imported_version(
     item: &Value,
     signature: Option<&str>,
 ) -> Value {
+    // NOTE: a JSON-literal envelope over VERBATIM fragments, for the same
+    // reason as `build_original_version` — `contribution`, `commit_audit` and
+    // the wrapped `item` are already-canonical stored bytes (the item is a
+    // FOREIGN system's `ORIGINAL_VERSION`, kept exactly as received), and this
+    // serialization is what gets signed. Nothing here is synthesized beyond
+    // the `_type` discriminator and the optional `signature` string.
     let mut iv = json!({
         "_type": "IMPORTED_VERSION",
         "contribution": contribution.clone(),
@@ -450,17 +459,27 @@ pub(crate) fn build_imported_version(
     iv
 }
 
+/// One `OBJECT_VERSION_ID` reference as canonical JSON — the `uid`,
+/// `preceding_version_uid` and `other_input_version_uids` slots of a
+/// `VERSION` (RM common master06 §Version and its Subtypes).
+fn object_version_ref(value: &str) -> Value {
+    openehr_its::json::to_canonical_value(&ObjectVersionId {
+        value: value.to_owned(),
+    })
+}
+
 /// The `VERSION.contribution` `OBJECT_REF` naming a CONTRIBUTION held by THIS
 /// repository (BASE `base_types` `master05-identification_package.adoc`
 /// §References). A foreign contribution reference is never rebuilt this way —
 /// it is stored and served verbatim.
 pub(crate) fn contribution_ref(contribution_id: Uuid) -> Value {
-    json!({
-        "_type": "OBJECT_REF",
-        "namespace": "local",
-        "type": "CONTRIBUTION",
-        "id": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() }
-    })
+    openehr_its::json::to_canonical_value(&ObjectRef::ObjectRef(ObjectRefData {
+        namespace: "local".to_owned(),
+        r#type: "CONTRIBUTION".to_owned(),
+        id: ObjectId::HierObjectId(HierObjectId {
+            value: contribution_id.to_string(),
+        }),
+    }))
 }
 
 /// The attributes of one `ORIGINAL_VERSION` to render, with `commit_audit`
@@ -506,23 +525,40 @@ pub(crate) struct OriginalVersionParts<'a> {
 /// ([`super::import`]), so the bytes signed at commit/import and served at read
 /// are identical.
 pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value {
+    // NOTE: the ENVELOPE stays a JSON literal on purpose. `contribution`,
+    // `commit_audit`, `data` and `attestations` arrive as already-canonical
+    // fragments — stored bytes, some of them client-authored — and
+    // `ORIGINAL_VERSION` is exactly the serialization master06 §Digital
+    // Signature signs ("the entire Version … serialised"). Decoding those
+    // fragments into typed RM values only to re-encode them would risk
+    // normalizing bytes a signature already covers. Every attribute this
+    // builder SYNTHESIZES is built from its generated type below.
     let mut ov = json!({
         "_type": "ORIGINAL_VERSION",
-        "uid": {
-            "_type": "OBJECT_VERSION_ID",
-            "value": object_version_id(parts.vo_id, parts.creating_system_id, parts.tree)
-        },
+        "uid": object_version_ref(&object_version_id(
+            parts.vo_id,
+            parts.creating_system_id,
+            parts.tree,
+        )),
         "contribution": parts.contribution.clone(),
         "commit_audit": parts.commit_audit.clone(),
-        "lifecycle_state": {
-            "_type": "DV_CODED_TEXT",
-            "value": lifecycle_rubric(parts.lifecycle_state),
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": OPENEHR },
-                "code_string": parts.lifecycle_state
-            }
-        }
+        "lifecycle_state": openehr_its::json::to_canonical_value(&DvText::DvCodedText(
+            DvCodedText {
+                value: lifecycle_rubric(parts.lifecycle_state).clone(),
+                hyperlink: None,
+                formatting: None,
+                mappings: Vec::new(),
+                language: None,
+                encoding: None,
+                defining_code: CodePhrase {
+                    terminology_id: TerminologyId {
+                        value: OPENEHR.to_owned(),
+                    },
+                    code_string: parts.lifecycle_state.to_owned(),
+                    preferred_term: None,
+                },
+            },
+        )),
     });
     if let Value::Object(map) = &mut ov {
         // preceding_version_uid: the STORED prior OBJECT_VERSION_ID (absent for
@@ -541,7 +577,7 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
         if let Some(preceding) = parts.preceding_version_uid {
             map.insert(
                 "preceding_version_uid".to_owned(),
-                json!({ "_type": "OBJECT_VERSION_ID", "value": preceding }),
+                object_version_ref(preceding),
             );
         }
         // other_input_version_uids: merge provenance (master06 §Version
@@ -550,12 +586,12 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
         if !parts.other_input_version_uids.is_empty() {
             map.insert(
                 "other_input_version_uids".to_owned(),
-                json!(
+                Value::Array(
                     parts
                         .other_input_version_uids
                         .iter()
-                        .map(|uid| json!({ "_type": "OBJECT_VERSION_ID", "value": uid }))
-                        .collect::<Vec<_>>()
+                        .map(|uid| object_version_ref(uid))
+                        .collect(),
                 ),
             );
         }

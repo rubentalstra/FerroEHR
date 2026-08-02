@@ -27,7 +27,9 @@
 use std::collections::HashMap;
 
 use base64::Engine as _;
-use serde_json::{Map, Value, json};
+use openehr_base::prelude::TerminologyId;
+use openehr_rm::prelude::{CodePhrase, DvUri, DvUriData};
+use serde_json::{Map, Value};
 use sha2::{Digest as _, Sha256};
 
 use super::MultimediaError;
@@ -59,10 +61,12 @@ fn sha256(bytes: &[u8]) -> (String, String) {
 
 /// The `integrity_check_algorithm` CODE_PHRASE for SHA-256, in canonical JSON.
 fn integrity_algorithm_code_phrase() -> Value {
-    json!({
-        "_type": "CODE_PHRASE",
-        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": INTEGRITY_ALGORITHM_TERMINOLOGY_ID },
-        "code_string": SHA256_CODE,
+    openehr_its::json::to_canonical_value(&CodePhrase {
+        terminology_id: TerminologyId {
+            value: INTEGRITY_ALGORITHM_TERMINOLOGY_ID.to_owned(),
+        },
+        code_string: SHA256_CODE.to_owned(),
+        preferred_term: None,
     })
 }
 
@@ -162,7 +166,9 @@ fn offload_one(
     map.remove("data");
     map.insert(
         "uri".to_owned(),
-        json!({ "_type": "DV_URI", "value": store.uri_for(&hex) }),
+        openehr_its::json::to_canonical_value(&DvUri::DvUri(DvUriData {
+            value: store.uri_for(&hex),
+        })),
     );
     map.insert("integrity_check".to_owned(), Value::String(integrity_b64));
     map.insert(
@@ -281,6 +287,7 @@ pub(super) fn verify_and_encode(hex: &str, bytes: &[u8]) -> Result<String, Multi
 )]
 mod tests {
     use super::*;
+    use serde_json::json;
     use std::sync::Arc;
 
     fn store() -> BlobStore {

@@ -18,7 +18,8 @@
 //! Gate: the connector's inbound routes are config-gated in `ferroehr-rest`;
 //! this builder only runs on the ingest path.
 
-use serde_json::{Value, json};
+use openehr_rm::prelude::{DvDateTime, DvIdentifier, FeederAudit, FeederAuditDetails};
+use serde_json::Value;
 
 /// The `system_id` recorded in the built COMPOSITION's `FEEDER_AUDIT`
 /// originating-system audit (RM common `FEEDER_AUDIT_DETAILS`), naming the
@@ -56,21 +57,34 @@ pub(super) fn feeder_audit(
     version_id: Option<&str>,
     time_iso: &str,
 ) -> Value {
-    let mut details = json!({
-        "_type": "FEEDER_AUDIT_DETAILS",
-        "system_id": ORIGINATING_SYSTEM,
-        "time": { "_type": "DV_DATE_TIME", "value": time_iso },
-    });
-    if let (Some(v), Some(obj)) = (version_id, details.as_object_mut()) {
-        obj.insert("version_id".to_owned(), json!(v));
-    }
-    json!({
-        "_type": "FEEDER_AUDIT",
-        "originating_system_item_ids": [
-            { "_type": "DV_IDENTIFIER", "id": resource_id, "type": resource_type, "issuer": "FHIR" }
-        ],
-        "originating_system_audit": details,
-    })
+    let audit = FeederAudit {
+        originating_system_item_ids: vec![DvIdentifier {
+            issuer: Some("FHIR".to_owned()),
+            assigner: None,
+            id: resource_id.to_owned(),
+            r#type: Some(resource_type.to_owned()),
+        }],
+        feeder_system_item_ids: Vec::new(),
+        original_content: None,
+        originating_system_audit: Box::new(FeederAuditDetails {
+            system_id: ORIGINATING_SYSTEM.to_owned(),
+            location: None,
+            subject: None,
+            provider: None,
+            time: Some(DvDateTime {
+                normal_status: None,
+                normal_range: None,
+                other_reference_ranges: Vec::new(),
+                magnitude_status: None,
+                accuracy: None,
+                value: time_iso.to_owned(),
+            }),
+            version_id: version_id.map(ToOwned::to_owned),
+            other_details: None,
+        }),
+        feeder_system_audit: None,
+    };
+    openehr_its::json::to_canonical_value(&audit)
 }
 
 /// Attach a `FEEDER_AUDIT` to a canonical-JSON COMPOSITION object.
@@ -83,6 +97,7 @@ pub(super) fn inject_feeder_audit(comp: &mut Value, feeder_audit: Value) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn feeder_audit_shape() {

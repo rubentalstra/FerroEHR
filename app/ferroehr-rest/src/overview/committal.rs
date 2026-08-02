@@ -58,12 +58,11 @@
 
 use http::HeaderMap;
 use indexmap::IndexMap;
-use serde_json::json;
 
 use super::params::key_value_pairs;
 
-use openehr_base::prelude::TerminologyCode;
-use openehr_rm::prelude::PartyProxy;
+use openehr_base::prelude::{HierObjectId, ObjectId, PartyRef, TerminologyCode};
+use openehr_rm::prelude::{PartyIdentified, PartyIdentifiedData, PartyProxy};
 
 use ferroehr::service::version_update::UpdateVersion;
 
@@ -296,23 +295,19 @@ fn build_committer(pairs: &[(String, String)]) -> Option<PartyProxy> {
     if name.is_none() && ext_id.is_none() {
         return None;
     }
-    let mut party = serde_json::Map::new();
-    party.insert("_type".to_owned(), json!("PARTY_IDENTIFIED"));
-    if let Some(name) = name {
-        party.insert("name".to_owned(), json!(name));
-    }
-    if let Some(id) = ext_id {
-        party.insert(
-            "external_ref".to_owned(),
-            json!({
-                "_type": "PARTY_REF",
-                "namespace": pair(pairs, "external_ref.namespace").unwrap_or_else(|| "demographic".to_owned()),
-                "type": pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
-                "id": { "_type": "HIER_OBJECT_ID", "value": id },
-            }),
-        );
-    }
-    openehr_its::json::from_canonical_value(&serde_json::Value::Object(party)).ok()
+    let external_ref = ext_id.map(|id| PartyRef {
+        namespace: pair(pairs, "external_ref.namespace")
+            .unwrap_or_else(|| "demographic".to_owned()),
+        r#type: pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
+        id: ObjectId::HierObjectId(HierObjectId { value: id }),
+    });
+    Some(PartyProxy::PartyIdentified(
+        PartyIdentified::PartyIdentified(PartyIdentifiedData {
+            external_ref,
+            name,
+            identifiers: Vec::new(),
+        }),
+    ))
 }
 
 /// The value of the first `key` in a parsed pair list.

@@ -15,6 +15,7 @@
 //! existing version), so the list is the full change-set, not the narrower
 //! committed-only rows.
 
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -71,15 +72,13 @@ impl FerroEhrService {
             .into_iter()
             .map(|(vo_id, columns, creating_system_id, kind)| {
                 let tree = TreeId::from_columns(columns.0, columns.1, columns.2);
-                json!({
-                    "_type": "OBJECT_REF",
-                    "namespace": "demographic",
-                    "type": kind,
-                    "id": {
-                        "_type": "OBJECT_VERSION_ID",
-                        "value": object_version_id(vo_id, &creating_system_id, tree)
-                    }
-                })
+                openehr_its::json::to_canonical_value(&ObjectRef::ObjectRef(ObjectRefData {
+                    namespace: "demographic".to_owned(),
+                    r#type: kind.clone(),
+                    id: ObjectId::ObjectVersionId(ObjectVersionId {
+                        value: object_version_id(vo_id, &creating_system_id, tree),
+                    }),
+                }))
             })
             .collect();
 
@@ -91,9 +90,15 @@ impl FerroEhrService {
             attestation: audit.attestation,
         }
         .canonical(&audit.time_committed)?;
+        // NOTE: a JSON-literal envelope over the already-canonical `audit`
+        // fragment (see `crate::versioning::contribution` for the same
+        // reasoning); every part this builder SYNTHESIZES is built from its
+        // generated type.
         Ok(json!({
             "_type": "CONTRIBUTION",
-            "uid": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() },
+            "uid": openehr_its::json::to_canonical_value(&HierObjectId {
+                value: contribution_id.to_string(),
+            }),
             "audit": audit_details,
             "versions": versions
         }))

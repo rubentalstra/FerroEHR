@@ -389,6 +389,17 @@ impl FerroEhrService {
         // the shared read builder so they match the /versioned_* surface.
         let (vo, _) = versioned_object(&self.pool, vo_id, ehr_id, versioned_rm_type(kind)).await?;
         let field = |name: &str| vo.get(name).cloned().unwrap_or(Value::Null);
+        // TODO(#1695): build the EXTRACT tree from the generated
+        // `openehr_rm::ehr_extract` types (`Extract`, `ExtractChapter`,
+        // `XVersionedObject`, `OpenehrContentItem`) instead of these JSON
+        // literals. Blocked on the composition shape, not on a missing type:
+        // every branch here splices ALREADY-CANONICAL opaque fragments — the
+        // `versioned_object` body reused field-by-field above, the
+        // `original_version` envelopes in `versions`, and the
+        // `revision_history` document — so a typed build would first have to
+        // decode each of them back into RM values. Doing that is a real change
+        // to the export path (and to what the signed version envelopes carry),
+        // not a mechanical substitution.
         let mut x = json!({
             "_type": x_versioned_type(kind),
             "uid": field("uid"),

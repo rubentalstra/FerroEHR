@@ -19,6 +19,7 @@ mod adl2_vetdf;
 mod aql_planner;
 mod audit_feed;
 mod audit_store;
+mod canonical_json_literals;
 mod codec_corpus;
 mod events_amqp;
 mod fhir_outbound_amqp;

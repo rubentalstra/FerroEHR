@@ -58,7 +58,9 @@ pub mod access_types;
 pub mod handle;
 
 use openehr_base::base_types::identification::lexical::composite_ids_equal;
-use serde_json::{Value, json};
+use openehr_base::prelude::{GenericId, ObjectId, PartyRef};
+use openehr_rm::prelude::{PartyProxy, PartySelf};
+use serde_json::Value;
 
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;
@@ -195,19 +197,16 @@ fn status_for_subject(base: Value, subject: &SubjectRef) -> Value {
     if let Value::Object(map) = &mut status {
         map.insert(
             "subject".to_owned(),
-            json!({
-                "_type": "PARTY_SELF",
-                "external_ref": {
-                    "_type": "PARTY_REF",
-                    "namespace": subject.namespace,
-                    "type": subject.r#type,
-                    "id": {
-                        "_type": "GENERIC_ID",
-                        "value": subject.id,
-                        "scheme": subject.namespace
-                    }
-                }
-            }),
+            openehr_its::json::to_canonical_value(&PartyProxy::PartySelf(PartySelf {
+                external_ref: Some(PartyRef {
+                    namespace: subject.namespace.clone(),
+                    r#type: subject.r#type.clone(),
+                    id: ObjectId::GenericId(GenericId {
+                        value: subject.id.clone(),
+                        scheme: subject.namespace.clone(),
+                    }),
+                }),
+            })),
         );
     }
     status

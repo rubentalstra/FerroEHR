@@ -10,6 +10,7 @@
 //! `audit_change_type` group and stored **verbatim** (never narrowed), while
 //! the storage branch collapses to create / modify / delete / attest.
 
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -1048,15 +1049,19 @@ pub(crate) async fn get_contribution(
             // container — not to the ORIGINAL_VERSION it wraps.
             versions.push(version_envelope(&loaded, signer)?);
         } else {
-            versions.push(json!({
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": kind,
-                "id": {
-                    "_type": "OBJECT_VERSION_ID",
-                    "value": object_version_id::object_version_id(vo_id, &creating_system_id, tree)
-                }
-            }));
+            versions.push(openehr_its::json::to_canonical_value(
+                &ObjectRef::ObjectRef(ObjectRefData {
+                    namespace: "local".to_owned(),
+                    r#type: kind.clone(),
+                    id: ObjectId::ObjectVersionId(ObjectVersionId {
+                        value: object_version_id::object_version_id(
+                            vo_id,
+                            &creating_system_id,
+                            tree,
+                        ),
+                    }),
+                }),
+            ));
         }
     }
 
@@ -1068,9 +1073,17 @@ pub(crate) async fn get_contribution(
         attestation: audit.attestation,
     }
     .canonical(&time_committed)?;
+    // NOTE: a JSON-literal envelope over already-canonical parts — `audit` is
+    // the canonical `AUDIT_DETAILS` fragment `AuditInput::canonical` produced,
+    // and `versions` holds EITHER `OBJECT_REF`s (built from their generated
+    // type above) OR whole resolved VERSION envelopes, which the generated
+    // `Contribution.versions: Vec<ObjectRef>` cannot express. Decoding those
+    // fragments only to re-encode them would gain nothing.
     Ok(json!({
         "_type": "CONTRIBUTION",
-        "uid": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() },
+        "uid": openehr_its::json::to_canonical_value(&HierObjectId {
+            value: contribution_id.to_string(),
+        }),
         "audit": audit_details,
         "versions": versions
     }))

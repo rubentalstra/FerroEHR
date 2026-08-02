@@ -15,6 +15,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Removed
+
+- **The AQL `RESULT_SET` no longer carries a top-level `id`.** Responses from
+  `POST/GET /query/aql` and the stored-query execute routes previously added an
+  `id` field holding a freshly minted UUID. The released ITS-REST `ResultSet`
+  schema declares exactly `meta`, `name`, `q`, `columns` and `rows` with no
+  `additionalProperties`, so the wire has no slot for it and the field was an
+  undeclared property on a closed object schema. Clients that read `id` should
+  use the response's `ETag` header instead — the released ITS-REST text names
+  it "a unique identifier of the resultSet" (`query/Request.md` §"Common
+  Headers and Query Parameters"), and it is unchanged by this removal.
+
 ### Changed
 
 - **AQL now rejects an `[archetype_node_id='…']` predicate whose value is

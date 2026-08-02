@@ -13,7 +13,9 @@ use crate::service::ehr::handle::EhrSummary;
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
-use serde_json::{Value, json};
+use openehr_base::prelude::{ArchetypeId, HierObjectId, ObjectId, ObjectRef, ObjectRefData};
+use openehr_rm::prelude::{Archetyped, DvText, DvTextData, Ehr, EhrStatus, PartySelf};
+use serde_json::Value;
 use uuid::Uuid;
 
 use crate::service::FerroEhrService;
@@ -186,7 +188,7 @@ impl FerroEhrService {
         // byte-identical to `ehr_summary` for a new EHR (pinned by a test); it
         // is stashed so `ehr_created_object` serves a
         // `Prefer: return=representation` response without a re-read.
-        let body = self.ehr_object_from_committed(ehr_id, time_created, &committed.versions);
+        let body = self.ehr_object_from_committed(ehr_id, time_created, &committed.versions)?;
         self.created_ehr_repr.insert(ehr_id, body.clone()).await;
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
             .with_last_modified(time_created);
@@ -201,53 +203,33 @@ impl FerroEhrService {
     /// `OBJECT_VERSION_ID` (the stored per-version `creating_system_id`,
     /// master06 §Distributed Versioning), and a fresh EHR has no
     /// `directory`/`folders` (RM ehr master04 §Folders, 0..1). Byte-identical
-    /// to [`Self::ehr_summary`] for a newly created EHR (pinned by a test); the
-    /// key order mirrors `ehr_summary`.
+    /// to [`Self::ehr_summary`] for a newly created EHR (pinned by a test) —
+    /// both go through [`ehr_object`], so they cannot drift apart.
+    ///
+    /// # Errors
+    /// [`ServiceError::Internal`] when the commit results carry no `EHR_STATUS`
+    /// or no `EHR_ACCESS` version — both are 1..1 on `EHR` (see [`ehr_object`]),
+    /// and EHR creation commits both, so this cannot happen on the create path.
     fn ehr_object_from_committed(
         &self,
         ehr_id: EhrId,
         time_created: jiff::Timestamp,
         committed: &[crate::versioning::change::Committed],
-    ) -> Value {
-        let status_ref = committed
-            .iter()
-            .find(|c| c.kind == Kind::EhrStatus)
-            .map(|c| {
-                // The container ref: HIER_OBJECT_ID of the VERSIONED_EHR_STATUS
-                // (RM ehr `Ehr_status_valid` + BASE master05 OBJECT_REF.id —
-                // the referenced object IS the container), matching the read
-                // path and the ehr_access ref.
-                json!({
-                    "_type": "OBJECT_REF",
-                    "namespace": "local",
-                    "type": "VERSIONED_EHR_STATUS",
-                    "id": { "_type": "HIER_OBJECT_ID", "value": c.vo_id.to_string() }
-                })
-            });
-        let mut body = json!({
-            "_type": "EHR",
-            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() },
-            "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
-            "ehr_status": status_ref,
-            "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
-        });
-        // `body` is the object literal above, so the reference goes in through
-        // its own map rather than a panicking index-assign.
-        if let (Some(access), Some(obj)) = (
-            committed.iter().find(|c| c.kind == Kind::EhrAccess),
-            body.as_object_mut(),
-        ) {
-            obj.insert(
-                "ehr_access".to_owned(),
-                json!({
-                    "_type": "OBJECT_REF",
-                    "namespace": "local",
-                    "type": "VERSIONED_EHR_ACCESS",
-                    "id": { "_type": "HIER_OBJECT_ID", "value": access.vo_id.to_string() }
-                }),
-            );
-        }
-        body
+    ) -> Result<Value, ServiceError> {
+        let vo_of = |kind: Kind| {
+            committed
+                .iter()
+                .find(|c| c.kind == kind)
+                .map(|c| c.vo_id.to_string())
+        };
+        ehr_object(
+            &self.effective_system_id(),
+            ehr_id,
+            vo_of(Kind::EhrStatus).as_deref(),
+            vo_of(Kind::EhrAccess).as_deref(),
+            time_created,
+            &[],
+        )
     }
 
     /// Find an EHR by the subject its current `EHR_STATUS` names (external ref
@@ -302,7 +284,6 @@ impl FerroEhrService {
             .ok_or_else(|| {
                 ServiceError::sm(CallStatusType::EhrIdDoesNotExist, format!("EHR {ehr_id}"))
             })?;
-        let stored_system_id = read.system_id;
         let time_created = read.time_created;
         let status = read.status.ok_or_else(|| {
             ServiceError::sm(
@@ -310,61 +291,15 @@ impl FerroEhrService {
                 format!("EHR_STATUS for EHR {ehr_id}"),
             )
         })?;
-        let mut body = json!({
-            "_type": "EHR",
-            "system_id": { "_type": "HIER_OBJECT_ID", "value": stored_system_id },
-            "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
-            // Ehr_status_valid: ehr_status.type.is_equal("VERSIONED_EHR_STATUS")
-            // (RM ehr `ehr.adoc` invariants — normative): the ref names the
-            // version CONTAINER, so its `id` is the container's
-            // HIER_OBJECT_ID (BASE master05: OBJECT_REF.id is the "Globally
-            // unique id of an object" — here the VERSIONED_EHR_STATUS, whose
-            // uid is a HIER_OBJECT_ID), consistent with the `ehr_access` ref
-            // below. NOTE (spec defect): the non-normative ITS-REST example
-            // shows `type: EHR_STATUS` with an OBJECT_VERSION_ID id — the
-            // released-OAS reading; the RM wins this real conflict on both counts.
-            "ehr_status": {
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": "VERSIONED_EHR_STATUS",
-                "id": { "_type": "HIER_OBJECT_ID", "value": status.vo_id.to_string() }
-            },
-            "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
-        });
-        // EHR.ehr_access (1..1): a reference to the VERSIONED_EHR_ACCESS
-        // container (invariant Ehr_access_valid — RM ehr, EHR class). Every EHR
-        // this service creates has one; tolerate absence only for raw fixtures.
-        if let (Some(access_vo), Some(obj)) = (read.access_vo, body.as_object_mut()) {
-            obj.insert(
-                "ehr_access".to_owned(),
-                json!({
-                    "_type": "OBJECT_REF",
-                    "namespace": "local",
-                    "type": "VERSIONED_EHR_ACCESS",
-                    "id": { "_type": "HIER_OBJECT_ID", "value": access_vo.to_string() }
-                }),
-            );
-        }
-        // EHR.folders (0..1) + EHR.directory (0..1): the LIVE hierarchies in
-        // rank order, each an OBJECT_REF to a VERSIONED_FOLDER (invariant
-        // Folders_valid; directory = folders.item(1), Directory_in_folders —
-        // RM ehr, EHR class).
-        let refs: Vec<Value> = read
-            .folders
-            .iter()
-            .map(|vo| {
-                json!({
-                    "_type": "OBJECT_REF",
-                    "namespace": "local",
-                    "type": "VERSIONED_FOLDER",
-                    "id": { "_type": "HIER_OBJECT_ID", "value": vo.to_string() }
-                })
-            })
-            .collect();
-        if let (Some(first), Some(obj)) = (refs.first(), body.as_object_mut()) {
-            obj.insert("directory".to_owned(), first.clone());
-            obj.insert("folders".to_owned(), Value::Array(refs.clone()));
-        }
+        let folders: Vec<String> = read.folders.iter().map(ToString::to_string).collect();
+        let body = ehr_object(
+            &read.system_id,
+            ehr_id,
+            Some(&status.vo_id.to_string()),
+            read.access_vo.map(|vo| vo.to_string()).as_deref(),
+            time_created,
+            &folders,
+        )?;
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
             .with_last_modified(time_created);
         Ok(ServiceResponse::new(body, meta))
@@ -409,6 +344,91 @@ impl FerroEhrService {
     }
 }
 
+/// An `OBJECT_REF` to a version CONTAINER held in this system.
+///
+/// The referenced object IS the container, so its `id` is the container's
+/// `HIER_OBJECT_ID` (BASE `base_types` `master05-identification_package.adoc`
+/// §References: `OBJECT_REF.id` is the "Globally unique id of an object"), and
+/// `namespace` is `"local"` (same section: `"local"` is the namespace of the
+/// containing system).
+fn container_ref(rm_type: &str, vo_id: &str) -> ObjectRef {
+    ObjectRef::ObjectRef(ObjectRefData {
+        namespace: "local".to_owned(),
+        r#type: rm_type.to_owned(),
+        id: ObjectId::HierObjectId(HierObjectId {
+            value: vo_id.to_owned(),
+        }),
+    })
+}
+
+/// Assemble the canonical RM `EHR` wire body from the identities that make it
+/// up — the single builder behind both the create path
+/// ([`FerroEhrService::ehr_object_from_committed`]) and the read path
+/// ([`FerroEhrService::ehr_summary`]), so the two cannot drift apart.
+///
+/// Built as the generated [`Ehr`] and serialized through the native canonical
+/// codec, so `_type` comes first and the attribute order is the BMM's own. The
+/// mandatory `EHR_STATUS` / `EHR_ACCESS` references are 1..1 on the RM class
+/// (RM ehr `ehr.adoc` invariants `Ehr_status_valid` / `Ehr_access_valid`), and
+/// the generated type makes that structural: an EHR missing either cannot be
+/// constructed. `contributions` and `compositions` stay empty — the codec omits
+/// an empty list, so the served body carries neither master list (they are
+/// unbounded and the wire has dedicated collection endpoints for both).
+///
+/// `directory` is `folders.item(1)` (RM ehr `ehr.adoc` invariant
+/// `Directory_in_folders`), derived here rather than passed in, so the two can
+/// never disagree.
+///
+/// # Errors
+/// [`ServiceError::Internal`] when `status_vo` or `access_vo` is absent — an
+/// EHR without either is RM-invalid and cannot be represented.
+fn ehr_object(
+    system_id: &str,
+    ehr_id: EhrId,
+    status_vo: Option<&str>,
+    access_vo: Option<&str>,
+    time_created: jiff::Timestamp,
+    folder_vos: &[String],
+) -> Result<Value, ServiceError> {
+    // NOTE (spec conflict, adjudicated): the `ehr_status` ref names the version
+    // CONTAINER — `Ehr_status_valid: ehr_status.type.is_equal(
+    // "VERSIONED_EHR_STATUS")` (RM ehr `ehr.adoc` invariants, normative). The
+    // non-normative ITS-REST example instead shows `type: EHR_STATUS` with an
+    // OBJECT_VERSION_ID id; the RM wins this real conflict on both counts.
+    let ehr_status = status_vo.map(|vo| container_ref("VERSIONED_EHR_STATUS", vo));
+    let ehr_access = access_vo.map(|vo| container_ref("VERSIONED_EHR_ACCESS", vo));
+    let (Some(ehr_status), Some(ehr_access)) = (ehr_status, ehr_access) else {
+        return Err(ServiceError::Internal(format!(
+            "EHR {ehr_id} has no EHR_STATUS or no EHR_ACCESS version; both are \
+             mandatory on the RM EHR class"
+        )));
+    };
+    // EHR.folders (0..1): the LIVE hierarchies in rank order, each an
+    // OBJECT_REF to a VERSIONED_FOLDER (RM ehr `ehr.adoc` invariant
+    // `Folders_valid`; RM ehr master04 §Folders).
+    let folders: Vec<ObjectRef> = folder_vos
+        .iter()
+        .map(|vo| container_ref("VERSIONED_FOLDER", vo))
+        .collect();
+    let ehr = Ehr {
+        system_id: HierObjectId {
+            value: system_id.to_owned(),
+        },
+        ehr_id: HierObjectId {
+            value: ehr_id.to_string(),
+        },
+        contributions: Vec::new(),
+        ehr_status,
+        ehr_access,
+        compositions: Vec::new(),
+        directory: folders.first().cloned(),
+        time_created: crate::versioning::audit::dv_date_time(&time_created),
+        folders,
+        tags: Vec::new(),
+    };
+    Ok(openehr_its::json::to_canonical_value(&ehr))
+}
+
 /// The default `EHR_STATUS` for a new EHR (queryable, modifiable,
 /// `PARTY_SELF`) — RM ehr master04 §EHR Creation.
 ///
@@ -420,26 +440,42 @@ impl FerroEhrService {
 /// form of the `archetype_id` found in the `archetype_details` object"
 /// (`locatable.adoc` §`archetype_node_id`).
 pub(in crate::service) fn default_ehr_status() -> Value {
-    json!({
-        "_type": "EHR_STATUS",
-        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
-        "archetype_details": archetyped("openEHR-EHR-EHR_STATUS.generic.v1"),
-        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
-        "subject": { "_type": "PARTY_SELF" },
-        "is_queryable": true,
-        "is_modifiable": true
-    })
+    let status = EhrStatus {
+        name: DvText::DvText(DvTextData {
+            value: "EHR Status".to_owned(),
+            hyperlink: None,
+            formatting: None,
+            mappings: Vec::new(),
+            language: None,
+            encoding: None,
+        }),
+        archetype_node_id: DEFAULT_EHR_STATUS_ARCHETYPE.to_owned(),
+        uid: None,
+        links: Vec::new(),
+        archetype_details: Some(archetyped(DEFAULT_EHR_STATUS_ARCHETYPE)),
+        feeder_audit: None,
+        subject: PartySelf { external_ref: None },
+        is_queryable: true,
+        is_modifiable: true,
+        other_details: None,
+    };
+    openehr_its::json::to_canonical_value(&status)
 }
+
+/// The archetype a server-minted default `EHR_STATUS` declares.
+const DEFAULT_EHR_STATUS_ARCHETYPE: &str = "openEHR-EHR-EHR_STATUS.generic.v1";
 
 /// A root `ARCHETYPED` block for a server-minted LOCATABLE (RM common
 /// `archetyped.adoc`: `archetype_id` 1..1, `rm_version` 1..1 — the RM
 /// release this server implements, `docs/VERSIONS.md`).
-pub(in crate::service) fn archetyped(archetype_id: &str) -> Value {
-    json!({
-        "_type": "ARCHETYPED",
-        "archetype_id": { "_type": "ARCHETYPE_ID", "value": archetype_id },
-        "rm_version": "1.2.0"
-    })
+pub(in crate::service) fn archetyped(archetype_id: &str) -> Archetyped {
+    Archetyped {
+        archetype_id: ArchetypeId {
+            value: archetype_id.to_owned(),
+        },
+        template_id: None,
+        rm_version: openehr_rm::SPEC_VERSION.to_owned(),
+    }
 }
 
 // ── The SM I_EHR_SERVICE call surface ─────────────────────────────────────────

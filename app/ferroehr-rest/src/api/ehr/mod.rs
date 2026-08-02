@@ -49,7 +49,7 @@ use uuid::Uuid;
 
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{PartyProxy, PartySelf};
+use openehr_rm::prelude::{DvIdentifier, PartyIdentified, PartyIdentifiedData, PartyProxy};
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::response::{ResourceMeta, ServiceResponse};
@@ -152,30 +152,30 @@ fn term(code: &str) -> TerminologyCode {
 /// The SM service impl re-derives the committer from the same principal, so
 /// this rides in the [`UpdateVersion`] envelope for completeness.
 pub(crate) fn committer_proxy() -> PartyProxy {
-    let value = match crate::extensions::access::authn::current_principal() {
+    let party = match crate::extensions::access::authn::current_principal() {
         Some(principal) => {
             let id_type = match principal.method {
                 AuthMethod::Basic => "basic",
                 AuthMethod::Bearer => "oauth2",
             };
-            json!({
-                "_type": "PARTY_IDENTIFIED",
-                "name": principal.subject.clone(),
-                "identifiers": [{
-                    "_type": "DV_IDENTIFIER",
-                    "id": principal.subject,
-                    "issuer": "ferroehr",
-                    "type": id_type
-                }]
-            })
+            PartyIdentifiedData {
+                external_ref: None,
+                name: Some(principal.subject.clone()),
+                identifiers: vec![DvIdentifier {
+                    issuer: Some("ferroehr".to_owned()),
+                    assigner: None,
+                    id: principal.subject,
+                    r#type: Some(id_type.to_owned()),
+                }],
+            }
         }
-        None => json!({
-            "_type": "PARTY_IDENTIFIED",
-            "name": ferroehr::service::SYSTEM_COMMITTER_NAME
-        }),
+        None => PartyIdentifiedData {
+            external_ref: None,
+            name: Some(ferroehr::service::SYSTEM_COMMITTER_NAME.to_owned()),
+            identifiers: Vec::new(),
+        },
     };
-    openehr_its::json::from_canonical_value(&value)
-        .unwrap_or(PartyProxy::PartySelf(PartySelf { external_ref: None }))
+    PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(party))
 }
 
 /// Synthesize the SM `UPDATE_VERSION` commit envelope for a bare-RM-body write

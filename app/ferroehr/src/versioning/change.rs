@@ -11,6 +11,7 @@
 //! spec governs the SQL — our own design.
 
 use openehr_base::base_types::identification::lexical::composite_ids_equal;
+use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -450,7 +451,9 @@ fn stamp_version_uid(canonical: &mut Value, version_uid: &str) {
     if let Value::Object(map) = canonical {
         map.insert(
             "uid".to_owned(),
-            serde_json::json!({ "_type": "OBJECT_VERSION_ID", "value": version_uid }),
+            openehr_its::json::to_canonical_value(&ObjectVersionId {
+                value: version_uid.to_owned(),
+            }),
         );
     }
 }

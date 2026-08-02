@@ -16,7 +16,9 @@
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use serde_json::{Value, json};
+use openehr_base::prelude::ObjectVersionId;
+use openehr_rm::prelude::{DvIdentifier, PartyIdentified, PartyIdentifiedData, PartyProxy};
+use serde_json::Value;
 
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
@@ -135,9 +137,8 @@ impl FerroEhrService {
         if let Value::Object(map) = &mut canonical {
             map.insert(
                 "uid".to_owned(),
-                json!({
-                    "_type": "OBJECT_VERSION_ID",
-                    "value": object_version_id(vo_id, creating_system_id, version)
+                openehr_its::json::to_canonical_value(&ObjectVersionId {
+                    value: object_version_id(vo_id, creating_system_id, version),
                 }),
             );
         }
@@ -249,13 +250,11 @@ impl FerroEhrService {
 /// principal (auth disabled, or an internal/system write) is attributed to the
 /// system identity (RM common master04 `AUDIT_DETAILS.committer` 1..1).
 pub(in crate::service) fn committer() -> Value {
-    match crate::service::committer::current_committer() {
-        Some(identity) => json!({
-            "_type": "PARTY_IDENTIFIED",
-            "name": identity.subject.clone(),
-            "identifiers": [{
-                "_type": "DV_IDENTIFIER",
-                "id": identity.subject,
+    let party = match crate::service::committer::current_committer() {
+        Some(identity) => PartyIdentifiedData {
+            external_ref: None,
+            name: Some(identity.subject.clone()),
+            identifiers: vec![DvIdentifier {
                 // DV_IDENTIFIER.issuer is the "authority which issues the kind
                 // of id used in the id field of this object" (RM data_types
                 // UML/classes/org.openehr.rm.data_types.dv_identifier.adoc
@@ -269,15 +268,21 @@ pub(in crate::service) fn committer() -> Value {
                 // an AUDIT_DETAILS committer's identifying information may be
                 // "in the form of a system login identifier" (RM common
                 // master04-generic_package.adoc §Audit Details).
-                "issuer": identity.issuer.unwrap_or_else(|| LOCAL_ISSUER.to_owned()),
-                "type": identity.id_type
-            }]
-        }),
-        None => json!({
-            "_type": "PARTY_IDENTIFIED",
-            "name": crate::service::SYSTEM_COMMITTER_NAME
-        }),
-    }
+                issuer: Some(identity.issuer.unwrap_or_else(|| LOCAL_ISSUER.to_owned())),
+                assigner: None,
+                id: identity.subject,
+                r#type: Some(identity.id_type.to_owned()),
+            }],
+        },
+        None => PartyIdentifiedData {
+            external_ref: None,
+            name: Some(crate::service::SYSTEM_COMMITTER_NAME.to_owned()),
+            identifiers: Vec::new(),
+        },
+    };
+    openehr_its::json::to_canonical_value(&PartyProxy::PartyIdentified(
+        PartyIdentified::PartyIdentified(party),
+    ))
 }
 
 // ── ITS-REST version-metadata adapter (adapter-support extension) ─────────────

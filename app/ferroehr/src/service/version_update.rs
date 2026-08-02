@@ -40,7 +40,8 @@ use crate::versioning::lifecycle;
 /// `openehr-audit-details` header, whose grammar carries the attribute
 /// pre-flattened as the `description.value` subkey — i.e. the `DV_TEXT.value`
 /// string both `UDvText` branches share — which
-/// [`crate::versioning::audit::AuditInput::from_update`] re-wraps as a plain
+/// `AuditInput::from_update` (crate-private, `crate::versioning::audit`)
+/// re-wraps as a plain
 /// `DV_TEXT` fragment. A header therefore cannot express a coded description at
 /// all: `DV_CODED_TEXT.defining_code` has no subkey to travel in. Where a coded
 /// description IS expressible — the native CONTRIBUTION body — the commit does

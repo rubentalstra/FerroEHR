@@ -13,8 +13,11 @@
 //! or one VERSION's, never both. Not an SM-EHR interface. The `item_tag`
 //! table SQL is spec-silent (storage seam — our own design).
 
-use openehr_base::prelude::ObjectVersionId;
-use serde_json::{Value, json};
+use openehr_base::prelude::{
+    HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, UidBasedId,
+};
+use openehr_rm::prelude::ItemTag;
+use serde_json::Value;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
@@ -255,39 +258,39 @@ impl FerroEhrService {
     /// schema disagrees with the RM on `target`'s shape — the RM is the
     /// RELEASED component and wins (owner ruling 2026-07-24).
     fn tag_json(ehr_id: EhrId, row: &crate::storage::tag_repo::TagRow) -> Value {
-        let target_vo_id = row.target_vo_id;
-        let target = match &row.target_version {
-            Some(tail) => json!({
-                "_type": "OBJECT_VERSION_ID",
-                "value": format!("{target_vo_id}::{tail}")
-            }),
-            None => json!({
-                "_type": "HIER_OBJECT_ID",
-                "value": target_vo_id.to_string()
+        let tag = ItemTag {
+            key: row.key.clone(),
+            value: row.value.clone(),
+            target: tag_target(row),
+            target_path: row.target_path.clone(),
+            owner_id: ObjectRef::ObjectRef(ObjectRefData {
+                namespace: "local".to_owned(),
+                r#type: "EHR".to_owned(),
+                id: ObjectId::HierObjectId(HierObjectId {
+                    value: ehr_id.to_string(),
+                }),
             }),
         };
-        let mut tag = json!({
-            "_type": "ITEM_TAG",
-            "key": row.key.as_str(),
-            "target": target,
-            "owner_id": {
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": "EHR",
-                "id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() }
-            },
-        });
-        // `tag` is the object literal above, so the optional fields go in
-        // through its own map rather than a panicking index-assign.
-        if let Some(obj) = tag.as_object_mut() {
-            if let Some(value) = &row.value {
-                obj.insert("value".to_owned(), json!(value.as_str()));
-            }
-            if let Some(path) = &row.target_path {
-                obj.insert("target_path".to_owned(), json!(path.as_str()));
-            }
-        }
-        tag
+        openehr_its::json::to_canonical_value(&tag)
+    }
+}
+
+/// The `ITEM_TAG.target` identifier of a stored tag row: "Identifier of target,
+/// which may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`" (RM common
+/// `UML/classes/org.openehr.rm.common.item_tag.adoc` §Attributes) — a
+/// version-scoped tag names the `OBJECT_VERSION_ID`, an object-scoped one the
+/// container's `HIER_OBJECT_ID`. Shared with the demographic tag surface
+/// (`crate::service::demographic::tags`), which tags the same rows under a
+/// different owner.
+pub(in crate::service) fn tag_target(row: &crate::storage::tag_repo::TagRow) -> UidBasedId {
+    let target_vo_id = row.target_vo_id;
+    match &row.target_version {
+        Some(tail) => UidBasedId::ObjectVersionId(ObjectVersionId {
+            value: format!("{target_vo_id}::{tail}"),
+        }),
+        None => UidBasedId::HierObjectId(HierObjectId {
+            value: target_vo_id.to_string(),
+        }),
     }
 }
 

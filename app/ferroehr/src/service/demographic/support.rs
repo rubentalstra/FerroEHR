@@ -69,9 +69,8 @@ pub(super) fn inject_uid(
     if let Value::Object(map) = &mut canonical {
         map.insert(
             "uid".to_owned(),
-            serde_json::json!({
-                "_type": "OBJECT_VERSION_ID",
-                "value": object_version_id(vo_id, creating_system_id, tree)
+            openehr_its::json::to_canonical_value(&ObjectVersionId {
+                value: object_version_id(vo_id, creating_system_id, tree),
             }),
         );
     }
