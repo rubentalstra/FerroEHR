@@ -21,7 +21,7 @@ use serde_json::{Value, json};
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
-use crate::versioning::audit::AuditInput;
+use crate::versioning::audit::{AuditInput, description_fragment};
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::VersionRead;
 
@@ -228,8 +228,9 @@ impl FerroEhrService {
         AuditInput {
             system_id: self.effective_system_id(),
             change_type: change_type.to_owned(),
-            description: Some(description.to_owned()),
+            description: Some(description_fragment(description)),
             committer: committer(),
+            attestation: None,
         }
     }
 }

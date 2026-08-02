@@ -104,6 +104,29 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`ATTESTATION` commit audits and rich audit descriptions now round-trip
+  instead of being silently flattened.** A CONTRIBUTION version whose
+  `commit_audit` is an `ATTESTATION` — the openEHR way of committing content
+  that is already signed, or that is marked as awaiting signature
+  (`is_pending: true`) — used to be stored as a plain `AUDIT_DETAILS`: the
+  concrete type and every attestation attribute (`reason`, `is_pending`,
+  `proof`, `items`, `attested_view`) were dropped without an error, on the
+  REST commit and on EHR-Extract import alike. They are now decoded,
+  validated against the RM invariants, stored, and served back as an
+  `ATTESTATION` on the version envelope, in the revision history, in the
+  CONTRIBUTION rendering, and in exports/archives. A `commit_audit` whose
+  `_type` names neither `AUDIT_DETAILS` (`UPDATE_AUDIT`) nor `ATTESTATION`
+  (`UPDATE_ATTESTATION`) is now refused with **422** instead of being read as
+  a plain audit. `AUDIT_DETAILS.description` is likewise kept whole: a
+  `DV_CODED_TEXT` description keeps its `defining_code` instead of being
+  reduced to its display string, and AQL can now address
+  `commit_audit/description/value`,
+  `commit_audit/description/defining_code/code_string` and
+  `.../defining_code/terminology_id/value` as distinct fields (a coded
+  description could previously never match). The `audit` table's baseline
+  schema changes with this: `description` becomes `jsonb` (the whole
+  `DV_TEXT`) and a nullable `attestation` column is added.
+
 - **The FLAT `_link:i` builder now reports a missing mandatory suffix instead
   of inventing an empty value.** `|meaning`, `|type` and `|target` are all
   required on a simplified-format `_link:i` datum; a submission omitting one

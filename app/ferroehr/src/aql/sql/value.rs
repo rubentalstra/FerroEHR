@@ -493,7 +493,34 @@ pub(super) fn version_field_expr(
             coded_rubric_case(&col(&audit(), "change_type"), "audit_change_type")
         }
         VersionField::Committer => col(&audit(), "committer"),
+        // The stored description is the whole canonical DV_TEXT fragment, so
+        // the addressed representation is a jsonb extraction: the bare
+        // attribute is the object (as `committer` is), each scalar sub-path a
+        // `->>` text read that is NULL when the description is uncoded.
         VersionField::Description => col(&audit(), "description"),
+        VersionField::DescriptionValue => sea_query::extension::postgres::PgExpr::cast_json_field(
+            col(&audit(), "description"),
+            Expr::val("value"),
+        ),
+        VersionField::DescriptionCode => sea_query::extension::postgres::PgExpr::cast_json_field(
+            sea_query::extension::postgres::PgExpr::get_json_field(
+                col(&audit(), "description"),
+                Expr::val("defining_code"),
+            ),
+            Expr::val("code_string"),
+        ),
+        VersionField::DescriptionTerminology => {
+            sea_query::extension::postgres::PgExpr::cast_json_field(
+                sea_query::extension::postgres::PgExpr::get_json_field(
+                    sea_query::extension::postgres::PgExpr::get_json_field(
+                        col(&audit(), "description"),
+                        Expr::val("defining_code"),
+                    ),
+                    Expr::val("terminology_id"),
+                ),
+                Expr::val("value"),
+            )
+        }
         VersionField::ContributionId => cast(col(voa, "contribution_id"), "text"),
         VersionField::LifecycleState => col(voa, "lifecycle_state"),
         VersionField::LifecycleStateRubric => {

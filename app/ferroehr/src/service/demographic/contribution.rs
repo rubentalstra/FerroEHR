@@ -23,7 +23,7 @@ use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
 use crate::storage::version_repo;
-use crate::versioning::audit::audit_details;
+use crate::versioning::audit::AuditInput;
 use crate::versioning::contribution::commit_version_set;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 
@@ -83,13 +83,14 @@ impl FerroEhrService {
             })
             .collect();
 
-        let audit_details = audit_details(
-            &audit.system_id,
-            &audit.change_type,
-            audit.description.as_deref(),
-            &audit.committer,
-            &audit.time_committed,
-        )?;
+        let audit_details = AuditInput {
+            system_id: audit.system_id,
+            change_type: audit.change_type,
+            description: audit.description,
+            committer: audit.committer,
+            attestation: audit.attestation,
+        }
+        .canonical(&audit.time_committed)?;
         Ok(json!({
             "_type": "CONTRIBUTION",
             "uid": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() },

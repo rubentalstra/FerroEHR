@@ -7347,3 +7347,60 @@ AMB-178:
     withdraws that lineage.
   disposition: report_only
   upstream_issue: 1615
+
+AMB-179:
+  ambiguity: >-
+    THE RELEASED COMMIT SCHEMA NARROWS THE COMMIT AUDIT TO ONE OF THE TWO RM
+    CLASSES THE RM ADMITS THERE. The RM makes a VERSION's `commit_audit` an
+    `AUDIT_DETAILS` "or its subtype `ATTESTATION`", and gives the subtype form
+    a named, motivated use: committing content that must be signed or reviewed
+    ("`ORIGINAL_VERSION._commit_audit_` is of type `ATTESTATION` rather than
+    `AUDIT_DETAILS`", with `is_pending` True for the review case), which
+    master04 calls "the most common scenario" when an attestation is required.
+    The released OAS admits only the flat class: `UpdateAudit.yaml`'s own
+    description enumerates the acceptable discriminators as `UPDATE_AUDIT`,
+    `AUDIT_DETAILS`, or an omitted `_type`, and `UpdateVersion.commit_audit`
+    `$ref`s that schema alone — while `UpdateAttestation.yaml`, the commit DTO
+    of exactly the ATTESTATION attributes, is reachable from `attestations[]`
+    only. So the pending-at-committal case the RM states in prose has no
+    released commit shape. The same narrowing applies to
+    `AUDIT_DETAILS.description`: the RM types it `DV_TEXT` and the released
+    `UDvText` admits the `DV_CODED_TEXT` subtype, so a coded description is a
+    representable value whose `defining_code` a flat-string store would drop.
+  source: >-
+    RM common master06-change_control_package.adoc §Committal and Audits
+    ("`AUDIT_DETAILS` ... or its subtype `ATTESTATION`, which adds a number of
+    other attributes") + §Attestation ("Signing content at committal ... In
+    this case, `ORIGINAL_VERSION._commit_audit_` is of type `ATTESTATION`
+    rather than `AUDIT_DETAILS`"; "Marking content for review and signing ...
+    the Attestation will have its `_is_pending_` flag set True") + master04
+    §Attestation ("the most common scenario will be that a Composition Version
+    will be committed with a `_commit_audit_` of type `ATTESTATION`, rather
+    than just `AUDIT_DETAILS`; the `_is_pending_` flag will be set to True") +
+    UML/classes/org.openehr.rm.common.{attestation,audit_details}.adoc
+    §Attributes; ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §"openehr-version and openehr-audit-details" ("The 'native' way of
+    committing is to use a CONTRIBUTION and wrap the content as a VERSION",
+    linking the RM change-control package and VERSION class) vs
+    specifications/schemas/common/{UpdateAudit,UpdateAttestation,UDvText}.yaml
+    and schemas/ehr/UpdateVersion.yaml — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server follows the RM, exactly as it does for the
+    deletion member the same released schema cannot express (AMB-85). A
+    version's `commit_audit` is accepted with `_type` `AUDIT_DETAILS` /
+    `UPDATE_AUDIT` / an omitted `_type` (the plain class) or `ATTESTATION` /
+    `UPDATE_ATTESTATION` (the subtype — both spellings, so the RM class and its
+    released commit DTO pair symmetrically with the flat pair above); any other
+    `_type` is refused 422. An accepted ATTESTATION commit audit has its own
+    attributes decoded typed and invariant-checked (`Reason_valid`,
+    `Items_valid`, `reason`/`is_pending` 1..1) and is stored and served AS an
+    `ATTESTATION` — on the version envelope, in the revision history, in a
+    CONTRIBUTION rendering and in an EHR-Extract export alike. `description` is
+    likewise kept as the whole `DV_TEXT`/`DV_CODED_TEXT` value. The narrowing
+    is a released-OAS silence about a released-RM shape, not a prohibition: no
+    released sentence says a commit audit may not be an ATTESTATION, and the
+    docs text points the native commit at the RM that says it may. An outbound
+    upstream report — give the commit schema an ATTESTATION variant for
+    `commit_audit`, as `attestations[]` already has one — is still to be filed;
+    this entry records the divergence in the meantime.
+  disposition: fixed_handling

@@ -2507,6 +2507,27 @@ cnf.composition.minimal_event_coded_name.v1:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "derived 2026-07-30 from cnf.composition.minimal_event.v1 (the vendored CNF Robot fixture) — the single ELEMENT's name upgraded to DV_CODED_TEXT (snomed_ct(3.1)::271649006 |Systolic blood pressure|; DV_CODED_TEXT IS-A DV_TEXT, so the unconstrained LOCATABLE.name admits it) to give the query battery a fake-proof coded-name target (#969)"
+# COMMIT-AUDIT corpus — the shapes a version's own `commit_audit` may take
+# beyond the plain flat one. The ITS-REST docs text points the native commit at
+# the RM ("The 'native' way of committing is to use a CONTRIBUTION and wrap the
+# content as a VERSION", overview Requests_and_responses.md §openehr-version and
+# openehr-audit-details), so VERSION.commit_audit is an RM AUDIT_DETAILS "or its
+# subtype ATTESTATION" (RM common master06 §Committal and Audits) whose
+# description is a DV_TEXT — the coded subtype included. Each payload is a
+# CONTRIBUTION member's commit_audit, merged over the parts every client always
+# sends; the member's own change_type token stays authoritative.
+cnf.audit.attestation_commit_audit:
+  source: fixtures/audit/attestation_commit_audit.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 as the FIRST object of RM common master04-generic_package.adoc §Attestation's two-object pattern, in the form that section itself gives it: \"When an attestation is required, the most common scenario will be that a Composition Version will be committed with a commit_audit of type ATTESTATION, rather than just AUDIT_DETAILS; the is_pending flag will be set to True to indicate that the committed information needs to be signed by another person\" (master06 §Attestation states the same case: \"ORIGINAL_VERSION._commit_audit_ is of type ATTESTATION rather than AUDIT_DETAILS\", with is_pending True for \"Marking content for review and signing\"). No proof: the signing has not happened yet (ATTESTATION.proof 0..1). reason is coded 648|witnessed|, a member of the openEHR `attestation reason` group ATTESTATION.Reason_valid binds (TERM SupportTerminology, attestation reason: 240 signed, 648 witnessed)"
+cnf.audit.description_coded:
+  source: fixtures/audit/description_coded.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-02 to pin the CODED spelling of AUDIT_DETAILS.description, which RM common UML/classes/org.openehr.rm.common.audit_details.adoc §Attributes types DV_TEXT (0..1) — a class whose DV_CODED_TEXT subtype carries a defining_code — and which ITS-REST schemas/common/UpdateAudit.yaml types UDvText (schemas/common/UDvText.yaml: oneOf DV_TEXT, DV_CODED_TEXT). The code is archetype-local (terminology_id `local`), the form an archetyped reason-for-committal takes; no openEHR terminology group binds this attribute, so membership is not asserted — only that the whole coded value survives"
 # ATTESTATION corpus — the `666|attestation|` wire family. RM common
 # master06-change_control_package.adoc §Contributions makes an attestation a
 # change that commits NO new version ("all logical changes … are achieved by

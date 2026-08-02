@@ -127,14 +127,43 @@ CREATE TABLE audit (
     -- §6); the terminology layer validates the full audit_change_type group at
     -- the wire edge (service/codes.rs).
     change_type    text NOT NULL,
-    description    text,
+    -- AUDIT_DETAILS.description is a DV_TEXT (0..1) whose DV_CODED_TEXT
+    -- subtype carries a defining_code (RM common
+    -- UML/classes/org.openehr.rm.common.audit_details.adoc §Attributes), so the
+    -- whole canonical fragment is stored — a bare text column would discard the
+    -- concrete _type and every coded attribute.
+    description    jsonb COMPRESSION lz4,
     -- canonical PARTY_PROXY; lz4-compressed (storage choice — no spec governs
     -- compression). PG grammar: the
     -- COMPRESSION clause precedes column constraints.
     committer      jsonb COMPRESSION lz4 NOT NULL,
+    -- The ATTESTATION-declared attributes (attested_view, proof, items, reason,
+    -- is_pending — RM common UML/classes/org.openehr.rm.common.attestation.adoc
+    -- §Attributes), each in its canonical encoding, when this commit audit is
+    -- an ATTESTATION rather than a plain AUDIT_DETAILS: "ORIGINAL_VERSION.
+    -- commit_audit is of type ATTESTATION rather than AUDIT_DETAILS" (RM common
+    -- master06 §Attestation; master04 §Attestation calls it "the most common
+    -- scenario" when an attestation is required). NULL ⇔ a plain AUDIT_DETAILS:
+    -- ATTESTATION is the ONLY AUDIT_DETAILS subtype RM 1.2.0 declares and both
+    -- of these attributes are mandatory on it, so presence is the concrete
+    -- class and there is no second discriminator to drift from. The INHERITED
+    -- attributes stay in the promoted columns for every audit alike, so
+    -- system_id / change_type / time_committed remain one queryable shape.
+    -- lz4-compressed: attested_view is a DV_MULTIMEDIA and may carry inline
+    -- data (storage choice — no spec governs compression).
+    attestation    jsonb COMPRESSION lz4,
     CONSTRAINT pk_audit PRIMARY KEY (id),
     -- AUDIT_DETAILS.System_id_valid: system_id is 1..1, non-void (req 1.8).
     CONSTRAINT ck_audit_system_id_nonempty CHECK (system_id <> ''),
+    -- DV_TEXT.value is 1..1 (RM data_types
+    -- UML/classes/org.openehr.rm.data_types.dv_text.adoc §Attributes), so a
+    -- stored description always carries one.
+    CONSTRAINT ck_audit_description_shape CHECK
+        (description IS NULL OR description ? 'value'),
+    -- ATTESTATION.reason and ATTESTATION.is_pending are both 1..1 (RM common
+    -- UML/classes/org.openehr.rm.common.attestation.adoc §Attributes).
+    CONSTRAINT ck_audit_attestation_shape CHECK
+        (attestation IS NULL OR (attestation ? 'reason' AND attestation ? 'is_pending')),
     -- The full openEHR audit_change_type group (the service validates the same
     -- set at the wire edge, service/codes.rs): 249 creation, 250 amendment,
     -- 251 modification, 252 synthesis, 253 unknown, 523 deleted, 666
@@ -144,10 +173,12 @@ CREATE TABLE audit (
         ('249', '250', '251', '252', '253', '523', '666', '816', '817'))
 );
 
-COMMENT ON TABLE audit IS 'AUDIT_DETAILS of every committed change (RM common master06 §AUDIT_DETAILS).';
+COMMENT ON TABLE audit IS 'AUDIT_DETAILS of every committed change (RM common master06 §AUDIT_DETAILS), including the ATTESTATION subtype a version may be committed with (master06 §Attestation).';
 COMMENT ON COLUMN audit.change_type IS 'audit_change_type group code (AUDIT_DETAILS.Change_type_valid, RM common master04). CHECK validates the full audit_change_type terminology group (aligned with service/codes.rs).';
 COMMENT ON COLUMN audit.time_committed IS 'Server-computed commit instant (req 1.8 — never client-supplied).';
 COMMENT ON COLUMN audit.committer IS 'Canonical PARTY_PROXY of the committer (req 1.8).';
+COMMENT ON COLUMN audit.description IS 'Canonical AUDIT_DETAILS.description fragment (DV_TEXT or its DV_CODED_TEXT subtype), stored whole so the concrete _type and defining_code survive (RM common master04 §Audit Details).';
+COMMENT ON COLUMN audit.attestation IS 'The ATTESTATION-declared attributes (attested_view/proof/items/reason/is_pending) when the commit audit is an ATTESTATION, else NULL (RM common master06 §Attestation; master04 §Attestation).';
 
 -- ── contribution ─────────────────────────────────────────────────────────────
 -- The change-set envelope (RM common master06 §CONTRIBUTION): one CONTRIBUTION

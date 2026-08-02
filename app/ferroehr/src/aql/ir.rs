@@ -241,8 +241,17 @@ pub enum VersionField {
     ChangeTypeTerminology,
     /// `commit_audit/committer[/...]`.
     Committer,
-    /// `commit_audit/description[/value]`.
+    /// `commit_audit/description` — the whole `DV_TEXT` (or its
+    /// `DV_CODED_TEXT` subtype) as stored.
     Description,
+    /// `commit_audit/description/value` — the description's display text.
+    DescriptionValue,
+    /// `commit_audit/description/defining_code/code_string` — the code of a
+    /// `DV_CODED_TEXT` description, `NULL` on a plain `DV_TEXT`.
+    DescriptionCode,
+    /// `commit_audit/description/defining_code/terminology_id/value` — the
+    /// terminology of a `DV_CODED_TEXT` description.
+    DescriptionTerminology,
     /// `contribution/id[/value]`.
     ContributionId,
     /// `lifecycle_state/defining_code/code_string` — the stored numeric

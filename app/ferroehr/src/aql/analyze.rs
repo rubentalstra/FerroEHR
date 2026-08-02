@@ -406,7 +406,21 @@ fn version_field_from_parts(parts: &[&str]) -> Result<VersionField, AqlError> {
                 VersionField::ChangeTypeTerminology,
             ),
             ["committer", ..] => Ok(VersionField::Committer),
-            ["description", ..] => Ok(VersionField::Description),
+            // AUDIT_DETAILS.description is a DV_TEXT whose DV_CODED_TEXT
+            // subtype carries a defining_code (RM common
+            // UML/classes/org.openehr.rm.common.audit_details.adoc
+            // §Attributes), so each addressed representation resolves to its
+            // own extraction — a flat mapping would compare a coded
+            // description's code against its display text and never match.
+            ["description", rest @ ..] => match rest {
+                [] => Ok(VersionField::Description),
+                ["value"] => Ok(VersionField::DescriptionValue),
+                ["defining_code", "code_string"] => Ok(VersionField::DescriptionCode),
+                ["defining_code", "terminology_id", "value"] => {
+                    Ok(VersionField::DescriptionTerminology)
+                }
+                _ => Err(AqlFeatureError::UnsupportedVersionPredicate(parts.join("/")).into()),
+            },
             _ => Err(AqlFeatureError::UnsupportedVersionPredicate(parts.join("/")).into()),
         },
         _ => Err(AqlFeatureError::UnsupportedVersionPredicate(parts.join("/")).into()),
