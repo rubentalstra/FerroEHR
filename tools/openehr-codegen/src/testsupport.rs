@@ -9,6 +9,7 @@
 use crate::analyze::invariants::{self, Bucket};
 use crate::analyze::{Model, augment_with_reemit, class_paths, cross_schema_reemit};
 use crate::load::bmm::BmmSchema;
+use crate::load::impls::SiblingImpls;
 use crate::plan::composition::{self, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
@@ -256,7 +257,9 @@ pub fn generation_conflicts() -> Result<Vec<GenerationConflict>, Error> {
                 schema: &g.schema,
                 prelude_owned: Some(&g.owned),
             }];
-            for f in emit_generations(&gen_view, &c.external, c.doc) {
+            // Path/ident conflicts are independent of the banner input, so an
+            // empty sibling set is the right (and cheapest) view here.
+            for f in emit_generations(&gen_view, &c.external, c.doc, &SiblingImpls::default()) {
                 paths.entry(f.path).or_default().push(g.file.to_string());
             }
             for spec in &g.owned {
@@ -396,8 +399,10 @@ fn shape_name(e: &Emission) -> &'static str {
 }
 
 /// Render every emit-crate's spec files to an in-memory map keyed
-/// `"<crate>/<path>"` (pre-rustfmt bodies). Reproduces `cli::cmd_emit`'s emission
-/// half without touching the filesystem, so a double call proves the emitter is
+/// `"<crate>/<path>"` (pre-rustfmt bodies). Reproduces `cli::cmd_emit`'s
+/// emission half without WRITING to the filesystem (it reads the same inputs
+/// `cmd_emit` does, the vendored BMM plus each crate's hand-written
+/// `*_impl.rs` siblings), so a double call proves the emitter is
 /// byte-deterministic.
 ///
 /// # Errors
@@ -413,11 +418,23 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
     let base = compose("base")?;
     add(
         "openehr-base",
-        &emit_crate(&base.model, &base.own_schema, &base.external, base.doc),
+        &emit_crate(
+            &base.model,
+            &base.own_schema,
+            &base.external,
+            base.doc,
+            &sibling_impls("openehr-base"),
+        ),
     );
 
     let rm = compose("rm")?;
-    let mut rm_files = emit_crate(&rm.model, &rm.own_schema, &rm.external, rm.doc);
+    let mut rm_files = emit_crate(
+        &rm.model,
+        &rm.own_schema,
+        &rm.external,
+        rm.doc,
+        &sibling_impls("openehr-rm"),
+    );
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
     inject_validate(
         &mut rm_files,
@@ -428,7 +445,12 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
     let lang = compose("lang")?;
     add(
         "openehr-lang",
-        &emit_generations(&crate_generations(&lang), &lang.external, lang.doc),
+        &emit_generations(
+            &crate_generations(&lang),
+            &lang.external,
+            lang.doc,
+            &sibling_impls("openehr-lang"),
+        ),
     );
 
     let am14 = compose("am14")?;
@@ -445,15 +467,34 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
             ],
             &am24.external,
             am24.doc,
+            &sibling_impls("openehr-am"),
         ),
     );
 
     let term = compose("term")?;
     add(
         "openehr-term",
-        &emit_crate(&term.model, &term.own_schema, &term.external, term.doc),
+        &emit_crate(
+            &term.model,
+            &term.own_schema,
+            &term.external,
+            term.doc,
+            &sibling_impls("openehr-term"),
+        ),
     );
     Ok(out)
+}
+
+/// The hand-written `*_impl.rs` siblings of a generated crate — the same
+/// emitter input `cli::sibling_impls` reads, so the in-memory render matches
+/// the written tree byte for byte.
+fn sibling_impls(crate_name: &str) -> SiblingImpls {
+    SiblingImpls::scan(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../crates")
+            .join(crate_name)
+            .join("src"),
+    )
 }
 
 /// Mirror of `cli::inject_validate` (kept private there): append the generated
@@ -535,7 +576,12 @@ pub fn am24_reemit_closure() -> Result<BTreeSet<String>, Error> {
 /// Returns an error if the crate's BMM files cannot be loaded.
 pub fn rendered_files(key: &str) -> Result<Vec<String>, Error> {
     let c = compose(key)?;
-    let files = emit_generations(&crate_generations(&c), &c.external, c.doc);
+    let files = emit_generations(
+        &crate_generations(&c),
+        &c.external,
+        c.doc,
+        &SiblingImpls::default(),
+    );
     Ok(files.into_iter().map(|f| f.path).collect())
 }
 

@@ -17,3 +17,4 @@ pub mod attestation_impl;
 pub mod audit_details_impl;
 pub mod party_identified_impl;
 pub mod party_related_impl;
+pub mod revision_history_impl;

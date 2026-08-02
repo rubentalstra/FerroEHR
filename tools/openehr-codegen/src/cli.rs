@@ -4,6 +4,7 @@
 
 use crate::analyze::{augment_with_reemit, cross_schema_reemit, emittable_specs};
 use crate::load::bmm::BmmSchema;
+use crate::load::impls::SiblingImpls;
 use crate::load::{oas, xsd};
 use crate::plan::composition::{self, compose};
 use crate::render::emit::{
@@ -574,6 +575,13 @@ fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// The hand-written `*_impl.rs` siblings a generated crate already carries — an
+/// emitter INPUT (`crate::load::impls`), read before rendering so a type file's
+/// banner names a sibling only when one exists.
+fn sibling_impls(crate_name: &str) -> SiblingImpls {
+    SiblingImpls::scan(&crates_root().join(crate_name).join("src"))
+}
+
 fn crates_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
@@ -590,7 +598,13 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let base = compose("base")?;
     write_crate(
         "openehr-base",
-        &emit_crate(&base.model, &base.own_schema, &base.external, base.doc),
+        &emit_crate(
+            &base.model,
+            &base.own_schema,
+            &base.external,
+            base.doc,
+            &sibling_impls("openehr-base"),
+        ),
     )?;
 
     // openehr-rm: depends on openehr-base. Also carries the static RM attribute/
@@ -598,7 +612,13 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     // self-consistent (lib.rs declares `model`, and a later `emit` regenerates it
     // byte-identically to the standalone `emit-rm-model` target).
     let rm = compose("rm")?;
-    let mut rm_files = emit_crate(&rm.model, &rm.own_schema, &rm.external, rm.doc);
+    let mut rm_files = emit_crate(
+        &rm.model,
+        &rm.own_schema,
+        &rm.external,
+        rm.doc,
+        &sibling_impls("openehr-rm"),
+    );
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
     inject_validate(
         &mut rm_files,
@@ -617,7 +637,12 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let lang = compose("lang")?;
     write_crate(
         "openehr-lang",
-        &emit_generations(&crate_generations(&lang), &lang.external, lang.doc),
+        &emit_generations(
+            &crate_generations(&lang),
+            &lang.external,
+            lang.doc,
+            &sibling_impls("openehr-lang"),
+        ),
     )?;
 
     // openehr-am: two versions in one crate, each depending on openehr-base and
@@ -650,6 +675,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
         ],
         &am24.external,
         am24.doc,
+        &sibling_impls("openehr-am"),
     );
     write_crate("openehr-am", &am_files)?;
 
@@ -659,7 +685,13 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let term = compose("term")?;
     write_crate(
         "openehr-term",
-        &emit_crate(&term.model, &term.own_schema, &term.external, term.doc),
+        &emit_crate(
+            &term.model,
+            &term.own_schema,
+            &term.external,
+            term.doc,
+            &sibling_impls("openehr-term"),
+        ),
     )?;
     Ok(())
 }

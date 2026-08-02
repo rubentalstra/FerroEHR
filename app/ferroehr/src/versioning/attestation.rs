@@ -20,7 +20,8 @@ use crate::service::error::ServiceError;
 use crate::service::status::CallStatusType;
 use crate::versioning::Kind;
 use crate::versioning::audit::{
-    change_type, change_type_rubric, dv_date_time, dv_text, openehr_coded_text, party_proxy,
+    change_type, change_type_rubric, decode_description, dv_date_time, dv_text, openehr_coded_text,
+    party_proxy,
 };
 use crate::versioning::change::Committed;
 use crate::versioning::object_version_id::TreeId;
@@ -340,7 +341,8 @@ impl AttestationParts {
 /// # Errors
 /// The [`AttestationParts::decode`] rejections, and
 /// [`ServiceError::Unprocessable`] when `committer` is not a canonical
-/// `PARTY_PROXY`.
+/// `PARTY_PROXY` or `description` is neither a string nor a canonical
+/// `DV_TEXT`.
 pub(crate) fn complete_attestation(
     partial: &Value,
     system_id: &str,
@@ -355,15 +357,23 @@ pub(crate) fn complete_attestation(
         .unwrap_or_else(|| committer_fallback.clone());
     // description: the inherited AUDIT_DETAILS.description (0..1). ITS-REST
     // types it `UDvText` — `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`]
-    // (`specifications/schemas/data_types/UDvText.yaml`) — while SM
-    // `UPDATE_AUDIT.description` is `String [0..1]`
-    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes); both spellings are
-    // read, reduced to the `DV_TEXT.value` they share, because the completed
-    // ATTESTATION below rebuilds it as a plain `DV_TEXT`.
-    let description = partial.get("description").and_then(|d| {
-        d.as_str()
-            .or_else(|| d.get("value").and_then(Value::as_str))
-    });
+    // (`specifications/schemas/data_types/UDvText.yaml`, an object, never a bare
+    // string) — while SM `UPDATE_AUDIT.description` is `String [0..1]`
+    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes), which grounds the
+    // plain-string branch. Both spellings are read, and the object spelling is
+    // decoded WHOLE: `description` is typed `DV_TEXT` at 0..1 (RM common
+    // `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes,
+    // inherited by `…org.openehr.rm.common.attestation.adoc`), and
+    // `DV_CODED_TEXT` is a substitutable subtype — reducing it to its `value`
+    // would drop the `defining_code` of a committed attestation permanently.
+    let description = partial
+        .get("description")
+        .filter(|d| !d.is_null())
+        .map(|d| match d {
+            Value::String(s) => Ok(dv_text(s)),
+            other => decode_description(other),
+        })
+        .transpose()?;
     // The inherited AUDIT_DETAILS fields are the server's, exactly as any
     // audit's; `openehr-its` writes the whole ATTESTATION in BMM order.
     Ok(openehr_its::json::to_canonical_value(&Attestation {
@@ -373,7 +383,7 @@ pub(crate) fn complete_attestation(
             change_type::ATTESTATION,
             change_type_rubric(change_type::ATTESTATION),
         ),
-        description: description.map(dv_text),
+        description,
         committer: party_proxy(&committer)?,
         attested_view: parts.attested_view,
         proof: parts.proof,
@@ -453,6 +463,81 @@ mod tests {
         assert_eq!(
             att.get("_type").and_then(Value::as_str),
             Some("ATTESTATION")
+        );
+    }
+
+    /// A `DV_CODED_TEXT` `description` survives completion whole. The
+    /// inherited `AUDIT_DETAILS.description` is typed `DV_TEXT` at 0..1 (RM
+    /// common `UML/classes/org.openehr.rm.common.audit_details.adoc`
+    /// §Attributes, inherited by `…org.openehr.rm.common.attestation.adoc`)
+    /// and `DV_CODED_TEXT` is a substitutable subtype — so the `_type`, the
+    /// display `value` and the whole `defining_code` come back unchanged
+    /// rather than being flattened to the plain text they share.
+    #[test]
+    fn coded_description_round_trips() {
+        let description = json!({
+            "_type": "DV_CODED_TEXT",
+            "value": "amended after multidisciplinary review",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "local" },
+                "code_string": "at0004"
+            }
+        });
+        let att = complete_attestation(
+            &json!({
+                "reason": { "_type": "DV_TEXT", "value": "witness" },
+                "is_pending": false,
+                "description": description.clone()
+            }),
+            "ferroehr.local",
+            &committer(),
+            now(),
+        )
+        .expect("a coded description is a valid DV_TEXT");
+        assert_eq!(att.get("description"), Some(&description));
+    }
+
+    /// The SM spelling of the same attribute — `UPDATE_AUDIT.description` is
+    /// `String [0..1]` (`SM/docs/UML/classes/update_audit.adoc` §Attributes) —
+    /// still completes into the plain `DV_TEXT` it denotes.
+    #[test]
+    fn string_description_becomes_plain_dv_text() {
+        let att = complete_attestation(
+            &json!({
+                "reason": { "_type": "DV_TEXT", "value": "witness" },
+                "is_pending": false,
+                "description": "countersigned"
+            }),
+            "ferroehr.local",
+            &committer(),
+            now(),
+        )
+        .expect("the SM string spelling is accepted");
+        assert_eq!(
+            att.get("description"),
+            Some(&json!({ "_type": "DV_TEXT", "value": "countersigned" }))
+        );
+    }
+
+    /// A `description` that is neither a string nor a canonical `DV_TEXT` is
+    /// refused (422) instead of silently dropped.
+    #[test]
+    fn malformed_description_is_refused() {
+        let err = complete_attestation(
+            &json!({
+                "reason": { "_type": "DV_TEXT", "value": "witness" },
+                "is_pending": false,
+                "description": { "_type": "DV_CODED_TEXT", "value": "no defining_code" }
+            }),
+            "ferroehr.local",
+            &committer(),
+            now(),
+        )
+        .expect_err("a DV_CODED_TEXT without its mandatory defining_code must be refused");
+        assert!(
+            matches!(&err, ServiceError::Unprocessable(m) if m.contains("AUDIT_DETAILS.description")),
+            "got {err:?}"
         );
     }
 
