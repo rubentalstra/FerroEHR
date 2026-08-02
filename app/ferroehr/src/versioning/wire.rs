@@ -240,7 +240,7 @@ pub(crate) async fn versioned_object(
 }
 
 /// An `ORIGINAL_VERSION` wrapping a loaded version, with read-time signature
-/// verification (RM common master06 §Version subtypes / §Digital Signature).
+/// verification (RM common master06 §Version and its Subtypes / §Digital Signature).
 ///
 /// When `verify_on_read` is not `off` and the signature is server-generated
 /// (not client-supplied), the served version's signature is checked against its
@@ -297,7 +297,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
 ///
 /// Spec: `VERSION.commit_audit` 1..1; `VERSION.Preceding_version_uid_validity`;
 /// `ORIGINAL_VERSION.lifecycle_state` coded from `version_lifecycle_state`
-/// (RM common master06 §Version subtypes).
+/// (RM common master06 §Version and its Subtypes).
 ///
 /// # Errors
 /// The [`AuditInput::canonical`] rejection when `audit.committer` is not a

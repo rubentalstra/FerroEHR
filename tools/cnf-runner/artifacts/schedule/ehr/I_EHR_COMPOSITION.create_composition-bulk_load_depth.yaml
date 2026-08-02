@@ -16,7 +16,7 @@
 # independently addressable versioned objects whose content reads back
 # unchanged, and an EHR-scoped AQL CONTAINS COMPOSITION query over that EHR
 # returns exactly N rows. Every commit here is a CREATE of a NEW container
-# (RM common master06 §Version tree: each POST mints its own
+# (RM common master06 §The 'Virtual Version Tree': each POST mints its own
 # VERSIONED_OBJECT) — the update/version-tree axis belongs to Versioning, not
 # to this capability.
 #

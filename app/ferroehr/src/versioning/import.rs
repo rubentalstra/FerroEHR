@@ -80,7 +80,7 @@ async fn container_state(
 #[derive(Debug)]
 pub(crate) struct ImportVersion {
     /// The `version_tree_id` of the wrapped original (trunk or branch; branch
-    /// import is first-class — master06 §Version tree).
+    /// import is first-class — master06 §The 'Virtual Version Tree').
     pub(crate) tree: TreeId,
     /// The wrapped original's `creating_system_id` — per VERSION, not per
     /// container: a copied version tree legitimately mixes systems (master06

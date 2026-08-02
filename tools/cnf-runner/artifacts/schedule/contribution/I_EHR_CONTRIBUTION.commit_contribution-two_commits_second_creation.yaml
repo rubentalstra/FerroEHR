@@ -2,7 +2,7 @@
 # change_type = creation against the same COMPOSITION: rejected for the wrong
 # change type (only one create is allowed for a persistent COMPOSITION; further
 # operations must be modification — master08 C.9 NOTE). Only the first VERSION
-# remains. Per RM master06 §Change Control a 249|creation| is a first
+# remains. Per RM master06 §Contributions a 249|creation| is a first
 # ORIGINAL_VERSION (preceding_version_uid Void); a creation member naming a
 # preceding version is that change_type mismatch, rejected — the status code is
 # spec-unassigned (AMB-54: 400|422). commit 1 commits one VERSION, so
@@ -48,7 +48,7 @@ flow:
         - data: "${ds:cnf.composition.persistent.v2}"
           change_type: creation                 # wrong: the object already exists
           preceding_version_uid: "${v1_uids}"   # body property: RM VERSION.preceding_version_uid (SM update_version.adoc)
-    expect: validation_failed             # RM master06 §Change Control: a creation is a first version — a creation naming a preceding version is a change_type mismatch, rejected; the status code is spec-unassigned (AMB-54: 400|422)
+    expect: validation_failed             # RM master06 §Contributions: a creation is a first version — a creation naming a preceding version is a change_type mismatch, rejected; the status code is spec-unassigned (AMB-54: 400|422)
 postconditions:
   - { assert: version, count: 1 }        # only the first VERSION remains
 ambiguities: [AMB-54]

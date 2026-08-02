@@ -2,9 +2,30 @@
 //! `I_DEMOGRAPHIC_SERVICE.create_party_relationship` factory
 //! (`i_demographic_service.adoc`) — the demographic `PARTY_RELATIONSHIP` domain
 //! logic, built on the shared [`crate::versioning`] machinery with
-//! `ehr_id = None` (no EHR scope — our own design). A relationship is a
-//! versioned object in the demographics repository, but it is *not* a PARTY (it
-//! has its own `versioned_party_relationship` read surface).
+//! `ehr_id = None` (no EHR scope — our own design).
+//!
+//! NOTE: a relationship has TWO modelled representations and the released text
+//! reconciles them nowhere, so this module realizes the SM's. The RM makes a
+//! relationship compositional data of its source party — "`PARTY_RELATIONSHIPs`
+//! are stored as part of the data of the `PARTY` designated as the source. This
+//! means that the relationships attribute is by value" (RM demographic
+//! `docs/demographic/master02-demographic_package.adoc` §Party Relationships
+//! L44), versioned with that party ("A Version of a `PARTY` includes all the
+//! compositional parts, such as identities, contacts, Party relationships of
+//! which it is the source", §Versioning Semantics L48) — and declares no
+//! `VERSIONED_PARTY_RELATIONSHIP` class at all. The SM instead gives every
+//! relationship its own version container: all six `I_PARTY_RELATIONSHIP`
+//! operations are keyed by `a_versioned_party_rel_id`,
+//! `update_party_relationship` "Causes server-side creation of a new
+//! `ORIGINAL_VERSION` and `CONTRIBUTION`", and four operations declare
+//! `versioned_object_does_not_exist` (SM `UML/classes/i_party_relationship.adoc`).
+//! This module implements the SM reading — independently-versioned containers,
+//! addressed on the `versioned_party_relationship` read surface — while an
+//! inline `relationships` list in a committed PARTY body stays RM-valid data
+//! that is validated, stored and served verbatim. The two representations are
+//! DISJOINT: neither is auto-synchronized into the other. Register AMB-187
+//! carries the adjudication; AMB-32 carries the missing released wire for the
+//! container half.
 //!
 //! NOTEs on the SM spec asymmetries this module normalizes to the PARTY
 //! pattern:
@@ -347,13 +368,8 @@ impl FerroEhrService {
     pub(super) async fn versioned_relationship(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_relationship(vo_id, CallStatusType::VersionedObjectDoesNotExist)
             .await?;
-        self.versioned_wrapper(
-            vo_id,
-            "VERSIONED_OBJECT",
-            "PARTY_RELATIONSHIP",
-            "versioned party relationship",
-        )
-        .await
+        self.versioned_wrapper(vo_id, "VERSIONED_OBJECT", "versioned party relationship")
+            .await
     }
 
     /// The `REVISION_HISTORY` of a relationship: one item per version with its

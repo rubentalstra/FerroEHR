@@ -30,7 +30,7 @@ use crate::service::error::ServiceError;
 
 /// A decoded `VERSION_TREE_ID`: the trunk version plus, for a branch version,
 /// the `(branch_number, branch_version)` pair (both `>= 1` per BASE
-/// `VERSION_TREE_ID`; RM common master06 §Version tree).
+/// `VERSION_TREE_ID`; RM common master06 §The 'Virtual Version Tree').
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TreeId {
     /// The trunk version this id sits on (first lexical part).

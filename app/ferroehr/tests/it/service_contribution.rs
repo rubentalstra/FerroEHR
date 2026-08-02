@@ -973,7 +973,7 @@ async fn contribution_resolve_refs() {
 
 /// A client-supplied CONTRIBUTION uid is honoured when unused, rejected as a
 /// conflict when already in use, and rejected as unprocessable when malformed
-/// (ITS-REST `contribution_create`; RM common master06 §CONTRIBUTION `uid`).
+/// (ITS-REST `contribution_create`; RM common master06 §Contributions, the CONTRIBUTION `uid`).
 #[tokio::test]
 async fn contribution_supplied_uid() {
     let db = testkit::db().await.expect("testkit database");
@@ -1085,7 +1085,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
 }
 
 /// The temporal non-overlap invariant survives the removal of the `GiST`
-/// EXCLUDE constraints (RM common master06 §Version tree: one valid version
+/// EXCLUDE constraints (RM common master06 §The 'Virtual Version Tree': one valid version
 /// per lineage at any instant; the enforcement is now by construction —
 /// close-then-insert at one `now()` per write, one open row per lineage via
 /// the partial unique indexes). A burst of sequential updates must leave

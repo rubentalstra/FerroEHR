@@ -26,7 +26,7 @@ impl FerroEhrService {
     pub(super) async fn versioned_party(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id, CallStatusType::VersionedObjectDoesNotExist)
             .await?;
-        self.versioned_wrapper(vo_id, "VERSIONED_PARTY", "PARTY", "versioned party")
+        self.versioned_wrapper(vo_id, "VERSIONED_PARTY", "versioned party")
             .await
     }
 

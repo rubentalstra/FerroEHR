@@ -7,12 +7,12 @@ Runner: cnf-runner 3.17.1 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 873 |
+| passed | 874 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 910 |
+| total | 911 |
 
 ## By chapter
 
@@ -35,8 +35,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | **Query** | 56 | 0 | 0 | 0 |
 | — Ad-hoc AQL | 45 | 0 | 0 | 0 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
-| **Demographic** | 68 | 0 | 0 | 4 |
-| — Parties | 45 | 0 | 0 | 3 |
+| **Demographic** | 69 | 0 | 0 | 4 |
+| — Parties | 46 | 0 | 0 | 3 |
 | — Party relationships | 17 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
 | **Messaging** | 37 | 0 | 0 | 0 |
@@ -89,7 +89,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | ChangeSets | pass | 63 | 0 | 0 | 5 |
 | Versioning | pass | 62 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
-| PartyOperations | pass | 48 | 0 | 0 | 4 |
+| PartyOperations | pass | 49 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 17 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 8 | 0 | 0 | 0 |
 | AqlBasic | pass | 32 | 0 | 0 | 0 |
@@ -105,7 +105,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
-| DemographicApi | pass | 26 | 0 | 0 | 1 |
+| DemographicApi | pass | 27 | 0 | 0 | 1 |
 | QueryApi | pass | 20 | 0 | 0 | 0 |
 | AdminApi | pass | 8 | 0 | 0 | 0 |
 | MessageApi | pass | 4 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 873 of 910 selected cases driven.
+Coverage: 874 of 911 selected cases driven.
 
 Not-executed verdicts (each cited):
 
