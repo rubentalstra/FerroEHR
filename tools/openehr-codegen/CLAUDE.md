@@ -14,6 +14,10 @@ The single deterministic generator behind the whole spec layer. Lives under
 - `emit-rm-model` — the static RM attribute/type model (refreshes the subtree
   `emit` already writes).
 - `emit-validate` — the machine-classified RM invariant cores.
+- `model-query` — read-only report: what the vendored BMM states about every
+  class attribute (declared type, existence, container + cardinality, class
+  abstractness) beside the field shape the emitter currently emits for it;
+  `[--class X] [--attribute Y] [--component KEY] [--format table|tsv|json]`.
 - `check` / `check-xsd` — input validation.
 
 ## Pipeline structure (four stages + CLI)

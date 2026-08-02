@@ -145,7 +145,9 @@ fn emit_version(
     let used = model.used_as_type();
 
     // Spec class names emitted in this version; anything referenced outside it
-    // degrades to `serde_json::Value` so the crate stays self-contained.
+    // degrades to `serde_json::Value` so the crate stays self-contained. This is
+    // the same projection [`crate::analyze::emittable_specs`] computes — the one
+    // the `External` prelude index and the `model-query` report resolve against.
     let mut local: BTreeSet<String> = BTreeSet::new();
     for (name, class) in &schema.classes {
         if !matches!(decide(model, class, &used), Emission::Skip) {
@@ -573,7 +575,7 @@ fn emit_struct(
 }
 
 /// The params a struct is generic over (see `used_generic_params`).
-fn struct_generics(model: &Model, class: &BmmClass) -> Vec<String> {
+pub(crate) fn struct_generics(model: &Model, class: &BmmClass) -> Vec<String> {
     model
         .used_generic_params(&class.name)
         .into_iter()
@@ -809,7 +811,11 @@ fn decode_char(inner: &str) -> char {
 
 /// Compute a field's Rust type (the JSON codec handles `None`/empty omission at
 /// its field call sites, so no attribute is needed on the field).
-fn field_type(
+///
+/// This is the single field-shape decision: the struct renderer above calls it
+/// for every flattened property, and [`crate::render::model_query`] calls it to
+/// report the decision, so the report cannot drift from the emitted code.
+pub(crate) fn field_type(
     model: &Model,
     class: &BmmClass,
     p: &crate::load::bmm::BmmProperty,

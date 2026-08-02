@@ -11,7 +11,7 @@ use crate::render::emit::{
     GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate, type_module_path,
 };
 use crate::render::{
-    emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, naming,
+    emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, model_query, naming,
 };
 use std::path::{Path, PathBuf};
 /// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
@@ -56,9 +56,10 @@ pub(crate) fn run() -> std::process::ExitCode {
         "emit-aom2" => cmd_emit_aom2(),
         "emit-rm-model" => cmd_emit_rm_model(),
         "emit-validate" => cmd_emit_validate(),
+        "model-query" => cmd_model_query(args.get(1..).unwrap_or_default()),
         other => {
             eprintln!(
-                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-aom2`, `emit-rm-model`, or `emit-validate`"
+                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-aom2`, `emit-rm-model`, `emit-validate`, or `model-query`"
             );
             return std::process::ExitCode::from(EXIT_USAGE);
         }
@@ -91,6 +92,65 @@ fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
     Ok(())
+}
+
+/// Report what the vendored BMM states about every class attribute of the
+/// loaded components, beside the Rust field shape the emitter currently emits
+/// for it — a read-only query over the same LOAD → ANALYZE → PLAN → RENDER
+/// decisions `emit` drives (see [`model_query`] for the BMM column definitions
+/// and their `LANG` citations).
+///
+/// Usage: `model-query [--class NAME] [--attribute NAME] [--component KEY]
+/// [--format table|tsv|json]`; no filter reports the whole loaded model.
+fn cmd_model_query(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let (query, format) = parse_model_query_args(args)?;
+    print!("{}", model_query::render(&query, format)?);
+    Ok(())
+}
+
+/// Parse `model-query`'s options (`--flag value` and `--flag=value` both work).
+///
+/// # Errors
+/// Returns an error naming the valid options if an option is unknown, and an
+/// error naming the valid values if `--format` is not one of them.
+fn parse_model_query_args(
+    args: &[String],
+) -> Result<(model_query::Query<'_>, model_query::Format), Box<dyn std::error::Error>> {
+    let mut query = model_query::Query::default();
+    let mut format = model_query::Format::Table;
+    let mut i = 0;
+    while let Some(arg) = args.get(i) {
+        let (flag, inline) = match arg.split_once('=') {
+            Some((f, v)) => (f, Some(v)),
+            None => (arg.as_str(), None),
+        };
+        let value = if let Some(v) = inline {
+            i += 1;
+            Some(v)
+        } else {
+            let v = args.get(i + 1).map(String::as_str);
+            i += 2;
+            v
+        };
+        let required = || -> Result<&str, Box<dyn std::error::Error>> {
+            value.ok_or_else(|| format!("option {flag} needs a value").into())
+        };
+        match flag {
+            "--class" => query.class = Some(required()?),
+            "--attribute" => query.attribute = Some(required()?),
+            "--component" => query.component = Some(required()?),
+            "--format" => format = model_query::Format::parse(required()?)?,
+            other => {
+                return Err(format!(
+                    "unknown model-query option {other:?}; valid options: --class NAME, \
+                     --attribute NAME, --component KEY, --format {}",
+                    model_query::Format::VALID
+                )
+                .into());
+            }
+        }
+    }
+    Ok((query, format))
 }
 
 /// Emit the ITS-REST contract (DTOs, param structs, server trait, route table)

@@ -5,7 +5,9 @@
 //! canonical-XML codecs; [`emit_rest`] the ITS-REST contract;
 //! [`emit_rm_model`] the static RM attribute/type model; [`emit_validate`] the
 //! RM class-invariant cores; [`emit_opt`] the OPT 1.4 model; [`naming`] is the
-//! shared identifier-casing helper.
+//! shared identifier-casing helper. [`model_query`] renders the read-only
+//! `model-query` report (BMM facts beside the current field-shape decisions) —
+//! a text producer over the same stages, never generated code.
 
 pub(crate) mod emit;
 pub(crate) mod emit_json;
@@ -14,4 +16,5 @@ pub(crate) mod emit_rest;
 pub(crate) mod emit_rm_model;
 pub(crate) mod emit_validate;
 pub(crate) mod emit_xml;
+pub(crate) mod model_query;
 pub(crate) mod naming;
