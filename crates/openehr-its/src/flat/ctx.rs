@@ -344,11 +344,24 @@ fn resolve_participations(ctx: &SimNode, d: &CtxDefaults) -> Result<Vec<Value>, 
             continue;
         }
 
+        // `PARTICIPATION.function` is 1..1 (RM
+        // `UML/classes/org.openehr.rm.common.participation.adoc` §Attributes),
+        // and master06 §Participation supplies `participation_function:<i>` in
+        // every example it gives. The chapter is silent on omitting it, so the
+        // class table governs: a participation the client began at this index
+        // but gave no function is a client error, refused by name — never
+        // completed with a fabricated empty DV_TEXT, which would commit a
+        // participation whose mandatory attribute carries no information.
+        let Some(function) = function else {
+            return Err(FlatError::MissingRequiredSuffix {
+                key: format!("ctx/participation_function:{i}"),
+            });
+        };
         let mut p = Map::new();
         p.insert("_type".to_owned(), json!("PARTICIPATION"));
         p.insert(
             "function".to_owned(),
-            json!({"_type": "DV_TEXT", "value": function.unwrap_or("")}),
+            json!({"_type": "DV_TEXT", "value": function}),
         );
         // The performer is a PARTY_IDENTIFIED (master06 §Participation); its
         // identifiers make it identified even without a name.
@@ -699,6 +712,12 @@ mod tests {
         ctx.occurrence_mut("participation_name", Some(1))
             .attrs
             .insert(String::new(), json!("Lara Markham"));
+        // PARTICIPATION.function is 1..1, and master06 §Participation's own
+        // index-1 example carries `participation_function:1` (it is omitted
+        // from no example in the chapter).
+        ctx.occurrence_mut("participation_function", Some(1))
+            .attrs
+            .insert(String::new(), json!("performer"));
         let d = resolve(Some(&ctx), "now").unwrap();
         // index 0 is an empty placeholder → one real participation at index 1.
         let with_ids: Vec<_> = d
@@ -730,6 +749,50 @@ mod tests {
             resolve(Some(&ctx), "now"),
             Err(FlatError::InvalidValue { .. })
         ));
+    }
+
+    // PARTICIPATION.function is 1..1 (RM
+    // `UML/classes/org.openehr.rm.common.participation.adoc` §Attributes): a
+    // participation begun at an index with any other participation_* key but
+    // no function is refused by name, never completed with an empty DV_TEXT.
+    #[test]
+    fn participation_without_function_rejected() {
+        let partials = [
+            ("participation_name", json!("Lara Markham")),
+            ("participation_id", json!("199")),
+            ("participation_mode", json!("face-to-face communication")),
+            (
+                "participation_identifiers",
+                json!("issuer1::assigner1::id1::PERSON"),
+            ),
+        ];
+        for (key, value) in partials {
+            let ctx = ctx_node(&[(key, Some(0), "", value)]);
+            let err = resolve(Some(&ctx), "now")
+                .expect_err("a participation without its mandatory function is refused");
+            assert!(
+                matches!(&err, FlatError::MissingRequiredSuffix { key }
+                         if key == "ctx/participation_function:0"),
+                "should name the missing key, got {err:?}"
+            );
+        }
+    }
+
+    // The happy path of the same shape: the function is present, so the whole
+    // participation resolves (master06 §Participation).
+    #[test]
+    fn participation_with_function_resolves() {
+        let ctx = ctx_node(&[
+            ("participation_name", Some(0), "", json!("Lara Markham")),
+            ("participation_function", Some(0), "", json!("performer")),
+        ]);
+        let d = resolve(Some(&ctx), "now").unwrap();
+        assert_eq!(d.participations.len(), 1);
+        assert_eq!(d.participations[0]["function"]["value"], json!("performer"));
+        assert_eq!(
+            d.participations[0]["performer"]["name"],
+            json!("Lara Markham")
+        );
     }
 
     // master06 §"Workflow ID": scheme/namespace fall back to ctx defaults.

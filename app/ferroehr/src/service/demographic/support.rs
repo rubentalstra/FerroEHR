@@ -163,6 +163,15 @@ fn revision_history_item(
     meta: &version_repo::meta::VersionMeta,
 ) -> Result<RevisionHistoryItem, ServiceError> {
     let tree = TreeId::from_columns(meta.trunk_version, meta.branch_number, meta.branch_version);
+    // NOTE: the single-element `audits` vector is by construction, not a
+    // narrowing. `REVISION_HISTORY_ITEM.audits` holds "the audits for this
+    // revision; there will always be at least one commit audit …, there may
+    // also be further attestations" (RM
+    // `UML/classes/org.openehr.rm.common.revision_history_item.adoc`
+    // §Attributes) — and the demographic API exposes no attestation route, so
+    // a demographic version never acquires a further audit. (The EHR builder,
+    // whose `666|attestation|` members do, joins `read_attestations_all` after
+    // the commit audit — `crate::versioning::wire::revision_history`.)
     Ok(RevisionHistoryItem {
         version_id: ObjectVersionId {
             value: object_version_id(vo_id, &meta.creating_system_id, tree),

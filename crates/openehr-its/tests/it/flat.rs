@@ -606,6 +606,14 @@ fn persistent_composition_keeps_explicitly_supplied_context() {
         "ctx/participation_name:0".to_owned(),
         Value::String("Dr Explicit".into()),
     );
+    // PARTICIPATION.function is 1..1 (RM
+    // `UML/classes/org.openehr.rm.common.participation.adoc` §Attributes), and
+    // master06 §Participation carries `participation_function:<i>` in every
+    // example — so a participation-bearing ctx must supply it.
+    flat.insert(
+        "ctx/participation_function:0".to_owned(),
+        Value::String("requester".into()),
+    );
     let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),

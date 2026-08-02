@@ -86,7 +86,25 @@ workflow refuses a tag that has no matching section here.
   wire (a missing `reason`, a coded `reason` whose code sits outside the
   openEHR *attestation reason* group, and a present-but-empty `items` list).
   An `ORIGINAL_VERSION` carrying attestations is also pinned as a
-  canonical-JSON/XML serialization vector.
+  canonical-JSON/XML serialization vector. An attestation carrying an inline
+  `DV_MULTIMEDIA` `attested_view` — the screen image of what was signed — now
+  round-trips with its media type, size, inline data and alternate text intact
+  on both the version envelope and the revision history.
+
+- **Conformance cases for the generic-package party and participation rules.**
+  A COMPOSITION whose context participation carries a bounded
+  `DV_INTERVAL<DV_DATE_TIME>` `time` and whose ENTRY-level other participation
+  carries an open-ended one now round-trips with every interval boundary
+  intact, and four refusals pin the terminology and identity rules those
+  classes carry: a coded `PARTICIPATION.function` outside the openEHR
+  *participation function* group, a `PARTY_RELATED` participation performer
+  whose relationship code is outside the *subject relationship* group, and —
+  on the commit audit's `committer`, which sits beside the committed content
+  and is therefore missed by a content-only validation walk — the same
+  out-of-group relationship, a `PARTY_IDENTIFIED` carrying none of name,
+  identifiers or external reference, and one whose name is the empty string.
+  A `PARTY_RELATED` committer with an in-group relationship is pinned as the
+  accepting twin, so refusing that party type wholesale no longer passes.
 
 - **A conformance case for the third `PARTY_SELF` referral scheme.** The RM
   names three ways to refer to the record subject from inside an EHR, and the
@@ -144,6 +162,25 @@ workflow refuses a tag that has no matching section here.
   description could previously never match). The `audit` table's baseline
   schema changes with this: `description` becomes `jsonb` (the whole
   `DV_TEXT`) and a nullable `attestation` column is added.
+
+- **A coded description on an attestation keeps its code.** The
+  `666|attestation|` commit path completed a submitted `UPDATE_ATTESTATION`
+  by reducing its `description` to the plain text of a `DV_TEXT`, so a
+  `DV_CODED_TEXT` description lost its `defining_code` permanently at
+  committal — while the same attribute on a version's own `commit_audit`
+  was already kept whole. An attestation's description is now stored and
+  served back exactly as submitted (`_type`, display `value` and
+  `defining_code`), and a `description` that is neither a string nor a valid
+  `DV_TEXT` is refused with **422** instead of being dropped.
+
+- **A simplified-format `ctx` participation without a function is now
+  refused.** `ctx/participation_*` keys build `EVENT_CONTEXT.participations`,
+  whose `function` the Reference Model requires; a FLAT/STRUCTURED commit that
+  began a participation at some index (a name, an id, a mode or identifiers)
+  but supplied no `ctx/participation_function:<i>` used to be completed with
+  an empty function, committing a participation whose mandatory attribute
+  carried no information. It is now rejected with an error naming the exact
+  missing key (e.g. `ctx/participation_function:0 is required`).
 
 - **The FLAT `_link:i` builder now reports a missing mandatory suffix instead
   of inventing an empty value.** `|meaning`, `|type` and `|target` are all

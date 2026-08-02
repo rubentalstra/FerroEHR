@@ -1,0 +1,7 @@
+{
+  "_type": "UPDATE_AUDIT",
+  "committer": {
+    "_type": "PARTY_IDENTIFIED",
+    "name": ""
+  }
+}

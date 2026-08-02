@@ -41,7 +41,9 @@ use crate::versioning::signature::signer::Signer;
 /// [`ServiceError::NotFound`] when the object has no stored version or is not
 /// owned by `ehr_id`; the storage read errors of the metadata / attestation
 /// queries; [`ServiceError::Unprocessable`] when a stored audit or attestation
-/// is not a canonical `AUDIT_DETAILS`.
+/// is not a canonical `AUDIT_DETAILS`; [`ServiceError::Internal`] if the built
+/// history somehow carries no commit audit to take `Last-Modified` from (every
+/// item is built with one below).
 pub(crate) async fn revision_history(
     pool: &sqlx::PgPool,
     ehr_id: EhrId,
@@ -70,15 +72,6 @@ pub(crate) async fn revision_history(
         attestations.entry(sys_version).or_default().push(data);
     }
 
-    // The newest held version's commit instant — the history resource's
-    // `Last-Modified` value (ITS-REST overview `Requests_and_responses.md`
-    // §"`ETag` and Last-Modified": derived from
-    // `VERSION.commit_audit.time_committed.value`). Rows are ordered by
-    // storage ordinal, so the last row is the newest.
-    let last_modified = rows
-        .last()
-        .map_or(first.time_committed, |row| row.time_committed);
-
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {
         // "there will always be at least one commit audit … there may also be
@@ -99,8 +92,33 @@ pub(crate) async fn revision_history(
             audits,
         });
     }
+    let history = RevisionHistory { items };
+    // The history resource's `Last-Modified` value (ITS-REST overview
+    // `Requests_and_responses.md` §"`ETag` and Last-Modified": derived from
+    // `VERSION.commit_audit.time_committed.value`). On a `REVISION_HISTORY`
+    // that instant is exactly what the spec function
+    // `REVISION_HISTORY.most_recent_version_time_committed` returns
+    // (`UML/classes/org.openehr.rm.common.revision_history.adoc` §Functions,
+    // `Post: Result.is_equal (items.last.audits.first.time_committed.value)`),
+    // so the header is read off the built history through that function rather
+    // than re-derived from the rows — two expressions of one rule can drift
+    // apart, one cannot.
+    let last_modified = history
+        .most_recent_version_time_committed()
+        .ok_or_else(|| {
+            ServiceError::Internal(format!(
+                "the REVISION_HISTORY built for versioned object {vo_id} has no commit audit"
+            ))
+        })?
+        .parse::<jiff::Timestamp>()
+        .map_err(|e| {
+            ServiceError::Internal(format!(
+                "the commit instant of versioned object {vo_id}'s newest version is not a \
+                 valid instant: {e}"
+            ))
+        })?;
     Ok((
-        openehr_its::json::to_canonical_value(&RevisionHistory { items }),
+        openehr_its::json::to_canonical_value(&history),
         last_modified,
     ))
 }
