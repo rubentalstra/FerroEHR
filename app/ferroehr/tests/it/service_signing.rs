@@ -189,7 +189,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
 
     for ovid in [&ovid_v1, &ovid_v2] {
         let ov = svc
-            .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+            .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
             .await
             .expect("versioned composition version");
         assert_digest_recomputes(&ov);
@@ -222,7 +222,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
 
     let (status_vo, status_ver) = version_components(&status_ovid_v1);
     let ov = svc
-        .ehr_status_original_version(ehr_uuid, status_vo, &status_ver)
+        .ehr_status_version_envelope(ehr_uuid, status_vo, &status_ver)
         .await
         .expect("versioned ehr_status version");
     assert_eq!(ov["data"]["_type"], "EHR_STATUS");
@@ -284,7 +284,7 @@ async fn contribution_versions_are_signed() {
         .to_owned();
 
     let ov = svc
-        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
         .await
         .expect("versioned composition version");
     assert_digest_recomputes(&ov);
@@ -326,7 +326,7 @@ async fn client_supplied_signature_is_stored_verbatim() {
         .to_owned();
 
     let ov = svc
-        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
         .await
         .expect("versioned composition version");
     assert_eq!(
@@ -362,7 +362,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         .version_uid();
 
     // A clean read verifies fine.
-    svc.composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+    svc.composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
         .await
         .expect("clean read verifies");
 
@@ -375,7 +375,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     .expect("tamper");
 
     let tampered = svc
-        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
         .await;
     // NOTE: a signing/integrity failure surfaces at the SM boundary
     // as `SmError { status: Exception }` (the adapter maps it to the same wire 5xx
@@ -411,7 +411,7 @@ async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
         .version_uid();
 
     // A clean read verifies fine under the strict default.
-    svc.composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+    svc.composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
         .await
         .expect("clean read verifies under the strict default");
 
@@ -424,7 +424,7 @@ async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
     .expect("tamper");
 
     let tampered = svc
-        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
         .await;
     assert!(
         matches!(
@@ -478,7 +478,7 @@ async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
         .await
         .expect("tamper");
 
-        svc.composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        svc.composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
             .await
             .unwrap_or_else(|e| {
                 panic!("verify_on_read = {policy:?} must serve, not reject: {e:?}")
@@ -571,7 +571,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     // The served ORIGINAL_VERSION round-trips: uid stable, no signature, and the
     // server-computed commit instant present (master06 §Committal m3).
     let ov1 = svc
-        .composition_original_version(ehr_uuid, ovid_v1.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, ovid_v1.parse().expect("ovid"))
         .await
         .expect("v1 original version");
     assert_eq!(ov1["uid"]["value"], ovid_v1);
@@ -660,7 +660,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         .expect("contribution version uid")
         .to_owned();
     let c_ov = svc
-        .composition_original_version(ehr_uuid, c_ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, c_ovid.parse().expect("ovid"))
         .await
         .expect("contribution version");
     assert!(
@@ -715,7 +715,7 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     // The served ORIGINAL_VERSION still verifies — the signature was computed
     // over the stored creating_system_id, which the read path reconstructs.
     let ov = svc_b
-        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
         .await
         .expect("versioned composition version");
     assert_eq!(ov["uid"]["value"], ovid);

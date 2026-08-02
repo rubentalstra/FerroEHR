@@ -30,7 +30,7 @@ use crate::versioning::audit::{AuditInput, description_fragment};
 use crate::versioning::change::Committed;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::{VersionRead, read_current, read_version, version_at};
-use crate::versioning::wire::original_version;
+use crate::versioning::wire::version_envelope;
 use crate::versioning::{CommitEnv, Kind};
 
 /// The versioned-object [`Kind`] for a REST [`PartyKind`].
@@ -313,7 +313,7 @@ impl FerroEhrService {
         }))
     }
 
-    /// The `ORIGINAL_VERSION` of an ehr-less demographic object at a specific
+    /// The VERSION envelope of an ehr-less demographic object at a specific
     /// `version`, signed per the server signing context (`label` names the
     /// family for the `404`).
     ///
@@ -321,8 +321,8 @@ impl FerroEhrService {
     /// - [`ServiceError::NotFound`] — no ehr-less version `version` of `vo_id`
     ///   exists.
     /// - [`ServiceError`] on a storage/database fault, or when the
-    ///   `ORIGINAL_VERSION` assembly/signing fails.
-    pub(super) async fn demographic_original_version(
+    ///   VERSION envelope assembly/signing fails.
+    pub(super) async fn demographic_version_envelope(
         &self,
         vo_id: VoId,
         version: TreeId,
@@ -337,10 +337,10 @@ impl FerroEhrService {
                 )
             })?;
         let signer = CommitEnv::signing_ctx(self).signer;
-        original_version(&read, signer)
+        version_envelope(&read, signer)
     }
 
-    /// The `ORIGINAL_VERSION` of an ehr-less demographic object extant at `at`
+    /// The VERSION envelope of an ehr-less demographic object extant at `at`
     /// (or the latest when `None`), with `ETag`/`Location` metadata for the
     /// VERSION resource (`label` names the family for the `404`).
     ///
@@ -348,8 +348,8 @@ impl FerroEhrService {
     /// - [`ServiceError::NotFound`] — no ehr-less version of `vo_id` existed
     ///   at `at` (or no current version when `at` is `None`).
     /// - [`ServiceError`] on a storage/database fault, or when the
-    ///   `ORIGINAL_VERSION` assembly/signing fails.
-    pub(super) async fn demographic_original_version_at(
+    ///   VERSION envelope assembly/signing fails.
+    pub(super) async fn demographic_version_envelope_at(
         &self,
         vo_id: VoId,
         at: Option<jiff::Timestamp>,
@@ -369,7 +369,7 @@ impl FerroEhrService {
         )
         .with_last_modified(read.time_committed);
         let signer = CommitEnv::signing_ctx(self).signer;
-        let ov = original_version(&read, signer)?;
+        let ov = version_envelope(&read, signer)?;
         Ok(ServiceResponse::new(ov, meta))
     }
 }

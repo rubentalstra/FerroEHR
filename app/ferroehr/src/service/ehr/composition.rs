@@ -24,7 +24,7 @@ use crate::versioning::audit::change_type;
 use crate::versioning::change::{create, delete, update};
 use crate::versioning::object_version_id::{TreeId, components, parse_tree_id};
 use crate::versioning::read::{read_current, read_version, version_at};
-use crate::versioning::wire::{original_version, revision_history, versioned_object};
+use crate::versioning::wire::{revision_history, version_envelope, versioned_object};
 
 use super::resolve_envelope;
 use super::validation::composition_template_id;
@@ -199,7 +199,10 @@ impl FerroEhrService {
         ))
     }
 
-    /// An `ORIGINAL_VERSION` of a COMPOSITION at a specific version.
+    /// The VERSION envelope of a COMPOSITION at a specific version — an
+    /// `ORIGINAL_VERSION`, or an `IMPORTED_VERSION` when the version was
+    /// received from another system (RM common master06 §Version and its
+    /// Subtypes).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the version does not exist or belongs
@@ -219,12 +222,12 @@ impl FerroEhrService {
                     format!("COMPOSITION {vo_id} v{version}"),
                 )
             })?;
-        original_version(&read, self.signer())
+        version_envelope(&read, self.signer())
     }
 
-    /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `at`, or the latest
+    /// The VERSION envelope of a COMPOSITION extant at `at`, or the latest
     /// when `at` is `None` (`GET …/versioned_composition/{uid}/version`). A deleted version still returns `200` with the
-    /// deleted-lifecycle `ORIGINAL_VERSION` (no `data`).
+    /// deleted-lifecycle envelope (no `data`).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when no version existed at `at` or the
@@ -254,7 +257,7 @@ impl FerroEhrService {
             read.tree,
             read.time_committed,
         );
-        let ov = original_version(&read, self.signer())?;
+        let ov = version_envelope(&read, self.signer())?;
         Ok(ServiceResponse::new(ov, meta))
     }
 
@@ -772,7 +775,7 @@ impl FerroEhrService {
             .await?)
     }
 
-    /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `a_time`, or the
+    /// The VERSION envelope of a COMPOSITION extant at `a_time`, or the
     /// latest when `a_time` is `None`
     /// (`GET …/versioned_composition/{uid}/version`).
     ///
@@ -792,20 +795,20 @@ impl FerroEhrService {
             .body)
     }
 
-    /// The `ORIGINAL_VERSION` of a COMPOSITION at the named version
+    /// The VERSION envelope of a COMPOSITION at the named version
     /// (`GET …/versioned_composition/{uid}/version/{version_uid}`).
     ///
     /// # Errors
     /// [`SmError`] for a malformed `OBJECT_VERSION_ID`, an unknown version
     /// (404-equivalent), or a read failure.
-    pub async fn composition_original_version(
+    pub async fn composition_version_envelope(
         &self,
         an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
         let body = self.composition_version(an_ehr_id, vo_id, version).await?;
-        // The served ORIGINAL_VERSION.uid is the stored full identity; the
+        // The served VERSION.uid is the stored full identity; the
         // addressed uid must equal it (Resources.md §Identifier types; BASE
         // master05 case rule) — a fabricated creating_system_id names no
         // VERSION here.

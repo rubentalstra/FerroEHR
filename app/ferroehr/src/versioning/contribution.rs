@@ -26,7 +26,7 @@ use crate::versioning::change::{Change, CommittedContribution};
 use crate::versioning::lifecycle::{lifecycle_state_code, state};
 use crate::versioning::object_version_id::{self, TreeId};
 use crate::versioning::signature::signer::Signer;
-use crate::versioning::wire::original_version;
+use crate::versioning::wire::version_envelope;
 use crate::versioning::{CommitEnv, Kind, change, read};
 
 /// An optional `(lower, upper)` inclusive commit-time window — the simple
@@ -941,7 +941,7 @@ fn attestation_partials(version: &Value) -> Vec<Value> {
 /// # Errors
 /// [`ServiceError::NotFound`] when the CONTRIBUTION does not exist in `ehr_id`,
 /// or (under `resolve_refs`) a referenced version row is gone; the storage read
-/// errors; the [`original_version`] verification error under `resolve_refs`.
+/// errors; the [`version_envelope`] verification error under `resolve_refs`.
 pub(crate) async fn get_contribution(
     pool: &sqlx::PgPool,
     signer: &Signer,
@@ -985,7 +985,13 @@ pub(crate) async fn get_contribution(
                         format!("VERSION {vo_id}::{tree}"),
                     )
                 })?;
-            versions.push(original_version(&loaded, signer)?);
+            // The resolved object is the VERSION the CONTRIBUTION lists
+            // (`CONTRIBUTION.versions`, master06 §Contributions: "a
+            // CONTRIBUTION object will be created, listing the affected
+            // VERSION objects"), so an imported member resolves to its
+            // IMPORTED_VERSION — the version that actually sits in the
+            // container — not to the ORIGINAL_VERSION it wraps.
+            versions.push(version_envelope(&loaded, signer)?);
         } else {
             versions.push(json!({
                 "_type": "OBJECT_REF",

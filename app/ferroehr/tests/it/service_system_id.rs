@@ -119,9 +119,9 @@ async fn stamped_identities(svc: &FerroEhrService) -> (String, String, String) {
         .expect("create_composition")
         .version_uid();
     let original = svc
-        .composition_original_version(ehr_id, ovid.parse().expect("ovid"))
+        .composition_version_envelope(ehr_id, ovid.parse().expect("ovid"))
         .await
-        .expect("composition_original_version");
+        .expect("composition_version_envelope");
     let audit_system_id = original["commit_audit"]["system_id"]
         .as_str()
         .expect("commit_audit.system_id")

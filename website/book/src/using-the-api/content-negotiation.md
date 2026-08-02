@@ -188,8 +188,10 @@ did not send.
 Contribution reads return their `versions` as `OBJECT_REF`s by default. Add
 `resolve_refs` to the `Prefer` header (it combines with the `return=…`
 token, e.g. `Prefer: return=representation, resolve_refs`) and the response
-carries the full `ORIGINAL_VERSION` objects instead — one round trip instead
-of one per version.
+carries the full VERSION objects instead — one round trip instead of one per
+version. A version created here resolves to an `ORIGINAL_VERSION`; one this
+server received from another system resolves to the `IMPORTED_VERSION` that
+wraps it (see [Imported versions](#imported-versions)).
 
 ## `ETag` and `If-Match` — optimistic concurrency
 
@@ -259,6 +261,56 @@ you an `ETag` that changes when the served artefact changes.
 > The round-trip is: read the resource → keep its `ETag` value → send it back as
 > `If-Match` on the update → get a new `ETag` for the version you just created.
 > Never fabricate a version id; always echo the one the server gave you.
+
+## Imported versions
+
+Most versions are created here, and a `VERSION` read returns them as an
+`ORIGINAL_VERSION`. A version that arrived from **another** system — through
+an EHR Extract import — is a copy, and openEHR wraps a copy: the server
+commits it as an **`IMPORTED_VERSION`** and the version resource serves that
+wrapper. Both shapes appear at the same URLs
+(`…/versioned_composition/{uid}/version[/{version_uid}]`,
+`…/versioned_ehr_status/version[/{version_uid}]`) and in a `resolve_refs`
+contribution read, so branch on `_type`:
+
+```json
+{
+  "_type": "IMPORTED_VERSION",
+  "contribution": { "_type": "OBJECT_REF", "type": "CONTRIBUTION", "…": "…" },
+  "commit_audit": { "_type": "AUDIT_DETAILS", "…": "…" },
+  "item": {
+    "_type": "ORIGINAL_VERSION",
+    "uid": { "_type": "OBJECT_VERSION_ID", "value": "…::source.example.org::1" },
+    "contribution": { "_type": "OBJECT_REF", "type": "CONTRIBUTION", "…": "…" },
+    "commit_audit": { "_type": "AUDIT_DETAILS", "…": "…" },
+    "data": { "…": "…" }
+  }
+}
+```
+
+Two acts, kept apart on purpose:
+
+- the **wrapper's** `contribution` and `commit_audit` are *this* server's act
+  of importing — our system id, the importing user, the instant the import
+  landed here, change type `249|creation|`;
+- **`item`** is the received `ORIGINAL_VERSION`, byte-for-byte as it was sent,
+  keeping the source system's contribution reference, commit audit and
+  signature.
+
+Three consequences worth designing for:
+
+- **An `IMPORTED_VERSION` has no `uid` of its own.** It shares the wrapped
+  version's identity, so read the version id from `item.uid.value`. The
+  `ETag` still carries that id, so the `If-Match` round trip is unchanged.
+- **Times are local.** `VERSIONED_OBJECT.time_created`, `Last-Modified`, the
+  revision history and every as-of-instant read report when the version
+  became available *here*, never the source system's earlier clock — so a
+  query for the record's state at a past instant returns what this repository
+  actually held then. The original committal is still there, inside
+  `item.commit_audit`.
+- **An export unwraps.** EHR Extracts carry `ORIGINAL_VERSION`s, so exporting
+  an imported version ships the wrapped original verbatim; the receiving
+  system creates its own wrapper. Wrappers never nest.
 
 ## Commit metadata headers
 

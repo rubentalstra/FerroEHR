@@ -390,12 +390,6 @@ impl FerroEhrService {
             .map_or_else(|| self.system_id.clone(), |t| t.system_id)
     }
 
-    /// Whether the transactional event outbox is written on commit (see
-    /// [`Self::with_outbox_enabled`]).
-    pub(crate) fn outbox_enabled(&self) -> bool {
-        self.outbox_enabled
-    }
-
     /// The configured version [`Signer`] (used for read-time verification).
     pub(crate) fn signer(&self) -> &Signer {
         &self.signer

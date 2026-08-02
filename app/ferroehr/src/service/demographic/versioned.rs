@@ -50,7 +50,7 @@ impl FerroEhrService {
         // `object_version_does_not_exist` as its only does-not-exist code.
         self.ensure_any_party(vo_id, CallStatusType::ObjectVersionDoesNotExist)
             .await?;
-        self.demographic_original_version(vo_id, version, "party")
+        self.demographic_version_envelope(vo_id, version, "party")
             .await
     }
 
@@ -63,7 +63,7 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_any_party(vo_id, CallStatusType::VersionedObjectDoesNotExist)
             .await?;
-        self.demographic_original_version_at(vo_id, at, "party")
+        self.demographic_version_envelope_at(vo_id, at, "party")
             .await
     }
 }

@@ -18,7 +18,9 @@ use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::TreeId;
 use crate::versioning::signature::config::VerifyOnRead;
 use crate::versioning::signature::signer::Signer;
-use crate::versioning::wire::build_original_version;
+use crate::versioning::wire::{
+    OriginalVersionParts, build_imported_version, build_original_version, contribution_ref,
+};
 
 /// Compute the server-generated `VERSION.signature` for a version about to be
 /// persisted (RM common master06 §Digital Signature). The caller
@@ -37,8 +39,8 @@ use crate::versioning::wire::build_original_version;
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
 /// `OpenPGP` signer fails (digest signing is infallible); the
-/// [`build_original_version`] rejection of a commit audit whose committer is
-/// not a canonical `PARTY_PROXY`.
+/// [`AuditInput::canonical`] rejection of a commit audit whose committer is not
+/// a canonical `PARTY_PROXY`.
 #[expect(
     clippy::too_many_arguments,
     reason = "the parts of an ORIGINAL_VERSION plus the signing context; a \
@@ -59,20 +61,62 @@ pub(crate) fn sign_version(
     if !ctx.signer.enabled() {
         return Ok(None);
     }
-    let ov = build_original_version(
-        &ctx.system_id,
+    let ov = build_original_version(&OriginalVersionParts {
+        creating_system_id: &ctx.system_id,
         vo_id,
         tree,
-        preceding_uid,
+        preceding_version_uid: preceding_uid,
         other_input_version_uids,
-        contribution_id,
-        audit,
-        &time_committed,
+        contribution: &contribution_ref(contribution_id),
+        commit_audit: &audit.canonical(&time_committed)?,
         lifecycle_state,
         data,
-        None,
-    )?;
-    let canonical = openehr_rm::common::change_control::version_impl::canonical_form_of_json(&ov)
+        signature: None,
+    });
+    sign_canonical(ctx, &ov)
+}
+
+/// Compute the server-generated `VERSION.signature` of the `IMPORTED_VERSION`
+/// an import act is about to persist (RM common master06 §Digital Signature:
+/// "If the object to be serialised is an `IMPORTED_VERSION`, the process is the
+/// same — all attributes of the object are serialised and then used to generate
+/// a signature. The result will be that the `IMPORTED_VERSION` instance will
+/// carry its own signature which signifies the act of importing and making
+/// available locally an `ORIGINAL_VERSION` from another system").
+///
+/// The wrapper is signed exactly like a local commit — an import IS a local act
+/// of committal (§Committal and Audits) — so this server signs it whenever
+/// signing is enabled, and the wrapped original's own foreign signature rides
+/// inside `item` untouched (§Copying: "the `ORIGINAL_VERSION` instance is never
+/// modified"). The value signed is the one [`build_imported_version`] produces
+/// with `signature` Void and without `item.attestations`, which is exactly what
+/// the read path rebuilds before verifying.
+///
+/// # Errors
+/// [`ServiceError::Signing`] when the canonical form cannot be produced or the
+/// `OpenPGP` signer fails.
+pub(crate) fn sign_imported_version(
+    ctx: &SigningCtx<'_>,
+    contribution_id: Uuid,
+    commit_audit: &Value,
+    item: &Value,
+) -> Result<Option<String>, ServiceError> {
+    if !ctx.signer.enabled() {
+        return Ok(None);
+    }
+    let iv = build_imported_version(&contribution_ref(contribution_id), commit_audit, item, None);
+    sign_canonical(ctx, &iv)
+}
+
+/// Sign an assembled `VERSION` value over its `canonical_form()` (master06
+/// §Digital Signature; `version.adoc` `canonical_form`: "all attributes except
+/// signature").
+///
+/// # Errors
+/// [`ServiceError::Signing`] when the canonical form cannot be produced or the
+/// `OpenPGP` signer fails.
+fn sign_canonical(ctx: &SigningCtx<'_>, value: &Value) -> Result<Option<String>, ServiceError> {
+    let canonical = openehr_rm::common::change_control::version_impl::canonical_form_of_json(value)
         .map_err(|e| ServiceError::Signing(e.to_string()))?;
     let signature = ctx
         .signer

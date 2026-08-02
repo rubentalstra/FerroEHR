@@ -25,7 +25,7 @@ use crate::versioning::audit::{AuditInput, OPENEHR};
 use crate::versioning::integrity;
 use crate::versioning::lifecycle::lifecycle_rubric;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
-use crate::versioning::read::VersionRead;
+use crate::versioning::read::{VersionRead, WrappedOriginal};
 use crate::versioning::signature::signer::Signer;
 
 /// The `REVISION_HISTORY` of a versioned object: one item per version, each with
@@ -239,14 +239,68 @@ pub(crate) async fn versioned_object(
     ))
 }
 
-/// An `ORIGINAL_VERSION` wrapping a loaded version, with read-time signature
-/// verification (RM common master06 §Version and its Subtypes / §Digital Signature).
+/// The VERSION resource's wire form for a loaded version: an
+/// `ORIGINAL_VERSION` for a locally created version, an `IMPORTED_VERSION`
+/// wrapping the received original for an imported one (RM common master06
+/// §Version and its Subtypes; ITS-REST 1.1.0 `UVersionOfComposition.yaml` /
+/// `UVersionOfEhrStatus.yaml` / `UVersionOfParty.yaml` declare the version
+/// resource as the `_type`-discriminated `ORIGINAL_VERSION | IMPORTED_VERSION`
+/// union).
 ///
-/// When `verify_on_read` is not `off` and the signature is server-generated
-/// (not client-supplied), the served version's signature is checked against its
-/// recomputed `canonical_form`: a `warn` mismatch logs + meters, a `strict`
-/// mismatch is a 5xx integrity failure. A client-supplied signature is stored
-/// verbatim and never re-verified (master06 §Digital Signature).
+/// Read-time signature verification (master06 §Digital Signature) applies to
+/// the served envelope: for an imported version that is the WRAPPER's own
+/// signature — "the `IMPORTED_VERSION` instance will carry its own signature
+/// which signifies the act of importing" — while the wrapped original's foreign
+/// signature is served verbatim and never re-verified. A `warn` mismatch logs +
+/// meters, a `strict` mismatch is a 5xx integrity failure.
+///
+/// # Errors
+/// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
+/// signature fails verification, or (in any non-`off` mode) when the served
+/// version's canonical form cannot be recomputed; the
+/// [`build_original_version`] rejection of an uninterpretable stored commit
+/// audit.
+pub(crate) fn version_envelope(read: &VersionRead, signer: &Signer) -> Result<Value, ServiceError> {
+    let Some(wrapped) = &read.wrapped else {
+        return original_version(read, signer);
+    };
+    let item = build_wrapped_original(read, wrapped)?;
+    let mut iv = build_imported_version(
+        &contribution_ref(read.contribution_id),
+        &read.audit.canonical(&read.time_committed)?,
+        &item,
+        read.signature.as_deref(),
+    );
+    integrity::verify_on_read(
+        signer,
+        &iv,
+        read.signature.as_deref(),
+        read.signature_client_supplied,
+    )?;
+    // The wrapped original's `attestations` (RM common master06 §Attestation)
+    // ride `item`, and are appended AFTER verify_on_read for the same reason as
+    // on a local version: attestations "can be added at any time after
+    // committal", so they are excluded from the signed/verified canonical form
+    // — which is what keeps the bytes signed at import identical to the bytes
+    // verified at read.
+    if let Some(item) = iv.get_mut("item") {
+        attach_attestations(item, read);
+    }
+    Ok(iv)
+}
+
+/// The `ORIGINAL_VERSION` view of a loaded version: for an imported version the
+/// WRAPPED original, reproduced with its own foreign contribution, commit audit
+/// and signature; otherwise the version itself. This is the form an EHR Extract
+/// carries — `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION<T>>` (RM
+/// `ehr_extract` `x_versioned_object.adoc` §Attributes) — so a re-export
+/// reproduces exactly what was received (master06 §Copying: "the
+/// `ORIGINAL_VERSION` instance is never modified ... it remains a faithful copy
+/// of its original, no matter how many systems it may be copied through").
+///
+/// Read-time signature verification runs only for a locally created version:
+/// the wrapped original's signature is foreign and is never re-verified
+/// (master06 §Digital Signature).
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
@@ -255,19 +309,23 @@ pub(crate) async fn versioned_object(
 /// [`build_original_version`] rejection of an uninterpretable stored commit
 /// audit.
 pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Value, ServiceError> {
-    let mut ov = build_original_version(
-        &read.creating_system_id,
-        read.vo_id,
-        read.tree,
-        read.preceding_version_uid.as_deref(),
-        &read.other_input_version_uids,
-        read.contribution_id,
-        &read.audit,
-        &read.time_committed,
-        &read.lifecycle_state,
-        &read.canonical,
-        read.signature.as_deref(),
-    )?;
+    if let Some(wrapped) = &read.wrapped {
+        let mut ov = build_wrapped_original(read, wrapped)?;
+        attach_attestations(&mut ov, read);
+        return Ok(ov);
+    }
+    let mut ov = build_original_version(&OriginalVersionParts {
+        creating_system_id: &read.creating_system_id,
+        vo_id: read.vo_id,
+        tree: read.tree,
+        preceding_version_uid: read.preceding_version_uid.as_deref(),
+        other_input_version_uids: &read.other_input_version_uids,
+        contribution: &contribution_ref(read.contribution_id),
+        commit_audit: &read.audit.canonical(&read.time_committed)?,
+        lifecycle_state: &read.lifecycle_state,
+        data: &read.canonical,
+        signature: read.signature.as_deref(),
+    });
     integrity::verify_on_read(
         signer,
         &ov,
@@ -278,69 +336,155 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
     // AFTER verify_on_read: attestations "can be added at any time after
     // committal", so they are not part of the signed/verified canonical form
     // (the signature was computed over the attestation-free version at commit).
+    attach_attestations(&mut ov, read);
+    Ok(ov)
+}
+
+/// Append `ORIGINAL_VERSION.attestations` to an already-built version value,
+/// when the version carries any (RM common master06 §Attestation).
+fn attach_attestations(ov: &mut Value, read: &VersionRead) {
     if !read.attestations.is_empty()
-        && let Value::Object(map) = &mut ov
+        && let Value::Object(map) = ov
     {
         map.insert(
             "attestations".to_owned(),
             Value::Array(read.attestations.clone()),
         );
     }
-    Ok(ov)
 }
 
-/// Build the `ORIGINAL_VERSION` JSON for a version from its parts — the single
-/// shared builder used by both the read path ([`original_version`]) and the
-/// commit path ([`super::integrity::sign_version`]), so the bytes signed at
-/// commit and served at read are identical. `canonical_data` is `Value::Null`
-/// for a deleted version (no `data`); `signature` is set iff known.
-///
-/// Spec: `VERSION.commit_audit` 1..1; `VERSION.Preceding_version_uid_validity`;
-/// `ORIGINAL_VERSION.lifecycle_state` coded from `version_lifecycle_state`
-/// (RM common master06 §Version and its Subtypes).
+/// Rebuild the `ORIGINAL_VERSION` an `IMPORTED_VERSION` wraps: the row's own
+/// identity, lifecycle and content (which the import stored unchanged) plus the
+/// source system's `contribution` / `commit_audit` / `signature`, all verbatim
+/// (master06 §Copying). Attestations are attached by the caller.
 ///
 /// # Errors
-/// The [`AuditInput::canonical`] rejection when `audit.committer` is not a
-/// canonical `PARTY_PROXY`.
-#[expect(
-    clippy::too_many_arguments,
-    reason = "the ORIGINAL_VERSION's own attributes; a parameter struct would \
-              not read clearer than naming them"
-)]
-pub(crate) fn build_original_version(
-    creating_system_id: &str,
-    vo_id: VoId,
-    tree: TreeId,
-    preceding_version_uid: Option<&str>,
-    other_input_version_uids: &[String],
-    contribution_id: Uuid,
-    audit: &AuditInput,
-    time_committed: &jiff::Timestamp,
-    lifecycle_state: &str,
-    canonical_data: &Value,
-    signature: Option<&str>,
+/// [`ServiceError::Unprocessable`] when the stored foreign `commit_audit` is not
+/// a canonical `AUDIT_DETAILS` object — the served `ORIGINAL_VERSION` would
+/// otherwise misreport the provenance it exists to preserve.
+fn build_wrapped_original(
+    read: &VersionRead,
+    wrapped: &WrappedOriginal,
 ) -> Result<Value, ServiceError> {
-    let commit_audit = audit.canonical(time_committed)?;
+    if !wrapped.commit_audit.is_object() {
+        return Err(ServiceError::Unprocessable(format!(
+            "the wrapped ORIGINAL_VERSION stored for versioned object {} carries a \
+             non-object commit_audit",
+            read.vo_id
+        )));
+    }
+    Ok(build_original_version(&OriginalVersionParts {
+        creating_system_id: &read.creating_system_id,
+        vo_id: read.vo_id,
+        tree: read.tree,
+        preceding_version_uid: read.preceding_version_uid.as_deref(),
+        other_input_version_uids: &read.other_input_version_uids,
+        contribution: &wrapped.contribution,
+        commit_audit: &wrapped.commit_audit,
+        lifecycle_state: &read.lifecycle_state,
+        data: &read.canonical,
+        signature: wrapped.signature.as_deref(),
+    }))
+}
+
+/// Build the `IMPORTED_VERSION` wrapper JSON from the LOCAL act of committal
+/// plus the wrapped original — the single shared builder used by both the
+/// import path ([`super::integrity::sign_imported_version`]) and the read path
+/// ([`version_envelope`]), so the bytes signed at import and served at read are
+/// identical.
+///
+/// Spec: `IMPORTED_VERSION` "inherits `commit_audit` and `contribution` from
+/// `VERSION<T>`, providing imported versions with their own audit trail and
+/// Contribution, distinct from those of the imported `ORIGINAL_VERSION`"
+/// (`UML/classes/org.openehr.rm.common.imported_version.adoc`). Its `uid`,
+/// `preceding_version_uid`, `lifecycle_state` and `data` are effected
+/// FUNCTIONS over `item` and are therefore not serialized attributes.
+pub(crate) fn build_imported_version(
+    contribution: &Value,
+    commit_audit: &Value,
+    item: &Value,
+    signature: Option<&str>,
+) -> Value {
+    let mut iv = json!({
+        "_type": "IMPORTED_VERSION",
+        "contribution": contribution.clone(),
+        "commit_audit": commit_audit.clone(),
+        "item": item.clone()
+    });
+    if let Some(sig) = signature
+        && let Value::Object(map) = &mut iv
+    {
+        map.insert("signature".to_owned(), Value::String(sig.to_owned()));
+    }
+    iv
+}
+
+/// The `VERSION.contribution` `OBJECT_REF` naming a CONTRIBUTION held by THIS
+/// repository (BASE `base_types` `master05-identification_package.adoc`
+/// §References). A foreign contribution reference is never rebuilt this way —
+/// it is stored and served verbatim.
+pub(crate) fn contribution_ref(contribution_id: Uuid) -> Value {
+    json!({
+        "_type": "OBJECT_REF",
+        "namespace": "local",
+        "type": "CONTRIBUTION",
+        "id": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() }
+    })
+}
+
+/// The attributes of one `ORIGINAL_VERSION` to render, with `commit_audit`
+/// already in its canonical `AUDIT_DETAILS` form.
+///
+/// Spec: `VERSION.contribution` / `VERSION.commit_audit` 1..1;
+/// `VERSION.Preceding_version_uid_validity`;
+/// `ORIGINAL_VERSION.lifecycle_state` coded from `version_lifecycle_state`
+/// (RM common master06 §Version and its Subtypes).
+#[derive(Debug)]
+pub(crate) struct OriginalVersionParts<'a> {
+    /// The `OBJECT_VERSION_ID` middle segment (master06 §Distributed Versioning).
+    pub(crate) creating_system_id: &'a str,
+    /// The owning version container's id — the `OBJECT_VERSION_ID` object id.
+    pub(crate) vo_id: VoId,
+    /// The `VERSION_TREE_ID` this version sits at.
+    pub(crate) tree: TreeId,
+    /// The STORED prior `OBJECT_VERSION_ID`; `None` for a first version.
+    pub(crate) preceding_version_uid: Option<&'a str>,
+    /// The merge provenance (master06 §Version Merging); empty when not a merge.
+    pub(crate) other_input_version_uids: &'a [String],
+    /// The `VERSION.contribution` `OBJECT_REF` — local for a locally created
+    /// version, the source system's for a wrapped imported original.
+    pub(crate) contribution: &'a Value,
+    /// The canonical `AUDIT_DETAILS` (or `ATTESTATION`) of `commit_audit`.
+    pub(crate) commit_audit: &'a Value,
+    /// The numeric `version_lifecycle_state` code.
+    pub(crate) lifecycle_state: &'a str,
+    /// The canonical content, or [`Value::Null`] for a deleted version.
+    pub(crate) data: &'a Value,
+    /// `VERSION.signature` (0..1), when known.
+    pub(crate) signature: Option<&'a str>,
+}
+
+/// Build the `ORIGINAL_VERSION` JSON from its parts — the single shared builder
+/// used by the read path ([`original_version`]), the commit path
+/// ([`super::integrity::sign_version`]) and the import path
+/// ([`super::import`]), so the bytes signed at commit/import and served at read
+/// are identical.
+pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value {
     let mut ov = json!({
         "_type": "ORIGINAL_VERSION",
         "uid": {
             "_type": "OBJECT_VERSION_ID",
-            "value": object_version_id(vo_id, creating_system_id, tree)
+            "value": object_version_id(parts.vo_id, parts.creating_system_id, parts.tree)
         },
-        "contribution": {
-            "_type": "OBJECT_REF",
-            "namespace": "local",
-            "type": "CONTRIBUTION",
-            "id": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() }
-        },
-        "commit_audit": commit_audit,
+        "contribution": parts.contribution.clone(),
+        "commit_audit": parts.commit_audit.clone(),
         "lifecycle_state": {
             "_type": "DV_CODED_TEXT",
-            "value": lifecycle_rubric(lifecycle_state),
+            "value": lifecycle_rubric(parts.lifecycle_state),
             "defining_code": {
                 "_type": "CODE_PHRASE",
                 "terminology_id": { "_type": "TERMINOLOGY_ID", "value": OPENEHR },
-                "code_string": lifecycle_state
+                "code_string": parts.lifecycle_state
             }
         }
     });
@@ -349,7 +493,7 @@ pub(crate) fn build_original_version(
         // a first version). Stored — not synthesized — because under branching
         // and import the preceding version may carry a different
         // creating_system_id (RM common master06 §Distributed Versioning).
-        if let Some(preceding) = preceding_version_uid {
+        if let Some(preceding) = parts.preceding_version_uid {
             map.insert(
                 "preceding_version_uid".to_owned(),
                 json!({ "_type": "OBJECT_VERSION_ID", "value": preceding }),
@@ -358,11 +502,12 @@ pub(crate) fn build_original_version(
         // other_input_version_uids: merge provenance (master06 §Version
         // Merging); `is_merged` is its derived boolean
         // (`VERSION.Is_merged_validity`: is_merged = not …is_empty).
-        if !other_input_version_uids.is_empty() {
+        if !parts.other_input_version_uids.is_empty() {
             map.insert(
                 "other_input_version_uids".to_owned(),
                 json!(
-                    other_input_version_uids
+                    parts
+                        .other_input_version_uids
                         .iter()
                         .map(|uid| json!({ "_type": "OBJECT_VERSION_ID", "value": uid }))
                         .collect::<Vec<_>>()
@@ -370,12 +515,12 @@ pub(crate) fn build_original_version(
             );
         }
         // A deleted version carries no data (canonical is Null).
-        if !canonical_data.is_null() {
-            map.insert("data".to_owned(), canonical_data.clone());
+        if !parts.data.is_null() {
+            map.insert("data".to_owned(), parts.data.clone());
         }
-        if let Some(sig) = signature {
+        if let Some(sig) = parts.signature {
             map.insert("signature".to_owned(), Value::String(sig.to_owned()));
         }
     }
-    Ok(ov)
+    ov
 }

@@ -13,9 +13,10 @@ use openehr_its::rest::generated::ehr::{
     VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{EhrStatus, OriginalVersion, RevisionHistory, VersionedEhrStatus};
+use openehr_rm::prelude::{EhrStatus, RevisionHistory, Version, VersionedEhrStatus};
 
 use crate::api::RequestParts;
+use crate::api::ehr::version_root_tag;
 use crate::overview::error::RestError;
 use crate::overview::version_id::{parse_ehr_id, parse_version_uid};
 use crate::state::AppState;
@@ -87,12 +88,12 @@ pub(super) async fn run(
             // an alternate representation of an existing resource"). Body is an
             // ORIGINAL_VERSION<EHR_STATUS> (JSON or canonical XML).
             let resp = super::read_resp(&p.ehr_id, body);
-            Ok(negotiate::read_rm::<OriginalVersion<EhrStatus>>(
+            Ok(negotiate::read_rm::<Version<EhrStatus>>(
                 h,
                 &base,
                 None,
                 &resp,
-                "original_version",
+                version_root_tag(&resp.body),
             ))
         }
         "versioned_ehr_status_version_get_by_id" => {
@@ -101,7 +102,7 @@ pub(super) async fn run(
             let (vo_id, version) = super::version_components(&parse_version_uid(&p.version_uid)?)?;
             let body = state
                 .backend()
-                .ehr_status_original_version(ehr_id, ferroehr::ids::VoId(vo_id), &version)
+                .ehr_status_version_envelope(ehr_id, ferroehr::ids::VoId(vo_id), &version)
                 .await?;
             // Full-identity check as on the ehr_status by-version read
             // (Resources.md §Identifier types; BASE master05 case rule).
@@ -111,12 +112,12 @@ pub(super) async fn run(
             // SHOULD accompany a VERSION response, and Last-Modified is
             // "derived from VERSION.commit_audit.time_committed.value").
             let resp = super::read_resp(&p.ehr_id, body);
-            Ok(negotiate::read_rm::<OriginalVersion<EhrStatus>>(
+            Ok(negotiate::read_rm::<Version<EhrStatus>>(
                 h,
                 &base,
                 None,
                 &resp,
-                "original_version",
+                version_root_tag(&resp.body),
             ))
         }
         other => Err(RestError(ApiError::Internal(format!(

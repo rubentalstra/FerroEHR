@@ -395,7 +395,7 @@ impl FerroEhrService {
         // does-not-exist code (`i_party_relationship.adoc`, as `i_party.adoc`).
         self.ensure_any_relationship(vo_id, CallStatusType::ObjectVersionDoesNotExist)
             .await?;
-        self.demographic_original_version(vo_id, version, "party relationship")
+        self.demographic_version_envelope(vo_id, version, "party relationship")
             .await
     }
 
@@ -408,7 +408,7 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_any_relationship(vo_id, CallStatusType::VersionedObjectDoesNotExist)
             .await?;
-        self.demographic_original_version_at(vo_id, at, "party relationship")
+        self.demographic_version_envelope_at(vo_id, at, "party relationship")
             .await
     }
 }

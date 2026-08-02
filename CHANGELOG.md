@@ -188,6 +188,43 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Versions received from another system are now served as
+  `IMPORTED_VERSION`s, and imported records report their local chronology.**
+  openEHR wraps a copied version: an EHR Extract import commits the received
+  `ORIGINAL_VERSION` inside an `IMPORTED_VERSION` whose own contribution and
+  commit audit record *this* server's act of importing, while the wrapped
+  original keeps the source system's contribution reference, commit audit and
+  signature. This server had never materialised the wrapper — it wrote the
+  foreign commit audit as the version's own and discarded the received
+  contribution reference entirely. Four visible changes:
+  - A `VERSION` read of an imported version
+    (`…/versioned_composition/{uid}/version/{version_uid}`,
+    `…/versioned_ehr_status/version[/{version_uid}]`, and a `resolve_refs`
+    contribution read) now returns `"_type": "IMPORTED_VERSION"` with the
+    received original under `item`. An `IMPORTED_VERSION` carries no `uid` of
+    its own — it shares the wrapped version's identity — so read the version
+    id from `item.uid.value`; the `ETag` is unchanged, so `If-Match` round
+    trips are unaffected. Locally created versions are still
+    `ORIGINAL_VERSION`s.
+  - An imported version container's `VERSIONED_OBJECT.time_created`, its
+    `Last-Modified` header, its revision history and every as-of-instant read
+    now report the **local import** instant instead of the source system's
+    earlier clock, so a query for the record's past state returns what this
+    repository actually held at that time.
+  - Re-exporting imported content now reproduces the received
+    `ORIGINAL_VERSION` verbatim, including its source contribution reference;
+    it previously carried this server's local contribution id under the source
+    version's identity.
+  - With version signing enabled, the import act signs the `IMPORTED_VERSION`
+    wrapper it creates; the wrapped original's own signature is stored and
+    served untouched, and is never re-verified.
+
+  An `ORIGINAL_VERSION` arriving in an extract without the mandatory
+  `contribution` (or with a commit audit that is not a canonical
+  `AUDIT_DETAILS`) is now refused with `400`, instead of being imported with
+  the provenance silently dropped. Content imported before this release keeps
+  the provenance it was stored with.
+
 - **A demographic version container's `owner_id` now names the serving system,
   consistently, everywhere it is emitted.** `VERSIONED_OBJECT.owner_id` is a
   mandatory reference to "the containing EHR or other relevant owning entity",
