@@ -76,6 +76,18 @@ workflow refuses a tag that has no matching section here.
   is refused (422) — placed on the interior ENTRY so the case also proves the
   rule is applied below the resource root.
 
+- **Conformance cases for `FOLDER.items` — the directory's reference slot.**
+  The catalogue exercised directory folders, names, links and `details`, but
+  never the attribute the whole abstraction rests on: a folder's `items` list
+  holds *references* to other objects, never the objects themselves, and the
+  same object may be referenced from more than one folder (that is what lets
+  one directory classify a composition as both an episode and a problem). A
+  directory whose two sibling folders both reference the same target — beside
+  a second, distinct target — is now committed and read back with **both**
+  references intact, so a server that collapsed the duplicate would fail; and
+  a folder that carries a composition *by value* in `items` instead of a
+  reference to it is refused with `422`, leaving the EHR without a directory.
+
 - **Conformance cases for the ATTESTATION wire family.** The catalogue now
   drives the `666|attestation|` CONTRIBUTION member end to end: attesting an
   existing COMPOSITION version is accepted, adds **no** new version, reports
