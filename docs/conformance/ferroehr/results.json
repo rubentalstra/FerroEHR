@@ -523,7 +523,25 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-participation_function_invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-participation_mode_invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-participation_time_roundtrip",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-performer_relationship_invalid",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1835,7 +1853,21 @@
       "rows_total": 8
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_attested_view",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_commit_audit",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_description_coded",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
@@ -1885,6 +1917,34 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-client_uid_in_use",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_empty_name",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_no_identity",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_related",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_related_out_of_group",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5137,6 +5197,12 @@
     },
     {
       "case": "SF-CTX-missing_mandatory",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-CTX-participation_missing_function",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

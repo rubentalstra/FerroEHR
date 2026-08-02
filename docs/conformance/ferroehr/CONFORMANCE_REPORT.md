@@ -7,12 +7,12 @@ Runner: cnf-runner 3.17.1 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 857 |
+| passed | 867 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 894 |
+| total | 904 |
 
 ## By chapter
 
@@ -20,12 +20,12 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 344 | 0 | 0 | 18 |
+| **EHR** | 353 | 0 | 0 | 18 |
 | — EHR resource | 24 | 0 | 0 | 2 |
 | — EHR_STATUS | 43 | 0 | 0 | 5 |
-| — COMPOSITION | 114 | 0 | 0 | 0 |
+| — COMPOSITION | 117 | 0 | 0 | 0 |
 | — DIRECTORY | 63 | 0 | 0 | 6 |
-| — CONTRIBUTION | 64 | 0 | 0 | 5 |
+| — CONTRIBUTION | 70 | 0 | 0 | 5 |
 | — Item tags | 30 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 92 | 0 | 0 | 10 |
@@ -52,10 +52,10 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Data types | 52 | 0 | 0 | 0 |
 | — Interval data types | 30 | 0 | 0 | 0 |
 | — Structure & cardinality | 41 | 0 | 0 | 0 |
-| **Simplified formats** | 63 | 0 | 0 | 1 |
+| **Simplified formats** | 64 | 0 | 0 | 1 |
 | — FLAT & STRUCTURED | 21 | 0 | 0 | 0 |
 | — Web Template | 5 | 0 | 0 | 0 |
-| — Path mapping | 30 | 0 | 0 | 0 |
+| — Path mapping | 31 | 0 | 0 | 0 |
 | — Scope & legacy media | 7 | 0 | 0 | 1 |
 | **Security & privacy** | 6 | 0 | 0 | 0 |
 | — Authenticated access | 2 | 0 | 0 | 0 |
@@ -84,9 +84,9 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 21 | 0 | 0 | 2 |
 | EhrStatus | pass | 42 | 0 | 0 | 5 |
-| CompositionOps | pass | 45 | 0 | 0 | 0 |
+| CompositionOps | pass | 48 | 0 | 0 | 0 |
 | DirectoryOps | pass | 63 | 0 | 0 | 8 |
-| ChangeSets | pass | 57 | 0 | 0 | 5 |
+| ChangeSets | pass | 63 | 0 | 0 | 5 |
 | Versioning | pass | 62 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
 | PartyOperations | pass | 48 | 0 | 0 | 4 |
@@ -112,7 +112,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | SystemApi | pass | 1 | 0 | 0 | 0 |
 | ItemTags | pass | 32 | 0 | 0 | 0 |
 | Signing | pass | 10 | 0 | 0 | 2 |
-| SimplifiedFormats | pass | 67 | 0 | 0 | 1 |
+| SimplifiedFormats | pass | 68 | 0 | 0 | 1 |
 | SmartAppLaunch | pass | 3 | 0 | 0 | 0 |
 | EhrDemographicSeparation | pass | 1 | 0 | 0 | 0 |
 | AuthenticatedAccess | pass | 2 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 857 of 894 selected cases driven.
+Coverage: 867 of 904 selected cases driven.
 
 Not-executed verdicts (each cited):
 

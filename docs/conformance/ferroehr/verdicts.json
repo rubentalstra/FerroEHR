@@ -250,7 +250,7 @@
     [
       "CompositionOps",
       {
-        "passed": 45,
+        "passed": 48,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -268,7 +268,7 @@
     [
       "ChangeSets",
       {
-        "passed": 57,
+        "passed": 63,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -502,7 +502,7 @@
     [
       "SimplifiedFormats",
       {
-        "passed": 67,
+        "passed": 68,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 1
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 894,
-    "driven": 857,
-    "passed": 857,
+    "selected": 904,
+    "driven": 867,
+    "passed": 867,
     "failed": 0,
     "inconclusive": 0
   }
