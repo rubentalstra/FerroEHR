@@ -282,7 +282,7 @@ pub async fn close_ordinal_at_now(
 /// `uq_vo_version_branch_current`) require the old open row to be gone before
 /// the new one is inserted, and data-modifying CTEs in one statement share a
 /// snapshot with undefined ordering, so a fold could momentarily hold two open
-/// rows for the lineage. Close-then-insert stays ordered (master06 §Version tree).
+/// rows for the lineage. Close-then-insert stays ordered (master06 §The 'Virtual Version Tree').
 #[derive(Debug)]
 pub struct FoldedVersion<'a> {
     /// The versioned object's id.

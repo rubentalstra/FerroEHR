@@ -74,7 +74,7 @@ pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send
 
 /// `(vo_id, version) → template_id` (`vo_version.template_id`, read back via
 /// `ferroehr::service` in the binary). `version` is the `VERSION_TREE_ID` lexical
-/// form (`N` or `N.B.V` — trunk or branch, RM common master06 §Version tree);
+/// form (`N` or `N.B.V` — trunk or branch, RM common master06 §The 'Virtual Version Tree');
 /// `None` = the current version.
 pub type TemplateOfVersionFn =
     Arc<dyn Fn(String, Option<String>) -> ResolverFuture<Option<String>> + Send + Sync>;

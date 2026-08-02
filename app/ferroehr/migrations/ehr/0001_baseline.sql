@@ -270,7 +270,17 @@ CREATE UNIQUE INDEX ux_template_store_template_id_ci
 -- mechanism". Demographic kinds carry a NULL ehr_id (no owning EHR — RM
 -- demographic content stands alone).
 --
--- Version-tree model (RM common master06 §Version tree / §Distributed
+-- HOLDING THE VERSIONS AS ROWS rather than physically inside a VERSIONED_OBJECT
+-- is EXPLICITLY sanctioned by the RM, not merely unaddressed by it: RM common
+-- master06 §Overview says of its own figure, "Although the figure implies
+-- physical containment of Versions by a Versioned object, this is only one
+-- possible implementation. Other implementations (e.g. using orthodox
+-- relational structures) might use references, separate compressed copies, or
+-- any other mechanism." The temporal MECHANICS below — sys_period, the GiST
+-- exclusion/partial-index non-overlap machinery, the opaque sys_version
+-- ordinal — are our own storage design; no openEHR spec governs those.
+--
+-- Version-tree model (RM common master06 §The 'Virtual Version Tree' / §Distributed
 -- versioning — "To support branching, a further pair of numbers is added …
 -- branching version identifiers [are required] when local modifications are
 -- made to versions copied from elsewhere"):
@@ -403,7 +413,7 @@ CREATE INDEX idx_vo_version_template ON vo_version (template_id) WHERE template_
 COMMENT ON TABLE vo_version IS 'One temporal row per version of a versioned object (RM common master06 version tree). Non-overlap holds per lineage by construction (one open row per lineage via the partial unique indexes; close-then-insert at one now() per write; load-path overlap audit); ALL_VERSIONS = unfiltered, LATEST_VERSION (latest trunk) = uq_vo_version_current.';
 COMMENT ON COLUMN vo_version.sys_version IS 'Opaque per-vo commit ordinal (1..n across trunk AND branch commits) — the node/vo_attestation FK key and AQL join key. NOT the wire version number: the VERSION_TREE_ID lives in trunk_version/branch_number/branch_version.';
 COMMENT ON COLUMN vo_version.trunk_version IS 'VERSION_TREE_ID first part. For a trunk row this is the wire version number; for a branch row the trunk version the branch forks from.';
-COMMENT ON COLUMN vo_version.branch_number IS 'VERSION_TREE_ID second part; 0 = trunk row, >= 1 = branch (numbered per fork point, RM common master06 §Version tree).';
+COMMENT ON COLUMN vo_version.branch_number IS 'VERSION_TREE_ID second part; 0 = trunk row, >= 1 = branch (numbered per fork point, RM common master06 §The ''Virtual Version Tree'').';
 COMMENT ON COLUMN vo_version.branch_version IS 'VERSION_TREE_ID third part; 0 = trunk row, >= 1 = position on the branch.';
 COMMENT ON COLUMN vo_version.sys_period IS 'Validity interval [committed, superseded); the current trunk version has upper_inf(sys_period) AND branch_number = 0. Committal time is the only server-managed temporal axis (RM common master06 §Committal and Audits). The interval itself is our own storage design — no openEHR spec governs it.';
 COMMENT ON COLUMN vo_version.creating_system_id IS 'Immutable per-version creating-system id — the OBJECT_VERSION_ID middle segment (RM common master06 §Distributed versioning). Reconstructed from storage, never live config; never an empty-string sentinel.';
@@ -444,6 +454,16 @@ COMMENT ON COLUMN ehr_folder.vo_id IS 'The VERSIONED_FOLDER versioned-object id 
 -- The decomposed content: one row per RM structure node, per version. The
 -- nested-set interval (num..=num_cap) makes AQL CONTAINS an integer range join
 -- (never a JSON walk). ehr_id is nullable (demographic content has none).
+--
+-- DECOMPOSING the RM containment into rows rather than storing each versioned
+-- object as one physical document is EXPLICITLY sanctioned by the RM, not
+-- merely unaddressed by it: RM common master06 §Overview, of the containment
+-- its own figure draws — "Although the figure implies physical containment of
+-- Versions by a Versioned object, this is only one possible implementation.
+-- Other implementations (e.g. using orthodox relational structures) might use
+-- references, separate compressed copies, or any other mechanism." The column
+-- set, the nested-set index and the promoted predicate columns below are our
+-- own storage design — no openEHR spec governs those.
 CREATE TABLE node (
     vo_id       uuid NOT NULL,
     sys_version integer NOT NULL,

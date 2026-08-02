@@ -565,7 +565,8 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         .expect("create_composition")
         .version_uid();
     let (vo_uuid, v1) = version_components(&ovid_v1);
-    assert_eq!(v1, "1", "first version is trunk 1 (master06 §Version tree)");
+    // master06 §The 'Virtual Version Tree'
+    assert_eq!(v1, "1", "first version is trunk 1");
 
     // The served ORIGINAL_VERSION round-trips: uid stable, no signature, and the
     // server-computed commit instant present (master06 §Committal m3).
@@ -618,7 +619,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     assert_eq!(
         open,
         vec![false, true],
-        "v1 superseded, v2 open (master06 §Version tree)"
+        "v1 superseded, v2 open (master06 §The 'Virtual Version Tree')"
     );
     for row in &rows {
         let sig: Option<String> = row.try_get("signature").unwrap();

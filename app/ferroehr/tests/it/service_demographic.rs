@@ -670,3 +670,127 @@ async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
         "a stale full OBJECT_VERSION_ID must still fail the precondition, got {stale:?}"
     );
 }
+
+/// A PARTY committed with an inline `relationships` list keeps that list
+/// VERBATIM, and it stays disjoint from the service-managed relationship
+/// containers.
+///
+/// RM demographic `docs/demographic/master02-demographic_package.adoc` §Party
+/// Relationships (L44) makes the list compositional data of the source party —
+/// "`PARTY_RELATIONSHIPs` are stored as part of the data of the `PARTY`
+/// designated as the source. This means that the relationships attribute is by
+/// value, while the `PARTY_RELATIONSHIP._source_` and `_target_` are
+/// represented by references. The actual kind of reference is via the use of
+/// `OBJECT_REFs` containing `HIER_OBJECT_IDs` to denote the Version container
+/// of a Party, rather than `OBJECT_VERSION_IDs`" — and §Versioning Semantics
+/// (L48) versions it with the party: "A Version of a `PARTY` includes all the
+/// compositional parts, such as identities, contacts, Party relationships of
+/// which it is the source."
+///
+/// The SM instead models a relationship as its OWN version container (all six
+/// `I_PARTY_RELATIONSHIP` operations key on `a_versioned_party_rel_id`), which
+/// this server realizes on its `versioned_party_relationship` surface. The two
+/// representations are DISJOINT — committing this party mints no relationship
+/// container, and no container write edits this list. Register AMB-187.
+#[tokio::test]
+async fn inline_relationships_are_stored_and_served_verbatim() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+
+    let relationship = json!({
+        "_type": "PARTY_RELATIONSHIP",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+        "name": { "_type": "DV_TEXT", "value": "inline relationship" },
+        "source": { "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+            "id": { "_type": "HIER_OBJECT_ID", "value": "11111111-1111-4111-8111-111111111111" } },
+        "target": { "_type": "PARTY_REF", "namespace": "demographic", "type": "ORGANISATION",
+            "id": { "_type": "HIER_OBJECT_ID", "value": "22222222-2222-4222-8222-222222222222" } }
+    });
+    let mut body = person("Jane Related");
+    body["relationships"] = json!([relationship.clone()]);
+
+    // ACCEPTED: a by-value relationships list is ordinary PARTY content
+    // (PARTY.Relationships_validity only forbids a PRESENT-EMPTY list).
+    let created = svc
+        .party_create(PartyKind::Person, body, None)
+        .await
+        .expect("a party carrying an inline relationships list is accepted");
+    let vo = vo_uuid(&created.body);
+
+    // SERVED VERBATIM: the read-back list is the committed one, unchanged,
+    // unexpanded and un-repointed.
+    let got = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("read the party back");
+    assert_eq!(
+        got.body["relationships"],
+        json!([relationship]),
+        "the by-value relationships list must survive the commit byte-for-byte \
+         (RM demographic master02 §Party Relationships / §Versioning Semantics)"
+    );
+
+    // DISJOINT: the inline relationship minted no relationship container, so
+    // the party's own container id is not a relationship either.
+    let not_a_relationship = svc.versioned_party_relationship_get(vo).await;
+    assert!(
+        matches!(
+            not_a_relationship,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
+        "an inline by-value relationship must not create a relationship \
+         container (register AMB-187), got {not_a_relationship:?}"
+    );
+}
+
+/// The `owner_id` of an ehr-less demographic version container names the
+/// SERVING SYSTEM, in the shape the published `VersionedParty` example uses.
+///
+/// `VERSIONED_OBJECT.owner_id` is `OBJECT_REF` 1..1, "Reference to object to
+/// which this version container belongs, e.g. the id of the containing EHR or
+/// other relevant owning entity" (RM common
+/// `UML/classes/org.openehr.rm.common.versioned_object.adoc` §Attributes) — but
+/// a demographic party has no containing EHR (RM demographic
+/// `docs/demographic/master02-demographic_package.adoc` §Versioning Semantics:
+/// "Every Party is stored in its own Version container"), so the first limb has
+/// no referent and the second is read as the serving system. The one concrete
+/// released shape is the `VersionedParty` example in the vendored ITS-REST OAS
+/// (`crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
+/// `components.schemas.VersionedParty.example`): an `OBJECT_REF` with
+/// `namespace: local`, `type: SYSTEM` over a `HIER_OBJECT_ID`. Register AMB-69
+/// carries the fixed handling; the `id` is the configured system identifier,
+/// cross-checked here against the value the commit audits carry.
+#[tokio::test]
+async fn versioned_party_owner_id_names_the_serving_system() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+
+    let created = svc
+        .party_create(PartyKind::Person, person("Jane"), None)
+        .await
+        .expect("create person");
+    let vo = vo_uuid(&created.body);
+
+    let vp = svc
+        .versioned_party_get(vo.clone())
+        .await
+        .expect("versioned_party");
+    assert_eq!(vp.body["owner_id"]["_type"], "OBJECT_REF");
+    assert_eq!(vp.body["owner_id"]["namespace"], "local");
+    assert_eq!(vp.body["owner_id"]["type"], "SYSTEM");
+    assert_eq!(vp.body["owner_id"]["id"]["_type"], "HIER_OBJECT_ID");
+
+    let rh = svc
+        .versioned_party_revision_history(vo)
+        .await
+        .expect("revision_history");
+    assert_eq!(
+        vp.body["owner_id"]["id"]["value"], rh.body["items"][0]["audits"][0]["system_id"],
+        "the container owner_id names the serving system — the same identifier \
+         the commit audits carry"
+    );
+}

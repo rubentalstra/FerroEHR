@@ -10,12 +10,13 @@ Verified 2026-08-02 against RM 1.2.0
 (§4.1 = ONE paragraph + a diagram; §4.2 Design Principles starts line 11).
 
 **§4.1 yields almost no enforceable requirement** — its only structural claim
-delegates to `image::{uml_diagrams_uri}/RM-common.generic.svg`, which is **NOT
-vendored** (33 such refs in RM, 96 adoc files repo-wide reference
-`uml_diagrams_uri`; `RM/docs/common/diagrams/` holds only two version-id XMLs).
-Corroborate the roster from the BMM package (`org.openehr.rm.common.generic`)
-+ the §4.3 include list instead. `scripts/vendor-spec-docs.sh` does not fetch
-diagrams.
+delegates to `image::{uml_diagrams_uri}/RM-common.generic.svg`. **FIXED in
+#1633 (2026-08-02): the 33 UML class-diagram SVGs ARE now vendored** at
+`docs/specs/openehr/RM/docs/UML/diagrams/` by `scripts/vendor-spec-docs.sh`.
+STILL un-vendored: the `{diagrams_uri}` PNGs (172 refs repo-wide) and
+`{images_uri}` (30) — the script copies `{uml_diagrams_uri}` SVGs only, and
+each PROVENANCE.md discloses the exclusion honestly. Corroborate any
+roster claim from the BMM package + the §4.3 include list anyway.
 
 **Roster is CONFORMANT and complete (do not re-check):** all 9 classes emitted
 at `crates/openehr-rm/src/common/generic/` matching the BMM package exactly;

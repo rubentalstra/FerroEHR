@@ -75,6 +75,20 @@ workflow refuses a tag that has no matching section here.
   because of an invalid pattern in the upstream schemas. The full per-attribute
   breakdown ships in the conformance ambiguity register as `AMB-185`.
 
+- **A conformance case for a party's inline, by-value relationships.** A
+  `PARTY_RELATIONSHIP` is modelled twice and openEHR reconciles the two
+  nowhere: the Reference Model stores it *inside* its source party ("the
+  relationships attribute is by value"), versioned with that party and with no
+  version container of its own, while the Service Model gives every
+  relationship its own independently-addressed container. This server serves
+  both, and they are **disjoint** — committing a party that carries an inline
+  `relationships` list does not create a relationship container, and creating
+  a relationship container does not append to any party's list. The catalogue
+  now pins the inline half: a `PERSON` committed with a by-value
+  `PARTY_RELATIONSHIP` is accepted and reads back with that relationship
+  unchanged, unexpanded and un-repointed. Behaviour is unchanged; the
+  adjudication ships in the conformance ambiguity register as `AMB-187`.
+
 - **New conformance cases for the LOCATABLE root rules and the feeder-system
   audit.** The catalogue now pins the two refusals above from the wire side
   (a COMPOSITION root whose `archetype_node_id` contradicts its ARCHETYPED
@@ -170,6 +184,29 @@ workflow refuses a tag that has no matching section here.
   vendoring run.
 
 ### Fixed
+
+- **A demographic version container's `owner_id` now names the serving system,
+  consistently, everywhere it is emitted.** `VERSIONED_OBJECT.owner_id` is a
+  mandatory reference to "the containing EHR or other relevant owning entity",
+  but a demographic party has no containing EHR — and this server had drifted
+  into three different answers for it. `GET
+  /demographic/versioned_party/{uid}` (and the party-relationship container
+  read) served an `OBJECT_REF` in namespace `demographic` whose id was the
+  container's *own* uid, a self-reference that merely duplicated the sibling
+  `uid` field; the `X_VERSIONED_PARTY` wrapper of an EHR-Extract export served
+  namespace `demographic` over the system identifier; and the demographic
+  `ITEM_TAG` surface already served the shape the published openEHR
+  `VersionedParty` example shows. All three now emit that one shape — an
+  `OBJECT_REF` with `namespace: local`, `type: SYSTEM`, and a
+  `HIER_OBJECT_ID` carrying the deployment's configured `system_id`. Clients
+  that read `owner_id` off a demographic container will see the namespace,
+  type and id all change; nothing else about those responses moves. The served
+  OpenAPI example for the container read is corrected to match (it advertised
+  a `PARTY_REF`, a type the published schema does not name there), the
+  conformance catalogue now asserts the two tokens on the container read, and
+  the adjudication is restated in the ambiguity register as `AMB-69` — whose
+  previous text incorrectly claimed this server already emitted the published
+  shape.
 
 - **A path predicate carrying a parenthesised uniqueness modifier is now
   refused instead of silently matching nothing.** The Reference Model's

@@ -392,7 +392,7 @@ struct ResolvedWrite {
     other_input_version_uids: Vec<String>,
     template_id: Option<String>,
     /// The lineage tip storage ordinal to supersede at `now()` — `None` for a
-    /// first version or a FORK (master06 §Version tree).
+    /// first version or a FORK (master06 §The 'Virtual Version Tree').
     close_ordinal: Option<i32>,
     /// A client-supplied `UPDATE_VERSION.signature`, stored verbatim (master06
     /// §Digital Signature); `None` on the direct endpoints.
@@ -641,7 +641,7 @@ async fn commit_resolved(
     // (`uq_vo_version_current` / `uq_vo_version_branch_current`) require the
     // old open row to be gone before the new open row is inserted. `now()` is
     // the transaction timestamp, so the close boundary and the new version's
-    // `sys_period` open at the identical instant (master06 §Version tree).
+    // `sys_period` open at the identical instant (master06 §The 'Virtual Version Tree').
     if let Some(close_ordinal) = r.close_ordinal {
         crate::storage::version_repo::commit::close_ordinal_at_now(tx, r.vo_id, close_ordinal)
             .await?;

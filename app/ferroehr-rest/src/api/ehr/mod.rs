@@ -199,7 +199,7 @@ pub(super) fn mk_update_version(
 
 /// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid,
 /// version_tree_id)` pair the SM `*_at_version` reads take. Branch version ids
-/// are first-class (RM common master06 §Version tree; the former trunk-only
+/// are first-class (RM common master06 §The 'Virtual Version Tree'; the former trunk-only
 /// rejection is retired).
 /// Verify a version-addressed read served the VERSION the path named: the
 /// addressed `version_uid` must equal the served body's `uid.value` — the

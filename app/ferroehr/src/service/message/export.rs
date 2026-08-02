@@ -475,11 +475,17 @@ impl FerroEhrService {
                 "item": {
                     "_type": "X_VERSIONED_PARTY",
                     "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
-                    // The demographic repository is the owner — there is no
-                    // owning EHR (RM demographic content stands alone).
+                    // The serving system is the owner — there is no owning EHR
+                    // (RM demographic content stands alone). Same shape the
+                    // VERSIONED_PARTY container read serves: the released
+                    // `VersionedParty` example's `OBJECT_REF`
+                    // `{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}`
+                    // (vendored ITS-REST OAS
+                    // `crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
+                    // `components.schemas.VersionedParty.example`; register AMB-69).
                     "owner_id": {
                         "_type": "OBJECT_REF",
-                        "namespace": "demographic",
+                        "namespace": "local",
                         "type": "SYSTEM",
                         "id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() }
                     },

@@ -666,6 +666,34 @@ async fn demographic_operations_are_fully_documented() {
             .any(|h| h == "Last-Modified"),
         "the VERSIONED_PARTY container has no commit audit to derive Last-Modified from"
     );
+    // The container's 200 example carries `owner_id` in the shape the released
+    // `VersionedParty` example shows — the plain `OBJECT_REF` the released
+    // `ObjectRefOfHierObjectId` schema titles, `namespace: local`,
+    // `type: SYSTEM` (vendored ITS-REST OAS
+    // `crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
+    // `components.schemas.VersionedParty.example`; register AMB-69), not a
+    // PARTY_REF and not a demographic-namespaced self-reference.
+    let container_200 = &doc["paths"][&versioned[0]]["get"]["responses"]["200"];
+    // The example sits in the media-typed `content` block, or bare on the
+    // response when the declaration carries no schema.
+    let container_example = container_200["content"]
+        .as_object()
+        .and_then(|c| c.values().next())
+        .map_or_else(
+            || container_200["example"].clone(),
+            |media| media["example"].clone(),
+        );
+    assert_eq!(
+        container_example["owner_id"]["_type"], "OBJECT_REF",
+        "the VERSIONED_PARTY container example's owner_id is the plain \
+         OBJECT_REF the released schema names"
+    );
+    assert_eq!(container_example["owner_id"]["namespace"], "local");
+    assert_eq!(container_example["owner_id"]["type"], "SYSTEM");
+    assert_eq!(
+        container_example["owner_id"]["id"]["_type"], "HIER_OBJECT_ID",
+        "the released example's owner_id id is a HIER_OBJECT_ID"
+    );
     for path in &versioned[1..] {
         assert!(
             header_names(&doc["paths"][path]["get"], "200")
