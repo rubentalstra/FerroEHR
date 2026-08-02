@@ -2946,6 +2946,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-inline_relationships_verbatim",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-item_tag_wrapper_headers",
       "format": "canonical-json",
       "status": "passed",
