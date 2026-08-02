@@ -6628,7 +6628,11 @@ AMB-167:
     LOCATABLE-derived, so not even the generic `items` root is available;
     absent entirely from the 1.0.2-nsv1 bundle); EHR_STATUS (LOCATABLE
     subtype, no element; absent from nsv1); FOLDER (LOCATABLE subtype, no
-    element; present in BOTH bundles); PERSON/ORGANISATION/GROUP/AGENT/ROLE
+    element; a complexType of that NAME is present in BOTH bundles, but it is
+    NOT the same type — nsv1 `ALL/Structure.xsd` declares `folders` + `items`
+    alone, while nsv2 `RM/latest/Common.xsd` also declares `details`, the
+    RM 1.1.0 addition; AMB-185 registers that delta and the rest of the
+    nsv1-vs-RM-1.2.0 sweep); PERSON/ORGANISATION/GROUP/AGENT/ROLE
     and PARTY_RELATIONSHIP (LOCATABLE subtypes, no element; absent from
     nsv1); CONTRIBUTION (complexType, NOT LOCATABLE-derived; absent from
     nsv1); REVISION_HISTORY (complexType, no element — no binding declares
@@ -6685,7 +6689,11 @@ AMB-167:
     with mandatory `total_version_count` + `extract_version_count` and
     ORIGINAL_VERSION-restricted `versions`), NOT the RM `VERSIONED_OBJECT`
     complexType, which has no element of its own; no XSD in either bundle
-    mentions ITEM_TAG.
+    mentions ITEM_TAG. CORRECTED 2026-08-02: this entry's per-resource
+    classification asked only WHETHER a complexType exists in each bundle, and
+    for FOLDER that answer ("present in BOTH") concealed that the two
+    complexTypes DIFFER — a same-name-different-type case the sweep in AMB-185
+    generalises to 23 attribute divergences and 50 wholly-absent classes.
     (3) THE RELEASED OAS, citable only where the docs text is silent (owner
     ruling 2026-07-28) and cited AS the OAS — the per-operation declaration
     of the media type:
@@ -6848,10 +6856,21 @@ AMB-169:
     payload format"; "The client SHOULD use the `Accept: application/xml`
     request header to specify the expected XML response format") + §"Data
     representation" ("Services MUST support at least one of the openEHR **XML**
-    or **JSON** canonical formats") — neither section names a namespace, a
-    schema release, or any media-type parameter, and a grep of
-    specifications/docs/** for `schemas.openehr.org`, `namespace` or a
-    media-type-parameter clause returns ZERO hits. The two lineages and their
+    or **JSON** canonical formats") — neither section names a NAMESPACE and
+    neither names any media-type parameter; a grep of specifications/docs/**
+    for `schemas.openehr.org` or a media-type-parameter clause returns ZERO
+    hits. CORRECTED 2026-08-02 — the earlier wording also claimed neither
+    section names "a schema release", and that is wrong on its face: the
+    §"XML Format" phrase "[published XSDs]" is a MARKDOWN LINK whose target is
+    `https://specifications.openehr.org/releases/ITS-XML/latest`, i.e. the
+    release IS named, as `latest`. That resolves to the newest published
+    ITS-XML release — presently the 2.0.0 lineage, whose namespace is
+    `http://schemas.openehr.org/v2` — while the same repository's README
+    directs stable consumers to `Release-1.0.2` and marks 2.0.0 TRIAL. So the
+    released text does not merely omit the lineage: its own link points one
+    way while the schema repository's own release guidance points the other,
+    which is why the SERVED-lineage choice remains implementation-defined
+    rather than simply undocumented. The two lineages and their
     status come from the ITS-XML component itself (README.adoc §"Releases and
     IM Versions": "NOTE: These schemas are in *TRIAL* state and subject to
     change. An older *STABLE* release of openEHR XML schema can be still found
@@ -7612,4 +7631,149 @@ AMB-184:
     RM merely describes a possibility its service layer never exposed. This
     flips only if a released SM interface or ITS-REST path introduces a
     demographic directory resource.
+  disposition: fixed_handling
+
+AMB-185:
+  ambiguity: >-
+    THE §XML FORMAT `MUST CONFORM` CANNOT BE SATISFIED AGAINST BOTH PUBLISHED
+    LINEAGES AT ONCE, BECAUSE THE TWO PUBLISHED XSD BUNDLES MODEL DIFFERENT RM
+    GENERATIONS. ITS-REST states one unconditional obligation for canonical
+    XML — request payloads and responses "MUST conform to the [published
+    XSDs]" — and treats the published XSDs as a single set. They are not one
+    set. openEHR publishes TWO ITS-XML bundles: the `Release-1.0.2v2` bundle
+    (namespace `http://schemas.openehr.org/v1`, which the schema repository's
+    README still presents as the STABLE release) and the `Release-2.0.0v2`
+    bundle (namespace `…/v2`, marked TRIAL there). The 2.0.0 release did not
+    only change the namespace: it RESTRUCTURED the repository into per-
+    component, per-RM-release folders, and the older flat bundle was never
+    re-issued against a newer RM. The v1 bundle is therefore frozen at an RM
+    generation that predates a large part of RM 1.2.0, while a conformant RM
+    1.2.0 serializer must write the RM 1.2.0 model. A document that is a
+    correct RM 1.2.0 instance can consequently be INVALID against the v1
+    schemas and VALID against the v2 ones — the obligation's two halves
+    disagree, and no serialization choice satisfies both. Separately, the v2
+    lineage cannot be compiled by a conformant XSD processor at all (see
+    source (2c)), so for the newer half the obligation currently has no
+    machine-checkable referent either.
+  source: >-
+    ALL SOURCES READ FIRST-HAND, in the oracle order.
+    (1) DOCS TEXT — ITS-REST specifications/docs/overview/Resources.md §"XML
+    Format", first sentence: "When resources are serialized in **canonical
+    XML** format, both request payloads and responses MUST conform to the
+    [published XSDs]", the bracketed phrase linking to
+    `https://specifications.openehr.org/releases/ITS-XML/latest`. §"Data
+    representation" makes OFFERING XML a service choice ("Services MUST
+    support at least one of the openEHR **XML** or **JSON** canonical
+    formats"), but says nothing about which bundle a served document is judged
+    against. AMB-169 registers the served-lineage choice itself; this entry is
+    about the CONTENT delta between the bundles, which AMB-169 explicitly did
+    not cover (its premise was that the lineages differ by namespace alone).
+    (2) THE PUBLISHED XSDs, both vendored bundles, swept mechanically against
+    the generated RM 1.2.0 model by the gate
+    `crates/openehr-its/tests/it/xml_xsd_validity.rs` (the sweep re-derives
+    itself on every run; the numbers below are its pinned output).
+    (2a) THE nsv1 BUNDLE IS INCOMPLETE FOR RM 1.2.0 — 50 concrete RM classes
+    have NO complexType in it at all. Upstream's `Release-1.0.2v2` tag
+    publishes exactly `components/ALL/` (11 XSDs) + `components/AOM2/`
+    (verified against the upstream tag tree), so the bundle carries no
+    `Ehr.xsd` and no `Demographic.xsd`: EHR, EHR_STATUS, EHR_ACCESS,
+    CONTRIBUTION, every VERSIONED_* container, the five demographic PARTY
+    types and PARTY_RELATIONSHIP, plus later additions such as DV_SCALE and
+    ITEM_TAG, simply have no v1 schema. (AMB-167 classifies the REST
+    consequence — media type declared, document withheld.)
+    (2b) WHERE nsv1 DOES DECLARE THE CLASS, IT DECLARES FEWER MEMBERS — 23
+    attribute divergences over 17 classes, each traceable to the nsv2 RM
+    release folder that DOES declare it. `ISM_TRANSITION.reason`,
+    `EXTRACT_CHAPTER.items`, the four `EXTRACT_ENTITY_MANIFEST` members,
+    `EXTRACT_SPEC.priority` and `EXTRACT_UPDATE_SPEC.update_method` arrive in
+    nsv2 `RM/Release-1.0.3`; `FOLDER.details`, `ELEMENT.null_reason`,
+    `CODE_PHRASE.preferred_term`, `DV_QUANTITY.units_system` +
+    `units_display_name` and `FEEDER_AUDIT_DETAILS.other_details` arrive in
+    nsv2 `RM/Release-1.1.0`; `ENTRY.workflow_id` (inherited by ACTION,
+    ADMIN_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION) is declared by EVERY
+    nsv2 RM release folder including `Release-1.0.2` and is absent from the
+    nsv1 flat bundle entirely — so nsv1 is not even an RM-1.0.2-complete
+    packaging. `FOLDER.details` is the wire-visible instance the CDR actually
+    serves: RM common `master05-directory_package.adoc` §Overview — "Any
+    individual Folder may contain meta-data in its `details` attribute (type
+    `ITEM_STRUCTURE`)".
+    (2c) THE nsv2 LINEAGE DOES NOT COMPILE. `BASE/latest/BaseTypes.xsd`
+    (`xs:simpleType archetypeNodeId`) carries a Perl-flavoured `pattern` facet
+    built from `(?:…)` non-capturing groups, with an upstream comment linking
+    to regex101. XML Schema Part 2 Appendix F
+    (<https://www.w3.org/TR/xmlschema-2/#regexs>) defines the pattern-facet
+    language, and its `atom` production admits only a character, a character
+    class, or a parenthesised `regExp` — there is no `(?…)` construct, so the
+    facet is not a valid XSD regular expression and libxml2 refuses the
+    schema. The same defective facet appears in `BASE/Release-1.1.0`,
+    `BASE/Release-1.2.0` and the nsv2 `RM/Release-1.0.2` + `RM/Release-1.0.3`
+    local `BaseTypes.xsd`, and every nsv2 RM release folder includes one of
+    them, so the whole lineage is affected. The nsv1 bundle's own
+    `archetypeNodeId` facet is plain XSD regex and compiles.
+    (2d) TWO DIVERGENCES SURVIVE AGAINST nsv2 `latest` AND ARE THE XSDs'
+    DEFECT, NOT AN AGE EFFECT: `EHR.tags`, which RM
+    `UML/classes/org.openehr.rm.ehr.ehr.adoc` declares ("Optional list of tags
+    associated with this EHR") and `RM/latest/Ehr.xsd` does not; and a
+    spelling conflict on the EHR-Extract flags, where both lineages spell them
+    `includes_multimedia` / `includes_revision_history` / `includes_data`
+    while RM `ehr_extract/master04-common_package.adoc` and
+    `UML/classes/org.openehr.rm.ehr_extract.extract_{spec,version_spec}.adoc`
+    spell them `include_multimedia` / `include_revision_history` /
+    `include_data`.
+    (3) OURS, RECORDED HONESTLY — two further divergences the same sweep finds
+    are defects on OUR side, not upstream's, and are registered here so the
+    pinned list stays complete: `TRANSLATION_DETAILS.accreditaton` and
+    `RESOURCE_DESCRIPTION_ITEM.copyright`. Both come from the RM BMM's stale
+    in-component copy of the resource package. BASE
+    `resource/master00-amendment_record.adoc` records SPECPUB-6, "Correct
+    spelling error in `TRANSLATION_DETAILS._accreditation_`", and BASE
+    `UML/classes/org.openehr.base.resource.resource_description.adoc` places
+    `copyright` on RESOURCE_DESCRIPTION; `openehr-base` (generated from the
+    BASE 1.3.0 BMM) is correct on both counts, while
+    `openehr_rm::common::resource` reproduces the pre-correction shapes. These
+    classes are AUTHORED_RESOURCE metadata and are not part of any RM document
+    the CDR serves on the ITS-REST wire.
+  handling: >-
+    Fixed handling — the served wire is UNCHANGED, and the boundary is
+    recorded instead of papered over.
+    (a) THE SERVED DEFAULT STAYS v1. Nothing released assigns a lineage
+    (AMB-169), the schema repository still presents `Release-1.0.2` as the
+    STABLE release and marks 2.0.0 TRIAL, and the CDR keeps serving v1 by
+    default with v2 available through the `version` media-type parameter. A
+    party that would rather be judged against the newer schemas already has
+    that switch. Re-opening the default is an owner decision, not a
+    consequence of this entry.
+    (b) THE CODEC KEEPS WRITING THE FULL RM 1.2.0 MODEL. Suppressing
+    `FOLDER.details` (or any other member) to make a v1 document validate
+    would silently DROP CLINICAL CONTENT the RM mandates and the canonical
+    JSON carries — a data-loss defect far worse than a schema-age divergence,
+    and a fork of the spec model at the serializer. The RM is the authority
+    for WHAT is written; the XSD bundle is a validation artifact of a given
+    release, not a content filter.
+    (c) THE DIVERGENCE SET IS PINNED, NOT ASSUMED. `xml_xsd_validity.rs`
+    re-derives the absent-class set and the attribute delta from the generated
+    RM model against the vendored XSD text on every run and fails if either
+    changes, and it drives real serialized documents through `xmllint
+    --schema` so each pinned divergence is proven at the wire rather than
+    asserted. A NEW divergence — from an RM pin bump, an emitter change or a
+    re-vendored bundle — fails the build and must be adjudicated here before
+    the list may grow.
+    (d) THE nsv2 HALF IS PINNED AS UNCOMPILABLE. The gate asserts the compile
+    failure and its cause, so the day upstream fixes the facet (or the bundle
+    is re-vendored) the test fails and the nsv2 expectations are promoted from
+    "uncompilable" to real per-document validation.
+    (e) FIXTURE VERDICTS. `cnf.directory.v2.xml` stays `verdict: valid` — it
+    is a correct RM 1.2.0 FOLDER and a correct canonical-XML serialization of
+    one; its manifest entry cites this register entry so the v1-XSD
+    divergence it carries is visible where the verdict is, not buried.
+    (f) TWO UPSTREAM DEFECTS ARE WORTH REPORTING and are named above rather
+    than absorbed: the invalid `archetypeNodeId` pattern facet (2c) and the
+    XSD-vs-RM-text `include*` spelling conflict plus the missing `EHR.tags`
+    (2d). They do not change our behaviour, which is why this entry is
+    `fixed_handling` rather than `report_only`.
+    (g) OUR OWN TWO (3) ARE DEFECTS TO FIX IN THE GENERATOR'S INPUTS, not
+    workarounds to add in a consumer: the RM BMM's stale copy of the resource
+    package is the wrong source for classes BASE now owns. Until that is
+    resolved they are pinned here so the sweep stays green honestly instead of
+    being filtered out.
   disposition: fixed_handling

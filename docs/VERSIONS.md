@@ -145,11 +145,22 @@ possibly data migration".
   are detected automatically (the spec-update/release watcher workflows).
 - **ITS-XML is the one place a lineage is negotiated, and it is not a second
   generation** (owner ruling 2026-07-28). The `Release-2.0.0` restructure
-  changed the schemas' target namespace and nothing else about the document
-  shape, and upstream marks 2.0.0 TRIAL while directing stable consumers to
-  `Release-1.0.2`. So there is exactly ONE generated codec: the two bundles
-  merge into one emission closure and the lineage is a serialize-time choice
-  of root `xmlns`. The CDR serves v1 by default (the released-STABLE bundle)
+  changed the schemas' target namespace, and every element name and `xsi:type`
+  a document uses is spelled identically in both lineages, so there is exactly
+  ONE generated codec: the two bundles merge into one emission closure and the
+  lineage is a serialize-time choice of root `xmlns`. Upstream marks 2.0.0
+  TRIAL while directing stable consumers to `Release-1.0.2`. **The two bundles
+  are NOT interchangeable as validators, though** (corrected 2026-08-02): the
+  same release also re-packaged the schemas per component and per RM release,
+  and the flat `Release-1.0.2v2` bundle was never re-issued against a newer RM
+  — it declares no `Ehr.xsd`/`Demographic.xsd` (50 concrete RM 1.2.0 classes
+  absent) and omits 23 attributes on 17 more, `FOLDER.details` among them. So
+  a correct RM 1.2.0 document can be invalid against the v1 schemas and valid
+  against the v2 ones. That is a bundle-content fact, not a second generation:
+  no second model, crate module, or impl set exists. The sweep is pinned by
+  `crates/openehr-its/tests/it/xml_xsd_validity.rs` and adjudicated in
+  `tools/cnf-runner/artifacts/registers/ambiguities.yaml` AMB-185.
+  The CDR serves v1 by default (the released-STABLE bundle)
   and v2 when a request asks for it via the `version` media-type parameter on
   `application/xml`. That parameter is our own extension — no openEHR spec
   governs namespace selection on the REST wire — and it is not the

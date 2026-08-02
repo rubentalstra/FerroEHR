@@ -34,13 +34,36 @@ curl -u ferroehr:ferroehr \
 
 ### Choosing the XML namespace
 
-openEHR publishes its canonical XML schemas in two lineages that differ only
-by the namespace the document declares:
+openEHR publishes its canonical XML schemas in two lineages, each declaring its
+own namespace:
 
 | Lineage | Root namespace | Status |
 |---|---|---|
 | v1 (**default**) | `http://schemas.openehr.org/v1` | The stable schema release most openEHR tooling reads |
 | v2 | `http://schemas.openehr.org/v2` | The newer schema release, still marked *trial* by openEHR |
+
+The documents FerroEHR writes for the two lineages are byte-identical apart
+from that root namespace — the same elements, the same order, the same
+`xsi:type` dispatch. **The two schema bundles themselves are not equivalent,
+though**, and that matters if you validate responses:
+
+The v1 bundle was published against an older Reference Model and never
+re-issued, so it does not describe everything a current openEHR document may
+contain. The clearest example is a directory: a `FOLDER` may carry a `details`
+structure, which the v2 schemas declare and the v1 schemas do not — so a
+perfectly valid directory response will fail v1 schema validation. The same
+holds for a handful of data-type attributes (`ELEMENT.null_reason`,
+`DV_QUANTITY.units_system`, `CODE_PHRASE.preferred_term`, …) and for whole
+resources the v1 bundle never modelled at all (EHR, EHR_STATUS, CONTRIBUTION,
+the demographic party types). FerroEHR does not drop clinical content to fit
+the older bundle.
+
+> [!TIP]
+> If you validate XML responses against the published XSDs, use the v2
+> lineage — it is the one that models the current Reference Model. Note that
+> openEHR's v2 bundle currently contains an invalid regular expression in one
+> schema, which some strict XSD processors refuse to compile; that is an
+> upstream issue, not something the response can work around.
 
 Pick one per request with a `version` parameter on the XML media type:
 

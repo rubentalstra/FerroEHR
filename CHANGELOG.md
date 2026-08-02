@@ -56,6 +56,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Canonical-XML responses are now checked against the published openEHR XSDs.**
+  A new gate serializes documents through the shipped codec and validates them
+  with an XSD processor against both vendored ITS-XML bundles, and it records
+  exactly where a served document and the schema its namespace declares
+  disagree. The finding it makes visible: the `v1` bundle openEHR still
+  publishes as the STABLE one is frozen at an older Reference Model generation,
+  so a document that is a correct RM 1.2.0 instance can carry attributes that
+  bundle never declared — `FOLDER.details` on a directory is the case you are
+  most likely to meet, and 50 RM classes (EHR, EHR_STATUS, CONTRIBUTION, the
+  demographic party types, …) have no `v1` schema at all. **Nothing served
+  changes**: the default namespace is still `v1`, `Accept: application/xml;
+  version=2` still selects `v2`, and the codec still writes the complete
+  Reference Model rather than dropping clinical content to fit an older
+  schema. Deployments that validate responses against the published XSDs
+  should be aware that the `v2` lineage is the one that models RM 1.2.0 — and
+  that it currently cannot be compiled by a standards-conformant XSD processor
+  because of an invalid pattern in the upstream schemas. The full per-attribute
+  breakdown ships in the conformance ambiguity register as `AMB-185`.
+
 - **New conformance cases for the LOCATABLE root rules and the feeder-system
   audit.** The catalogue now pins the two refusals above from the wire side
   (a COMPOSITION root whose `archetype_node_id` contradicts its ARCHETYPED
