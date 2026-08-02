@@ -16,6 +16,9 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::common::generic::party_identified::{PartyIdentified, PartyIdentifiedData};
 use openehr_rm::prelude::{DvEhrUri, DvMultimedia, DvText, PartyProxy};
 
+use crate::versioning::audit::{OPENEHR, change_type};
+use crate::versioning::lifecycle;
+
 /// `UPDATE_AUDIT` — "The set of attributes required to document the committal
 /// of an information item to a repository. Used by the server to create an
 /// `AUDIT_DETAILS` object" (`update_audit.adoc`).
@@ -168,7 +171,7 @@ impl UpdateVersion {
         Self {
             preceding_version_uid: None,
             // 532|complete| (RM common master06 §Version Lifecycle).
-            lifecycle_state: code("openehr", "532"),
+            lifecycle_state: code(OPENEHR, lifecycle::state::COMPLETE),
             attestations: None,
             data,
             audit: UpdateAudit {
@@ -179,7 +182,7 @@ impl UpdateVersion {
                 // header-derived envelopes blank this first so only a
                 // header-carried value reads as supplied
                 // (`overview::committal::committal_audit`).
-                change_type: code("openehr", "249"),
+                change_type: code(OPENEHR, change_type::CREATION),
                 description: None,
                 // Built with the generated constructor rather than decoded
                 // from a JSON literal: the value is a compile-time constant of

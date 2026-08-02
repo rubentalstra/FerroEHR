@@ -10,6 +10,7 @@
 //! `crate::storage::node_repo` (canonical decompose/reassemble). No openEHR
 //! spec governs the SQL — our own design.
 
+use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -22,7 +23,7 @@ use crate::storage::row::NodeRow;
 use crate::versioning::attestation::{self, PendingAttest};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle::{self, resolve_lifecycle, validate_transition};
-use crate::versioning::object_version_id::{TreeId, eq_composite_id, object_version_id};
+use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::{Kind, SigningCtx, integrity};
 
 /// The outcome of a versioned-object write: the object id, the new version's
@@ -337,7 +338,7 @@ async fn next_version(
     }
     let preceding_uid = object_version_id(vo_id, &tip.creating_system_id, tip.tree);
 
-    let (tree, close_ordinal) = if eq_composite_id(&tip.creating_system_id, local_system_id) {
+    let (tree, close_ordinal) = if composite_ids_equal(&tip.creating_system_id, local_system_id) {
         // Continue the lineage this system owns; the preceding tip is superseded.
         let tree = match tip.tree.branch {
             None => TreeId::trunk(tip.tree.trunk + 1),

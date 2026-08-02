@@ -120,7 +120,7 @@ use crate::versioning::wire::{OriginalVersionParts, build_original_version, cont
 /// Lifecycle-state code of a logically-deleted version (RM common master06
 /// §Logical Deletion) — such versions store no `node` rows, so their exported
 /// `body` is `null`.
-const DELETED_LIFECYCLE: &str = "523";
+const DELETED_LIFECYCLE: &str = crate::versioning::lifecycle::state::DELETED;
 
 /// The archive manifest (`manifest.json`) — enough to read the segments back.
 #[derive(Debug, Serialize, Deserialize)]

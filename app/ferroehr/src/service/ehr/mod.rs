@@ -43,6 +43,7 @@
 //! own design).
 
 pub(in crate::service) mod access;
+pub(in crate::service) mod category;
 mod composition;
 mod contributions;
 mod directory;
@@ -56,11 +57,12 @@ pub(crate) mod validation;
 pub mod access_types;
 pub mod handle;
 
+use openehr_base::base_types::identification::lexical::composite_ids_equal;
+use serde_json::{Value, json};
+
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;
 use crate::service::status::SmError;
-use serde_json::{Value, json};
-
 use crate::versioning::contribution::TimeRange;
 
 /// The committed version's full [`ResourceMeta`] (version uid + commit
@@ -79,14 +81,15 @@ fn committed_meta(
 /// three-part identity — `object_id :: creating_system_id ::
 /// version_tree_id` (ITS-REST overview `Resources.md` §Identifier types:
 /// the `version_uid` "uniquely identifies a VERSION") — compared
-/// case-insensitively (BASE `base_types` master05 §"Composite Identifiers
+/// case-insensitively — the shared composite-identifier rule
+/// ([`composite_ids_equal`], BASE `base_types` master05 §"Composite Identifiers
 /// and Case"). A tree-id-only fetch would satisfy a fabricated
 /// `creating_system_id`; that names no VERSION in this repository → 404.
 fn ensure_addressed_version(
     addressed: &openehr_base::prelude::ObjectVersionId,
     served_uid: &str,
 ) -> Result<(), crate::service::error::ServiceError> {
-    if served_uid.eq_ignore_ascii_case(&addressed.value) {
+    if composite_ids_equal(served_uid, &addressed.value) {
         Ok(())
     } else {
         Err(crate::service::error::ServiceError::sm(
@@ -112,7 +115,7 @@ fn ensure_if_match(
         // Composite identifiers compare case-INsensitively (BASE
         // base_types master05 §"Composite Identifiers and Case": two
         // identifiers identical apart from case identify the same thing).
-        Some(meta) if meta.uid.eq_ignore_ascii_case(&pre.value) => Ok(()),
+        Some(meta) if composite_ids_equal(&meta.uid, &pre.value) => Ok(()),
         Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(
             format!(
                 "If-Match {:?} does not match the current latest version {:?}",

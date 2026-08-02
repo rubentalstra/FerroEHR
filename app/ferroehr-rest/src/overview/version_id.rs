@@ -12,11 +12,16 @@
 //! three `::`-delimited parts (`object_id '::' creating_system_id '::'
 //! version_tree_id`); the strict parse is `ObjectVersionId::from_str`. A
 //! `uid_based_id`/`versioned_object_uid` path segment is either a bare
-//! `HIER_OBJECT_ID` (a UUID) or a full `OBJECT_VERSION_ID`.
+//! `HIER_OBJECT_ID` (a UUID) or a full `OBJECT_VERSION_ID` — that one is
+//! decoded by the platform library's single decoder
+//! ([`ferroehr::versioning::object_version_id::parse_uid_based_id`]), because
+//! the POLICY it applies (a versioned object is keyed by its `object_id` UUID,
+//! and a version resolves to a storage tree position) belongs to the storage
+//! model, not to the protocol edge.
 
 use std::str::FromStr;
 
-use ferroehr::ids::{EhrId, VoId};
+use ferroehr::ids::EhrId;
 use openehr_base::prelude::ObjectVersionId;
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
@@ -60,42 +65,6 @@ pub(crate) fn parse_uuid(raw: &str, what: &str) -> Result<Uuid, ApiError> {
 pub(crate) fn parse_version_uid(raw: &str) -> Result<ObjectVersionId, ApiError> {
     ObjectVersionId::from_str(raw)
         .map_err(|e| ApiError::BadRequest(format!("malformed OBJECT_VERSION_ID {raw:?}: {e}")))
-}
-
-/// A decoded `uid_based_id`/`versioned_object_uid` path segment: the
-/// versioned-object UUID, plus the full `OBJECT_VERSION_ID` when the segment
-/// carried a version (`{object_id}::{system}::{version}`).
-pub(crate) struct UidBasedId {
-    /// The versioned-object UUID (`object_id`).
-    pub(crate) vo_id: VoId,
-    /// The full version id, when the segment named a specific version.
-    pub(crate) version: Option<ObjectVersionId>,
-}
-
-/// Parse a `uid_based_id`/`versioned_object_uid` path segment: a bare
-/// `HIER_OBJECT_ID` (UUID → no version) or a full `OBJECT_VERSION_ID`.
-///
-/// # Errors
-/// [`ApiError::BadRequest`] if a `::`-carrying value is not a valid
-/// `OBJECT_VERSION_ID`, or a bare value is not a UUID or its `object_id` is not.
-pub(crate) fn parse_uid_based_id(raw: &str) -> Result<UidBasedId, ApiError> {
-    if raw.contains("::") {
-        let ovid = parse_version_uid(raw)?;
-        let vo_id = object_id_uuid(&ovid).ok_or_else(|| {
-            ApiError::BadRequest(format!(
-                "OBJECT_VERSION_ID object_id is not a UUID: {raw:?}"
-            ))
-        })?;
-        Ok(UidBasedId {
-            vo_id: VoId(vo_id),
-            version: Some(ovid),
-        })
-    } else {
-        Ok(UidBasedId {
-            vo_id: VoId(parse_uuid(raw, "versioned_object_uid")?),
-            version: None,
-        })
-    }
 }
 
 /// The `object_id` of an `OBJECT_VERSION_ID` as a UUID (this CDR keys versioned

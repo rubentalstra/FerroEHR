@@ -20,6 +20,7 @@
 
 use std::collections::HashSet;
 
+use openehr_base::prelude::ArchetypeId;
 use openehr_its::opt14::{
     ArchetypeInternalRef, ArchetypeSlot, Assertion, CObject, ConstraintRef, ExprItem,
     Intervalofinteger,
@@ -127,7 +128,9 @@ pub(super) fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Vio
 
 /// Archetype-identifier shape for uploaded artefacts:
 /// `rm_originator-rm_name-rm_entity.domain_concept.v<version>` (BASE `base_types`
-/// master05 §Syntaxes). Tolerances beyond the strict BASE `name-str` grammar,
+/// master05 §Syntaxes), decided by the BASE parser
+/// ([`ArchetypeId`]) plus the OPT-ingest narrowing below. Tolerances beyond the
+/// strict BASE `name-str` grammar,
 /// both adjudicated against real published templates (never against CNF valid
 /// fixtures, which all conform strictly):
 ///
@@ -144,24 +147,26 @@ fn is_archetype_id_shaped(id: &str) -> bool {
         chars.next().is_some_and(|c| c.is_ascii_alphabetic())
             && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
     }
-    // Split the version off the tail: the last `.v` followed by a digit.
-    let Some((head, version)) = id.rsplit_once(".v") else {
+    // The lexical form itself is BASE's — `ARCHETYPE_ID::from_str` splits on
+    // the trailing `.v` and the RM qualifier and enforces the three-part
+    // qualifier; the axes are then read back through its typed accessors, so
+    // this function never re-implements the grammar. What it adds on top is the
+    // OPT-ingest NARROWING documented above (numeric multi-part version, ASCII
+    // concept charset), which BASE deliberately leaves open.
+    let Ok(parsed) = id.parse::<ArchetypeId>() else {
         return false;
     };
-    let version_ok = !version.is_empty()
-        && version
-            .split('.')
-            .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
+    let version = parsed.version_id();
+    let version_ok = version
+        .split('.')
+        .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
         && version.split('.').count() <= 3;
-    let Some((qualified, concept)) = head.split_once('.') else {
-        return false;
-    };
-    let entity_parts: Vec<&str> = qualified.split('-').collect();
+    let entity_parts: Vec<&str> = parsed.qualified_rm_entity().split('-').collect();
     let entity_ok = entity_parts.len() == 3 && entity_parts.iter().all(|p| alphanum_str(p));
-    let concept_ok = !concept.is_empty()
-        && concept
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '(' | ')' | '.'));
+    let concept_ok = parsed
+        .domain_concept()
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '(' | ')' | '.'));
     version_ok && entity_ok && concept_ok
 }
 

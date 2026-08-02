@@ -9,16 +9,17 @@
 //! validation is 422, not 400). Versioned-object mechanics are RM common
 //! master06, delegated to [`crate::versioning`].
 
-use crate::ids::{EhrId, VoId};
-use crate::service::datetime::parse_at_time;
-use crate::service::response::{ResourceMeta, ServiceResponse};
-use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::UpdateVersion;
+use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
+use crate::service::datetime::parse_at_time;
 use crate::service::error::ServiceError;
+use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::version_update::UpdateVersion;
 use crate::versioning::Kind;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::{create, delete, update};
@@ -59,7 +60,8 @@ impl FerroEhrService {
         )?;
         // 553|incomplete| relaxes validation strictness (master06 §Version
         // Lifecycle).
-        let incomplete = version.lifecycle_state.code_string == "553";
+        let incomplete =
+            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
         let composition = version.data;
         // The EHR-existence (404) and content-writability (409) gates in one
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
@@ -323,7 +325,8 @@ impl FerroEhrService {
             "COMPOSITION update",
             &self.effective_system_id(),
         )?;
-        let incomplete = version.lifecycle_state.code_string == "553";
+        let incomplete =
+            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
         let composition = version.data;
         // The lifecycle (deleted → 404, RM common master06 §Logical Deletion)
         // and the content-write guard are checked from the threaded pre-read.
@@ -520,7 +523,7 @@ impl FerroEhrService {
             &current.creating_system_id,
             current_tree,
         );
-        if !latest_uid.eq_ignore_ascii_case(&a_version_uid.value) {
+        if !composite_ids_equal(&latest_uid, &a_version_uid.value) {
             return Err(ServiceError::Conflict(format!(
                 "preceding_version_uid names version {}, latest is {latest_uid}",
                 a_version_uid.value

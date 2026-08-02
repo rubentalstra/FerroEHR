@@ -14,9 +14,14 @@
 //!   attribute (`master08` line 132).
 //! - **VCAEX** — an attribute's existence, if set, must not widen the RM's
 //!   (`master08` line 129).
+//! - **VCACA** — a container attribute's cardinality must be the same as, or
+//!   narrower than, the RM's (`master08` line 74, `master04.5` line 162).
 //! - **VACMCO / VCOC** — the mandatory children must fit the container
 //!   cardinality (`master04.5` line 159, restating cADL VCOC
 //!   `ADL1.4/master05-cadl.adoc` line 324).
+
+use std::collections::BTreeSet;
+use std::sync::LazyLock;
 
 use openehr_its::opt14::{CAttribute, CObject, Cardinality, Intervalofinteger};
 use openehr_rm::model;
@@ -26,15 +31,18 @@ use super::{NodeView, Violation};
 
 /// LOCATABLE meta attributes tolerated on any RM class (see the NOTE in
 /// [`check_attribute`]: archie-era OPTs constrain these on PATHABLE-only
-/// classes).
-const LOCATABLE_META_ATTRS: &[&str] = &[
-    "name",
-    "archetype_node_id",
-    "uid",
-    "links",
-    "archetype_details",
-    "feeder_audit",
-];
+/// classes) — the class's OWN attribute set, read from the BMM-generated static
+/// RM model, never a hand-kept list: a LOCATABLE attribute added or renamed by
+/// a spec-pin bump follows automatically. PATHABLE's inherited members
+/// (`parent`, which the flattened model also reports) are excluded, since the
+/// tolerance exists precisely for classes the RM derives from PATHABLE alone.
+static LOCATABLE_META_ATTRS: LazyLock<BTreeSet<&'static str>> = LazyLock::new(|| {
+    let pathable: BTreeSet<&'static str> = model::attributes("PATHABLE").map(|a| a.name).collect();
+    model::attributes("LOCATABLE")
+        .map(|a| a.name)
+        .filter(|name| !pathable.contains(name))
+        .collect()
+});
 
 /// Legacy `(class, attribute)` pairs tolerated for prior-art OPT compatibility
 /// (NOTE): `ELEMENT.null_flavor` is the archetype-tooling (US) spelling of
@@ -110,7 +118,7 @@ pub(super) fn check_attribute(
         // Rejecting them per strict VCARM would refuse real-world templates; the
         // constraints are tolerated (they bind to the serialized meta fields,
         // which canonical JSON carries).
-        None if LOCATABLE_META_ATTRS.contains(&attr_name)
+        None if LOCATABLE_META_ATTRS.contains(attr_name)
             || LEGACY_RM_ATTRS.contains(&(parent_rm, attr_name)) =>
         {
             Ok(())
@@ -167,16 +175,103 @@ fn rm_conformance(
         ));
     }
 
-    // VCACA: "archetype attribute reference model cardinality conformance …"
-    // (line 162). NOTE: the static RM model (`openehr_rm::model`) exposes an
-    // attribute's *container kind* (`None`/`List`/`Set`/`Hash`) but not the RM's
-    // numeric cardinality bounds, and cADL itself hedges that RM-cardinality
-    // enforcement "may depend somewhat on knowledge of the software system"
-    // (`ADL1.4/master05-cadl.adoc` line 268). The enforceable part of VCACA —
-    // that a container constraint may not sit on a single-valued RM attribute —
-    // is already covered by VCAM above; the numeric-bound part is not checkable
-    // without RM cardinality metadata.
+    // VCACA: "archetype attribute reference model cardinality conformance: the
+    // cardinality of an attribute must conform, i.e. be the same or narrower, to
+    // the cardinality of the corresponding attribute in the underlying
+    // information model." (line 162.)
+    if let CAttribute::CMultipleAttribute(multiple) = attr {
+        check_rm_cardinality(&multiple.cardinality, attr_name, parent_rm, rm_attr)?;
+    }
 
+    Ok(())
+}
+
+/// VCACA's numeric arm: the archetype cardinality interval must be CONTAINED in
+/// the RM's declared container cardinality — "the same or narrower"
+/// (`AOM2/master04.5-…class_definitions.adoc` line 162).
+///
+/// The RM bounds come from the BMM-generated static model
+/// ([`openehr_rm::model::RmAttribute::cardinality`], the BMM `cardinality` of a
+/// container attribute); an attribute the BMM leaves unconstrained has no RM
+/// interval to conform to and is skipped. Containment is the ordinary interval
+/// rule in both directions:
+///
+/// - the archetype LOWER bound may not fall below the RM's — e.g. `CLUSTER.items`
+///   is `List<ITEM> [1..*]`
+///   (`RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+///   §Attributes), so an OPT stating `items cardinality {0..*}` widens the RM by
+///   admitting an empty CLUSTER the RM forbids;
+/// - the archetype UPPER bound may not exceed the RM's (an unbounded archetype
+///   upper against a finite RM upper is the widest case of that).
+///
+/// The fully-open `{0..*}` is read as "no cardinality override" rather than as
+/// a widening — see the in-body citations.
+///
+/// NOTE: this is the *numeric* part only. The `ordered`/`unordered`/`unique`
+/// half of a cADL cardinality is deliberately NOT judged here: that is exactly
+/// what `ADL1.4/master05-cadl.adoc` line 268 hedges ("developers often use lists
+/// to facilitate integration, when the actual semantics are intended to be of a
+/// set … How such constraints are evaluated in practice may depend somewhat on
+/// knowledge of the software system"), and the hedge is about container
+/// SEMANTICS, not about the membership range the same paragraph calls a plain
+/// constraint.
+fn check_rm_cardinality(
+    card: &Cardinality,
+    attr_name: &str,
+    parent_rm: &str,
+    rm_attr: &model::RmAttribute,
+) -> Result<(), Violation> {
+    let Some(rm_card) = rm_attr.cardinality else {
+        return Ok(());
+    };
+    // The fully-open interval states NO cardinality override and defers to the
+    // RM, so it can never widen it. Two spec facts force that reading of an
+    // OPT 1.4 artefact:
+    //
+    // - AOM2 types the field `C_ATTRIBUTE.cardinality [0..1]` and gives the
+    //   governing principle on its sibling `existence`: "Only set if it
+    //   overrides the underlying reference model or parent archetype"
+    //   (`AM/docs/UML/classes/org.openehr.am.aom2.c_attribute.adoc`
+    //   §Attributes). AOM **1.4** types it `C_MULTIPLE_ATTRIBUTE.cardinality
+    //   [1..1]` — MANDATORY
+    //   (`…org.openehr.am.aom14.c_multiple_attribute.adoc` §Attributes) — so an
+    //   OPT 1.4 has no way to say "not overridden"; it must write an interval
+    //   for every container attribute.
+    // - cADL spells the open range `{*}`, "a single `*` means the range
+    //   `0..*`", and §"'Any' Constraints" fixes what an open constraint means:
+    //   "any value permitted by the underlying information model is also
+    //   permitted by the archetype" (`AM/docs/ADL1.4/master05-cadl.adoc`) —
+    //   deference to the RM, not a widening of it.
+    //
+    // Every STATED interval (a finite bound on either side) is judged below.
+    if iv_lower(&card.interval) == 0 && iv_upper(&card.interval).is_none() {
+        return Ok(());
+    }
+    let arch_lower = iv_lower(&card.interval);
+    let widens_lower = i64::from(arch_lower) < i64::from(rm_card.lower);
+    let widens_upper = match (iv_upper(&card.interval), rm_card.upper) {
+        // An RM-unbounded upper cannot be exceeded.
+        (_, None) => false,
+        // An unbounded archetype upper against a finite RM upper widens it.
+        (None, Some(_)) => true,
+        (Some(arch_upper), Some(rm_upper)) => i64::from(arch_upper) > i64::from(rm_upper),
+    };
+    if widens_lower || widens_upper {
+        let rm_upper = rm_card
+            .upper
+            .map_or_else(|| "*".to_owned(), |u| u.to_string());
+        let arch_upper = iv_upper(&card.interval).map_or_else(|| "*".to_owned(), |u| u.to_string());
+        return Err(Violation::new(
+            "VCACA",
+            format!(
+                "attribute '{attr_name}' on '{parent_rm}' has cardinality \
+                 {{{arch_lower}..{arch_upper}}}, which is wider than the reference \
+                 model's {{{}..{rm_upper}}} — an archetype cardinality must be the \
+                 same or narrower",
+                rm_card.lower
+            ),
+        ));
+    }
     Ok(())
 }
 

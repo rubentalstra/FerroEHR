@@ -24,6 +24,7 @@ description: "upload semantically invalid OPTs"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.upload_opt"
   - "AM ADL1.4 master08-adl.adoc §Coded Term Validity (VATDF/VACDF)"
+  - "AM AOM2 master04.5-constraint_model-class_definitions.adoc §VCACA; master08-validation.adoc §Validate Definition"
   - "ITS-REST overview Requests_and_responses.md §HTTP status codes"
   - "CNF platform_test_schedule master04 §upload_opt data sets"
 applies: { rm: ">=1.0.2" }
@@ -41,6 +42,14 @@ parameters:
     # preserved as a refusal row beside its corrected valid twin
     # (cnf.tpl.dv_coded_text_binding_sct), so a lenient server fails here.
     - { data_set: cnf.opt.invalid.undefined_constraint_code, expected: validation_failed, defect: "constraint binding key ac0001 is never defined in constraint_definitions" }
+    # VCACA's numeric arm: a STATED container cardinality wider than the RM's.
+    # `CLUSTER.items` is `List<ITEM> [1..*]`, so an OPT restating it as the
+    # finite `{0..3}` admits an empty CLUSTER the RM forbids (AOM2
+    # master04.5 §VCACA; master08 §Validate Definition). The fully-open
+    # `{0..*}` real OPTs carry is NOT this defect — it states no override
+    # (ADL1.4 master05-cadl.adoc §"'Any' Constraints") — which is why the
+    # invalid twin here is deliberately a finite interval.
+    - { data_set: cnf.opt.invalid.cluster_items_cardinality_widened, expected: validation_failed, defect: "CLUSTER.items cardinality {0..3} is wider than the reference model's {1..*} (VCACA)" }
 flow:
   - step: 1
     call: upload_opt

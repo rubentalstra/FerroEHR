@@ -73,7 +73,7 @@ pub(crate) mod contribution;
 pub(crate) mod import;
 pub(crate) mod integrity;
 pub(crate) mod lifecycle;
-pub(crate) mod object_version_id;
+pub mod object_version_id;
 pub(crate) mod read;
 pub mod signature;
 pub(crate) mod wire;
@@ -149,21 +149,27 @@ impl Kind {
         self.is_party() || self == Kind::PartyRelationship
     }
 
-    /// The versioned-object kind for an RM `_type`, if it is a versioned root.
+    /// Every versioned-object kind, in declaration order — the domain of
+    /// [`Kind`], for callers that need to derive a subset of the versioned-root
+    /// RM types rather than restate one.
+    pub(crate) const ALL: [Kind; 10] = [
+        Kind::Composition,
+        Kind::EhrStatus,
+        Kind::EhrAccess,
+        Kind::Folder,
+        Kind::Agent,
+        Kind::Group,
+        Kind::Organisation,
+        Kind::Person,
+        Kind::Role,
+        Kind::PartyRelationship,
+    ];
+
+    /// The versioned-object kind for an RM `_type`, if it is a versioned root —
+    /// the inverse of [`Kind::as_str`] over [`Kind::ALL`], so the RM type names
+    /// are written once and the two directions cannot drift apart.
     pub(crate) fn from_type(rm_type: &str) -> Option<Self> {
-        match rm_type {
-            "COMPOSITION" => Some(Kind::Composition),
-            "EHR_STATUS" => Some(Kind::EhrStatus),
-            "EHR_ACCESS" => Some(Kind::EhrAccess),
-            "FOLDER" => Some(Kind::Folder),
-            "AGENT" => Some(Kind::Agent),
-            "GROUP" => Some(Kind::Group),
-            "ORGANISATION" => Some(Kind::Organisation),
-            "PERSON" => Some(Kind::Person),
-            "ROLE" => Some(Kind::Role),
-            "PARTY_RELATIONSHIP" => Some(Kind::PartyRelationship),
-            _ => None,
-        }
+        Kind::ALL.into_iter().find(|kind| kind.as_str() == rm_type)
     }
 }
 

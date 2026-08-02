@@ -8,11 +8,13 @@
 
 use std::collections::BTreeMap;
 
+use openehr_base::prelude::ObjectVersionId;
 use serde_json::{Value, json};
 
 use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::demographic::types::PartyKind;
+use crate::service::ehr::tags::tag_target_tail;
 use crate::service::error::ServiceError;
 use crate::service::status::CallStatusType;
 use crate::storage::tag_repo;
@@ -65,7 +67,7 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         vo_id: VoId,
-        target_version: Option<&str>,
+        target_version: Option<&ObjectVersionId>,
     ) -> Result<(), ServiceError> {
         let stored = crate::versioning::read::object_kind(&self.pool, vo_id).await?;
         if stored != Some(crate::service::demographic::support::kind_of(kind)) {
@@ -74,13 +76,13 @@ impl FerroEhrService {
                 format!("tag target {} {vo_id}", kind.rm_type()),
             ));
         }
-        if let Some(tail) = target_version {
-            let tree = crate::versioning::object_version_id::parse_version_tail(tail)?;
-            let (branch_number, branch_version) = tree.branch.unwrap_or((0, 0));
+        if let Some(version) = target_version {
+            let (_, tree) = crate::versioning::object_version_id::components(version)?;
+            let (trunk, branch_number, branch_version) = tree.columns();
             if !crate::storage::version_repo::meta::version_exists(
                 &self.pool,
                 vo_id,
-                tree.trunk,
+                trunk,
                 branch_number,
                 branch_version,
             )
@@ -88,7 +90,7 @@ impl FerroEhrService {
             {
                 return Err(ServiceError::sm(
                     CallStatusType::ObjectVersionDoesNotExist,
-                    format!("tag target version {vo_id}::{tail}"),
+                    format!("tag target version {}", version.value),
                 ));
             }
         }
@@ -108,7 +110,7 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         vo_id: VoId,
-        target_version: Option<&str>,
+        target_version: Option<&ObjectVersionId>,
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_party_tag_target(kind, vo_id, target_version)
@@ -157,9 +159,17 @@ impl FerroEhrService {
             })
             .collect();
         let mut tx = self.pool.begin().await?;
-        tag_repo::replace_tags(&mut tx, None, vo_id, target_version, &new_tags).await?;
+        tag_repo::replace_tags(
+            &mut tx,
+            None,
+            vo_id,
+            tag_target_tail(target_version),
+            &new_tags,
+        )
+        .await?;
         tx.commit().await?;
-        self.party_tags(vo_id, target_version).await
+        self.party_tags(vo_id, tag_target_tail(target_version))
+            .await
     }
 
     /// Delete a target's tags by key (a SET delete over the `(key,
@@ -172,12 +182,20 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         vo_id: VoId,
-        target_version: Option<&str>,
+        target_version: Option<&ObjectVersionId>,
         key: &str,
     ) -> Result<(), ServiceError> {
         self.ensure_party_tag_target(kind, vo_id, target_version)
             .await?;
-        if !tag_repo::delete_tag(&self.pool, None, vo_id, target_version, key).await? {
+        if !tag_repo::delete_tag(
+            &self.pool,
+            None,
+            vo_id,
+            tag_target_tail(target_version),
+            key,
+        )
+        .await?
+        {
             return Err(ServiceError::sm(
                 CallStatusType::VersionedObjectDoesNotExist,
                 format!("item tag {key:?}"),

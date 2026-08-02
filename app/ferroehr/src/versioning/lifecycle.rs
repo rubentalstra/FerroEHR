@@ -135,6 +135,37 @@ pub(crate) fn validate_transition(from: Option<&str>, to: &str) -> Result<(), Se
 mod tests {
     use super::*;
 
+    /// Every named constant is a real group member, and the constants cover the
+    /// COMPLETE `version_lifecycle_state` group — a code added to the TERM
+    /// bundle without a constant here fails this test. (The same guard the
+    /// `audit_change_type` and `composition_category` constant sets carry;
+    /// master06 §Version Lifecycle names exactly these five values.)
+    #[test]
+    fn lifecycle_constants_are_the_complete_group() {
+        let all = [
+            state::COMPLETE,
+            state::INCOMPLETE,
+            state::DELETED,
+            state::INACTIVE,
+            state::ABANDONED,
+        ];
+        let t = openehr();
+        for code in all {
+            assert!(t.is_valid_version_lifecycle_state(code), "code {code}");
+            // `code_string` must be numeric (the group's wire form).
+            assert!(code.chars().all(|c| c.is_ascii_digit()), "code {code}");
+        }
+        let mut group: Vec<String> = t
+            .concepts_in_group(VERSION_LIFECYCLE_STATE)
+            .iter()
+            .map(|c| c.id.clone())
+            .collect();
+        group.sort();
+        let mut named: Vec<String> = all.iter().map(|c| (*c).to_owned()).collect();
+        named.sort();
+        assert_eq!(group, named, "constants must mirror the full TERM group");
+    }
+
     #[test]
     fn lifecycle_state_code_accepts_code_or_rubric_and_rejects_non_members() {
         assert_eq!(lifecycle_state_code("532").as_deref(), Some("532"));

@@ -28,6 +28,16 @@ cnf.opt.invalid.removed_mandatory:
     defect: "removed mandatory elements (no definition)"
     spec_ref: "CNF platform_test_schedule master04 (upload_opt invalid data sets); AM AOM1.4 (OPERATIONAL_TEMPLATE.definition is mandatory)"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.opt.invalid.cluster_items_cardinality_widened:
+  source: fixtures/opt/invalid/cluster_items_cardinality_widened.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the CLUSTER node's `items` C_MULTIPLE_ATTRIBUTE states cardinality {0..3}, wider on the lower side than the reference model's CLUSTER.items List<ITEM> [1..*] — it admits an empty CLUSTER the RM forbids"
+    spec_ref: "AM AOM2 master04.5-constraint_model-class_definitions.adoc §VCACA (\"the cardinality of an attribute must conform, i.e. be the same or narrower, to the cardinality of the corresponding attribute in the underlying information model\"); master08-validation.adoc §Validate Definition (\"check that cardinality in C_ATTRIBUTE is valid with respect to RM (VCACA)\"); RM UML/classes/org.openehr.rm.data_structures.cluster.adoc §Attributes (items: List<ITEM> [1..*])"
+  template_id: "cnf.opt.invalid.cluster_items_cardinality_widened"
+  provenance: "authored 2026-08-02 from the openEHR CNF Robot minimal_evaluation.opt skeleton (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin) with three targeted edits: the data-slot node retyped ITEM_TREE -> CLUSTER (the RM class whose items carries a cardinality lower bound of 1), its items existence raised to 1..1 so the artefact carries no VCAEX defect, and the items cardinality interval restated as the FINITE {0..3}. A STATED interval is the case VCACA can decide; the fully-open {0..*} that real published OPTs carry states no cardinality override at all (AOM 1.4 makes C_MULTIPLE_ATTRIBUTE.cardinality mandatory where AOM2 makes it optional and \"only set if it overrides the underlying reference model\", and cADL's open constraint means \"any value permitted by the underlying information model\" - ADL1.4 master05-cadl.adoc §'Any' Constraints), so it is accepted. This row pins the refusal so a server that skips VCACA's numeric arm fails it"
 cnf.opt.invalid.multiple_elements:
   source: fixtures/opt/invalid/multiple_elements.opt
   format: opt-xml

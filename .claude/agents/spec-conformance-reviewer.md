@@ -56,3 +56,14 @@ internal plan/design files are deleted in the PR that implements them and are
 never a citable authority. Where the specs are silent, write the explicit flag
 "no openEHR spec governs this — our own design/extension". Treat any ADR or
 internal-doc citation you encounter as a defect to scrub in files you touch.
+
+## En-route findings are NEVER dropped (owner hard rule, 2026-08-02)
+
+Anything you notice that is wrong, misplaced, or suspicious OUTSIDE your
+assigned scope — code living in the wrong crate, a duplicated definition, a
+stale claim, a missing test, a dependency smell — goes in your final report
+under an explicit "En-route findings" heading, each with file:line and one
+sentence of evidence, so the orchestrator files a tracker issue for it.
+"It was already there" or "not in my task list" is never a reason to stay
+silent: unreported observations are lost work. Do not fix out-of-scope
+findings yourself; report them.

@@ -8,9 +8,11 @@
 //! `TERMINOLOGY_ID.name`/…). The generator emits only the `{ value: String }`
 //! struct; the accessors and a fallible strict parser live here and in the
 //! sibling `*_impl.rs` files. This module holds the pieces multiple types share
-//! (the error type + the `UID` subtype builder + digit predicates).
+//! (the error type + the `UID` subtype builder + digit predicates + the
+//! composite-identifier case rule).
 //!
-//! Spec: `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.*`.
+//! Spec: `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.*`
+//! and `docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`.
 
 use crate::base_types::identification::internet_id::InternetId;
 use crate::base_types::identification::iso_oid::IsoOid;
@@ -46,6 +48,47 @@ pub enum IdError {
     /// `rm_originator-rm_name-rm_entity.concept{-spec}*.vN`.
     #[error("malformed ARCHETYPE_ID: {0:?}")]
     Archetype(String),
+}
+
+/// Composite-identifier equality: `true` iff `a` and `b` are the same
+/// identifier under the openEHR case rule — BASE `base_types`
+/// `master05-identification_package.adoc` §"Composite Identifiers and Case":
+/// "two identifiers identical apart from case are considered to be identical,
+/// and therefore to identify the same thing".
+///
+/// This is the ONE comparison every composite identifier goes through —
+/// `UID_BASED_ID` values ([`super::uid_based_id::UidBasedId::is_equal`]),
+/// archetype and template ids, `INTERNET_ID` system ids. The sibling rule of
+/// the same section, case-**preserving** ("not change case due to persistence,
+/// copying, transfer or other computation processes"), belongs to whoever
+/// stores the value: nothing here rewrites a stored string, only the
+/// *comparison* folds case.
+///
+/// The fold is ASCII, which is exactly the section's intent: §"Composite
+/// Identifiers and Language" restricts the human-readable identifier sections
+/// to the basic latin character set, and §"Composite Identifiers and Case"
+/// explicitly carves out languages where case does not exist (the Turkish
+/// `I/i` caveat) — a Unicode-locale fold would *re-introduce* that hazard, so
+/// [`str::eq_ignore_ascii_case`] is the correct, locale-safe choice.
+#[must_use]
+pub fn composite_ids_equal(a: &str, b: &str) -> bool {
+    a.eq_ignore_ascii_case(b)
+}
+
+/// The comparison/keying form of a composite identifier: the value with ASCII
+/// case folded away, so that two identifiers are the same identifier exactly
+/// when their keys are equal (BASE `base_types`
+/// `master05-identification_package.adoc` §"Composite Identifiers and Case" —
+/// the same rule [`composite_ids_equal`] decides pairwise).
+///
+/// For a caller that needs a *key* rather than a comparison — a hash-map entry,
+/// a cache key, a SQL `lower()` predicate — this is the single derivation, so a
+/// keyed lookup can never disagree with a pairwise comparison. It is
+/// case-**preserving** in the spec's sense: the derived key is for lookup only,
+/// never a replacement for the stored value.
+#[must_use]
+pub fn composite_id_key(id: &str) -> String {
+    id.to_ascii_lowercase()
 }
 
 /// `true` for a non-empty string of ASCII digits.
@@ -113,6 +156,32 @@ mod tests {
         assert!(matches!(make_uid("openehr.org"), Uid::InternetId(_)));
         // A single digit group is not an OID (needs >= 2 groups) → internet id.
         assert!(matches!(make_uid("12345"), Uid::InternetId(_)));
+    }
+
+    /// BASE `master05` §"Composite Identifiers and Case": two identifiers
+    /// identical apart from case identify the same thing, and the pairwise
+    /// comparison agrees with the derived key.
+    #[test]
+    fn composite_id_case_rule() {
+        for (a, b) in [
+            ("openEHR.org", "OPENEHR.ORG"),
+            ("uk.nhs.ehr1", "UK.NHS.EHR1"),
+            ("FerroEHR.local", "ferroehr.local"),
+            ("sys", "SYS"),
+            (
+                "87284370-2D4B-4E3D-A3F3-F303D2F4F34B",
+                "87284370-2d4b-4e3d-a3f3-f303d2f4f34b",
+            ),
+        ] {
+            assert!(composite_ids_equal(a, b), "{a} vs {b}");
+            assert_eq!(composite_id_key(a), composite_id_key(b));
+        }
+        assert!(!composite_ids_equal("system.a", "system.b"));
+        assert_ne!(composite_id_key("system.a"), composite_id_key("system.b"));
+        // Case-preserving: neither function rewrites its input.
+        let original = "openEHR.org";
+        assert_eq!(original, "openEHR.org");
+        assert_eq!(composite_id_key(original), "openehr.org");
     }
 
     #[test]

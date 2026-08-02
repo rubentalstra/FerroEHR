@@ -462,81 +462,44 @@ pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceErr
     validate_committer(&audit.committer)
 }
 
-/// Enforce the committer `PARTY_PROXY`'s `Basic_validity` + `Name_valid`
-/// (RM `UML/classes/org.openehr.rm.common.party_identified.adoc` §Invariants): a
-/// `PARTY_IDENTIFIED`/`PARTY_RELATED` committer must carry at least one of
-/// `name` / `identifiers` / `external_ref`, and a present `name` must be
-/// non-empty. A `PARTY_RELATED` committer additionally requires its
-/// `relationship` (1..1) with `Relationship_valid`. `PARTY_SELF` has no such
-/// invariant and is accepted unconditionally.
+/// Run the committer `PARTY_PROXY`'s OWN RM class invariants + terminology
+/// bindings — `PARTY_IDENTIFIED.Basic_validity` / `.Name_valid`
+/// (`RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc`
+/// §Invariants), `PARTY_RELATED.Relationship_valid`
+/// (`…org.openehr.rm.common.party_related.adoc` §Invariants), and the
+/// structural conformance of the concrete `PARTY_PROXY` subtype.
+///
+/// The rules are NOT restated here: the value goes through the unified
+/// dispatcher [`openehr_its::rm_validate::validate_rm_value`], the same one the
+/// whole-instance commit pass runs on every node of a committed RM document
+/// (`openehr_its::flat::validation::validate_rm_and_terminology_as`). That
+/// dispatcher is where the generated structural check, the typed invariant
+/// cores, the model-driven mandatory-container bounds and the
+/// terminology-backed invariants all live.
+///
+/// It has to be invoked EXPLICITLY here because a commit audit is not part of
+/// any committed RM document: the `AUDIT_DETAILS` is written to its own row and
+/// never walked by the content pass, so without this call the committer would
+/// be the one `PARTY_PROXY` in the system that reaches storage unvalidated.
+///
+/// `AUDIT_DETAILS.committer` is typed `PARTY_PROXY` — an ABSTRACT class — so
+/// canonical JSON must tag it; an untagged value carries no class to judge and
+/// is left to the structural decode at the storage boundary, exactly as the
+/// dispatcher treats an untagged node anywhere else.
 fn validate_committer(committer: &Value) -> Result<(), ServiceError> {
-    let party_type = committer.get("_type").and_then(Value::as_str);
-    if !matches!(party_type, Some("PARTY_IDENTIFIED" | "PARTY_RELATED")) {
+    let mut violations = Vec::new();
+    openehr_its::rm_validate::validate_rm_value(committer, &mut violations);
+    if violations.is_empty() {
         return Ok(());
     }
-    let name = committer.get("name").filter(|v| !v.is_null());
-    let has_identifiers = committer
-        .get("identifiers")
-        .and_then(Value::as_array)
-        .is_some_and(|a| !a.is_empty());
-    let has_external_ref = committer.get("external_ref").is_some_and(|v| !v.is_null());
-    // Basic_validity: at least one of name / identifiers / external_ref.
-    if name.is_none() && !has_identifiers && !has_external_ref {
-        return Err(ServiceError::Unprocessable(
-            "AUDIT_DETAILS.committer (PARTY_IDENTIFIED) requires at least one of \
-             name, identifiers, external_ref (PARTY_IDENTIFIED.Basic_validity)"
-                .to_owned(),
-        ));
-    }
-    // Name_valid: a present name must be non-empty.
-    if name.and_then(Value::as_str) == Some("") {
-        return Err(ServiceError::Unprocessable(
-            "AUDIT_DETAILS.committer name must be non-empty when present \
-             (PARTY_IDENTIFIED.Name_valid)"
-                .to_owned(),
-        ));
-    }
-    if party_type == Some("PARTY_RELATED") {
-        validate_party_related_relationship(committer)?;
-    }
-    Ok(())
-}
-
-/// `PARTY_RELATED.relationship` (1..1 `DV_CODED_TEXT`) + `Relationship_valid`
-/// for an audit committer. The invariant is
-/// `terminology(openehr).has_code_for_group_id(subject_relationship,
-/// relationship.defining_code)` (RM
-/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Invariants) — the
-/// code must BE an openEHR `subject_relationship` group
-/// member, so a `defining_code` from any other terminology fails the invariant
-/// too (the spec formula has no terminology escape hatch; openEHR specs are
-/// leading).
-fn validate_party_related_relationship(committer: &Value) -> Result<(), ServiceError> {
-    let Some(relationship) = committer.get("relationship").filter(|v| !v.is_null()) else {
-        return Err(ServiceError::Unprocessable(
-            "PARTY_RELATED.relationship is mandatory (1..1 DV_CODED_TEXT)".to_owned(),
-        ));
-    };
-    let code = relationship
-        .pointer("/defining_code/code_string")
-        .and_then(Value::as_str)
-        .ok_or_else(|| {
-            ServiceError::Unprocessable(
-                "PARTY_RELATED.relationship must be a DV_CODED_TEXT with a defining_code"
-                    .to_owned(),
-            )
-        })?;
-    let terminology = relationship
-        .pointer("/defining_code/terminology_id/value")
-        .and_then(Value::as_str)
-        .unwrap_or("");
-    if terminology != OPENEHR || !openehr().is_valid_subject_relationship(code) {
-        return Err(ServiceError::Unprocessable(format!(
-            "PARTY_RELATED.relationship code {code:?} (terminology {terminology:?}) is not \
-             in the openEHR subject relationship group (Relationship_valid)"
-        )));
-    }
-    Ok(())
+    let detail = violations
+        .iter()
+        .map(|v| v.message.as_str())
+        .collect::<Vec<_>>()
+        .join("; ");
+    Err(ServiceError::Unprocessable(format!(
+        "AUDIT_DETAILS.committer is not a valid PARTY_PROXY: {detail}"
+    )))
 }
 
 #[cfg(test)]
@@ -749,11 +712,12 @@ mod tests {
             "defining_code": { "_type": "CODE_PHRASE", "code_string": "99999",
                                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" } }
         }));
+        // The refusal is produced by the generated `PARTY_RELATED` core, whose
+        // violation message names the invariant, not the rejected code.
         match validate_commit_audit(&bad) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("Relationship_valid") && msg.contains("99999"),
-                "got {msg}"
-            ),
+            Err(ServiceError::Unprocessable(msg)) => {
+                assert!(msg.contains("Relationship_valid"), "got {msg}");
+            }
             other => panic!("non-member relationship code must be 422, got {other:?}"),
         }
         validate_commit_audit(&related(json!({

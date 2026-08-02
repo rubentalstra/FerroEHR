@@ -16,6 +16,7 @@
 //!   and Relationships — relationship refs denote the party's version
 //!   container).
 
+use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use openehr_base::prelude::PartyRef;
 use openehr_base::validate::Validate;
 use serde_json::Value;
@@ -79,12 +80,12 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
     })?;
 
     // PARTY is unconditionally an archetype root (`demographic.party.adoc`
-    // §Invariants `Is_archetype_root: is_archetype_root` — no antecedent),
-    // so the same root-LOCATABLE rules the EHR_STATUS/EHR_ACCESS commits
-    // enforce apply here: `Archetyped_valid` (archetype_details mandatory at
-    // a root), the root `archetype_node_id` = the stringified
-    // `archetype_details.archetype_id` (`locatable.adoc`
-    // §archetype_node_id), and `Links_valid`.
+    // §Invariants `Is_archetype_root: is_archetype_root` — no antecedent), so
+    // the same root-only rule the EHR_STATUS/EHR_ACCESS commits enforce applies
+    // here: `Archetyped_valid`'s "a root MUST carry ARCHETYPED" direction, the
+    // one a per-node pass cannot express. The root-identity rule
+    // (`archetype_node_id` = the stringified `archetype_details.archetype_id`)
+    // and `Links_valid` are the whole-instance pass's, run below.
     if let Some(obj) = data.as_object() {
         crate::service::ehr::validation::validate_root_locatable(obj, rm_type)?;
     }
@@ -133,7 +134,7 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
     ) {
         for (i, rel) in relationships.iter().enumerate() {
             let source = rel.pointer("/source/id/value").and_then(Value::as_str);
-            if source.is_some_and(|s| !s.eq_ignore_ascii_case(uid)) {
+            if source.is_some_and(|s| !composite_ids_equal(s, uid)) {
                 return Err(ServiceError::Unprocessable(format!(
                     "{rm_type}.relationships[{i}].source must reference this party \
                      (uid {uid}) — relationships are stored under their source \
@@ -328,13 +329,17 @@ mod tests {
         };
         assert!(msg.contains("archetype_details"), "got {msg}");
 
+        // The root-identity half is the whole-instance pass's
+        // (`openehr_its::flat::validation`, `check_archetyped_valid`), so it
+        // surfaces as the structured `ValidationFailed` report.
         let mut mismatched = person(&json!([identity()]));
         mismatched["archetype_node_id"] = json!("openEHR-DEMOGRAPHIC-PERSON.other.v1");
-        let msg = match party_check("PERSON", &mismatched) {
-            Err(ServiceError::Unprocessable(m)) => m,
-            other => panic!("expected Unprocessable, got {other:?}"),
-        };
-        assert!(msg.contains("archetype_node_id"), "got {msg}");
+        let err = party_check("PERSON", &mismatched)
+            .expect_err("a contradicting root identity is rejected");
+        assert!(
+            format!("{err:?}").contains("archetype_node_id"),
+            "got {err:?}"
+        );
     }
 
     #[test]

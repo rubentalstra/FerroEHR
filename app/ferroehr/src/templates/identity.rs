@@ -27,17 +27,22 @@
 //! stays case-preserved. Storage lookups likewise compare case-insensitively in
 //! SQL (see [`crate::templates::store`]).
 
-/// The §Composite Identifiers and Case *comparison* form of an identifier: the
-/// value with ASCII case folded away. Two ids are the same identifier iff their
-/// canonical keys are equal.
+/// The §Composite Identifiers and Case *comparison* form of an identifier, for
+/// use as a map/cache KEY: surrounding whitespace trimmed off the wire token,
+/// then the shared composite-identifier fold
+/// ([`composite_id_key`](openehr_base::base_types::identification::lexical::composite_id_key)).
+/// Two ids are the same identifier iff their canonical keys are equal — the
+/// keyed form of the same rule
+/// [`composite_ids_equal`](openehr_base::base_types::identification::lexical::composite_ids_equal)
+/// decides pairwise, so a cache hit can never disagree with a comparison.
 ///
 /// Case-**preserving**: this is only the comparison/keying form — the original
 /// string is what is stored and returned on the wire. Archetype/template ids are
-/// ASCII by grammar (§Archetype Identifiers), so ASCII case folding is exact and
+/// ASCII by grammar (§Archetype Identifiers), so the ASCII fold is exact and
 /// matches `PostgreSQL` `lower()` on the same values.
 #[must_use]
 pub(crate) fn canonical_key(id: &str) -> String {
-    id.trim().to_ascii_lowercase()
+    openehr_base::base_types::identification::lexical::composite_id_key(id.trim())
 }
 
 /// The version axis of a `TEMPLATE_ID`, i.e. the numeric-dotted tail of a

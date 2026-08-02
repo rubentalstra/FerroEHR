@@ -40,3 +40,4 @@
 - [Upstream reports are issues](upstream-reports-are-issues.md) — owner 2026-08-01: md ledger deleted; upstream-report label (red), unverified→v3.20.0, confirmed→upstream-confirmed (not blocked-upstream); ambiguities.yaml upstream_issue: N; issue bodies = plain summary + Acceptance criteria (Contract/Exit criteria retired)
 - [Verified commits hard rule](verified-commits-hard-rule.md) — owner 2026-08-01: all commits signed incl. CI — workflows create commits ONLY via the Git Data API (github-actions[bot] Verified), never local git commit+push
 - [Foundation-first sequencing](foundation-first-sequencing.md) — owner 2026-08-02: systemic defect classes get a full-repo sweep phase before the next audit unit (blocked-by edge + P1); typed-codec sweep #1686 is the live case
+- [En-route findings always filed](en-route-findings-always-filed.md) — owner 2026-08-02: out-of-scope discoveries become tracker issues, never ignored; all agent defs carry the reporting section

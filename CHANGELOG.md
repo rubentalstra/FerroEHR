@@ -17,6 +17,43 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **AQL now rejects an `[archetype_node_id='…']` predicate whose value is
+  neither an archetype identifier nor a node code.** `CONTAINS COMPOSITION
+  c[archetype_node_id='openEHR-garbage']` used to be planned as an archetype
+  constraint that could never match (a `200` with an empty result set); such a
+  value is now a `400` naming it. The QUERY spec defines that bracket predicate
+  as equivalent to the archetype (`[openEHR-EHR-…]`) and node (`[at0002]`)
+  shortcut predicates (`QUERY/docs/AQL/master03-syntax.adoc` §"Archetype
+  predicate" / §"Node predicate"), so those two forms are its whole admissible
+  operand set — matching what the RM lets `LOCATABLE.archetype_node_id` hold.
+  Well-formed archetype ids and at/id codes are unaffected.
+
+- **Operational-template upload now enforces AOM2 VCACA's numeric arm.** A
+  template that states a container cardinality wider than the reference
+  model's — for example `CLUSTER.items cardinality {0..3}` against the RM's
+  `List<ITEM> [1..*]` — is refused with `422` naming the rule
+  (`AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc` §VCACA;
+  `master08-validation.adoc` §Validate Definition). The fully-open `{0..*}`
+  that published templates commonly carry is **not** affected: ADL 1.4 makes
+  `C_MULTIPLE_ATTRIBUTE.cardinality` mandatory where AOM2 makes it optional
+  and set "only if it overrides the underlying reference model", and cADL's
+  open constraint means "any value permitted by the underlying information
+  model" (`AM/docs/ADL1.4/master05-cadl.adoc` §"'Any' Constraints"), so an
+  open interval states no override and defers to the RM. Every template that
+  uploaded before still uploads.
+
+- **Commit-audit and EHR-resource validation failures now report through the
+  structured error body.** The `AUDIT_DETAILS.committer` and the
+  `EHR_STATUS` / `EHR_ACCESS` / FOLDER / demographic-party commit checks are
+  now produced by the shared Reference Model validator instead of duplicated
+  by hand, so the same defects are refused with the same `422` status but
+  render as the openEHR `Error` object (`{ message, validationErrors[] }`)
+  rather than a flat message — the shape every other validation failure
+  already used. The one message-detail change: a `PARTY_RELATED` committer
+  whose `relationship` code is outside the openEHR `subject_relationship`
+  group is still refused naming `Relationship_valid`, but no longer echoes the
+  rejected code.
+
 - **System-generated commits are now attributed to the product's own
   identity.** A write with no authenticated principal (auth disabled, or an
   internal write such as an import or a synthesized composition) records an

@@ -65,12 +65,12 @@ use crate::api::RequestParts;
 use crate::extensions::access::authn::{Principal, current_principal};
 use crate::extensions::access::authz::AbacGate;
 use crate::overview::error::RestError;
-use crate::overview::version_id::parse_uid_based_id;
 
 use crate::smart::enforce::{self, GateConfig, ScopeDecision};
 use crate::state::AppState;
 use crate::{negotiate, params};
 use ferroehr::config::smart::SmartConfig;
+use ferroehr::versioning::object_version_id::parse_uid_based_id;
 use openehr_its::rest::smart_scopes::SmartScope;
 
 /// Whether an operation is ABAC-checked, and when.

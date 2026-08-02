@@ -6,7 +6,8 @@
 //! Lexical form: `object_id '::' creating_system_id '::' version_tree_id`
 //! (exactly three `::`-delimited parts).
 //! - `object_id()` — the logical object's UID (part 1).
-//! - `creating_system_id()` — the UID of the creating system (part 2).
+//! - `creating_system_id()` — the UID of the creating system (part 2), with
+//!   `creating_system_id_str()` as its verbatim (case-preserving) sibling.
 //! - `version_tree_id()` — the `VERSION_TREE_ID` (part 3).
 //! - `is_branch()` — `version_tree_id.is_branch`.
 //!
@@ -48,8 +49,25 @@ impl ObjectVersionId {
     /// `::`-delimited part (BASE `creating_system_id`).
     #[must_use]
     pub fn creating_system_id(&self) -> Uid {
-        let s = split3(&self.value).map(|p| p[1]).unwrap_or_default();
-        make_uid(s)
+        make_uid(self.creating_system_id_str())
+    }
+
+    /// The `creating_system_id` part **verbatim**: the exact bytes of the
+    /// second `::`-delimited component, borrowed from `value` (empty for a
+    /// malformed id, so the accessor is total like its siblings).
+    ///
+    /// [`creating_system_id`](Self::creating_system_id) types the same part as a
+    /// [`Uid`], which *normalises* a `UUID`-shaped system id to the RFC 4122
+    /// lower-case rendering (see the `uid_impl` module note). A caller bound by
+    /// the case-**PRESERVING** half of BASE
+    /// `master05-identification_package.adoc` §"Composite Identifiers and Case"
+    /// ("not change case due to persistence, copying, transfer or other
+    /// computation processes") — anything that stores, re-serialises or
+    /// round-trips the originating system id — must read it here, not through
+    /// the typed accessor.
+    #[must_use]
+    pub fn creating_system_id_str(&self) -> &str {
+        split3(&self.value).map(|p| p[1]).unwrap_or_default()
     }
 
     /// Tree identifier of this version relative to others in the same version
@@ -132,6 +150,26 @@ mod tests {
         assert!(matches!(o.creating_system_id(), Uid::InternetId(_)));
         assert_eq!(o.version_tree_id().value, "1");
         assert!(!o.is_branch());
+    }
+
+    /// The verbatim accessor preserves case where the typed one normalises it
+    /// (BASE master05 §"Composite Identifiers and Case", case-preserving half).
+    #[test]
+    fn creating_system_id_str_is_verbatim() {
+        let o = ovid("1.2.840::openEHR.org::1");
+        assert_eq!(o.creating_system_id_str(), "openEHR.org");
+        let uuid_system = ovid("1.2.840::87284370-2D4B-4e3d-A3F3-F303D2F4F34B::1");
+        assert_eq!(
+            uuid_system.creating_system_id_str(),
+            "87284370-2D4B-4e3d-A3F3-F303D2F4F34B"
+        );
+        // The typed accessor normalises the same part to lower case.
+        assert_eq!(
+            uuid_system.creating_system_id().value(),
+            "87284370-2d4b-4e3d-a3f3-f303d2f4f34b"
+        );
+        // Total on a malformed id, like its siblings.
+        assert_eq!(ovid("not-an-ovid").creating_system_id_str(), "");
     }
 
     #[test]

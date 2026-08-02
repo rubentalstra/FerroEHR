@@ -21,6 +21,7 @@ use openehr_its::opt14::{
     CArchetypeRoot, CAttribute, CObject, Codedefinitionset, FlatArchetypeOntology,
     OperationalTemplate,
 };
+use openehr_rm::paths::archetype_node_id_is_term_code;
 
 use super::{NodeView, Violation, attribute_children};
 
@@ -29,13 +30,18 @@ use super::{NodeView, Violation, attribute_children};
 /// VATID: "check that all codes mentioned in `definition` are defined in
 /// terminology" (`AOM2/master08-validation.adoc` line 56). Applied to at-code
 /// `node_id`s (the addressable, sibling-identifying codes, AOM14/04 §`Node_id`).
-/// Empty `node_ids` (non-addressable leaves) and non-`at`/`id` codes are exempt.
+/// What counts as a term code is the RM's own reading of `archetype_node_id`
+/// ([`archetype_node_id_is_term_code`] — an `at`/`id` leader followed by
+/// `.`-separated numeric segments), so this pass and the RM path layer can
+/// never disagree about which node ids are codes. Empty `node_ids`
+/// (non-addressable leaves), archetype-root ids, and free text are exempt: VATID
+/// constrains *codes*, and a string outside the code grammar is not one.
 /// The defined-code set is collected globally across the flattened OPT (the
 /// definition roots + every `component_ontologies` set), which is deliberately
 /// lenient about per-archetype scoping — it still catches a `node_id` that is
 /// defined nowhere while never mis-rejecting a correctly-scoped code.
 pub(super) fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Violation> {
-    if !is_at_code(node_id) {
+    if !archetype_node_id_is_term_code(node_id) {
         return Ok(());
     }
     if !defined_at.contains(node_id) {
@@ -45,16 +51,6 @@ pub(super) fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Resu
         ));
     }
     Ok(())
-}
-
-/// An addressable archetype term code: `at0000`, `at0001.1`, or the ADL2 `id`
-/// form. A bare, empty, or free-text `node_id` is not an at-code.
-fn is_at_code(code: &str) -> bool {
-    let rest = code
-        .strip_prefix("at")
-        .or_else(|| code.strip_prefix("id"))
-        .unwrap_or("");
-    rest.starts_with(|c: char| c.is_ascii_digit())
 }
 
 // ─── VTTBK / VTCBK (binding key validity) ───────────────────────────────────────
@@ -69,14 +65,18 @@ pub(super) fn check_term_bindings(
     defined_at: &HashSet<String>,
 ) -> Result<(), Violation> {
     let check = |code: &str| -> Result<(), Violation> {
-        // NOTE (flattened-OPT tolerance): a *specialised* at-code
+        // NOTE (flattened-OPT tolerance): a *specialised* code
         // (`at0.23`, dot-notation — AOM2 §specialisation depth) may be bound
         // without a re-emitted local term definition: archie-era flattening
         // keeps parent-archetype bindings whose definitions live in the parent
         // (the vendored blood-pressure corpus OPTs carry these). A dotted
-        // at-code is therefore accepted as a valid binding key.
-        let specialised = code.starts_with("at") && code.contains('.');
-        if code.starts_with('/') || !is_at_code(code) || specialised || defined_at.contains(code) {
+        // code is therefore accepted as a valid binding key.
+        let specialised = code.contains('.');
+        if code.starts_with('/')
+            || !archetype_node_id_is_term_code(code)
+            || specialised
+            || defined_at.contains(code)
+        {
             return Ok(());
         }
         Err(Violation::new(

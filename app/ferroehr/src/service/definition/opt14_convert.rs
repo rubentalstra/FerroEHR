@@ -754,14 +754,21 @@ fn max_at_num_obj(obj: &opt14::CObject) -> i64 {
 
 /// The numeric value of an `atNNNN` node id's first segment (0 for a non-at
 /// code, e.g. an empty id or an already-id code).
+///
+/// The code grammar is not restated here: the string goes through the AOM2 code
+/// parser ([`openehr_adl::codes::parse_code`], the
+/// `org.openehr.am.aom2.adl_code_definitions` leader + `.`-separated numeric
+/// segments), so an at-code is recognised exactly as the rest of the ADL layer
+/// recognises one.
 fn at_num(node_id: &str) -> i64 {
-    let Some(rest) = node_id.strip_prefix("at") else {
-        return 0;
-    };
-    rest.split('.')
-        .next()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0)
+    match openehr_adl::codes::parse_code(node_id) {
+        Some(code) if code.prefix == openehr_adl::codes::CodePrefix::At => code
+            .segments
+            .first()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+        _ => 0,
+    }
 }
 
 // ── object constructors (the 1.4-shaped `am24` common fields) ────────────────

@@ -26,11 +26,13 @@ use ferroehr::ids::{EhrId, VoId};
 use ferroehr::service::response::{ResourceMeta, ServiceResponse};
 use ferroehr::versioning::change::Committed;
 
+use ferroehr::versioning::object_version_id::parse_uid_based_id;
+
 use crate::api::RequestParts;
 use crate::negotiate::{AppliedPreference, WireFormat};
 use crate::overview::error::RestError;
 use crate::overview::version_id::{
-    object_id_uuid, parse_ehr_id, parse_uid_based_id, parse_version_uid, require_if_match,
+    object_id_uuid, parse_ehr_id, parse_version_uid, require_if_match,
 };
 use crate::state::AppState;
 use crate::{negotiate, params};
