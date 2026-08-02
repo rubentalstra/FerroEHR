@@ -65,6 +65,7 @@ use crate::api::RequestParts;
 use crate::extensions::access::authn::{Principal, current_principal};
 use crate::extensions::access::authz::AbacGate;
 use crate::overview::error::RestError;
+use crate::overview::version_id::parse_uid_based_id;
 
 use crate::smart::enforce::{self, GateConfig, ScopeDecision};
 use crate::state::AppState;
@@ -397,9 +398,7 @@ async fn pre_template(
             let Some(uid) = parts.path.get("uid_based_id") else {
                 return Ok(None);
             };
-            let Some(vo_id) = vo_id_of(uid) else {
-                return Ok(None);
-            };
+            let (vo_id, _) = resolve_target(principal, uid)?;
             let template = (abac.resolvers.template_of_version)(vo_id, None)
                 .await
                 .map_err(|e| engine_error(principal, &format!("template resolution: {e}")))?;
@@ -427,10 +426,7 @@ async fn post_template(
     let Some(uid) = uid else {
         return Ok(None);
     };
-    let Some(vo_id) = vo_id_of(uid) else {
-        return Ok(None);
-    };
-    let version = version_of(uid);
+    let (vo_id, version) = resolve_target(principal, uid)?;
     (abac.resolvers.template_of_version)(vo_id, version)
         .await
         .map_err(|e| engine_error(principal, &format!("template resolution: {e}")))
@@ -500,26 +496,34 @@ async fn decide(
     }
 }
 
-/// The `vo_id` of an `OBJECT_VERSION_ID` (`{vo_id}::{system}::{version}`), or the
-/// whole string when it is a bare uid.
-fn vo_id_of(uid: &str) -> Option<String> {
-    let head = uid.split("::").next().unwrap_or(uid);
-    (!head.is_empty()).then(|| head.to_owned())
-}
-
-/// The trailing version number of an `OBJECT_VERSION_ID`, if present.
-fn version_of(uid: &str) -> Option<String> {
-    // The VERSION_TREE_ID lexical form: `N` or `N.B.V` (trunk or branch —
-    // RM common master06 §The 'Virtual Version Tree'). Anything else carries no version.
-    let tail = uid.rsplit("::").next()?;
-    let mut parts = tail.split('.');
-    let is_number = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
-    match (parts.next(), parts.next(), parts.next(), parts.next()) {
-        (Some(t), None, None, None) if is_number(t) => Some(tail.to_owned()),
-        (Some(t), Some(b), Some(v), None) if is_number(t) && is_number(b) && is_number(v) => {
-            Some(tail.to_owned())
-        }
-        _ => None,
+/// Decompose a `UID_BASED_ID` the PEP has to attribute — a bare
+/// `HIER_OBJECT_ID` or a full `OBJECT_VERSION_ID` — into the
+/// `(vo_id, version_tree_id)` pair the attribute resolvers take.
+///
+/// The identifier grammar is NOT restated here: the string goes through this
+/// adapter's one strict decoder ([`parse_uid_based_id`], which delegates the
+/// lexical form to `ObjectVersionId::from_str` in `openehr-base` — BASE
+/// `base_types` `master05-identification_package.adoc` §Syntaxes), so the PEP
+/// can never read an id differently from the route it is guarding.
+///
+/// A value that decoder rejects is **denied**, not silently degraded. This is
+/// the module's fail-closed rule (every attribute-resolution failure denies):
+/// the resource attributes the policy binds on cannot be computed for an
+/// unaddressable id, and permitting on an absent attribute would let a
+/// malformed path parameter walk past a template- or patient-scoped policy. It
+/// matches the existing hard deny for a CONTRIBUTION version whose template
+/// cannot be determined. Authorization decisions are our own design — no
+/// openEHR spec governs them (see the module header).
+fn resolve_target(principal: &Principal, uid: &str) -> Result<(String, Option<String>), Response> {
+    match parse_uid_based_id(uid) {
+        Ok(decoded) => Ok((
+            decoded.vo_id.to_string(),
+            decoded.version.map(|ovid| ovid.version_tree_id().value),
+        )),
+        Err(e) => Err(forbidden(
+            principal,
+            &format!("unaddressable resource id: {e}"),
+        )),
     }
 }
 
@@ -840,23 +844,65 @@ mod tests {
         assert_eq!(mode_of("definition_template_adl1.4_upload"), Mode::Skip);
     }
 
+    /// The PEP reads a resource id through this adapter's one strict
+    /// decoder (BASE `base_types` `master05-identification_package.adoc`
+    /// §Syntaxes), so a well-formed id decomposes and a malformed one is
+    /// DENIED rather than degraded into a whole-string `vo_id`.
     #[test]
     fn object_version_id_parsing() {
+        let principal = fallback_principal();
+        let ok = |uid: &str| resolve_target(&principal, uid).map_err(|_resp| "denied");
+
         let uid = "0197f1c2-3aa0-7000-8000-000000000001::ferroehr.local::2";
         assert_eq!(
-            vo_id_of(uid).as_deref(),
-            Some("0197f1c2-3aa0-7000-8000-000000000001")
+            ok(uid),
+            Ok((
+                "0197f1c2-3aa0-7000-8000-000000000001".to_owned(),
+                Some("2".to_owned())
+            ))
         );
-        assert_eq!(version_of(uid), Some("2".to_owned()));
         // A branch VERSION_TREE_ID is carried whole (RM common master06
         // §The 'Virtual Version Tree').
         assert_eq!(
-            version_of("0197f1c2-3aa0-7000-8000-000000000001::sys::2.1.3"),
-            Some("2.1.3".to_owned())
+            ok("0197f1c2-3aa0-7000-8000-000000000001::sys::2.1.3"),
+            Ok((
+                "0197f1c2-3aa0-7000-8000-000000000001".to_owned(),
+                Some("2.1.3".to_owned())
+            ))
         );
-        // A bare uid (no version) → itself, no version.
-        assert_eq!(vo_id_of("abc").as_deref(), Some("abc"));
-        assert_eq!(version_of("abc"), None);
+        // A bare HIER_OBJECT_ID (a UUID) → the versioned object, no version.
+        assert_eq!(
+            ok("0197f1c2-3aa0-7000-8000-000000000001"),
+            Ok(("0197f1c2-3aa0-7000-8000-000000000001".to_owned(), None))
+        );
+    }
+
+    /// The invalid twins: none of these is a `UID_BASED_ID` this CDR can
+    /// address, so each is a fail-closed deny (403) instead of the former
+    /// whole-string `vo_id` degradation.
+    #[test]
+    fn malformed_resource_ids_are_denied() {
+        let principal = fallback_principal();
+        for bad in [
+            // not a UUID at all
+            "abc",
+            // two parts, not three (BASE master05 §Syntaxes)
+            "0197f1c2-3aa0-7000-8000-000000000001::sys",
+            // an empty creating_system_id component
+            "0197f1c2-3aa0-7000-8000-000000000001::::2",
+            // a VERSION_TREE_ID that is not `N` or `N.B.V`
+            "0197f1c2-3aa0-7000-8000-000000000001::sys::v2",
+            // a three-part id whose object_id is not this CDR's UUID key
+            "not-a-uuid::sys::1",
+            "",
+        ] {
+            let denied = resolve_target(&principal, bad).expect_err("must deny");
+            assert_eq!(
+                denied.status(),
+                StatusCode::FORBIDDEN,
+                "id {bad:?} must be a fail-closed deny"
+            );
+        }
     }
 
     // ── SMART scope + launch-context gate (master08 §Resource Scopes; ─────────

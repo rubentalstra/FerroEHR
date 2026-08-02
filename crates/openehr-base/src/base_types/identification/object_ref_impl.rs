@@ -18,10 +18,16 @@ use super::object_ref::ObjectRefData;
 use crate::validate::{InvariantViolation, Validate};
 
 /// `true` when `ns` matches the openEHR namespace regex
-/// `[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*`. Shared with `PartyRef` (which inherits the
-/// `OBJECT_REF` invariant).
+/// `[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*` — BASE base_types
+/// `org.openehr.base.base_types.object_ref.adoc` §Attributes, the `namespace`
+/// Meaning row.
+///
+/// This is the single realization of that rule in the workspace: `PartyRef`
+/// (which inherits the `OBJECT_REF` constraint) and every consumer outside
+/// this crate judge a namespace through it, so there is one definition to
+/// maintain against the spec text.
 #[must_use]
-pub(crate) fn namespace_valid(ns: &str) -> bool {
+pub fn namespace_valid(ns: &str) -> bool {
     let mut chars = ns.chars();
     let Some(first) = chars.next() else {
         return false;

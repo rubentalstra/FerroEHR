@@ -15,6 +15,7 @@ use std::sync::Arc;
 
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
+use openehr_adl::hrid::{raw_id_concept, raw_id_lookup_key, raw_id_version};
 use openehr_adl::meta::{ArtefactSummary, summarize};
 use openehr_adl::opt::create_opt;
 use openehr_adl::parse::Dialect;
@@ -448,9 +449,9 @@ impl FerroEhrService {
         }
         // Partial resolution over the (small) registry: match the family and the
         // version prefix, then take the highest release version.
-        let family = family_key(template_id);
+        let family = raw_id_lookup_key(template_id);
         let want_version = version.map(str::to_owned).or_else(|| {
-            let v = version_of(template_id);
+            let v = raw_id_version(template_id);
             (!v.is_empty()).then(|| v.to_owned())
         });
         let hrids: Vec<String> = sqlx::query_scalar("SELECT hrid FROM adl2_artefact")
@@ -458,13 +459,13 @@ impl FerroEhrService {
             .await?;
         hrids
             .into_iter()
-            .filter(|h| family_key(h) == family)
+            .filter(|h| raw_id_lookup_key(h) == family)
             .filter(|h| {
                 want_version
                     .as_deref()
-                    .is_none_or(|want| version_prefix_matches(version_of(h), want))
+                    .is_none_or(|want| version_prefix_matches(raw_id_version(h), want))
             })
-            .max_by(|a, b| cmp_version(version_of(a), version_of(b)))
+            .max_by(|a, b| cmp_version(raw_id_version(a), raw_id_version(b)))
             .ok_or_else(|| {
                 ServiceError::sm(
                     CallStatusType::TemplateDoesNotExist,
@@ -803,7 +804,7 @@ impl FerroEhrService {
                     .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
                     .to_jiff()
                     .to_string();
-                let concept = hrid_concept(&hrid);
+                let concept = raw_id_concept(&hrid);
                 Ok(serde_json::json!({
                     "template_id": hrid,
                     "concept": concept,
@@ -855,61 +856,6 @@ fn store_kind(kind: &str) -> &str {
     }
 }
 
-/// The concept segment of an `ARCHETYPE_HRID` — the token between the model part
-/// (`publisher-package-class`) and the `.vN…` version
-/// (`AOM2/master07.05` §Physical Archetype Identifier). Falls back to the whole
-/// id when the shape is unexpected (never panics on stored input).
-fn hrid_concept(hrid: &str) -> &str {
-    let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
-    let (before_version, _) = split_at_version(core);
-    before_version.rsplit_once('.').map_or(core, |(_, c)| c)
-}
-
-/// The case-folded `publisher-package-class.concept` family key of an HRID
-/// (namespace + version stripped) — the identity used to group stored versions
-/// of the same template family (`AOM2/master07.05`).
-fn family_key(hrid: &str) -> String {
-    let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
-    split_at_version(core).0.to_ascii_lowercase()
-}
-
-/// The numeric release-version segment of an HRID (`…concept.v1.2.3-rc.4` →
-/// `1.2.3`); empty when there is no `.vN` marker.
-fn version_of(hrid: &str) -> &str {
-    let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
-    match split_at_version(core).1 {
-        Some(marker) => {
-            // Skip the `.v`; take up to the pre-release status marker (`-`).
-            let tail = marker.get(2..).unwrap_or_default();
-            tail.split('-').next().unwrap_or(tail)
-        }
-        None => "",
-    }
-}
-
-/// The byte index of the `.v<digit>` version marker in an archetype id (the
-/// first `.v` immediately followed by a digit, so a concept id containing `.v`
-/// is not mistaken for the version).
-fn version_marker(s: &str) -> Option<usize> {
-    s.as_bytes()
-        .windows(3)
-        .position(|w| matches!(w, [b'.', b'v', digit] if digit.is_ascii_digit()))
-}
-
-/// Split an archetype id core at its `.v<digit>` version marker: everything
-/// before the marker, and the marker onwards (`None` when the id carries no
-/// version marker, in which case the whole core is the "before" part). The
-/// marker's `.` and `v` are ASCII, so the split is always on a char boundary.
-fn split_at_version(core: &str) -> (&str, Option<&str>) {
-    let Some(idx) = version_marker(core) else {
-        return (core, None);
-    };
-    match core.split_at_checked(idx) {
-        Some((before, marker)) => (before, Some(marker)),
-        None => (core, None),
-    }
-}
-
 /// Whether `full` (a `major.minor.patch` release) matches the SEMVER `prefix`
 /// (`1`, `1.2`, or `1.2.3` — `version.yaml`: "an exact version … or a pattern
 /// as partial prefix"). Each supplied prefix component must equal the
@@ -943,14 +889,19 @@ mod tests {
 
     #[test]
     fn hrid_concept_and_family_extract_from_the_identifier() {
+        // The HRID grammar has ONE reading, owned by `openehr_adl::hrid`; this
+        // pins that the template-resolution path reads identifiers through it.
         let hrid = "org.example::openEHR-EHR-COMPOSITION.vital_signs.v1.2.3";
-        assert_eq!(hrid_concept(hrid), "vital_signs");
-        assert_eq!(family_key(hrid), "openehr-ehr-composition.vital_signs");
-        assert_eq!(version_of(hrid), "1.2.3");
-        // a concept id containing a dotted token is not mistaken for the version
+        assert_eq!(raw_id_concept(hrid), "vital_signs");
+        assert_eq!(
+            raw_id_lookup_key(hrid),
+            "openehr-ehr-composition.vital_signs"
+        );
+        assert_eq!(raw_id_version(hrid), "1.2.3");
+        // the pre-release qualifier is not part of the release version
         let hrid = "openEHR-EHR-OBSERVATION.lab_result.v2.0.0-rc.1";
-        assert_eq!(hrid_concept(hrid), "lab_result");
-        assert_eq!(version_of(hrid), "2.0.0");
+        assert_eq!(raw_id_concept(hrid), "lab_result");
+        assert_eq!(raw_id_version(hrid), "2.0.0");
     }
 
     #[test]

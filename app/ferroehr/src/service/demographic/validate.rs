@@ -16,77 +16,40 @@
 //!   and Relationships — relationship refs denote the party's version
 //!   container).
 
-use std::sync::LazyLock;
-
-use regex::Regex;
+use openehr_base::prelude::PartyRef;
+use openehr_base::validate::Validate;
 use serde_json::Value;
 
 use crate::service::demographic::types::PartyKind;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 
-/// `OBJECT_REF.namespace` legality: `"local"`, `"unknown"`, or a value matching
-/// the standard regex `[a-zA-Z][a-zA-Z0-9_.:\/&?=+-]*` (the two specials are
-/// themselves matched by the regex) — BASE `base_types`
-/// `object_ref.adoc §namespace`.
-static NAMESPACE_RE: LazyLock<Regex> = LazyLock::new(|| {
-    #[expect(
-        clippy::expect_used,
-        reason = "the pattern is a fixed literal in this file; inspecting it \
-                  proves it compiles, so the Err arm is unreachable and a \
-                  typed error would have no caller"
-    )]
-    Regex::new(r"^[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*$")
-        .expect("the static namespace pattern should always compile")
-});
-
-/// The legal `PARTY_REF.type` set — BASE `base_types` `party_ref.adoc`
-/// §`Type_validity`: `type ∈ {PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY,
-/// ACTOR}` (abstract supertypes are allowed so a valid ref can still be built
-/// to a subtype not known by the current implementation).
-const PARTY_REF_TYPES: [&str; 7] = [
-    "PERSON",
-    "ORGANISATION",
-    "GROUP",
-    "AGENT",
-    "ROLE",
-    "PARTY",
-    "ACTOR",
-];
-
 /// The RM `_type` a `PARTY_RELATIONSHIP` versioned object stores.
 const RELATIONSHIP_RM_TYPE: &str = "PARTY_RELATIONSHIP";
 
-/// Validate one inbound `PARTY_REF` value: enforce
-/// `PARTY_REF.Type_validity` (`type ∈` [`PARTY_REF_TYPES`], BASE `party_ref.adoc`)
-/// and `OBJECT_REF.namespace` legality (BASE `object_ref.adoc`). `context`
-/// names the referencing attribute for the `422` message. An absent value is
-/// the caller's concern (mandatory refs fail deserialization first).
+/// Validate one inbound `PARTY_REF` value against the BASE class checks —
+/// `PARTY_REF.Type_validity` and the inherited `OBJECT_REF.namespace` rule.
+///
+/// The rules themselves are NOT restated here: the reference is decoded into
+/// the generated [`PartyRef`] and judged by that class's single spec-cited
+/// realization in `openehr-base`
+/// (`base_types/identification/party_ref_impl.rs`), so this service and the
+/// whole-instance RM pass can never give two answers about the same ref.
+/// `context` names the referencing attribute for the `422` message.
+///
+/// Decoding also enforces the mandatory `OBJECT_REF` attributes (`id`,
+/// `namespace`, `type` are all 1..1 —
+/// `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_ref.adoc`
+/// §Attributes), which a partial hand check cannot see.
 fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceError> {
-    let ref_type = reference
-        .get("type")
-        .and_then(Value::as_str)
-        .ok_or_else(|| {
-            ServiceError::Unprocessable(format!(
-                "{context}: PARTY_REF requires a type (OBJECT_REF.type)"
-            ))
-        })?;
-    if !PARTY_REF_TYPES.contains(&ref_type) {
+    let typed = openehr_its::json::from_canonical_value::<PartyRef>(reference).map_err(|e| {
+        ServiceError::Unprocessable(format!("{context}: not a well-formed PARTY_REF: {e}"))
+    })?;
+    let violations = typed.invariants();
+    if let Some(first) = violations.first() {
         return Err(ServiceError::Unprocessable(format!(
-            "{context}: PARTY_REF.type {ref_type:?} is not one of \
-             {{PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY, ACTOR}} \
-             (PARTY_REF.Type_validity)"
-        )));
-    }
-    // OBJECT_REF.namespace is mandatory (1..1) and must be legal.
-    let namespace = reference
-        .get("namespace")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
-    if !NAMESPACE_RE.is_match(namespace) {
-        return Err(ServiceError::Unprocessable(format!(
-            "{context}: OBJECT_REF.namespace {namespace:?} is not \"local\", \"unknown\", \
-             or a value matching [a-zA-Z][a-zA-Z0-9_.:/&?=+-]* (OBJECT_REF.namespace)"
+            "{context}: {}",
+            first.message
         )));
     }
     Ok(())
@@ -412,6 +375,20 @@ mod tests {
         }
     }
 
+    /// The accepting twin for the universal supertype `ANY`: the demographic
+    /// write boundary judges `PARTY_REF.type` by the one realization in
+    /// `openehr-base`, whose adjudicated set admits `ANY` (the value the CNF
+    /// positive commit corpus writes into `PARTY_IDENTIFIED.external_ref` —
+    /// `CNF/tests/platform/robot/_resources/test_data_sets/compositions/TDD/persistent_minimal.en.v1__full.xml`).
+    /// Before this crate consumed that realization it kept its own list and
+    /// refused `ANY`, so the two disagreed.
+    #[test]
+    fn party_ref_any_supertype_is_accepted() {
+        let any = json!({ "_type": "PARTY_REF", "namespace": "local",
+            "type": "ANY", "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
+        validate_party_ref(&any, "ctx").expect("ANY is admitted by PARTY_REF.Type_validity");
+    }
+
     /// an `OBJECT_REF.namespace` that is empty or violates the standard
     /// regex is a `422` (`OBJECT_REF.namespace`).
     #[test]
@@ -419,9 +396,30 @@ mod tests {
         let bad_ns = json!({ "_type": "PARTY_REF", "namespace": "1nope",
             "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
         match validate_party_ref(&bad_ns, "ctx") {
-            Err(ServiceError::Unprocessable(m)) => assert!(m.contains("namespace"), "got {m}"),
+            Err(ServiceError::Unprocessable(m)) => {
+                assert!(m.contains("Namespace_valid"), "got {m}");
+            }
             other => panic!("expected namespace 422, got {other:?}"),
         }
+    }
+
+    /// The mandatory `OBJECT_REF` attributes (`id`, `namespace`, `type` all
+    /// 1..1 — BASE `object_ref.adoc` §Attributes) are enforced by decoding the
+    /// reference into the generated type, so a ref missing one is a `422`
+    /// instead of passing a partial hand check.
+    #[test]
+    fn party_ref_mandatory_attributes_are_enforced() {
+        let no_id = json!({ "_type": "PARTY_REF", "namespace": "local", "type": "PERSON" });
+        assert!(matches!(
+            validate_party_ref(&no_id, "ctx"),
+            Err(ServiceError::Unprocessable(_))
+        ));
+        let no_type = json!({ "_type": "PARTY_REF", "namespace": "local",
+            "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
+        assert!(matches!(
+            validate_party_ref(&no_type, "ctx"),
+            Err(ServiceError::Unprocessable(_))
+        ));
     }
 
     /// A ROLE.performer / ACTOR.roles ref is checked for `Type_validity`.

@@ -188,6 +188,31 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The demographic endpoints accept `PARTY_REF.type` `ANY`.** A `PARTY_REF`
+  inside a party or `PARTY_RELATIONSHIP` body — `ACTOR.roles`,
+  `ROLE.performer`, `PARTY_RELATIONSHIP.source`/`target` — was refused with
+  `422` when its `type` was `ANY`, even though the composition endpoints
+  accepted the same value. The demographic write boundary kept a second copy
+  of the legal `PARTY_REF.type` set that had drifted from the single
+  spec-cited one; it now judges every reference through that one definition,
+  so the two surfaces give the same answer. Unknown type strings are still
+  refused.
+
+- **A `PARTY_REF` missing a mandatory attribute is refused.** A reference in
+  a demographic body without an `id`, `namespace` or `type` (all `1..1` on
+  `OBJECT_REF`) passed the write boundary and was only caught, if at all,
+  further in. It is now a `422` naming the missing attribute.
+
+- **The authorization gate refuses an unaddressable resource id instead of
+  guessing.** A malformed `{uid_based_id}` — not a UUID, and not a
+  well-formed three-part `OBJECT_VERSION_ID` — was previously read as if the
+  whole string were the versioned-object id, so the template attribute the
+  ABAC/SMART policy binds on silently came back empty and the request could
+  pass a template-scoped rule. Such a request is now denied with `403`, in
+  line with the gate's existing fail-closed handling of every other
+  attribute-resolution failure. Well-formed ids (bare `HIER_OBJECT_ID` and
+  full `OBJECT_VERSION_ID`, trunk or branch) are unaffected.
+
 - **A version's digital signature now covers the attestations it was
   committed with.** openEHR signs "the entire Version object", excluding only
   the `signature` attribute itself, so an attestation supplied on the commit

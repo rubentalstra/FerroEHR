@@ -11,7 +11,8 @@
 use axum::response::Response;
 use http::StatusCode;
 use serde_json::Value;
-use uuid::Uuid;
+
+use openehr_base::prelude::ObjectVersionId;
 
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
@@ -224,8 +225,16 @@ pub(super) async fn run(
                 .and_then(|u| u.get("value"))
                 .and_then(Value::as_str)
             {
-                let body_vo = body_uid.split("::").next().unwrap_or(body_uid);
-                if body_vo.parse::<Uuid>() != Ok(uid.vo_id.0) {
+                // The versioned object a body `uid` names is its
+                // OBJECT_VERSION_ID `object_id`, read through the BASE
+                // accessor (`base_types` §Functions `object_id`;
+                // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`).
+                // Anything whose object_id is not this CDR's UUID key cannot
+                // name the addressed object, so it fails the comparison.
+                let body_vo = object_id_uuid(&ObjectVersionId {
+                    value: body_uid.to_owned(),
+                });
+                if body_vo != Some(uid.vo_id.0) {
                     return Err(ApiError::Unprocessable(format!(
                         "the body COMPOSITION.uid {body_uid:?} does not identify the \
                          versioned object addressed by the request path ({})",

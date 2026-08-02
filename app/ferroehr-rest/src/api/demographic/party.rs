@@ -7,6 +7,7 @@
 use axum::response::Response;
 use http::{HeaderMap, StatusCode};
 
+use openehr_base::prelude::ObjectVersionId;
 use openehr_its::rest::generated::demographic::{
     AgentCreateParams, AgentDeleteParams, AgentGetParams, AgentUpdateParams,
 };
@@ -169,10 +170,17 @@ async fn persist_request_tags(
     let Some(version_uid) = resp.meta.as_ref().map(|m| m.uid.clone()) else {
         return Ok(());
     };
-    let container_uid = version_uid
-        .split_once("::")
-        .map_or(version_uid.as_str(), |(object_id, _)| object_id)
-        .to_owned();
+    // The VERSIONED_OBJECT the `openehr-item-tag` header addresses is the
+    // `object_id` of the committed version's OBJECT_VERSION_ID, read through
+    // the BASE accessor (`base_types` §Functions `object_id`;
+    // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`)
+    // rather than a local `::` split.
+    let container_uid = ObjectVersionId {
+        value: version_uid.clone(),
+    }
+    .object_id()
+    .value()
+    .into_owned();
     if let Some(entries) = object_entries {
         let tags = params::item_tags_from_header_entries(&entries);
         let stored = state

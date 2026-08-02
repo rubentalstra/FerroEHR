@@ -31,4 +31,5 @@ pub mod object_version_id_impl;
 pub mod party_ref_impl;
 pub mod terminology_id_impl;
 pub mod uid_based_id_impl;
+pub mod uid_impl;
 pub mod version_tree_id_impl;

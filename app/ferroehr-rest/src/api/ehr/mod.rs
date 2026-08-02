@@ -285,16 +285,24 @@ pub(super) async fn apply_item_tag_headers(
     // stored collection stays separate all the way to its own response header
     // — the echo confirms "the actual list of ITEM_TAGs stored" for the target
     // the header names, so the two lists are never merged.
-    let container_uid = version_uid
-        .split_once("::")
-        .map_or(version_uid, |(object_id, _)| object_id);
+    // The VERSIONED_OBJECT the `openehr-item-tag` header addresses is the
+    // `object_id` of the just-committed version's OBJECT_VERSION_ID, read
+    // through the BASE accessor (`base_types` §Functions `object_id`;
+    // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`)
+    // rather than a local `::` split.
+    let container_uid = ObjectVersionId {
+        value: version_uid.to_owned(),
+    }
+    .object_id()
+    .value()
+    .into_owned();
     let mut stored = StoredItemTags::default();
     if let Some(entries) = object_tags {
         let tags = entries.iter().map(entry_to_value).collect();
         stored.object = Some(
             state
                 .backend()
-                .target_tags_replace(ehr_id, container_uid.to_owned(), target_type, tags)
+                .target_tags_replace(ehr_id, container_uid, target_type, tags)
                 .await?,
         );
     }

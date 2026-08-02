@@ -1,0 +1,108 @@
+//! Hand-written accessor for the abstract `UID` class.
+//!
+//! Spec: BASE 1.3.0
+//! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.uid.adoc`
+//! — `UID` declares exactly one attribute, `value: String` [1..1] ("The value
+//! of the id."), and one invariant, `Value_valid: not value.empty`. The
+//! generator emits `UID` as the closed subtype enum
+//! ([`Uid`](super::uid::Uid)) and puts the `value` field on each concrete
+//! subtype, so the inherited attribute has no accessor on the parent; this
+//! sibling supplies it.
+//!
+//! NOTE (settled emission decision, not a defect): `UUID.value` is emitted as
+//! `uuid::Uuid` rather than `String` — the strong-typing rule of the root
+//! `CLAUDE.md` §Conventions ("strong types where unambiguous"). The spec's
+//! `String` view of that variant is therefore rendered, not borrowed, which is
+//! why [`Uid::value`](super::uid::Uid::value) returns a
+//! [`Cow`](std::borrow::Cow): borrowed for `INTERNET_ID`/`ISO_OID`, owned for
+//! `UUID`. `uuid::Uuid`'s `Display` is the RFC 4122 lower-case hyphenated form
+//! (the form BASE `base_types`
+//! `master05-identification_package.adoc` §Syntaxes gives for `uuid`), so the
+//! rendered value is a legal `UID` lexical form — but it is a *normalised*
+//! rendering: a `UUID` written in upper case does not survive the round trip
+//! byte-for-byte. Callers that must honour the case-PRESERVING half of
+//! master05 §"Composite Identifiers and Case" (storing an identifier verbatim)
+//! must keep the original string; this accessor is for reading the identifier
+//! *value*, not for re-serialising a stored one.
+
+use std::borrow::Cow;
+
+use super::uid::Uid;
+
+impl Uid {
+    /// The `UID.value` string of whichever subtype this is — BASE
+    /// `org.openehr.base.base_types.uid.adoc` §Attributes (`value: String`
+    /// [1..1], "The value of the id.").
+    ///
+    /// Borrowed for the two string-backed subtypes (`INTERNET_ID`, `ISO_OID`)
+    /// and owned for `UUID`, whose `value` is a typed `uuid::Uuid` rendered in
+    /// the RFC 4122 lower-case hyphenated form (see the module note).
+    #[must_use]
+    pub fn value(&self) -> Cow<'_, str> {
+        match self {
+            Uid::InternetId(id) => Cow::Borrowed(id.value.as_str()),
+            Uid::IsoOid(id) => Cow::Borrowed(id.value.as_str()),
+            Uid::Uuid(id) => Cow::Owned(id.value.to_string()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::base_types::identification::internet_id::InternetId;
+    use crate::base_types::identification::iso_oid::IsoOid;
+    use crate::base_types::identification::lexical::make_uid;
+    use crate::base_types::identification::uuid::Uuid;
+
+    /// Each variant yields its own `value`, and the string-backed ones borrow.
+    #[test]
+    fn value_per_subtype() {
+        let internet = Uid::InternetId(InternetId {
+            value: "openehr.org".to_owned(),
+        });
+        assert_eq!(internet.value(), "openehr.org");
+        assert!(matches!(internet.value(), Cow::Borrowed(_)));
+
+        let oid = Uid::IsoOid(IsoOid {
+            value: "1.2.840.113554".to_owned(),
+        });
+        assert_eq!(oid.value(), "1.2.840.113554");
+        assert!(matches!(oid.value(), Cow::Borrowed(_)));
+
+        let uuid = Uid::Uuid(Uuid {
+            value: "2fdbf3f0-1c0a-4a0e-9f2a-3b7f6b1e9c11"
+                .parse()
+                .expect("the literal is a well-formed RFC 4122 UUID"),
+        });
+        assert_eq!(uuid.value(), "2fdbf3f0-1c0a-4a0e-9f2a-3b7f6b1e9c11");
+        assert!(matches!(uuid.value(), Cow::Owned(_)));
+    }
+
+    /// Postcondition of `UID.Value_valid` (`not value.empty`) on every id the
+    /// lexical builder produces from a non-empty string.
+    #[test]
+    fn value_is_never_empty_for_a_non_empty_source() {
+        for raw in [
+            "openehr.org",
+            "1.2.840.113554.3.7.10",
+            "87284370-2D4B-4e3d-A3F3-F303D2F4F34B",
+            "12345",
+        ] {
+            assert!(!make_uid(raw).value().is_empty(), "empty value for {raw:?}");
+        }
+    }
+
+    /// `value()` round-trips the two string-backed lexical forms verbatim; the
+    /// `UUID` form is NORMALISED to lower case (see the module note), which is
+    /// why it is not a byte-for-byte round trip.
+    #[test]
+    fn round_trip_is_verbatim_except_for_the_normalised_uuid_rendering() {
+        assert_eq!(make_uid("openEHR.org").value(), "openEHR.org");
+        assert_eq!(make_uid("1.2.840.113554").value(), "1.2.840.113554");
+        assert_eq!(
+            make_uid("87284370-2D4B-4e3d-A3F3-F303D2F4F34B").value(),
+            "87284370-2d4b-4e3d-a3f3-f303d2f4f34b"
+        );
+    }
+}

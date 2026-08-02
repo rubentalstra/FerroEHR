@@ -27,5 +27,10 @@ The phase has THREE legs, all blocking the next audit unit: #1686 (typed
 codec + openehr-term sourcing), #1687 (RM spec logic pushed down into
 *_impl.rs — criterion: realizes-a-spec-definition => crate with citation +
 postcondition tests; app keeps storage/wire/service only), and the
-duplication inventory that scopes both. Related: [[owner-work-style]]
-(no quick fixes, big-bang convergence).
+duplication inventory that scopes both. FULLY BREAKING changes are the
+owner's explicit expectation for such phases (2026-08-02): every crate is
+publish=false, so no signature/shape/layout is preserved for compatibility —
+best shape wins, wide call-site churn included; only spec conformance
+(never-lax, adjudicated wire changes with twins + changelog) and green gates
+are unbreakable. Related: [[owner-work-style]] (no quick fixes, big-bang
+convergence).
