@@ -19,11 +19,81 @@ use crate::base_types::identification::iso_oid::IsoOid;
 use crate::base_types::identification::uid::Uid;
 use crate::base_types::identification::uuid::Uuid;
 
+/// The identifier component a syntax failure is attributed to — the *field*
+/// half of [`IdError::Malformed`].
+///
+/// Named after the productions of BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes, so an error says which
+/// part of the identifier is wrong rather than only that something is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IdComponent {
+    /// The whole `value` string of the identifier.
+    Value,
+    /// `root` of a `uid_based_id` (`root, [ '::', extension ]`).
+    Root,
+    /// `object_id`, the first part of an `object_version_id`.
+    ObjectId,
+    /// `creating_system_id`, the second part of an `object_version_id`.
+    CreatingSystemId,
+}
+
+impl std::fmt::Display for IdComponent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Value => "value",
+            Self::Root => "root",
+            Self::ObjectId => "object_id",
+            Self::CreatingSystemId => "creating_system_id",
+        })
+    }
+}
+
+/// The grammar production a component was required to match — the *expected*
+/// half of [`IdError::Malformed`] (BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IdProduction {
+    /// `uid = iso_oid | uuid | internet_id`.
+    Uid,
+    /// `iso_oid = number, { '.', number }`.
+    IsoOid,
+    /// `uuid = hex-number, '-', … (five groups)`.
+    Uuid,
+    /// `internet_id = subdomain`.
+    InternetId,
+}
+
+impl std::fmt::Display for IdProduction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Uid => "uid",
+            Self::IsoOid => "iso_oid",
+            Self::Uuid => "uuid",
+            Self::InternetId => "internet_id",
+        })
+    }
+}
+
 /// Error raised when an identifier string does not conform to its openEHR
 /// lexical form (BASE 1.3.0). Returned by the `FromStr`/`TryFrom<&str>`
 /// implementations on the identification value types.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum IdError {
+    /// A component of the identifier did not match the grammar production its
+    /// position requires (BASE `base_types`
+    /// `master05-identification_package.adoc` §Syntaxes).
+    ///
+    /// Carried as data — which component, what was expected, what was found —
+    /// so a caller can branch on the failure instead of matching on prose.
+    #[error("{component} {found:?} does not match the {expected} production")]
+    Malformed {
+        /// The identifier component at fault.
+        component: IdComponent,
+        /// The production that component was required to match.
+        expected: IdProduction,
+        /// The offending substring, verbatim (case-preserving).
+        found: String,
+    },
     /// The identifier string was empty (violates `UID.Value_valid` and the
     /// non-empty requirement of every identifier lexical form).
     #[error("empty identifier value")]
@@ -107,6 +177,93 @@ pub(crate) fn is_positive_int(s: &str) -> bool {
     }
 }
 
+/// `true` for the `iso_oid` production of BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes:
+/// `iso_oid = number, { '.', number }` — one or more `.`-separated non-empty
+/// runs of ASCII digits.
+///
+/// Note the "one or more": the grammar admits a single group (`12345`), which
+/// is wider than the ≥2-group form the subtype *dispatch* uses to tell an OID
+/// from an internet id (`make_uid`). This predicate answers "is this string a
+/// legal `iso_oid`", which is a validity question, not a classification one.
+#[must_use]
+pub fn is_iso_oid(s: &str) -> bool {
+    s.split('.').all(all_digits)
+}
+
+/// `true` for the `uuid` production of BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes:
+/// `uuid = hex-number, '-', hex-number, '-', hex-number, '-', hex-number, '-',
+/// hex-number` — five `-`-separated runs of hex digits, in the `8-4-4-4-12`
+/// widths of the UUID the production names.
+///
+/// The EBNF writes the five groups as bare `hex-number`s and does not spell the
+/// widths out, but the identified thing is a UUID: master05 §"Primitive
+/// Identifiers" defines the subtype as the commonly accepted UUID ("also
+/// commonly known as GUIDs"), and every UUID the spec shows is the canonical
+/// `8-4-4-4-12` form (§"Identifying Versions within openEHR Versioned
+/// Containers": `87284370-2D4B-4e3d-A3F3-F303D2F4F34B`). The generated
+/// [`Uuid`] carries an RFC 4122 `uuid::Uuid` (the settled strong-typing
+/// override), whose `Display` is exactly this form — so anything else could not
+/// be stored as a `UUID` in the first place, and a five-group hex string with
+/// other widths (`1-2-3-4-5`) is not a UUID and is not accepted as one here.
+///
+/// The UUID grammar itself is not re-implemented: it is delegated to the
+/// pinned [`uuid`] crate — the same parser the strong-typed `UUID.value` field
+/// is built from, so the predicate and the stored type can never disagree. The
+/// one thing added on top is the length check, because
+/// [`uuid::Uuid::try_parse`] also accepts the simple (`8f2c…`), braced
+/// (`{8f2c…}`) and URN (`urn:uuid:8f2c…`) spellings
+/// (<https://docs.rs/uuid/1/uuid/struct.Uuid.html#method.try_parse>), none of
+/// which is a `uuid` in the §Syntaxes sense.
+#[must_use]
+pub fn is_uuid(s: &str) -> bool {
+    s.len() == uuid::fmt::Hyphenated::LENGTH && uuid::Uuid::try_parse(s).is_ok()
+}
+
+/// `true` for one `label` of the `internet_id` production (BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes):
+/// `label = alphanum | alphanum-ext-str, alphanum` with
+/// `alphanum-ext-str = letter, { letter | digit | '_' | '-' }` — i.e. a single
+/// letter-or-digit, or a run that starts with a letter, ends with a
+/// letter-or-digit, and uses only letters, digits, `_` and `-` in between.
+fn is_internet_label(label: &str) -> bool {
+    match label.as_bytes() {
+        [] => false,
+        [only] => only.is_ascii_alphanumeric(),
+        [first, middle @ .., last] => {
+            first.is_ascii_alphabetic()
+                && last.is_ascii_alphanumeric()
+                && middle
+                    .iter()
+                    .all(|b| b.is_ascii_alphanumeric() || *b == b'_' || *b == b'-')
+        }
+    }
+}
+
+/// `true` for the `internet_id` production of BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes:
+/// `internet_id = subdomain`, `subdomain = label | subdomain, '.', label` —
+/// one or more `.`-separated labels (`is_internet_label`).
+#[must_use]
+pub fn is_internet_id(s: &str) -> bool {
+    s.split('.').all(is_internet_label)
+}
+
+/// `true` for the `uid` production of BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes:
+/// `uid = iso_oid | uuid | internet_id`.
+///
+/// This is the predicate every validating identifier constructor runs on a
+/// `root` / `object_id` / `creating_system_id` position, so an identifier whose
+/// UID part is not a legal UID cannot be constructed. It accepts exactly what
+/// the three productions accept — no more (the strictness rule) and no less
+/// (an invented prohibition is the same defect).
+#[must_use]
+pub fn is_uid(s: &str) -> bool {
+    is_iso_oid(s) || is_uuid(s) || is_internet_id(s)
+}
+
 /// Build a concrete [`Uid`] from a root/identifier string, choosing the subtype
 /// by lexical form (BASE 1.3.0 `UID` hierarchy): a valid RFC-4122 UUID becomes
 /// [`Uuid`]; an OID (dot-separated groups of digits, at least two groups)
@@ -115,7 +272,14 @@ pub(crate) fn is_positive_int(s: &str) -> bool {
 /// UID carries no `_type`, so the subtype is inferred from the string.
 #[must_use]
 pub(crate) fn make_uid(value: &str) -> Uid {
-    if let Ok(u) = value.parse::<uuid::Uuid>() {
+    // The `uuid` arm goes through [`is_uuid`] rather than a bare
+    // `parse::<uuid::Uuid>()`, so classification and validity answer from ONE
+    // grammar: the bare parse also accepts the braced/URN/simple spellings,
+    // which are not `uuid` lexical forms and whose acceptance here would
+    // silently rewrite the identifier's text on the way through `Uid::value`.
+    if is_uuid(value)
+        && let Ok(u) = value.parse::<uuid::Uuid>()
+    {
         return Uid::Uuid(Uuid { value: u });
     }
     if is_oid(value) {
@@ -182,6 +346,55 @@ mod tests {
         let original = "openEHR.org";
         assert_eq!(original, "openEHR.org");
         assert_eq!(composite_id_key(original), "openehr.org");
+    }
+
+    /// The three `uid` productions of BASE `master05` §Syntaxes, each accepted
+    /// exactly where the grammar accepts it.
+    #[test]
+    fn uid_productions() {
+        // iso_oid = number, { '.', number } — one or more digit groups.
+        assert!(is_iso_oid("12345"));
+        assert!(is_iso_oid("1.2.840.113554"));
+        assert!(is_iso_oid("0.0"));
+        assert!(!is_iso_oid(""));
+        assert!(!is_iso_oid("1."));
+        assert!(!is_iso_oid(".1"));
+        assert!(!is_iso_oid("1.2a"));
+
+        // uuid = the canonical 8-4-4-4-12 hex form, and nothing else.
+        assert!(is_uuid("87284370-2D4B-4e3d-A3F3-F303D2F4F34B"));
+        assert!(is_uuid("2fdbf3f0-1c0a-4a0e-9f2a-3b7f6b1e9c11"));
+        assert!(!is_uuid("1-2-3-4-5"));
+        assert!(!is_uuid("87284370-2D4B-4e3d-A3F3-F303D2F4F34"));
+        assert!(!is_uuid("87284370-2D4B-4e3d-A3F3-F303D2F4F34BB"));
+        assert!(!is_uuid("872843702D4B4e3dA3F3F303D2F4F34B"));
+        assert!(!is_uuid("87284370-2D4B-4e3d-A3F3-F303D2F4F34G"));
+        assert!(!is_uuid("{87284370-2D4B-4e3d-A3F3-F303D2F4F34B}"));
+        assert!(!is_uuid("1-2-3-4"));
+        assert!(!is_uuid("1-2-3-4-5-6"));
+
+        // internet_id = subdomain of labels.
+        assert!(is_internet_id("openehr.org"));
+        assert!(is_internet_id("uk.nhs.ehr1"));
+        assert!(is_internet_id("a"));
+        assert!(is_internet_id("7"));
+        assert!(is_internet_id("my_system-1.example"));
+        assert!(!is_internet_id(""));
+        assert!(!is_internet_id("1234-5678"));
+        assert!(!is_internet_id("-leading"));
+        assert!(!is_internet_id("trailing-"));
+        assert!(!is_internet_id("has space"));
+        assert!(!is_internet_id("a..b"));
+
+        // uid is the union of the three.
+        assert!(is_uid("12345"));
+        assert!(is_uid("87284370-2D4B-4e3d-A3F3-F303D2F4F34B"));
+        assert!(is_uid("openEHR.org"));
+        assert!(!is_uid(""));
+        assert!(!is_uid("1-2-3-4-5"));
+        assert!(!is_uid("1234-5678"));
+        assert!(!is_uid("a::b"));
+        assert!(!is_uid("système"));
     }
 
     #[test]

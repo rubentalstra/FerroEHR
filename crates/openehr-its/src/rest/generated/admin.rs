@@ -22,6 +22,7 @@ pub struct AdminEhrDeleteParams {
 /// Parameters for `admin_ehr_delete_all` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdminEhrDeleteAllParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
 }

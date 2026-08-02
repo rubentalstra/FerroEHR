@@ -16,7 +16,7 @@
 //! id in `ETag`/`Location`/version paths); we express it as `Value_format_valid`
 //! in the same spirit as the ISO-8601 `Value_valid` invariants elsewhere.
 
-use super::lexical::{IdError, make_uid};
+use super::lexical::{IdComponent, IdError, IdProduction, is_uid, make_uid};
 use super::object_version_id::ObjectVersionId;
 use super::uid::Uid;
 use super::version_tree_id::VersionTreeId;
@@ -87,32 +87,87 @@ impl ObjectVersionId {
     }
 }
 
-impl FromStr for ObjectVersionId {
-    type Err = IdError;
-
-    /// Parse an `OBJECT_VERSION_ID`, enforcing the three-part lexical form
-    /// strictly: exactly three non-empty `::`-delimited parts, the third a
+impl ObjectVersionId {
+    /// Build an `OBJECT_VERSION_ID` from its string form, validating the BASE
+    /// `master05-identification_package.adoc` §Syntaxes grammar:
+    /// `object_version_id = object_id, '::', creating_system_id, '::',
+    /// version_tree_id` with `object_id = uid`, `creating_system_id = uid` and
+    /// `version_tree_id = trunk_version, [ '.', branch_number, '.',
+    /// branch_version ]`.
+    ///
+    /// The value is stored verbatim — the case-**preserving** half of master05
+    /// §"Composite Identifiers and Case".
+    ///
+    /// # Errors
+    /// [`IdError::Empty`] for an empty value; [`IdError::PartCount`] when there
+    /// are not exactly three `::`-delimited parts;
+    /// [`IdError::EmptyComponent`] when the `object_id` or `creating_system_id`
+    /// part is empty; [`IdError::Malformed`] when either of those parts is not
+    /// a legal `uid`; [`IdError::VersionTree`] when the third part is not a
     /// well-formed `VERSION_TREE_ID`.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
+    pub fn new(value: impl Into<String>) -> Result<Self, IdError> {
+        let value = value.into();
+        if value.is_empty() {
             return Err(IdError::Empty);
         }
-        let parts = split3(s).ok_or(IdError::PartCount {
+        let parts = split3(&value).ok_or(IdError::PartCount {
             expected: 3,
-            found: s.split("::").count(),
+            found: value.split("::").count(),
         })?;
-        if parts[0].is_empty() {
-            return Err(IdError::EmptyComponent("object_id"));
-        }
-        if parts[1].is_empty() {
-            return Err(IdError::EmptyComponent("creating_system_id"));
-        }
+        check_uid_part(parts[0], IdComponent::ObjectId, "object_id")?;
+        check_uid_part(
+            parts[1],
+            IdComponent::CreatingSystemId,
+            "creating_system_id",
+        )?;
         if !is_valid_version_tree(parts[2]) {
             return Err(IdError::VersionTree(parts[2].to_owned()));
         }
-        Ok(Self {
-            value: s.to_owned(),
-        })
+        Ok(Self { value })
+    }
+}
+
+/// One `uid`-typed component of an `OBJECT_VERSION_ID`: present, and a legal
+/// `uid` (BASE `master05-identification_package.adoc` §Syntaxes,
+/// `object_id = uid` / `creating_system_id = uid`).
+fn check_uid_part(part: &str, component: IdComponent, name: &'static str) -> Result<(), IdError> {
+    if part.is_empty() {
+        return Err(IdError::EmptyComponent(name));
+    }
+    if !is_uid(part) {
+        return Err(IdError::Malformed {
+            component,
+            expected: IdProduction::Uid,
+            found: part.to_owned(),
+        });
+    }
+    Ok(())
+}
+
+impl FromStr for ObjectVersionId {
+    type Err = IdError;
+
+    /// Parse an `OBJECT_VERSION_ID` — see [`ObjectVersionId::new`].
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::new(s)
+    }
+}
+
+impl TryFrom<&str> for ObjectVersionId {
+    type Error = IdError;
+
+    /// Parse an `OBJECT_VERSION_ID` — see [`ObjectVersionId::new`].
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Self::new(s)
+    }
+}
+
+impl TryFrom<String> for ObjectVersionId {
+    type Error = IdError;
+
+    /// Parse an `OBJECT_VERSION_ID` — see [`ObjectVersionId::new`].
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::new(s)
     }
 }
 
@@ -199,6 +254,80 @@ mod tests {
             Err(IdError::VersionTree(_))
         ));
         assert_eq!("".parse::<ObjectVersionId>(), Err(IdError::Empty));
+    }
+
+    /// `object_id = uid` and `creating_system_id = uid` (BASE `master05`
+    /// §Syntaxes): a part that matches none of `iso_oid | uuid | internet_id`
+    /// is refused, and the error names WHICH part and what was expected.
+    #[test]
+    fn uid_parts_run_the_master05_grammar() {
+        // The three `uid` productions, in both uid positions.
+        for raw in [
+            "87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2",
+            "1.2.840.113554.3.7.10::openEHR.org::1",
+            "12345::1.2.840::1.2.3",
+            "openehr.org::87284370-2d4b-4e3d-a3f3-f303d2f4f34b::1",
+        ] {
+            assert!(
+                ObjectVersionId::new(raw).is_ok(),
+                "{raw:?} is a legal OBJECT_VERSION_ID"
+            );
+        }
+
+        for (raw, component, found) in [
+            ("1234-5678::sys::1", IdComponent::ObjectId, "1234-5678"),
+            ("bad id::sys::1", IdComponent::ObjectId, "bad id"),
+            ("-lead::sys::1", IdComponent::ObjectId, "-lead"),
+            (
+                "1-2-3-4-5::sys::1",
+                IdComponent::ObjectId,
+                // Five hex groups are NOT a UUID: the widths are not 8-4-4-4-12.
+                "1-2-3-4-5",
+            ),
+            (
+                "sys::1234-5678::1",
+                IdComponent::CreatingSystemId,
+                "1234-5678",
+            ),
+            (
+                "sys::trailing-::1",
+                IdComponent::CreatingSystemId,
+                "trailing-",
+            ),
+        ] {
+            assert_eq!(
+                ObjectVersionId::new(raw),
+                Err(IdError::Malformed {
+                    component,
+                    expected: IdProduction::Uid,
+                    found: found.to_owned(),
+                }),
+                "for {raw:?}"
+            );
+        }
+
+        // An empty middle part keeps its own, more specific error.
+        assert_eq!(
+            ObjectVersionId::new("a::::1"),
+            Err(IdError::EmptyComponent("creating_system_id"))
+        );
+    }
+
+    /// Construction is case-PRESERVING while identity is case-INSENSITIVE
+    /// (master05 §"Composite Identifiers and Case").
+    #[test]
+    fn construction_preserves_case() {
+        let upper = ObjectVersionId::new("87284370-2D4B-4E3D-A3F3-F303D2F4F34B::UK.NHS.EHR1::2")
+            .expect("a well-formed version id");
+        let lower = ObjectVersionId::new("87284370-2d4b-4e3d-a3f3-f303d2f4f34b::uk.nhs.ehr1::2")
+            .expect("a well-formed version id");
+        assert_eq!(
+            upper.value,
+            "87284370-2D4B-4E3D-A3F3-F303D2F4F34B::UK.NHS.EHR1::2"
+        );
+        assert_ne!(upper.value, lower.value);
+        assert!(upper.is_equal(&lower));
+        assert_eq!(upper.creating_system_id_str(), "UK.NHS.EHR1");
     }
 
     #[test]

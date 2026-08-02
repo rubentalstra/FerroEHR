@@ -117,7 +117,7 @@ impl UidBasedId {
     /// Case-**insensitive** identity across the `UID_BASED_ID` value, regardless
     /// of which concrete variant either side is — the shared
     /// composite-identifier rule
-    /// ([`composite_ids_equal`](super::lexical::composite_ids_equal), BASE
+    /// ([`composite_ids_equal`], BASE
     /// `master05-identification_package.adoc` §"Composite Identifiers and Case").
     #[must_use]
     pub fn is_equal(&self, other: &Self) -> bool {

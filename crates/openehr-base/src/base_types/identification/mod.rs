@@ -22,6 +22,7 @@ pub mod version_tree_id;
 
 // hand-written modules (spec behaviour), auto-declared:
 pub mod archetype_id_impl;
+pub mod hier_object_id_impl;
 pub mod internet_id_impl;
 pub mod iso_oid_impl;
 pub mod lexical;

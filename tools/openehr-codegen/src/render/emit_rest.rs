@@ -87,6 +87,50 @@ fn dto_type(raw: &str) -> String {
     }
 }
 
+/// The serde attribute every `Option` field of a generated REST DTO or param
+/// struct carries.
+///
+/// An OAS property that is not in the schema's `required` list and does not set
+/// `nullable: true` admits its declared type and nothing else — `null` is not a
+/// member of `type: string` (or of a `$ref` to a string alias) under OpenAPI
+/// 3.0 (<https://spec.openapis.org/oas/v3.0.3#schema-object>: "nullable …
+/// Default value is false", and the Schema Object is a JSON Schema subset). No
+/// component schema in the vendored ITS-REST bundles
+/// (`crates/openehr-its/vendor/rest-oas/`) sets `nullable`, so an absent
+/// optional property is **omitted** on the wire, never serialized as `null`.
+const SKIP_NONE_ATTR: &str = "    #[serde(skip_serializing_if = \"Option::is_none\")]\n";
+
+/// The generated field name for an OAS `additionalProperties` extension map.
+const ADDITIONAL_PROPERTIES_FIELD: &str = "additional_properties";
+
+/// Emit the flattened extension map for a DTO whose OAS schema declares
+/// `additionalProperties` (the designated extension point), or nothing when it
+/// declares `additionalProperties: false`/omits the keyword.
+///
+/// `additionalProperties: true` carries arbitrary JSON values; an
+/// `additionalProperties: <schema>` form carries that schema's Rust type. A
+/// `BTreeMap` keeps the emitted order deterministic, and `#[serde(flatten)]`
+/// puts the entries at the object's own level — which is what "additional
+/// properties" means in JSON Schema — while collecting every undeclared key on
+/// the way in. An empty map serializes to nothing, so a DTO with no extensions
+/// is byte-identical to one emitted before this field existed.
+fn emit_additional_properties(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
+    let value_ty = match schema.get("additionalProperties") {
+        Some(Value::Bool(true)) => "serde_json::Value".to_string(),
+        Some(v @ Value::Object(_)) => ctx.rust_type(v),
+        // `false`, a non-schema value, or the keyword's absence: the object is
+        // closed and gets no extension slot.
+        _ => return,
+    };
+    let _ = write!(
+        b,
+        "    /// The undeclared (`additionalProperties`) members of `{name}`, which\n\
+         \x20   /// its ITS-REST OAS component schema declares as an extension point.\n\
+         \x20   #[serde(flatten)]\n\
+         \x20   pub {ADDITIONAL_PROPERTIES_FIELD}: std::collections::BTreeMap<String, {value_ty}>,\n"
+    );
+}
+
 /// Names emitted by the RM and BASE crates, to resolve OAS `$ref`s to preludes.
 pub(crate) struct RmNames {
     pub rm: BTreeSet<String>,
@@ -219,7 +263,15 @@ impl Ctx<'_> {
                         if i.as_object().is_some_and(serde_json::Map::is_empty) {
                             "serde_json::Value".to_string()
                         } else {
-                            self.rust_type(self.oas.resolve(i))
+                            // The item schema goes through `rust_type` VERBATIM
+                            // (never pre-resolved): a `$ref` item must keep its
+                            // name so `items: {$ref: ResultSetColumn}` emits
+                            // `Vec<ResultSetColumn>`. Resolving first discards
+                            // the name and the item degrades to an untyped
+                            // `serde_json::Value`. The `$ref` arm above still
+                            // resolves structurally when the name is not one
+                            // this emitter binds.
+                            self.rust_type(i)
                         }
                     },
                 );
@@ -237,6 +289,29 @@ impl Ctx<'_> {
             // allOf/oneOf/anyOf and untyped → free-form JSON.
             _ => "serde_json::Value".to_string(),
         }
+    }
+
+    /// Map an OAS **parameter** schema to a Rust type.
+    ///
+    /// A parameter is transported as TEXT, not as JSON: its wire form is fixed
+    /// by the parameter's `style`/`explode` serialization rules
+    /// (<https://spec.openapis.org/oas/v3.0.3#style-values>) — e.g. the
+    /// `openehr-item-tag` header is `style: simple, explode: true`, whose
+    /// values read `key="flag",value="follow-up"`, not JSON objects. So an
+    /// array parameter whose items are a structured schema carries the raw
+    /// parameter values (one `String` per occurrence) and the handler decodes
+    /// the style-encoded content; only primitive items keep their mapped type,
+    /// which is exactly what a text value can be coerced to.
+    fn param_rust_type(&self, schema: &Value) -> String {
+        if schema.get("type").and_then(Value::as_str) == Some("array") {
+            let item = schema.get("items").map(|i| self.rust_type(i));
+            let inner = item
+                .as_deref()
+                .filter(|mapped| matches!(*mapped, "String" | "i64" | "f64" | "bool"))
+                .unwrap_or("String");
+            return format!("Vec<{inner}>");
+        }
+        self.rust_type(schema)
     }
 }
 
@@ -284,8 +359,12 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
             if let Some(rename) = naming::serde_rename(pname, &ident) {
                 let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
             }
+            if !required.contains(pname.as_str()) {
+                b.push_str(SKIP_NONE_ATTR);
+            }
             let _ = writeln!(b, "    pub {ident}: {ty},");
         }
+        emit_additional_properties(b, name, schema, ctx);
         b.push_str("}\n\n");
     } else {
         // string/array/map/ref alias.
@@ -317,12 +396,15 @@ fn emit_params_struct(b: &mut String, op: &Operation, ctx: &Ctx) {
     );
     for p in &op.parameters {
         let ident = field_id(&p.name);
-        let mut ty = ctx.rust_type(&p.schema);
+        let mut ty = ctx.param_rust_type(&p.schema);
         if !p.required {
             ty = format!("Option<{ty}>");
         }
         if let Some(rename) = naming::serde_rename(&p.name, &ident) {
             let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
+        }
+        if !p.required {
+            b.push_str(SKIP_NONE_ATTR);
         }
         let _ = writeln!(b, "    /// `{}` ({})", p.name, p.location);
         let _ = writeln!(b, "    pub {ident}: {ty},");

@@ -106,7 +106,13 @@ fn strip_omittable_tags(v: &mut Value, declared: Option<&str>) {
     if let (Some(tag), Some(decl)) = (obj.get("_type").and_then(Value::as_str), declared)
         && tag == decl
     {
-        obj.remove("_type");
+        // `shift_remove`, never `remove`: with `serde_json/preserve_order` the
+        // plain `remove` is a swap-remove that moves the LAST key into the
+        // removed slot
+        // (<https://docs.rs/serde_json/1/serde_json/struct.Map.html#method.remove>),
+        // which would reorder the object and make this test compare two
+        // different traversal orders instead of two verdict lists.
+        obj.shift_remove("_type");
     }
     let Some(this_type) = this_type else { return };
     let keys: Vec<String> = obj

@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **`OBJECT_VERSION_ID` values on the wire are now checked against the full
+  openEHR identifier grammar.** A version identifier in a request path, an
+  `If-Match` header or a `VERSION.uid` previously only had to have three
+  `::`-delimited parts with a well-formed version-tree id; its `object_id` and
+  `creating_system_id` parts are now also required to be legal `uid` values —
+  an ISO OID, a UUID, or an internet id
+  (`BASE/docs/base_types/master05-identification_package.adoc` §Syntaxes).
+  Values such as `bad id::sys::1` or `1234-5678::sys::1`, which no conformant
+  client sends, are refused with `400` instead of being accepted; every
+  identifier the spec admits is unaffected. The same grammar now backs the
+  validating constructors of `HIER_OBJECT_ID`, `OBJECT_VERSION_ID` and the
+  `UID` family, so a malformed identifier cannot be built through them.
+
 ### Removed
 
 - **The AQL `RESULT_SET` no longer carries a top-level `id`.** Responses from

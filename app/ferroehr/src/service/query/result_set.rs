@@ -122,7 +122,7 @@ pub(super) fn result_set_json(
     name: Option<&str>,
     result: &QueryResult,
 ) -> Value {
-    let columns: Vec<Value> = result
+    let columns: Vec<ResultSetColumn> = result
         .columns
         .iter()
         .map(|c| {
@@ -132,13 +132,10 @@ pub(super) fn result_set_json(
             // `ResultSetColumn` has no slot for it (the OAS declares only
             // `name` + `path`), and the SM itself flags it "check on whether
             // needed". The optional cardinality means omitting it is conformant.
-            let column = ResultSetColumn {
+            ResultSetColumn {
                 name: c.name.clone(),
                 path: c.path.clone(),
-            };
-            let mut value = serde_json::to_value(&column).unwrap_or(Value::Null);
-            drop_absent_properties(&mut value);
-            value
+            }
         })
         .collect();
 
@@ -155,6 +152,12 @@ pub(super) fn result_set_json(
             // and it is left absent rather than fabricated.
             _generator: None,
             _executed_aql: Some(executed.to_owned()),
+            // The OAS declares `ResultSetMetadata` `additionalProperties: true`
+            // (`crates/openehr-its/vendor/rest-oas/query-*.openapi.yaml`
+            // §`components.schemas.ResultSetMetadata`); this server publishes
+            // no metadata extension, so the map stays empty (and serializes to
+            // nothing).
+            additional_properties: std::collections::BTreeMap::new(),
         }),
         name: name.map(ToOwned::to_owned),
         q: Some(aql.to_owned()),
@@ -162,35 +165,12 @@ pub(super) fn result_set_json(
         rows: result.rows.clone(),
     };
 
-    let mut out = serde_json::to_value(&set).unwrap_or(Value::Null);
-    drop_absent_properties(&mut out);
-    if let Some(meta) = out.get_mut("meta") {
-        drop_absent_properties(meta);
-    }
-    out
-}
-
-/// Remove the `null` entries of one JSON **object**, leaving every other value
-/// (including nested ones) untouched.
-///
-/// The `ResultSet` / `ResultSetMetadata` / `ResultSetColumn` OAS schemas type
-/// each optional property as a scalar (`string`, `$ref` to a string alias) and
-/// none of them sets `nullable: true`, so an absent optional property is
-/// **omitted**, never sent as `null` — JSON Schema does not admit `null` for a
-/// `type: string` property. The generated transport DTOs carry no
-/// `skip_serializing_if`, so `serde_json` renders every `None` as an explicit
-/// `null`; this restores the declared contract at the one place the DTOs are
-/// serialized.
-///
-/// Applied only to the three contract objects — never to `rows`, whose cells
-/// carry genuine AQL `null`s (an unset leaf) that must survive verbatim.
-///
-/// TODO(#1695): the generated ITS-REST DTOs should emit
-/// `#[serde(skip_serializing_if = "Option::is_none")]` for every optional
-/// property, which removes the need for this pass entirely — an
-/// `openehr-codegen` `emit-rest` change, not a consumer-side one.
-fn drop_absent_properties(value: &mut Value) {
-    if let Value::Object(map) = value {
-        map.retain(|_, v| !v.is_null());
-    }
+    // Every optional property the DTOs leave `None` is OMITTED, not rendered as
+    // `null`: the generated contract types carry
+    // `#[serde(skip_serializing_if = "Option::is_none")]` on each optional
+    // property, because no ITS-REST component schema sets `nullable: true` and
+    // an OpenAPI 3.0 `type: string` property does not admit `null`
+    // (<https://spec.openapis.org/oas/v3.0.3#schema-object>). `rows` cells are
+    // untouched — an unset AQL leaf is a genuine `null` there.
+    serde_json::to_value(&set).unwrap_or(Value::Null)
 }
