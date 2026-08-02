@@ -25,10 +25,10 @@ use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead}
 use ferroehr::versioning::signature::signer::Signer;
 use ferroehr::versioning::signature::verify::Verdict;
 
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{UpdateAttestation, UpdateAudit, UpdateVersion};
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
-use openehr_rm::prelude::PartyProxy;
+use openehr_rm::prelude::{DvText, PartyProxy};
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
 
@@ -65,6 +65,26 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
             system_id: None,
         },
         signature: None,
+    }
+}
+
+/// A wire `UPDATE_ATTESTATION` partial for an attestation committed WITH the
+/// version (`UPDATE_VERSION.attestations`; SM
+/// `UML/classes/update_version.adoc` §Attributes) — the "Signing content at
+/// committal" case of RM common master06 §Attestation.
+fn update_attestation(reason: &str) -> UpdateAttestation {
+    UpdateAttestation {
+        change_type: term("666"),
+        description: None,
+        committer: committer("witness"),
+        attested_view: None,
+        proof: None,
+        items: None,
+        reason: openehr_its::json::from_canonical_value::<DvText>(
+            &json!({ "_type": "DV_TEXT", "value": reason }),
+        )
+        .expect("reason DV_TEXT"),
+        is_pending: false,
     }
 }
 
@@ -720,4 +740,141 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
         .expect("versioned composition version");
     assert_eq!(ov["uid"]["value"], ovid);
     assert_digest_recomputes(&ov);
+}
+
+/// RM common master06 §Digital Signature: "The serialisation process works by
+/// the simple rule of serialising the entire Version object (note that the
+/// signature attribute will be Void at this point)". `signature` is the ONLY
+/// excluded attribute — so the `ORIGINAL_VERSION.attestations` a version
+/// carried at committal (`UPDATE_VERSION.attestations`, SM
+/// `UML/classes/update_version.adoc` §Attributes; master06 §Attestation,
+/// "Signing content at committal") are INSIDE the signed canonical form.
+///
+/// Asserted both ways: the served version still recomputes its own digest with
+/// the attestation present (so commit-time and read-time bytes agree), and
+/// altering that attestation in the database is caught by a strict
+/// `verify_on_read`.
+#[tokio::test]
+async fn at_committal_attestation_is_signed_and_a_tamper_is_caught() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = service_with_verify(pool.clone(), VerifyOnRead::Strict);
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let mut version = uv(composition("attested"), "249", None);
+    version.attestations = Some(vec![update_attestation("witnessed")]);
+    let ovid = svc
+        .create_composition(ehr_uuid, version)
+        .await
+        .expect("create_composition with an accompanying attestation")
+        .version_uid();
+
+    // The served version carries the completed ATTESTATION and still verifies
+    // against its own canonical form — the attestation is part of the signed
+    // bytes, not an addendum the digest ignores.
+    let ov = svc
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
+        .await
+        .expect("clean read verifies");
+    assert_eq!(
+        ov["attestations"].as_array().map(Vec::len),
+        Some(1),
+        "the at-committal attestation is served on the version"
+    );
+    assert_digest_recomputes(&ov);
+
+    // Tamper the stored attestation — not the version row, not the signature.
+    let tampered_rows = sqlx::query(
+        "UPDATE vo_attestation SET data = jsonb_set(data, '{reason,value}', '\"forged\"') \
+         WHERE at_committal RETURNING id",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("tamper the at-committal attestation");
+    assert_eq!(
+        tampered_rows.len(),
+        1,
+        "exactly one at-committal attestation row exists to tamper"
+    );
+
+    let tampered = svc
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
+        .await;
+    assert!(
+        matches!(
+            tampered,
+            Err(SmError {
+                status: CallStatusType::Exception,
+                ..
+            })
+        ),
+        "an altered at-committal attestation must fail strict verify_on_read, got {tampered:?}"
+    );
+}
+
+/// The other side of the same rule. RM common master06 §Attestation:
+/// "Attestations can be added at any time after committal of the content being
+/// attested", and §Contributions makes the `666|attestation|` change "a new
+/// `ATTESTATION` … added to the attestations list of an EXISTING
+/// `ORIGINAL_VERSION`". Such an attestation necessarily post-dates the
+/// signature computed at committal, so it is served OUTSIDE the signed
+/// canonical form: adding one leaves verification passing, and altering one
+/// cannot make verification fail.
+#[tokio::test]
+async fn after_committal_attestation_is_outside_the_signed_form() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = service_with_verify(pool.clone(), VerifyOnRead::Strict);
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let ovid = svc
+        .create_composition(ehr_uuid, uv(composition("plain"), "249", None))
+        .await
+        .expect("create_composition")
+        .version_uid();
+
+    // A later 666|attestation|-only CONTRIBUTION attaches an ATTESTATION to the
+    // existing version — no new version is committed.
+    svc.create_ehr_contribution(
+        ehr_uuid,
+        json!({
+            "versions": [{
+                "preceding_version_uid": { "value": ovid.clone() },
+                "commit_audit": {
+                    "change_type": change_type("666", "attestation"),
+                    "committer": { "_type": "PARTY_IDENTIFIED", "name": "senior reviewer" },
+                    "reason": { "_type": "DV_TEXT", "value": "authorised" },
+                    "is_pending": false
+                }
+            }]
+        }),
+    )
+    .await
+    .expect("666-only contribution");
+
+    let ov = svc
+        .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
+        .await
+        .expect("a post-committal attestation does not invalidate the signature");
+    assert_eq!(
+        ov["attestations"].as_array().map(Vec::len),
+        Some(1),
+        "the after-committal attestation is served on the version"
+    );
+
+    // Altering it is likewise outside the signed form: the read still succeeds.
+    let tampered_rows = sqlx::query(
+        "UPDATE vo_attestation SET data = jsonb_set(data, '{reason,value}', '\"forged\"') \
+         WHERE NOT at_committal RETURNING id",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("tamper the after-committal attestation");
+    assert_eq!(tampered_rows.len(), 1, "one after-committal row to tamper");
+
+    svc.composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
+        .await
+        .expect("an after-committal attestation is not covered by the signature");
 }

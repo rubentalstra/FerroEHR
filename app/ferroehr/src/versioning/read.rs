@@ -101,11 +101,21 @@ pub(crate) struct VersionRead {
     /// The reassembled canonical JSON, or `Value::Null` for a deleted version
     /// (a logical delete stores no node rows — master06 §Logical Deletion).
     pub(crate) canonical: Value,
-    /// The `ATTESTATION`s attached to this version, in commit order (RM common
-    /// master06 §Attestation). Surfaced as `ORIGINAL_VERSION.attestations`,
-    /// appended **after** signature verification (attestations arrive after
-    /// committal and are not part of the signed canonical form).
-    pub(crate) attestations: Vec<Value>,
+    /// The `ATTESTATION`s that were on this version AT the act of committal, in
+    /// commit order (RM common master06 §Attestation, "Signing content at
+    /// committal"; SM `UML/classes/update_version.adoc` §Attributes
+    /// `UPDATE_VERSION.attestations`). They are part of the version's signed
+    /// canonical form — master06 §Digital Signature signs "the entire Version
+    /// object", excluding only `signature` — so they are built into the value
+    /// BEFORE signature verification.
+    pub(crate) attestations_at_committal: Vec<Value>,
+    /// The `ATTESTATION`s added to this version AFTER committal, in commit
+    /// order (master06 §Attestation: "Attestations can be added at any time
+    /// after committal of the content being attested"; §Contributions:
+    /// "attestation of item: a new `ATTESTATION` is added to the attestations
+    /// list of an existing `ORIGINAL_VERSION`"). They post-date the signature
+    /// and are therefore appended **after** verification.
+    pub(crate) attestations_after_committal: Vec<Value>,
 }
 
 impl VersionRead {
@@ -157,7 +167,8 @@ fn version_read(
         signature_client_supplied: stored.signature_client_supplied,
         wrapped,
         canonical: stored.canonical,
-        attestations: stored.attestations,
+        attestations_at_committal: stored.attestations_at_committal,
+        attestations_after_committal: stored.attestations_after_committal,
     })
 }
 

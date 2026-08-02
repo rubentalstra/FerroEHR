@@ -70,10 +70,15 @@
 //! (`template_store` OPTs via `vo_version.template_id`, `stored_query`) are NOT
 //! carried — they are provisioned through the DEFINITION API and must pre-exist
 //! (a COMPOSITION referencing an absent template fails its FK on load, reported
-//! per EHR). Demographic parties (ehr-less versioned objects) and standalone
+//! per EHR). Demographic parties (ehr-less versioned objects) and
 //! `vo_attestation` rows are out of this EHR-scoped dump; a whole-repository
-//! back-up would need a demographic dump wave (deferred). The verbatim
-//! version-row re-persist is a storage seam
+//! back-up would need a demographic dump wave (deferred).
+//! TODO(#1685): carry the `vo_attestation` rows (with their `at_committal`
+//! flag) — an at-committal attestation is inside the version's signed canonical
+//! form (RM common master06 §Digital Signature: "serialising the entire Version
+//! object"), so restoring the version's `signature` without its attestations
+//! leaves a restored version whose signature cannot verify.
+//! The verbatim version-row re-persist is a storage seam
 //! ([`crate::storage::version_repo::import::insert_version_verbatim`]); this module
 //! keeps the archive format and orchestration.
 //!
@@ -575,8 +580,8 @@ fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
 /// common master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1) —
 /// used only for a locally created version; an imported one renders the WRAPPED
 /// original's own foreign provenance instead (§Committal and Audits).
-/// Attestations are deliberately absent: they are appended after committal and
-/// this EHR-scoped dump carries no `vo_attestation` rows (the module docs).
+/// Attestations are absent because this EHR-scoped dump carries no
+/// `vo_attestation` rows at all (the module docs).
 ///
 /// # Errors
 /// [`ServiceError::Internal`] when the archived audit carries a commit time
@@ -647,6 +652,9 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         commit_audit: &commit_audit,
         lifecycle_state: &v.lifecycle_state,
         data: &v.body,
+        // The archive carries no `vo_attestation` rows, so no version document
+        // can render an `attestations` list (module docs).
+        attestations: &[],
         signature: signature.as_deref(),
     }))
 }

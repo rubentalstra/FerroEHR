@@ -13,7 +13,7 @@
 use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
 use openehr_rm::prelude::{
     AuditDetails, RevisionHistory, RevisionHistoryItem, VersionedComposition, VersionedEhrAccess,
-    VersionedEhrStatus, VersionedFolder, VersionedObject, VersionedObjectData, VersionedParty,
+    VersionedEhrStatus, VersionedFolder, VersionedObject, VersionedObjectData,
 };
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -219,11 +219,19 @@ pub(crate) async fn versioned_object(
             owner_id,
             time_created,
         }),
-        "VERSIONED_PARTY" => VersionedObject::VersionedParty(VersionedParty {
-            uid,
-            owner_id,
-            time_created,
-        }),
+        // NOTE: there is deliberately NO `VERSIONED_PARTY` arm here. This
+        // builder is EHR-scoped by signature — it takes an `EhrId` and stamps
+        // `owner_id` as the containing EHR, which is what
+        // `VERSIONED_OBJECT.owner_id` means ("Reference to object to which this
+        // version container belongs, e.g. the id of the containing EHR or other
+        // relevant owning entity", RM common
+        // `UML/classes/org.openehr.rm.common.versioned_object.adoc`
+        // §Attributes). A demographic party has no owning EHR: RM demographic
+        // content stands alone, and its container is built by
+        // `crate::service::demographic::support` with the system-scoped
+        // `owner_id` the released `VersionedParty` example carries (register
+        // AMB-69). Adding a party arm here could only produce a container that
+        // names an EHR as the owner of a party.
         // The generic container of RM common master06 §Versioned Objects, for a
         // kind with no dedicated `VERSIONED_*` binding (the EHR-extract export's
         // own fallback).
@@ -277,14 +285,16 @@ pub(crate) fn version_envelope(read: &VersionRead, signer: &Signer) -> Result<Va
         read.signature.as_deref(),
         read.signature_client_supplied,
     )?;
-    // The wrapped original's `attestations` (RM common master06 §Attestation)
-    // ride `item`, and are appended AFTER verify_on_read for the same reason as
-    // on a local version: attestations "can be added at any time after
-    // committal", so they are excluded from the signed/verified canonical form
-    // — which is what keeps the bytes signed at import identical to the bytes
-    // verified at read.
+    // The attestations the wrapped original carried AT the act of importing are
+    // already inside `item` (built by `build_wrapped_original` above), because
+    // master06 §Digital Signature signs an `IMPORTED_VERSION` the same way as an
+    // ORIGINAL_VERSION — "all attributes of the object are serialised" — and
+    // `item` is one of those attributes, wrapped whole. Anything attested
+    // AFTERWARDS ("Attestations can be added at any time after committal",
+    // §Attestation) post-dates the wrapper's signature and is appended here,
+    // after verification.
     if let Some(item) = iv.get_mut("item") {
-        attach_attestations(item, read);
+        append_after_committal_attestations(item, &read.attestations_after_committal);
     }
     Ok(iv)
 }
@@ -311,7 +321,7 @@ pub(crate) fn version_envelope(read: &VersionRead, signer: &Signer) -> Result<Va
 pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Value, ServiceError> {
     if let Some(wrapped) = &read.wrapped {
         let mut ov = build_wrapped_original(read, wrapped)?;
-        attach_attestations(&mut ov, read);
+        append_after_committal_attestations(&mut ov, &read.attestations_after_committal);
         return Ok(ov);
     }
     let mut ov = build_original_version(&OriginalVersionParts {
@@ -324,6 +334,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
         commit_audit: &read.audit.canonical(&read.time_committed)?,
         lifecycle_state: &read.lifecycle_state,
         data: &read.canonical,
+        attestations: &read.attestations_at_committal,
         signature: read.signature.as_deref(),
     });
     integrity::verify_on_read(
@@ -332,31 +343,50 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
         read.signature.as_deref(),
         read.signature_client_supplied,
     )?;
-    // ORIGINAL_VERSION.attestations (RM common master06 §Attestation). Appended
-    // AFTER verify_on_read: attestations "can be added at any time after
-    // committal", so they are not part of the signed/verified canonical form
-    // (the signature was computed over the attestation-free version at commit).
-    attach_attestations(&mut ov, read);
+    // NOTE (the attestation/signature split, RM common master06). §Digital
+    // Signature signs "the entire Version object (note that the signature
+    // attribute will be Void at this point)" — `signature` is the ONLY excluded
+    // attribute, so the `attestations` a version carried at committal
+    // (§Attestation, "Signing content at committal"; SM
+    // `UML/classes/update_version.adoc` `UPDATE_VERSION.attestations`) are
+    // inside the signed form and were built into `ov` above, before
+    // verification. §Attestation equally says an attestation "can be added at
+    // any time after committal of the content being attested", and
+    // §Contributions makes that a change to "an EXISTING `ORIGINAL_VERSION`";
+    // such an attestation necessarily post-dates the signature, so it is
+    // appended HERE, after verification, and never enters the canonical form.
+    append_after_committal_attestations(&mut ov, &read.attestations_after_committal);
     Ok(ov)
 }
 
-/// Append `ORIGINAL_VERSION.attestations` to an already-built version value,
-/// when the version carries any (RM common master06 §Attestation).
-fn attach_attestations(ov: &mut Value, read: &VersionRead) {
-    if !read.attestations.is_empty()
-        && let Value::Object(map) = ov
-    {
-        map.insert(
-            "attestations".to_owned(),
-            Value::Array(read.attestations.clone()),
-        );
+/// Append the after-committal `ORIGINAL_VERSION.attestations` to an
+/// already-built (and already-verified) version value, extending the
+/// at-committal list the builder put there when both are present (RM common
+/// master06 §Attestation). A no-op when there are none.
+fn append_after_committal_attestations(ov: &mut Value, after_committal: &[Value]) {
+    if after_committal.is_empty() {
+        return;
+    }
+    let Value::Object(map) = ov else { return };
+    match map.get_mut("attestations") {
+        Some(Value::Array(existing)) => existing.extend_from_slice(after_committal),
+        _ => {
+            map.insert(
+                "attestations".to_owned(),
+                Value::Array(after_committal.to_vec()),
+            );
+        }
     }
 }
 
 /// Rebuild the `ORIGINAL_VERSION` an `IMPORTED_VERSION` wraps: the row's own
 /// identity, lifecycle and content (which the import stored unchanged) plus the
 /// source system's `contribution` / `commit_audit` / `signature`, all verbatim
-/// (master06 §Copying). Attestations are attached by the caller.
+/// (master06 §Copying), and the attestations the received original carried at
+/// the act of importing — part of the wrapper's signed form, since "all
+/// attributes of the object are serialised" and `item` is one of them (master06
+/// §Digital Signature). Attestations added AFTER the import are appended by the
+/// caller.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when the stored foreign `commit_audit` is not
@@ -383,6 +413,7 @@ fn build_wrapped_original(
         commit_audit: &wrapped.commit_audit,
         lifecycle_state: &read.lifecycle_state,
         data: &read.canonical,
+        attestations: &read.attestations_at_committal,
         signature: wrapped.signature.as_deref(),
     }))
 }
@@ -460,6 +491,11 @@ pub(crate) struct OriginalVersionParts<'a> {
     pub(crate) lifecycle_state: &'a str,
     /// The canonical content, or [`Value::Null`] for a deleted version.
     pub(crate) data: &'a Value,
+    /// `ORIGINAL_VERSION.attestations` (0..1) as they stood at the act of
+    /// committal — the ones inside the signed canonical form (master06
+    /// §Digital Signature / §Attestation). Empty ≙ absent
+    /// (`ORIGINAL_VERSION.Attestations_valid`: a present list is non-empty).
+    pub(crate) attestations: &'a [Value],
     /// `VERSION.signature` (0..1), when known.
     pub(crate) signature: Option<&'a str>,
 }
@@ -493,6 +529,15 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
         // a first version). Stored — not synthesized — because under branching
         // and import the preceding version may carry a different
         // creating_system_id (RM common master06 §Distributed Versioning).
+        //
+        // NOTE (register AMB-189): `VERSION.Preceding_version_uid_validity`
+        // (`uid.version_tree_id.is_first xor preceding_version_uid /= Void`) is
+        // enforced in its TRUNK-ONLY sense, because BASE defines `is_first` as
+        // "trunk_version is 1" alone (`VERSION_TREE_ID.Is_first_validity`),
+        // which makes the literal invariant unsatisfiable for every branch
+        // version off trunk node 1 — those necessarily name the trunk node they
+        // forked from. A branch version therefore always carries its real
+        // preceding uid here.
         if let Some(preceding) = parts.preceding_version_uid {
             map.insert(
                 "preceding_version_uid".to_owned(),
@@ -517,6 +562,16 @@ pub(crate) fn build_original_version(parts: &OriginalVersionParts<'_>) -> Value 
         // A deleted version carries no data (canonical is Null).
         if !parts.data.is_null() {
             map.insert("data".to_owned(), parts.data.clone());
+        }
+        // attestations: the ones present AT committal, which master06 §Digital
+        // Signature includes in the signed serialisation of "the entire Version
+        // object". Omitted when empty — `Attestations_valid` forbids a
+        // present-but-empty list.
+        if !parts.attestations.is_empty() {
+            map.insert(
+                "attestations".to_owned(),
+                Value::Array(parts.attestations.to_vec()),
+            );
         }
         if let Some(sig) = parts.signature {
             map.insert("signature".to_owned(), Value::String(sig.to_owned()));

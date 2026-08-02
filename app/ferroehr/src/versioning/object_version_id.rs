@@ -7,15 +7,17 @@
 //! and a `VERSION_TREE_ID` is `trunk_version [ '.' branch_number '.'
 //! branch_version ]` with every part `>= 1`
 //! (`VERSION_TREE_ID.Trunk_version_valid` / `.Branch_validity`; RM common
-//! `master06-change_control_package.adoc` §Version tree). The strict three-part
-//! parse lives in `openehr-base` (`ObjectVersionId::from_str`); this module adds
-//! the storage-model typing on top: the `object_id` must be the UUID `vo_id`
-//! key, and the `version_tree_id` decodes into a [`TreeId`].
+//! `master06-change_control_package.adoc` §The 'Virtual Version Tree'). The
+//! strict three-part parse lives in `openehr-base`
+//! (`ObjectVersionId::from_str`); this module adds the storage-model typing on
+//! top: the `object_id` must be the UUID `vo_id` key, and the
+//! `version_tree_id` decodes into a [`TreeId`].
 //!
 //! One strict decoder replaces the several hand-rolled `::` splitters the
 //! service used to carry. Branch ids are first-class (RM common master06
-//! §Version tree: "To support branching, a further pair of numbers is added …
-//! Both of these numbers also start at '1'").
+//! §Versioning Semantics → §Version Identification → §Local Versioning: "To
+//! support branching, a further pair of numbers is added … Both of these
+//! numbers also start at '1'").
 
 use std::fmt;
 use std::str::FromStr;
@@ -138,11 +140,16 @@ pub(crate) fn object_version_id(vo_id: VoId, creating_system_id: &str, tree: Tre
 /// is the correct fold; the Turkish `I/i` caveat (master05 §Composite
 /// Identifiers and Case) does not apply to an ASCII system id.
 ///
-/// NOTE (master05 §Composite Identifiers and Case): storage keeps
-/// `creating_system_id` verbatim, and the DB uniqueness that also needs the
-/// case-fold is a storage-boundary concern cross-checked in
-/// `docs/spec-audit/rm-common-change-control`; versioning enforces the
-/// case-insensitive *equality* here.
+/// NOTE: the two rules of BASE `base_types`
+/// `master05-identification_package.adoc` §"Composite Identifiers and Case" are
+/// realized in two places, because they pull in opposite directions.
+/// Case-PRESERVING ("not change case due to persistence, copying, transfer or
+/// other computation processes") is storage's: the `creating_system_id` column
+/// keeps exactly the bytes committed, and the version-identity uniqueness index
+/// carries the case-fold so two spellings cannot both claim one version.
+/// Case-INSENSITIVE ("two identifiers identical apart from case are considered
+/// to be identical, and therefore to identify the same thing") is this
+/// function, which is the single place versioning compares two system ids.
 pub(crate) fn eq_composite_id(a: &str, b: &str) -> bool {
     a.eq_ignore_ascii_case(b)
 }

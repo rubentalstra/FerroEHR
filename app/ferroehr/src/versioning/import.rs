@@ -400,6 +400,17 @@ async fn commit_import_scoped(
                     commit_audit: &version.commit_audit,
                     lifecycle_state: &version.lifecycle_state,
                     data: &served,
+                    // The received original's own attestations are attributes
+                    // of `item`, so they ride inside the wrapper's signed form:
+                    // master06 §Digital Signature says of an IMPORTED_VERSION
+                    // that "all attributes of the object are serialised and then
+                    // used to generate a signature". They are the version's
+                    // at-committal attestations for this repository — nothing
+                    // else can be, since the local act of importing supplies no
+                    // attestations of its own (an import replays received
+                    // ORIGINAL_VERSIONs; §Copying: "the `ORIGINAL_VERSION`
+                    // instance is never modified").
+                    attestations: &version.attestations,
                     signature: version.signature.as_deref(),
                 },
             );
@@ -443,6 +454,9 @@ async fn commit_import_scoped(
                     container.vo_id,
                     ordinal,
                     contribution_id,
+                    // At committal: these rode in with the original and are
+                    // inside the wrapper signature computed just above.
+                    true,
                     attestation,
                 )
                 .await?;

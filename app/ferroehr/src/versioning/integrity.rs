@@ -32,9 +32,17 @@ use crate::versioning::wire::{
 /// [`build_original_version`] so commit-time and read-time bytes match,
 /// **including `other_input_version_uids` merge provenance**, which is part of
 /// the committed version) — is signed over its `canonical_form()` (the signature
-/// attribute Void during serialization). Attestations are NOT signed: they
-/// arrive after committal (master06 §Attestation) and are appended after
-/// verification, so they are excluded here exactly as at read time.
+/// attribute Void during serialization).
+///
+/// `attestations` are the COMPLETED `ATTESTATION`s committed WITH this version
+/// (`UPDATE_VERSION.attestations`, SM `UML/classes/update_version.adoc`
+/// §Attributes). They ARE signed: master06 §Digital Signature serialises "the
+/// entire Version object (note that the signature attribute will be Void at this
+/// point)", so `signature` is the only excluded attribute and an attestation
+/// present at committal is inside the signed form. An attestation added
+/// afterwards (§Attestation: "at any time after committal"; §Contributions: to
+/// "an existing `ORIGINAL_VERSION`") post-dates the signature and is appended
+/// outside it at read time.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
@@ -57,6 +65,7 @@ pub(crate) fn sign_version(
     contribution_id: Uuid,
     lifecycle_state: &str,
     data: &Value,
+    attestations: &[Value],
 ) -> Result<Option<String>, ServiceError> {
     if !ctx.signer.enabled() {
         return Ok(None);
@@ -71,6 +80,7 @@ pub(crate) fn sign_version(
         commit_audit: &audit.canonical(&time_committed)?,
         lifecycle_state,
         data,
+        attestations,
         signature: None,
     });
     sign_canonical(ctx, &ov)
@@ -89,8 +99,11 @@ pub(crate) fn sign_version(
 /// signing is enabled, and the wrapped original's own foreign signature rides
 /// inside `item` untouched (§Copying: "the `ORIGINAL_VERSION` instance is never
 /// modified"). The value signed is the one [`build_imported_version`] produces
-/// with `signature` Void and without `item.attestations`, which is exactly what
-/// the read path rebuilds before verifying.
+/// with the wrapper's own `signature` Void — `item` included WHOLE, since "all
+/// attributes of the object are serialised" and the received original's own
+/// `attestations` are part of it. That is exactly what the read path rebuilds
+/// before verifying; attestations added to the imported version AFTER the
+/// import (§Attestation) are appended outside the signed form.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the

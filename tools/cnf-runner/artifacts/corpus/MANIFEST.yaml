@@ -1650,6 +1650,25 @@ cnf.security.signed_version:
   views:
     signature:
       select: "$.signature"
+cnf.security.attested_version:
+  source: fixtures/security/attested_version.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: >-
+    authored 2026-08-02 as the AT-COMMITTAL-ATTESTATION twin of
+    cnf.security.signed_version: the same ORIGINAL_VERSION<COMPOSITION> over the
+    official Robot minimal_evaluation composition, with the client signature
+    REMOVED (so the server signs it) and an `attestations` list added — the
+    "Signing content at committal" case of RM common
+    master06-change_control_package.adoc §Attestation, carried on the wire by SM
+    UML/classes/update_version.adoc §Attributes (`UPDATE_VERSION.attestations`,
+    List<ATTESTATION> 0..1) and ITS-REST
+    specifications/schemas/common/UpdateVersion.yaml. The member is the same
+    UPDATE_ATTESTATION as cnf.attestation.witnessed (reason coded 648|witnessed|
+    from the openEHR `attestation reason` group ATTESTATION.Reason_valid binds).
+    Used by SIG-VERSION-at_committal_attestation_signed to prove the signature
+    covers the attestations present at committal
 # DEMOGRAPHIC (master10) corpus additions — concatenated into MANIFEST.yaml by
 # the verify harness. Canonical-JSON PERSON / PARTY_RELATIONSHIP payloads for the
 # I_DEMOGRAPHIC_SERVICE / I_PARTY / I_PARTY_RELATIONSHIP cases. master10 defines

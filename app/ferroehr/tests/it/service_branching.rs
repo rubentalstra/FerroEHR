@@ -1,14 +1,16 @@
 //! Version-tree branching + merge provenance, end-to-end against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!
-//! Spec: RM common `master06-change_control_package.adoc` §Version tree /
-//! §Distributed versioning — "To support branching, a further pair of numbers
-//! is added … branching version identifiers [are required] when local
-//! modifications are made to versions copied from elsewhere" — and §Version
-//! Merging (`ORIGINAL_VERSION.other_input_version_uids`). BASE
-//! `VERSION_TREE_ID`: `trunk_version [ '.' branch_number '.' branch_version ]`.
+//! Spec: RM common `master06-change_control_package.adoc` §The 'Virtual Version
+//! Tree' and §Versioning Semantics → §Version Identification — its §Local
+//! Versioning subsection ("To support branching, a further pair of numbers is
+//! added") and its §Distributed Versioning subsection ("to require branching
+//! version identifiers to be used when local modifications are made to versions
+//! copied from elsewhere") — plus §Version Merging
+//! (`ORIGINAL_VERSION.other_input_version_uids`). BASE `VERSION_TREE_ID`:
+//! `trunk_version [ '.' branch_number '.' branch_version ]`.
 //!
-//! Covers (A1 rm-common-change-control R7/R19/R50):
+//! Covers:
 //! 1. modifying an imported version created by ANOTHER system forks a branch
 //!    (`t.1.1`, local `creating_system_id`) while the imported trunk version
 //!    stays the container current;
@@ -315,7 +317,7 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
 
     // (5) A second fork from the same foreign trunk version numbers the NEXT
     // branch (2.2.1) — branch numbers count per fork point (master06
-    // §Version tree).
+    // §The 'Virtual Version Tree').
     let contribution3 = svc
         .create_ehr_contribution(
             target,

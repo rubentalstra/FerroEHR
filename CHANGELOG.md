@@ -188,6 +188,39 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A version's digital signature now covers the attestations it was
+  committed with.** openEHR signs "the entire Version object", excluding only
+  the `signature` attribute itself, so an attestation supplied on the commit
+  (`attestations` on the committed VERSION) belongs inside the signed form.
+  It previously did not: such an attestation could be altered in the database
+  without any signature check noticing. It is now part of the signed
+  canonical form at commit and at read, in both the local-commit and the
+  EHR-Extract-import paths, so tampering with it is caught by strict
+  read-time verification and the served version verifies for an external
+  reader that recomputes the digest itself. Attestations added *after*
+  committal (a `666|attestation|` contribution) keep their existing
+  behaviour: they post-date the signature by definition, and are served
+  outside it. Versions committed before this change are unaffected — nothing
+  is re-signed — unless they carried commit-time attestations, in which case
+  their stored signature no longer matches and a `strict` `verify_on_read`
+  deployment will report them; re-commit or set `verify_on_read = warn` while
+  auditing.
+
+- **An attestation whose optional `items` is sent as JSON `null` is no longer
+  rejected.** A null optional means absent, and the sibling optional
+  attributes (`proof`, `attested_view`, `description`) were already read that
+  way; `items` alone treated it as a malformed list and returned `422`. That
+  made commit-time attestations unusable through the typed API, which emits
+  `null` for an omitted list. A present-but-*empty* list (`[]`) is still
+  refused, which is what the RM invariant actually forbids.
+
+- **A contribution mixing amendments and deletions now reports the amendment
+  aggregate.** When a client sends no contribution-level change type, the
+  server derives one; openEHR names `250|amendment|` for "a mixture of
+  amendments and deletions that logically constitute a correction", which
+  previously fell through to the general `251|modification|`. Uniform change
+  sets and every other mixture are unchanged.
+
 - **Versions received from another system are now served as
   `IMPORTED_VERSION`s, and imported records report their local chronology.**
   openEHR wraps a copied version: an EHR Extract import commits the received

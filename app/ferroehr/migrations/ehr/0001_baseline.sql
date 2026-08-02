@@ -628,6 +628,16 @@ CREATE TABLE vo_attestation (
     sys_version     integer NOT NULL,
     contribution_id uuid NOT NULL,
     time_committed  timestamptz NOT NULL DEFAULT now(),
+    -- Whether this ATTESTATION was present ON THE VERSION at the act of
+    -- committal (RM common master06 §Attestation, "Signing content at
+    -- committal"; SM UML/classes/update_version.adoc §Attributes carries
+    -- `attestations` on the client-supplied UPDATE_VERSION) rather than added
+    -- later ("Attestations can be added at any time after committal of the
+    -- content being attested"). The signed canonical form of a VERSION is "the
+    -- entire Version object" minus `signature` (master06 §Digital Signature),
+    -- so an at-committal attestation is INSIDE it and an after-committal one is
+    -- outside; this column is what keeps the two apart at read time.
+    at_committal    boolean NOT NULL,
     data            jsonb NOT NULL,
     CONSTRAINT pk_vo_attestation PRIMARY KEY (id),
     CONSTRAINT fk_vo_attestation_vo_version FOREIGN KEY (vo_id, sys_version)
@@ -638,6 +648,7 @@ CREATE INDEX idx_vo_attestation_version ON vo_attestation (vo_id, sys_version);
 CREATE INDEX idx_vo_attestation_contribution ON vo_attestation (contribution_id);
 
 COMMENT ON TABLE vo_attestation IS 'ATTESTATION storage (RM common master06 §Attestation; class in master04-generic_package.adoc §Attestation): appended to an ORIGINAL_VERSION''s attestations list without a new version; canonical ATTESTATION verbatim in data.';
+COMMENT ON COLUMN vo_attestation.at_committal IS 'True when the ATTESTATION was on the VERSION at the act of committal (RM common master06 §Attestation "Signing content at committal"; SM update_version.adoc UPDATE_VERSION.attestations) and is therefore INSIDE the version''s signed canonical form (master06 §Digital Signature: "serialising the entire Version object", signature Void); false for one added afterwards ("Attestations can be added at any time after committal"), which stays outside it.';
 
 -- ── stored_query ─────────────────────────────────────────────────────────────
 -- Stored AQL queries, addressed by qualified name + SEMVER version (ITS-REST

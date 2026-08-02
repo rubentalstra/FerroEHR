@@ -79,8 +79,15 @@ pub struct StoredVersion {
     /// Reassembled canonical JSON, or [`Value::Null`] for a logically deleted
     /// version (no node rows — master06 §Logical Deletion).
     pub canonical: Value,
-    /// `ORIGINAL_VERSION.attestations` in commit order (master06 §Attestation).
-    pub attestations: Vec<Value>,
+    /// The `ORIGINAL_VERSION.attestations` that were on the version AT the act
+    /// of committal, in commit order (master06 §Attestation "Signing content at
+    /// committal") — the ones inside the version's signed canonical form.
+    pub attestations_at_committal: Vec<Value>,
+    /// The `ORIGINAL_VERSION.attestations` added AFTER committal, in commit
+    /// order (master06 §Attestation: "Attestations can be added at any time
+    /// after committal of the content being attested") — outside the signed
+    /// canonical form.
+    pub attestations_after_committal: Vec<Value>,
 }
 
 /// The `vo_version`⋈`audit` column list every version read selects, as a
@@ -88,12 +95,20 @@ pub struct StoredVersion {
 /// (`sqlx` 0.9 `SqlSafeStr` — no runtime SQL assembly).
 ///
 /// The version's `ATTESTATION`s (RM common master06 §Attestation) are folded in
-/// as an aggregated `attestations` jsonb column via a `LEFT JOIN LATERAL`, so
-/// one statement carries the whole version read instead of a second round trip
-/// per versioned read (empty in the common case → `[]`). The aggregate's
+/// as aggregated jsonb columns via a `LEFT JOIN LATERAL`, so one statement
+/// carries the whole version read instead of a second round trip per versioned
+/// read (empty in the common case → `[]`). The aggregates'
 /// `ORDER BY time_committed, id` is the same commit order the per-object
 /// attestation read
 /// ([`crate::storage::version_repo::attestation::read_attestations_all`]) applies.
+///
+/// They arrive SPLIT on `at_committal`, because the two halves stand in
+/// different relations to `VERSION.signature`: an attestation present at the act
+/// of committal is inside the version's signed canonical form ("serialising the
+/// entire Version object", master06 §Digital Signature), while one added later
+/// ("Attestations can be added at any time after committal", §Attestation) is
+/// not. The split uses the standard aggregate `FILTER` clause
+/// (<https://www.postgresql.org/docs/18/sql-expressions.html#SYNTAX-AGGREGATES>).
 macro_rules! version_select {
     ($tail:literal) => {
         concat!(
@@ -103,11 +118,14 @@ macro_rules! version_select {
             "v.signature_client_supplied, v.wrapped_original, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
-            "att.attestations ",
+            "att.attestations_at_committal, att.attestations_after_committal ",
             "FROM vo_version v JOIN audit a ON a.id = v.audit_id ",
             "LEFT JOIN LATERAL (",
-            "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id), '[]'::jsonb) ",
-            "AS attestations FROM vo_attestation x ",
+            "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
+            "FILTER (WHERE x.at_committal), '[]'::jsonb) AS attestations_at_committal, ",
+            "coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
+            "FILTER (WHERE NOT x.at_committal), '[]'::jsonb) AS attestations_after_committal ",
+            "FROM vo_attestation x ",
             "WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version",
             ") att ON true ",
             $tail
@@ -131,12 +149,17 @@ async fn stored_version(
         .unwrap_or_default();
     let canonical = read_version_canonical(pool, vo_id, sys_version).await?;
     // The attestations arrive folded into the version-select row (the LATERAL
-    // aggregate in `version_select!`), in commit order — no separate round trip.
-    let attestations = row
-        .try_get::<Value, _>("attestations")?
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
+    // aggregates in `version_select!`), in commit order and already split on
+    // `at_committal` — no separate round trip.
+    let attestation_list = |column: &str| -> Result<Vec<Value>, StorageError> {
+        Ok(row
+            .try_get::<Value, _>(column)?
+            .as_array()
+            .cloned()
+            .unwrap_or_default())
+    };
+    let attestations_at_committal = attestation_list("attestations_at_committal")?;
+    let attestations_after_committal = attestation_list("attestations_after_committal")?;
     Ok(StoredVersion {
         vo_id,
         kind: row.try_get("kind")?,
@@ -163,7 +186,8 @@ async fn stored_version(
         signature_client_supplied: row.try_get("signature_client_supplied")?,
         wrapped_original: row.try_get("wrapped_original")?,
         canonical,
-        attestations,
+        attestations_at_committal,
+        attestations_after_committal,
     })
 }
 

@@ -1,4 +1,7 @@
-//! Hand-written RM spec function `VERSION.canonical_form()` (hand-written spec behaviour).
+//! Hand-written RM spec functions of `VERSION` (hand-written spec behaviour):
+//! `canonical_form()` over an already-serialised Version value, plus the
+//! subtype-dispatching `uid()` / `owner_id()` / `is_branch()` on the closed
+//! `VERSION` subtype set.
 //!
 //! Spec authority:
 //! - RM common §"Digital Signature"
@@ -20,7 +23,10 @@
 //! canonicalise per RFC 8785 (JSON Canonicalization Scheme, `serde_jcs`) so the
 //! signed bytes are deterministic (key ordering, number formatting, string
 //! escaping pinned by the RFC). This is the single source of the signed bytes
-//! for both signing and verification.
+//! for both signing and verification. That choice is OUR OWN extension — no
+//! released openEHR text licenses it, which is exactly what the `[.tbd]` says;
+//! register entry AMB-188 carries the adjudication, including why RFC 8785 over
+//! the served JSON is preferred to the ODIN the spec speculates about.
 //!
 //! The signed input is always assembled as a `serde_json::Value` (the shape the
 //! versioning service and the wire boundary already hold), so this module works
@@ -29,6 +35,72 @@
 //! here.
 
 use serde_json::Value;
+
+use crate::common::change_control::version::Version;
+use openehr_base::prelude::{HierObjectId, ObjectVersionId, Uid};
+
+/// The `value` string of whichever concrete `UID` subtype this is — the
+/// `_uid.value_` the `VERSION` postconditions below compare against.
+///
+/// NOTE: the `UUID` arm renders from the strong `uuid::Uuid` the BASE model
+/// gives `UUID.value`, so a hexadecimal id comes back in the canonical
+/// lower-case hyphenated form regardless of the case it was written in. That is
+/// the intended reading of BASE `base_types`
+/// `master05-identification_package.adoc` §"Composite Identifiers and Case",
+/// whose second rule is that "two identifiers identical apart from case are
+/// considered to be identical, and therefore to identify the same thing" — so
+/// the rendering never denotes a different object. The case-PRESERVING rule
+/// binds the stored `value`, which this function does not touch.
+fn uid_value(id: &Uid) -> String {
+    match id {
+        Uid::InternetId(internet_id) => internet_id.value.clone(),
+        Uid::IsoOid(iso_oid) => iso_oid.value.clone(),
+        Uid::Uuid(uuid) => uuid.value.to_string(),
+    }
+}
+
+impl<T> Version<T> {
+    /// `VERSION.uid`: the version's own three-part identifier.
+    ///
+    /// `VERSION` declares this abstract; each subtype effects it — an
+    /// `ORIGINAL_VERSION` stores it, and an `IMPORTED_VERSION` derives it from
+    /// the version it wraps (`Post: Result = item.uid`, RM
+    /// `UML/classes/org.openehr.rm.common.imported_version.adoc` §Functions).
+    /// This is that dispatch.
+    #[must_use]
+    pub fn uid(&self) -> &ObjectVersionId {
+        match self {
+            Version::OriginalVersion(original) => &original.uid,
+            Version::ImportedVersion(imported) => imported.uid(),
+        }
+    }
+
+    /// `VERSION.owner_id`: "Copy of the owning `VERSIONED_OBJECT._uid_` value;
+    /// extracted from the local `_uid_` property's `_object_id_`"
+    /// (`Post: Result.value.is_equal (uid.object_id.value)`; the same equality
+    /// is the class's `Owner_id_valid` invariant).
+    ///
+    /// The extraction is the BASE accessor `OBJECT_VERSION_ID.object_id()`, so
+    /// there is one lexical decoder for the three-part form rather than a
+    /// second one here.
+    #[must_use]
+    pub fn owner_id(&self) -> HierObjectId {
+        HierObjectId {
+            value: uid_value(&self.uid().object_id()),
+        }
+    }
+
+    /// `VERSION.is_branch`: "True if this Version represents a branch. Derived
+    /// from `_uid_` attribute" — delegated to
+    /// `OBJECT_VERSION_ID.is_branch()`, which is itself
+    /// `version_tree_id.is_branch` (BASE
+    /// `UML/classes/org.openehr.base.base_types.version_tree_id.adoc`
+    /// §Functions: "has `_branch_number()_` and `_branch_version()_` parts").
+    #[must_use]
+    pub fn is_branch(&self) -> bool {
+        self.uid().is_branch()
+    }
+}
 
 /// Failure to produce a Version canonical form.
 #[derive(Debug, thiserror::Error)]
@@ -65,6 +137,15 @@ pub fn canonical_form_of_json(value: &Value) -> Result<String, CanonicalFormErro
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::common::change_control::imported_version::ImportedVersion;
+    use crate::common::change_control::original_version::OriginalVersion;
+    use crate::common::generic::audit_details::{AuditDetails, AuditDetailsData};
+    use crate::common::generic::party_proxy::PartyProxy;
+    use crate::common::generic::party_self::PartySelf;
+    use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
+    use crate::data_types::text::code_phrase::CodePhrase;
+    use crate::data_types::text::dv_coded_text::DvCodedText;
+    use openehr_base::prelude::{ObjectId, ObjectRef, ObjectRefData, TerminologyId};
 
     /// A representative `ORIGINAL_VERSION` JSON whose `data` is a real corpus
     /// COMPOSITION (`openehr-its` vendored `minimal_persistent.json`), with fixed
@@ -159,5 +240,137 @@ mod tests {
         // ORIGINAL_VERSION so any accidental change to the algorithm is caught.
         let canonical = canonical_form_of_json(&original_version(None)).unwrap();
         insta::assert_snapshot!("original_version_canonical_form", canonical);
+    }
+
+    /// A plain `ORIGINAL_VERSION` whose `uid` is `value`, to exercise the
+    /// identity-derived functions of `VERSION`.
+    fn typed_original(value: &str) -> OriginalVersion<String> {
+        OriginalVersion {
+            contribution: ObjectRef::ObjectRef(ObjectRefData {
+                namespace: "local".to_owned(),
+                r#type: "CONTRIBUTION".to_owned(),
+                id: ObjectId::HierObjectId(HierObjectId {
+                    value: "11111111-1111-4111-8111-111111111111".to_owned(),
+                }),
+            }),
+            signature: None,
+            commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
+                system_id: "ferroehr.local".to_owned(),
+                time_committed: DvDateTime {
+                    normal_status: None,
+                    normal_range: None,
+                    other_reference_ranges: Vec::new(),
+                    magnitude_status: None,
+                    accuracy: None,
+                    value: "2026-07-07T10:11:12Z".to_owned(),
+                },
+                change_type: coded("249", "creation"),
+                description: None,
+                committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
+            }),
+            uid: ObjectVersionId {
+                value: value.to_owned(),
+            },
+            preceding_version_uid: None,
+            other_input_version_uids: Vec::new(),
+            lifecycle_state: coded("532", "complete"),
+            attestations: Vec::new(),
+            data: Some("content".to_owned()),
+        }
+    }
+
+    /// That same `ORIGINAL_VERSION` in the `VERSION` slot.
+    fn typed_version(value: &str) -> Version<String> {
+        Version::OriginalVersion(typed_original(value))
+    }
+
+    fn coded(code: &str, rubric: &str) -> DvCodedText {
+        DvCodedText {
+            value: rubric.to_owned(),
+            hyperlink: None,
+            formatting: None,
+            mappings: Vec::new(),
+            language: None,
+            encoding: None,
+            defining_code: CodePhrase {
+                terminology_id: TerminologyId {
+                    value: "openehr".to_owned(),
+                },
+                code_string: code.to_owned(),
+                preferred_term: None,
+            },
+        }
+    }
+
+    /// `Post: Result.value.is_equal (uid.object_id.value)` — the same equality
+    /// the `Owner_id_valid` invariant states.
+    #[test]
+    fn owner_id_is_the_uids_object_id() {
+        let version = typed_version("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2.1.1");
+        assert_eq!(
+            version.owner_id().value,
+            "8849182c-82ad-4088-a07f-48ead4180515"
+        );
+        assert_eq!(
+            version.owner_id().value,
+            uid_value(&version.uid().object_id()),
+            "Owner_id_valid"
+        );
+    }
+
+    /// "True if this Version represents a branch. Derived from `uid` attribute"
+    /// — a bare trunk version id is not a branch, a three-part
+    /// `VERSION_TREE_ID` is.
+    #[test]
+    fn is_branch_follows_the_version_tree_id() {
+        assert!(
+            !typed_version("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2").is_branch()
+        );
+        assert!(
+            typed_version("8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2.1.1")
+                .is_branch()
+        );
+    }
+
+    /// The `IMPORTED_VERSION` arm of the same dispatch: the wrapper reports the
+    /// WRAPPED original's identity, so both derived functions read the foreign
+    /// version id (`Post: Result = item.uid`).
+    #[test]
+    fn an_imported_version_derives_its_identity_from_the_wrapped_original() {
+        let item = typed_original("8849182c-82ad-4088-a07f-48ead4180515::remote.example::3.2.1");
+        let wrapper = Version::ImportedVersion(ImportedVersion {
+            contribution: ObjectRef::ObjectRef(ObjectRefData {
+                namespace: "local".to_owned(),
+                r#type: "CONTRIBUTION".to_owned(),
+                id: ObjectId::HierObjectId(HierObjectId {
+                    value: "22222222-2222-4222-8222-222222222222".to_owned(),
+                }),
+            }),
+            signature: Some("local-wrapper-signature".to_owned()),
+            commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
+                system_id: "local.example".to_owned(),
+                time_committed: DvDateTime {
+                    normal_status: None,
+                    normal_range: None,
+                    other_reference_ranges: Vec::new(),
+                    magnitude_status: None,
+                    accuracy: None,
+                    value: "2026-07-09T08:00:00Z".to_owned(),
+                },
+                change_type: coded("249", "creation"),
+                description: None,
+                committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
+            }),
+            item,
+        });
+        assert_eq!(
+            wrapper.uid().value,
+            "8849182c-82ad-4088-a07f-48ead4180515::remote.example::3.2.1"
+        );
+        assert_eq!(
+            wrapper.owner_id().value,
+            "8849182c-82ad-4088-a07f-48ead4180515"
+        );
+        assert!(wrapper.is_branch());
     }
 }
