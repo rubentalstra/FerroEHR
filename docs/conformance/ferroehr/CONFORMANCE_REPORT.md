@@ -7,12 +7,12 @@ Runner: cnf-runner 3.17.1 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 874 |
+| passed | 877 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 911 |
+| total | 914 |
 
 ## By chapter
 
@@ -39,8 +39,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Parties | 46 | 0 | 0 | 3 |
 | — Party relationships | 17 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
-| **Messaging** | 37 | 0 | 0 | 0 |
-| — EHR Extract | 21 | 0 | 0 | 0 |
+| **Messaging** | 39 | 0 | 0 | 0 |
+| — EHR Extract | 23 | 0 | 0 | 0 |
 | — TDD | 16 | 0 | 0 | 0 |
 | **Admin** | 54 | 0 | 0 | 2 |
 | — Admin service | 24 | 0 | 0 | 2 |
@@ -63,8 +63,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Audit accountability | 1 | 0 | 0 | 0 |
 | — Anonymous EHRs | 1 | 0 | 0 | 0 |
 | — EHR/demographic separation | 1 | 0 | 0 | 0 |
-| **Signing** | 10 | 0 | 0 | 2 |
-| — Version signing | 10 | 0 | 0 | 2 |
+| **Signing** | 11 | 0 | 0 | 2 |
+| — Version signing | 11 | 0 | 0 | 2 |
 | **SMART App Launch** | 3 | 0 | 0 | 0 |
 | — Discovery | 1 | 0 | 0 | 0 |
 | — Resource scopes | 2 | 0 | 0 | 0 |
@@ -101,7 +101,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
 | EhrArchive | pass | 7 | 0 | 0 | 0 |
 | DemographicArchive | pass | 8 | 0 | 0 | 0 |
-| EhrExtract | pass | 21 | 0 | 0 | 0 |
+| EhrExtract | pass | 23 | 0 | 0 | 0 |
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
@@ -111,7 +111,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | MessageApi | pass | 4 | 0 | 0 | 0 |
 | SystemApi | pass | 1 | 0 | 0 | 0 |
 | ItemTags | pass | 32 | 0 | 0 | 0 |
-| Signing | pass | 10 | 0 | 0 | 2 |
+| Signing | pass | 11 | 0 | 0 | 2 |
 | SimplifiedFormats | pass | 68 | 0 | 0 | 1 |
 | SmartAppLaunch | pass | 3 | 0 | 0 | 0 |
 | EhrDemographicSeparation | pass | 1 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 874 of 911 selected cases driven.
+Coverage: 877 of 914 selected cases driven.
 
 Not-executed verdicts (each cited):
 

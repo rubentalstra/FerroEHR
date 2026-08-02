@@ -403,7 +403,7 @@
     [
       "EhrExtract",
       {
-        "passed": 21,
+        "passed": 23,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -493,7 +493,7 @@
     [
       "Signing",
       {
-        "passed": 10,
+        "passed": 11,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 2
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 911,
-    "driven": 874,
-    "passed": 874,
+    "selected": 914,
+    "driven": 877,
+    "passed": 877,
     "failed": 0,
     "inconclusive": 0
   }
