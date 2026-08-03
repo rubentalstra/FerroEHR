@@ -60,6 +60,12 @@ pub struct AttestTargetRow {
     pub sys_version: i32,
     /// The addressed version's stored `creating_system_id`.
     pub creating_system_id: String,
+    /// Whether the addressed version is an `IMPORTED_VERSION` (a stored
+    /// `wrapped_original`) — the `is_original_version(a_ver_id)` half of the
+    /// `VERSIONED_OBJECT.commit_attestation` precondition
+    /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc`
+    /// §Functions: "Attestations can only be added to Original versions").
+    pub imported: bool,
 }
 
 /// Look up the target version of a `666|attestation|` item by its tree id and
@@ -75,7 +81,8 @@ pub async fn attestation_target(
 ) -> Result<Option<AttestTargetRow>, StorageError> {
     let (t, b, v) = tree;
     let row = sqlx::query(
-        "SELECT ehr_id, sys_version, creating_system_id FROM vo_version \
+        "SELECT ehr_id, sys_version, creating_system_id, \
+         (wrapped_original IS NOT NULL) AS imported FROM vo_version \
          WHERE vo_id = $1 AND trunk_version = $2 AND branch_number = $3 \
          AND branch_version = $4 AND kind = $5",
     )
@@ -91,6 +98,7 @@ pub async fn attestation_target(
             ehr_id: row.try_get("ehr_id")?,
             sys_version: row.try_get("sys_version")?,
             creating_system_id: row.try_get("creating_system_id")?,
+            imported: row.try_get("imported")?,
         })
     })
     .transpose()
