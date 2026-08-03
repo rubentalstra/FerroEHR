@@ -269,13 +269,10 @@ fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
             .iter()
             .map(crate::overview::params::item_tag_to_header_entry)
             .collect();
-        if entries.is_empty() {
-            continue;
-        }
-        // A list that cannot be rendered omits the header entirely — an EMPTY
-        // `openehr-item-tag` is the release's "remove all ITEM_TAGs"
-        // instruction (overview §Usage in Requests), so echoing one would tell
-        // a mirroring client to wipe the collection this response confirms.
+        // The empty-collection guard (an empty header is the "remove all
+        // ITEM_TAGs" request instruction, overview §Usage in Requests) lives
+        // in `emit_item_tag_header` itself — one rule for both echo paths
+        // (#1837).
         if let Some(value) = crate::overview::params::emit_item_tag_header(&entries) {
             resp_out.headers_mut().insert(name, value);
         }

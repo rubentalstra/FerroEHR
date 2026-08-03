@@ -373,6 +373,16 @@ pub(crate) fn validate_item_tag_entries(
 /// `value=""` echo describes a tag that violates `Inv_value_valid` and that
 /// this server never stored.
 pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> Option<HeaderValue> {
+    // An EMPTY collection emits NO header: the empty header value is the
+    // "remove all `ITEM_TAG`s" REQUEST instruction (ITS-REST overview
+    // `Requests_and_responses.md` §openehr-item-tag: "Providing an empty
+    // value for this header will effectively remove all ITEM_TAGs"), so a
+    // response echoing one would hand the client the destructive form as if
+    // it were state (#1837 — the EHR echo path emitted it; the demographic
+    // path guarded it; one rule now lives here for both).
+    if entries.is_empty() {
+        return None;
+    }
     let rendered = entries
         .iter()
         .map(|e| {
