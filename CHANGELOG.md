@@ -75,6 +75,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A malformed ITEM_TAG refuses at construction, not after the fact.** The
+  generated `ItemTag` type gains a validated constructor running its RM
+  invariants (`Inv_key_valid`/`Inv_value_valid`), so a violating tag cannot
+  exist as a typed value anywhere in the application — the JSON and XML
+  readers refuse it at parse, path-named. Wire statuses are unchanged (the
+  tag routes' 422 mapping stays); a stored tag row that no longer constructs
+  is reported as the server fault it is instead of being served.
+
 - **A CONTRIBUTION whose audit omits `committer` is now refused (`422`)
   instead of being attributed to the server's default identity.** The same
   released commit schema that requires `change_type` requires `committer`
