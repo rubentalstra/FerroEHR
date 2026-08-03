@@ -13182,7 +13182,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::BmmFeatureGroup {
                 ::core::result::Result::Ok(crate::am24::prelude::BmmFeatureGroup {
                     name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        .unwrap_or(::std::string::String::from("feature")),
                     properties: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("properties"))?,
@@ -18947,7 +18947,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::BmmResult {
                 ::core::result::Result::Ok(crate::am24::prelude::BmmResult {
                     name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        .unwrap_or(::std::string::String::from("Result")),
                     documentation: __s1.flatten(),
                     extensions: __s2.flatten(),
                     r#type: __s3
@@ -20481,7 +20481,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::BmmSelf {
                 ::core::result::Result::Ok(crate::am24::prelude::BmmSelf {
                     name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        .unwrap_or(::std::string::String::from("Self")),
                     documentation: __s1.flatten(),
                     extensions: __s2.flatten(),
                     r#type: __s3
@@ -30974,9 +30974,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElFunctionAgent {
                     }
                 }
                 ::core::result::Result::Ok(crate::am24::prelude::ElFunctionAgent {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -31134,9 +31132,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElFunctionCall {
                     }
                 }
                 ::core::result::Result::Ok(crate::am24::prelude::ElFunctionCall {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -31604,9 +31600,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElProcedureAgent {
                     }
                 }
                 ::core::result::Result::Ok(crate::am24::prelude::ElProcedureAgent {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -31763,9 +31757,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElPropertyRef {
                     }
                 }
                 ::core::result::Result::Ok(crate::am24::prelude::ElPropertyRef {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(true),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -31906,9 +31898,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElReadonlyVariable
                     }
                 }
                 ::core::result::Result::Ok(crate::am24::prelude::ElReadonlyVariable {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -32228,9 +32218,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElStaticRef {
                     }
                 }
                 ::core::result::Result::Ok(crate::am24::prelude::ElStaticRef {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -32821,9 +32809,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElTypeRef {
                     r#type: __s2
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_mutable: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_mutable"))?,
+                    is_mutable: __s3.flatten().unwrap_or(false),
                 })
             }
         }
@@ -33337,9 +33323,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::am24::prelude::ElWritableVariable
                     }
                 }
                 ::core::result::Result::Ok(crate::am24::prelude::ElWritableVariable {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(true),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,

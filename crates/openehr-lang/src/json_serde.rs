@@ -2279,9 +2279,9 @@ impl<'de> ::serde::Deserialize<'de>
                             .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
                         item_names: __s10,
                         item_values: __s11,
-                        underlying_type_name: __s12.flatten().ok_or_else(|| {
-                            ::serde::de::Error::missing_field("underlying_type_name")
-                        })?,
+                        underlying_type_name: __s12
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("INTEGER")),
                     },
                 )
             }
@@ -2643,9 +2643,9 @@ impl<'de> ::serde::Deserialize<'de>
                             .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
                         item_names: __s10,
                         item_values: __s11,
-                        underlying_type_name: __s12.flatten().ok_or_else(|| {
-                            ::serde::de::Error::missing_field("underlying_type_name")
-                        })?,
+                        underlying_type_name: __s12
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("STRING")),
                     },
                 )
             }
@@ -15614,7 +15614,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefBoolean {
                 ::core::result::Result::Ok(crate::prelude::TypeDefBoolean {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Boolean")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -15740,7 +15740,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDate {
                 ::core::result::Result::Ok(crate::prelude::TypeDefDate {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Date")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -15867,7 +15867,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDateTime {
                 ::core::result::Result::Ok(crate::prelude::TypeDefDateTime {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Date_time")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -15994,7 +15994,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDuration {
                 ::core::result::Result::Ok(crate::prelude::TypeDefDuration {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Duration")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -16121,7 +16121,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefInteger {
                 ::core::result::Result::Ok(crate::prelude::TypeDefInteger {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Integer")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -16248,7 +16248,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefObjectRef {
                 ::core::result::Result::Ok(crate::prelude::TypeDefObjectRef {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Object_ref")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -16374,7 +16374,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefReal {
                 ::core::result::Result::Ok(crate::prelude::TypeDefReal {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Real")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -16500,7 +16500,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefString {
                 ::core::result::Result::Ok(crate::prelude::TypeDefString {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("String")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -16633,7 +16633,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTerminologyCode {
                 ::core::result::Result::Ok(crate::prelude::TypeDefTerminologyCode {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Terminology_code")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -16759,7 +16759,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTime {
                 ::core::result::Result::Ok(crate::prelude::TypeDefTime {
                     type_name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                        .unwrap_or(::std::string::String::from("Time")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -16883,9 +16883,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefUri {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::TypeDefUri {
-                    type_name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_name"))?,
+                    type_name: __s0.flatten().unwrap_or(::std::string::String::from("Uri")),
                     type_anchor: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
@@ -21468,7 +21466,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureGroup {
                 ::core::result::Result::Ok(crate::prelude::BmmFeatureGroup {
                     name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        .unwrap_or(::std::string::String::from("feature")),
                     properties: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("properties"))?,
@@ -27557,7 +27555,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmResult {
                 ::core::result::Result::Ok(crate::prelude::BmmResult {
                     name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        .unwrap_or(::std::string::String::from("Result")),
                     documentation: __s1.flatten(),
                     extensions: __s2.flatten(),
                     r#type: __s3
@@ -28702,7 +28700,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSelf {
                 ::core::result::Result::Ok(crate::prelude::BmmSelf {
                     name: __s0
                         .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        .unwrap_or(::std::string::String::from("Self")),
                     documentation: __s1.flatten(),
                     extensions: __s2.flatten(),
                     r#type: __s3
@@ -33816,9 +33814,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionAgent {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::ElFunctionAgent {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -33976,9 +33972,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionCall {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::ElFunctionCall {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -34446,9 +34440,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElProcedureAgent {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::ElProcedureAgent {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -34605,9 +34597,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPropertyRef {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::ElPropertyRef {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(true),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -34748,9 +34738,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElReadonlyVariable {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::ElReadonlyVariable {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -35070,9 +35058,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElStaticRef {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::ElStaticRef {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(false),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -35663,9 +35649,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTypeRef {
                     r#type: __s2
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_mutable: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_mutable"))?,
+                    is_mutable: __s3.flatten().unwrap_or(false),
                 })
             }
         }
@@ -36179,9 +36163,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElWritableVariable {
                     }
                 }
                 ::core::result::Result::Ok(crate::prelude::ElWritableVariable {
-                    is_writable: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
+                    is_writable: __s0.flatten().unwrap_or(true),
                     name: __s1
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,

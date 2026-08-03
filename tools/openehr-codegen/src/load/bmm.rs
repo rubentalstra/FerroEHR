@@ -150,6 +150,19 @@ pub(crate) struct BmmProperty {
     pub documentation: Option<String>,
     /// `is_mandatory = true` → an obligatory attribute (else optional/`Option`).
     pub is_mandatory: bool,
+    /// The vendored `default` facet, verbatim, if the schema carries one.
+    ///
+    /// The value is the schema's own text for the attribute's initial value —
+    /// ODIN `default = <False>` / `<"Boolean">` arrives here as `"False"` /
+    /// `"\"Boolean\""`. It is kept unparsed because the facet is NOT part of the
+    /// released persistence model: LANG
+    /// `docs/UML/classes/org.openehr.lang.bmm_persistence.p_bmm_property.adoc`
+    /// §Attributes lists `name`, `is_mandatory`, `is_computed`,
+    /// `is_im_infrastructure`, `is_im_runtime`, `type_def` and `bmm_property`
+    /// and no `default`, so every vendored occurrence is an undeclared extension
+    /// whose meaning is adjudicated in `plan::overrides`, not assumed here. The
+    /// loader's job is only to stop dropping it.
+    pub default: Option<String>,
     /// The property's shape and type.
     pub kind: BmmPropKind,
 }
@@ -498,6 +511,15 @@ fn parse_property(node: &Value) -> BmmProperty {
         .get("is_mandatory")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    // The `default` facet, verbatim. The JSON export stringifies every ODIN
+    // literal (`<False>` → `"False"`, `<"Boolean">` → `"\"Boolean\""`), but a
+    // schema that writes a real JSON scalar is read too, so the value is
+    // normalized to its text rather than required to be a string.
+    let default = node.get("default").and_then(|v| match v {
+        Value::String(s) => Some(s.clone()),
+        Value::Bool(_) | Value::Number(_) => Some(v.to_string()),
+        Value::Null | Value::Array(_) | Value::Object(_) => None,
+    });
     let ptype = node.get("_type").and_then(Value::as_str).unwrap_or("");
 
     let kind = if ptype == "P_BMM_CONTAINER_PROPERTY" {
@@ -531,6 +553,7 @@ fn parse_property(node: &Value) -> BmmProperty {
         name,
         documentation,
         is_mandatory,
+        default,
         kind,
     }
 }

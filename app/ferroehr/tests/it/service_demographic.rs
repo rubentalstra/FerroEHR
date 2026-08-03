@@ -596,7 +596,7 @@ async fn party_tags_crud() {
         .await
         .expect("put tags");
     assert_eq!(tags.len(), 1);
-    assert_eq!(tags[0].key, "priority");
+    assert_eq!(tags[0].key(), "priority");
 
     // GET tags on the party
     let got = svc

@@ -20,7 +20,7 @@ pub struct VersionOfComposition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `contribution` property of `VersionOfComposition`.
-    pub contribution: super::common::ObjectRefOfHierObjectId,
+    pub contribution: openehr_base::prelude::ObjectRef,
     /// The `signature` property of `VersionOfComposition`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
@@ -38,7 +38,7 @@ pub struct VersionOfEhrStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `contribution` property of `VersionOfEhrStatus`.
-    pub contribution: super::common::ObjectRefOfHierObjectId,
+    pub contribution: openehr_base::prelude::ObjectRef,
     /// The `signature` property of `VersionOfEhrStatus`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,

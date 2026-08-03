@@ -1620,18 +1620,10 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
         Ok(openehr_base::prelude::PointInterval {
             lower: __lower,
             upper: __upper,
-            lower_unbounded: __lower_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_unbounded".into())
-            })?,
-            upper_unbounded: __upper_unbounded.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_unbounded".into())
-            })?,
-            lower_included: __lower_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element lower_included".into())
-            })?,
-            upper_included: __upper_included.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element upper_included".into())
-            })?,
+            lower_unbounded: __lower_unbounded.unwrap_or(false),
+            upper_unbounded: __upper_unbounded.unwrap_or(false),
+            lower_included: __lower_included.unwrap_or(true),
+            upper_included: __upper_included.unwrap_or(true),
         })
     }
 }
@@ -12620,15 +12612,16 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ItemTag {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        self.key.write_xml(w, "key", Some("String"))?;
-        if let Some(v) = &self.value {
+        self.key().write_xml(w, "key", Some("String"))?;
+        if let Some(v) = &self.value() {
             v.write_xml(w, "value", Some("String"))?;
         }
-        self.target.write_xml(w, "target", Some("UID_BASED_ID"))?;
-        if let Some(v) = &self.target_path {
+        self.target().write_xml(w, "target", Some("UID_BASED_ID"))?;
+        if let Some(v) = &self.target_path() {
             v.write_xml(w, "target_path", Some("String"))?;
         }
-        self.owner_id.write_xml(w, "owner_id", Some("OBJECT_REF"))?;
+        self.owner_id()
+            .write_xml(w, "owner_id", Some("OBJECT_REF"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -12673,18 +12666,17 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ItemTag {
                 }
             }
         }
-        Ok(openehr_rm::prelude::ItemTag {
-            key: __key.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element key".into())
-            })?,
-            value: __value,
-            target: __target.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element target".into())
-            })?,
-            target_path: __target_path,
-            owner_id: __owner_id.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element owner_id".into())
-            })?,
+        let __a0: String = __key
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element key".into()))?;
+        let __a1: Option<String> = __value;
+        let __a2: openehr_base::prelude::UidBasedId = __target
+            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element target".into()))?;
+        let __a3: Option<String> = __target_path;
+        let __a4: openehr_base::prelude::ObjectRef = __owner_id.ok_or_else(|| {
+            crate::xml::runtime::XmlError::Parse("missing element owner_id".into())
+        })?;
+        openehr_rm::prelude::ItemTag::new(__a0, __a1, __a2, __a3, __a4).map_err(|__e| {
+            crate::xml::runtime::XmlError::Parse(::std::format!("ITEM_TAG: {__e}").into())
         })
     }
 }

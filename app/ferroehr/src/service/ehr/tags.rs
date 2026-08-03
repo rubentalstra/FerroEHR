@@ -20,7 +20,6 @@
 use openehr_base::prelude::{
     HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, UidBasedId,
 };
-use openehr_base::validate::Validate;
 use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_rm::prelude::ItemTag;
 
@@ -58,7 +57,6 @@ impl FerroEhrService {
         rows.iter()
             .map(|r| Self::stored_item_tag(ehr_id, r))
             .collect::<Result<Vec<_>, _>>()
-            .map_err(Into::into)
     }
 
     /// Tags on one target object (a COMPOSITION or `EHR_STATUS`). The caller
@@ -102,7 +100,6 @@ impl FerroEhrService {
         rows.iter()
             .map(|r| Self::stored_item_tag(ehr_id, r))
             .collect::<Result<Vec<_>, _>>()
-            .map_err(Into::into)
     }
 
     /// Replace the **whole** tag collection of a target with the posted set,
@@ -145,13 +142,16 @@ impl FerroEhrService {
             Vec::with_capacity(tags.len());
         for tag in tags {
             let target_path = normalized_target_path(tag.target_path.as_deref());
-            validate_item_tag(
-                &tag.key,
-                tag.value.as_deref(),
-                target_path,
+            // Construction IS the invariant check (#1839): a violating tag
+            // cannot exist as a typed ItemTag.
+            ItemTag::new(
+                tag.key.clone(),
+                tag.value.clone(),
                 target.clone(),
+                target_path.map(str::to_owned),
                 owner_id.clone(),
-            )?;
+            )
+            .map_err(|e| item_tag_refusal(&e))?;
             new_tags.push(crate::storage::tag_repo::NewTag {
                 target_type,
                 key: &tag.key,
@@ -291,14 +291,18 @@ impl FerroEhrService {
     fn stored_item_tag(
         ehr_id: EhrId,
         row: &crate::storage::tag_repo::TagRow,
-    ) -> Result<ItemTag, VersionIdError> {
-        Ok(ItemTag {
-            key: row.key.clone(),
-            value: row.value.clone(),
-            target: tag_target(row)?,
-            target_path: row.target_path.clone(),
-            owner_id: ehr_owner_ref(ehr_id),
-        })
+    ) -> Result<ItemTag, ServiceError> {
+        // A stored row that no longer constructs is storage corruption, not a
+        // client fault — fail loud as the 500 class (the write path validated
+        // at commit; #1839 made construction the invariant check).
+        ItemTag::new(
+            row.key.clone(),
+            row.value.clone(),
+            tag_target(row)?,
+            row.target_path.clone(),
+            ehr_owner_ref(ehr_id),
+        )
+        .map_err(|e| ServiceError::Internal(format!("stored ITEM_TAG row: {e}")))
     }
 }
 
@@ -359,45 +363,16 @@ fn ehr_owner_ref(ehr_id: EhrId) -> ObjectRef {
 pub(in crate::service) fn normalized_target_path(raw: Option<&str>) -> Option<&str> {
     raw.filter(|p| !p.is_empty())
 }
-
-/// Judge one incoming `UPDATE_ITEM_TAG` by building the `ITEM_TAG` the write
-/// would store and running the RM's own invariants over it.
-///
-/// This is the single seam both tag families go through: the RM invariants
-/// (`Inv_key_valid`, `Inv_value_valid` —
-/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`)
-/// are implemented exactly once, in `openehr_rm`'s `Validate` impl for
-/// `ItemTag`, and reached from here rather than restated per family. `target`
-/// and `owner_id` are the values the SERVER assigns from the route — which is
-/// why `schemas/common/UpdateItemTag.yaml` omits them from the write schema —
-/// so the instance validated is the instance stored.
-///
-/// # Errors
-/// [`ServiceError::Unprocessable`] carrying the RM invariant violations as
-/// causes (the `422` family).
-pub(in crate::service) fn validate_item_tag(
-    key: &str,
-    value: Option<&str>,
-    target_path: Option<&str>,
-    target: UidBasedId,
-    owner_id: ObjectRef,
-) -> Result<(), ServiceError> {
-    let candidate = ItemTag {
-        key: key.to_owned(),
-        value: value.map(str::to_owned),
-        target,
-        target_path: target_path.map(str::to_owned),
-        owner_id,
-    };
-    let violations = candidate.invariants();
-    if violations.is_empty() {
-        return Ok(());
-    }
-    Err(ServiceError::Unprocessable(
-        Violation::new(format!("item tag {key:?} violates its RM invariants"))
-            .with_path("ITEM_TAG")
-            .with_causes(violations),
-    ))
+/// Refuse an [`ItemTagError`] as the ITS-REST 422 shape (the same
+/// `Violation` the pre-constructor `validate_item_tag` produced): the typed
+/// constructor IS the invariant check now (#1839 — construction =
+/// validation), so the service seam only maps the refusal onto the wire.
+pub(in crate::service) fn item_tag_refusal(
+    err: &openehr_rm::common::tags::item_tag_impl::ItemTagError,
+) -> ServiceError {
+    ServiceError::Unprocessable(
+        Violation::new(format!("item tag violates its RM invariants: {err}")).with_path("ITEM_TAG"),
+    )
 }
 
 // ── The ITS-REST tags call surface ────────────────────────────────────────────

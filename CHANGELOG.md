@@ -75,6 +75,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A malformed ITEM_TAG refuses at construction, not after the fact.** The
+  generated `ItemTag` type gains a validated constructor running its RM
+  invariants (`Inv_key_valid`/`Inv_value_valid`), so a violating tag cannot
+  exist as a typed value anywhere in the application — the JSON and XML
+  readers refuse it at parse, path-named. Wire statuses are unchanged (the
+  tag routes' 422 mapping stays); a stored tag row that no longer constructs
+  is reported as the server fault it is instead of being served.
+
 - **A CONTRIBUTION whose audit omits `committer` is now refused (`422`)
   instead of being attributed to the server's default identity.** The same
   released commit schema that requires `change_type` requires `committer`
@@ -401,6 +409,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **An `ITEM_TAG` whose key or value violates its own RM invariants is now
+  refused when the payload is read, not after it is built.** RM
+  `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants states
+  `Inv_key_valid` (`not key.is_empty and key.is_justified` — no leading or
+  trailing whitespace) and `Inv_value_valid` (a present value must be
+  non-empty) over `ITEM_TAG`'s own fields. Both now run at the type's
+  construction door, which the canonical-JSON and canonical-XML readers build
+  through, so an empty or whitespace-padded tag key is rejected at parse — in
+  any document position, named by its path — instead of producing a value that
+  existed in violation of its own class definition until something validated
+  it. Tag requests that already conformed are unaffected.
+- **The canonical-JSON reader honours the default values the vendored
+  meta-model states.** A `Point_interval` payload that omits
+  `lower_included`/`upper_included`/`lower_unbounded`/`upper_unbounded` now
+  reads back with the schema's own declared defaults (included, bounded),
+  matching what `Proper_interval` and `Multiplicity_interval` already did — the
+  meta-model states those four values on `Point_interval` and only there, and
+  the reader had been ignoring them.
 - **BREAKING: a structurally invalid RM request body now answers `400`, not
   `422`, and the commit audit's coded members carry their released wire
   shape.** The commit routes (COMPOSITION, `EHR_STATUS`, DIRECTORY, EHR

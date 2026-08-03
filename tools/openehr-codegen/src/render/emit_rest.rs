@@ -10,6 +10,7 @@
 //! (the handler logic is hand-written application code, not generatable).
 
 use crate::load::oas::{Oas, Operation};
+use crate::plan::overrides::oas_monomorphization;
 use crate::render::naming;
 use serde_json::Value;
 use std::collections::BTreeSet;
@@ -240,6 +241,7 @@ pub(crate) fn hoist_set(bundles: &[(&str, Oas)], names: &RmNames) -> BTreeSet<St
                 && reprs.get(*n).is_some_and(|r| r.len() == 1)
                 && !names.rm.contains(*n)
                 && !names.base.contains(*n)
+                && oas_monomorphization(n).is_none()
         })
         .map(|(n, _)| n.clone())
         .collect();
@@ -248,8 +250,12 @@ pub(crate) fn hoist_set(bundles: &[(&str, Oas)], names: &RmNames) -> BTreeSet<St
         let snapshot = hoisted.clone();
         hoisted.retain(|n| {
             refs.get(n).is_some_and(|rs| {
-                rs.iter()
-                    .all(|r| names.rm.contains(r) || names.base.contains(r) || snapshot.contains(r))
+                rs.iter().all(|r| {
+                    names.rm.contains(r)
+                        || names.base.contains(r)
+                        || oas_monomorphization(r).is_some()
+                        || snapshot.contains(r)
+                })
             })
         });
         if hoisted.len() == snapshot.len() {
@@ -317,7 +323,9 @@ pub(crate) fn emit_group(
         .schemas()
         .iter()
         .map(|(n, _)| n.clone())
-        .filter(|n| !names.rm.contains(n) && !names.base.contains(n))
+        .filter(|n| {
+            !names.rm.contains(n) && !names.base.contains(n) && oas_monomorphization(n).is_none()
+        })
         .collect();
     let ctx = Ctx {
         oas,
@@ -437,6 +445,15 @@ impl Ctx<'_> {
     fn rust_type(&self, schema: &Value) -> String {
         // A `$ref` (possibly to a name we resolve without following it).
         if let Some(name) = Oas::ref_name(schema) {
+            // A schema whose KEY does not match its class — the released
+            // bundles rename `CLUSTER` to `Clstr` and give every generic
+            // INSTANTIATION its own flat key. The mapping is read from each
+            // schema's own `title` (see `plan::overrides::OAS_MONOMORPHIZATIONS`);
+            // without it these emit as `allOf`-truncated DTOs that drop their
+            // inherited members and the spec type's strict reader.
+            if let Some(spec) = oas_monomorphization(&name) {
+                return spec.to_string();
+            }
             // RM/BASE spec types resolve to the TYPED spec structs: since the
             // foundation rewrite (#1702) every spec type carries emitted manual
             // `serde::Serialize`/`Deserialize` impls (its crate's
