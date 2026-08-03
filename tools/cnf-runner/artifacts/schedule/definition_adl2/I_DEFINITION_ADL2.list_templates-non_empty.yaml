@@ -13,7 +13,7 @@ description: "list ADL2 templates when some are loaded"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.list_templates"
   - "AM AOM2 §Templates (TEMPLATE vs OPERATIONAL_TEMPLATE)"
-  - "ITS-REST definition_template_adl2_list §200 OK"
+  - "ITS-REST OAS operations/definition_template_adl2_list.yaml §responses ('200')"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any

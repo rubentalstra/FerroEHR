@@ -14,7 +14,7 @@ description: "retrieve a single ADL2 OPT"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.get_artefact"
   - "AM ADL2 §Templates (operational template form)"
-  - "ITS-REST definition_template_adl2_get §200 OK"
+  - "ITS-REST OAS operations/definition_template_adl2_get.yaml §responses ('200')"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any

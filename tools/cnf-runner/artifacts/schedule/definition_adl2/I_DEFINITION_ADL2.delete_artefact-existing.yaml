@@ -20,7 +20,7 @@ test_purpose: "Deleting an existing ADL2 artefact succeeds and the artefact is n
 description: "delete an existing ADL2 artefact"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.delete_artefact"
-  - "ITS-REST definition_template_adl2_get §404 Not Found"
+  - "ITS-REST OAS operations/definition_template_adl2_get.yaml §responses ('404')"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any

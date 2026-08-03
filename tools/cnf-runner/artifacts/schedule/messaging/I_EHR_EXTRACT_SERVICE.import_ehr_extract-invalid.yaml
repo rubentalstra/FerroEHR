@@ -22,7 +22,7 @@ description: "Import a malformed EXTRACT"
 spec_refs:
   - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.import_ehr_extract"
   - "RM ehr_extract master04-common_package §EXTRACT"
-  - "CNF platform_test_schedule master13 §import_ehr_extract (chapter: export_ehr_extract)"
+  - "CNF platform_test_schedule master13 §Test Cases (the schedule enumerates only the export_* operations; no import_ehr_extract case)"
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs the /message/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family message-extract) and adjudicated by register AMB-34. The row gates the CAPABILITY verdicts only, never ITS-REST wire conformance"

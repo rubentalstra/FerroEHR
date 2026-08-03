@@ -22,10 +22,10 @@ description: "A read-only principal is forbidden from write operations"
 spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr"
   - "ITS-REST overview Requests_and_responses (HTTP status codes: 403 — forbidden)"
-  - "CNF 2.0 security schedule §SEC-BASIC Authorization separation (this proposal; 2017 schedule Security BASIC lineage)"
+  - "CNF profiles master03-profiles §Non-Functional (the Security & Privacy product attribute; the SEC-BASIC tier is our own extension — no released openEHR spec defines it)"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "applies only when the SUT declares the SEC-BASIC security tier — CNF 2.0 security schedule (this proposal; 2017 schedule Security BASIC lineage)"
+  - "applies only when the SUT declares the SEC-BASIC security tier — CNF profiles master03-profiles §Non-Functional (the Security & Privacy product attribute; the SEC-BASIC tier is our own extension — no released openEHR spec defines it)"
 requires:
   server: any
   templates: [cnf.opt.minimal_event]

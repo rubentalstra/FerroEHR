@@ -14,7 +14,7 @@ test_purpose: "Retrieving a loaded ADL2 OPT at a specific version (deprecated en
 description: "get an ADL2 OPT at a specific version (deprecated)"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.get_artefact"
-  - "ITS-REST definition_template_adl2_version_get §200 OK"
+  - "ITS-REST OAS operations/definition_template_adl2_version_get.yaml §responses ('200')"
 guards:
   - "ADL2 Get-template-at-version is deprecated in ITS-REST 1.1.0 (deprecated: true) — ITS-REST definition_template_adl2_version_get; SPECITS-87 (skip where the deprecated surface is withdrawn)"
 applies: { rm: ">=1.0.2" }

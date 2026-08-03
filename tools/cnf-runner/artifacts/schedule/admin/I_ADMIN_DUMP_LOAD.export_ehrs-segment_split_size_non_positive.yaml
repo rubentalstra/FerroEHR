@@ -24,7 +24,7 @@ test_purpose: >-
 description: "Export with a non-positive segment split size"
 spec_refs:
   - "SM openehr_platform §I_ADMIN_DUMP_LOAD.export_ehrs"
-  - "SM openehr_platform UML export_spec.adoc (segment_split_size, kb)"
+  - "SM UML/classes/export_spec.adoc (segment_split_size, kb)"
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs /admin/dump or /admin/load; our own design/extension, declared in vocab/wire_surface.yaml served_extensions and adjudicated by register AMB-33. The row gates the EhrDumpLoad CAPABILITY verdict only, never ITS-REST wire conformance"

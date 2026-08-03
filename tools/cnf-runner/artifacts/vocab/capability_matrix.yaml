@@ -140,7 +140,7 @@ EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, so
 EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 47, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
 CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 50, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
 DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 77, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
-ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 84, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
+ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 87, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 69, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 # Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
 # BINDING cases (member accepted / non-member refused / unresolvable under each
@@ -320,7 +320,7 @@ DemographicArchive: { family: Platform, tier: OPTIONS, required: false, realizat
 # The workload_exclusion is GONE: the `integration_poll` journey now exports an
 # EHR as EXTRACTs (`ehr_extract_export`), so the measured hospital simulation
 # exercises the capability.
-EhrExtract: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 26, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: EHR Extract)" }
+EhrExtract: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: EHR Extract)" }
 # REALIZED ON THE EXTENSION SURFACE (#659, 2026-07-29) — no MESSAGE group exists
 # in the release (CONFIRMED unchanged first-hand), but the product serves
 # import_tdd + import_tdds under /message/tdd/ (the `message-tdd`

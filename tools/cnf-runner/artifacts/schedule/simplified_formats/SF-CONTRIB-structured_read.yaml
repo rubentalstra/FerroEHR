@@ -22,7 +22,7 @@ test_purpose: >-
   audit unchanged by the simplified negotiation.
 description: "Get CONTRIBUTION with a STRUCTURED Accept, canonical envelope"
 spec_refs:
-  - "ITS-REST overview Amendment_record §SPECITS-84"
+  - "ITS-REST overview Amendment_record.md §Amendment Record (the SPECITS-84 row)"
   - "ITS-REST overview Resources.md §Simplified Formats"
   - "ITS-REST simplified_formats master04 §Structured format"
   - "SM openehr_platform §I_EHR_CONTRIBUTION.get_contribution"

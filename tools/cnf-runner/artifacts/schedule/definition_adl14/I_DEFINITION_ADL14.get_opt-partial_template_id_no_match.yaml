@@ -41,7 +41,7 @@ test_purpose: >-
 description: "retrieve an OPT by a family-name template_id under exact matching"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
-  - "ITS-REST specifications §definition_template_adl1.4_get"
+  - "ITS-REST OAS operations/definition_template_adl1.4_get.yaml §responses"
   - "ITS-REST overview Requests_and_responses.md §HTTP status codes"
 applies: { rm: ">=1.0.2" }
 requires:

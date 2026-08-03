@@ -23,7 +23,7 @@ test_purpose: >-
 description: "Ad-hoc AQL archetype predicate matches specialisation children of the named archetype"
 spec_refs:
   - "BASE architecture_overview master10 §Design-time Relationships between Archetypes (parent-archetype queries retrieve specialisation-child data)"
-  - "AM AOM1.4 master07 §Querying / §Supporting Archetype-based Querying (the archetype-based matching set)"
+  - "AM Identification master07-referencing §Supporting Archetype-based Querying (the archetype-based matching set)"
   - "QUERY AQL master03 §Archetype predicate (the predicate scopes the data source by archetype)"
   - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
 ambiguities: [AMB-173]

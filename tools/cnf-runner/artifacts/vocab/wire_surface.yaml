@@ -1169,14 +1169,14 @@ elements:
   # (ITS-REST docs/query/Qualified_query_name.md).
   - id: query-stored-version-selector-matching
     description: "A stored query is addressable at a version: an exact major.minor.patch selector executes that definition, a {major} prefix the highest version inside that major, and a {major}.{minor} prefix the highest inside that minor line."
-    source: "ITS-REST query Qualified_query_name.md §version identifier (\"The `version` identifier is in the format specified by SEMVER style (i.e. `major.minor.patch`)\"; \"When only a partial `version` pattern is supplied, or when `version` is not supplied at all, the system must use the latest `version` with the supplied prefix - i.e. if only `major` or `major.minor` is used, then the latest query version matching supplied prefix will be used\")"
+    source: "ITS-REST query Qualified_query_name.md §Qualified query name (the version identifier) (\"The `version` identifier is in the format specified by SEMVER style (i.e. `major.minor.patch`)\"; \"When only a partial `version` pattern is supplied, or when `version` is not supplied at all, the system must use the latest `version` with the supplied prefix - i.e. if only `major` or `major.minor` is used, then the latest query version matching supplied prefix will be used\")"
     covered_by:
       - I_QUERY_SERVICE.execute_stored_query-version_exact
       - I_QUERY_SERVICE.execute_stored_query-version_major_prefix
       - I_QUERY_SERVICE.execute_stored_query-version_minor_prefix
   - id: query-stored-version-unmatchable-selector
     description: "A version selector that matches no stored version — an out-of-range major, or a token that is neither an exact SEMVER nor a legal {major}/{major}.{minor} prefix — is not found, and never falls back to another version."
-    source: "ITS-REST query Qualified_query_name.md §version identifier admits exactly the exact-SEMVER and the {major}/{major}.{minor} prefix shapes and assigns nothing to any other token; adjudicated in register AMB-102 (fixed handling: an unmatchable selector IS a version that does not exist), on Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
+    source: "ITS-REST query Qualified_query_name.md §Qualified query name (the version identifier) admits exactly the exact-SEMVER and the {major}/{major}.{minor} prefix shapes and assigns nothing to any other token; adjudicated in register AMB-102 (fixed handling: an unmatchable selector IS a version that does not exist), on Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
     covered_by:
       - I_QUERY_SERVICE.execute_stored_query-version_unknown_major
       - I_QUERY_SERVICE.execute_stored_query-version_malformed_selector

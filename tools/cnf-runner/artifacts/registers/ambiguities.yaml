@@ -6752,12 +6752,28 @@ AMB-167:
     (1) DOCUMENTED — COMPOSITION reads/writes and the OPT example payload
     (`composition`); every VERSION sub-resource read of any container
     (`version`, whose ORIGINAL_VERSION.data is `xs:anyType`, so the payload
-    type is unconstrained); the VERSIONED_* container reads
-    (`versioned_object`); the ADL 1.4 OPT (`template`, type
+    type is unconstrained); the ADL 1.4 OPT (`template`, type
     OPERATIONAL_TEMPLATE) and the ADL 1.4/2 archetype (`archetype`);
     EHR_EXTRACT (`extract` / `extract_request`); any LOCATABLE served under
     the generic abstract root (`items`, type LOCATABLE).
-    (2) UNDEFINED, media type declared — EHR (Ehr.xsd complexType, NOT
+    (2) UNDEFINED, media type declared — the VERSIONED_* container reads
+    (RE-ADJUDICATED 2026-08-03, first-hand: this entry classified them
+    DOCUMENTED on the `versioned_object` element, contradicting its own
+    source paragraph. That element is typed `X_VERSIONED_OBJECT` — the
+    EXTRACT-package shape (`crates/openehr-its/schemas/xml/
+    its-xml-1.0.2-nsv1/ALL/Extract.xsd` line 8, and the nsv2 twin under every
+    `RM/*/documents/Extract.xsd`), whose sequence makes `total_version_count`
+    and `extract_version_count` MANDATORY and restricts `versions` to
+    `ORIGINAL_VERSION`. The RM `VERSIONED_OBJECT` / `VERSIONED_COMPOSITION` /
+    `VERSIONED_EHR_STATUS` / `VERSIONED_FOLDER` / `VERSIONED_PARTY`
+    complexTypes are declared in Common.xsd / Ehr.xsd / Demographic.xsd with
+    NO global element of their own, and a served VERSIONED_COMPOSITION —
+    which carries neither extract count — cannot conform under the
+    `versioned_object` element. So the release DECLARES the media type and
+    WITHHOLDS the document here exactly as it does for EHR and EHR_STATUS.
+    No case floor changes: `get_versioned_composition-xml` already asserts
+    only an XML-document entity and says why in its own header, which is the
+    class-(2) floor); EHR (Ehr.xsd complexType, NOT
     LOCATABLE-derived, so not even the generic `items` root is available;
     absent entirely from the 1.0.2-nsv1 bundle); EHR_STATUS (LOCATABLE
     subtype, no element; absent from nsv1); FOLDER (LOCATABLE subtype, no
@@ -8866,3 +8882,53 @@ AMB-205:
     request-schema violation on the tag PUTs.
   disposition: fixed_handling
   upstream_issue: 1800
+
+AMB-206:
+  upstream_issue: 1834
+  ambiguity: >-
+    'Latest available version' is undefined when a container carries TWO open
+    lineage heads. The default Extract request has no version specification,
+    "corresponding to the assumption of 'latest available version' for each
+    matched item" (RM ehr_extract master04-common_package.adoc §Version
+    Specification), and the only switch the spec offers beside it is
+    `include_all_versions`, which returns "the whole version stack". Neither
+    sentence says WHICH head is latest when a trunk head (`::2`) and a branch
+    head (`::1.1.1`) are both current — and RM common master06 §Semantics in
+    Distributed Systems makes coexisting lineages a normal state, not an
+    error. The RM itself names the two readings without choosing between them
+    for an Extract: VERSIONED_OBJECT declares BOTH `latest_version()` and
+    `latest_trunk_version()` as distinct functions (RM common
+    UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions), so a
+    conformant implementation could defensibly export either head, or both.
+  source: >-
+    RM ehr_extract master04-common_package.adoc §Version Specification (read
+    first-hand): "An Extract request in its simplest form has no version
+    specification, corresponding to the assumption of 'latest available
+    version' for each matched item", and the two enumerated possibilities
+    (`include_all_versions`, `include_revision_history`) — no third setting
+    and no lineage rule. RM ehr_extract
+    UML/classes/org.openehr.rm.ehr_extract.extract_version_spec.adoc
+    §Attributes: `include_all_versions` "forces all versions to be included",
+    so its FALSE branch is exactly the undefined one. RM common
+    UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions:
+    `latest_version()` and `latest_trunk_version()` are separate functions
+    over the same container. No released sentence in either component picks
+    one for the Extract, and the ITS-REST release publishes no MESSAGE API at
+    all (register AMB-34), so no wire source narrows it either.
+  handling: >-
+    Fixed handling: the default (non-`include_all_versions`) Extract includes
+    the TRUNK head of each matched container and no branch head. The reason is
+    the RM's own trunk-first reading of "latest": master06 §The 'Virtual
+    Version Tree' makes the trunk the lineage every branch descends from,
+    `VERSIONED_OBJECT.latest_trunk_version()` names it without qualification,
+    and a branch is by construction a local divergence that may never have
+    been propagated — the same asymmetry master04 already relies on when it
+    warns that an Extract returns "all available versions from the repository
+    in question", not all that exist. Exporting a branch head under a request
+    that asked for the latest version would hand the receiver a version whose
+    trunk successor it never sees, so the fixed choice is the conservative
+    one; a caller that wants the branch asks for the whole stack with
+    `include_all_versions`, which the same section defines. Pinned by
+    `I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages`, whose
+    container holds trunk `::2` and branch `::1.1.1` at once.
+  disposition: fixed_handling

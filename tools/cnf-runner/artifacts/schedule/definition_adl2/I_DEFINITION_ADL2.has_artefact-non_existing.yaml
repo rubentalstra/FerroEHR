@@ -11,7 +11,7 @@ test_purpose: "has_artefact reports false for an unknown ADL2 template_id."
 description: "has_artefact for a non-existing ADL2 OPT"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.has_artefact"
-  - "ITS-REST definition_template_adl2_list §200 OK"
+  - "ITS-REST OAS operations/definition_template_adl2_list.yaml §responses ('200')"
 applies: { rm: ">=1.0.2" }
 requires: { server: exclusive }    # global-state ground — shared instances N/A
 flow:

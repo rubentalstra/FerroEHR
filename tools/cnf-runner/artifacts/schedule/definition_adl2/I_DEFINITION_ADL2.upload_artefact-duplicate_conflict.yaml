@@ -16,7 +16,7 @@ description: "upload the same ADL2 OPT twice"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.upload_artefact"
   - "AM AOM2 §Identification (archetype/template HRID uniqueness)"
-  - "ITS-REST definition_template_adl2_upload §409 Conflict"
+  - "ITS-REST OAS operations/definition_template_adl2_upload.yaml §responses ('409')"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 data_sets: [cnf.adl2.opt.minimal_d]

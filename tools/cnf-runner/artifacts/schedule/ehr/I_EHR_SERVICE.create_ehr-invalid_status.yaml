@@ -15,7 +15,7 @@ test_purpose: >-
 description: "Create EHR with invalid EHR_STATUS data sets"
 spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr"
-  - "CNF platform_test_schedule master06 §create_ehr data sets (INVALID class)"
+  - "CNF platform_test_schedule master06 §Test Data Sets (the INVALID class)"
   - "RM ehr §EHR_STATUS"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }

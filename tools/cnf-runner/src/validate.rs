@@ -225,6 +225,9 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         }
     }
     check_corpus_integrity(ctx.set, &mut findings);
+    if let Some(spec) = spec.as_ref() {
+        check_corpus_spec_refs(ctx.set, spec, &mut findings);
+    }
     check_vocab_drift(ctx.set, &mut findings);
     check_journey_envelope(ctx.set, &mut findings);
     check_claim_completeness(ctx.set, &mut findings);
@@ -1496,6 +1499,10 @@ fn check_links(case: &CaseCore, who: &str, set: &ArtifactSet, findings: &mut Vec
 /// could not be read.
 type InterfaceOperations = Result<Rc<[String]>, String>;
 
+/// A memoized section-name lookup: the component-relative document, and how
+/// many `include::` levels below it were followed.
+type SectionKey = (PathBuf, u8);
+
 /// A memoizing reader over the vendored spec tree.
 ///
 /// The citation-resolution gates ask the same questions once per case: the
@@ -1511,10 +1518,25 @@ struct SpecIndex<'a> {
     root: &'a Path,
     /// `path → file text`, or the io error's display text.
     texts: RefCell<BTreeMap<PathBuf, Result<Rc<str>, String>>>,
-    /// `(component dir, lowercased token) → any path under the dir matches`.
-    tokens: RefCell<BTreeMap<(PathBuf, String), bool>>,
+    /// `component dir → its file listing + basename index`.
+    components: RefCell<BTreeMap<PathBuf, Rc<ComponentFiles>>>,
+    /// `(document, include depth) → the section names it offers`.
+    sections: RefCell<BTreeMap<SectionKey, Rc<BTreeSet<String>>>>,
+    /// `document directory → the asciidoc attributes its book files define`.
+    attributes: RefCell<BTreeMap<PathBuf, Rc<BTreeMap<String, String>>>>,
     /// `interface → its parsed SM operation names`.
     interfaces: RefCell<BTreeMap<String, InterfaceOperations>>,
+}
+
+/// One vendored component directory's file listing, indexed for the two
+/// lookups citation resolution needs.
+#[derive(Debug, Default)]
+struct ComponentFiles {
+    /// Every file under the component dir: its lowercased, `/`-joined
+    /// component-relative path paired with the real relative path.
+    all: Vec<(String, PathBuf)>,
+    /// Lowercased file name → the component-relative paths carrying it.
+    by_name: BTreeMap<String, Vec<PathBuf>>,
 }
 
 impl<'a> SpecIndex<'a> {
@@ -1523,7 +1545,9 @@ impl<'a> SpecIndex<'a> {
         Self {
             root,
             texts: RefCell::new(BTreeMap::new()),
-            tokens: RefCell::new(BTreeMap::new()),
+            components: RefCell::new(BTreeMap::new()),
+            sections: RefCell::new(BTreeMap::new()),
+            attributes: RefCell::new(BTreeMap::new()),
             interfaces: RefCell::new(BTreeMap::new()),
         }
     }
@@ -1547,16 +1571,159 @@ impl<'a> SpecIndex<'a> {
         result
     }
 
-    /// Case-insensitive substring match of `token` against any path under
-    /// `dir`, once per `(dir, token)` pair.
-    fn contains_token(&self, dir: &Path, token: &str) -> bool {
-        let key = (dir.to_owned(), token.to_owned());
-        if let Some(hit) = self.tokens.borrow().get(&key) {
-            return *hit;
+    /// One component directory's file listing, walked once per run.
+    fn component_files(&self, dir: &Path) -> Rc<ComponentFiles> {
+        if let Some(hit) = self.components.borrow().get(dir) {
+            return Rc::clone(hit);
         }
-        let hit = path_contains_token(dir, token);
-        self.tokens.borrow_mut().insert(key, hit);
-        hit
+        let mut listing = ComponentFiles::default();
+        let mut stack = vec![dir.to_owned()];
+        while let Some(current) = stack.pop() {
+            let Ok(entries) = std::fs::read_dir(&current) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    stack.push(path);
+                    continue;
+                }
+                let Ok(relative) = path.strip_prefix(dir) else {
+                    continue;
+                };
+                let lowered = relative
+                    .components()
+                    .filter_map(|c| c.as_os_str().to_str())
+                    .collect::<Vec<_>>()
+                    .join("/")
+                    .to_lowercase();
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    listing
+                        .by_name
+                        .entry(name.to_lowercase())
+                        .or_default()
+                        .push(relative.to_owned());
+                }
+                listing.all.push((lowered, relative.to_owned()));
+            }
+        }
+        listing.all.sort();
+        let listing = Rc::new(listing);
+        self.components
+            .borrow_mut()
+            .insert(dir.to_owned(), Rc::clone(&listing));
+        listing
+    }
+
+    /// The asciidoc attributes the book files of one document directory define
+    /// (`:pkg: org.openehr.rm.common.` and friends), read once per directory.
+    /// They are what an `include::{uml_export_dir}/classes/{pkg}x.adoc[]`
+    /// directive is resolved through.
+    fn attributes(&self, dir: &Path) -> Rc<BTreeMap<String, String>> {
+        if let Some(hit) = self.attributes.borrow().get(dir) {
+            return Rc::clone(hit);
+        }
+        let mut attributes = BTreeMap::new();
+        for book in ["master.adoc", "manifest_vars.adoc"] {
+            let Ok(text) = self.read(&dir.join(book)) else {
+                continue;
+            };
+            for line in text.lines() {
+                let Some(rest) = line.strip_prefix(':') else {
+                    continue;
+                };
+                let Some((name, value)) = rest.split_once(':') else {
+                    continue;
+                };
+                if !name.is_empty()
+                    && name
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+                {
+                    attributes
+                        .entry(name.to_owned())
+                        .or_insert_with(|| value.trim().to_owned());
+                }
+            }
+        }
+        let attributes = Rc::new(attributes);
+        self.attributes
+            .borrow_mut()
+            .insert(dir.to_owned(), Rc::clone(&attributes));
+        attributes
+    }
+
+    /// The section names one vendored document offers, transitively through
+    /// its `include::` directives (the class and interface tables live in the
+    /// component's `UML/classes` export and are pulled into the chapter that
+    /// documents them, so a chapter's section space is not what its own file
+    /// literally contains).
+    fn document_sections(&self, component: &Path, relative: &Path) -> Rc<BTreeSet<String>> {
+        self.sections_at_depth(component, relative, INCLUDE_DEPTH)
+    }
+
+    fn sections_at_depth(
+        &self,
+        component: &Path,
+        relative: &Path,
+        depth: u8,
+    ) -> Rc<BTreeSet<String>> {
+        let key = (relative.to_owned(), depth);
+        if let Some(hit) = self.sections.borrow().get(&key) {
+            return Rc::clone(hit);
+        }
+        // Insert the empty set first: a cyclic include then terminates.
+        self.sections
+            .borrow_mut()
+            .insert(key.clone(), Rc::new(BTreeSet::new()));
+        let path = component.join(relative);
+        let mut names = BTreeSet::new();
+        if let Ok(text) = self.read(&path) {
+            let yaml = matches!(
+                path.extension().and_then(|e| e.to_str()),
+                Some("yaml" | "yml" | "json")
+            );
+            if yaml {
+                names.extend(structured_keys(&text));
+            } else {
+                names.extend(asciidoc_section_names(&text));
+                if depth > 0 {
+                    let directory = path.parent().unwrap_or(component).to_owned();
+                    let attributes = self.attributes(&directory);
+                    for target in include_targets(&text, &attributes) {
+                        for included in self.included_files(component, &target) {
+                            names.extend(
+                                self.sections_at_depth(component, &included, depth - 1)
+                                    .iter()
+                                    .cloned(),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        let names = Rc::new(names);
+        self.sections.borrow_mut().insert(key, Rc::clone(&names));
+        names
+    }
+
+    /// The vendored files one `include::` target names. The vendored tree
+    /// carries no boilerplate directory, so `{ref_dir}`-style attributes stay
+    /// unresolved: the target is matched by file name, and a still-unresolved
+    /// prefix (`{pkg}extract_manifest.adoc`) by name suffix.
+    fn included_files(&self, component: &Path, target: &str) -> Vec<PathBuf> {
+        let name = target.rsplit('/').next().unwrap_or(target).to_lowercase();
+        let files = self.component_files(component);
+        match name.rsplit_once('}') {
+            None => files.by_name.get(&name).cloned().unwrap_or_default(),
+            Some((_, suffix)) if !suffix.is_empty() => files
+                .by_name
+                .iter()
+                .filter(|(candidate, _)| candidate.ends_with(suffix))
+                .flat_map(|(_, paths)| paths.iter().cloned())
+                .collect(),
+            Some(_) => Vec::new(),
+        }
     }
 
     /// The service operations of an SM interface, parsed once per run.
@@ -1570,6 +1737,145 @@ impl<'a> SpecIndex<'a> {
             .insert(interface.to_owned(), result.clone());
         result
     }
+}
+
+/// How deep a document's `include::` graph is followed when its section space
+/// is collected. Two levels reach the chapter's class/interface tables and the
+/// tables those pull in; deeper is book boilerplate.
+const INCLUDE_DEPTH: u8 = 2;
+
+/// The `include::TARGET[]` targets of one asciidoc text, with the document
+/// directory's attributes substituted where they are known.
+fn include_targets(text: &str, attributes: &BTreeMap<String, String>) -> Vec<String> {
+    let mut out = Vec::new();
+    for line in text.lines() {
+        let Some(rest) = line.trim_start().strip_prefix("include::") else {
+            continue;
+        };
+        let Some((target, _)) = rest.split_once('[') else {
+            continue;
+        };
+        let mut target = target.to_owned();
+        for (name, value) in attributes {
+            if value.is_empty() {
+                continue;
+            }
+            target = target.replace(&format!("{{{name}}}"), value);
+        }
+        out.push(target);
+    }
+    out
+}
+
+/// The section names one asciidoc/markdown text offers: `=`/`#` headings (plus
+/// the bare class/interface name of a `X Class` heading), block anchors, and
+/// the labelled cells of the UML class tables (`h|*Attributes*`,
+/// `|*upload_opt* (`) — the class exports carry their attribute, function and
+/// invariant sections as table labels, not as headings.
+fn asciidoc_section_names(text: &str) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if let Some(heading) = trimmed
+            .strip_prefix('=')
+            .or_else(|| trimmed.strip_prefix('#'))
+        {
+            let heading = heading.trim_start_matches(['=', '#']).trim();
+            if !heading.is_empty() {
+                let name = normalize_section(heading);
+                for suffix in [" class", " interface", " enumeration"] {
+                    if let Some(bare) = name.strip_suffix(suffix) {
+                        out.insert(bare.to_owned());
+                    }
+                }
+                out.insert(name);
+            }
+        }
+        if let Some(anchor) = trimmed.strip_prefix("[[").or_else(|| {
+            trimmed
+                .strip_prefix("[#")
+                .filter(|rest| rest.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_'))
+        }) {
+            let anchor = anchor
+                .split([',', ']'])
+                .next()
+                .unwrap_or_default()
+                .trim_start_matches('_');
+            if !anchor.is_empty() {
+                out.insert(normalize_section(anchor));
+            }
+        }
+        // The AM validity rules are anchored blocks, not headings:
+        // `[.rule,id=VCACA]` names the section a citation addresses.
+        if let Some(attributes) = trimmed.strip_prefix('[').and_then(|r| r.strip_suffix(']')) {
+            for attribute in attributes.split(',') {
+                if let Some(id) = attribute.trim().strip_prefix("id=") {
+                    let id = id.trim_matches(['"', '\'']);
+                    if !id.is_empty() {
+                        out.insert(normalize_section(id));
+                    }
+                }
+            }
+        }
+        if let Some(label) = table_cell_label(trimmed) {
+            out.insert(label);
+        }
+        // An asciidoc block title (`.Parser grammar`) labels the block a
+        // citation addresses when the chapter has no heading for it.
+        if let Some(title) = trimmed.strip_prefix('.')
+            && title.starts_with(|c: char| c.is_ascii_alphabetic())
+            && !title.contains('|')
+        {
+            out.insert(normalize_section(title));
+        }
+        // The ITS-REST markdown chapters carry their own title in a comment
+        // line rather than a `#` heading, and a citation names that title.
+        if let Some(rest) = trimmed.strip_prefix("[comment]: # (title:")
+            && let Some((title, _)) = rest.split_once(')')
+        {
+            out.insert(normalize_section(title));
+        }
+    }
+    out
+}
+
+/// The bolded label of an asciidoc table cell (`h|*Attributes*`,
+/// `2+^h|*OBJECT_REF*`, `|*upload_opt* ( +`), normalized.
+fn table_cell_label(line: &str) -> Option<String> {
+    let (prefix, rest) = line.split_once("|*")?;
+    if !prefix
+        .chars()
+        .all(|c| c.is_ascii_digit() || matches!(c, '+' | '^' | '<' | '>' | 'h' | 'a' | 'm' | 's'))
+    {
+        return None;
+    }
+    let label = rest.split('*').next()?.trim();
+    if label.is_empty() || !label.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_') {
+        return None;
+    }
+    Some(normalize_section(label))
+}
+
+/// The keys of a YAML/JSON document (the OAS operation, response and schema
+/// files a citation addresses by key, e.g. `§requestBody`, `§'409'`).
+fn structured_keys(text: &str) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for line in text.lines() {
+        let trimmed = line.trim_start().trim_start_matches("- ");
+        let key = trimmed.trim_start_matches(['\'', '"']);
+        let Some((key, _)) = key.split_once(':') else {
+            continue;
+        };
+        let key = key.trim_end_matches(['\'', '"']);
+        if !key.is_empty()
+            && key
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | '$'))
+        {
+            out.insert(normalize_section(key));
+        }
+    }
+    out
 }
 
 fn sm_class_file(spec_root: &Path, interface: &str) -> PathBuf {
@@ -1678,73 +1984,298 @@ fn component_dir(token: &str) -> Option<&'static str> {
     })
 }
 
-fn check_spec_refs(case: &CaseCore, who: &str, spec: &SpecIndex<'_>, findings: &mut Vec<Finding>) {
-    for citation in &case.spec_refs {
-        let mut tokens = citation.split_whitespace();
-        let Some(component) = tokens.next() else {
-            push(findings, CheckId::SpecRef, who, "empty spec_ref".to_owned());
-            continue;
-        };
-        let Some(dir) = component_dir(component) else {
-            push(
-                findings,
-                CheckId::SpecRef,
-                who,
-                format!("{citation:?}: unknown component {component:?}"),
-            );
-            continue;
-        };
-        let root = spec.root().join(dir);
-        if !root.is_dir() {
-            push(
-                findings,
-                CheckId::SpecRef,
-                who,
-                format!(
-                    "{citation:?}: vendored component dir {} missing",
-                    root.display()
-                ),
-            );
+/// Marker tokens a citation may carry between the component and its path
+/// hint: they name the SOURCE the claim is grounded on, not a path segment.
+/// `OAS` is the one in use — the oracle order requires an OAS-only ground to
+/// be cited AS the OAS (`.claude/rules/spec-adherence.md`).
+const CITATION_SOURCE_MARKERS: [&str; 1] = ["OAS"];
+
+/// One `<COMPONENT> <path hint> §<section>` clause of a citation. A citation
+/// may carry several, separated by `;` or ` + `.
+#[derive(Debug)]
+struct CitationClause<'a> {
+    /// The component token opening the clause.
+    component: &'a str,
+    /// The path-hint tokens naming the document (possibly empty: a
+    /// component-only citation).
+    tokens: Vec<&'a str>,
+    /// The `§`-introduced section names, in citation order.
+    sections: Vec<&'a str>,
+}
+
+/// Whether a token can be part of a path hint (a file/directory name, or a
+/// `/`-joined path). Prose stops the hint.
+fn path_like(token: &str) -> bool {
+    !token.is_empty()
+        && token.chars().all(|c| {
+            c.is_ascii_alphanumeric()
+                || matches!(c, '.' | '_' | '/' | '-' | '{' | '}' | ',' | '*' | '+')
+        })
+}
+
+/// Split a citation into its component clauses. A citation cites several
+/// documents by separating the clauses with `;` or ` + `; a fragment that does
+/// not open with a known component is commentary on the preceding clause and
+/// is dropped. A citation naming no component at all yields one clause so the
+/// unknown-component finding still fires.
+fn citation_clauses(citation: &str) -> Vec<CitationClause<'_>> {
+    let mut clauses = Vec::new();
+    for semi in citation.split(';') {
+        for fragment in semi.split(" + ") {
+            let fragment = fragment.trim();
+            let mut words = fragment.split_whitespace();
+            let Some(component) = words.next() else {
+                continue;
+            };
+            if component_dir(component).is_none() {
+                continue;
+            }
+            let mut tokens = Vec::new();
+            for word in words {
+                if word.contains('§') || !path_like(word) {
+                    break;
+                }
+                let word = word.trim_end_matches([',', '.']);
+                if word.is_empty() || CITATION_SOURCE_MARKERS.contains(&word) {
+                    continue;
+                }
+                tokens.push(word);
+            }
+            let sections = fragment
+                .split('§')
+                .skip(1)
+                .map(|rest| {
+                    let rest = rest.trim_start();
+                    match rest.strip_prefix('"') {
+                        Some(quoted) => quoted.split('"').next().unwrap_or(quoted),
+                        None => rest,
+                    }
+                })
+                .filter(|s| !s.trim().is_empty())
+                .collect();
+            clauses.push(CitationClause {
+                component,
+                tokens,
+                sections,
+            });
+        }
+    }
+    if clauses.is_empty() {
+        let component = citation.split_whitespace().next().unwrap_or("");
+        clauses.push(CitationClause {
+            component,
+            tokens: Vec::new(),
+            sections: Vec::new(),
+        });
+    }
+    clauses
+}
+
+/// The vendored documents one path hint names, or `None` when it names none.
+///
+/// Every token must appear in the file's component-relative path, and the LAST
+/// token must name the target: the file name equals it, starts with it
+/// (`master06` → `master06-change_control.adoc`), ends with `.`+it (the
+/// `org.openehr.rm.common.locatable.adoc` UML class-export convention), or it
+/// names one of the file's parent directories — a chapter directory, whose
+/// every file is then a target.
+fn resolve_documents(spec: &SpecIndex<'_>, dir: &Path, tokens: &[&str]) -> Vec<PathBuf> {
+    let Some(last) = tokens.last() else {
+        return Vec::new();
+    };
+    let lowered: Vec<String> = tokens.iter().map(|t| t.to_lowercase()).collect();
+    let last = last.rsplit('/').next().unwrap_or(last).to_lowercase();
+    let files = spec.component_files(dir);
+    let mut out = Vec::new();
+    for (lowered_path, path) in &files.all {
+        if !lowered
+            .iter()
+            .all(|token| lowered_path.contains(token.as_str()))
+        {
             continue;
         }
-        // The document token: the first token before the § section marker.
-        let doc_token = tokens.next().map(|t| t.trim_end_matches(',').to_owned());
-        let Some(doc_token) = doc_token.filter(|t| !t.starts_with('§')) else {
-            continue; // component-only citation: dir existence was the check
-        };
-        if !spec.contains_token(&root, &doc_token.to_lowercase()) {
-            push(
-                findings,
-                CheckId::SpecRef,
-                who,
-                format!("{citation:?}: no vendored path under {dir} matches {doc_token:?}"),
-            );
+        let mut segments = lowered_path.split('/');
+        let name = segments.next_back().unwrap_or_default();
+        let names_file =
+            name == last || name.starts_with(&last) || name.ends_with(&format!(".{last}"));
+        if names_file || segments.any(|segment| segment == last) {
+            out.push(path.clone());
+        }
+    }
+    out
+}
+
+/// Normalize a section name (cited or vendored) for comparison: lowercase,
+/// asciidoc emphasis and underscores flattened to spaces, quotes dropped,
+/// whitespace collapsed.
+fn normalize_section(text: &str) -> String {
+    let mut out = String::new();
+    let mut pending_space = false;
+    for ch in text.chars() {
+        match ch {
+            '"' | '\'' | '‘' | '’' | '“' | '”' => {}
+            '`' | '*' | '_' | '\u{a0}' => pending_space = !out.is_empty(),
+            c if c.is_whitespace() => pending_space = !out.is_empty(),
+            c => {
+                if pending_space {
+                    out.push(' ');
+                    pending_space = false;
+                }
+                out.extend(c.to_lowercase());
+            }
+        }
+    }
+    out
+}
+
+/// The forms a cited section may take once its trailing commentary is cut:
+/// citations routinely append a parenthetical, an em-dash gloss, or a
+/// qualifier after the heading proper.
+fn section_candidates(section: &str) -> BTreeSet<String> {
+    let full = normalize_section(section);
+    let mut out = BTreeSet::new();
+    let mut add = |text: &str| {
+        let text = text
+            .trim()
+            .trim_end_matches([',', ';', '.', '/', '-', ':'])
+            .trim();
+        if !text.is_empty() {
+            out.insert(text.to_owned());
+        }
+    };
+    for cut in [" (", " — ", " -- ", " - ", ", ", ": ", "; ", " §"] {
+        if let Some((head, _)) = full.split_once(cut) {
+            add(head);
+        }
+    }
+    if let Some((head, _)) = full.split_once('.') {
+        add(head);
+    }
+    add(&full);
+    out
+}
+
+/// Whether one cited section resolves against a document's section names.
+/// Equality first; a longer cited form may carry a section name inside it
+/// (`I_DEFINITION_ADL14.upload_opt`), and a section name may carry the cited
+/// form inside it (`OBJECT_REF Class`).
+fn section_resolves(candidates: &BTreeSet<String>, names: &BTreeSet<String>) -> bool {
+    candidates.iter().any(|candidate| {
+        names.iter().any(|name| {
+            name == candidate
+                || (name.len() >= 4 && candidate.contains(name.as_str()))
+                || (candidate.len() >= 3 && name.contains(candidate.as_str()))
+        })
+    })
+}
+
+/// Resolve every citation of one artifact against the vendored spec tree:
+/// the component directory exists, the path hint names a real DOCUMENT, and
+/// every `§section` names a real section of it.
+fn check_citations(
+    citations: &[&str],
+    who: &str,
+    spec: &SpecIndex<'_>,
+    findings: &mut Vec<Finding>,
+) {
+    for citation in citations {
+        if citation.trim().is_empty() {
+            push(findings, CheckId::SpecRef, who, "empty spec_ref".to_owned());
+            continue;
+        }
+        for clause in citation_clauses(citation) {
+            let Some(dir) = component_dir(clause.component) else {
+                push(
+                    findings,
+                    CheckId::SpecRef,
+                    who,
+                    format!("{citation:?}: unknown component {:?}", clause.component),
+                );
+                continue;
+            };
+            let root = spec.root().join(dir);
+            if !root.is_dir() {
+                push(
+                    findings,
+                    CheckId::SpecRef,
+                    who,
+                    format!(
+                        "{citation:?}: vendored component dir {} missing",
+                        root.display()
+                    ),
+                );
+                continue;
+            }
+            if clause.tokens.is_empty() {
+                continue; // component-only citation: dir existence was the check
+            }
+            let documents = resolve_documents(spec, &root, &clause.tokens);
+            if documents.is_empty() {
+                push(
+                    findings,
+                    CheckId::SpecRef,
+                    who,
+                    format!(
+                        "{citation:?}: no vendored document under {dir} matches {:?}",
+                        clause.tokens.join(" ")
+                    ),
+                );
+                continue;
+            }
+            if clause.sections.is_empty() {
+                continue;
+            }
+            let mut names = BTreeSet::new();
+            for document in &documents {
+                names.extend(spec.document_sections(&root, document).iter().cloned());
+            }
+            for section in &clause.sections {
+                if !section_resolves(&section_candidates(section), &names) {
+                    push(
+                        findings,
+                        CheckId::SpecRef,
+                        who,
+                        format!(
+                            "{citation:?}: the {} vendored document(s) matching {:?} carry no \
+                             section matching §{}",
+                            documents.len(),
+                            clause.tokens.join(" "),
+                            section.trim()
+                        ),
+                    );
+                }
+            }
         }
     }
 }
 
-/// Case-insensitive substring match of `token` against any path under `root`.
-fn path_contains_token(root: &Path, token: &str) -> bool {
-    let mut stack = vec![root.to_owned()];
-    while let Some(current) = stack.pop() {
-        let Ok(entries) = std::fs::read_dir(&current) else {
+/// Every citation a case core carries: its own `spec_refs` plus the per-row
+/// grounds of its fixture set.
+fn check_spec_refs(case: &CaseCore, who: &str, spec: &SpecIndex<'_>, findings: &mut Vec<Finding>) {
+    let mut citations: Vec<&str> = case.spec_refs.iter().map(String::as_str).collect();
+    if let Some(fixtures) = case
+        .parameters
+        .as_ref()
+        .and_then(|p| p.fixture_set.as_ref())
+    {
+        citations.extend(fixtures.iter().filter_map(|f| f.spec_ref.as_deref()));
+    }
+    check_citations(&citations, who, spec, findings);
+}
+
+/// The corpus manifest's own citations: every invalid fixture grounds its
+/// defect in a spec rule, and that citation resolves like any other.
+fn check_corpus_spec_refs(set: &ArtifactSet, spec: &SpecIndex<'_>, findings: &mut Vec<Finding>) {
+    let Some((path, manifest)) = &set.corpus else {
+        return;
+    };
+    let who = path.display().to_string();
+    for (key, entry) in manifest.entries() {
+        let Some(citation) = entry.validity.spec_ref.as_deref() else {
             continue;
         };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let matches = path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.to_lowercase().contains(token));
-            if matches {
-                return true;
-            }
-            if path.is_dir() {
-                stack.push(path);
-            }
-        }
+        check_citations(&[citation], &format!("{who} [{key}]"), spec, findings);
     }
-    false
 }
 
 // ── binding completeness ────────────────────────────────────────────────────
@@ -3307,6 +3838,129 @@ h|*1..1*\n\
         );
         // A missing class export is an error, not an empty list.
         assert!(spec.interface_operations("I_ABSENT").is_err());
+    }
+
+    /// A minimal vendored RM tree: one chapter that pulls its class table in
+    /// through the `include::{uml_export_dir}/classes/{pkg}…` indirection the
+    /// real spec uses, plus the class export itself.
+    fn spec_tree_fixture() -> assert_fs::TempDir {
+        let dir = assert_fs::TempDir::new().unwrap();
+        let chapter = dir.path().join("RM/docs/ehr_extract");
+        let classes = dir.path().join("RM/docs/UML/classes");
+        std::fs::create_dir_all(&chapter).unwrap();
+        std::fs::create_dir_all(&classes).unwrap();
+        std::fs::write(
+            chapter.join("master.adoc"),
+            ":pkg: org.openehr.rm.ehr_extract.\n",
+        )
+        .unwrap();
+        std::fs::write(
+            chapter.join("master04-common_package.adoc"),
+            "= Common Package\n\n== Version Specification\n\n\
+             include::{uml_export_dir}/classes/{pkg}extract_manifest.adoc[]\n",
+        )
+        .unwrap();
+        std::fs::write(
+            classes.join("org.openehr.rm.ehr_extract.extract_manifest.adoc"),
+            "=== EXTRACT_MANIFEST Class\n\n|===\nh|*Attributes*\nh|*1..1*\n\
+             |*entities*: `List<EXTRACT_ENTITY_MANIFEST>`\n|===\n",
+        )
+        .unwrap();
+        dir
+    }
+
+    fn citation_findings(citation: &str, spec: &SpecIndex<'_>) -> Vec<Finding> {
+        let mut findings = Vec::new();
+        check_citations(&[citation], "T-1", spec, &mut findings);
+        findings
+    }
+
+    #[test]
+    fn spec_ref_gate_resolves_documents_and_sections() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+
+        // The chapter resolves, and so does a section it declares itself.
+        assert!(
+            citation_findings(
+                "RM ehr_extract master04-common_package §Version Specification",
+                &spec
+            )
+            .is_empty()
+        );
+        // A section the chapter only carries THROUGH its class-table include
+        // resolves too — the included table is part of the document.
+        assert!(
+            citation_findings(
+                "RM ehr_extract master04-common_package §EXTRACT_MANIFEST",
+                &spec
+            )
+            .is_empty()
+        );
+        // So does a class-table label, and the class export addressed directly.
+        assert!(
+            citation_findings(
+                "RM ehr_extract UML/classes/org.openehr.rm.ehr_extract.extract_manifest.adoc \
+                 §Attributes (entities 1..1)",
+                &spec
+            )
+            .is_empty()
+        );
+        // A component-only citation checks the component directory alone.
+        assert!(citation_findings("RM", &spec).is_empty());
+    }
+
+    #[test]
+    fn spec_ref_gate_refuses_a_phantom_document() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+        // Seeded defect: the chapter number does not exist. The pre-#1807
+        // gate passed this on the `ehr_extract` token alone.
+        let findings = citation_findings(
+            "RM ehr_extract master99-invented_package §Version Specification",
+            &spec,
+        );
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        let message = &findings.first().unwrap().message;
+        assert!(message.contains("no vendored document"), "{message}");
+        // Seeded defect: a real chapter name under the WRONG component.
+        let findings = citation_findings("BASE ehr_extract master04-common_package", &spec);
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        // Seeded defect: a component that does not exist at all.
+        let findings = citation_findings("NONESUCH master04 §Whatever", &spec);
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        assert!(
+            findings
+                .first()
+                .unwrap()
+                .message
+                .contains("unknown component"),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn spec_ref_gate_refuses_a_phantom_section() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+        // Seeded defect: the document resolves, the section does not — the
+        // phantom-citation class (#1738): a real chapter plus a §heading that
+        // exists nowhere in it.
+        let findings = citation_findings(
+            "RM ehr_extract master04-common_package §Invented Section",
+            &spec,
+        );
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        let message = &findings.first().unwrap().message;
+        assert!(message.contains("carry no section matching"), "{message}");
+        // Every clause of a multi-document citation is resolved, not just the
+        // first: the second clause's section is the seeded defect here.
+        let findings = citation_findings(
+            "RM ehr_extract master04-common_package §Version Specification; \
+             RM ehr_extract master04-common_package §Invented Section",
+            &spec,
+        );
+        assert_eq!(findings.len(), 1, "{findings:?}");
     }
 
     fn build_set(with_exception: bool) -> ArtifactSet {
