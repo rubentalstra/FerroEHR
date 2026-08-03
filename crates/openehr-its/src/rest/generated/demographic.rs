@@ -20,7 +20,7 @@ pub struct VersionOfParty {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `contribution` property of `VersionOfParty`.
-    pub contribution: super::common::ObjectRefOfHierObjectId,
+    pub contribution: openehr_base::prelude::ObjectRef,
     /// The `signature` property of `VersionOfParty`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,

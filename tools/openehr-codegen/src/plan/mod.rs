@@ -331,7 +331,7 @@ impl Model {
                     wire_name: p.name.clone(),
                     rust_name: naming::field_ident(&p.name),
                     kind,
-                    default: field_default(&rp.owner, &p.name).map(str::to_string),
+                    default: field_default(&rp.owner, p),
                 }
             })
             .collect()
@@ -487,7 +487,7 @@ impl Model {
                         && !cardinality_contradicted(&rp.owner, &p.name),
                     target,
                     map_value,
-                    default: field_default(&rp.owner, &p.name).map(str::to_string),
+                    default: field_default(&rp.owner, p),
                 }
             })
             .collect()

@@ -18754,19 +18754,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ItemTag {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ItemTag {
-                    key: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("key"))?,
-                    value: __s1.flatten(),
-                    target: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("target"))?,
-                    target_path: __s3.flatten(),
-                    owner_id: __s4
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("owner_id"))?,
-                })
+                let __a0: String = __s0
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("key"))?;
+                let __a1: Option<String> = __s1.flatten();
+                let __a2: openehr_base::prelude::UidBasedId = __s2
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("target"))?;
+                let __a3: Option<String> = __s3.flatten();
+                let __a4: openehr_base::prelude::ObjectRef = __s4
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("owner_id"))?;
+                let __built = crate::prelude::ItemTag::new(__a0, __a1, __a2, __a3, __a4);
+                __built.map_err(|__e| ::serde::de::Error::custom(::std::format!("ITEM_TAG: {__e}")))
             }
         }
         ::serde::Deserializer::deserialize_struct(__deserializer, "ITEM_TAG", __FIELDS, __Visitor)

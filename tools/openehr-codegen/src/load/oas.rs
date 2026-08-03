@@ -59,15 +59,42 @@ impl Oas {
     /// schema across `bundles` — the shared-module fallback when no single
     /// bundle declares every hoisted schema (the copies are identical by the
     /// hoist analysis, so first-declarer is deterministic and lossless).
+    ///
+    /// **The `allOf` base closure comes with them.** A kept schema that composes
+    /// `allOf: [{$ref: Base}]` is only half a schema without `Base`: the emitter
+    /// resolves that `$ref` through this same document to flatten the inherited
+    /// members, and a document holding `keep` alone leaves the ref dangling, so
+    /// the emitted struct silently carries only the schema's OWN `properties`.
+    /// The closure is transitive (a base may compose a base of its own) and
+    /// carries the bases as ordinary schemas — being reachable does not make a
+    /// base hoisted, so `keep` itself is unchanged.
     #[must_use]
     pub(crate) fn merged_schemas(
         bundles: &[(&str, Oas)],
         keep: &std::collections::BTreeSet<String>,
     ) -> Oas {
+        let mut wanted = keep.clone();
+        // Fixpoint over the `allOf` bases of everything already wanted.
+        loop {
+            let mut added = false;
+            for (_, o) in bundles {
+                for (name, schema) in o.schemas() {
+                    if !wanted.contains(&name) {
+                        continue;
+                    }
+                    for base in Self::allof_bases(schema) {
+                        added |= wanted.insert(base);
+                    }
+                }
+            }
+            if !added {
+                break;
+            }
+        }
         let mut schemas = serde_json::Map::new();
         for (_, o) in bundles {
             for (name, schema) in o.schemas() {
-                if keep.contains(&name) && !schemas.contains_key(&name) {
+                if wanted.contains(&name) && !schemas.contains_key(&name) {
                     schemas.insert(name, schema.clone());
                 }
             }
@@ -75,6 +102,15 @@ impl Oas {
         Oas {
             root: serde_json::json!({ "components": { "schemas": schemas } }),
         }
+    }
+
+    /// The component-schema names a schema's `allOf` members `$ref`.
+    fn allof_bases(schema: &Value) -> Vec<String> {
+        schema
+            .get("allOf")
+            .and_then(Value::as_array)
+            .map(|members| members.iter().filter_map(Self::ref_name).collect())
+            .unwrap_or_default()
     }
 
     /// The component schemas (`#/components/schemas`), in document order.

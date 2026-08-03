@@ -21,7 +21,7 @@ use openehr_rm::prelude::ItemTag;
 use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::demographic::types::PartyKind;
-use crate::service::ehr::tags::{normalized_target_path, tag_target_tail, validate_item_tag};
+use crate::service::ehr::tags::{item_tag_refusal, normalized_target_path, tag_target_tail};
 use crate::service::error::ServiceError;
 use crate::service::status::CallStatusType;
 use crate::storage::tag_repo;
@@ -40,7 +40,6 @@ impl FerroEhrService {
         rows.iter()
             .map(|r| party_item_tag(&sid, r))
             .collect::<Result<Vec<_>, _>>()
-            .map_err(Into::into)
     }
 
     /// The tags on one party target — the `VERSIONED_PARTY` container
@@ -67,7 +66,6 @@ impl FerroEhrService {
         rows.iter()
             .map(|r| party_item_tag(&sid, r))
             .collect::<Result<Vec<_>, _>>()
-            .map_err(Into::into)
     }
 
     /// The demographic tag-target guard, mirroring the EHR side
@@ -152,13 +150,15 @@ impl FerroEhrService {
         let mut deduped: BTreeMap<(String, Option<String>), Option<String>> = BTreeMap::new();
         for tag in tags {
             let target_path = normalized_target_path(tag.target_path.as_deref());
-            validate_item_tag(
-                &tag.key,
-                tag.value.as_deref(),
-                target_path,
+            // Construction IS the invariant check (#1839).
+            ItemTag::new(
+                tag.key.clone(),
+                tag.value.clone(),
                 target.clone(),
+                target_path.map(str::to_owned),
                 owner_id.clone(),
-            )?;
+            )
+            .map_err(|e| item_tag_refusal(&e))?;
             deduped.insert(
                 (tag.key.clone(), target_path.map(str::to_owned)),
                 tag.value.clone(),
@@ -241,14 +241,18 @@ impl FerroEhrService {
 /// # Errors
 /// [`VersionIdError`] when the configured `system_id` or the stored tag target
 /// is not a well-formed BASE identifier.
-fn party_item_tag(system_id: &str, row: &tag_repo::TagRow) -> Result<ItemTag, VersionIdError> {
-    Ok(ItemTag {
-        key: row.key.clone(),
-        value: row.value.clone(),
-        target: crate::service::ehr::tags::tag_target(row)?,
-        target_path: row.target_path.clone(),
-        owner_id: party_owner_ref(system_id)?,
-    })
+fn party_item_tag(system_id: &str, row: &tag_repo::TagRow) -> Result<ItemTag, ServiceError> {
+    // A stored row that no longer constructs is storage corruption, not a
+    // client fault — fail loud (the write path validated at commit; #1839
+    // made construction the invariant check).
+    ItemTag::new(
+        row.key.clone(),
+        row.value.clone(),
+        crate::service::ehr::tags::tag_target(row)?,
+        row.target_path.clone(),
+        party_owner_ref(system_id)?,
+    )
+    .map_err(|e| ServiceError::Internal(format!("stored ITEM_TAG row: {e}")))
 }
 
 /// The `ITEM_TAG.owner_id` of a demographic (ehr-less) tag — the `OBJECT_REF`

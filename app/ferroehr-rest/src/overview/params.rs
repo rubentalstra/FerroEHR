@@ -406,9 +406,9 @@ pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> Option<Hea
 /// the typed instance.
 pub(crate) fn item_tag_to_header_entry(tag: &ItemTag) -> ItemTagHeaderEntry {
     ItemTagHeaderEntry {
-        key: tag.key.clone(),
-        value: tag.value.clone(),
-        target_path: tag.target_path.clone(),
+        key: tag.key().to_owned(),
+        value: tag.value().map(str::to_owned),
+        target_path: tag.target_path().map(str::to_owned),
     }
 }
 

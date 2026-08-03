@@ -12,14 +12,25 @@
 #
 # What remains is NOT a reach gap: the `Interval` inclusivity/boundedness
 # flags are mandatory in the BMM, but the codec fills them from a literal
-# default on read (the emitter's `plan::overrides::FIELD_DEFAULTS` entries:
-# "a bounded interval limit is included by default", "an unstated interval
-# limit is bounded by default" — BASE foundation_types (Interval) for the
-# semantics; no openEHR spec governs the wire omission, it is the
-# archie/EHRbase interop convention, our own design). A defaulted field cannot
-# fail to decode: the omission IS the documented wire form, so refusing it
-# would contradict the codec's own contract. (They are also exempted from the
-# mandatory-container check by shape: they are scalars, not containers.)
+# default on read. A defaulted field cannot fail to decode: the omission IS the
+# documented wire form, so refusing it would contradict the codec's own
+# contract. (They are also exempted from the mandatory-container check by
+# shape: they are scalars, not containers.)
+#
+# The default itself is VENDORED, not invented: the BASE 1.3.0 schema states
+# `default = <False>` on `lower_unbounded`/`upper_unbounded` and
+# `default = <True>` on `lower_included`/`upper_included` — on `Point_interval`,
+# the one Interval descendant that redeclares the four properties. The emitter
+# reads the facet there and propagates the identical values to the inherited
+# sites through `plan::overrides::FIELD_DEFAULTS` ("a bounded interval limit is
+# included by default", "an unstated interval limit is bounded by default"; the
+# WIRE omission itself is governed by no openEHR spec — it is the
+# archie/EHRbase interop convention, our own design).
+#
+# The four `Point_interval` rows are the schema's OWN statement of the default
+# and joined this register when the loader stopped dropping the `default` facet:
+# they were the one place the vendored input states the rule and the only place
+# the reader was not applying it.
 DV_INTERVAL.lower_included
 DV_INTERVAL.lower_unbounded
 DV_INTERVAL.upper_included
@@ -28,6 +39,10 @@ Multiplicity_interval.lower_included
 Multiplicity_interval.lower_unbounded
 Multiplicity_interval.upper_included
 Multiplicity_interval.upper_unbounded
+Point_interval.lower_included
+Point_interval.lower_unbounded
+Point_interval.upper_included
+Point_interval.upper_unbounded
 Proper_interval.lower_included
 Proper_interval.lower_unbounded
 Proper_interval.upper_included
