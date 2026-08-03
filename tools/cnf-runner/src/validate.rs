@@ -20,8 +20,10 @@ use crate::model::assertion::{Assertion, EquivalentTarget, assertion_refs};
 use crate::model::binding::OperationBinding;
 use crate::model::capability::Realization;
 use crate::model::case::{
-    CaseCore, ExpectSpec, FlowStep, MatrixCell, Parameters, PartyRelationshipRequirement,
+    CaseCore, ExpectSpec, FlowStep, ImportRequirement, MatrixCell, Parameters,
+    PartyRelationshipRequirement,
 };
+use crate::model::value::TemplatedValue;
 use crate::model::wire_surface::{ServedExtension, WireSurface};
 use crate::refgrammar::{CaptureField, TimeExpr, ValueRef};
 use crate::vocab::{CaseKind, CaseStatus, Disposition, FormatName, Iteration, OutcomeKind};
@@ -37,7 +39,8 @@ pub enum CheckId {
     KindShape,
     /// `${…}` reference resolution + sentinel discipline.
     ReferenceGrammar,
-    /// Decision-table literals + violation categories.
+    /// Decision-table literals + violation categories + the closed token
+    /// vocabularies a flow's bundled `versions:` members may spell.
     LiteralGrammar,
     /// `sm_operation` (and flow `call:`) resolution against the vendored SM.
     SmOperation,
@@ -1189,6 +1192,13 @@ fn check_references(case: &CaseCore, who: &str, set: &ArtifactSet, findings: &mu
         }) => vec![source, target, relationship],
         Some(PartyRelationshipRequirement::None) | None => Vec::new(),
     };
+    // The EXTRACT a `requires.import` replays resolves the same way, so a
+    // dangling fixture reference is a catalogue finding rather than a
+    // drive-time provisioning error.
+    let import_key: Option<&CorpusKey> = match &case.requires.import {
+        Some(ImportRequirement::Received { extract, .. }) => Some(extract),
+        Some(ImportRequirement::None) | None => None,
+    };
     for key in case
         .data_sets
         .iter()
@@ -1196,6 +1206,7 @@ fn check_references(case: &CaseCore, who: &str, set: &ArtifactSet, findings: &mu
         .chain(case.requires.commit.iter())
         .chain(case.constraint_context.as_ref().map(|c| &c.template))
         .chain(relationship_keys)
+        .chain(import_key)
     {
         check_ds_ref(key, None, who, set, findings);
     }
@@ -1235,7 +1246,88 @@ fn check_ds_ref(
 
 // ── literals ────────────────────────────────────────────────────────────────
 
+/// The closed token vocabularies a CONTRIBUTION member of a flow's bundled
+/// `versions:` construct may spell: its audit change kind
+/// ([`crate::vocab::MemberChangeType`]), its class self-tag
+/// ([`crate::vocab::MemberVersionType`]) and its committed version lifecycle
+/// ([`crate::vocab::VersionLifecycleState`]).
+///
+/// The driver refuses an unknown token at drive time too — this gate is what
+/// makes it a CATALOGUE finding instead, caught before a SUT is composed.
+fn check_member_tokens(case: &CaseCore, who: &str, findings: &mut Vec<Finding>) {
+    /// One member key and the closed vocabulary it must spell a value of.
+    struct ClosedKey {
+        /// The member key (`change_type`, `_type`, `lifecycle_state`).
+        key: &'static str,
+        /// Whether a token is in that key's vocabulary.
+        accepts: fn(&str) -> bool,
+        /// What the key expects, for the finding text.
+        expected: &'static str,
+    }
+    let closed = [
+        ClosedKey {
+            key: "change_type",
+            accepts: |t| crate::vocab::MemberChangeType::from_token(t).is_some(),
+            expected: "a member of the openEHR audit_change_type group \
+                       (creation | amendment | modification | synthesis | deleted | \
+                       attestation | restoration | format conversion | unknown)",
+        },
+        ClosedKey {
+            key: "_type",
+            accepts: |t| crate::vocab::MemberVersionType::from_token(t).is_some(),
+            expected: "a class of the RM VERSION family the commit wire is addressed with \
+                       (UPDATE_VERSION | ORIGINAL_VERSION | IMPORTED_VERSION)",
+        },
+        ClosedKey {
+            key: "lifecycle_state",
+            accepts: |t| crate::vocab::VersionLifecycleState::from_token(t).is_some(),
+            expected: "a state of the openEHR version_lifecycle_state group \
+                       (complete | incomplete | deleted | inactive | abandoned)",
+        },
+    ];
+    for step in &case.flow {
+        for (name, value) in step.with_entries() {
+            if name != "versions" {
+                continue;
+            }
+            let TemplatedValue::Seq(members) = value else {
+                continue;
+            };
+            for (i, member) in members.iter().enumerate() {
+                let TemplatedValue::Map(entries) = member else {
+                    continue;
+                };
+                for (key, cell) in entries {
+                    let Some(closed_key) = closed.iter().find(|c| c.key == key) else {
+                        continue;
+                    };
+                    // A member that authors the whole ORIGINAL_VERSION verbatim
+                    // spells its `_type` INSIDE `data`, not here, so only the
+                    // member-level key is judged; a templated token resolves per
+                    // row and is judged by the driver.
+                    let TemplatedValue::Text(template) = cell else {
+                        continue;
+                    };
+                    let token = template.raw();
+                    if !token.contains("${") && !(closed_key.accepts)(token) {
+                        push(
+                            findings,
+                            CheckId::LiteralGrammar,
+                            who,
+                            format!(
+                                "step {}: versions[{i}].{key}: {token:?} is not {}",
+                                step.step, closed_key.expected
+                            ),
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn check_literals(case: &CaseCore, who: &str, findings: &mut Vec<Finding>) {
+    check_member_tokens(case, who, findings);
     let Some(table) = &case.decision_table else {
         return;
     };

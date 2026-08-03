@@ -367,6 +367,38 @@
             }
           ]
         },
+        "import": {
+          "anyOf": [
+            {
+              "const": "none"
+            },
+            {
+              "type": "object",
+              "description": "An EHR-Extract received from another system before the flow, so a RELEASED read has an IMPORTED_VERSION to serve (RM common master06-change_control_package.adoc §Copying: \"An IMPORTED_VERSION instance is then created, its item set to the received ORIGINAL_VERSION\"). Mints `${imported_versioned_object_uid}` + `${imported_version_uid}` (+ `${imported_branch_version_uid}` when the named container carries a branch) from the extract's own identities, which the copy preserves; with no `requires.ehr` the import CLONES a whole EHR (§Copying Case 1) and mints `${ehr_id}` too, otherwise it lands in the provisioned one (Cases 2/3). The import itself has no released wire (register AMB-34, the `message-extract` served_extensions family), so the requirement is usable only on a party that serves it.",
+              "additionalProperties": false,
+              "required": [
+                "extract",
+                "container"
+              ],
+              "properties": {
+                "extract": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+                },
+                "container": {
+                  "description": "Which X_VERSIONED_* content item of the extract the minted handles name — an extract carries several at once.",
+                  "enum": [
+                    "X_VERSIONED_COMPOSITION",
+                    "X_VERSIONED_EHR_STATUS",
+                    "X_VERSIONED_EHR_ACCESS",
+                    "X_VERSIONED_FOLDER",
+                    "X_VERSIONED_PARTY"
+                  ]
+                }
+              }
+            }
+          ]
+        },
         "commit": {
           "type": "array",
           "items": {

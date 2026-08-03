@@ -9,7 +9,7 @@
 use crate::artifacts::ArtifactSet;
 use crate::exec::driver::HttpDriver;
 use crate::exec::{CaseRecord, RowOutcome, run_case};
-use crate::ids::{InstanceName, SmOperationRef};
+use crate::ids::{CapabilityName, InstanceName, SmOperationRef};
 use crate::ixit::Ixit;
 use crate::model::assertion::assertion_refs;
 use crate::model::case::CaseCore;
@@ -192,6 +192,83 @@ fn extension_family(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
         }
     }
     None
+}
+
+/// The capabilities the catalogue's own cases put a verdict on when they drive
+/// the `family` extension route — the ONLY way a party statement can say it
+/// serves a route no openEHR specification governs.
+fn capabilities_claiming_family(set: &ArtifactSet, family: &str) -> Vec<CapabilityName> {
+    let mut claiming: Vec<CapabilityName> = Vec::new();
+    for (_, case) in &set.cases {
+        if !extension_family(set, case)
+            .is_some_and(|marker| marker.starts_with(&format!("{family};")))
+        {
+            continue;
+        }
+        for capability in &case.capabilities {
+            if !claiming.contains(capability) {
+                claiming.push(capability.clone());
+            }
+        }
+    }
+    claiming
+}
+
+/// Why THIS party cannot have a `requires.import` case driven: the extract
+/// replay is an EXTENSION route (ITS-REST 1.1.0 publishes no MESSAGE /
+/// EHR-Extract API at all — register AMB-34), so a party that claims none of
+/// the capabilities that family's cases gate has no import to precondition
+/// with.
+///
+/// The scoping is the same law the extension arm of
+/// [`selection_exception`] applies to a case's FLOW, moved to its
+/// PRECONDITION: the case's own subject is a released read, and driving it
+/// against a party that serves no import route would record a red row for a
+/// ground that party never offered to establish. Excused at SELECTION time —
+/// never as a drive-time provisioning refusal, which reads like a SUT defect.
+fn unservable_import(
+    set: &ArtifactSet,
+    statement: Option<&crate::party::Statement>,
+    case: &CaseCore,
+) -> Option<String> {
+    if !matches!(
+        case.requires.import,
+        Some(crate::model::case::ImportRequirement::Received { .. })
+    ) {
+        return None;
+    }
+    let statement = statement?;
+    // Either receiving situation of master06 §Copying drives the same family;
+    // whichever binding the catalogue realizes names it.
+    let decl = ["import_ehr_extract", "import_ehr"]
+        .into_iter()
+        .filter_map(|call| SmOperationRef::parse(&format!("I_EHR_EXTRACT_SERVICE.{call}")).ok())
+        .find_map(|op| {
+            set.bindings
+                .iter()
+                .map(|(_, b)| b)
+                .find(|b| b.sm_operation == op)
+                .and_then(|b| b.extension.as_ref())
+        })?;
+    let claiming = capabilities_claiming_family(set, &decl.family);
+    if claiming
+        .iter()
+        .any(|c| statement.claims.capabilities.contains(c))
+    {
+        return None;
+    }
+    Some(format!(
+        "requires.import provisions over the {} extension routes ({}): the ICS claims none of \
+         the capabilities those routes' cases gate ({}), and no openEHR specification governs \
+         them, so the received version this case reads cannot exist here",
+        decl.family,
+        decl.ambiguity,
+        claiming
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
+    ))
 }
 
 /// The `${ixit:…}` facts a case reads that THIS party's ixit does not
@@ -426,6 +503,13 @@ fn selection_exception(
             "extension realization ({family}): the ICS claims none of this case's \
              capabilities, and no openEHR specification governs the route — ISO/IEC 9646 \
              test selection"
+        )));
+    }
+    // The same arm for a case whose PRECONDITION (rather than flow) is
+    // established over an extension route: a received EHR-Extract.
+    if let Some(citation) = unservable_import(set, statement, case) {
+        return Some(Exception::Unrealized(format!(
+            "{citation} — ISO/IEC 9646 test selection"
         )));
     }
     // An option branch the party statement does not declare is not this
@@ -851,6 +935,108 @@ mod tests {
         }))
         .unwrap();
         assert!(extension_family(&set, &on_released).is_none());
+    }
+
+    /// A `requires.import` case is party-scoped on the capabilities the
+    /// IMPORT family's cases gate, not on its own released-read ones: the
+    /// precondition is established over an extension route, so a party that
+    /// serves none has no received version for the read to serve.
+    #[test]
+    fn an_import_precondition_is_scoped_to_the_party_that_serves_the_family() {
+        let import: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract",
+                "its": "its-rest",
+                "extension": {
+                    "family": "message-extract",
+                    "reason": "the release publishes no MESSAGE API",
+                    "source": "SM master09 vs the released ITS-REST groups",
+                    "ambiguity": "AMB-34"
+                },
+                "request": { "method": "POST", "path": "/message/import/{an_ehr_id}" },
+                "outcomes": { "updated": { "status": 204 } }
+            }))
+            .unwrap();
+        let released: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_EHR_COMPOSITION.get_versioned_composition",
+                "its": "its-rest",
+                "request": { "method": "GET", "path": "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}" },
+                "outcomes": { "ok": { "status": 200 } }
+            }))
+            .unwrap();
+        // The catalogue's own import case is what says which capability the
+        // family is claimed under.
+        let importer: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-import", "kind": "functional", "component": "MESSAGING",
+            "sm_operation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["EhrExtract"],
+            "flow": [{ "step": 1, "call": "import_ehr_extract", "expect": "updated" }]
+        }))
+        .unwrap();
+        let mut set = ArtifactSet::default();
+        set.bindings
+            .push((std::path::PathBuf::from("i.yaml"), import));
+        set.bindings
+            .push((std::path::PathBuf::from("r.yaml"), released));
+        set.cases
+            .push((std::path::PathBuf::from("i-case.yaml"), importer));
+
+        let reader: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-read", "kind": "functional", "component": "EHR_COMPOSITION",
+            "sm_operation": "I_EHR_COMPOSITION.get_versioned_composition",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["Versioning"],
+            "requires": {
+                "ehr": { "commits": "none" },
+                "import": {
+                    "extract": "cnf.messaging.ehr_extract.v1",
+                    "container": "X_VERSIONED_COMPOSITION"
+                }
+            },
+            "flow": [{ "step": 1, "call": "get_versioned_composition", "expect": "ok" }]
+        }))
+        .unwrap();
+
+        let statement = |caps: &[&str]| -> crate::party::Statement {
+            serde_json::from_value(serde_json::json!({
+                "product": { "name": "p", "version": "1", "vendor": "v", "identifier": "i" },
+                "schedule_release": "CNF-2.0",
+                "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
+                "claims": { "capabilities": caps, "profiles": ["CORE"] },
+                "tech_profiles": [ { "its": "its-rest", "formats": ["canonical-json"] } ],
+                "options": []
+            }))
+            .unwrap()
+        };
+        let serving = statement(&["EhrExtract", "Versioning"]);
+        assert!(
+            unservable_import(&set, Some(&serving), &reader).is_none(),
+            "a party claiming the family's capability drives the case"
+        );
+
+        // Claims the READ capability but not the import family — the case's
+        // own capabilities must not be what decides this.
+        let read_only = statement(&["Versioning"]);
+        let citation =
+            unservable_import(&set, Some(&read_only), &reader).expect("excused with a citation");
+        assert!(citation.contains("message-extract"), "{citation}");
+        assert!(
+            citation.contains("AMB-34"),
+            "the citation stays register-linked: {citation}"
+        );
+
+        // A case with no import precondition is untouched.
+        let plain: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-plain", "kind": "functional", "component": "EHR_COMPOSITION",
+            "sm_operation": "I_EHR_COMPOSITION.get_versioned_composition",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["Versioning"],
+            "flow": [{ "step": 1, "call": "get_versioned_composition", "expect": "ok" }]
+        }))
+        .unwrap();
+        assert!(unservable_import(&set, Some(&read_only), &plain).is_none());
     }
 
     /// The SMART-lane marker is the DECLARATION of a `scopes:` key (empty

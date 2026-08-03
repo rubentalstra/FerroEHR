@@ -1971,6 +1971,42 @@ cnf.messaging.ehr_extract.append_trunk_v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-08-03 as the SECOND half of the §Copying third-situation pair: the SAME version-container uid as append_trunk_v1 at trunk version 2, carrying preceding_version_uid ::1 and 251|modification|, and only that one version (extract_version_count 1 of total_version_count 2) — the shape master06 §Copying describes when 'some version of the item had already been received, [so] this step will have already occurred, and the requisite VERSIONED_OBJECT would already exist'. Its own commit instant (2026-07-28T11:45:00Z) is later than v1's, and both are earlier than any local import, which is what makes the local-chronology rule observable on an append"
+cnf.messaging.ehr_extract.imported_composition:
+  source: fixtures/messaging/ehr_extract.imported_composition.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 for the RELEASED read of an IMPORTED_VERSION (a `requires.import` precondition): an identity-disjoint X_VERSIONED_COMPOSITION carrying one trunk ORIGINAL_VERSION, so the receiver's read surface serves a version it did not create (RM common master06 §Copying: 'An IMPORTED_VERSION instance is then created, its item set to the received ORIGINAL_VERSION'). A COMPOSITION rather than an EHR_STATUS because the container lands in an EHR that already holds its own status (EHR.ehr_status 1..1, RM ehr master04). Its wrapped original's committal (2026-07-20T08:00:00Z) predates every local instant, which is what makes the wrapper/wrapped provenance split observable"
+cnf.messaging.ehr_extract.imported_contribution:
+  source: fixtures/messaging/ehr_extract.imported_contribution.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 as the identity-disjoint sibling of cnf.messaging.ehr_extract.imported_composition for the IMPORT CONTRIBUTION read: the local act of committal creates a CONTRIBUTION of its own listing the affected versions (RM common master06 §Contributions), which is read through the released contribution endpoint"
+cnf.messaging.ehr_extract.imported_status:
+  source: fixtures/messaging/ehr_extract.imported_status.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 as an identity-disjoint whole-EHR clone (master06 §Copying Case 1 — the EXTRACT_SPEC names the source EHR id import_ehr re-uses) whose X_VERSIONED_EHR_STATUS is read back through the released versioned-EHR_STATUS version endpoint. Its EHR_STATUS.subject is PARTY_SELF with no external_ref, so the clone collides with no other EHR's subject (one EHR per subject, RM ehr master04 §EHR Status)"
+cnf.messaging.ehr_extract.branch_lineage_v1:
+  source: fixtures/messaging/ehr_extract.branch_lineage_v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 as the FIRST half of the branch-lineage pair: one X_VERSIONED_COMPOSITION carrying its trunk version 1 AND a branch version ::1.1.1 created by a different system (RM common master06 §Distributed Versioning — a branch is identified by its own creating system and version_tree_id). The copy is CLOSED: the branch names trunk 1 as its preceding_version_uid and that trunk travels with it, so the receiver never holds a branch whose ancestor it was never sent"
+cnf.messaging.ehr_extract.branch_lineage_v2:
+  source: fixtures/messaging/ehr_extract.branch_lineage_v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 as the SECOND half of the branch-lineage pair: the SAME version-container uid at trunk version 2, naming trunk 1 as its preceding_version_uid. It lands into a container whose lineage set already carries a branch — master06 §Copying's third receiving situation ('previous copies have been made for the item in question') over a branched tree, where §Distributed Versioning has the trunk and each branch as coexisting lineages"
+cnf.messaging.ehr_extract.branch_read:
+  source: fixtures/messaging/ehr_extract.branch_read.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 as an identity-disjoint trunk+branch container for the released read AT A BRANCH version uid (`object_id::creating_system_id::1.1.1` — RM common master06 §Version Identification names the branch form). Closed like branch_lineage_v1: the branch's preceding trunk version travels with it"
 cnf.messaging.ehr_extract.invalid:
   source: fixtures/messaging/ehr_extract.invalid.json
   format: canonical-json

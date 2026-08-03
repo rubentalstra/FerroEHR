@@ -27,14 +27,13 @@
 # The accepting twin is step 4: the identical member without those keys, whose
 # served version is an ORIGINAL_VERSION wrapping nothing.
 #
-# COVERAGE BOUNDARY: the third refused key — a member `_type` naming a class
-# other than UPDATE_VERSION / ORIGINAL_VERSION — is not expressible through
-# this catalogue. The runner's `versions:` construct always emits
-# `_type: ORIGINAL_VERSION` on a member (its verbatim pass-through is itself
-# keyed on that value), so no case can post `_type: IMPORTED_VERSION`. That
-# branch is pinned by an asserted negative test in the server's own suite
-# instead. A legal self-tag (`_type: ORIGINAL_VERSION`) is what every other
-# case in this family already sends, so its acceptance is covered throughout.
+# The third refused key — a member `_type` naming a class other than
+# UPDATE_VERSION / ORIGINAL_VERSION — is the sibling case
+# -imported_version_type, which posts `_type: IMPORTED_VERSION` through the
+# member-level `_type` override and keeps its accepting twin
+# (`_type: UPDATE_VERSION`) beside it. A legal self-tag
+# (`_type: ORIGINAL_VERSION`) is what every other case in this family already
+# sends, so its acceptance is covered throughout.
 id: I_EHR_CONTRIBUTION.commit_contribution-imported_version_member
 kind: functional
 component: EHR_CONTRIBUTION
