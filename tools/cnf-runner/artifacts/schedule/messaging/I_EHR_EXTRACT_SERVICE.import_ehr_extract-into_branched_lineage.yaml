@@ -86,7 +86,11 @@ flow:
         criteria: []
         version_spec:
           _type: EXTRACT_VERSION_SPEC
+          # All three Booleans are 1..1 (extract_version_spec.adoc
+          # §Attributes); include_data true is "the default".
           include_all_versions: true
+          include_revision_history: false
+          include_data: true
         manifest:
           _type: EXTRACT_MANIFEST
           entities:
