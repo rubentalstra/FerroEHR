@@ -21,7 +21,7 @@ test_purpose: >-
 description: "Report for a declared service that holds no versioned content"
 spec_refs:
   - "SM openehr_platform §I_ADMIN_SERVICE.list_contributions"
-  - "SM openehr_platform UML platform_service.adoc (the closed member set)"
+  - "SM UML/classes/platform_service.adoc (the closed member set)"
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs the /admin/report/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions and adjudicated by register AMB-33. The row gates the ActivityReport CAPABILITY verdict only, never ITS-REST wire conformance"

@@ -14,7 +14,7 @@ description: "valid_artefact for a valid ADL2 OPT"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.valid_artefact"
   - "AM AOM2 §Validity (a valid artefact satisfies the AOM2 validity rules)"
-  - "ITS-REST definition_template_adl2_upload §201 Created"
+  - "ITS-REST OAS operations/definition_template_adl2_upload.yaml §responses ('201')"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 parameters:

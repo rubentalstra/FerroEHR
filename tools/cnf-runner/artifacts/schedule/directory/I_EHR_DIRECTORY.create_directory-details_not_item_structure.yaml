@@ -50,7 +50,7 @@ spec_refs:
   - "SM openehr_platform §I_VALIDITY_CHECKER.content_valid"
   - "RM common §folder (details: ITEM_STRUCTURE, 0..1)"
   - "RM common master05-directory_package §Overview"
-  - "RM data_structures master04-representation_package §Item Structures"
+  - "RM data_structures master04-item_structure_package §Class Descriptions (ITEM_STRUCTURE and its descendants)"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
 applies: { rm: ">=1.0.2" }
 requires:

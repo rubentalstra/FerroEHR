@@ -28,7 +28,7 @@ test_purpose: >-
   rejected, and nothing is committed.
 description: "Reject an undeclared member on the COMPOSITION root"
 spec_refs:
-  - "ITS-REST overview Resources.md §Payload (L75 XML / L87 JSON — the payload must validate against the ITS schemas)"
+  - "ITS-REST overview Resources.md §XML Format / §JSON Format (the payload must validate against the published ITS schemas)"
   - "RM ehr §COMPOSITION (org.openehr.rm.composition.composition.adoc §Attributes)"
   - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
 applies: { rm: ">=1.0.2" }

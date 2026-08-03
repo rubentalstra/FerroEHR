@@ -30,7 +30,7 @@ description: "Stored-query execution at an exact SEMVER version selector"
 spec_refs:
   - "SM openehr_platform §I_QUERY_SERVICE.execute_stored_query"
   - "SM openehr_platform §I_DEFINITION_QUERY.store_query"
-  - "ITS-REST query Qualified_query_name.md §version identifier"
+  - "ITS-REST query Qualified_query_name.md §Qualified query name (the version identifier)"
   - "ITS-REST query Response.md §RESULT_SET response"
   - "QUERY AQL §SELECT, §FROM, §CONTAINS"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }

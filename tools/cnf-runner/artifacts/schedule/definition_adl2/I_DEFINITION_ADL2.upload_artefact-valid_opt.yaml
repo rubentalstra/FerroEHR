@@ -16,7 +16,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.upload_artefact"
   - "AM ADL2 §Templates (operational template form)"
   - "AM AOM2 §Validity (an uploaded artefact must validate)"
-  - "ITS-REST definition_template_adl2_upload §201 Created"
+  - "ITS-REST OAS operations/definition_template_adl2_upload.yaml §responses ('201')"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 parameters:

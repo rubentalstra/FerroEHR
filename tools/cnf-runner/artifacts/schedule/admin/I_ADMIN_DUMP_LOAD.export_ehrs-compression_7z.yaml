@@ -18,7 +18,7 @@ test_purpose: >-
 description: "Export with COMPRESSION_FORMAT 7z"
 spec_refs:
   - "SM openehr_platform §I_ADMIN_DUMP_LOAD.export_ehrs"
-  - "SM openehr_platform UML compression_format.adoc (the 7z member)"
+  - "SM UML/classes/compression_format.adoc (the 7z member)"
 applies: { rm: ">=1.0.2" }
 requires: { ehr: { commits: any } }
 flow:

@@ -27,7 +27,7 @@ test_purpose: >-
 description: "Commit CONTRIBUTION with an incomplete (553) version carrying wrong data"
 spec_refs:
   - "RM common §change_control (master06 §Incomplete Content — \"data may be missing, but it may not be wrong\")"
-  - "RM composition §COMPOSITION (Category_validity)"
+  - "RM ehr master05-composition_package §COMPOSITION (Category_validity)"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
 applies: { rm: ">=1.0.2" }

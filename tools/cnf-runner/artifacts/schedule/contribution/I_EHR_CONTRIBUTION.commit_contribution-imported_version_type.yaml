@@ -45,7 +45,7 @@ test_purpose: >-
   as UPDATE_VERSION commits.
 description: "Commit CONTRIBUTION whose member self-tags as a class the wire does not commit"
 spec_refs:
-  - "ITS-REST overview Resources §Resource representation (the _type attribute; the uppercase RM class name)"
+  - "ITS-REST overview Resources.md §JSON Format (the _type attribute; the uppercase RM class name)"
   - "RM common §change_control (master06 §Copying; commit_imported_version has no released wire)"
   - "RM common UML/classes/org.openehr.rm.common.imported_version.adoc (item is its sole own attribute)"
   - "ITS-REST OAS schemas/ehr/UpdateVersion.yaml + schemas/ehr/NewContribution.yaml (UpdateVersion is the only member schema)"

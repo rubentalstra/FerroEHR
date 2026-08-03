@@ -1257,6 +1257,11 @@ const ATTESTATION_TOKEN: &str = "attestation";
 /// The `audit_change_type` code the token above names (`666|attestation|`).
 const ATTESTATION_CODE: &str = "666";
 
+/// The reserved sentinel a case writes in place of a value to say "omit this
+/// member entirely" — the same word the parameter matrix reserves
+/// ([`crate::model::case::MatrixCell::Absent`]).
+const ABSENT_SENTINEL: &str = "absent";
+
 impl HttpDriver<'_> {
     /// An openEHR `DV_CODED_TEXT` over the `openehr` terminology.
     fn openehr_coded_text(code: &str, rubric: &str) -> Value {
@@ -1349,7 +1354,10 @@ impl HttpDriver<'_> {
     /// A message naming the offending member when an override token is outside
     /// its closed vocabulary — never a silent fallback to the derived value,
     /// which would commit a version the case did not ask for.
-    fn contribution_envelope(versions: &[Value]) -> Result<Value, String> {
+    fn contribution_envelope(
+        versions: &[Value],
+        commit_audit: Option<&Value>,
+    ) -> Result<Value, String> {
         // The envelope audit's aggregate change type. RM common
         // `master06-change_control_package.adoc` §Contributions fixes the
         // attestation-only value verbatim — "`666|attestation|`: used when the
@@ -1359,7 +1367,7 @@ impl HttpDriver<'_> {
         // creation default.
         let all_attestations = !versions.is_empty()
             && versions.iter().all(|member| {
-                member.get("change_type").and_then(Value::as_str) == Some(ATTESTATION_TOKEN)
+                Self::member_change_type(member) == Ok(MemberChangeType::Attestation)
             });
         let members: Vec<Value> = versions
             .iter()
@@ -1368,18 +1376,66 @@ impl HttpDriver<'_> {
         let aggregate = if all_attestations {
             Self::openehr_coded_text(ATTESTATION_CODE, ATTESTATION_TOKEN)
         } else {
-            Self::openehr_coded_text("249", "creation")
+            Self::openehr_coded_text(
+                MemberChangeType::Creation.code(),
+                MemberChangeType::Creation.token(),
+            )
         };
+        let mut audit = serde_json::json!({
+            "_type": "AUDIT_DETAILS",
+            "system_id": "cnf-runner",
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
+            "change_type": aggregate
+        });
+        Self::apply_commit_audit_override(&mut audit, commit_audit)?;
         Ok(serde_json::json!({
             "_type": "CONTRIBUTION",
             "versions": members,
-            "audit": {
-                "_type": "AUDIT_DETAILS",
-                "system_id": "cnf-runner",
-                "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
-                "change_type": aggregate
-            }
+            "audit": audit
         }))
+    }
+
+    /// Apply a case's `audit:` override onto the derived commit audit.
+    ///
+    /// The derived envelope audit is what a conformant commit carries, so a
+    /// case that is ABOUT the audit states only its delta: each key the
+    /// override names replaces the derived value verbatim, and the reserved
+    /// `absent` sentinel OMITS the key entirely. Omission is what the
+    /// mandatory-member refusals need — RM common
+    /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes
+    /// makes `change_type` and `committer` 1..1, and the released OAS
+    /// `specifications/schemas/common/UpdateAudit.yaml` §required lists both
+    /// on the commit DTO — and a verbatim value is what an out-of-group
+    /// `change_type` code needs, since the closed vocabulary cannot spell one
+    /// (§Invariants `Change_type_valid`).
+    ///
+    /// # Errors
+    /// A message when the override is not an object — never a silent ignore,
+    /// which would send the derived audit a case deliberately altered.
+    fn apply_commit_audit_override(
+        audit: &mut Value,
+        commit_audit: Option<&Value>,
+    ) -> Result<(), String> {
+        let Some(commit_audit) = commit_audit else {
+            return Ok(());
+        };
+        let Some(overrides) = commit_audit.as_object() else {
+            return Err(format!(
+                "`audit:` must be an AUDIT_DETAILS object stating the members to override \
+                 (or `absent` to omit one), got {commit_audit}"
+            ));
+        };
+        let Some(target) = audit.as_object_mut() else {
+            return Err("the derived commit audit is not an object".to_owned());
+        };
+        for (key, value) in overrides {
+            if value.as_str() == Some(ABSENT_SENTINEL) {
+                target.remove(key);
+            } else {
+                target.insert(key.clone(), value.clone());
+            }
+        }
+        Ok(())
     }
 
     /// One CONTRIBUTION member of the bundled `versions:` construct, in its
@@ -1612,7 +1668,7 @@ impl HttpDriver<'_> {
                 if name == "contribution"
                     && let Some(versions) = with.get("versions").and_then(Value::as_array)
                 {
-                    return Self::contribution_envelope(versions)
+                    return Self::contribution_envelope(versions, with.get("audit"))
                         .map(Some)
                         .map_err(|e| format!("step {}: {e}", step.step));
                 }
@@ -3670,15 +3726,18 @@ mod tests {
     /// attestation of one or more of the member versions").
     #[test]
     fn an_attestation_member_commits_no_version_and_carries_the_fixture_audit() {
-        let envelope = HttpDriver::contribution_envelope(&[serde_json::json!({
-            "change_type": "attestation",
-            "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
-            "attestation": {
-                "_type": "UPDATE_ATTESTATION",
-                "reason": { "_type": "DV_TEXT", "value": "witnessed" },
-                "is_pending": false
-            }
-        })])
+        let envelope = HttpDriver::contribution_envelope(
+            &[serde_json::json!({
+                "change_type": "attestation",
+                "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
+                "attestation": {
+                    "_type": "UPDATE_ATTESTATION",
+                    "reason": { "_type": "DV_TEXT", "value": "witnessed" },
+                    "is_pending": false
+                }
+            })],
+            None,
+        )
         .expect("the attestation member builds");
         let member = &envelope["versions"][0];
         assert_eq!(member["_type"], serde_json::json!("ORIGINAL_VERSION"));
@@ -3714,11 +3773,14 @@ mod tests {
     /// `ATTESTATION` invariants rather than the runner's defaults.
     #[test]
     fn an_invalid_attestation_fixture_is_not_repaired() {
-        let envelope = HttpDriver::contribution_envelope(&[serde_json::json!({
-            "change_type": "attestation",
-            "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
-            "attestation": { "_type": "UPDATE_ATTESTATION", "is_pending": false, "items": [] }
-        })])
+        let envelope = HttpDriver::contribution_envelope(
+            &[serde_json::json!({
+                "change_type": "attestation",
+                "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
+                "attestation": { "_type": "UPDATE_ATTESTATION", "is_pending": false, "items": [] }
+            })],
+            None,
+        )
         .expect("the attestation member builds");
         let audit = &envelope["versions"][0]["commit_audit"];
         assert!(
@@ -3738,7 +3800,7 @@ mod tests {
                 "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
                 "attestation": { "is_pending": true, "reason": { "value": "witnessed" } }
             }),
-        ])
+        ], None)
         .expect("the mixed change set builds");
         assert_eq!(
             envelope["audit"]["change_type"]["defining_code"]["code_string"],
@@ -3754,12 +3816,15 @@ mod tests {
     /// Lifecycle transitions).
     #[test]
     fn member_overrides_are_closed_vocabularies() {
-        let envelope = HttpDriver::contribution_envelope(&[serde_json::json!({
-            "change_type": "modification",
-            "_type": "IMPORTED_VERSION",
-            "lifecycle_state": "abandoned",
-            "data": { "_type": "COMPOSITION" }
-        })])
+        let envelope = HttpDriver::contribution_envelope(
+            &[serde_json::json!({
+                "change_type": "modification",
+                "_type": "IMPORTED_VERSION",
+                "lifecycle_state": "abandoned",
+                "data": { "_type": "COMPOSITION" }
+            })],
+            None,
+        )
         .expect("the overridden member builds");
         let member = &envelope["versions"][0];
         assert_eq!(member["_type"], serde_json::json!("IMPORTED_VERSION"));
@@ -3778,9 +3843,10 @@ mod tests {
         );
 
         // Absent overrides keep the derived shape.
-        let derived = HttpDriver::contribution_envelope(&[
-            serde_json::json!({ "change_type": "creation", "data": { "_type": "COMPOSITION" } }),
-        ])
+        let derived = HttpDriver::contribution_envelope(
+            &[serde_json::json!({ "change_type": "creation", "data": { "_type": "COMPOSITION" } })],
+            None,
+        )
         .expect("the derived member builds");
         assert_eq!(
             derived["versions"][0]["_type"],
@@ -3797,7 +3863,7 @@ mod tests {
             serde_json::json!({ "change_type": "creation", "lifecycle_state": "finished" }),
         ] {
             assert!(
-                HttpDriver::contribution_envelope(std::slice::from_ref(&bad)).is_err(),
+                HttpDriver::contribution_envelope(std::slice::from_ref(&bad), None).is_err(),
                 "{bad} must be refused"
             );
         }
@@ -3805,21 +3871,78 @@ mod tests {
         // A verbatim member already spells its own shape — an override beside
         // it would state it twice.
         assert!(
-            HttpDriver::contribution_envelope(&[serde_json::json!({
-                "_type": "ORIGINAL_VERSION",
-                "data": { "_type": "ORIGINAL_VERSION" }
-            })])
+            HttpDriver::contribution_envelope(
+                &[serde_json::json!({
+                    "_type": "ORIGINAL_VERSION",
+                    "data": { "_type": "ORIGINAL_VERSION" }
+                })],
+                None
+            )
             .is_err()
         );
         // An attestation member commits no version, so it has no lifecycle.
         assert!(
-            HttpDriver::contribution_envelope(&[serde_json::json!({
-                "change_type": "attestation",
-                "lifecycle_state": "complete",
-                "attestation": { "is_pending": false }
-            })])
+            HttpDriver::contribution_envelope(
+                &[serde_json::json!({
+                    "change_type": "attestation",
+                    "lifecycle_state": "complete",
+                    "attestation": { "is_pending": false }
+                })],
+                None
+            )
             .is_err()
         );
+    }
+
+    /// A case's `audit:` override states only its delta against the derived
+    /// commit audit, and the `absent` sentinel omits a member outright — the
+    /// seam the mandatory-member refusals need (RM common
+    /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes:
+    /// `change_type` and `committer` are 1..1; released OAS
+    /// `specifications/schemas/common/UpdateAudit.yaml` §required lists both).
+    #[test]
+    fn a_case_overrides_or_omits_the_commit_audit() {
+        let member = serde_json::json!({ "data": { "_type": "COMPOSITION" } });
+        let build = |audit: Option<Value>| {
+            HttpDriver::contribution_envelope(std::slice::from_ref(&member), audit.as_ref())
+        };
+
+        // No override: the derived audit, unchanged.
+        let derived = build(None).expect("the derived envelope builds");
+        assert_eq!(derived["audit"]["change_type"]["value"], "creation");
+        assert_eq!(derived["audit"]["committer"]["name"], "cnf runner");
+
+        // `absent` omits the member entirely — the omitted-change_type and
+        // omitted-committer refusal shapes.
+        let omitted = build(Some(serde_json::json!({ "change_type": "absent" })))
+            .expect("the omission builds");
+        assert!(omitted["audit"].get("change_type").is_none(), "{omitted}");
+        assert!(omitted["audit"].get("committer").is_some(), "{omitted}");
+        let omitted =
+            build(Some(serde_json::json!({ "committer": "absent" }))).expect("the omission builds");
+        assert!(omitted["audit"].get("committer").is_none(), "{omitted}");
+
+        // A verbatim value replaces the derived one — an out-of-group
+        // `change_type` code the closed vocabulary cannot spell.
+        let overridden = build(Some(serde_json::json!({
+            "change_type": {
+                "_type": "DV_CODED_TEXT",
+                "value": "not a change type",
+                "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "999"
+                }
+            }
+        })))
+        .expect("the override builds");
+        assert_eq!(
+            overridden["audit"]["change_type"]["defining_code"]["code_string"],
+            "999"
+        );
+
+        // A non-object override is refused, never silently ignored.
+        assert!(build(Some(serde_json::json!("nonsense"))).is_err());
     }
 
     /// The identities a `requires.import` mints come from the EXTRACT itself

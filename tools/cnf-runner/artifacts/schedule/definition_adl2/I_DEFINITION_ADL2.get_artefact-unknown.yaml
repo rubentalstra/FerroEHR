@@ -11,7 +11,7 @@ test_purpose: "Retrieving an unknown ADL2 template_id is rejected as not-found."
 description: "retrieve an unknown ADL2 OPT"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.get_artefact"
-  - "ITS-REST definition_template_adl2_get §404 Not Found"
+  - "ITS-REST OAS operations/definition_template_adl2_get.yaml §responses ('404')"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:

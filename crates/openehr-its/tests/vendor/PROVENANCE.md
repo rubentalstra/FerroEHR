@@ -11,16 +11,29 @@ re-vendor from upstream and update the pin below.
 
 | Item     | Value                                                                                               |
 |----------|-----------------------------------------------------------------------------------------------------|
-| Upstream | `ferroehr/openEHR_SDK`                                                                               |
+| Upstream | `ehrbase/openEHR_SDK`                                                                                |
 | Ref      | branch `develop`, commit `22b01e0c99b53669394e56da29c2410838b5cf7e`                                 |
 | Path     | `test-data/src/main/resources/{composition,contribution,ehr,folder,item_structure}/canonical_json/` |
 | License  | Apache-2.0 (see the upstream `LICENSE.md`)                                                          |
-| Fetched  | 2026-07-03                                                                                          |
+| Script   | `scripts/vendor-openehr-sdk-json.sh` (`--check` proves the committed tree is what the pin produces)  |
+| Fetched  | 2026-07-03; reproduced byte-identically from the pin 2026-08-03                                     |
 
-`ferroehr/openEHR_SDK` is the serialization library EHRbase itself uses, so its
+`ehrbase/openEHR_SDK` is the serialization library EHRbase itself uses, so its
 `canonical_json` corpus is the closest available match to our parity baseline
-(EHRbase v2.33.0). Files were downloaded verbatim from the pinned commit via
-the GitHub contents API (raw), preserving the upstream sub-directory layout.
+(EHRbase v2.33.0). The tree is vendored verbatim from the pinned commit by
+**`scripts/vendor-openehr-sdk-json.sh`**, preserving the upstream
+sub-directory layout; `scripts/vendor-openehr-sdk-json.sh --check` reports
+drift and writes nothing. Never hand-edit a vendored fixture and never
+hand-download into this tree — change the script, bump the pin, re-run it
+(`.claude/rules/vendored-corpora.md`).
+
+The script applies exactly ONE adjudicated exclusion, so that its output IS
+the committed tree: upstream carries an editor backup file,
+`composition/canonical_json/compo_feeder_audit_details.json.bak`, beside its
+fixtures. It is not a corpus document — the corpus is the `*.json` canonical
+instances the fidelity gates read — and vendoring it would place a file in
+the tree that no gate can classify. Nothing else upstream publishes under
+these five `canonical_json/` directories is dropped.
 
 ### Corpus composition (72 files)
 

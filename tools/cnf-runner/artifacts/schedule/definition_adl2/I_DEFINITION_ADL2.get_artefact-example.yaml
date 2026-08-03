@@ -15,7 +15,7 @@ description: "get example data by ADL2 template"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.get_artefact"
   - "AM AOM2 §Templates (an OPT constrains a COMPOSITION instance)"
-  - "ITS-REST definition_template_adl2_example_get §200 OK"
+  - "ITS-REST OAS operations/definition_template_adl2_example_get.yaml §responses ('200')"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any

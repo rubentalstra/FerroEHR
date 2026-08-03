@@ -30,7 +30,7 @@ test_purpose: >-
 description: "Stored-query execution under the reserved query-name `aql` is not found"
 spec_refs:
   - "SM openehr_platform §I_QUERY_SERVICE.execute_stored_query"
-  - "ITS-REST query Qualified_query_name.md §NOTE (reserved name)"
+  - "ITS-REST query Qualified_query_name.md §Qualified query name (the reserved-name NOTE)"
   - "ITS-REST query Query_types.md §Ad-hoc queries"
   - "ITS-REST overview Requests_and_responses.md §HTTP status codes"
 applies: { rm: ">=1.0.2", aql: ">=1.1", its_rest: ">=1.1.0" }   # the reserved `aql` query-name resolution arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-46)

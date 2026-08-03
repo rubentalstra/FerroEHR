@@ -11,7 +11,7 @@ test_purpose: >-
 description: "DV_QUANTITY against C_DV_QUANTITY property=openehr::122 (length), no units list"
 spec_refs:
   - "CNF platform_test_schedule master17.3 §CONT-DV_QUANTITY-validate_property"
-  - "AM AOM1.4 §C_DV_QUANTITY"
+  - "AM ADL2 master04.4-cadl_second_order §Tuple Constraints (the ADL 1.4 Archetype Profile C_DV_QUANTITY the tuple constraint replaced; the oAP itself is not part of the released AM)"
   - "RM data_types §DV_QUANTITY"
 applies: { rm: ">=1.0.2" }
 constraint_context:
