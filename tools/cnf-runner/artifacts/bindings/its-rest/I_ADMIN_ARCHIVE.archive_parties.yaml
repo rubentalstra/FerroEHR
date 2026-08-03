@@ -24,10 +24,10 @@ extension:
     serves the operation on its own /admin/archive/parties route, which is what the cases
     drive.
   source: >-
-    SM docs/UML/classes/i_admin_archive.adoc (archive_parties) vs released ITS-REST
-    specifications/admin.openapi.yaml (admin_ehr_delete + admin_ehr_delete_all
-    only) + specifications/docs/admin/** (no archive resource) — no openEHR
-    spec governs the extension route, our own design/extension
+    SM docs/UML/classes/i_admin_archive.adoc (archive_parties); ITS-REST
+    specifications/admin.openapi.yaml (the released admin API declares admin_ehr_delete and
+    admin_ehr_delete_all only); ITS-REST specifications/docs/admin (no archive resource); no
+    openEHR spec governs this — our own design/extension
   ambiguity: AMB-33
 request:
   method: POST

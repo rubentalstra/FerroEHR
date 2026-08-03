@@ -31,12 +31,12 @@ extension:
     serves the operation on its own /admin/dump route, which is what the cases
     drive.
   source: >-
-    SM docs/UML/classes/i_admin_dump_load.adoc (export_ehrs, error
-    file_not_writable) + export_spec.adoc / export_format.adoc /
-    compression_format.adoc / encoding_format.adoc vs released ITS-REST
-    specifications/admin.openapi.yaml (admin_ehr_delete + admin_ehr_delete_all
-    only) + specifications/docs/admin/** (no dump/load resource) — no openEHR
-    spec governs the extension route, our own design/extension
+    SM docs/UML/classes/i_admin_dump_load.adoc (export_ehrs, error file_not_writable); SM
+    docs/UML/classes/export_spec.adoc; SM docs/UML/classes/export_format.adoc; SM
+    docs/UML/classes/compression_format.adoc; SM docs/UML/classes/encoding_format.adoc; ITS-REST
+    specifications/admin.openapi.yaml (the released admin API declares admin_ehr_delete and
+    admin_ehr_delete_all only); ITS-REST specifications/docs/admin (no dump/load resource); no
+    openEHR spec governs this — our own design/extension
   ambiguity: AMB-33
 request:
   method: POST

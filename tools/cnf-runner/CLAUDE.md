@@ -229,6 +229,37 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   two released overview chapters — every section must be named by an authored
   `elements`/`branches` source or pinned in `AXIS3_SECTION_EXCLUSIONS` with
   its citation.
+- **An authored input the driver never reads is a CATALOGUE DEFECT, not
+  decoration** — the `step-arguments` gate (`validate.rs`, issue #1830).
+  Every `with:` key a flow step authors must be consumed by the binding the
+  driver would select for it (path param, declared query parameter, a
+  header/query/body template reference, the payload role and its aliases, the
+  bundled-CONTRIBUTION `versions`/`audit` pair, a `required` format header's
+  `${ds:…}` source, or a `with_<p>` auto-variant selector). An unread key
+  never reaches the SUT, so whatever the case asserts about it passes
+  VACUOUSLY however the server behaves — the live instance was the SEC audit
+  case's deliberately ancient client-supplied `audit.time_committed`, dropped
+  for its whole life. The gate models `select_body`'s short-circuit ORDER, so
+  it is sharp where the driver is deterministic and generous only where the
+  choice is a runtime property (the single-payload scan).
+- **Every CITATION inside a binding declaration is machine-resolved** — the
+  `spec-ref` gate now reads `unrealized.source` / `extension.source` too
+  (issue #1832). Those fields are DERIVATIONS (what the SM defines; what the
+  released ITS surfaces, or does not; the spec-silence flag), authored as
+  `;`-separated clauses each opening with its component token — because a
+  fragment that opens with anything else is DROPPED unread by the citation
+  splitter, which is how the ITS-REST half of a `A vs B` derivation used to
+  escape the gate entirely. The sibling `reason` field stays free-text
+  prose by design: `source` + `reason` are the citation/note split.
+- **ITS-XML citations resolve against TWO roots** (issue #1833):
+  `scripts/vendor-spec-docs.sh` vendors prose, so the docs tree's
+  `ITS-XML/components/**` holds only upstream README stubs, while the
+  released XSD bundles are vendored ONCE at `crates/openehr-its/schemas/xml/`
+  as the canonical-XML codec's input. The gate learns the bundle as a second
+  root — one vendored copy, two readers, never a duplicated bundle — and an
+  XSD's `§` sections are its declared `name="…"` values, so
+  `ITS-XML components/RM/Release-1.0.2/documents/Composition.xsd §composition`
+  resolves and a phantom element is a finding.
 - **Verdicts are computed, never asserted** — pure functions of
   (statement, results, catalogue, capability matrix).
 - **The measurement machinery is conformance-by-measurement** (`perf.rs`,

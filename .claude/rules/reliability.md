@@ -95,6 +95,26 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   — never rely on it inside `else`; rewrite as `match` when the guard must
   span both arms. Tail-expression temporaries drop at end of block, before
   locals (temporary-tail-expr-scope.html) — same discipline.
+- **`Result → Option` inside a chain is a DECISION, and it carries NO
+  automated guard** (review-enforced; the honest no-guard record, issue
+  #1733). `.filter_map(|x| f(x).ok())`, `.and_then(|x| f(x).ok())` and
+  `f(x).ok()?` turn an error into a missing element with no trace — the
+  silent-data-loss shape that dropped a client-supplied attestation from a
+  commit and a non-decoding version uid from an admin merge list. The rule:
+  **a fallible conversion whose failure means "the input is DEFECTIVE"
+  propagates a typed error; only a fallible conversion whose failure means
+  "this input is legitimately ABSENT / not of this form" may become
+  `Option`, and it carries a `// NOTE:` saying so.** Enforcement is honest
+  about its own limits: this is the one rule in this file with no failing
+  check, because there is no lint (the Clippy book lists none —
+  https://rust-lang.github.io/rust-clippy/master/) and a grep gate cannot
+  make the distinction the rule turns on. The two shapes are
+  *textually identical* — a grammar probe where a parse failure IS the
+  answer (`CaptureName::parse(a).ok()?` in the reference-grammar reader)
+  reads exactly like a defect swallowed in a codec — and the repo carries
+  ~300 `.ok()` sites, the vast majority legitimate, so a pattern gate would
+  be ~99% false positives and would be blanket-suppressed within a release.
+  A wish honestly labelled beats a check that trains people to ignore it.
 - **Determinism is lint-backed** (deny tier: `iter_over_hash_type`):
   HashMap/HashSet iteration order is undefined; anything that feeds
   canonical JSON/XML, SQL generation, or emitted code iterates ordered

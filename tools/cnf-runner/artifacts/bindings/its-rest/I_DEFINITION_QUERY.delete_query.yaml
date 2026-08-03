@@ -15,5 +15,11 @@ unrealized:
     {version}` is an extension of our own and is deliberately NOT bound here:
     it removes one `(name, version)` row and therefore cannot establish the SM
     postcondition.
-  source: "ITS-REST specifications/definition.openapi.yaml (the two /definition/query paths) + operations/definition_query_{list,store,version_get,version_store}.yaml vs SM docs/UML/classes/i_definition_query.adoc §delete_query"
+  source: >-
+    ITS-REST specifications/definition.openapi.yaml (the two /definition/query paths); ITS-REST
+    specifications/operations/definition_query_list.yaml; ITS-REST
+    specifications/operations/definition_query_store.yaml; ITS-REST
+    specifications/operations/definition_query_version_get.yaml; ITS-REST
+    specifications/operations/definition_query_version_store.yaml; SM
+    docs/UML/classes/i_definition_query.adoc §delete_query
   ambiguity: AMB-127

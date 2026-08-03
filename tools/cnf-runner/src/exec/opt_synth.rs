@@ -97,7 +97,7 @@ pub fn synthesize_value_opt(
         "DV_CODED_TEXT" => build_coded_text(&row),
         "DV_IDENTIFIER" => (build_identifier(&row), Vec::new()),
         "DV_PARSABLE" => (build_parsable(&row), Vec::new()),
-        "DV_MULTIMEDIA" => (build_multimedia(&row), Vec::new()),
+        "DV_MULTIMEDIA" => (build_multimedia(&row)?, Vec::new()),
         "DV_INTERVAL" => build_interval(case_id, &row),
         other => {
             return Err(SynthError::Unsupported(format!(
@@ -639,7 +639,7 @@ fn build_parsable(row: &Row<'_>) -> String {
     c_complex("DV_PARSABLE", &attrs)
 }
 
-fn build_multimedia(row: &Row<'_>) -> String {
+fn build_multimedia(row: &Row<'_>) -> Result<String, SynthError> {
     let mut attrs = String::new();
     let media = parse_list(row.literal("C_CODE_PHRASE"));
     if !media.is_empty() {
@@ -649,9 +649,8 @@ fn build_multimedia(row: &Row<'_>) -> String {
             (1, 1),
         ));
     }
-    if let Some(range) = row.text("C_INTEGER.range")
-        && let Some((lo, hi)) = parse_int_range(range)
-    {
+    if let Some(range) = row.text("C_INTEGER.range") {
+        let (lo, hi) = parse_int_range(range)?;
         // DV_MULTIMEDIA.size is RM-mandatory (existence 1..1 in the reference
         // model — RM data_types §DV_MULTIMEDIA); the archetype must not relax it.
         attrs.push_str(&c_single_attr(
@@ -660,7 +659,7 @@ fn build_multimedia(row: &Row<'_>) -> String {
             (1, 1),
         ));
     } else {
-        let ints = parse_int_list(row.literal("C_INTEGER.list"));
+        let ints = parse_int_list(row.literal("C_INTEGER.list"))?;
         if !ints.is_empty() {
             attrs.push_str(&c_single_attr(
                 "size",
@@ -669,20 +668,49 @@ fn build_multimedia(row: &Row<'_>) -> String {
             ));
         }
     }
-    c_complex("DV_MULTIMEDIA", &attrs)
+    Ok(c_complex("DV_MULTIMEDIA", &attrs))
 }
 
-fn parse_int_list(cell: Option<&Value>) -> Vec<i64> {
+/// Parse an integer list cell into its bounds.
+///
+/// A non-integer entry is a CATALOGUE defect, never a silently narrower
+/// constraint: dropping it would emit an OPT whose `C_INTEGER.list` is missing
+/// the very value the row's expected-rejection rests on, so the row would pass
+/// vacuously.
+fn parse_int_list(cell: Option<&Value>) -> Result<Vec<i64>, SynthError> {
     parse_list(cell)
         .into_iter()
-        .filter_map(|s| s.parse::<i64>().ok())
+        .map(|s| {
+            s.parse::<i64>().map_err(|e| {
+                SynthError::Unsupported(format!(
+                    "C_INTEGER.list entry {s:?} is not an integer: {e}"
+                ))
+            })
+        })
         .collect()
 }
 
 /// Parse a range cell authored as `lo..hi` (or `[lo, hi]`) into integer bounds.
-fn parse_int_range(cell: &str) -> Option<(i64, i64)> {
-    let (lo, hi) = split_range(cell)?;
-    Some((lo.parse().ok()?, hi.parse().ok()?))
+///
+/// # Errors
+/// [`SynthError::Unsupported`] when the cell is not a two-bound range or a
+/// bound is not an integer — a catalogue defect, never a silent fall-through
+/// to the list branch (which would emit an OPT with no `size` constraint at
+/// all).
+fn parse_int_range(cell: &str) -> Result<(i64, i64), SynthError> {
+    let defect = |detail: String| SynthError::Unsupported(detail);
+    let (lo, hi) = split_range(cell).ok_or_else(|| {
+        defect(format!(
+            "C_INTEGER.range cell {cell:?} is not a `lo..hi` range"
+        ))
+    })?;
+    let lo: i64 = lo
+        .parse()
+        .map_err(|e| defect(format!("C_INTEGER.range lower bound {lo:?}: {e}")))?;
+    let hi: i64 = hi
+        .parse()
+        .map_err(|e| defect(format!("C_INTEGER.range upper bound {hi:?}: {e}")))?;
+    Ok((lo, hi))
 }
 
 /// Split a `lo..hi` (or `[lo, hi]`) range cell into its two string bounds.
@@ -725,7 +753,7 @@ fn interval_inner(case_id: &str) -> &'static str {
     }
 }
 
-/// A `DV_INTERVAL`<inner> value `C_COMPLEX_OBJECT` with optional lower/upper limit
+/// A `DV_INTERVAL<inner>` value `C_COMPLEX_OBJECT` with optional lower/upper limit
 /// object constraints (`None` => that side unconstrained).
 fn dv_interval(inner: &str, lower: Option<&str>, upper: Option<&str>) -> String {
     let mut attrs = String::new();
