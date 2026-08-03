@@ -75,6 +75,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A CONTRIBUTION whose audit omits `committer` is now refused (`422`)
+  instead of being attributed to the server's default identity.** The same
+  released commit schema that requires `change_type` requires `committer`
+  (`NewContribution.yaml` over `UpdateAudit.yaml`), and a server-invented
+  committer would put an identity the client never named into the audit
+  trail. The direct COMPOSITION/DIRECTORY routes are unchanged — there the
+  committal headers stay optional and the authenticated default applies,
+  exactly as the ITS-REST overview requires.
+
 - **An emptied ITEM_TAG collection is echoed as no header, never an empty
   one.** The EHR-side write routes echoed an EMPTY `openehr-item-tag` header
   when the stored collection was empty — but the empty header value is the
