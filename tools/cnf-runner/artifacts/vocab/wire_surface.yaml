@@ -546,11 +546,17 @@ branches:
     format: wt-structured
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the wt-structured representation is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes its distinctive branch"
-  - binding: I_EHR_COMPOSITION.get_versioned_composition
-    variant: version
-    format: canonical-xml
-    reason: variant_of
-    source: "released ITS-REST 1.1.0 — the canonical-xml representation is exercised on the variant-less I_EHR_COMPOSITION.get_versioned_composition binding; this variant scopes its distinctive branch"
+  # RETIRED (the version-read document): the canonical-xml branch of the
+  # `version` variant was excepted as `variant_of` the container read — which
+  # was never true of the DOCUMENT, only of the media type. The container read
+  # has no published document element at all (register AMB-167) while the
+  # version sub-resource has one, `<xs:element name="version" type="VERSION"/>`
+  # over an ABSTRACT type, so the two branches conform to different things and
+  # the version one now carries its own rows:
+  # I_EHR_COMPOSITION.get_versioned_composition-version_xml_root and
+  # -imported_version_xml_root pin the root element, its namespace and the
+  # `xsi:type` naming each concrete VERSION class.
+  #
   # RETIRED coverage_gaps (#288 slice 3): every COMPOSITION format branch now
   # has its own isolated case, so the exceptions are gone rather than reworded
   # (coverage only ratchets up). canonical-xml on create_composition /

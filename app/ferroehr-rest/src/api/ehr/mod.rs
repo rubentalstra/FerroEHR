@@ -112,17 +112,24 @@ fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
         .ok()
 }
 
-/// The canonical-XML root tag for a served VERSION envelope, taken from the
-/// body's own `_type` so an `IMPORTED_VERSION` is not announced as an
-/// `ORIGINAL_VERSION` (RM common master06 §Version and its Subtypes; the
-/// version resource is the `_type`-discriminated union ITS-REST 1.1.0 declares
-/// in `schemas/ehr/UVersionOfComposition.yaml` / `UVersionOfEhrStatus.yaml`).
-pub(super) fn version_root_tag(body: &Value) -> &'static str {
-    match body.get("_type").and_then(Value::as_str) {
-        Some("IMPORTED_VERSION") => "imported_version",
-        _ => "original_version",
-    }
-}
+/// The canonical-XML root tag for a served VERSION envelope: the document
+/// element the published ITS-XML schemas declare for the resource.
+///
+/// ITS-REST overview `Resources.md` §"XML Format" requires that "both request
+/// payloads and responses MUST conform to the [published XSDs]", and the
+/// schemas publish exactly one document element for a VERSION —
+/// `<xs:element name="version" type="VERSION"/>`
+/// (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/Version.xsd`; the
+/// 2.0.0 lineage repeats the declaration in
+/// `RM/latest/documents/Version.xsd`). `VERSION` is abstract there, so the
+/// concrete subtype is named by `xsi:type` on that same root rather than by a
+/// root element of its own — the serializer emits it from the declared type
+/// (`crate::overview::negotiate` §`ABSTRACT_ROOT_TYPES`), which is how an
+/// `IMPORTED_VERSION` stays distinguishable from an `ORIGINAL_VERSION`
+/// (RM common master06 §Version and its Subtypes). Neither published lineage
+/// declares an `original_version` or `imported_version` document element, so
+/// no per-subtype root exists to serve.
+pub(super) const VERSION_ROOT_TAG: &str = "version";
 
 /// Wrap a read body as a [`ServiceResponse`], attaching resource metadata drawn
 /// from the body's own `uid` (and, for a VERSION envelope, its commit instant)

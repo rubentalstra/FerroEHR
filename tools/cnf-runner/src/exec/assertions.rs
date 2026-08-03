@@ -533,13 +533,94 @@ pub fn eval_returns(
     Ok(())
 }
 
-/// The root element of an XML document entity: its LOCAL name and, when the
-/// document binds one, the namespace URI it resolves to.
+/// The XML Schema instance namespace, whose `type` attribute selects the
+/// concrete type of an element declared with an abstract one
+/// (<https://www.w3.org/TR/xmlschema-1/#xsi_type>).
+const XSI_NAMESPACE: &str = "http://www.w3.org/2001/XMLSchema-instance";
+
+/// The judged facts of an XML document entity's ROOT element.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct XmlRootElement {
+    /// The root's LOCAL name.
+    local: String,
+    /// The namespace URI the root resolves to, when the document binds one.
+    namespace: Option<String>,
+    /// The root's `xsi:type`, when present: the `QName`'s LOCAL part and the
+    /// namespace URI its prefix resolves to (absent when the `QName` is
+    /// unprefixed and the document binds no default namespace).
+    xsi_type: Option<(String, Option<String>)>,
+}
+
+/// The `xsi:type` an element carries, resolved: the `QName`'s LOCAL part and the
+/// namespace URI its prefix resolves to.
+///
+/// The attribute is identified by its resolved NAME (the XML Schema instance
+/// namespace + local `type`), never by the literal prefix `xsi`, which a
+/// document is free to spell any way it binds it. Its VALUE is a `QName` and
+/// resolves by the `QName`-in-content rule — an unprefixed `QName` takes the
+/// document's DEFAULT namespace — which `resolve_element` implements.
+///
+/// # Errors
+/// A message when an attribute is malformed or its value is not valid UTF-8,
+/// or when the `xsi:type` `QName` carries a prefix the document never bound.
+fn root_xsi_type(
+    reader: &mut quick_xml::NsReader<&[u8]>,
+    start: &quick_xml::events::BytesStart<'_>,
+) -> Result<Option<(String, Option<String>)>, AssertionFailure> {
+    for attribute in start.attributes() {
+        let attribute = attribute
+            .map_err(|e| AssertionFailure(format!("xml_root: body is not well-formed XML: {e}")))?;
+        let (attribute_ns, attribute_local) =
+            reader.resolver_mut().resolve_attribute(attribute.key);
+        let is_xsi_type = attribute_local.as_ref() == b"type"
+            && matches!(
+                attribute_ns,
+                quick_xml::name::ResolveResult::Bound(ns) if ns.as_ref() == XSI_NAMESPACE.as_bytes()
+            );
+        if !is_xsi_type {
+            continue;
+        }
+        // Attribute-value normalization per XML 1.0 §3.3.3 (the version every
+        // published ITS-XML schema and canonical openEHR document is written
+        // in — `<?xml version="1.0"?>`): entity references resolved, tab/CR/LF
+        // folded to spaces, before the value is read as a QName.
+        let value = attribute
+            .normalized_value(quick_xml::XmlVersion::Implicit1_0)
+            .map_err(|e| AssertionFailure(format!("xml_root: xsi:type is not readable: {e}")))?;
+        let (type_ns, type_local) = reader
+            .resolver_mut()
+            .resolve_element(quick_xml::name::QName(value.as_bytes()));
+        let namespace = match type_ns {
+            quick_xml::name::ResolveResult::Bound(ns) => {
+                Some(String::from_utf8_lossy(ns.as_ref()).into_owned())
+            }
+            quick_xml::name::ResolveResult::Unbound => None,
+            quick_xml::name::ResolveResult::Unknown(prefix) => {
+                return Err(AssertionFailure(format!(
+                    "xml_root: the xsi:type QName's prefix `{}` is not bound to any namespace",
+                    String::from_utf8_lossy(&prefix)
+                )));
+            }
+        };
+        return Ok(Some((
+            String::from_utf8_lossy(type_local.as_ref()).into_owned(),
+            namespace,
+        )));
+    }
+    Ok(None)
+}
+
+/// The root element of an XML document entity: its LOCAL name, the namespace
+/// URI it resolves to when the document binds one, and its `xsi:type` when it
+/// carries one.
 ///
 /// Namespace resolution is delegated to `quick_xml::NsReader` rather than
 /// pattern-matched out of the text: a conforming document may bind the
 /// namespace with any prefix (or as the default `xmlns`), and only a real
-/// resolver relates the root's prefix to the URI in scope for it.
+/// resolver relates the root's prefix to the URI in scope for it. The
+/// `xsi:type` VALUE is a `QName` too and resolves by the `QName`-in-content rule —
+/// an unprefixed `QName` takes the DEFAULT namespace — which is what
+/// `resolve_element` implements.
 ///
 /// The whole document is read to end-of-input, not just its first tag: a
 /// payload that is not well-formed cannot be valid against any schema either,
@@ -547,9 +628,9 @@ pub fn eval_returns(
 ///
 /// # Errors
 /// A message when the payload is not a well-formed XML document entity.
-fn xml_root_element(text: &str) -> Result<(String, Option<String>), AssertionFailure> {
+fn xml_root_element(text: &str) -> Result<XmlRootElement, AssertionFailure> {
     let mut reader = quick_xml::NsReader::from_str(text);
-    let mut root: Option<(String, Option<String>)> = None;
+    let mut root: Option<XmlRootElement> = None;
     // Element balance, tracked here rather than left to the reader's
     // configuration: at end of input an unclosed element is a truncated
     // document, which no schema can validate.
@@ -581,7 +662,12 @@ fn xml_root_element(text: &str) -> Result<(String, Option<String>), AssertionFai
                         )));
                     }
                 };
-                root = Some((local, namespace));
+                let xsi_type = root_xsi_type(&mut reader, &e)?;
+                root = Some(XmlRootElement {
+                    local,
+                    namespace,
+                    xsi_type,
+                });
             }
             // The prolog (declaration, doctype, comments, whitespace) before
             // the root, and the whole content after it: read through, so an
@@ -602,12 +688,14 @@ fn xml_root_element(text: &str) -> Result<(String, Option<String>), AssertionFai
 ///
 /// # Errors
 /// [`AssertionFailure`] when the body is not an XML document entity, when the
-/// root's local name differs, or when its namespace is not the expected
-/// published openEHR ITS-XML target namespace.
+/// root's local name differs, when its namespace is not the expected published
+/// openEHR ITS-XML target namespace, or when an expected `xsi_type` is absent
+/// or names another type.
 pub fn eval_xml_root(
     body: &Value,
     name: &str,
     namespace: Option<crate::vocab::XmlNamespace>,
+    xsi_type: Option<&str>,
 ) -> Result<(), AssertionFailure> {
     let Value::String(text) = body else {
         return Err(AssertionFailure(format!(
@@ -618,28 +706,73 @@ pub fn eval_xml_root(
             }
         )));
     };
-    let (local, uri) = xml_root_element(text)?;
+    let root = xml_root_element(text)?;
+    let local = root.local;
     if local != name {
         return Err(AssertionFailure(format!(
             "xml_root: document root is `{local}`, expected the published document element `{name}`"
         )));
     }
-    let Some(expected) = namespace else {
+    if let Some(expected) = namespace {
+        match root.namespace.as_deref() {
+            Some(uri) if expected.accepts(uri) => {}
+            Some(uri) => {
+                return Err(AssertionFailure(format!(
+                    "xml_root: root `{local}` is in namespace {uri:?}, expected {}",
+                    expected.token()
+                )));
+            }
+            None => {
+                return Err(AssertionFailure(format!(
+                    "xml_root: root `{local}` is in NO namespace, expected {} — every published \
+                     ITS-XML schema declares elementFormDefault=\"qualified\" over its \
+                     targetNamespace, so a conforming document's root is namespace-qualified",
+                    expected.token()
+                )));
+            }
+        }
+    }
+    let Some(expected_type) = xsi_type else {
         return Ok(());
     };
-    match uri {
-        Some(uri) if expected.accepts(&uri) => Ok(()),
-        Some(uri) => Err(AssertionFailure(format!(
-            "xml_root: root `{local}` is in namespace {uri:?}, expected {}",
-            expected.token()
-        ))),
-        None => Err(AssertionFailure(format!(
-            "xml_root: root `{local}` is in NO namespace, expected {} — every published \
-             ITS-XML schema declares elementFormDefault=\"qualified\" over its targetNamespace, \
-             so a conforming document's root is namespace-qualified",
-            expected.token()
-        ))),
+    // An element whose XSD-declared type is abstract MUST name a non-abstract
+    // derived type with `xsi:type` (XML Schema Part 1 §2.6.1 + §3.4.6,
+    // <https://www.w3.org/TR/xmlschema-1/#xsi_type>).
+    let Some((type_local, type_uri)) = root.xsi_type else {
+        return Err(AssertionFailure(format!(
+            "xml_root: root `{local}` carries no xsi:type, expected `{expected_type}` — the \
+             published element's declared type is abstract, and an instance may not use an \
+             abstract type directly"
+        )));
+    };
+    if type_local != expected_type {
+        return Err(AssertionFailure(format!(
+            "xml_root: root `{local}` names concrete type `{type_local}`, expected \
+             `{expected_type}`"
+        )));
     }
+    // The ITS-XML complexTypes are declared in each schema's own
+    // `targetNamespace`, so a type QName in another namespace names another
+    // schema's type — judged by the same expectation as the root.
+    if let Some(expected) = namespace {
+        match type_uri.as_deref() {
+            Some(uri) if expected.accepts(uri) => {}
+            Some(uri) => {
+                return Err(AssertionFailure(format!(
+                    "xml_root: xsi:type `{type_local}` is in namespace {uri:?}, expected {}",
+                    expected.token()
+                )));
+            }
+            None => {
+                return Err(AssertionFailure(format!(
+                    "xml_root: xsi:type `{type_local}` resolves to NO namespace, expected {} — \
+                     the ITS-XML complexTypes are declared in each schema's targetNamespace",
+                    expected.token()
+                )));
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Whether an assertion is wire-dependent (its facts need a driver read:
@@ -776,36 +909,162 @@ mod tests {
                <composition xmlns="http://schemas.openehr.org/v1"><name/></composition>"#
                 .to_owned(),
         );
-        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::Published)).is_ok());
-        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::V1)).is_ok());
-        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::V2)).is_err());
+        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::Published), None).is_ok());
+        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::V1), None).is_ok());
+        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::V2), None).is_err());
 
         // A prefix binding is equally conforming — only the URI is asserted.
         let prefixed = Value::String(
             r#"<oe:composition xmlns:oe="http://schemas.openehr.org/v2"/>"#.to_owned(),
         );
-        assert!(eval_xml_root(&prefixed, "composition", Some(XmlNamespace::Published)).is_ok());
+        assert!(
+            eval_xml_root(
+                &prefixed,
+                "composition",
+                Some(XmlNamespace::Published),
+                None
+            )
+            .is_ok()
+        );
 
         // The defect this assertion exists for: a root in NO namespace, against
         // schemas that are elementFormDefault="qualified" over a targetNamespace.
         let unqualified = Value::String(r#"<composition archetype_node_id="x"/>"#.to_owned());
-        let failure = eval_xml_root(&unqualified, "composition", Some(XmlNamespace::Published))
-            .expect_err("an unqualified root must fail");
+        let failure = eval_xml_root(
+            &unqualified,
+            "composition",
+            Some(XmlNamespace::Published),
+            None,
+        )
+        .expect_err("an unqualified root must fail");
         assert!(failure.0.contains("NO namespace"), "{failure:?}");
         // …and the name-only row still passes it, which is why the namespace
         // fact needs its own assertion rather than a regex over the body.
-        assert!(eval_xml_root(&unqualified, "composition", None).is_ok());
+        assert!(eval_xml_root(&unqualified, "composition", None, None).is_ok());
 
         let wrong_name =
             Value::String(r#"<folder xmlns="http://schemas.openehr.org/v1"/>"#.to_owned());
-        assert!(eval_xml_root(&wrong_name, "composition", None).is_err());
+        assert!(eval_xml_root(&wrong_name, "composition", None, None).is_err());
 
         // A JSON body is not an XML document entity.
-        assert!(eval_xml_root(&json!({ "_type": "COMPOSITION" }), "composition", None).is_err());
-        assert!(eval_xml_root(&Value::Null, "composition", None).is_err());
+        assert!(
+            eval_xml_root(
+                &json!({ "_type": "COMPOSITION" }),
+                "composition",
+                None,
+                None
+            )
+            .is_err()
+        );
+        assert!(eval_xml_root(&Value::Null, "composition", None, None).is_err());
         // Malformed XML fails loudly rather than silently passing.
         let malformed = Value::String("<composition>".to_owned());
-        assert!(eval_xml_root(&malformed, "composition", None).is_err());
+        assert!(eval_xml_root(&malformed, "composition", None, None).is_err());
+    }
+
+    /// The abstract-root half: `ALL/Version.xsd` publishes
+    /// `<xs:element name="version" type="VERSION"/>` over
+    /// `<xs:complexType name="VERSION" abstract="true">`, and XML Schema Part 1
+    /// §2.6.1 + §3.4.6 (<https://www.w3.org/TR/xmlschema-1/#xsi_type>) forbid an
+    /// instance from using an abstract type directly — it must select a
+    /// non-abstract derived type with `xsi:type`. So on that root the concrete
+    /// class is a judged fact, and it is what tells an `ORIGINAL_VERSION`
+    /// response apart from an `IMPORTED_VERSION` one.
+    #[test]
+    fn xml_root_judges_the_concrete_type_of_an_abstract_root() {
+        use crate::vocab::XmlNamespace;
+
+        let original = Value::String(
+            r#"<version xmlns="http://schemas.openehr.org/v1"
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xsi:type="ORIGINAL_VERSION"><uid/></version>"#
+                .to_owned(),
+        );
+        assert!(
+            eval_xml_root(
+                &original,
+                "version",
+                Some(XmlNamespace::Published),
+                Some("ORIGINAL_VERSION")
+            )
+            .is_ok()
+        );
+        // The discrimination the attribute exists for.
+        let failure = eval_xml_root(
+            &original,
+            "version",
+            Some(XmlNamespace::Published),
+            Some("IMPORTED_VERSION"),
+        )
+        .expect_err("a different concrete type must fail");
+        assert!(failure.0.contains("ORIGINAL_VERSION"), "{failure:?}");
+
+        // The prefix is the document's own choice, on the attribute NAME and
+        // inside the QName VALUE alike; both resolve, neither is matched.
+        let prefixed = Value::String(
+            r#"<oe:version xmlns:oe="http://schemas.openehr.org/v1"
+                           xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
+                           i:type="oe:IMPORTED_VERSION"/>"#
+                .to_owned(),
+        );
+        assert!(
+            eval_xml_root(
+                &prefixed,
+                "version",
+                Some(XmlNamespace::Published),
+                Some("IMPORTED_VERSION")
+            )
+            .is_ok()
+        );
+
+        // An abstract root with no xsi:type at all is invalid against the
+        // published schema, and says so.
+        let bare = Value::String(r#"<version xmlns="http://schemas.openehr.org/v1"/>"#.to_owned());
+        let failure = eval_xml_root(
+            &bare,
+            "version",
+            Some(XmlNamespace::Published),
+            Some("ORIGINAL_VERSION"),
+        )
+        .expect_err("an abstract root must name its concrete type");
+        assert!(failure.0.contains("no xsi:type"), "{failure:?}");
+        // …and a row that does not assert the type still passes it, which is
+        // why the concrete class needs its own field.
+        assert!(eval_xml_root(&bare, "version", Some(XmlNamespace::Published), None).is_ok());
+
+        // A type QName from a foreign namespace names another schema's type.
+        let foreign = Value::String(
+            r#"<version xmlns="http://schemas.openehr.org/v1"
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xmlns:x="http://example.org/other"
+                        xsi:type="x:ORIGINAL_VERSION"/>"#
+                .to_owned(),
+        );
+        let failure = eval_xml_root(
+            &foreign,
+            "version",
+            Some(XmlNamespace::Published),
+            Some("ORIGINAL_VERSION"),
+        )
+        .expect_err("a foreign type namespace must fail");
+        assert!(failure.0.contains("example.org"), "{failure:?}");
+
+        // An unbound prefix on the QName is a defect, not a silent local name.
+        let unbound = Value::String(
+            r#"<version xmlns="http://schemas.openehr.org/v1"
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xsi:type="nope:ORIGINAL_VERSION"/>"#
+                .to_owned(),
+        );
+        assert!(
+            eval_xml_root(
+                &unbound,
+                "version",
+                Some(XmlNamespace::Published),
+                Some("ORIGINAL_VERSION")
+            )
+            .is_err()
+        );
     }
 
     #[test]

@@ -74,8 +74,8 @@ flow:
     expect: ok
     assert:
       # both trunk positions of the ONE container are held
-      - { assert: returns, matches: "d4e2b0c8-3a17-4f6d-8c92-5b71e04af238::cnf.source.openehr.org::1" }
-      - { assert: returns, matches: "d4e2b0c8-3a17-4f6d-8c92-5b71e04af238::cnf.source.openehr.org::2" }
+      - { assert: returns, matches: "d4e2b0c8-3a17-4f6d-8c92-5b71e04af238::cnf\\.source\\.openehr\\.org::1" }
+      - { assert: returns, matches: "d4e2b0c8-3a17-4f6d-8c92-5b71e04af238::cnf\\.source\\.openehr\\.org::2" }
       # each wrapped original keeps its OWN source committal
       - { assert: returns, matches: "2026-07-28T09:30:00Z" }
       - { assert: returns, matches: "2026-07-28T11:45:00Z" }

@@ -16,7 +16,7 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Composition, RevisionHistory, Version, VersionedComposition};
 
 use crate::api::RequestParts;
-use crate::api::ehr::version_root_tag;
+use crate::api::ehr::VERSION_ROOT_TAG;
 use crate::overview::error::RestError;
 use crate::overview::version_id::{parse_ehr_id, parse_uuid, parse_version_uid};
 use crate::state::AppState;
@@ -94,7 +94,7 @@ pub(super) async fn run(
                 &base,
                 None,
                 &resp,
-                version_root_tag(&resp.body),
+                VERSION_ROOT_TAG,
             ))
         }
         "versioned_composition_version_get_by_id" => {
@@ -129,7 +129,7 @@ pub(super) async fn run(
                 &base,
                 None,
                 &resp,
-                version_root_tag(&resp.body),
+                VERSION_ROOT_TAG,
             ))
         }
         other => Err(RestError(ApiError::Internal(format!(

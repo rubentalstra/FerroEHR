@@ -814,9 +814,11 @@ impl<'a> HttpDriver<'a> {
                     columns.as_deref(),
                     vars,
                 ),
-                Assertion::XmlRoot { name, namespace } => {
-                    assertions::eval_xml_root(body, name, *namespace)
-                }
+                Assertion::XmlRoot {
+                    name,
+                    namespace,
+                    xsi_type,
+                } => assertions::eval_xml_root(body, name, *namespace, xsi_type.as_deref()),
                 Assertion::InstanceOf { rm_type, .. } => {
                     // Structural check: the body self-identifies as the type.
                     match body.get("_type").and_then(Value::as_str) {
