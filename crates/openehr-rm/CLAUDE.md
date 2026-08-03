@@ -18,7 +18,13 @@ BMM** by `openehr-codegen -- emit`. Versioned by the spec
   `nonempty_list_violations` — the `x /= Void implies not x.is_empty` family,
   evaluated over the BMM-derived `generated::NONEMPTY_LIST_RULES` table and its
   descendant closure —, `check_archetyped_valid`,
-  `check_data_structure_shapes`). **Container shapes carry their own bounds:**
+  `check_cluster_items_present`, `check_data_structure_shapes`), plus
+  `validate::incomplete` — the two pure model-driven predicates
+  (`mandatory_data_present` / `contradicts_rm_type`) that split a node's
+  structural judgement into "is anything missing?" and "is anything wrong?"
+  for the `553|incomplete|` relaxation of RM common
+  `master06-change_control_package.adoc` §Incomplete Content. The strict
+  (`532|complete|`) path never calls them. **Container shapes carry their own bounds:**
   an optional container emits `Option<Vec<T>>` (absence and present-but-
   emptiness are distinct states the RM relies on) and a `1..*` container emits
   `openehr_base::containers::NonEmptyVec<T>` (the bound is structural, so an

@@ -90,10 +90,14 @@ impl FerroEhrService {
     /// `422` (ITS-REST `responses/422_COMPOSITION.yaml`); syntactic parse
     /// failures are `400` and caught earlier at the REST negotiation edge.
     ///
-    /// `incomplete` (a `553|incomplete|` CONTRIBUTION version, RM common
-    /// master06 §Incomplete Content) relaxes the archetype/template existence
-    /// & cardinality **lower** limits to zero; RM invariants + terminology
-    /// stay at full strictness ("data may be missing, but it may not be
+    /// `incomplete` (a `553|incomplete|` commit, RM common master06
+    /// §Incomplete Content) relaxes the existence & cardinality **lower**
+    /// limits to zero on BOTH template-driven and RM-driven layers — the
+    /// archetype-conformance pass and the RM mandatory-presence layers alike
+    /// ("mandatory attributes may be absent … even though they may have
+    /// minimum existence and cardinality respectively of one"). Every other
+    /// check — class invariants, types, terminology, patterns, coded values —
+    /// stays at full strictness ("data may be missing, but it may not be
     /// wrong").
     ///
     /// The template lookup goes through `web_template_for`; the
@@ -116,7 +120,14 @@ impl FerroEhrService {
         composition: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError> {
-        let mut messages = openehr_its::rm_instance::validate_rm_and_terminology(composition);
+        let mut messages = if incomplete {
+            openehr_its::rm_instance::validate_rm_and_terminology_incomplete_as(
+                composition,
+                "COMPOSITION",
+            )
+        } else {
+            openehr_its::rm_instance::validate_rm_and_terminology(composition)
+        };
         let rm_terminology_failures = messages.len();
         let mut template_failures = 0;
         let mut binding_failures = 0;
@@ -212,14 +223,27 @@ impl FerroEhrService {
     ) -> Result<(), ServiceError> {
         match kind {
             Kind::Composition => self.validate_composition_for_commit(data, incomplete).await,
+            // NOTE: EHR_STATUS is the ONE committable kind the relaxation does
+            // not reach. The CNF schedule's EHR_STATUS reject case 2
+            // (`CNF/docs/platform_test_schedule/master08-func_tc_ehr_contribution.adoc`
+            // §EHR_STATUS CONTRIBUTION Commit Data Sets) says the incomplete
+            // state "doesn't apply to EHR_STATUS", and the schedule itself
+            // flags that as open upstream (SPECPR-368) — the adjudication
+            // carried by register entry AMB-9, which reports rather than gates
+            // until upstream resolves. Until then this kind keeps the strict
+            // reading and the `incomplete` flag is deliberately not threaded.
             Kind::EhrStatus => validate_ehr_status(data),
-            Kind::EhrAccess => validate_ehr_access(data),
-            Kind::Folder => validate_folder(data),
+            Kind::EhrAccess => validate_ehr_access(data, incomplete),
+            Kind::Folder => validate_folder(data, incomplete),
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
-                crate::service::demographic::validate::validate_party_kind_for_commit(kind, data)
+                crate::service::demographic::validate::validate_party_kind_for_commit(
+                    kind, data, incomplete,
+                )
             }
             Kind::PartyRelationship => {
-                crate::service::demographic::validate::validate_relationship_for_commit(data)
+                crate::service::demographic::validate::validate_relationship_for_commit(
+                    data, incomplete,
+                )
             }
         }
     }
@@ -256,8 +280,13 @@ impl FerroEhrService {
 pub(in crate::service) fn validate_rm_invariants_for_commit(
     data: &Value,
     declared: &str,
+    incomplete: bool,
 ) -> Result<(), ServiceError> {
-    let messages = openehr_its::rm_instance::validate_rm_and_terminology_as(data, declared);
+    let messages = if incomplete {
+        openehr_its::rm_instance::validate_rm_and_terminology_incomplete_as(data, declared)
+    } else {
+        openehr_its::rm_instance::validate_rm_and_terminology_as(data, declared)
+    };
     if messages.is_empty() {
         return Ok(());
     }
@@ -465,7 +494,7 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
     }
 
     validate_root_locatable(obj, "EHR_STATUS")?;
-    validate_rm_invariants_for_commit(status, "EHR_STATUS")
+    validate_rm_invariants_for_commit(status, "EHR_STATUS", false)
 }
 
 /// Validate a client-supplied `EHR_ACCESS` before it is committed (via a
@@ -486,7 +515,10 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
 /// [`ServiceError::Unprocessable`] naming the first violated rule, or
 /// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
 /// found below the root (both → 422).
-pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
+pub(in crate::service) fn validate_ehr_access(
+    access: &Value,
+    incomplete: bool,
+) -> Result<(), ServiceError> {
     let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
     let obj = access
         .as_object()
@@ -533,7 +565,7 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
     if let Some(map) = without_settings.as_object_mut() {
         map.remove("settings");
     }
-    validate_rm_invariants_for_commit(&without_settings, "EHR_ACCESS")
+    validate_rm_invariants_for_commit(&without_settings, "EHR_ACCESS", incomplete)
 }
 
 /// Validate a client-supplied FOLDER tree before it is committed (directory
@@ -561,8 +593,11 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 /// [`ServiceError::Unprocessable`] naming the first violated rule and the
 /// offending tree path, or [`ServiceError::ValidationFailed`] carrying the
 /// RM-invariant violations found anywhere in the tree (both → 422).
-pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
-    fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
+pub(in crate::service) fn validate_folder(
+    folder: &Value,
+    incomplete: bool,
+) -> Result<(), ServiceError> {
+    fn walk(node: &Value, path: &str, incomplete: bool) -> Result<(), ServiceError> {
         let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
         let obj = node
             .as_object()
@@ -577,18 +612,26 @@ pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceE
         }
         if let Some(items) = obj.get("items").and_then(Value::as_array) {
             for (i, item) in items.iter().enumerate() {
-                let ok = item.get("id").is_some_and(Value::is_object)
-                    && item
-                        .get("namespace")
-                        .and_then(Value::as_str)
-                        .is_some_and(|s| !s.is_empty())
-                    && item
-                        .get("type")
-                        .and_then(Value::as_str)
-                        .is_some_and(|s| !s.is_empty())
-                    // A LOCATABLE by value carries archetype_node_id — an
-                    // OBJECT_REF never does.
-                    && item.get("archetype_node_id").is_none();
+                // The PRESENCE half (`id`/`namespace`/`type` supplied) is a
+                // mandatory-attribute duty, so a `553|incomplete|` commit is
+                // allowed to leave it unmet (RM common master06 §Incomplete
+                // Content). The WRONGNESS half — a LOCATABLE committed by
+                // value rather than by reference — is enforced either way:
+                // "Folder structures do not contain Compositions, only
+                // references to them" (RM ehr master04 §Folders).
+                let present = incomplete
+                    || (item.get("id").is_some_and(Value::is_object)
+                        && item
+                            .get("namespace")
+                            .and_then(Value::as_str)
+                            .is_some_and(|s| !s.is_empty())
+                        && item
+                            .get("type")
+                            .and_then(Value::as_str)
+                            .is_some_and(|s| !s.is_empty()));
+                // A LOCATABLE by value carries archetype_node_id — an
+                // OBJECT_REF never does.
+                let ok = present && item.get("archetype_node_id").is_none();
                 if !ok {
                     return Err(unproc(format!(
                         "{path}/items[{i}]: FOLDER.items members must be OBJECT_REFs \
@@ -601,13 +644,13 @@ pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceE
         }
         if let Some(folders) = obj.get("folders").and_then(Value::as_array) {
             for (i, sub) in folders.iter().enumerate() {
-                walk(sub, &format!("{path}/folders[{i}]"))?;
+                walk(sub, &format!("{path}/folders[{i}]"), incomplete)?;
             }
         }
         Ok(())
     }
-    walk(folder, "")?;
-    validate_rm_invariants_for_commit(folder, "FOLDER")
+    walk(folder, "", incomplete)?;
+    validate_rm_invariants_for_commit(folder, "FOLDER", incomplete)
 }
 
 #[cfg(test)]
@@ -798,8 +841,8 @@ mod tests {
     /// `Scheme_valid`).
     #[test]
     fn ehr_access_commit_validation() {
-        validate_ehr_access(&default_ehr_access()).expect("the default EHR_ACCESS is valid");
-        let err = validate_ehr_access(&json!({ "_type": "EHR_STATUS" }))
+        validate_ehr_access(&default_ehr_access(), false).expect("the default EHR_ACCESS is valid");
+        let err = validate_ehr_access(&json!({ "_type": "EHR_STATUS" }), false)
             .expect_err("foreign _type rejected");
         assert!(format!("{err:?}").contains("EHR_ACCESS"), "got {err:?}");
         let err = validate_ehr_access(&json!({
@@ -810,21 +853,24 @@ mod tests {
                               "value": "openEHR-EHR-EHR_ACCESS.generic.v1" },
             "rm_version": "1.2.0"
         },
-               }))
+               }), false)
         .expect_err("missing name rejected");
         assert!(format!("{err:?}").contains("name"), "got {err:?}");
-        let err = validate_ehr_access(&json!({
-            "_type": "EHR_ACCESS",
-            "name": { "_type": "DV_TEXT", "value": "EHR Access" },
-            "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
-            "archetype_details": {
-                "_type": "ARCHETYPED",
-                "archetype_id": { "_type": "ARCHETYPE_ID",
-                                  "value": "openEHR-EHR-EHR_ACCESS.generic.v1" },
-                "rm_version": "1.2.0"
-            },
-            "settings": { "scheme": "acme" }
-        }))
+        let err = validate_ehr_access(
+            &json!({
+                "_type": "EHR_ACCESS",
+                "name": { "_type": "DV_TEXT", "value": "EHR Access" },
+                "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+                "archetype_details": {
+                    "_type": "ARCHETYPED",
+                    "archetype_id": { "_type": "ARCHETYPE_ID",
+                                      "value": "openEHR-EHR-EHR_ACCESS.generic.v1" },
+                    "rm_version": "1.2.0"
+                },
+                "settings": { "scheme": "acme" }
+            }),
+            false,
+        )
         .expect_err("settings without a concrete _type rejected (Scheme_valid)");
         assert!(format!("{err:?}").contains("Scheme_valid"), "got {err:?}");
     }
@@ -847,7 +893,7 @@ mod tests {
                 "archetype_node_id": "at0001"
             }]
         });
-        validate_folder(&good).expect("a ref-holding folder tree is valid");
+        validate_folder(&good, false).expect("a ref-holding folder tree is valid");
 
         // A COMPOSITION by value inside items is rejected.
         let mut bad = good.clone();
@@ -856,13 +902,13 @@ mod tests {
             "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
             "name": { "_type": "DV_TEXT", "value": "inline!" }
         });
-        let err = validate_folder(&bad).expect_err("content by value must be rejected");
+        let err = validate_folder(&bad, false).expect_err("content by value must be rejected");
         assert!(format!("{err:?}").contains("OBJECT_REF"), "got {err:?}");
 
         // A sub-folder without a name violates LOCATABLE.name 1..1.
         let mut bad = good;
         bad["folders"][0].as_object_mut().unwrap().remove("name");
-        let err = validate_folder(&bad).expect_err("nameless sub-folder rejected");
+        let err = validate_folder(&bad, false).expect_err("nameless sub-folder rejected");
         assert!(format!("{err:?}").contains("name"), "got {err:?}");
     }
 
@@ -892,14 +938,14 @@ mod tests {
     /// non-empty one is accepted.
     #[test]
     fn folder_links_present_must_be_non_empty() {
-        validate_folder(&folder_fixture()).expect("the baseline folder tree is valid");
+        validate_folder(&folder_fixture(), false).expect("the baseline folder tree is valid");
 
         let mut bad = folder_fixture();
         bad["folders"][0]
             .as_object_mut()
             .unwrap()
             .insert("links".into(), json!([]));
-        let err = validate_folder(&bad).expect_err("an empty links list must be rejected");
+        let err = validate_folder(&bad, false).expect_err("an empty links list must be rejected");
         assert!(format!("{err:?}").contains("Links_valid"), "got {err:?}");
 
         let mut good = folder_fixture();
@@ -912,7 +958,7 @@ mod tests {
                 "target": { "_type": "DV_EHR_URI", "value": "ehr://example/x" }
             }]),
         );
-        validate_folder(&good).expect("a non-empty links list is valid");
+        validate_folder(&good, false).expect("a non-empty links list is valid");
     }
 
     /// RM common `org.openehr.rm.common.locatable.adoc` §Attributes
@@ -923,7 +969,8 @@ mod tests {
     fn folder_archetype_root_node_id_must_match_details() {
         let mut bad = folder_fixture();
         bad["archetype_details"]["archetype_id"]["value"] = json!("openEHR-EHR-FOLDER.other.v1");
-        let err = validate_folder(&bad).expect_err("a contradicting root identity is rejected");
+        let err =
+            validate_folder(&bad, false).expect_err("a contradicting root identity is rejected");
         assert!(
             format!("{err:?}").contains("LOCATABLE.archetype_node_id"),
             "got {err:?}"
@@ -931,7 +978,7 @@ mod tests {
 
         let mut without = folder_fixture();
         without.as_object_mut().unwrap().remove("archetype_details");
-        validate_folder(&without).expect("archetype_details stays optional on a FOLDER");
+        validate_folder(&without, false).expect("archetype_details stays optional on a FOLDER");
     }
 
     // ── the whole-instance RM class-invariant pass on the non-COMPOSITION
@@ -971,23 +1018,29 @@ mod tests {
                 .insert("links".into(), json!([link]));
             folder
         };
-        let err = validate_folder(&with_link(json!({
-            "_type": "LINK",
-            "type": { "_type": "DV_TEXT", "value": "issue" },
-            "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
-        })))
+        let err = validate_folder(
+            &with_link(json!({
+                "_type": "LINK",
+                "type": { "_type": "DV_TEXT", "value": "issue" },
+                "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+            })),
+            false,
+        )
         .expect_err("a LINK without its mandatory meaning must be refused");
         assert!(
             format!("{err:?}").contains("meaning"),
             "the refusal should name the missing attribute, got {err:?}"
         );
 
-        validate_folder(&with_link(json!({
-            "_type": "LINK",
-            "meaning": { "_type": "DV_TEXT", "value": "follow up" },
-            "type": { "_type": "DV_TEXT", "value": "issue" },
-            "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
-        })))
+        validate_folder(
+            &with_link(json!({
+                "_type": "LINK",
+                "meaning": { "_type": "DV_TEXT", "value": "follow up" },
+                "type": { "_type": "DV_TEXT", "value": "issue" },
+                "target": { "_type": "DV_EHR_URI", "value": "ehr://example.org/x" }
+            })),
+            false,
+        )
         .expect("a complete LINK on a folder is accepted");
     }
 
@@ -1110,13 +1163,13 @@ mod tests {
             );
             folder
         };
-        let err = validate_folder(&with_feeder(""))
+        let err = validate_folder(&with_feeder(""), false)
             .expect_err("an empty feeder-audit system_id must be refused");
         assert!(
             format!("{err:?}").contains("System_id_valid"),
             "the refusal should name the invariant, got {err:?}"
         );
-        validate_folder(&with_feeder("legacy-lab-1"))
+        validate_folder(&with_feeder("legacy-lab-1"), false)
             .expect("a populated feeder-audit system_id is accepted");
     }
 }

@@ -828,6 +828,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
                     "change_type": change_type("523", "deleted"),
                     "committer": committer("author")
                 },
+                "lifecycle_state": lifecycle("523"),
                 "preceding_version_uid": { "value": current }
             }],
             "audit": { "committer": committer("author") }
@@ -866,11 +867,13 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
                 "versions": [
                     // (A) commit_audit omits committer + system_id → inherit them.
                     {
+                        "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                         "commit_audit": { "change_type": change_type("249", "creation") },
                         "data": composition("inherits contribution audit")
                     },
                     // (B) commit_audit supplies distinct committer + system_id → keep.
                     {
+                        "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                         "commit_audit": {
                             "change_type": change_type("249", "creation"),
                             "committer": committer("version-B author"),
@@ -1180,6 +1183,7 @@ async fn contribution_cannot_delete_the_ehr_status() {
                         "change_type": change_type("523", "deleted"),
                         "committer": committer("author")
                     },
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "523" },
                     "preceding_version_uid": { "value": status_uid }
                 }],
                 "audit": { "committer": committer("author") }
@@ -1198,4 +1202,418 @@ async fn contribution_cannot_delete_the_ehr_status() {
         .await
         .expect("status still present");
     assert_eq!(still["_type"].as_str(), Some("EHR_STATUS"));
+}
+
+/// A `523|deleted|` **lifecycle_state** on a version that carries data is
+/// refused on every content-carrying route.
+///
+/// RM common master06 §Logical Deletion states deletion as one indivisible
+/// procedure — "create a new Version in the normal way; delete its `_data_`
+/// …; set the `_lifecycle_state_` value to the code for `deleted`; commit in
+/// the normal way" — so a data-carrying version in the `deleted` state is not
+/// producible by the spec's own procedure. Left unchecked, the read side
+/// answers `204` for the resource while its node rows stay stored and
+/// AQL-queryable.
+///
+/// Both twins are asserted: the refusal (CONTRIBUTION member AND direct
+/// route), and the acceptance of the same content under `532|complete|`.
+#[tokio::test]
+async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let v1 = svc
+        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .await
+        .expect("create")
+        .version_uid();
+    let vo_uuid: ferroehr::ids::VoId = v1
+        .split("::")
+        .next()
+        .expect("vo id part")
+        .parse()
+        .expect("vo uuid");
+
+    // (1) CONTRIBUTION member: a content-carrying modification claiming the
+    // deleted state.
+    let err = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [{
+                    "commit_audit": {
+                        "change_type": change_type("251", "modification"),
+                        "committer": committer("author")
+                    },
+                    "preceding_version_uid": { "value": v1 },
+                    "lifecycle_state": lifecycle("523"),
+                    "data": composition("deleted but full")
+                }],
+                "audit": { "committer": committer("author") }
+            }),
+        )
+        .await
+        .expect_err("a data-carrying 523 member is refused");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ) && err.message.contains("Logical Deletion"),
+        "expected the 422 naming §Logical Deletion, got {err:?}"
+    );
+
+    // (2) The direct route reaches the same refusal through the
+    // `openehr-version: lifecycle_state.code_string="523"` header.
+    let mut direct = uv(composition("deleted but full"), "251", Some(&v1));
+    direct.lifecycle_state = term("523");
+    let err = svc
+        .update_composition(ehr_uuid, vo_uuid, direct)
+        .await
+        .expect_err("a data-carrying 523 header is refused");
+    let err = SmError::from(err);
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ) && err.message.contains("Logical Deletion"),
+        "expected the 422 naming §Logical Deletion, got {err:?}"
+    );
+
+    // Neither refusal wrote anything: the composition is still at version 1
+    // and still readable (no 523 row with node rows behind it).
+    let live = svc
+        .get_composition_latest(ehr_uuid, vo_uuid)
+        .await
+        .expect("still live");
+    assert_eq!(live["name"]["value"], "v1");
+
+    // (3) The accepting twin: the identical content under 532|complete|.
+    let v2 = svc
+        .update_composition(
+            ehr_uuid,
+            vo_uuid,
+            uv(composition("deleted but full"), "251", Some(&v1)),
+        )
+        .await
+        .expect("the same content commits as 532|complete|")
+        .version_uid();
+    assert!(v2.ends_with("::2"), "the accepted twin is trunk version 2");
+}
+
+/// A `553|incomplete|` COMPOSITION missing mandatory data commits; the
+/// `532|complete|` twin of the same content is refused; and `553` content that
+/// is WRONG rather than merely missing stays refused.
+///
+/// RM common master06 §Incomplete Content (NOTE): "In the `incomplete` state, a
+/// limited form of invalidity is allowed: mandatory attributes may be absent.
+/// Concretely, single-valued attributes may have null values and container
+/// attributes may be empty, even though they may have minimum existence and
+/// cardinality respectively of one. All other validity requirements must be
+/// satisfied. In other words, in an `incomplete` commit, data may be missing,
+/// but it may not be wrong."
+#[tokio::test]
+async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    // `COMPOSITION.composer` is 1..1 (absent here); the ADMIN_ENTRY below omits
+    // its own mandatory `language`/`encoding`/`subject`; and `CLUSTER.items` is
+    // 1..* (empty here). All three are exactly the shapes the NOTE describes —
+    // "single-valued attributes may have null values and container attributes
+    // may be empty, even though they may have minimum existence and cardinality
+    // respectively of one".
+    let mut missing = composition("partial notes");
+    missing
+        .as_object_mut()
+        .expect("composition object")
+        .remove("composer");
+    missing["content"] = json!([{
+        "_type": "ADMIN_ENTRY",
+        "name": { "_type": "DV_TEXT", "value": "partial entry" },
+        "archetype_node_id": "at0002",
+        "data": {
+            "_type": "ITEM_TREE",
+            "name": { "_type": "DV_TEXT", "value": "tree" },
+            "archetype_node_id": "at0003",
+            "items": [{
+                "_type": "CLUSTER",
+                "name": { "_type": "DV_TEXT", "value": "empty cluster" },
+                "archetype_node_id": "at0004",
+                "items": []
+            }]
+        }
+    }]);
+
+    let member = |data: &Value, state: &str| {
+        json!({
+            "versions": [{
+                "commit_audit": {
+                    "change_type": change_type("249", "creation"),
+                    "committer": committer("author")
+                },
+                "lifecycle_state": lifecycle(state),
+                "data": data
+            }],
+            "audit": { "committer": committer("author") }
+        })
+    };
+
+    // (1) 553 accepts it.
+    let created = svc
+        .create_ehr_contribution(ehr_uuid, member(&missing, "553"))
+        .await
+        .expect("a 553 commit accepts absent mandatory data (master06 §Incomplete Content)");
+    let ovid = first_version_uid(&created.body);
+    assert_eq!(
+        lifecycle_code_of(&svc, &ehr_id, &vo_of(&ovid), &ovid).await,
+        "553"
+    );
+
+    // (2) The 532 twin of the SAME content is refused — the relaxation is
+    // scoped to the incomplete state and nothing else changed.
+    let err = svc
+        .create_ehr_contribution(ehr_uuid, member(&missing, "532"))
+        .await
+        .expect_err("the complete twin of incomplete content is refused");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "expected 422 for the complete twin, got {err:?}"
+    );
+
+    // (3) WRONG data stays refused under 553: a `language` CODE_PHRASE whose
+    // `code_string` is a number cannot hold a String, and a `category` code
+    // outside the openEHR terminology group is not a missing value at all.
+    let mut wrong_type = missing.clone();
+    wrong_type["language"]["code_string"] = json!(42);
+    let err = svc
+        .create_ehr_contribution(ehr_uuid, member(&wrong_type, "553"))
+        .await
+        .expect_err("a 553 commit still refuses a wrongly-typed value");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "expected 422 for wrongly-typed 553 content, got {err:?}"
+    );
+
+    let mut wrong_code = missing.clone();
+    wrong_code["category"]["defining_code"]["code_string"] = json!("999");
+    let err = svc
+        .create_ehr_contribution(ehr_uuid, member(&wrong_code, "553"))
+        .await
+        .expect_err("a 553 commit still refuses an out-of-group code");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "expected 422 for an out-of-group code under 553, got {err:?}"
+    );
+}
+
+/// The `553|incomplete|` relaxation is not COMPOSITION-only: master06
+/// §Incomplete Content names "Unfinished content items (EHR Compositions,
+/// Demographic Parties etc)" and states the implementation rule generally
+/// ("with all existence and cardinality lower limits set to zero"). A FOLDER
+/// committed incomplete without its mandatory `name` is accepted; the
+/// `532|complete|` twin is refused.
+#[tokio::test]
+async fn incomplete_relaxes_the_folder_kind_too() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    // `LOCATABLE.name` is 1..1 — absent here.
+    let nameless = json!({
+        "_type": "FOLDER",
+        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1"
+    });
+    let body = |lifecycle_code: &str| {
+        json!({
+            "versions": [{
+                "commit_audit": {
+                    "change_type": change_type("249", "creation"),
+                    "committer": committer("author")
+                },
+                "lifecycle_state": lifecycle(lifecycle_code),
+                "data": nameless
+            }],
+            "audit": { "committer": committer("author") }
+        })
+    };
+
+    svc.create_ehr_contribution(ehr_uuid, body("553"))
+        .await
+        .expect("a 553 FOLDER may omit its mandatory name");
+
+    let err = svc
+        .create_ehr_contribution(ehr_uuid, body("532"))
+        .await
+        .expect_err("the complete twin is refused");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "expected 422 for the complete FOLDER twin, got {err:?}"
+    );
+}
+
+/// `UPDATE_VERSION.lifecycle_state` is REQUIRED on the CONTRIBUTION wire — SM
+/// `master03-common_package.adoc` §Version Update Semantics ("The
+/// `lifecycle_state` must be supplied in all cases") + the released
+/// `UpdateVersion` schema's `required` list. A member that omits it is refused
+/// as the shape failure it is; the twin that states it commits.
+#[tokio::test]
+async fn contribution_member_without_lifecycle_state_is_refused() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let err = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [{
+                    "commit_audit": {
+                        "change_type": change_type("249", "creation"),
+                        "committer": committer("author")
+                    },
+                    "data": composition("no lifecycle")
+                }],
+                "audit": { "committer": committer("author") }
+            }),
+        )
+        .await
+        .expect_err("a member without lifecycle_state is refused");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ) && err.message.contains("lifecycle_state"),
+        "expected the 400 naming lifecycle_state, got {err:?}"
+    );
+
+    // The accepting twin: the same member stating its lifecycle.
+    svc.create_ehr_contribution(
+        ehr_uuid,
+        json!({
+            "versions": [{
+                "commit_audit": {
+                    "change_type": change_type("249", "creation"),
+                    "committer": committer("author")
+                },
+                "lifecycle_state": lifecycle("532"),
+                "data": composition("with lifecycle")
+            }],
+            "audit": { "committer": committer("author") }
+        }),
+    )
+    .await
+    .expect("the member that states its lifecycle_state commits");
+}
+
+/// `other_input_version_uids` is not a member of the released commit wire:
+/// ITS-REST `UpdateVersion.yaml` declares no such property and
+/// `NewContribution.versions` items are `UpdateVersion`, so the merge commit
+/// has no released shape (the same absence register entry AMB-89 records for
+/// the import commit). Merge provenance is produce-only — `OriginalVersion.yaml`
+/// declares it on reads. A member carrying it is refused; the twin without it
+/// commits and serves no merge provenance.
+#[tokio::test]
+async fn merge_provenance_is_refused_on_the_commit_wire() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let v1 = svc
+        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .await
+        .expect("create")
+        .version_uid();
+
+    let member = |extra: Option<Value>| {
+        let mut version = json!({
+            "commit_audit": {
+                "change_type": change_type("251", "modification"),
+                "committer": committer("author")
+            },
+            "preceding_version_uid": { "value": v1 },
+            "lifecycle_state": lifecycle("532"),
+            "data": composition("v2")
+        });
+        if let Some(extra) = extra {
+            version["other_input_version_uids"] = extra;
+        }
+        json!({
+            "versions": [version],
+            "audit": { "committer": committer("author") }
+        })
+    };
+
+    let err = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            member(Some(json!([
+                { "value": "0198f1f1-0000-7000-8000-000000000001::sysA.example.org::3" }
+            ]))),
+        )
+        .await
+        .expect_err("an undeclared merge-provenance member is refused");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ) && err.message.contains("other_input_version_uids"),
+        "expected the 400 naming other_input_version_uids, got {err:?}"
+    );
+
+    // The accepting twin commits, and the served ORIGINAL_VERSION carries no
+    // merge provenance (`Is_merged_validity` — a locally committed version is
+    // never a merge).
+    let committed = svc
+        .create_ehr_contribution(ehr_uuid, member(None))
+        .await
+        .expect("the same member without the undeclared property commits");
+    let v2 = first_version_uid(&committed.body);
+    let ov = read_version(&svc, &ehr_id, &vo_of(&v2), &v2).await;
+    assert!(
+        ov.get("other_input_version_uids").is_none(),
+        "a locally committed version carries no merge provenance, got {ov:?}"
+    );
 }

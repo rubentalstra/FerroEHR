@@ -502,6 +502,7 @@ async fn demographic_contribution_multi_version() {
         "_type": "CONTRIBUTION",
         "versions": [
             {
+                "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                 "_type": "ORIGINAL_VERSION",
                 "commit_audit": {
                     "change_type": {
@@ -517,6 +518,7 @@ async fn demographic_contribution_multi_version() {
                 "data": person("Alice")
             },
             {
+                "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                 "_type": "ORIGINAL_VERSION",
                 "commit_audit": {
                     "change_type": {

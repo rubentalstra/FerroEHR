@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: af8ec1a8-3953-4ae1-a5d1-355a712f597b
-  modified: 2026-08-02T07:42:04.110Z
+  modified: 2026-08-03T01:17:54.654Z
 ---
 
 Owner ruling 2026-08-02 (during the RM ch.6 audits): when an audit exposes a
@@ -23,14 +23,16 @@ class, and new code written during the program would copy the bad pattern.
 audit unit blocked by the sweep issue) + P1; the sweep issue carries the
 ruling in its opening. Missing constructors/constants are emitter or
 openehr-term gaps fixed at the generator (visible), never app literals.
-The phase has THREE legs, all blocking the next audit unit: #1686 (typed
-codec + openehr-term sourcing), #1687 (RM spec logic pushed down into
-*_impl.rs — criterion: realizes-a-spec-definition => crate with citation +
-postcondition tests; app keeps storage/wire/service only), and the
-duplication inventory that scopes both. FULLY BREAKING changes are the
-owner's explicit expectation for such phases (2026-08-02): every crate is
-publish=false, so no signature/shape/layout is preserved for compatibility —
-best shape wins, wide call-site churn included; only spec conformance
-(never-lax, adjudicated wire changes with twins + changelog) and green gates
-are unbreakable. Related: [[owner-work-style]] (no quick fixes, big-bang
-convergence).
+FULLY BREAKING changes are the owner's explicit expectation for such phases
+(2026-08-02): every crate is publish=false, so no signature/shape/layout is
+preserved for compatibility — best shape wins, wide call-site churn
+included; only spec conformance (never-lax, adjudicated wire changes with
+twins + changelog) and green gates are unbreakable.
+
+**The live case COMPLETED 2026-08-03** (PR #1739, squash-merged): 7 legs —
+#1686 typed codec, #1687 *_impl.rs push-down, #1690 rm→term move, #1695
+container bounds + validated construction + strict reader, #1702 the serde
+rewrite (manual emitted impls, reader 13.7% FASTER), #1694 errors-as-data
+(partially; typed commit seam gated on owner decision #1727 — 400 vs 422
+for structurally-invalid bodies), #1718. Pipeline 879/0 at close.
+Related: [[owner-work-style]] (no quick fixes, big-bang convergence).

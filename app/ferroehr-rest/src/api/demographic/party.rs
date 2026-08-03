@@ -247,7 +247,10 @@ async fn run_delete(
             kind,
             preceding.clone(),
             super::if_match_of(h),
-            crate::overview::committal::committal_audit(h, crate::api::ehr::committer_proxy())?,
+            crate::overview::committal::committal_audit_for_delete(
+                h,
+                crate::api::ehr::committer_proxy(),
+            )?,
         )
         .await
     {

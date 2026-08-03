@@ -206,6 +206,63 @@ pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<Invarian
     }
 }
 
+/// [`validate_rm_invariants_as`] under the `553|incomplete|` **presence
+/// relaxation** — the entry the relaxed commit path uses per node.
+///
+/// RM common `master06-change_control_package.adoc` §Incomplete Content
+/// (NOTE): "In the `incomplete` state, a limited form of invalidity is
+/// allowed: mandatory attributes may be absent … All other validity
+/// requirements must be satisfied. In other words, in an `incomplete` commit,
+/// data may be missing, but it may not be wrong."
+///
+/// The three branches realize that sentence exactly:
+///
+/// 1. an **undeclared member** is wrong, never missing — refused first, as on
+///    the strict path;
+/// 2. a node with **nothing missing** ([`mandatory_data_present`](openehr_rm::validate::incomplete::mandatory_data_present))
+///    runs the strict tiers unchanged: the relaxation costs it no strictness;
+/// 3. a node that **is** missing mandatory data does not have its TYPED
+///    construction driven — that tier's refusal IS the presence rule the state
+///    lifts (the generated types make existence and cardinality lower bounds
+///    structural). Wrongness is still judged: a positive type contradiction
+///    ([`contradicts_rm_type`](openehr_rm::validate::incomplete::contradicts_rm_type))
+///    is reported through the authoritative typed tier, and the class
+///    invariants run wherever the fast path can still vouch for the node as it
+///    stands.
+///
+/// The orthogonal layers the caller runs beside this one — terminology,
+/// `LOCATABLE.Archetyped_valid`, the data-structure shape duties, and the
+/// archetype-conformance pass — are NOT relaxed here; only the
+/// mandatory-presence and cardinality-lower-bound layers are
+/// (`openehr_rm::validate::check_mandatory_containers` /
+/// `nonempty_list_violations`, which the relaxed walker skips).
+pub fn validate_rm_invariants_relaxed_as(
+    ty: &str,
+    value: &Value,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if let Some(violation) = undeclared_key(ty, value) {
+        out.push(violation);
+        return;
+    }
+    if openehr_rm::validate::incomplete::mandatory_data_present(ty, value) {
+        if !openehr_rm::validate::try_fast_validate(ty, value, out) {
+            validate_rm_value_typed(ty, value, out);
+        }
+        return;
+    }
+    if openehr_rm::validate::incomplete::contradicts_rm_type(ty, value) {
+        validate_rm_value_typed(ty, value, out);
+        return;
+    }
+    // The node is missing mandatory data and is not wrong: its class
+    // invariants are evaluated where the fast path can still read them off the
+    // node as it stands, and a decline is the honest answer — an invariant
+    // over an absent attribute has nothing to judge, which is exactly the
+    // "data may be missing" case §Incomplete Content admits.
+    let _vouched = openehr_rm::validate::try_fast_validate(ty, value, out);
+}
+
 /// The violation for the first undeclared member of `value` under class `ty`,
 /// or `None` when every member is declared (or `ty` names no emitted struct).
 ///

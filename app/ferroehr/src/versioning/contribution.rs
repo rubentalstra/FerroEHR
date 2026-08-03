@@ -218,7 +218,6 @@ struct PlannedVersion {
     incomplete: bool,
     signature: Option<String>,
     accompanying: Vec<Value>,
-    other_input_version_uids: Vec<String>,
 }
 
 /// Commit a CONTRIBUTION's version set atomically under one contribution +
@@ -351,6 +350,56 @@ pub(crate) async fn commit_version_set(
             action != Action::Attest,
         )?;
         let lifecycle_state = lifecycle_of(version);
+        // `UPDATE_VERSION.lifecycle_state` is REQUIRED on this wire: SM
+        // `master03-common_package.adoc` §Version Update Semantics — "The
+        // `lifecycle_state` must be supplied in all cases, which is a value
+        // such as `532|complete|`, `553|incomplete|`, `523|deleted|`, etc" —
+        // and the released `UpdateVersion` schema lists it under `required`
+        // (ITS-REST `schemas/ehr/UpdateVersion.yaml`; the docs text is silent,
+        // so the OAS grounds it). An omitted member is therefore a SHAPE
+        // failure, not a semantic one: `400_CONTRIBUTION` covers "syntactically
+        // invalid header, parameter or content".
+        //
+        // NOTE: the `666|attestation|` member is exempt, and only it. That
+        // member commits NO new version — master06 §Contributions: "all
+        // logical changes … are achieved by physically committing new
+        // Versions, or for attestations, new Attestation objects to existing
+        // Versions" — so it has no version lifecycle state to supply. The
+        // released wire has no separate attestation-member schema (its
+        // `versions` items are all `UpdateVersion`), which is the same
+        // schema-vs-RM gap register entry AMB-85 records for `data` on a
+        // deletion member; the RM governs, as it does there.
+        // `other_input_version_uids` is NOT a member of the commit wire. The
+        // released `UPDATE_VERSION` declares no such property (ITS-REST
+        // `schemas/ehr/UpdateVersion.yaml`), and `NewContribution.versions`
+        // items are `UpdateVersion` — the merge commit has no released shape at
+        // all, exactly as the import commit has none (register AMB-89). Merge
+        // provenance is PRODUCE-only: `OriginalVersion.yaml` declares it on the
+        // read side, and it reaches storage only through the routes that carry
+        // a foreign `ORIGINAL_VERSION` verbatim (the EHR-Extract import, the
+        // archive load). Accepting it here would let a client stamp arbitrary
+        // provenance — feeding `ORIGINAL_VERSION.Is_merged_validity` (RM common
+        // master06 §Version Merging) and the version signature — onto a version
+        // this system never merged. Refused as the shape failure it is
+        // (`400_CONTRIBUTION`: "syntactically invalid … content").
+        if version.get("other_input_version_uids").is_some() {
+            return Err(ServiceError::BadRequest(
+                "other_input_version_uids is not a member of UPDATE_VERSION — the \
+                 released commit wire declares no merge shape (ITS-REST \
+                 UpdateVersion.yaml); merge provenance is served on reads only \
+                 (OriginalVersion.yaml)"
+                    .to_owned(),
+            ));
+        }
+        if action != Action::Attest && lifecycle_state.is_none() {
+            return Err(ServiceError::BadRequest(
+                "lifecycle_state is required on every CONTRIBUTION version \
+                 (SM master03 §Version Update Semantics: \"The lifecycle_state must \
+                 be supplied in all cases\"; ITS-REST UpdateVersion.yaml lists it \
+                 under required)"
+                    .to_owned(),
+            ));
+        }
         // A `553|incomplete|` version gets relaxed content validation
         // (master06 §Incomplete Content).
         let incomplete = lifecycle_state
@@ -372,21 +421,6 @@ pub(crate) async fn commit_version_set(
                 .and_then(Value::as_str)
                 .map(str::to_owned),
             accompanying: attestation_partials(version),
-            // ORIGINAL_VERSION.other_input_version_uids: merge provenance
-            // accepted on the wire (master06 §Version Merging).
-            other_input_version_uids: version
-                .get("other_input_version_uids")
-                .and_then(Value::as_array)
-                .map(|a| {
-                    a.iter()
-                        .filter_map(|u| {
-                            u.as_str()
-                                .or_else(|| u.get("value").and_then(Value::as_str))
-                                .map(str::to_owned)
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default(),
         });
     }
 
@@ -521,7 +555,6 @@ pub(crate) async fn commit_version_set(
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
                     attestations: accompanying(&v.accompanying)?,
-                    other_input_version_uids: v.other_input_version_uids,
                 }
             }
             Action::Delete => {

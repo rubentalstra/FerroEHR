@@ -41,8 +41,8 @@ use std::fmt::Write as _;
 
 use openehr_rm::model::declared_concrete_type;
 use openehr_rm::validate::{
-    check_archetyped_valid, check_data_structure_shapes, check_mandatory_containers,
-    nonempty_list_violations,
+    check_archetyped_valid, check_cluster_items_present, check_data_structure_shapes,
+    check_mandatory_containers, nonempty_list_violations,
 };
 
 use crate::flat::webtemplate::WebTemplate;
@@ -182,10 +182,60 @@ pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage
 /// not match a tagged root is simply overridden by the tag.
 #[must_use]
 pub fn validate_rm_and_terminology_as(root: &Value, declared: &str) -> Vec<ValidationMessage> {
+    validate_with(root, declared, LowerBounds::Enforced)
+}
+
+/// [`validate_rm_and_terminology_as`] for a `553|incomplete|` commit: the
+/// mandatory-presence and cardinality-lower-bound layers are relaxed to zero,
+/// every other layer runs at full strength.
+///
+/// RM common `master06-change_control_package.adoc` §Incomplete Content
+/// (NOTE): "mandatory attributes may be absent. Concretely, single-valued
+/// attributes may have null values and container attributes may be empty, even
+/// though they may have minimum existence and cardinality respectively of one.
+/// All other validity requirements must be satisfied. In other words, in an
+/// `incomplete` commit, data may be missing, but it may not be wrong." — and
+/// §Incomplete Content again, on the implementation form: incomplete data
+/// "respects the same template and archetype(s), but with all existence and
+/// cardinality lower limits set to zero".
+///
+/// Concretely, exactly four things change relative to the strict entry point:
+/// [`openehr_rm::validate::check_mandatory_containers`] and
+/// [`openehr_rm::validate::nonempty_list_violations`] are not run, the
+/// `CLUSTER.items` presence duty
+/// ([`openehr_rm::validate::check_cluster_items_present`]) is not run, and the
+/// class-invariant tier goes through
+/// [`crate::wire_validate::validate_rm_invariants_relaxed_as`], which does not
+/// drive the TYPED construction of a node that is missing mandatory data (that
+/// tier's refusal IS the presence rule). The terminology pass,
+/// `LOCATABLE.Archetyped_valid`, the HISTORY shape duty, the undeclared-member
+/// refusal and every value-level invariant are untouched.
+#[must_use]
+pub fn validate_rm_and_terminology_incomplete_as(
+    root: &Value,
+    declared: &str,
+) -> Vec<ValidationMessage> {
+    validate_with(root, declared, LowerBounds::Relaxed)
+}
+
+/// Whether the mandatory-presence / cardinality-lower-bound layers of the
+/// RM-instance passes are enforced or relaxed to zero (RM common master06
+/// §Incomplete Content).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LowerBounds {
+    /// The `532|complete|` reading: every lower bound is enforced.
+    Enforced,
+    /// The `553|incomplete|` reading: "all existence and cardinality lower
+    /// limits set to zero".
+    Relaxed,
+}
+
+/// The shared body of the two public entry points.
+fn validate_with(root: &Value, declared: &str, bounds: LowerBounds) -> Vec<ValidationMessage> {
     let mut out = Vec::new();
     // One reusable path buffer across both passes (each leaves it empty).
     let mut path = String::new();
-    rm_invariant_pass(&mut out, root, &mut path, Some(declared));
+    rm_invariant_pass(&mut out, root, &mut path, Some(declared), bounds);
     terminology::terminology_pass(&mut out, root, &mut path, Some(declared));
     out
 }
@@ -210,6 +260,7 @@ pub(crate) fn rm_invariant_pass(
     v: &Value,
     path: &mut String,
     declared: Option<&str>,
+    bounds: LowerBounds,
 ) {
     let Some(obj) = v.as_object() else { return };
     // One projection pass over the node's entries collects every field the
@@ -243,15 +294,24 @@ pub(crate) fn rm_invariant_pass(
         // invariants are enforced by the dedicated terminology pass (its own
         // `ValidationKind::Terminology` rendering), so calling the core-only
         // entry here avoids double-reporting them.
-        validate_rm_invariants_as(effective, v, &mut inv);
-        // The orthogonal model-driven layer: mandatory-container lower
-        // bounds (kept outside the core pair so the fast-vs-typed
-        // equivalence property stays exact).
-        check_mandatory_containers(effective, v, &mut inv);
-        // The optional-container family (`x /= Void implies not x.is_empty`),
-        // over the BMM-derived rule table — the second orthogonal model-driven
-        // layer, kept outside the core pair for the same reason.
-        nonempty_list_violations(effective, v, &mut inv);
+        match bounds {
+            LowerBounds::Enforced => validate_rm_invariants_as(effective, v, &mut inv),
+            LowerBounds::Relaxed => {
+                crate::wire_validate::validate_rm_invariants_relaxed_as(effective, v, &mut inv);
+            }
+        }
+        if bounds == LowerBounds::Enforced {
+            // The orthogonal model-driven layer: mandatory-container lower
+            // bounds (kept outside the core pair so the fast-vs-typed
+            // equivalence property stays exact). Relaxed to zero on a
+            // `553|incomplete|` commit (master06 §Incomplete Content).
+            check_mandatory_containers(effective, v, &mut inv);
+            // The optional-container family (`x /= Void implies not x.is_empty`),
+            // over the BMM-derived rule table — the second orthogonal model-driven
+            // layer, kept outside the core pair for the same reason. Same
+            // relaxation: "container attributes may be empty".
+            nonempty_list_violations(effective, v, &mut inv);
+        }
     }
     // The JSON-level per-node checks (`openehr-rm`'s own value semantics):
     // they read the raw node, so an absent list and a present-but-empty one
@@ -262,6 +322,13 @@ pub(crate) fn rm_invariant_pass(
         has_archetype_details,
         details_archetype_id,
     ));
+    if bounds == LowerBounds::Enforced {
+        // `CLUSTER.items` presence is a mandatory-presence duty, so it relaxes
+        // with the other lower bounds on a `553|incomplete|` commit; every
+        // other data-structure shape duty (the HISTORY generic-parameter rule)
+        // stays enforced below.
+        inv.extend(check_cluster_items_present(obj, ty));
+    }
     inv.extend(check_data_structure_shapes(obj, ty));
     for iv in inv {
         let p = if iv.path.is_empty() {
@@ -282,7 +349,7 @@ pub(crate) fn rm_invariant_pass(
                     if item.is_object() {
                         let base = path.len();
                         let _ = write!(path, "/{k}[{i}]");
-                        rm_invariant_pass(out, item, path, child_declared);
+                        rm_invariant_pass(out, item, path, child_declared, bounds);
                         path.truncate(base);
                     }
                 }
@@ -290,7 +357,7 @@ pub(crate) fn rm_invariant_pass(
             Value::Object(_) => {
                 let base = path.len();
                 let _ = write!(path, "/{k}");
-                rm_invariant_pass(out, val, path, child_declared);
+                rm_invariant_pass(out, val, path, child_declared, bounds);
                 path.truncate(base);
             }
             _ => {}
@@ -313,7 +380,13 @@ mod tests {
     /// Run only pass 1 (the RM class invariants over the whole instance).
     fn rm_only(instance: &Value) -> Vec<ValidationMessage> {
         let mut out = Vec::new();
-        rm_invariant_pass(&mut out, instance, &mut String::new(), Some("COMPOSITION"));
+        rm_invariant_pass(
+            &mut out,
+            instance,
+            &mut String::new(),
+            Some("COMPOSITION"),
+            LowerBounds::Enforced,
+        );
         out
     }
 
@@ -474,7 +547,13 @@ mod tests {
         let iters = 50;
         let t_rm = time_pass(iters, || {
             let mut out = Vec::new();
-            rm_invariant_pass(&mut out, &comp, &mut String::new(), Some("COMPOSITION"));
+            rm_invariant_pass(
+                &mut out,
+                &comp,
+                &mut String::new(),
+                Some("COMPOSITION"),
+                LowerBounds::Enforced,
+            );
             out.len()
         });
         let t_term = time_pass(iters, || {

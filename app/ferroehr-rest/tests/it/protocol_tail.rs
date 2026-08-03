@@ -205,7 +205,15 @@ async fn committal_headers_merge_into_the_commit() {
         .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
         .header(header::CONTENT_TYPE, "application/json")
         .header(header::IF_MATCH, format!("\"{v1}\""))
-        .header("openEHR-VERSION.lifecycle_state", "code_string=\"523\"")
+        // 800|inactive| — the `deactivate` transition of the RM common master06
+        // §Abandoned and Inactive States table, which is exactly what this PUT
+        // performs from the `532|complete|` first version. It is a state the
+        // server would never default to, so the assertion below proves the
+        // merge really happened. `523|deleted|` is NOT usable here: master06
+        // §Logical Deletion makes the deleted state and the data-Void one act,
+        // so a data-carrying PUT claiming it is refused — that refusal has its
+        // own asserted test below.
+        .header("openEHR-VERSION.lifecycle_state", "code_string=\"800\"")
         .header("openEHR-AUDIT_DETAILS.change_type", "code_string=\"251\"")
         .header(
             "openEHR-AUDIT_DETAILS.description",
@@ -249,7 +257,7 @@ async fn committal_headers_merge_into_the_commit() {
     // *persisted* ORIGINAL_VERSION must reflect the merged values. These
     // assertions verify the end-to-end MUST.
     assert_eq!(
-        ver["lifecycle_state"]["defining_code"]["code_string"], "523",
+        ver["lifecycle_state"]["defining_code"]["code_string"], "800",
         "openEHR-VERSION.lifecycle_state merged: {ver}"
     );
     let audit = &ver["commit_audit"];
@@ -263,6 +271,99 @@ async fn committal_headers_merge_into_the_commit() {
     );
     assert_eq!(audit["committer"]["name"], "John Doe");
     assert_eq!(audit["committer"]["external_ref"]["type"], "PERSON");
+}
+
+/// The REFUSAL twin of the merge test above: a content-carrying `PUT` whose
+/// `openehr-version` header claims `523|deleted|` is rejected `422`, and the
+/// composition stays at its previous version.
+///
+/// RM common `master06-change_control_package.adoc` §Logical Deletion states
+/// deletion as ONE procedure — "create a new Version in the normal way; delete
+/// its `_data_` …; set the `_lifecycle_state_` value to the code for
+/// `deleted`; commit in the normal way" — so a version that carries data
+/// cannot be the deleted one. Merging the header value here would leave the
+/// resource reading as deleted (`204`) while its content stayed stored.
+#[tokio::test]
+async fn a_deleted_lifecycle_header_on_a_content_commit_is_refused() {
+    let (_pg, app) = app().await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1).to_owned();
+
+    let mut body = canonical_composition();
+    body.as_object_mut().unwrap().remove("uid");
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{v1}\""))
+        .header("openehr-version", "lifecycle_state.code_string=\"523\"")
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    let (status, _h, resp_body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "a data-carrying commit may not claim the deleted state: {resp_body}"
+    );
+    assert!(
+        resp_body.contains("Logical Deletion"),
+        "the refusal names the spec rule it enforces, got {resp_body}"
+    );
+
+    // Nothing was committed: the composition is still readable at v1.
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition/{v1}"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "the composition is still live: {body}"
+    );
+}
+
+/// A DELETE whose `openehr-version` header names a lifecycle other than
+/// `523|deleted|` is refused `400` rather than having the value silently
+/// discarded — the merge duty (ITS-REST overview §"openehr-version and
+/// openehr-audit-details": "whatever is provided it MUST be merged") cannot be
+/// honoured for a state the operation itself fixes (RM common master06
+/// §Logical Deletion). The accepting twin states the `523` the DELETE commits.
+#[tokio::test]
+async fn a_contradictory_lifecycle_header_on_delete_is_refused() {
+    let (_pg, app) = app().await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+
+    let refused = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{v1}"))
+        .header("openehr-version", "lifecycle_state.code_string=\"532\"")
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, resp_body) = send(&app, refused).await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "a DELETE may not claim a live lifecycle: {resp_body}"
+    );
+
+    // The accepting twin: the same DELETE stating the state it does commit.
+    let accepted = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{v1}"))
+        .header("openehr-version", "lifecycle_state.code_string=\"523\"")
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, resp_body) = send(&app, accepted).await;
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "the delete stating 523 succeeds: {resp_body}"
+    );
 }
 
 /// A legal DIVERGENT client `change_type` is honoured, not overwritten:

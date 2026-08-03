@@ -57,9 +57,14 @@ impl FerroEhrService {
             "FOLDER directory creation",
             &self.effective_system_id(),
         )?;
+        // 553|incomplete| relaxes the existence/cardinality lower bounds
+        // (RM common master06 §Incomplete Content), exactly as on the
+        // COMPOSITION direct route.
+        let incomplete =
+            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
         let folder = version.data;
         self.ensure_ehr_exists(ehr_id).await?;
-        validate_folder(&folder)?;
+        validate_folder(&folder, incomplete)?;
         // is_modifiable = False forbids content writes; the directory is EHR
         // content (RM ehr master04 §EHR Active Status).
         self.ensure_content_writable(ehr_id).await?;
@@ -256,8 +261,10 @@ impl FerroEhrService {
             "FOLDER directory update",
             &self.effective_system_id(),
         )?;
+        let incomplete =
+            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
         let folder = version.data;
-        validate_folder(&folder)?;
+        validate_folder(&folder, incomplete)?;
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — the directory is EHR content. Folded from the
         // standalone `ensure_content_writable` side-SELECT into the merged
