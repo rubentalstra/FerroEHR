@@ -25,9 +25,9 @@ pub struct VersionOfParty {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `commit_audit` property of `VersionOfParty`.
-    pub commit_audit: serde_json::Value,
+    pub commit_audit: openehr_rm::prelude::AuditDetails,
     /// The `data` property of `VersionOfParty`.
-    pub data: serde_json::Value,
+    pub data: openehr_rm::prelude::Party,
 }
 
 /// The `UpdateItemTag` transport DTO of this API group (an ITS-REST OAS
@@ -56,16 +56,134 @@ pub struct Clstr {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `items` property of `Clstr`.
-    pub items: Vec<serde_json::Value>,
+    pub items: Vec<openehr_rm::prelude::Item>,
 }
 
-/// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type Versionable = serde_json::Value;
+/// The `Versionable` ITS-REST OAS component schema: `_type`-discriminated
+/// polymorphism over its OAS `discriminator.mapping` targets.
+#[derive(Debug, Clone)]
+pub enum Versionable {
+    /// `_type: "ACTOR"`
+    Actor(openehr_rm::prelude::Actor),
+    /// `_type: "AGENT"`
+    Agent(openehr_rm::prelude::Agent),
+    /// `_type: "GROUP"`
+    Group(openehr_rm::prelude::Group),
+    /// `_type: "ORGANISATION"`
+    Organisation(openehr_rm::prelude::Organisation),
+    /// `_type: "PARTY"`
+    Party(openehr_rm::prelude::Party),
+    /// `_type: "PERSON"`
+    Person(openehr_rm::prelude::Person),
+    /// `_type: "ROLE"`
+    Role(openehr_rm::prelude::Role),
+}
+
+impl ::serde::Serialize for Versionable {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            Self::Actor(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Agent(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Group(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Organisation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Party(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Person(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Role(__x) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for Versionable {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "ACTOR",
+            "AGENT",
+            "GROUP",
+            "ORGANISATION",
+            "PARTY",
+            "PERSON",
+            "ROLE",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = Versionable;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an ITS-REST `Versionable` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "ACTOR" => ::core::result::Result::Ok(Versionable::Actor(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "AGENT" => ::core::result::Result::Ok(Versionable::Agent(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "GROUP" => ::core::result::Result::Ok(Versionable::Group(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "ORGANISATION" => {
+                                ::core::result::Result::Ok(Versionable::Organisation(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "PARTY" => ::core::result::Result::Ok(Versionable::Party(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "PERSON" => ::core::result::Result::Ok(Versionable::Person(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "ROLE" => ::core::result::Result::Ok(Versionable::Role(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Versionable",
+                                    __other,
+                                    "ACTOR, AGENT, GROUP, ORGANISATION, PARTY, PERSON, ROLE",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Versionable",
+                            &__other,
+                            "ACTOR, AGENT, GROUP, ORGANISATION, PARTY, PERSON, ROLE",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "Versionable",
+                            "ACTOR, AGENT, GROUP, ORGANISATION, PARTY, PERSON, ROLE",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
 
 /// The `ListOfPartyIdentity` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfPartyIdentity = Vec<serde_json::Value>;
+pub type ListOfPartyIdentity = Vec<openehr_rm::prelude::PartyIdentity>;
 
 /// The `DvIntervalOfDate` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -76,19 +194,19 @@ pub struct DvIntervalOfDate {
     pub _type: Option<String>,
     /// The `lower` property of `DvIntervalOfDate`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub lower: Option<serde_json::Value>,
+    pub lower: Option<openehr_rm::prelude::DvDate>,
     /// The `upper` property of `DvIntervalOfDate`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub upper: Option<serde_json::Value>,
+    pub upper: Option<openehr_rm::prelude::DvDate>,
 }
 
 /// The `ListOfContact` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfContact = Vec<serde_json::Value>;
+pub type ListOfContact = Vec<openehr_rm::prelude::Contact>;
 
 /// The `ListOfPartyRelationship` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfPartyRelationship = Vec<serde_json::Value>;
+pub type ListOfPartyRelationship = Vec<openehr_rm::prelude::PartyRelationship>;
 
 /// The `Identifier` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -111,7 +229,7 @@ pub struct Error {
 
 /// The `ListOfCapability` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfCapability = Vec<serde_json::Value>;
+pub type ListOfCapability = Vec<openehr_rm::prelude::Capability>;
 
 /// The `ObjectRefOfHierObjectId` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -119,26 +237,85 @@ pub type ListOfCapability = Vec<serde_json::Value>;
 pub struct ObjectRefOfHierObjectId {
     /// The `id` property of `ObjectRefOfHierObjectId`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<serde_json::Value>,
+    pub id: Option<openehr_base::prelude::HierObjectId>,
 }
 
-/// The `UpdateAudit` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateAudit {
-    /// The `_type` property of `UpdateAudit`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `system_id` property of `UpdateAudit`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_id: Option<String>,
-    /// The `change_type` property of `UpdateAudit`.
-    pub change_type: serde_json::Value,
-    /// The `description` property of `UpdateAudit`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<serde_json::Value>,
-    /// The `committer` property of `UpdateAudit`.
-    pub committer: serde_json::Value,
+/// The `UpdateAudit` ITS-REST OAS component schema: `_type`-discriminated
+/// polymorphism over its OAS `discriminator.mapping` targets.
+#[derive(Debug, Clone)]
+pub enum UpdateAudit {
+    /// `_type: "UPDATE_ATTESTATION"`
+    UpdateAttestation(UpdateAttestation),
+}
+
+impl ::serde::Serialize for UpdateAudit {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            Self::UpdateAttestation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for UpdateAudit {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["UPDATE_ATTESTATION"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = UpdateAudit;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an ITS-REST `UpdateAudit` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "UPDATE_ATTESTATION" => {
+                                ::core::result::Result::Ok(UpdateAudit::UpdateAttestation(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "UpdateAudit",
+                                    __other,
+                                    "UPDATE_ATTESTATION",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "UpdateAudit",
+                            &__other,
+                            "UPDATE_ATTESTATION",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "UpdateAudit",
+                            "UPDATE_ATTESTATION",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
 }
 
 /// The `UpdateAttestation` transport DTO of this API group (an ITS-REST OAS
@@ -150,15 +327,15 @@ pub struct UpdateAttestation {
     pub _type: Option<String>,
     /// The `attested_view` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attested_view: Option<serde_json::Value>,
+    pub attested_view: Option<openehr_rm::prelude::DvMultimedia>,
     /// The `proof` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
     /// The `items` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Value>>,
+    pub items: Option<Vec<openehr_rm::prelude::DvEhrUri>>,
     /// The `reason` property of `UpdateAttestation`.
-    pub reason: serde_json::Value,
+    pub reason: openehr_rm::prelude::DvText,
     /// The `is_pending` property of `UpdateAttestation`.
     pub is_pending: bool,
 }
@@ -169,12 +346,12 @@ pub struct UpdateAttestation {
 pub struct UpdateVersion {
     /// The `preceding_version_uid` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub preceding_version_uid: Option<serde_json::Value>,
+    pub preceding_version_uid: Option<openehr_base::prelude::ObjectVersionId>,
     /// The `signature` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `lifecycle_state` property of `UpdateVersion`.
-    pub lifecycle_state: serde_json::Value,
+    pub lifecycle_state: openehr_rm::prelude::DvCodedText,
     /// The `attestations` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attestations: Option<Vec<UpdateAttestation>>,
@@ -190,7 +367,7 @@ pub struct UpdateVersion {
 pub struct NewContribution {
     /// The `uid` property of `NewContribution`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub uid: Option<serde_json::Value>,
+    pub uid: Option<openehr_base::prelude::HierObjectId>,
     /// The `versions` property of `NewContribution`.
     pub versions: Vec<UpdateVersion>,
     /// The `audit` property of `NewContribution`.
@@ -203,28 +380,28 @@ pub struct NewContribution {
 pub struct ObjectRefOfObjectVersionId {
     /// The `id` property of `ObjectRefOfObjectVersionId`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<serde_json::Value>,
+    pub id: Option<openehr_base::prelude::ObjectVersionId>,
 }
 
 /// The `ItemTagOfPerson` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfPerson = serde_json::Value;
+pub type ItemTagOfPerson = openehr_rm::prelude::ItemTag;
 
 /// The `ItemTagOfAgent` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfAgent = serde_json::Value;
+pub type ItemTagOfAgent = openehr_rm::prelude::ItemTag;
 
 /// The `ItemTagOfGroup` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfGroup = serde_json::Value;
+pub type ItemTagOfGroup = openehr_rm::prelude::ItemTag;
 
 /// The `ItemTagOfOrganisation` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfOrganisation = serde_json::Value;
+pub type ItemTagOfOrganisation = openehr_rm::prelude::ItemTag;
 
 /// The `ItemTagOfRole` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfRole = serde_json::Value;
+pub type ItemTagOfRole = openehr_rm::prelude::ItemTag;
 
 /// Parameters for `agent_create` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -902,7 +1079,7 @@ pub trait DemographicApi {
     async fn agent_create(
         &self,
         params: AgentCreateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Agent,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -910,14 +1087,14 @@ pub trait DemographicApi {
     async fn agent_get(
         &self,
         params: AgentGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Agent, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/agent/{uid_based_id}`
     async fn agent_update(
         &self,
         params: AgentUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Agent,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -932,7 +1109,7 @@ pub trait DemographicApi {
     async fn group_create(
         &self,
         params: GroupCreateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Group,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -940,14 +1117,14 @@ pub trait DemographicApi {
     async fn group_get(
         &self,
         params: GroupGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Group, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/group/{uid_based_id}`
     async fn group_update(
         &self,
         params: GroupUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Group,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -962,7 +1139,7 @@ pub trait DemographicApi {
     async fn organisation_create(
         &self,
         params: OrganisationCreateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Organisation,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -970,14 +1147,14 @@ pub trait DemographicApi {
     async fn organisation_get(
         &self,
         params: OrganisationGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Organisation, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/organisation/{uid_based_id}`
     async fn organisation_update(
         &self,
         params: OrganisationUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Organisation,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -992,7 +1169,7 @@ pub trait DemographicApi {
     async fn person_create(
         &self,
         params: PersonCreateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Person,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1000,14 +1177,14 @@ pub trait DemographicApi {
     async fn person_get(
         &self,
         params: PersonGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Person, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/person/{uid_based_id}`
     async fn person_update(
         &self,
         params: PersonUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Person,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1022,7 +1199,7 @@ pub trait DemographicApi {
     async fn role_create(
         &self,
         params: RoleCreateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Role,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1030,14 +1207,14 @@ pub trait DemographicApi {
     async fn role_get(
         &self,
         params: RoleGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Role, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/role/{uid_based_id}`
     async fn role_update(
         &self,
         params: RoleUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Role,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1052,35 +1229,35 @@ pub trait DemographicApi {
     async fn versioned_party_get(
         &self,
         params: VersionedPartyGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::VersionedParty, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/revision_history`
     async fn versioned_party_revision_history(
         &self,
         params: VersionedPartyRevisionHistoryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::RevisionHistory, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version`
     async fn versioned_party_version_get_at_time(
         &self,
         params: VersionedPartyVersionGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<VersionOfParty, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`
     async fn versioned_party_version_get_by_id(
         &self,
         params: VersionedPartyVersionGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<VersionOfParty, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /demographic/contribution`
     async fn contribution_create(
         &self,
         params: ContributionCreateParams,
-        body: serde_json::Value,
+        body: NewContribution,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1088,7 +1265,7 @@ pub trait DemographicApi {
     async fn contribution_get(
         &self,
         params: ContributionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Contribution, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/tags`
