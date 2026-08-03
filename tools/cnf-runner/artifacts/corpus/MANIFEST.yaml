@@ -1991,6 +1991,12 @@ cnf.messaging.ehr_extract.imported_composition_xml:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-08-03 (§6.4 round triage) as the identity-disjoint sibling of cnf.messaging.ehr_extract.imported_composition for the XML-root read case: one received object_id creates exactly one local container (RM common master06 §Copying: 'If some version of the item had already been received, this step will have already occurred'), so two cases in one run cannot both import the same identities into different EHRs — each requires.import case gets its own"
+cnf.messaging.ehr_extract.imported_composition_attest:
+  source: fixtures/messaging/ehr_extract.imported_composition_attest.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 (§6.5 round) as the identity-disjoint sibling of cnf.messaging.ehr_extract.imported_composition for the attest-imported-version refusal case: fixed-identity import fixtures are single-use per run (one received object_id creates exactly one local container — RM common master06 §Copying), and a COMPOSITION rather than an EHR_STATUS because the container lands in an EHR that already holds its own status (EHR.ehr_status 1..1, RM ehr master04)"
 cnf.messaging.ehr_extract.imported_contribution:
   source: fixtures/messaging/ehr_extract.imported_contribution.json
   format: canonical-json

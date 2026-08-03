@@ -101,6 +101,22 @@ pub(crate) async fn attest(
             format!("{} version {vo_id}::{expected}", kind.as_str()),
         ));
     };
+    // The is_original_version(a_ver_id) half of the commit_attestation
+    // precondition (`…common.versioned_object.adoc` §Functions: "Attestations
+    // can only be added to Original versions"): an IMPORTED_VERSION wraps a
+    // foreign ORIGINAL_VERSION that must stay byte-verbatim (master06
+    // §Copying — "the ORIGINAL_VERSION instance is never modified"), so it is
+    // not an attestable target.
+    if target.imported {
+        return Err(ServiceError::Unprocessable(
+            Violation::new(
+                "names an IMPORTED_VERSION — attestations can only be added to \
+                 Original versions",
+            )
+            .with_path("preceding_version_uid")
+            .with_invariant("VERSIONED_OBJECT.commit_attestation"),
+        ));
+    }
     crate::storage::version_repo::attestation::insert_attestation(
         tx,
         vo_id,
