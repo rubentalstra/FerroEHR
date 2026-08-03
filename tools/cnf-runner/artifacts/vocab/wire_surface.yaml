@@ -25,18 +25,18 @@ sm_operations:
   - operation: I_DEFINITION_ADL14.archetypes_count
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
-    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Four of the seven SM archetype operations carry EXTENSION bindings + executed cases (list_archetypes, upload_archetype, get_archetype, delete_archetype — the six-case battery landed 2026-07-29 with the owner's required-drop adjudication and the adl14-text corpus member); has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased and stay honestly excluded here."
+    note: &adl14_archetype_extension_note "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Four of the seven SM archetype operations carry EXTENSION bindings + executed cases (list_archetypes, upload_archetype, get_archetype, delete_archetype — the six-case battery landed 2026-07-29 with the owner's required-drop adjudication and the adl14-text corpus member); has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased and stay honestly excluded here."
   - operation: I_DEFINITION_ADL14.has_archetype
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
-    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Four of the seven SM archetype operations carry EXTENSION bindings + executed cases (list_archetypes, upload_archetype, get_archetype, delete_archetype — the six-case battery landed 2026-07-29 with the owner's required-drop adjudication and the adl14-text corpus member); has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased and stay honestly excluded here."
+    note: *adl14_archetype_extension_note
   - operation: I_DEFINITION_ADL14.has_opt
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
   - operation: I_DEFINITION_ADL14.list_matching_archetypes
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
-    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Four of the seven SM archetype operations carry EXTENSION bindings + executed cases (list_archetypes, upload_archetype, get_archetype, delete_archetype — the six-case battery landed 2026-07-29 with the owner's required-drop adjudication and the adl14-text corpus member); has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased and stay honestly excluded here."
+    note: *adl14_archetype_extension_note
   - operation: I_DEFINITION_ADL14.list_matching_opts
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
@@ -46,7 +46,7 @@ sm_operations:
   - operation: I_DEFINITION_ADL14.valid_archetype
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
-    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Four of the seven SM archetype operations carry EXTENSION bindings + executed cases (list_archetypes, upload_archetype, get_archetype, delete_archetype — the six-case battery landed 2026-07-29 with the owner's required-drop adjudication and the adl14-text corpus member); has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased and stay honestly excluded here."
+    note: *adl14_archetype_extension_note
   - operation: I_DEFINITION_ADL14.valid_opt
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
@@ -172,39 +172,39 @@ sm_operations:
   - operation: I_TERMINOLOGY_SERVICE.get_term
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: &terminology_extension_note "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.get_terminology_description
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_TERMINOLOGY_SERVICE.get_terminology_ids
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_TERMINOLOGY_SERVICE.get_value_set
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_TERMINOLOGY_SERVICE.has_term
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_TERMINOLOGY_SERVICE.has_terminology
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_TERMINOLOGY_SERVICE.has_value_set
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_TERMINOLOGY_SERVICE.subsumes
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_TERMINOLOGY_SERVICE.value_set_validate
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
-    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
+    note: *terminology_extension_note
   - operation: I_VALIDITY_CHECKER.content_valid
     reason: off_wire
     source: "SM i_validity_checker.adoc — validity checking is an internal service; released ITS-REST 1.1.0 exposes no validity-checker resource (validation happens at commit)"
@@ -494,7 +494,7 @@ branches:
     outcome: timeout
     reason: coverage_gap
     source: "The released text DECLARES the branch and withholds every trigger for it, so no conformance case can reach it deterministically. Declaration: ITS-REST Requests_and_responses.md §HTTP status codes, row 408 — 'Request maximum execution time is reached, therefore the server aborted the request'. Withheld trigger, CONFIRMED first-hand across the whole released query surface: docs/query/{Request,Response,Query_types,Qualified_query_name}.md contain no occurrence of 408, 'timeout' or any execution-time concept (grep-verified), and §'Common Headers and Query Parameters' enumerates the entire client-settable request surface — 'ehr_id', 'offset', 'fetch', 'query_parameters' and the 'openehr-ehr-id' header — none of which bounds execution time. 'Maximum execution time' is therefore a purely server-side deployment property no client input can drive. Register AMB-159"
-    note: "A case would have to invent the trigger the released text withholds, or reach for SUT fault injection, which is not a wire behaviour — the honest position is the register entry plus this citation (the AMB-140 / I_ADMIN_SERVICE.physical_ehr_delete#delete_all pattern). Closes when a release supplies a client-drivable execution bound (#1604)."
+    note: &untriggerable_branch_note "A case would have to invent the trigger the released text withholds, or reach for SUT fault injection, which is not a wire behaviour — the honest position is the register entry plus this citation (the AMB-140 / I_ADMIN_SERVICE.physical_ehr_delete#delete_all pattern). Closes when a release supplies a client-drivable execution bound (#1604)."
   # RETIRED coverage_gap: the stored-execution invalid_query branch is now
   # exercised by I_QUERY_SERVICE.execute_stored_query-fetch_with_top — a stored
   # definition carrying an AQL TOP invoked with the URL `fetch` paging
@@ -509,7 +509,7 @@ branches:
     outcome: timeout
     reason: coverage_gap
     source: "The released text DECLARES the branch and withholds every trigger for it, so no conformance case can reach it deterministically — the same adjudication as the ad-hoc route above, on the same evidence. Declaration: ITS-REST Requests_and_responses.md §HTTP status codes, row 408 — 'Request maximum execution time is reached, therefore the server aborted the request'. Withheld trigger, CONFIRMED first-hand: no occurrence of 408, 'timeout' or any execution-time concept anywhere in docs/query/ (grep-verified), and §'Common Headers and Query Parameters' enumerates the whole client-settable surface without an execution bound. The stored route adds nothing that would supply one: docs/query/Qualified_query_name.md governs only name and version selection. Register AMB-159"
-    note: "A case would have to invent the trigger the released text withholds, or reach for SUT fault injection, which is not a wire behaviour — the honest position is the register entry plus this citation (the AMB-140 / I_ADMIN_SERVICE.physical_ehr_delete#delete_all pattern). Closes when a release supplies a client-drivable execution bound (#1604)."
+    note: *untriggerable_branch_note
   - binding: I_DEFINITION_ADL2.get_artefact
     variant: example
     format: canonical-xml
