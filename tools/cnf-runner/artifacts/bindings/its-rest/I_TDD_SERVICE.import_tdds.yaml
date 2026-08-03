@@ -23,11 +23,10 @@ extension:
     import_tdds has no released wire; this product serves the operation on its
     own /message/tdd/{ehr_id}/batch route, which is what the cases drive.
   source: >-
-    SM docs/openehr_platform/master09-message_service.adoc +
-    docs/UML/classes/i_tdd_service.adoc (import_tdds) vs released ITS-REST
-    specifications/*.openapi.yaml (seven groups, none of them
-    message/extract/tdd) + specifications/docs/** (no such API) — no openEHR
-    spec governs the extension route, our own design/extension
+    SM docs/openehr_platform/master09-message_service.adoc; SM
+    docs/UML/classes/i_tdd_service.adoc (import_tdds); ITS-REST specifications (the seven
+    released API groups, none of them message/extract/tdd); ITS-REST specifications/docs (no
+    such API); no openEHR spec governs this — our own design/extension
   ambiguity: AMB-34
 request:
   method: POST

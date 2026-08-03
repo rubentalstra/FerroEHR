@@ -9,5 +9,7 @@ unrealized:
     No DELETE operation exists on any /definition/template/adl1.4* path in
     ITS-REST 1.1.0 (the only DELETEs in the OAS are admin_ehr_delete*,
     composition_delete, directory_delete and the demographic deletes).
-  source: "ITS-REST specifications/operations (definition template operations) vs SM docs/UML/classes/i_definition_adl14.adoc (delete_opt)"
+  source: >-
+    ITS-REST specifications/operations (definition template operations); SM
+    docs/UML/classes/i_definition_adl14.adoc (delete_opt)
   ambiguity: AMB-17

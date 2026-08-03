@@ -13,5 +13,8 @@ unrealized:
     ITS-REST 1.1.0; the VERSIONED_FOLDER container has no REST resource (the
     only directory paths are /ehr/{ehr_id}/directory and
     /ehr/{ehr_id}/directory/{version_uid}).
-  source: "SM docs/UML/classes/i_ehr_directory.adoc (get_versioned_directory -> VERSIONED_FOLDER) vs ITS-REST specifications/ehr.openapi.yaml (directory paths: no versioned_directory)"
+  source: >-
+    SM docs/UML/classes/i_ehr_directory.adoc (get_versioned_directory returning
+    VERSIONED_FOLDER); ITS-REST specifications/ehr.openapi.yaml (directory paths, no
+    versioned_directory)
   ambiguity: AMB-24

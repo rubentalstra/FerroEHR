@@ -2157,7 +2157,7 @@ once §8.3 makes cases enumerable files:
    ratification of the [legislated] points, not de-novo design. Seed
    material: this repo's 25 QRY + 8 SQR + 4 AQT case
    designs (each carrying AQL 1.1 citations) and EHRbase's AQL conformance
-   corpus ([ferroehr/conformance-testing-documentation](https://github.com/ehrbase/conformance-testing-documentation),
+   corpus ([ehrbase/conformance-testing-documentation](https://github.com/ehrbase/conformance-testing-documentation),
    SELECT/WHERE/ORDER BY/LIMIT/FROM/parameter suites).
 2. **The maximal-coverage template round-trip** (the 2017 "template
    injection test"): one template exercising ALL RM types (every DV_* incl.
@@ -2548,7 +2548,7 @@ proposing a format and demonstrating one.
   <https://openehr.atlassian.net/wiki/spaces/resources/pages/416514052/>.
 
 **Ecosystem:**
-- [ferroehr/conformance-testing-documentation](https://github.com/ehrbase/conformance-testing-documentation)
+- [ehrbase/conformance-testing-documentation](https://github.com/ehrbase/conformance-testing-documentation)
   (AQL suites + fixtures, last push 2025-01-30);
   [CaboLabs openEHR Conformance Framework](https://www.cabolabs.com/blog/article/openehr_conformance_framework-61ef4f513f7c5.html).
 - Rust crates (verified live 2026-07-21): serde-saphyr

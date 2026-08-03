@@ -52,8 +52,10 @@ flow:
     capture: { v2_uid: updated.version_uid }
   - step: 3                              # the empty answer still committed the version the ETag names
     call: get_party_at_version
+    # The read is version-addressed: GET /demographic/person/{version_uid}
+    # takes the OBJECT_VERSION_ID alone (person_get.yaml), so the version uid
+    # the 204's ETag named is the whole argument.
     with:
-      versioned_object_uid: "${versioned_object_uid}"
       version_uid: "${v2_uid}"
     expect: ok
 postconditions:

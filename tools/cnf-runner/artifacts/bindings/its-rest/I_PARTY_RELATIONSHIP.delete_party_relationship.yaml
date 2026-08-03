@@ -33,9 +33,9 @@ extension:
     the preceding version in the path.
   source: >-
     SM docs/UML/classes/i_party_relationship.adoc (delete_party_relationship,
-    Post_relationship_deleted) vs released ITS-REST
-    specifications/demographic.openapi.yaml (no party_relationship path) — no
-    openEHR spec governs the extension route, our own design/extension
+    Post_relationship_deleted); ITS-REST specifications/demographic.openapi.yaml (no
+    party_relationship path); ITS-REST specifications/docs/demographic (no mention); no openEHR
+    spec governs this — our own design/extension
   ambiguity: AMB-32
 request:
   method: DELETE

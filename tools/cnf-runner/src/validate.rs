@@ -53,6 +53,11 @@ pub enum CheckId {
     /// A binding file's stem states the binding it holds:
     /// `<sm_operation>[-<variant>]`.
     BindingFilename,
+    /// Every `with:` key a flow step authors is CONSUMED by the binding the
+    /// driver would select for it (issue #1830): an argument no request form
+    /// reads is decoration the SUT never sees, so the case's assertion about
+    /// it passes vacuously — the whole reason the gate exists.
+    StepArguments,
     /// `verified_by` targets exist.
     VerifiedBy,
     /// Corpus keys/views/sources exist; entry invariants hold.
@@ -119,6 +124,7 @@ impl CheckId {
             Self::SpecRef => "spec-ref",
             Self::BindingCompleteness => "binding-completeness",
             Self::BindingFilename => "binding-filename",
+            Self::StepArguments => "step-arguments",
             Self::VerifiedBy => "verified-by",
             Self::CorpusIntegrity => "corpus-integrity",
             Self::AmbiguityLink => "ambiguity-link",
@@ -201,6 +207,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         }
     }
     check_binding_completeness(ctx.set, &mut findings);
+    check_step_arguments(ctx.set, &mut findings);
     for (path, binding) in &ctx.set.bindings {
         let who = path.display().to_string();
         if let Err(message) = binding.check_invariants() {
@@ -222,6 +229,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         }
         if let Some(spec) = spec.as_ref() {
             resolve_sm_operation(&binding.sm_operation, &who, spec, &mut findings);
+            check_binding_sources(binding, &who, spec, &mut findings);
         }
     }
     check_corpus_integrity(ctx.set, &mut findings);
@@ -1526,6 +1534,24 @@ struct SpecIndex<'a> {
     attributes: RefCell<BTreeMap<PathBuf, Rc<BTreeMap<String, String>>>>,
     /// `interface → its parsed SM operation names`.
     interfaces: RefCell<BTreeMap<String, InterfaceOperations>>,
+    /// The ITS-XML component's SECOND root: the released XSD bundles.
+    /// See [`SpecIndex::component_roots`].
+    xml_schemas: Option<PathBuf>,
+}
+
+/// The vendored ITS-XML schema bundle, located from the vendored spec root.
+///
+/// Both are repo-relative and both are vendored by committed scripts, so the
+/// spec root's grandparent IS the workspace root (`docs/specs/openehr` →
+/// `docs/specs` → `docs` → the workspace). The same derivation already
+/// locates `docs/conformance/` for the coverage report. `None` when the
+/// bundle is not there (a spec tree used outside the workspace, e.g. a test
+/// fixture): ITS-XML citations then resolve against the docs tree alone,
+/// exactly as before issue #1833.
+fn xml_schema_root(spec_root: &Path) -> Option<PathBuf> {
+    let workspace = spec_root.parent()?.parent()?.parent()?;
+    let bundle = workspace.join("crates/openehr-its/schemas/xml");
+    bundle.is_dir().then_some(bundle)
 }
 
 /// One vendored component directory's file listing, indexed for the two
@@ -1549,7 +1575,39 @@ impl<'a> SpecIndex<'a> {
             sections: RefCell::new(BTreeMap::new()),
             attributes: RefCell::new(BTreeMap::new()),
             interfaces: RefCell::new(BTreeMap::new()),
+            xml_schemas: xml_schema_root(root),
         }
+    }
+
+    /// The directories a citation of `component` may resolve against, most
+    /// authoritative first.
+    ///
+    /// Every component has exactly one — its vendored docs directory —
+    /// except **ITS-XML**, which has two. `scripts/vendor-spec-docs.sh`
+    /// vendors PROSE, so the docs tree's `ITS-XML/components/**` holds only
+    /// the upstream `README.adoc` stubs; the released XSD bundles themselves
+    /// are vendored ONCE, at `crates/openehr-its/schemas/xml/`, as the
+    /// canonical-XML codec's input (`docs/VERSIONS.md` §openEHR
+    /// specification matrix). An XSD-element citation therefore resolved
+    /// nowhere. Adjudication (issue #1833): the gate learns the bundle as a
+    /// SECOND ROOT — one vendored copy, two readers — rather than the
+    /// bundle being copied into the docs tree, which would fork the
+    /// schemas the codec and the citations speak about.
+    ///
+    /// A root that does not exist is dropped, so an empty result is the
+    /// "component dir missing" finding.
+    fn component_roots(&self, component: &str, dir: &str) -> Vec<PathBuf> {
+        let mut roots = Vec::new();
+        let docs = self.root.join(dir);
+        if docs.is_dir() {
+            roots.push(docs);
+        }
+        if component == "ITS-XML"
+            && let Some(schemas) = &self.xml_schemas
+        {
+            roots.push(schemas.clone());
+        }
+        roots
     }
 
     /// The vendored spec root this index reads.
@@ -1683,7 +1741,10 @@ impl<'a> SpecIndex<'a> {
                 path.extension().and_then(|e| e.to_str()),
                 Some("yaml" | "yml" | "json")
             );
-            if yaml {
+            let xsd = matches!(path.extension().and_then(|e| e.to_str()), Some("xsd"));
+            if xsd {
+                names.extend(xsd_declared_names(&text));
+            } else if yaml {
                 names.extend(structured_keys(&text));
             } else {
                 names.extend(asciidoc_section_names(&text));
@@ -1854,6 +1915,34 @@ fn table_cell_label(line: &str) -> Option<String> {
         return None;
     }
     Some(normalize_section(label))
+}
+
+/// The declared names of an XSD — its `name="…"` values, which are exactly
+/// what an ITS-XML citation addresses with `§`: a globally declared element
+/// (`§composition`), a `complexType` (`§COMPOSITION`), an attribute or a
+/// group. A schema is the one vendored artifact with no headings, so without
+/// this its `§` citations could never resolve (issue #1833).
+///
+/// Deliberately a lexical scan, not an XML parse: the gate needs the set of
+/// declared names, and an XSD's `name` attribute is unambiguous — nothing
+/// else in the grammar spells `name="`.
+fn xsd_declared_names(text: &str) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    for tail in text.split("name=").skip(1) {
+        let Some(rest) = tail.strip_prefix('"').or_else(|| tail.strip_prefix('\'')) else {
+            continue;
+        };
+        let quote = if tail.starts_with('"') { '"' } else { '\'' };
+        let Some(value) = rest.split(quote).next() else {
+            continue;
+        };
+        // A qualified name cites its local part (`openehr:COMPOSITION`).
+        let local = value.rsplit(':').next().unwrap_or(value).trim();
+        if !local.is_empty() {
+            names.insert(normalize_section(local));
+        }
+    }
+    names
 }
 
 /// The keys of a YAML/JSON document (the OAS operation, response and schema
@@ -2193,23 +2282,34 @@ fn check_citations(
                 );
                 continue;
             };
-            let root = spec.root().join(dir);
-            if !root.is_dir() {
+            let roots = spec.component_roots(clause.component, dir);
+            let Some(first) = roots.first() else {
                 push(
                     findings,
                     CheckId::SpecRef,
                     who,
                     format!(
                         "{citation:?}: vendored component dir {} missing",
-                        root.display()
+                        spec.root().join(dir).display()
                     ),
                 );
                 continue;
-            }
+            };
             if clause.tokens.is_empty() {
-                continue; // component-only citation: dir existence was the check
+                let _ = first; // component-only citation: dir existence was the check
+                continue;
             }
-            let documents = resolve_documents(spec, &root, &clause.tokens);
+            // Each root is resolved independently and the hits pooled: an
+            // ITS-XML citation may name a docs-tree chapter OR an XSD of the
+            // vendored schema bundle (issue #1833).
+            let mut documents: Vec<(&PathBuf, PathBuf)> = Vec::new();
+            for root in &roots {
+                documents.extend(
+                    resolve_documents(spec, root, &clause.tokens)
+                        .into_iter()
+                        .map(|document| (root, document)),
+                );
+            }
             if documents.is_empty() {
                 push(
                     findings,
@@ -2226,8 +2326,8 @@ fn check_citations(
                 continue;
             }
             let mut names = BTreeSet::new();
-            for document in &documents {
-                names.extend(spec.document_sections(&root, document).iter().cloned());
+            for (root, document) in &documents {
+                names.extend(spec.document_sections(root, document).iter().cloned());
             }
             for section in &clause.sections {
                 if !section_resolves(&section_candidates(section), &names) {
@@ -2263,6 +2363,97 @@ fn check_spec_refs(case: &CaseCore, who: &str, spec: &SpecIndex<'_>, findings: &
     check_citations(&citations, who, spec, findings);
 }
 
+/// The one non-citation clause a binding `source` may carry: the explicit
+/// spec-silence flag an `unrealized`/`extension` declaration must state
+/// (`.claude/rules/spec-adherence.md` — where the specs are SILENT, flag it).
+const SPEC_SILENCE_FLAG_PREFIX: &str = "no openehr spec governs";
+/// The other non-citation clause: the ambiguity-register entry that
+/// adjudicated the boundary (`ambiguity:` carries the id; the `source` may
+/// repeat it as the closing clause of the derivation).
+const REGISTER_CLAUSE_PREFIX: &str = "register amb-";
+
+/// A binding's `unrealized.source` / `extension.source` is a DERIVATION, not
+/// a sentence: what the SM defines, what the released ITS surfaces (or does
+/// not), and the spec-silence flag that follows. This gate pins it to the
+/// `spec_ref` clause grammar so every citation inside it is machine-resolved
+/// like a case's `spec_refs`.
+///
+/// Two halves:
+///
+/// 1. **Every clause is accounted for.** [`citation_clauses`] silently DROPS
+///    a fragment that does not open with a known component token — that is
+///    what let these fields escape the citation gate (issue #1832): a
+///    derivation written `SM x.adoc … vs ITS-REST y.yaml …` reads as ONE
+///    clause, so the ITS-REST half was never checked, and a typo in a
+///    component token vanished with it. Here a fragment must open with a
+///    component, state the spec-silence flag, or name the register entry.
+/// 2. **Every citation resolves**, via the shared [`check_citations`].
+///
+/// The sibling `reason` field is deliberately NOT gated: `source` and
+/// `reason` are the citation/free-text SPLIT of one declaration — `source`
+/// carries the citations, `reason` says in prose why the released ITS
+/// surfaces no wire and what this product serves instead. Gating prose would
+/// only push it back into `source`.
+fn check_binding_sources(
+    binding: &OperationBinding,
+    who: &str,
+    spec: &SpecIndex<'_>,
+    findings: &mut Vec<Finding>,
+) {
+    let sources = [
+        binding
+            .unrealized
+            .as_ref()
+            .map(|d| ("unrealized", &d.source)),
+        binding.extension.as_ref().map(|d| ("extension", &d.source)),
+    ];
+    for (field, source) in sources.into_iter().flatten() {
+        let source = source.trim();
+        if source.is_empty() {
+            push(
+                findings,
+                CheckId::SpecRef,
+                who,
+                format!("{field}.source is empty"),
+            );
+            continue;
+        }
+        for fragment in source.split(';').flat_map(|semi| semi.split(" + ")) {
+            let fragment = fragment.trim();
+            if fragment.is_empty() {
+                continue;
+            }
+            let opens_component = fragment
+                .split_whitespace()
+                .next()
+                .is_some_and(|word| component_dir(word).is_some());
+            let normalized = normalize_section(fragment);
+            if opens_component
+                || normalized.starts_with(SPEC_SILENCE_FLAG_PREFIX)
+                || normalized.starts_with(REGISTER_CLAUSE_PREFIX)
+            {
+                continue;
+            }
+            push(
+                findings,
+                CheckId::SpecRef,
+                who,
+                format!(
+                    "{field}.source clause {fragment:?} opens with neither a spec component nor \
+                     the spec-silence flag nor the register entry — the citation gate would drop \
+                     it unread; separate the derivation's citations with `;` or ` + `"
+                ),
+            );
+        }
+        check_citations(
+            &[source],
+            &format!("{who} [{field}.source]"),
+            spec,
+            findings,
+        );
+    }
+}
+
 /// The corpus manifest's own citations: every invalid fixture grounds its
 /// defect in a spec rule, and that citation resolves like any other.
 fn check_corpus_spec_refs(set: &ArtifactSet, spec: &SpecIndex<'_>, findings: &mut Vec<Finding>) {
@@ -2275,6 +2466,287 @@ fn check_corpus_spec_refs(set: &ArtifactSet, spec: &SpecIndex<'_>, findings: &mu
             continue;
         };
         check_citations(&[citation], &format!("{who} [{key}]"), spec, findings);
+    }
+}
+
+// ── step arguments (no vacuous `with:` key) ─────────────────────────────────
+
+/// The payload-role aliases [`crate::exec::driver`]'s `select_body` accepts
+/// for a `Named` body beside the declared role name.
+const BODY_ROLE_ALIASES: [&str; 2] = ["composition", "opt"];
+/// The two keys the bundled-CONTRIBUTION construct reads when the declared
+/// body role is `contribution`: the version set and the client-supplied
+/// commit audit (the latter is what issue #1818 wired through).
+const CONTRIBUTION_KEYS: [&str; 2] = ["versions", "audit"];
+
+/// Every `${name}` a template addresses as a capture/handle.
+fn template_capture_names(template: &crate::refgrammar::Template, into: &mut BTreeSet<String>) {
+    for reference in template.refs() {
+        if let ValueRef::Capture { name, .. } = reference {
+            into.insert(name.to_string());
+        }
+    }
+}
+
+/// The same, over a whole templated value tree.
+fn value_capture_names(value: &TemplatedValue, into: &mut BTreeSet<String>) {
+    match value {
+        TemplatedValue::Text(template) => template_capture_names(template, into),
+        TemplatedValue::Seq(items) => {
+            for item in items {
+                value_capture_names(item, into);
+            }
+        }
+        TemplatedValue::Map(entries) => {
+            for (_, item) in entries {
+                value_capture_names(item, into);
+            }
+        }
+        TemplatedValue::Null | TemplatedValue::Bool(_) | TemplatedValue::Number(_) => {}
+    }
+}
+
+/// Every `${ds:…}` a templated value tree addresses.
+fn value_data_set_refs(value: &TemplatedValue, into: &mut BTreeSet<String>) {
+    match value {
+        TemplatedValue::Text(template) => {
+            for reference in template.refs() {
+                if let ValueRef::DataSet { key, .. } = reference {
+                    into.insert(key.to_string());
+                }
+            }
+        }
+        TemplatedValue::Seq(items) => {
+            for item in items {
+                value_data_set_refs(item, into);
+            }
+        }
+        TemplatedValue::Map(entries) => {
+            for (_, item) in entries {
+                value_data_set_refs(item, into);
+            }
+        }
+        TemplatedValue::Null | TemplatedValue::Bool(_) | TemplatedValue::Number(_) => {}
+    }
+}
+
+/// Whether a `with:` value could resolve to the single-payload body the
+/// `Named` role's fallback picks.
+///
+/// Mirrors `select_body`'s own test on the RESOLVED value — an object, an
+/// array, or (for a `*_text` role, whose payload IS a string) any string.
+/// Statically, a reference-bearing string may resolve to either: a
+/// `${ds:…}` resolves to the corpus entry's parsed JSON, a capture to
+/// whatever was captured.
+fn could_be_payload(value: &TemplatedValue, text_role: bool) -> bool {
+    match value {
+        TemplatedValue::Seq(_) | TemplatedValue::Map(_) => true,
+        TemplatedValue::Text(template) => {
+            text_role
+                || template.refs().any(|r| {
+                    matches!(
+                        r,
+                        ValueRef::DataSet { .. }
+                            | ValueRef::FixtureDataSet
+                            | ValueRef::Recipe(_)
+                            | ValueRef::Capture { .. }
+                            | ValueRef::Row(_)
+                            | ValueRef::Fixture(_)
+                    )
+                })
+        }
+        TemplatedValue::Null | TemplatedValue::Bool(_) | TemplatedValue::Number(_) => false,
+    }
+}
+
+/// The `with:` keys the driver would READ when it drives `step` through
+/// `binding` — the union of every consumption path in
+/// [`crate::exec::driver`].
+fn consumed_with_keys(
+    set: &ArtifactSet,
+    binding: &OperationBinding,
+    step: &FlowStep,
+) -> BTreeSet<String> {
+    let mut consumed = BTreeSet::new();
+    // `auto_variant`: a sibling binding named `with_<p>` is selected BY the
+    // step binding `<p>` non-null, so `<p>` is read even when the selected
+    // binding's own request never names it.
+    for (_, sibling) in &set.bindings {
+        if sibling.sm_operation == binding.sm_operation
+            && let Some(param) = sibling
+                .variant
+                .as_deref()
+                .and_then(|v| v.strip_prefix("with_"))
+        {
+            consumed.insert(param.to_owned());
+        }
+    }
+    let Some(request) = &binding.request else {
+        return consumed;
+    };
+    // `build_url`: path params, declared query names, and every capture name
+    // a query template addresses (scalars are promoted by `merge_with_vars`).
+    for param in request.path.params() {
+        consumed.insert(param.to_string());
+    }
+    for (name, value) in request.query.iter().flatten() {
+        consumed.insert(name.clone());
+        for template in value.templates() {
+            template_capture_names(template, &mut consumed);
+        }
+    }
+    // `compose_headers` resolves header templates over the same merged vars.
+    for (_, template) in request.headers.iter().flatten() {
+        template_capture_names(template, &mut consumed);
+    }
+    // A `required` format header (`openehr-template-id`) takes its value from
+    // the step's own `${ds:…}` argument — the committed data set's
+    // manifest-declared template identity — so a data-set key is read there
+    // even when the request declares no body of its own.
+    let requires_template_id = binding.format_headers.iter().flatten().any(|(_, map)| {
+        map.0
+            .iter()
+            .any(|(_, req)| matches!(req, crate::model::binding::FormatHeaderReq::Required))
+    });
+    if requires_template_id {
+        for (key, value) in step.with_entries() {
+            let mut refs = BTreeSet::new();
+            value_data_set_refs(value, &mut refs);
+            if !refs.is_empty() {
+                consumed.insert(key.clone());
+            }
+        }
+    }
+    // `select_body`.
+    match &request.body {
+        None => {}
+        Some(crate::model::binding::RequestBody::Named { name, .. }) => {
+            let authored = |key: &str| step.with_entries().iter().any(|(k, _)| k == key);
+            // `select_body` resolves the payload in a fixed ORDER, and each
+            // arm short-circuits the ones after it. Modelling the order is
+            // what makes this gate sharp: once an earlier arm answers, the
+            // later arms read nothing, so a key they might have picked up is
+            // genuinely unread.
+            //
+            // 1. the bundled-CONTRIBUTION construct, when `versions:` is
+            //    authored: the envelope is built from `versions` + `audit`
+            //    (the client-supplied committal metadata) and NOTHING else.
+            if name == "contribution" && authored("versions") {
+                consumed.extend(CONTRIBUTION_KEYS.iter().map(|k| (*k).to_owned()));
+            }
+            // 2. the declared role name, then the two aliases, in that order.
+            else if let Some(hit) = std::iter::once(name.as_str())
+                .chain(BODY_ROLE_ALIASES)
+                .find(|key| authored(key))
+            {
+                consumed.insert(hit.to_owned());
+            }
+            // 3. only with none of those authored does the single-payload
+            //    scan run. It picks ONE key, but WHICH one is a runtime
+            //    property (the resolved values' JSON shapes, in the driver's
+            //    `BTreeMap` order), so every key that could be it counts —
+            //    an accusation must be certain.
+            else {
+                let text_role = name.ends_with("_text");
+                for (key, value) in step.with_entries() {
+                    if could_be_payload(value, text_role) {
+                        consumed.insert(key.clone());
+                    }
+                }
+            }
+        }
+        Some(crate::model::binding::RequestBody::Structured(template)) => {
+            value_capture_names(template, &mut consumed);
+        }
+        Some(crate::model::binding::RequestBody::Patched { from_capture, set }) => {
+            consumed.insert(from_capture.to_string());
+            for (_, value) in set {
+                if let Ok(value) = TemplatedValue::from_value(value) {
+                    value_capture_names(&value, &mut consumed);
+                }
+            }
+        }
+    }
+    consumed
+}
+
+/// No flow step authors a `with:` key its binding never reads (issue #1830).
+///
+/// A `with:` key is an ARGUMENT, and an argument the request form does not
+/// consume never leaves the runner: the SUT is driven exactly as if the key
+/// were absent. That is worse than a no-op — it makes the case ASSERT
+/// vacuously about an input it never sent. The live instance was
+/// `SEC-AUDIT_ACCOUNTABILITY-server_set_commit_audit`, whose deliberately
+/// ancient client-supplied `audit.time_committed` was dropped by the driver,
+/// so its `not_equals` assertion could not have failed however the server
+/// behaved.
+///
+/// The consumption model is [`consumed_with_keys`] — the union of every path
+/// `crate::exec::driver` reads a key by. It is deliberately GENEROUS where a
+/// path's choice is a runtime property (the single-payload body fallback),
+/// because an accusation must be certain: a key this gate names is one no
+/// request form can reach.
+///
+/// A step whose binding is `unrealized` is skipped — nothing is driven, so
+/// nothing can be vacuous; its case is not-applicable with the citation.
+fn check_step_arguments(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    for (_, case) in &set.cases {
+        let Some(anchor) = &case.sm_operation else {
+            continue;
+        };
+        let who = case.id.to_string();
+        for step in &case.flow {
+            if step.with_entries().is_empty() {
+                continue;
+            }
+            let op = if step.call.contains('.') {
+                match SmOperationRef::parse(&step.call) {
+                    Ok(op) => op,
+                    Err(_) => continue, // reported by the SM check
+                }
+            } else {
+                anchor.sibling(&step.call)
+            };
+            let mut bindings: Vec<&OperationBinding> = set
+                .bindings
+                .iter()
+                .map(|(_, b)| b)
+                .filter(|b| b.sm_operation == op)
+                .collect();
+            if let Some(v) = &step.variant
+                && bindings
+                    .iter()
+                    .any(|b| b.variant.as_deref() == Some(v.as_str()))
+            {
+                bindings.retain(|b| b.variant.as_deref() == Some(v.as_str()));
+            } else if bindings.iter().any(|b| b.variant.is_none()) {
+                bindings.retain(|b| b.variant.is_none());
+            }
+            let Some(binding) = bindings.first() else {
+                continue; // reported by binding-completeness
+            };
+            if binding.is_unrealized() {
+                continue;
+            }
+            let consumed = consumed_with_keys(set, binding, step);
+            for (key, _) in step.with_entries() {
+                if consumed.contains(key) {
+                    continue;
+                }
+                push(
+                    findings,
+                    CheckId::StepArguments,
+                    &who,
+                    format!(
+                        "step {}: `with.{key}` is authored but {} reads it on no request path \
+                         (not a path param, query parameter, header/body template reference, \
+                         payload role or variant selector) — the SUT is driven as if the key \
+                         were absent, so anything the case asserts about it passes vacuously",
+                        step.step, binding.sm_operation
+                    ),
+                );
+            }
+        }
     }
 }
 
@@ -2656,7 +3128,7 @@ fn check_vocab_drift(set: &ArtifactSet, findings: &mut Vec<Finding>) {
 /// `I_ADMIN_SERVICE` because the catalogue binds them (unrealized) as the SM
 /// Admin surface. Sub-interface navigation accessors (return type an
 /// interface — `i_ehr`, `i_party`, `i_party_relationship`) are not service
-/// operations and are excluded by [`sm_interface_operations`].
+/// operations and are excluded by `sm_interface_operations`.
 ///
 /// This table is the SM half of the Axis-1 domain only. A RELEASED ITS-REST
 /// operation the SM defines no interface for is invisible to it by
@@ -3875,6 +4347,101 @@ h|*1..1*\n\
         findings
     }
 
+    /// A workspace-shaped fixture: `docs/specs/openehr` beside the vendored
+    /// XSD bundle at `crates/openehr-its/schemas/xml`, mirroring the real
+    /// layout [`xml_schema_root`] derives.
+    fn workspace_fixture() -> assert_fs::TempDir {
+        let dir = assert_fs::TempDir::new().unwrap();
+        let docs = dir
+            .path()
+            .join("docs/specs/openehr/ITS-XML/components/RM/Release-1.0.2");
+        let schemas = dir
+            .path()
+            .join("crates/openehr-its/schemas/xml/components/RM/Release-1.0.2/documents");
+        std::fs::create_dir_all(&docs).unwrap();
+        std::fs::create_dir_all(&schemas).unwrap();
+        // What `vendor-spec-docs.sh` actually vendors into the docs tree: the
+        // upstream README stub, no schemas.
+        std::fs::write(docs.join("README.adoc"), "= XML Schemas\n\n== Releases\n").unwrap();
+        std::fs::write(
+            schemas.join("Composition.xsd"),
+            "<xs:schema targetNamespace=\"http://schemas.openehr.org/v1\">\n\
+             <xs:element name=\"composition\" type=\"COMPOSITION\"/>\n\
+             <xs:complexType name=\"COMPOSITION\"/>\n</xs:schema>\n",
+        )
+        .unwrap();
+        dir
+    }
+
+    /// ITS-XML is the one component with TWO roots (issue #1833): the docs
+    /// tree carries only prose, the released XSDs are vendored once under
+    /// `crates/openehr-its/schemas/xml`, and a citation of an XSD element
+    /// must resolve without the bundle being duplicated into the docs tree.
+    #[test]
+    fn its_xml_citations_resolve_against_the_vendored_schema_bundle() {
+        let dir = workspace_fixture();
+        let root = dir.path().join("docs/specs/openehr");
+        let spec = SpecIndex::new(&root);
+
+        // Both roots are offered for ITS-XML, the docs tree first.
+        let roots = spec.component_roots("ITS-XML", "ITS-XML");
+        assert_eq!(roots.len(), 2, "{roots:?}");
+        // Every other component keeps exactly one.
+        assert_eq!(spec.component_roots("RM", "RM").len(), 0, "no RM docs dir");
+
+        // The docs-tree half still resolves.
+        assert!(
+            citation_findings(
+                "ITS-XML components/RM/Release-1.0.2/README.adoc §Releases",
+                &spec
+            )
+            .is_empty()
+        );
+        // The XSD half resolves — the document AND its declared element, the
+        // citation that could not be machine-resolved at all before.
+        assert!(
+            citation_findings(
+                "ITS-XML components/RM/Release-1.0.2/documents/Composition.xsd §composition",
+                &spec
+            )
+            .is_empty()
+        );
+        assert!(
+            citation_findings(
+                "ITS-XML components/RM/Release-1.0.2/documents/Composition.xsd §COMPOSITION",
+                &spec
+            )
+            .is_empty()
+        );
+        // Seeded defect: an element the schema does not declare.
+        let out = citation_findings(
+            "ITS-XML components/RM/Release-1.0.2/documents/Composition.xsd §invented_element",
+            &spec,
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+        // Seeded defect: the overlay is ITS-XML-only — the same path under
+        // another component resolves nowhere.
+        let out = citation_findings(
+            "ITS-JSON components/RM/Release-1.0.2/documents/Composition.xsd",
+            &spec,
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+    }
+
+    #[test]
+    fn xsd_declared_names_reads_every_name_attribute() {
+        let names = xsd_declared_names(
+            "<xs:element name=\"composition\" type=\"openehr:COMPOSITION\"/>\
+             <xs:complexType name='LOCATABLE'><xs:attribute name=\"archetype_node_id\"/>\
+             </xs:complexType>",
+        );
+        // Declared names only — `type=` references are not declarations.
+        assert!(names.contains("composition"), "{names:?}");
+        assert!(names.contains("locatable"), "{names:?}");
+        assert!(names.contains("archetype node id"), "{names:?}");
+        assert_eq!(names.len(), 3, "{names:?}");
+    }
+
     #[test]
     fn spec_ref_gate_resolves_documents_and_sections() {
         let dir = spec_tree_fixture();
@@ -3961,6 +4528,280 @@ h|*1..1*\n\
             &spec,
         );
         assert_eq!(findings.len(), 1, "{findings:?}");
+    }
+
+    /// A binding `extension`/`unrealized` `source` is a DERIVATION, and every
+    /// clause of it is read (issue #1832): before this gate a derivation
+    /// written `SM x.adoc … vs ITS-REST y.yaml …` was ONE clause to
+    /// [`citation_clauses`], so the ITS-REST half — and any typo in it —
+    /// never reached the resolver.
+    #[test]
+    fn binding_source_gate_reads_every_clause_of_the_derivation() {
+        let dir = spec_tree_fixture();
+        let spec = SpecIndex::new(dir.path());
+        let binding = |source: &str| -> OperationBinding {
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_EHR_SERVICE.create_ehr",
+                "its": "its-rest",
+                "unrealized": {
+                    "reason": "r",
+                    "source": source,
+                    "ambiguity": "AMB-1"
+                }
+            }))
+            .expect("fixture binding parses")
+        };
+        let findings = |source: &str| -> Vec<Finding> {
+            let mut out = Vec::new();
+            check_binding_sources(&binding(source), "b.yaml", &spec, &mut out);
+            out
+        };
+
+        // Normalized: one `;`-separated clause per citation, each resolving.
+        assert!(
+            findings(
+                "RM ehr_extract master04-common_package §Version Specification; \
+                 RM ehr_extract master04-common_package §EXTRACT_MANIFEST"
+            )
+            .is_empty()
+        );
+        // The spec-silence flag is the one allowed non-citation clause.
+        assert!(
+            findings(
+                "RM ehr_extract master04-common_package; \
+                 no openEHR spec governs this — our own design/extension"
+            )
+            .is_empty()
+        );
+        // Seeded defect: a separated fragment that names a document without
+        // its component. `citation_clauses` DROPS it unread, so the gate
+        // refuses the shape rather than passing it vacuously.
+        let out = findings(
+            "RM ehr_extract master04-common_package; \
+             UML/classes/org.openehr.rm.ehr_extract.extract_manifest.adoc (a gloss)",
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert!(
+            out.first().expect("one finding").message.contains(
+                "opens with neither a spec component nor the spec-silence flag nor the register"
+            ),
+            "{out:?}"
+        );
+        // Seeded defect: the un-normalized `vs` form, which reads as ONE
+        // clause whose token run swallows the connective — it resolves to no
+        // document at all, so it cannot pass either.
+        let out = findings(
+            "RM ehr_extract master04-common_package vs RM ehr_extract master99-invented_package",
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+        // Seeded defect: normalized shape, phantom document in the SECOND
+        // clause — exactly what the old form hid.
+        let out = findings(
+            "RM ehr_extract master04-common_package; RM ehr_extract master99-invented_package",
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert!(
+            out.first()
+                .expect("one finding")
+                .message
+                .contains("no vendored document"),
+            "{out:?}"
+        );
+    }
+
+    /// Drive one step through one binding and return the gate's findings.
+    fn step_argument_findings(
+        binding: serde_json::Value,
+        with: &serde_json::Value,
+    ) -> Vec<Finding> {
+        let binding: OperationBinding =
+            serde_json::from_value(binding).expect("fixture binding parses");
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "T-ARG", "kind": "functional", "component": "EHR",
+            "sm_operation": "I_EHR_CONTRIBUTION.commit_contribution",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": [],
+            "flow": [ {
+                "step": 1, "call": "commit_contribution",
+                "with": with, "expect": "created"
+            } ]
+        }))
+        .expect("fixture case parses");
+        let mut set = ArtifactSet::default();
+        set.bindings.push((PathBuf::from("b.yaml"), binding));
+        set.cases.push((PathBuf::from("c.yaml"), case));
+        let mut out = Vec::new();
+        check_step_arguments(&set, &mut out);
+        out
+    }
+
+    /// The bundled-CONTRIBUTION binding: a path param, a declared query
+    /// parameter, and the `contribution` body role.
+    fn contribution_binding() -> serde_json::Value {
+        serde_json::json!({
+            "sm_operation": "I_EHR_CONTRIBUTION.commit_contribution",
+            "its": "its-rest",
+            "request": {
+                "method": "POST",
+                "path": "/ehr/{ehr_id}/contribution",
+                "query": { "dry_run": "${dry_run?}" },
+                "body": "contribution"
+            },
+            "outcomes": { "created": { "status": 201 } }
+        })
+    }
+
+    /// A key every request path reads is not accused: a path param, a
+    /// declared query parameter, and the two keys the bundled-CONTRIBUTION
+    /// construct reads — `versions` and `audit`, the client-supplied
+    /// committal metadata issue #1818 wired through.
+    #[test]
+    fn step_arguments_gate_credits_every_read_key() {
+        let out = step_argument_findings(
+            contribution_binding(),
+            &serde_json::json!({
+                "ehr_id": "${ehr_id}",
+                "dry_run": "true",
+                "versions": [{ "data": "${ds:x}", "change_type": "creation" }],
+                "audit": { "committer": { "name": "Dr Example" } }
+            }),
+        );
+        assert!(out.is_empty(), "{out:?}");
+    }
+
+    /// A `with:` key the driver reads on no request path never reaches the
+    /// SUT, so anything the case asserts about it passes vacuously (issue
+    /// #1830 — the live instance was the SEC audit case's client-supplied
+    /// `audit.time_committed`, dropped for its whole life).
+    ///
+    /// The seeded defect is that very block on a binding whose body role is
+    /// NOT `contribution`: `select_body` resolves the `composition` role
+    /// directly, so the single-payload scan that might otherwise have picked
+    /// the object up never runs.
+    #[test]
+    fn step_arguments_gate_accuses_an_unread_payload_key() {
+        let out = step_argument_findings(
+            serde_json::json!({
+                "sm_operation": "I_EHR_CONTRIBUTION.commit_contribution",
+                "its": "its-rest",
+                "request": {
+                    "method": "POST",
+                    "path": "/ehr/{ehr_id}/composition",
+                    "body": "composition"
+                },
+                "outcomes": { "created": { "status": 201 } }
+            }),
+            &serde_json::json!({
+                "ehr_id": "${ehr_id}",
+                "composition": "${ds:x}",
+                "audit": { "time_committed": "1990-01-01T00:00:00Z" }
+            }),
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+        let finding = out.first().expect("one finding");
+        assert_eq!(finding.check, CheckId::StepArguments);
+        assert!(finding.message.contains("with.audit"), "{finding:?}");
+        assert!(finding.message.contains("vacuously"), "{finding:?}");
+    }
+
+    /// A key that names nothing on the wire at all.
+    #[test]
+    fn step_arguments_gate_accuses_a_key_no_form_declares() {
+        let out = step_argument_findings(
+            contribution_binding(),
+            &serde_json::json!({ "ehr_id": "${ehr_id}", "decoration": "x" }),
+        );
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert!(
+            out.first()
+                .expect("one finding")
+                .message
+                .contains("with.decoration"),
+            "{out:?}"
+        );
+    }
+
+    /// A `*_text` payload role takes a plain STRING as its body, so the one
+    /// non-path string key is the payload, not decoration.
+    #[test]
+    fn step_arguments_gate_credits_a_text_role_payload() {
+        let out = step_argument_findings(
+            serde_json::json!({
+                "sm_operation": "I_EHR_CONTRIBUTION.commit_contribution",
+                "its": "its-rest",
+                "request": {
+                    "method": "PUT",
+                    "path": "/definition/query/{qualified_query_name}",
+                    "body": "aql_text"
+                },
+                "outcomes": { "created": { "status": 200 } }
+            }),
+            &serde_json::json!({
+                "qualified_query_name": "org.openehr.cnf::q",
+                "query": "SELECT c FROM EHR e CONTAINS COMPOSITION c"
+            }),
+        );
+        assert!(out.is_empty(), "{out:?}");
+    }
+
+    /// A structured body reads its `${…}` members from the step's `with:`.
+    #[test]
+    fn step_arguments_gate_credits_structured_body_members() {
+        let out = step_argument_findings(
+            serde_json::json!({
+                "sm_operation": "I_EHR_CONTRIBUTION.commit_contribution",
+                "its": "its-rest",
+                "request": {
+                    "method": "POST",
+                    "path": "/query/aql",
+                    "body": { "q": "${q}", "offset": "${offset?}" }
+                },
+                "outcomes": { "created": { "status": 200 } }
+            }),
+            &serde_json::json!({ "q": "SELECT c FROM EHR e", "offset": "0" }),
+        );
+        assert!(out.is_empty(), "{out:?}");
+    }
+
+    /// A `with_<p>` sibling binding is SELECTED BY the step binding `<p>`, so
+    /// `<p>` is read even though the variant-less binding's own request never
+    /// names it (`HttpDriver::auto_variant`).
+    #[test]
+    fn step_arguments_gate_credits_the_auto_variant_selector() {
+        let variantless: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_EHR_SERVICE.create_ehr",
+            "its": "its-rest",
+            "request": { "method": "POST", "path": "/ehr" },
+            "outcomes": { "created": { "status": 201 } }
+        }))
+        .expect("fixture binding parses");
+        let with_ehr_id: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_EHR_SERVICE.create_ehr",
+            "its": "its-rest",
+            "variant": "with_ehr_id",
+            "request": { "method": "PUT", "path": "/ehr/{ehr_id}" },
+            "outcomes": { "created": { "status": 201 } }
+        }))
+        .expect("fixture binding parses");
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "T-VAR", "kind": "functional", "component": "EHR",
+            "sm_operation": "I_EHR_SERVICE.create_ehr",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": [],
+            "flow": [ {
+                "step": 1, "call": "create_ehr",
+                "with": { "ehr_id": "11111111-1111-4111-8111-111111111111" },
+                "expect": "created"
+            } ]
+        }))
+        .expect("fixture case parses");
+        let mut set = ArtifactSet::default();
+        set.bindings.push((PathBuf::from("a.yaml"), variantless));
+        set.bindings.push((PathBuf::from("b.yaml"), with_ehr_id));
+        set.cases.push((PathBuf::from("c.yaml"), case));
+        let mut findings = Vec::new();
+        check_step_arguments(&set, &mut findings);
+        assert!(findings.is_empty(), "{findings:?}");
     }
 
     fn build_set(with_exception: bool) -> ArtifactSet {

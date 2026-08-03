@@ -226,16 +226,20 @@ fn capabilities_claiming_family(set: &ArtifactSet, family: &str) -> Vec<Capabili
 /// against a party that serves no import route would record a red row for a
 /// ground that party never offered to establish. Excused at SELECTION time —
 /// never as a drive-time provisioning refusal, which reads like a SUT defect.
+///
+/// # Errors
+/// An interpreter defect: one of the SM operation anchors this arm is written
+/// against is not a well-formed `I_<INTERFACE>.<operation>` reference.
 fn unservable_import(
     set: &ArtifactSet,
     statement: Option<&crate::party::Statement>,
     case: &CaseCore,
-) -> Option<String> {
+) -> Result<Option<String>, String> {
     if !matches!(
         case.requires.import,
         Some(crate::model::case::ImportRequirement::Received { .. })
     ) {
-        return None;
+        return Ok(None);
     }
     // Either receiving situation of master06 §Copying drives the same family;
     // whichever binding the catalogue realizes names it.
@@ -257,16 +261,20 @@ fn unservable_import(
 /// [`unservable_import`]'s extract replay is, so a party that claims none of
 /// the capabilities that family's cases gate has no relationship to
 /// precondition with.
+///
+/// # Errors
+/// An interpreter defect: an SM operation anchor this arm is written against
+/// is not a well-formed `I_<INTERFACE>.<operation>` reference.
 fn unservable_party_relationship(
     set: &ArtifactSet,
     statement: Option<&crate::party::Statement>,
     case: &CaseCore,
-) -> Option<String> {
+) -> Result<Option<String>, String> {
     if !matches!(
         case.requires.party_relationship,
         Some(PartyRelationshipRequirement::Exists { .. })
     ) {
-        return None;
+        return Ok(None);
     }
     unservable_provisioning(
         set,
@@ -292,32 +300,47 @@ fn unservable_party_relationship(
 /// family (the first one the catalogue realizes decides); `requirement` names
 /// the precondition for the citation, and `consequence` says what the case
 /// therefore cannot read.
+///
+/// # Errors
+/// An interpreter defect: an `operations` anchor is not a well-formed
+/// `I_<INTERFACE>.<operation>` reference. A malformed anchor matches no
+/// binding, so swallowing the parse would silently turn this whole arm off —
+/// every `requires`-provisioned case would then DRIVE against a party that
+/// serves no such route and record a red row for a ground it never offered to
+/// establish, which is the opposite of what this selection law exists to do.
 fn unservable_provisioning(
     set: &ArtifactSet,
     statement: Option<&crate::party::Statement>,
     operations: &[&str],
     requirement: &str,
     consequence: &str,
-) -> Option<String> {
-    let statement = statement?;
-    let decl = operations
-        .iter()
-        .filter_map(|call| SmOperationRef::parse(call).ok())
-        .find_map(|op| {
-            set.bindings
-                .iter()
-                .map(|(_, b)| b)
-                .find(|b| b.sm_operation == op)
-                .and_then(|b| b.extension.as_ref())
-        })?;
+) -> Result<Option<String>, String> {
+    let Some(statement) = statement else {
+        return Ok(None);
+    };
+    let mut parsed: Vec<SmOperationRef> = Vec::with_capacity(operations.len());
+    for call in operations {
+        parsed.push(SmOperationRef::parse(call).map_err(|e| {
+            format!("interpreter defect: selection-law SM operation anchor {call:?}: {e}")
+        })?);
+    }
+    let Some(decl) = parsed.iter().find_map(|op| {
+        set.bindings
+            .iter()
+            .map(|(_, b)| b)
+            .find(|b| b.sm_operation == *op)
+            .and_then(|b| b.extension.as_ref())
+    }) else {
+        return Ok(None);
+    };
     let claiming = capabilities_claiming_family(set, &decl.family);
     if claiming
         .iter()
         .any(|c| statement.claims.capabilities.contains(c))
     {
-        return None;
+        return Ok(None);
     }
-    Some(format!(
+    Ok(Some(format!(
         "{requirement} provisions over the {} extension routes ({}): the ICS claims none of \
          the capabilities those routes' cases gate ({}), and no openEHR specification governs \
          them, so {consequence}",
@@ -328,7 +351,7 @@ fn unservable_provisioning(
             .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join(", ")
-    ))
+    )))
 }
 
 /// The `${ixit:…}` facts a case reads that THIS party's ixit does not
@@ -547,11 +570,15 @@ fn not_applicable_record(case: &CaseCore, citation: &str) -> CaseRecord {
 /// at another vendor's SUT would publish failures for routes that vendor never
 /// offered to serve — the published comparison must be honest in both
 /// directions, and a spurious red row is not honesty.
+///
+/// # Errors
+/// An interpreter defect propagated from the provisioning arms (a malformed
+/// SM operation anchor).
 fn unserved_extension(
     set: &ArtifactSet,
     statement: Option<&crate::party::Statement>,
     case: &CaseCore,
-) -> Option<String> {
+) -> Result<Option<String>, String> {
     if let Some(stmt) = statement
         && let Some(family) = extension_family(set, case)
         && !case
@@ -559,28 +586,33 @@ fn unserved_extension(
             .iter()
             .any(|c| stmt.claims.capabilities.contains(c))
     {
-        return Some(format!(
+        return Ok(Some(format!(
             "extension realization ({family}): the ICS claims none of this case's \
              capabilities, and no openEHR specification governs the route — ISO/IEC 9646 \
              test selection"
-        ));
+        )));
     }
-    unservable_import(set, statement, case)
-        .or_else(|| unservable_party_relationship(set, statement, case))
-        .map(|citation| format!("{citation} — ISO/IEC 9646 test selection"))
+    let citation = match unservable_import(set, statement, case)? {
+        Some(citation) => Some(citation),
+        None => unservable_party_relationship(set, statement, case)?,
+    };
+    Ok(citation.map(|citation| format!("{citation} — ISO/IEC 9646 test selection")))
 }
 
+/// # Errors
+/// An interpreter defect propagated from the extension arm (a malformed SM
+/// operation anchor in the selection law).
 fn selection_exception(
     set: &ArtifactSet,
     ixit: &Ixit,
     statement: Option<&crate::party::Statement>,
     case: &CaseCore,
-) -> Option<Exception> {
+) -> Result<Option<Exception>, String> {
     if let Some(citation) = fully_unrealized(set, case) {
-        return Some(Exception::Unrealized(citation));
+        return Ok(Some(Exception::Unrealized(citation)));
     }
-    if let Some(citation) = unserved_extension(set, statement, case) {
-        return Some(Exception::Unrealized(citation));
+    if let Some(citation) = unserved_extension(set, statement, case)? {
+        return Ok(Some(Exception::Unrealized(citation)));
     }
     // An option branch the party statement does not declare is not this
     // SUT's behaviour — driving it records a spurious failure the verdict
@@ -590,10 +622,10 @@ fn selection_exception(
         && let Some(tag) = &case.option
         && !stmt.options.contains(tag)
     {
-        return Some(Exception::Unrealized(format!(
+        return Ok(Some(Exception::Unrealized(format!(
             "option {tag}: the ICS does not declare this register branch \
              (statement.options) — ISO/IEC 9646 test selection"
-        )));
+        ))));
     }
     // Case-level spec-version floors (`CaseCore.applies`): a behaviour the
     // spec dates to a release the party does not declare is out of scope for
@@ -611,11 +643,11 @@ fn selection_exception(
             .into_iter()
             .map(|(component, range)| format!("{} {}", component.token(), range.raw()))
             .collect();
-        return Some(Exception::Unrealized(format!(
+        return Ok(Some(Exception::Unrealized(format!(
             "case version floor unmet ({}) — the party's declared spec versions do not \
              satisfy the case's applies ranges; ISO/IEC 9646 test selection",
             declared.join(", ")
-        )));
+        ))));
     }
     // Operation-level spec-version floors (`OperationBinding.applies`): a
     // wire a later release introduced is not this party's behaviour to
@@ -624,11 +656,11 @@ fn selection_exception(
     if let Some(stmt) = statement {
         let unmet = unmet_binding_floors(set, case, &stmt.spec_versions);
         if !unmet.is_empty() {
-            return Some(Exception::Unrealized(format!(
+            return Ok(Some(Exception::Unrealized(format!(
                 "operation version floor unmet ({}) — the party's declared spec versions \
                  predate the release that introduced this wire; ISO/IEC 9646 test selection",
                 unmet.join("; ")
-            )));
+            ))));
         }
     }
     // The SMART lane is a party declaration, exactly like the ixit facts
@@ -639,12 +671,12 @@ fn selection_exception(
     // Undeclared => not-applicable with the citation, never a spurious
     // failure against a deployment that legitimately does not run SMART.
     if needs_smart_lane(case) && ixit.smart.is_none() {
-        return Some(Exception::Guarded(
+        return Ok(Some(Exception::Guarded(
             "the ixit declares no `smart` lane — the case needs a SMART-enabled \
              deployment and a minted, scope-carrying access token, neither of which any \
              released operation discloses or provides; ISO/IEC 9646 test selection"
                 .to_owned(),
-        ));
+        )));
     }
     // The terminology deployment is a party declaration exactly like the
     // SMART lane above: released ITS-REST surfaces no terminology resource,
@@ -653,31 +685,31 @@ fn selection_exception(
     // or differently declared => not-applicable with the citation, never a
     // red row against a deployment that legitimately runs the other posture.
     if let Some(citation) = unsatisfied_terminology(case, ixit) {
-        return Some(Exception::Guarded(format!(
+        return Ok(Some(Exception::Guarded(format!(
             "{citation}; ISO/IEC 9646 test selection"
-        )));
+        ))));
     }
     // A flow step addressing an instance this party does not declare has no
     // ground to run on (the deployment or principal simply does not exist
     // here).
     let missing_instances = undeclared_instances(case, ixit);
     if !missing_instances.is_empty() {
-        return Some(Exception::Guarded(format!(
+        return Ok(Some(Exception::Guarded(format!(
             "the ixit declares no instance {} — the case's flow addresses it with `on:` and \
              this party runs no such deployment/principal; ISO/IEC 9646 test selection",
             missing_instances.join(", ")
-        )));
+        ))));
     }
     // A case reading a party-declared SUT fact this ixit does not carry
     // cannot be driven: the fact is not on the wire, so the alternative to a
     // declaration is a guess.
     let missing = undeclared_ixit_facts(case, ixit);
     if !missing.is_empty() {
-        return Some(Exception::Guarded(format!(
+        return Ok(Some(Exception::Guarded(format!(
             "the ixit declares no {} — the case reads it as ${{ixit:…}} and no released \
              operation discloses the value; ISO/IEC 9646 test selection",
             missing.join(", ")
-        )));
+        ))));
     }
     // Global-state grounds (an empty template list, a globally-absent
     // artefact) hold only on an exclusively-owned SUT; on a shared instance
@@ -690,14 +722,14 @@ fn selection_exception(
         .as_ref()
         .is_some_and(|env| env.exclusive_server)
     {
-        return Some(Exception::Unrealized(
+        return Ok(Some(Exception::Unrealized(
             "requires.server: exclusive — the ixit declares a shared SUT instance \
              (environment.exclusive_server: false); the global-state ground cannot \
              be established"
                 .to_owned(),
-        ));
+        )));
     }
-    None
+    Ok(None)
 }
 
 /// Execute every runnable case against the ixit's default topology.
@@ -737,7 +769,7 @@ pub fn execute(
             ));
             continue;
         }
-        if let Some(exception) = selection_exception(set, ixit, statement, case) {
+        if let Some(exception) = selection_exception(set, ixit, statement, case)? {
             let citation = match &exception {
                 Exception::Unrealized(c)
                 | Exception::ContentGeneration(c)
@@ -1082,15 +1114,18 @@ mod tests {
         };
         let serving = statement(&["EhrExtract", "Versioning"]);
         assert!(
-            unservable_import(&set, Some(&serving), &reader).is_none(),
+            unservable_import(&set, Some(&serving), &reader)
+                .expect("well-formed anchors")
+                .is_none(),
             "a party claiming the family's capability drives the case"
         );
 
         // Claims the READ capability but not the import family — the case's
         // own capabilities must not be what decides this.
         let read_only = statement(&["Versioning"]);
-        let citation =
-            unservable_import(&set, Some(&read_only), &reader).expect("excused with a citation");
+        let citation = unservable_import(&set, Some(&read_only), &reader)
+            .expect("well-formed anchors")
+            .expect("excused with a citation");
         assert!(citation.contains("message-extract"), "{citation}");
         assert!(
             citation.contains("AMB-34"),
@@ -1106,7 +1141,11 @@ mod tests {
             "flow": [{ "step": 1, "call": "get_versioned_composition", "expect": "ok" }]
         }))
         .unwrap();
-        assert!(unservable_import(&set, Some(&read_only), &plain).is_none());
+        assert!(
+            unservable_import(&set, Some(&read_only), &plain)
+                .expect("well-formed anchors")
+                .is_none()
+        );
     }
 
     /// `requires.party_relationship` provisions over the SAME extension seam
@@ -1183,7 +1222,9 @@ mod tests {
         };
         let serving = statement(&["PartyRelationships", "Demographics"]);
         assert!(
-            unservable_party_relationship(&set, Some(&serving), &reader).is_none(),
+            unservable_party_relationship(&set, Some(&serving), &reader)
+                .expect("well-formed anchors")
+                .is_none(),
             "a party claiming the family's capability drives the case"
         );
 
@@ -1191,6 +1232,7 @@ mod tests {
         // case's own capabilities must not be what decides this.
         let read_only = statement(&["Demographics"]);
         let citation = unservable_party_relationship(&set, Some(&read_only), &reader)
+            .expect("well-formed anchors")
             .expect("excused with a citation");
         assert!(citation.contains("party-relationship"), "{citation}");
         assert!(
@@ -1208,7 +1250,11 @@ mod tests {
             "flow": [{ "step": 1, "call": "get_party", "expect": "ok" }]
         }))
         .unwrap();
-        assert!(unservable_party_relationship(&set, Some(&read_only), &plain).is_none());
+        assert!(
+            unservable_party_relationship(&set, Some(&read_only), &plain)
+                .expect("well-formed anchors")
+                .is_none()
+        );
     }
 
     /// The SMART-lane marker is the DECLARATION of a `scopes:` key (empty

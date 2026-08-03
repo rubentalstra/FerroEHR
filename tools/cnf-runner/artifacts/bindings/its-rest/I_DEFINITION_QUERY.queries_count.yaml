@@ -12,5 +12,8 @@ unrealized:
     there is no request that enumerates the whole registry ("Return total count
     of queries") — the description's empty-pattern wildcard clause names a
     request the released paths cannot express (register AMB-124(d)).
-  source: "SM docs/UML/classes/i_definition_query.adoc §queries_count vs ITS-REST specifications/definition.openapi.yaml (the two /definition/query paths, no count resource) + parameters/path/qualified_query_name.yaml (`required: true`)"
+  source: >-
+    SM docs/UML/classes/i_definition_query.adoc §queries_count; ITS-REST
+    specifications/definition.openapi.yaml (the two /definition/query paths, no count resource);
+    ITS-REST specifications/parameters/path/qualified_query_name.yaml (`required: true`)
   ambiguity: AMB-127

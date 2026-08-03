@@ -22,10 +22,10 @@ extension:
     its own /definition/artefact/adl2/count route, whose body is the bare
     Integer the SM operation returns.
   source: >-
-    SM docs/UML/classes/i_definition_adl2.adoc (artefacts_count) vs released
-    ITS-REST specifications/definition.openapi.yaml (definition_template_adl2_*
-    only — no count path anywhere) + specifications/docs/definition/** (no mention) — no
-    openEHR spec governs the extension route, our own design/extension
+    SM docs/UML/classes/i_definition_adl2.adoc (artefacts_count); ITS-REST
+    specifications/definition.openapi.yaml (definition_template_adl2_* only, no count path
+    anywhere); ITS-REST specifications/docs/definition (no mention); no openEHR spec governs
+    this — our own design/extension
   ambiguity: AMB-37
 request:
   method: GET

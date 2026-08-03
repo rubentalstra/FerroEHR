@@ -760,7 +760,7 @@ fn min_observation(events: Vec<Value>, state: Option<Value>, protocol: Option<Va
     Value::Object(obs)
 }
 
-/// The COMPOSITION shell (category/composer/[context]) carrying `content`
+/// The COMPOSITION shell (category/composer/\[context\]) carrying `content`
 /// (omitted entirely when empty — COMPOSITION.content existence 0..1, so an
 /// absent list is 0 items; a present-but-empty list is an RM error).
 fn comp_shell(template_id: &str, content: Vec<Value>, with_context: bool) -> Value {

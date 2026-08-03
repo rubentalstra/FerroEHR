@@ -2759,7 +2759,7 @@ cnf.opt.invalid.undefined_constraint_code:
   validity:
     verdict: invalid
     defect: "the definition references constraint code ac0001 (CONSTRAINT_REF) and constraint_bindings binds it, but no constraint_definitions entry defines it, and the ontology omits the mandatory term_definitions"
-    spec_ref: "AM ADL1.4 master08-adl.adoc §Coded Term Validity (VATDF: all ac codes used in the definition must be defined in constraint_definitions; VACDF); master05-cadl.adoc §Placeholder Constraints; ITS-XML components/AM/Release-1.4 §Archetype 1.4 (Archetype.xsd — ARCHETYPE_ONTOLOGY term_definitions mandatory)"
+    spec_ref: "AM ADL1.4 master08-adl.adoc §Coded Term Validity (VATDF: all ac codes used in the definition must be defined in constraint_definitions; VACDF); master05-cadl.adoc §Placeholder Constraints; ITS-XML components/AM/Release-1.4 §Archetype 1.4; ITS-XML components/AM/Release-1.4/Archetype.xsd §ARCHETYPE_ONTOLOGY (term_definitions mandatory)"
   template_id: "cnf.tpl.dv_coded_text_binding_undefined_ac"
   provenance: "the 2026-07-29 triage's adjudicated-invalid shape, preserved verbatim under its own id per the valid+invalid-twins rule (owner 2026-07-29): the pre-correction dt_coded_text_binding_sct.opt whose upload the SUT was spec-RIGHT to refuse (422 VTCBK). Its corrected valid twin is cnf.tpl.dv_coded_text_binding_sct; this row pins the refusal so a lenient server fails it"
 cnf.tpl.dv_coded_text_binding_sct:

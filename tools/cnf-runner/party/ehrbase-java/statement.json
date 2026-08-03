@@ -3,7 +3,7 @@
     "name": "EHRbase",
     "version": "2.34.0",
     "vendor": "EHRbase (vitagroup / upstream open-source project)",
-    "identifier": "urn:ferroehr:ferroehr"
+    "identifier": "urn:ehrbase:ehrbase"
   },
   "schedule_release": "cnf-2.0-w2",
   "spec_versions": {

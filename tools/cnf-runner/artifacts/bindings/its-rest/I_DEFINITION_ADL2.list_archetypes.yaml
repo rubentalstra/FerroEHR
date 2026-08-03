@@ -21,10 +21,10 @@ extension:
     list_archetypes has no released wire; this product serves the operation on
     its own /definition/archetype/adl2 route, which is what the cases drive.
   source: >-
-    SM docs/UML/classes/i_definition_adl2.adoc (list_archetypes) vs released
-    ITS-REST specifications/definition.openapi.yaml (definition_template_adl2_*
-    only — no archetype path anywhere) + specifications/docs/definition/** (no mention) — no
-    openEHR spec governs the extension route, our own design/extension
+    SM docs/UML/classes/i_definition_adl2.adoc (list_archetypes); ITS-REST
+    specifications/definition.openapi.yaml (definition_template_adl2_* only, no archetype path
+    anywhere); ITS-REST specifications/docs/definition (no mention); no openEHR spec governs
+    this — our own design/extension
   ambiguity: AMB-37
 request:
   method: GET
