@@ -86,10 +86,28 @@
 #    `uid_based_id` does not exist"; register AMB-91 adjudicates the kind
 #    mismatch as that miss, on GET, PUT and DELETE alike and on all seven typed
 #    families.
+#  - `validation_failed` 422: the OTHER half of the AMB-93 split, and the one
+#    branch here that the released response set does NOT declare. A body that
+#    satisfies schemas/common/UpdateItemTag.yaml and then breaks an ITEM_TAG
+#    RM invariant (`Inv_key_valid`: "not key.is_empty and key.is_justified";
+#    `Inv_value_valid`: "value /= Void implies not value.is_empty" — RM
+#    UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants) is not a
+#    syntactic defect, so the declared 400 ("could not be parsed or is
+#    invalid ... syntactically invalid ... content") does not describe it;
+#    the docs text's own status table does — Requests_and_responses.md §"HTTP
+#    status codes", the 422 row: "The request was well-formed but was unable
+#    to be followed due to semantic errors". Register AMB-93 fixes the
+#    handling for all seven tag PUTs; the branch is DECLARED here, on the
+#    EHR-side seam the case drives, rather than restated per family.
 #
-# `Prefer: return=identifier` is NOT realized: an ITEM_TAG has no uid and the
-# affected resource is a collection, so the released identifier contract cannot
-# apply (register AMB-92).
+# `Prefer: return=identifier` IS accepted and resolves to the APPLIED default
+# `return=minimal` (204, `Preference-Applied: return=minimal`): an ITEM_TAG has
+# no uid and the affected resource is a collection, so the released identifier
+# contract ("a single JSON object with a single `uid` attribute", overview
+# §"Prefer only identifier") has nothing to return and claiming the preference
+# was applied would be false (register AMB-92). That resolution is a distinct
+# request shape, so it is a VARIANT binding of its own
+# (`-prefer_identifier`), not an outcome of this one.
 sm_operation: I_ITS_REST_ITEM_TAGS.composition_tags_update
 its: its-rest
 request:
@@ -109,4 +127,7 @@ outcomes:
   bad_request:
     status: 400
     body: error_loose
+  validation_failed:
+    status: 422                           # AMB-93's semantic half — overview §HTTP status codes, the 422 row
+    body: error_loose                     # overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details
   not_found: { status: 404 }

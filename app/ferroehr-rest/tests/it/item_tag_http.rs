@@ -514,3 +514,228 @@ async fn a_keyless_wrapper_entry_refuses_the_write() {
         "NO version was created"
     );
 }
+
+// ── Negotiation and preference branches of the dedicated tag operations ──────
+
+/// `GET …/tags` with an XML `Accept` is refused, never answered in JSON.
+///
+/// ITS-REST overview `Resources.md` §"XML Format": "The client SHOULD use the
+/// `Accept: application/xml` request header to specify the expected XML
+/// response format. If the service cannot fulfill this aspect of the request,
+/// it MUST respond with HTTP status code `406 Not Acceptable`." It cannot be
+/// fulfilled here: the same section requires responses to "conform to the
+/// [published XSDs]" and no published ITS-XML schema declares an `ITEM_TAG`
+/// type at all.
+#[tokio::test]
+async fn a_tag_read_with_an_xml_accept_is_not_acceptable() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let vo = status_vo(&app, &ehr).await;
+    let (put, text) = put_status_tags(&app, &ehr, &vo, &json!([{ "key": "alpha" }])).await;
+    assert_eq!(put, StatusCode::NO_CONTENT, "seed: {text}");
+
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{ehr}/ehr_status/{vo}/tags"))
+        .header(header::ACCEPT, "application/xml")
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_ACCEPTABLE,
+        "no ITEM_TAG canonical-XML type is published, so the Accept cannot be fulfilled: {body}"
+    );
+}
+
+/// `PUT …/tags` declaring a payload media type the collection has no
+/// representation for is refused before anything is read.
+///
+/// ITS-REST overview `Resources.md` §"JSON Format": "If the service cannot
+/// process the request payload as JSON format, it MUST respond with HTTP
+/// status code `415 Unsupported Media Type`." The tag write declares
+/// `application/json` only, and the refused replace must leave the addressed
+/// collection exactly as it was.
+#[tokio::test]
+async fn a_tag_put_with_an_unprocessable_content_type_is_refused() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let vo = status_vo(&app, &ehr).await;
+    let (put, text) = put_status_tags(&app, &ehr, &vo, &json!([{ "key": "alpha" }])).await;
+    assert_eq!(put, StatusCode::NO_CONTENT, "seed: {text}");
+
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr}/ehr_status/{vo}/tags"))
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::from(json!([{ "key": "beta" }]).to_string()))
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::UNSUPPORTED_MEDIA_TYPE,
+        "text/plain is no representation of the tag collection: {body}"
+    );
+    let tags = ehr_tags(&app, &ehr).await;
+    assert_eq!(
+        tags.len(),
+        1,
+        "the refused replace changed nothing: {tags:?}"
+    );
+    assert_eq!(tags[0]["key"], "alpha");
+}
+
+/// An `ITEM_TAG` whose `value` is present but EMPTY breaks
+/// `Inv_value_valid` — "`value /= Void implies not value.is_empty`" (RM
+/// `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants) — which is a
+/// SEMANTIC failure of well-formed content, not a syntactic one: ITS-REST
+/// overview `Requests_and_responses.md` §"HTTP status codes", the `422` row
+/// ("The request was well-formed but was unable to be followed due to semantic
+/// errors"). Register AMB-93 fixes that split for all seven tag PUTs.
+#[tokio::test]
+async fn a_tag_put_with_an_empty_value_is_unprocessable() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let vo = status_vo(&app, &ehr).await;
+    let (put, text) = put_status_tags(&app, &ehr, &vo, &json!([{ "key": "alpha" }])).await;
+    assert_eq!(put, StatusCode::NO_CONTENT, "seed: {text}");
+
+    let (status, body) =
+        put_status_tags(&app, &ehr, &vo, &json!([{ "key": "beta", "value": "" }])).await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "ITEM_TAG.Inv_value_valid: a set value may not be empty: {body}"
+    );
+    let tags = ehr_tags(&app, &ehr).await;
+    assert_eq!(
+        tags.len(),
+        1,
+        "the refused replace changed nothing: {tags:?}"
+    );
+    assert_eq!(tags[0]["key"], "alpha");
+}
+
+/// `Prefer: return=identifier` on a tag PUT resolves to the APPLIED default
+/// `return=minimal`.
+///
+/// The released identifier contract cannot apply: it demands "a non-empty
+/// response body (i.e., the status will be `201 Created` or `200 OK`, never
+/// `204 No Content`)" carrying "a single JSON object with a single `uid`
+/// attribute" (ITS-REST overview `Requests_and_responses.md` §"Prefer only
+/// identifier"), while an `ITEM_TAG` has no uid at all and the affected
+/// resource is a collection. Register AMB-92 fixes the fallback; the `204` is
+/// itself the proof, since the identifier branch forbids that status.
+#[tokio::test]
+async fn a_tag_put_preferring_an_identifier_applies_the_minimal_default() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let vo = status_vo(&app, &ehr).await;
+
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr}/ehr_status/{vo}/tags"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Prefer", "return=identifier")
+        .body(Body::from(
+            json!([{ "key": "alpha", "value": "a" }]).to_string(),
+        ))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "an ITEM_TAG collection has no identifier to return: {body}"
+    );
+    assert!(body.is_empty(), "204 carries no payload body: {body}");
+    if let Some(applied) = h.get("preference-applied") {
+        assert_eq!(
+            applied.to_str().unwrap(),
+            "return=minimal",
+            "the header may be omitted, but it may not claim a preference that was not applied"
+        );
+    }
+    // The write itself still landed.
+    let tags = ehr_tags(&app, &ehr).await;
+    assert_eq!(tags.len(), 1, "{tags:?}");
+    assert_eq!(tags[0]["key"], "alpha");
+}
+
+/// Two entries of one PUT body sharing the `ITEM_TAG` identity — the
+/// (`key`, `target_path`) pair (ITS-REST overview
+/// `Requests_and_responses.md` §openehr-item-tag and
+/// openehr-version-item-tag) — are ONE tag afterwards, and the LAST occurrence
+/// wins (register AMB-95: the released array declares no `uniqueItems` and no
+/// merge rule).
+#[tokio::test]
+async fn a_duplicate_identity_pair_in_one_tag_put_keeps_the_last() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let vo = status_vo(&app, &ehr).await;
+
+    let (status, text) = put_status_tags(
+        &app,
+        &ehr,
+        &vo,
+        &json!([
+            { "key": "alpha", "value": "first" },
+            { "key": "alpha", "value": "last" }
+        ]),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "{text}");
+    let tags = ehr_tags(&app, &ehr).await;
+    assert_eq!(tags.len(), 1, "the identity pair is deduped: {tags:?}");
+    assert_eq!(tags[0]["value"], "last");
+}
+
+/// An empty-string `target_path` normalizes to ABSENT — one identity, not two,
+/// and therefore still addressable by the key-only DELETE route.
+///
+/// `target_path` is `String[0..1]` in the RM with no non-empty invariant
+/// (`UML/classes/org.openehr.rm.common.item_tag.adoc`), while six of the seven
+/// released `ItemTagOf<T>` examples spell it `""`; register AMB-96 fixes the
+/// normalization identically on the EHR and demographic families.
+#[tokio::test]
+async fn an_empty_target_path_is_stored_as_absent_and_stays_deletable() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let vo = status_vo(&app, &ehr).await;
+
+    let (status, text) = put_status_tags(
+        &app,
+        &ehr,
+        &vo,
+        &json!([{ "key": "alpha", "value": "a", "target_path": "" }]),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "{text}");
+    let tags = ehr_tags(&app, &ehr).await;
+    assert_eq!(tags.len(), 1, "{tags:?}");
+    assert!(
+        tags[0].get("target_path").is_none(),
+        "an empty target_path is stored as absent, never served back as \"\": {tags:?}"
+    );
+
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/ehr/{ehr}/ehr_status/{vo}/tags/alpha"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "the key-only DELETE must reach a tag posted with target_path \"\": {body}"
+    );
+    assert!(ehr_tags(&app, &ehr).await.is_empty());
+
+    // The released 404 trigger set includes "when the ITEM_TAG identified by
+    // the `key` does not exist", so the second identical DELETE is a miss.
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/ehr/{ehr}/ehr_status/{vo}/tags/alpha"))
+        .body(Body::empty())
+        .unwrap();
+    assert_eq!(send(&app, req).await.0, StatusCode::NOT_FOUND);
+}
