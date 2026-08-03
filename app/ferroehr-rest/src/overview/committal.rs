@@ -172,6 +172,55 @@ pub(crate) fn committal_audit(
     Ok(merged_committal(headers, Some(committer))?.map(|c| c.audit))
 }
 
+/// [`committal_audit`] for a **DELETE** wire, which additionally REFUSES a
+/// committal header that names a lifecycle state other than `523|deleted|`.
+///
+/// A `DELETE` on a change-controlled resource is the logical-deletion
+/// procedure, and that procedure fixes the state: "create a new Version in the
+/// normal way; delete its `_data_`; set the `_lifecycle_state_` value to the
+/// code for `deleted`; commit in the normal way" (RM common
+/// `master06-change_control_package.adoc` §Logical Deletion). A request that
+/// says `openehr-version: lifecycle_state.code_string="532"` on a DELETE is
+/// therefore asking for two contradictory things at once. The overview's merge
+/// duty — "whatever is provided it MUST be merged with the default VERSION and
+/// `VERSION.audit_details` attributes on commit runtime" (ITS-REST overview
+/// `Requests_and_responses.md` §"openehr-version and openehr-audit-details")
+/// — cannot be honoured for such a value, and silently discarding it is the
+/// leniency this refusal removes: the client is told its instruction was not
+/// followed rather than being led to believe it was. `400` is the shape class
+/// the overview assigns to "syntactically invalid header, parameter or
+/// content".
+///
+/// A DELETE with NO lifecycle attribute is unaffected — the header set is
+/// optional ("None of these headers are mandatory") — as is one that states
+/// the `523|deleted|` the operation already commits.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a header carries a malformed identifier, or a
+/// lifecycle state other than `523|deleted|`.
+pub(crate) fn committal_audit_for_delete(
+    headers: &HeaderMap,
+    committer: PartyProxy,
+) -> Result<Option<ferroehr::service::version_update::UpdateAudit>, ApiError> {
+    let Some(committal) = merged_committal(headers, Some(committer))? else {
+        return Ok(None);
+    };
+    if let Some(code) = committal.lifecycle_state.as_deref()
+        && code != DELETED_LIFECYCLE
+    {
+        return Err(ApiError::BadRequest(format!(
+            "openehr-version lifecycle_state.code_string={code:?} contradicts DELETE — \
+             a delete commits a {DELETED_LIFECYCLE}|deleted| version (RM common master06 \
+             §Logical Deletion)"
+        )));
+    }
+    Ok(Some(committal.audit))
+}
+
+/// The `version_lifecycle_state` code a logical deletion commits (RM common
+/// master06 §Logical Deletion; openEHR terminology `version lifecycle state`).
+const DELETED_LIFECYCLE: &str = "523";
+
 /// The full committal metadata — merged `UPDATE_AUDIT` **and** the VERSION
 /// `lifecycle_state` — of a request that commits a change-controlled resource
 /// whose `UPDATE_VERSION` envelope never travels in the body: the bare EHR

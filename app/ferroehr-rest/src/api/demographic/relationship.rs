@@ -1121,7 +1121,7 @@ pub(super) async fn run(
                 .party_relationship_delete(
                     p.uid_based_id,
                     super::if_match_of(h),
-                    crate::overview::committal::committal_audit(
+                    crate::overview::committal::committal_audit_for_delete(
                         h,
                         crate::api::ehr::committer_proxy(),
                     )?,

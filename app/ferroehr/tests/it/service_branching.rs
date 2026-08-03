@@ -17,8 +17,11 @@
 //! 2. continuing one's own branch tip advances it (`t.1.2`) and supersedes
 //!    the previous tip; every branch version stays addressable by its full
 //!    `OBJECT_VERSION_ID`, with the true `preceding_version_uid` served;
-//! 3. `other_input_version_uids` round-trips the CONTRIBUTION wire and is
-//!    served on the `ORIGINAL_VERSION`;
+//! 3. `other_input_version_uids` is preserved verbatim by the EHR-Extract
+//!    import — the route that legitimately carries merge provenance — and
+//!    served on the `ORIGINAL_VERSION` (the commit wire declares no merge
+//!    shape, so a member carrying it is refused; that twin lives in
+//!    `service_contribution`);
 //! 4. an exported version tree containing branches re-imports whole
 //!    (branch import is first-class).
 
@@ -131,6 +134,9 @@ fn modify_contribution(data: &Value, preceding: &str) -> Value {
         "versions": [{
             "data": data,
             "preceding_version_uid": { "value": preceding },
+            // Required on every CONTRIBUTION member (SM master03 §Version
+            // Update Semantics; ITS-REST UpdateVersion.yaml `required`).
+            "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
             "commit_audit": {
                 "change_type": change_type("251", "modification"),
                 "committer": committer("branching tester")
@@ -332,44 +338,102 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
 }
 
 #[tokio::test]
-async fn merge_provenance_round_trips_the_wire() {
+async fn merge_provenance_is_preserved_by_the_route_that_carries_it() {
+    // `ORIGINAL_VERSION.other_input_version_uids` (RM common master06 §Version
+    // Merging) is PRODUCE-only on this server: the released commit wire
+    // declares no merge shape at all (ITS-REST `UpdateVersion.yaml` has no such
+    // property and `NewContribution.versions` items are `UpdateVersion`), so a
+    // member carrying it is refused — pinned by
+    // `service_contribution::merge_provenance_is_refused_on_the_commit_wire`.
+    // What DOES carry merge provenance is the route that reproduces a FOREIGN
+    // `ORIGINAL_VERSION` verbatim: master06 §Copying — "the `ORIGINAL_VERSION`
+    // instance is never modified … it remains a faithful copy of its original".
+    // This test pins that direction end to end: an imported merged version
+    // keeps its inputs and serves them on the read side
+    // (`OriginalVersion.yaml` declares the property), while a locally
+    // committed version carries none (`Is_merged_validity`).
+    let source_db = testkit::db().await.expect("testkit database");
+    let source_svc = FerroEhrService::new(source_db.pool());
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
-    let ehr = svc.create_ehr(None).await.expect("ehr");
-    let v1 = svc
-        .create_composition(ehr, uv(composition("v1"), "249", None))
-        .await
-        .expect("v1")
-        .version_uid();
-    let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
+    let (mut extract, vo) = foreign_extract(&source_svc).await;
 
-    // A modification carrying other_input_version_uids (master06 §Version
-    // Merging — the merged-in inputs) is stored and served.
+    // Stamp merge provenance onto the LATEST foreign version, as a merging
+    // source system would have recorded it before the copy.
     let merged_in = format!("{}::{FOREIGN}::3", Uuid::now_v7());
-    let mut body = modify_contribution(&composition("merged"), &v1);
-    body["versions"][0]["other_input_version_uids"] = json!([{ "value": merged_in }]);
-    let contribution = svc
-        .create_ehr_contribution(ehr, body)
+    let merged_uid = format!("{vo}::{FOREIGN}::2");
+    let stamped = stamp_merge_provenance(&mut extract, &merged_uid, &merged_in);
+    assert!(stamped, "the extract must carry the version to stamp");
+
+    let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
+    // An imported version is served as the IMPORTED_VERSION wrapper whose
+    // `item` IS the foreign ORIGINAL_VERSION, reproduced verbatim (RM common
+    // master06 §Copying + §Version and its Subtypes).
+    let iv = svc
+        .composition_version_envelope(target, format!("{vo_id}::{FOREIGN}::2").parse().unwrap())
         .await
-        .expect("merge commit");
-    let v2 = first_version_uid(&contribution.body);
-    let ov = svc
-        .composition_version_envelope(ehr, v2.parse().unwrap())
-        .await
-        .expect("merged ORIGINAL_VERSION");
+        .expect("imported merged version");
     assert_eq!(
-        ov["other_input_version_uids"][0]["value"],
+        iv["item"]["other_input_version_uids"][0]["value"],
         json!(merged_in),
-        "other_input_version_uids round-trips (Is_merged_validity: is_merged \
-         is its derived boolean)"
+        "the imported version keeps its merge provenance verbatim (master06 §Copying)"
     );
-    // A plain version carries none.
-    let ov1 = svc
-        .composition_version_envelope(ehr, v1.parse().unwrap())
+
+    // The twin: an identical import whose version was never merged carries
+    // none (`ORIGINAL_VERSION.Is_merged_validity` — merge provenance is
+    // present exactly when the version really was merged).
+    let (unstamped, plain_vo) = foreign_extract(&source_svc).await;
+    let (plain_target, plain_vo_id) = import_foreign(&svc, unstamped, &plain_vo).await;
+    let plain = svc
+        .composition_version_envelope(
+            plain_target,
+            format!("{plain_vo_id}::{FOREIGN}::2").parse().unwrap(),
+        )
         .await
-        .expect("v1");
-    assert!(ov1.get("other_input_version_uids").is_none());
-    let _ = vo;
+        .expect("imported unmerged version");
+    assert!(
+        plain["item"].get("other_input_version_uids").is_none(),
+        "a non-merged version carries no merge provenance (Is_merged_validity)"
+    );
+    let _ = target;
+}
+
+/// Add `other_input_version_uids` to the `ORIGINAL_VERSION` identified by
+/// `version_uid` inside an EHR-Extract value, returning whether it was found.
+/// Mirrors what a merging source system records before the version is copied
+/// elsewhere (RM common master06 §Version Merging).
+fn stamp_merge_provenance(extract: &mut Value, version_uid: &str, merged_in: &str) -> bool {
+    fn walk(node: &mut Value, version_uid: &str, merged_in: &str, done: &mut bool) {
+        match node {
+            Value::Object(map) => {
+                if map.get("_type").and_then(Value::as_str) == Some("ORIGINAL_VERSION")
+                    && map
+                        .get("uid")
+                        .and_then(|u| u.get("value"))
+                        .and_then(Value::as_str)
+                        == Some(version_uid)
+                {
+                    map.insert(
+                        "other_input_version_uids".to_owned(),
+                        json!([{ "_type": "OBJECT_VERSION_ID", "value": merged_in }]),
+                    );
+                    *done = true;
+                }
+                for (_, child) in map.iter_mut() {
+                    walk(child, version_uid, merged_in, done);
+                }
+            }
+            Value::Array(items) => {
+                for item in items {
+                    walk(item, version_uid, merged_in, done);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut done = false;
+    walk(extract, version_uid, merged_in, &mut done);
+    done
 }
 
 #[tokio::test]

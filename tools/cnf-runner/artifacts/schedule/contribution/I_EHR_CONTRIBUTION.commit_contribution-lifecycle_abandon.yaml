@@ -1,0 +1,112 @@
+# The `abandon` transition of the master06 §Abandoned and Inactive States
+# table: `incomplete` -> `abandoned`.
+#
+# The prose states the rule: "A content item that is in the `incomplete` state
+# may lose relevance before it is ever completed, e.g. due to its data subject
+# no longer being under care. The version containing such an item may be
+# transitioned to the `abandoned` state to represent this state of affairs."
+# The table's row: "`incomplete` | `abandon` | `abandoned` | A new care plan
+# (the version content) was made in rehabilitation centre, but patient
+# transferred to hospital before care plan was completed. The draft care plan
+# is abandoned."
+#
+# The first version is committed `incomplete` because that is the ONLY arrival
+# the table gives `abandoned` — the sibling case -lifecycle_illegal_transition
+# pins the refusal of the `complete` -> `abandoned` shortcut.
+#
+# No named wire operation exists for the transition (register AMB-195).
+id: I_EHR_CONTRIBUTION.commit_contribution-lifecycle_abandon
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [Versioning]
+profiles: [CORE]
+ambiguities: [AMB-195]
+test_purpose: >-
+  An incomplete (553) version transitions to abandoned (801) through a new version, and the served version carries the abandoned state.
+description: "Commit CONTRIBUTION transitioning an incomplete version to abandoned (abandon)"
+spec_refs:
+  - "RM common §change_control (master06 §Version Lifecycle — any transition requires the commit of a new version)"
+  - "RM common §change_control (master06 §Abandoned and Inactive States — the transition table)"
+  - "TERM SupportTerminology §Version Lifecycle State"
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1, cnf.composition.minimal_event.v2]
+flow:
+  - step: 1                              # the incomplete first version
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - data:
+            _type: ORIGINAL_VERSION
+            lifecycle_state:
+              _type: DV_CODED_TEXT
+              value: "incomplete"
+              defining_code:
+                _type: CODE_PHRASE
+                terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
+                code_string: "553"
+            commit_audit:
+              _type: AUDIT_DETAILS
+              system_id: "cnf-runner"
+              committer: { _type: PARTY_IDENTIFIED, name: "cnf runner" }
+              change_type:
+                _type: DV_CODED_TEXT
+                value: "creation"
+                defining_code:
+                  _type: CODE_PHRASE
+                  terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
+                  code_string: "249"
+            data: "${ds:cnf.composition.minimal_event.v1}"
+    expect: created
+    capture:
+      v1_uid: created.first_version_uid
+  - step: 2                              # abandon
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - data:
+            _type: ORIGINAL_VERSION
+            preceding_version_uid: { _type: OBJECT_VERSION_ID, value: "${v1_uid}" }
+            lifecycle_state:
+              _type: DV_CODED_TEXT
+              value: "abandoned"
+              defining_code:
+                _type: CODE_PHRASE
+                terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
+                code_string: "801"
+            commit_audit:
+              _type: AUDIT_DETAILS
+              system_id: "cnf-runner"
+              committer: { _type: PARTY_IDENTIFIED, name: "cnf runner" }
+              change_type:
+                _type: DV_CODED_TEXT
+                value: "modification"
+                defining_code:
+                  _type: CODE_PHRASE
+                  terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
+                  code_string: "251"
+            data: "${ds:cnf.composition.minimal_event.v2}"
+    expect: created
+    capture:
+      v2_uid: created.first_version_uid
+      versioned_object_uid: created.first_versioned_object_uid
+  - step: 3
+    call: I_EHR_COMPOSITION.get_versioned_composition
+    variant: version
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${v2_uid}"
+    expect: ok
+    assert:
+      - { assert: field, path: "lifecycle_state/defining_code/code_string", equals: "801" }
+postconditions:
+  - { assert: version, count: 2 }

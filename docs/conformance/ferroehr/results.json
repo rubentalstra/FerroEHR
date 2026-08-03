@@ -683,6 +683,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.delete_composition-contradictory_lifecycle_header",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.delete_composition-etag_names_new_version",
       "status": "passed",
       "rows_driven": 1,
@@ -1009,6 +1015,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-body_uid_mismatch",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-deleted_lifecycle_header",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1962,6 +1974,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-complete_missing_mandatory",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-creation_with_preceding_version",
       "status": "passed",
       "rows_driven": 1,
@@ -1975,6 +1993,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-delete_directory",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-deleted_lifecycle_with_data",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2046,6 +2070,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-incomplete_missing_mandatory",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-incomplete_wrong_data",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-invalid_composition",
       "status": "passed",
       "rows_driven": 1,
@@ -2067,6 +2103,54 @@
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-last_modified_minimal",
       "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_abandon",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_deactivate",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_illegal_transition",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_reactivate",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_restore_from_deleted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_retrieve",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-member_without_lifecycle_state",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-merge_provenance_member",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

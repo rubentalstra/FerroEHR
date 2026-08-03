@@ -537,6 +537,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": composition("Via contribution"),
                     "commit_audit": { "change_type": change_type("249", "creation") }
                 }]
@@ -824,6 +825,7 @@ async fn contribution_commits_a_composition_atomically() {
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr. Contribution" }
         },
         "versions": [{
+            "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
             "data": composition("Via contribution"),
             "commit_audit": { "change_type": change_type("249", "creation") }
         }]
@@ -871,6 +873,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": composition("v1"),
                     "commit_audit": { "change_type": change_type("249", "creation") }
                 }]
@@ -889,6 +892,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": composition("v2 corrected"),
                     "preceding_version_uid": ovid_v1,
                     "commit_audit": { "change_type": change_type("250", "amendment") }
@@ -928,6 +932,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": composition("v3"),
                     "preceding_version_uid": ovid_v2,
                     "commit_audit": { "change_type": change_type("249", "creation") }
@@ -956,6 +961,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": composition("v3"),
                     "preceding_version_uid": ovid_v2,
                     "commit_audit": { "change_type": change_type("999", "bogus") }
@@ -1015,6 +1021,7 @@ async fn contribution_rejects_an_invalid_composition() {
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr. Contribution" }
         },
         "versions": [{
+            "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
             "data": composition_with_bad_category(),
             "commit_audit": { "change_type": change_type("249", "creation") }
         }]
@@ -1777,6 +1784,7 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": secondary,
                     "commit_audit": { "change_type": change_type("249", "creation") }
                 }]
@@ -1822,6 +1830,7 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": secondary_v2,
                     "preceding_version_uid": f2_ovid_v1,
                     "commit_audit": { "change_type": change_type("251", "modification") }
@@ -1890,6 +1899,7 @@ async fn logical_delete_of_a_secondary_hierarchy_drops_it_from_folders() {
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": folder("primary"),
                     "commit_audit": { "change_type": change_type("249", "creation") }
                 }]
@@ -1909,6 +1919,7 @@ async fn logical_delete_of_a_secondary_hierarchy_drops_it_from_folders() {
             ehr_uuid,
             json!({
                 "versions": [{
+                    "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
                     "data": folder("secondary"),
                     "commit_audit": { "change_type": change_type("249", "creation") }
                 }]
@@ -1933,6 +1944,7 @@ async fn logical_delete_of_a_secondary_hierarchy_drops_it_from_folders() {
         ehr_uuid,
         json!({
             "versions": [{
+                "lifecycle_state": { "terminology_id": "openehr", "code_string": "523" },
                 "preceding_version_uid": f2_ovid,
                 "commit_audit": { "change_type": change_type("523", "deleted") }
             }]

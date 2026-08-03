@@ -96,6 +96,26 @@ cnf.composition.minimal_event.comma_fraction:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "authored 2026-07-29 for the comma-decimal-sign lexical case: minimal_event.v1 with the EVENT_CONTEXT.start_time fraction rendered with the ISO 8601 COMMA decimal sign (BASE iso8601_date_time value form [(,|.)sss] + is_decimal_sign_comma(); AMB-171 records the comma as settled-legal), extended offset kept"
+cnf.composition.minimal_event.missing_mandatory:
+  source: fixtures/composition/minimal_event.missing_mandatory.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "two mandatory single-valued attributes are absent: COMPOSITION.composer [1..1] at the root and ENTRY.subject [1..1] on the contained EVALUATION"
+    spec_ref: "RM UML/classes/org.openehr.rm.composition.composition.adoc §Attributes (composer 1..1) + org.openehr.rm.composition.content.entry.entry.adoc §Attributes (subject 1..1); RM common master06-change_control_package.adoc §Incomplete Content (the shape a 553|incomplete| commit — and ONLY a 553 commit — admits: \"mandatory attributes may be absent\")"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "authored 2026-08-03 from cnf.composition.minimal_event.v1 by DELETING two mandatory attributes and nothing else — the twin that pins both directions of RM common master06 §Incomplete Content: refused under 532|complete| and accepted under 553|incomplete|"
+cnf.composition.minimal_event.missing_mandatory_and_wrong_category:
+  source: fixtures/composition/minimal_event.missing_mandatory_and_wrong_category.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the same two absent mandatory attributes as cnf.composition.minimal_event.missing_mandatory PLUS a COMPOSITION.category code (999) that is not a member of the openEHR composition category terminology group — data that is WRONG, not merely missing"
+    spec_ref: "RM common master06-change_control_package.adoc §Incomplete Content (\"All other validity requirements must be satisfied. In other words, in an incomplete commit, data may be missing, but it may not be wrong.\"); RM UML/classes/org.openehr.rm.composition.composition.adoc §Invariants (Category_validity)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "authored 2026-08-03 from cnf.composition.minimal_event.missing_mandatory by replacing the category code with one outside the openEHR group — the twin that pins the LIMIT of the incomplete relaxation: still refused at 553|incomplete|"
 cnf.composition.minimal_event.v2:
   source: fixtures/composition/minimal_event.v2.json
   format: canonical-json

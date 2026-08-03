@@ -170,6 +170,25 @@ deleted returns **400**, and a version id that is not the latest returns **409**
 > Entity** naming the states. In particular, a version left in the
 > `801|abandoned|` state cannot be updated straight to `complete` — you must
 > first retrieve it back to `553|incomplete|`, then complete it.
+>
+> Two further rules apply to the state a commit may claim:
+>
+> - **`523|deleted|` belongs to `DELETE` alone.** Deleting is one act — a new
+>   version whose data is removed and whose state is `deleted` — so a `PUT`
+>   or `POST` that carries content may not claim it. Such a request is
+>   rejected **422**. Conversely, a `DELETE` that supplies a lifecycle other
+>   than `523|deleted|` is rejected **400**: the value would have to be
+>   discarded, and the server tells you rather than pretending to honour it.
+>   A `DELETE` with no lifecycle header at all is the normal case and is
+>   unaffected.
+> - **`553|incomplete|` relaxes what a commit must contain.** Content
+>   committed as `incomplete` may leave mandatory attributes absent and
+>   `1..*` containers empty — for compositions, folders, and demographic
+>   parties and relationships alike. Everything else is still checked: types,
+>   terminology codes, patterns and archetype constraints, so content that is
+>   *wrong* rather than merely *missing* is still rejected **422**. The
+>   `EHR_STATUS` resource is the one exception: it does not accept the
+>   `incomplete` state.
 
 ### Composition version history
 
@@ -227,11 +246,21 @@ curl -u ferroehr:ferroehr \
 ```
 
 `POST /ehr/{ehr_id}/contribution` takes a contribution whose `versions` array
-each describe a change (the RM object, its `change_type`, and per-version
-`commit_audit`) plus a shared `audit`. The audit objects are of type
-`UPDATE_AUDIT` (the server fills in `time_committed` and `system_id`). It returns
-**201** with the contribution id in `ETag`, or **400**/**404**/**409** on
-invalid input, unknown EHR, or a uid conflict.
+each describe a change (the RM object, its `change_type`, its `lifecycle_state`,
+and per-version `commit_audit`) plus a shared `audit`. The audit objects are of
+type `UPDATE_AUDIT` (the server fills in `time_committed` and `system_id`). It
+returns **201** with the contribution id in `ETag`, or **400**/**404**/**409**
+on invalid input, unknown EHR, or a uid conflict.
+
+Two things about a version entry are worth calling out:
+
+- **`lifecycle_state` is required on every version** and is not defaulted.
+  Omitting it is a **400**. The one exception is an attestation entry (see
+  below), which commits no new version and therefore has no lifecycle state.
+- **`other_input_version_uids` is not accepted on a commit.** Merge provenance
+  is read-only: it appears on `ORIGINAL_VERSION` reads and is preserved when a
+  version arrives through an EHR-Extract import or an archive load, but a
+  version entry that carries it is rejected **400**.
 
 A `commit_audit` may instead be an **`ATTESTATION`** — set its `_type` to
 `ATTESTATION` (or the wire form `UPDATE_ATTESTATION`) and add `reason` (required)

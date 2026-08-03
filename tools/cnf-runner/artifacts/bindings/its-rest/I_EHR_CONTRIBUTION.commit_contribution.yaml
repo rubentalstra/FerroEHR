@@ -81,6 +81,18 @@ outcomes:
   template_not_found:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors ("the underlying template is not known"); kind distinguished by fixture
     body: error_loose
+  bad_request:
+    # The SHAPE class the released `400_CONTRIBUTION.yaml` enumerates verbatim:
+    # "`400 Bad Request` is returned when the request could not be parsed or is
+    # invalid (e.g. malformed request URL syntax, missing required header or
+    # parameter, or syntactically invalid header, parameter or content …)".
+    # Distinct from `validation_failed`, which is the well-formed-but-
+    # semantically-unfollowable branch: this kind is for an envelope that does
+    # not match the released `NewContribution`/`UpdateVersion` schemas at all —
+    # a member missing a `required` property, or carrying one the schemas do
+    # not declare.
+    status: 400
+    body: error_loose
   not_found: { status: 404 }              # 404_unknown_ehr_id.yaml — the EHR the route addresses does not exist
   conflict:
     # DOCS TEXT (overview `Requests_and_responses.md` §HTTP status codes, the
