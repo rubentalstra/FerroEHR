@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: af8ec1a8-3953-4ae1-a5d1-355a712f597b
-  modified: 2026-08-02T11:41:31.245Z
+  modified: 2026-08-03T11:25:10.305Z
 ---
 
 Incident 2026-08-02 (foundation phase): round 3 (app-scoped) and the
@@ -26,4 +26,20 @@ to HEAD, redo sequentially. Nothing committed was lost.
   clean on shared state; it reports what should be reverted.
 - Before any recovery reset: tar-backup every dirty file to the scratchpad;
   verify committed history intact; keep .claude memory dirt out of resets.
+- **2026-08-03 corollary: ONE WRITE lane at a time IN THE MAIN TREE —
+  including the orchestrator.** Two write workers (or a worker + an
+  in-session fix) sharing one working tree cross-contaminate each other's
+  cargo gate runs even on disjoint files, and any `git checkout -b` by one
+  lane silently moves the branch pointer under the other. Disjoint-scope
+  concurrency is safe only for READ-ONLY agents.
+- **2026-08-03 refinement (owner): WORKTREE isolation unlocks parallel
+  write lanes for small/medium shots.** `Agent(isolation: "worktree")`
+  gives the worker its own checkout — no file or branch interference. The
+  cost is a COLD `./target` per worktree (the one-target rule's disk
+  physics), so: worktree workers run SCOPED gates only (`-p` touched
+  crates, never `--workspace`); the orchestrator collects the diff, runs
+  the FULL battery once at convergence in the main tree, and DELETES the
+  worktree + its target after merging. Big implementation rounds stay
+  serial in the main tree (cold build + convergence overhead eats the
+  win).
 Related: [[concurrent-sessions-shared-tree]], [[max-two-concurrent-workers]].
