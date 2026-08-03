@@ -86,7 +86,7 @@ pub(crate) async fn revision_history(
         // The commit audit makes the `1..*` bound of
         // `REVISION_HISTORY_ITEM.audits` hold by construction.
         let mut audits = openehr_base::containers::NonEmptyVec::of(
-            AuditInput::from_meta(row).typed(&row.time_committed)?,
+            AuditInput::from_meta(row)?.typed(&row.time_committed),
         );
         for stored in attestations.remove(&row.sys_version).unwrap_or_default() {
             audits.push(stored_attestation(&stored)?);
@@ -290,7 +290,7 @@ pub(crate) fn version_envelope(read: &VersionRead, signer: &Signer) -> Result<Va
     let item = build_wrapped_original(read, wrapped)?;
     let mut iv = build_imported_version(
         &contribution_ref(read.contribution_id),
-        &read.audit.canonical(&read.time_committed)?,
+        &read.audit.canonical(&read.time_committed),
         &item,
         read.signature.as_deref(),
     );
@@ -346,7 +346,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
         preceding_version_uid: read.preceding_version_uid.as_deref(),
         other_input_version_uids: &read.other_input_version_uids,
         contribution: &contribution_ref(read.contribution_id),
-        commit_audit: &read.audit.canonical(&read.time_committed)?,
+        commit_audit: &read.audit.canonical(&read.time_committed),
         lifecycle_state: &read.lifecycle_state,
         data: &read.canonical,
         attestations: &read.attestations_at_committal,

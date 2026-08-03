@@ -154,7 +154,7 @@ pub(crate) enum Change {
         lifecycle_state: Option<String>,
         /// Wire `UPDATE_VERSION.attestations` committed with this version
         /// (master06 §Attestation "Signing content at committal").
-        attestations: Vec<Value>,
+        attestations: Vec<attestation::AttestationInput>,
     },
     /// Commit a new version of an existing object.
     Modify {
@@ -165,7 +165,7 @@ pub(crate) enum Change {
         template_id: Option<String>,
         signature: Option<String>,
         lifecycle_state: Option<String>,
-        attestations: Vec<Value>,
+        attestations: Vec<attestation::AttestationInput>,
         /// Wire `ORIGINAL_VERSION.other_input_version_uids` — the merged-in
         /// version ids for a merge commit (master06 §Version Merging); empty for
         /// a plain modification.
@@ -205,7 +205,7 @@ pub(crate) struct WriteEnvelope {
     /// §Digital Signature).
     pub(crate) signature: Option<String>,
     /// `UPDATE_VERSION.attestations` committed with the version.
-    pub(crate) attestations: Vec<Value>,
+    pub(crate) attestations: Vec<attestation::AttestationInput>,
 }
 
 /// The preceding lineage tip read for a tree-placement decision — mapped from
@@ -402,7 +402,7 @@ struct ResolvedWrite {
     /// The decomposed node rows (empty for a logical delete — data Void).
     rows: Vec<NodeRow>,
     /// `UPDATE_VERSION.attestations` committed with this version.
-    attestations: Vec<Value>,
+    attestations: Vec<attestation::AttestationInput>,
     /// A newly created FOLDER hierarchy that joins `EHR.folders` (create only).
     is_first_folder: bool,
     /// The transaction timestamp — the commit instant this transaction stamps
@@ -485,7 +485,7 @@ async fn apply_change(
     contribution: ContributionCtx,
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
-    committer_fallback: &Value,
+    committer_fallback: &openehr_rm::prelude::PartyProxy,
     known_now: Option<jiff::Timestamp>,
     change: Change,
 ) -> Result<(Committed, Uuid), ServiceError> {
@@ -644,7 +644,7 @@ async fn commit_resolved(
     ctx: &SigningCtx<'_>,
     audit: &AuditInput,
     contribution: ContributionCtx,
-    committer_fallback: &Value,
+    committer_fallback: &openehr_rm::prelude::PartyProxy,
     r: ResolvedWrite,
 ) -> Result<(Committed, Uuid), ServiceError> {
     let audit_row = audit.row();
@@ -674,12 +674,18 @@ async fn commit_resolved(
     // excluded), and reused verbatim for the insert below so the signed bytes
     // and the stored bytes are the same bytes. `r.time_committed` is the
     // transaction timestamp every row of this transaction stamps.
-    let at_committal_attestations = attestation::complete_accompanying(
+    // Completed once, then serialized once: the SAME `Value`s are signed
+    // below and inserted further down, so the signed bytes and the stored
+    // bytes cannot drift.
+    let at_committal_attestations: Vec<Value> = attestation::complete_accompanying(
         &r.attestations,
         &ctx.system_id,
         committer_fallback,
         r.time_committed,
-    )?;
+    )
+    .iter()
+    .map(openehr_its::json::to_canonical_value)
+    .collect();
 
     let (signature, signature_client_supplied) =
         version_signature(ctx, audit, contribution_id, &r, &at_committal_attestations)?;
@@ -1026,7 +1032,7 @@ pub(crate) async fn commit_contribution(
             &ctx.system_id,
             committer_fallback,
             contribution_time,
-        )?;
+        );
         committed.push(
             attestation::attest(
                 tx,

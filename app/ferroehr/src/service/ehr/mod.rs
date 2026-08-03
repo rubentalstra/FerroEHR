@@ -172,15 +172,14 @@ fn resolve_envelope(
         default_description,
         system_id,
     )?;
+    // Every supplied attestation is converted — never a `filter_map` that
+    // would drop one silently.
     let attestations = version
         .attestations
-        .as_ref()
-        .map(|a| {
-            a.iter()
-                .filter_map(|x| serde_json::to_value(x).ok())
-                .collect()
-        })
-        .unwrap_or_default();
+        .iter()
+        .flatten()
+        .map(crate::versioning::attestation::AttestationInput::from_update)
+        .collect::<Result<Vec<_>, _>>()?;
     let envelope = crate::versioning::change::WriteEnvelope {
         lifecycle_state: Some(version.lifecycle_state.code_string.clone()),
         signature: version.signature.clone(),

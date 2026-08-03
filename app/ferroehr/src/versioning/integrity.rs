@@ -46,9 +46,7 @@ use crate::versioning::wire::{
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
-/// `OpenPGP` signer fails (digest signing is infallible); the
-/// [`AuditInput::canonical`] rejection of a commit audit whose committer is not
-/// a canonical `PARTY_PROXY`.
+/// `OpenPGP` signer fails (digest signing is infallible).
 #[expect(
     clippy::too_many_arguments,
     reason = "the parts of an ORIGINAL_VERSION plus the signing context; a \
@@ -77,7 +75,7 @@ pub(crate) fn sign_version(
         preceding_version_uid: preceding_uid,
         other_input_version_uids,
         contribution: &contribution_ref(contribution_id),
-        commit_audit: &audit.canonical(&time_committed)?,
+        commit_audit: &audit.canonical(&time_committed),
         lifecycle_state,
         data,
         attestations,

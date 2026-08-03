@@ -20,7 +20,7 @@ use crate::service::list::Page;
 use crate::service::status::CallStatusType;
 use crate::versioning::attestation::{AttestationParts, PendingAttest};
 use crate::versioning::audit::{
-    AuditInput, change_type, change_type_code, decode_description, description_fragment,
+    AuditInput, change_type, change_type_code, decode_description, dv_text, party_proxy,
     validate_commit_audit,
 };
 use crate::versioning::change::{Change, CommittedContribution};
@@ -295,11 +295,10 @@ pub(crate) async fn commit_version_set(
     // included in the CONTRIBUTION". We default each version's committer/system_id
     // from the CONTRIBUTION's own audit; time_committed is always the server
     // commit-act time.
-    let contrib_committer = body
-        .get("audit")
-        .and_then(|a| a.get("committer"))
-        .cloned()
-        .unwrap_or_else(|| cx.default_committer());
+    let contrib_committer = match body.get("audit").and_then(|a| a.get("committer")) {
+        Some(supplied) => party_proxy(supplied)?,
+        None => cx.default_committer(),
+    };
     let contrib_system_id = body
         .get("audit")
         .and_then(|a| a.get("system_id"))
@@ -445,7 +444,7 @@ pub(crate) async fn commit_version_set(
                 vo_id,
                 kind,
                 expected,
-                partial,
+                partial: crate::versioning::attestation::AttestationInput::decode(&partial)?,
             });
             continue;
         }
@@ -488,7 +487,7 @@ pub(crate) async fn commit_version_set(
                     template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
-                    attestations: v.accompanying,
+                    attestations: accompanying(&v.accompanying)?,
                 }
             }
             Action::Modify => {
@@ -521,7 +520,7 @@ pub(crate) async fn commit_version_set(
                     template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
-                    attestations: v.accompanying,
+                    attestations: accompanying(&v.accompanying)?,
                     other_input_version_uids: v.other_input_version_uids,
                 }
             }
@@ -763,6 +762,21 @@ fn commit_audit_is_attestation(audit: &Value) -> Result<bool, ServiceError> {
     }
 }
 
+/// Decode a CONTRIBUTION version's `UPDATE_VERSION.attestations` — the
+/// attestations committed WITH the new version (master06 §Attestation, "Signing
+/// content at committal") — into the typed carrier the commit path completes.
+///
+/// # Errors
+/// The [`crate::versioning::attestation::AttestationInput::decode`] rejections.
+fn accompanying(
+    partials: &[Value],
+) -> Result<Vec<crate::versioning::attestation::AttestationInput>, ServiceError> {
+    partials
+        .iter()
+        .map(crate::versioning::attestation::AttestationInput::decode)
+        .collect()
+}
+
 /// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`,
 /// `UpdateAttestation`, or the RM class either partials) and the
 /// already-resolved numeric `audit_change_type` code, defaulting the
@@ -786,7 +800,7 @@ fn commit_audit_is_attestation(audit: &Value) -> Result<bool, ServiceError> {
 fn parse_audit(
     audit: Option<&Value>,
     change_type: String,
-    default_committer: &Value,
+    default_committer: &openehr_rm::prelude::PartyProxy,
     default_system_id: &str,
     attestable: bool,
 ) -> Result<AuditInput, ServiceError> {
@@ -804,24 +818,22 @@ fn parse_audit(
         .and_then(|a| a.get("description"))
         .filter(|d| !d.is_null())
         .map(|d| match d {
-            Value::String(s) => Ok(description_fragment(s)),
-            other => {
-                decode_description(other).map(|text| openehr_its::json::to_canonical_value(&text))
-            }
+            Value::String(s) => Ok(dv_text(s)),
+            other => decode_description(other),
         })
         .transpose()?;
     let attestation = match audit {
         // The `_type` is checked for EVERY commit audit, attestable or not — an
         // unknown class is refused wherever it appears.
         Some(a) if commit_audit_is_attestation(a)? && attestable => {
-            Some(AttestationParts::decode(a)?.fragment())
+            Some(Box::new(AttestationParts::decode(a)?))
         }
         _ => None,
     };
-    let committer = audit
-        .and_then(|a| a.get("committer"))
-        .cloned()
-        .unwrap_or_else(|| default_committer.clone());
+    let committer = match audit.and_then(|a| a.get("committer")) {
+        Some(supplied) => party_proxy(supplied)?,
+        None => default_committer.clone(),
+    };
     let system_id = audit
         .and_then(|a| a.get("system_id"))
         .and_then(Value::as_str)
@@ -1104,11 +1116,20 @@ pub(crate) async fn get_contribution(
     let audit_details = AuditInput {
         system_id: audit.system_id,
         change_type: audit.change_type,
-        description: audit.description,
-        committer: audit.committer,
-        attestation: audit.attestation,
+        description: audit
+            .description
+            .as_ref()
+            .map(decode_description)
+            .transpose()?,
+        committer: party_proxy(&audit.committer)?,
+        attestation: audit
+            .attestation
+            .as_ref()
+            .map(AttestationParts::decode)
+            .transpose()?
+            .map(Box::new),
     }
-    .canonical(&time_committed)?;
+    .canonical(&time_committed);
     // NOTE: a JSON-literal envelope over already-canonical parts — `audit` is
     // the canonical `AUDIT_DETAILS` fragment `AuditInput::canonical` produced,
     // and `versions` holds EITHER `OBJECT_REF`s (built from their generated
@@ -1217,6 +1238,7 @@ mod tests {
     #[test]
     fn attestation_commit_audit_round_trips() {
         let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let fallback = party_proxy(&committer).expect("the fixture is a canonical PARTY_PROXY");
         let wire = json!({
             "_type": "ATTESTATION",
             "system_id": "sysA.example.org",
@@ -1236,7 +1258,7 @@ mod tests {
         let audit = parse_audit(
             Some(&wire),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )
@@ -1244,7 +1266,7 @@ mod tests {
         let now: jiff::Timestamp = "2026-08-02T10:11:12Z"
             .parse()
             .expect("the literal is a valid RFC 3339 instant");
-        let rebuilt = audit.canonical(&now).expect("the stored audit rebuilds");
+        let rebuilt = audit.canonical(&now);
         assert_eq!(
             rebuilt.get("_type").and_then(Value::as_str),
             Some("ATTESTATION")
@@ -1277,6 +1299,7 @@ mod tests {
     #[test]
     fn coded_description_round_trips() {
         let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let fallback = party_proxy(&committer).expect("the fixture is a canonical PARTY_PROXY");
         let wire = json!({
             "_type": "UPDATE_AUDIT",
             "committer": committer,
@@ -1287,7 +1310,7 @@ mod tests {
         let audit = parse_audit(
             Some(&wire),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )
@@ -1295,7 +1318,7 @@ mod tests {
         let now: jiff::Timestamp = "2026-08-02T10:11:12Z"
             .parse()
             .expect("the literal is a valid RFC 3339 instant");
-        let rebuilt = audit.canonical(&now).expect("the stored audit rebuilds");
+        let rebuilt = audit.canonical(&now);
         assert_eq!(
             rebuilt
                 .pointer("/description/_type")
@@ -1319,13 +1342,12 @@ mod tests {
         let plain = parse_audit(
             Some(&json!({ "committer": committer, "description": "free text" })),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )
         .expect("a plain-string description is accepted")
-        .canonical(&now)
-        .expect("the stored audit rebuilds");
+        .canonical(&now);
         assert_eq!(
             plain.pointer("/description/_type").and_then(Value::as_str),
             Some("DV_TEXT")
@@ -1342,11 +1364,12 @@ mod tests {
     #[test]
     fn unknown_commit_audit_type_is_refused() {
         let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let fallback = party_proxy(&committer).expect("the fixture is a canonical PARTY_PROXY");
         for bad in ["COMPOSITION", "REVISION_HISTORY_ITEM", "UPDATE_VERSION"] {
             let err = parse_audit(
                 Some(&json!({ "_type": bad, "committer": committer })),
                 change_type::MODIFICATION.to_owned(),
-                &committer,
+                &fallback,
                 "fallback.system",
                 true,
             )
@@ -1372,7 +1395,7 @@ mod tests {
         let err = parse_audit(
             Some(&json!({ "_type": "ATTESTATION", "committer": committer })),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )

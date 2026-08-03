@@ -27,7 +27,7 @@ use openehr_its::opt14::{CAttribute, CObject, Cardinality, Intervalofinteger};
 use openehr_rm::model;
 
 use super::interval::{iv_lower, iv_upper};
-use super::{NodeView, Violation};
+use super::{NodeView, RuleViolation};
 
 /// LOCATABLE meta attributes tolerated on any RM class (see the NOTE in
 /// [`check_attribute`]: archie-era OPTs constrain these on PATHABLE-only
@@ -71,18 +71,18 @@ const LEGACY_RM_ATTRS: &[(&str, &str)] = &[
 /// VCORM: "object constraint type name existence: a type name introducing an
 /// object constraint block must be defined in the underlying information model."
 /// (`AOM2/master04.5-…class_definitions.adoc` line 325.)
-pub(super) fn check_object_type(rm_type: &str, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_object_type(rm_type: &str, node_id: &str) -> Result<(), RuleViolation> {
     // Strip any generic argument (`DV_INTERVAL<DV_QUANTITY>` → `DV_INTERVAL`);
     // the static model keys on the bare class name.
     let bare = rm_type.split('<').next().unwrap_or(rm_type).trim();
     if bare.is_empty() {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VCORM",
             format!("object node '{node_id}' has an empty rm_type_name"),
         ));
     }
     if model::class(bare).is_none() {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VCORM",
             format!(
                 "type '{rm_type}' (object node '{node_id}') is not defined in the reference model"
@@ -104,7 +104,7 @@ pub(super) fn check_attribute(
     attr_name: &str,
     parent_rm: &str,
     existence: &Intervalofinteger,
-) -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
     if model::class(parent_rm).is_none() {
         return Ok(());
     }
@@ -123,7 +123,7 @@ pub(super) fn check_attribute(
         {
             Ok(())
         }
-        None => Err(Violation::new(
+        None => Err(RuleViolation::new(
             // VCARM: attribute name reference model validity (AOM2 line 126).
             "VCARM",
             format!("attribute '{attr_name}' is not defined in reference-model type '{parent_rm}'"),
@@ -140,7 +140,7 @@ fn rm_conformance(
     parent_rm: &str,
     existence: &Intervalofinteger,
     rm_attr: &model::RmAttribute,
-) -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
     let rm_is_multiple = !matches!(rm_attr.container, model::Container::None);
 
     // VCAM: "archetype attribute reference model multiplicity conformance: the
@@ -150,7 +150,7 @@ fn rm_conformance(
     // conform.
     let arch_is_multiple = matches!(attr, CAttribute::CMultipleAttribute(_));
     if arch_is_multiple && !rm_is_multiple {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VCAM",
             format!(
                 "attribute '{attr_name}' on '{parent_rm}' is constrained as a container \
@@ -166,7 +166,7 @@ fn rm_conformance(
     // is 1 for a mandatory attribute and 0 otherwise. Allowing absence (`{0..}`)
     // on an RM-mandatory attribute *widens* it — the one enforceable violation.
     if rm_attr.is_mandatory && iv_lower(existence) == 0 && !existence.lower_unbounded {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VCAEX",
             format!(
                 "attribute '{attr_name}' on '{parent_rm}' has existence lower bound 0 but the \
@@ -220,7 +220,7 @@ fn check_rm_cardinality(
     attr_name: &str,
     parent_rm: &str,
     rm_attr: &model::RmAttribute,
-) -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
     let Some(rm_card) = rm_attr.cardinality else {
         return Ok(());
     };
@@ -261,7 +261,7 @@ fn check_rm_cardinality(
             .upper
             .map_or_else(|| "*".to_owned(), |u| u.to_string());
         let arch_upper = iv_upper(&card.interval).map_or_else(|| "*".to_owned(), |u| u.to_string());
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VCACA",
             format!(
                 "attribute '{attr_name}' on '{parent_rm}' has cardinality \
@@ -292,7 +292,7 @@ pub(super) fn check_cardinality_occurrences(
     parent_rm: &str,
     card: &Cardinality,
     children: &[CObject],
-) -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
     let Some(card_upper) = iv_upper(&card.interval) else {
         return Ok(()); // open cardinality upper bound: any number of children fits.
     };
@@ -301,7 +301,7 @@ pub(super) fn check_cardinality_occurrences(
         .map(|c| i64::from(iv_lower(NodeView::of(c).occurrences)))
         .sum();
     if required > i64::from(card_upper) {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VACMCO",
             format!(
                 "attribute '{attr_name}' on '{parent_rm}': the sum of the child occurrences \

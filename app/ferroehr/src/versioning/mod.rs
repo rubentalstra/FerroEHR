@@ -215,7 +215,7 @@ pub(crate) trait CommitEnv {
     /// The effective openEHR `system_id` for this request.
     fn effective_system_id(&self) -> String;
     /// The default committer `PARTY_PROXY` (the authenticated principal).
-    fn default_committer(&self) -> Value;
+    fn default_committer(&self) -> openehr_rm::prelude::PartyProxy;
     /// The write-time signing context.
     fn signing_ctx(&self) -> SigningCtx<'_>;
     /// Validate a version's content for commit (relaxed when `incomplete`).

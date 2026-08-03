@@ -51,12 +51,12 @@ use openehr_its::opt14::{CAttribute, CObject, Intervalofinteger, OperationalTemp
 use crate::service::error::ServiceError;
 
 /// One artefact-validity violation: the AOM2 rule code + a human detail.
-struct Violation {
+struct RuleViolation {
     code: &'static str,
     detail: String,
 }
 
-impl Violation {
+impl RuleViolation {
     fn new(code: &'static str, detail: impl Into<String>) -> Self {
         Self {
             code,
@@ -164,7 +164,7 @@ pub(super) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), Ser
     })
 }
 
-fn check(opt: &OperationalTemplate) -> Result<(), Violation> {
+fn check(opt: &OperationalTemplate) -> Result<(), RuleViolation> {
     // Terminology-side rules first (cheap; no tree recursion needed beyond code
     // collection).
     let ctx = Ctx {
@@ -201,7 +201,7 @@ fn check(opt: &OperationalTemplate) -> Result<(), Violation> {
 
 /// Recurse into one constrained attribute of an object whose RM type is
 /// `parent_rm`.
-fn walk_attribute(attr: &CAttribute, parent_rm: &str, ctx: &Ctx) -> Result<(), Violation> {
+fn walk_attribute(attr: &CAttribute, parent_rm: &str, ctx: &Ctx) -> Result<(), RuleViolation> {
     let (attr_name, existence, children, cardinality) = match attr {
         CAttribute::CSingleAttribute(a) => (
             a.rm_attribute_name.as_str(),
@@ -241,7 +241,7 @@ fn walk_attribute(attr: &CAttribute, parent_rm: &str, ctx: &Ctx) -> Result<(), V
 }
 
 /// Check one child object node, then recurse into its own attributes.
-fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
+fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), RuleViolation> {
     let view = NodeView::of(obj);
 
     // VCORM: object constraint type-name existence. A primitive-object node

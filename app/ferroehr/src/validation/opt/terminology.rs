@@ -23,7 +23,7 @@ use openehr_its::opt14::{
 };
 use openehr_rm::paths::archetype_node_id_is_term_code;
 
-use super::{NodeView, Violation, attribute_children};
+use super::{NodeView, RuleViolation, attribute_children};
 
 // ─── VATID (node-id codes defined in terminology) ───────────────────────────────
 
@@ -40,12 +40,15 @@ use super::{NodeView, Violation, attribute_children};
 /// definition roots + every `component_ontologies` set), which is deliberately
 /// lenient about per-archetype scoping — it still catches a `node_id` that is
 /// defined nowhere while never mis-rejecting a correctly-scoped code.
-pub(super) fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Violation> {
+pub(super) fn check_node_id(
+    node_id: &str,
+    defined_at: &HashSet<String>,
+) -> Result<(), RuleViolation> {
     if !archetype_node_id_is_term_code(node_id) {
         return Ok(());
     }
     if !defined_at.contains(node_id) {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VATID",
             format!("node_id '{node_id}' is used in the definition but not defined in terminology"),
         ));
@@ -63,8 +66,8 @@ pub(super) fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Resu
 pub(super) fn check_term_bindings(
     opt: &OperationalTemplate,
     defined_at: &HashSet<String>,
-) -> Result<(), Violation> {
-    let check = |code: &str| -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
+    let check = |code: &str| -> Result<(), RuleViolation> {
         // NOTE (flattened-OPT tolerance): a *specialised* code
         // (`at0.23`, dot-notation — AOM2 §specialisation depth) may be bound
         // without a re-emitted local term definition: archie-era flattening
@@ -79,7 +82,7 @@ pub(super) fn check_term_bindings(
         {
             return Ok(());
         }
-        Err(Violation::new(
+        Err(RuleViolation::new(
             "VTTBK",
             format!(
                 "term binding key '{code}' is neither a defined archetype term (at-code) nor a path"
@@ -115,12 +118,12 @@ pub(super) fn check_term_bindings(
 pub(super) fn check_constraint_bindings(
     opt: &OperationalTemplate,
     defined_ac: &HashSet<String>,
-) -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
     for onto in flat_ontologies(opt) {
         for set in &onto.constraint_bindings {
             for item in &set.items {
                 if !defined_ac.contains(&item.code) {
-                    return Err(Violation::new(
+                    return Err(RuleViolation::new(
                         "VTCBK",
                         format!(
                             "constraint binding key '{}' is not a defined archetype constraint \
@@ -147,7 +150,7 @@ pub(super) fn check_constraint_bindings(
 /// `Vec<ARCHETYPE_TERM>`, single-language) carry no language grouping, so VTLC
 /// is inert for a single-language OPT — the multi-language code sets live only
 /// in `ontology` / `component_ontologies`.
-pub(super) fn check_language_consistency(opt: &OperationalTemplate) -> Result<(), Violation> {
+pub(super) fn check_language_consistency(opt: &OperationalTemplate) -> Result<(), RuleViolation> {
     for onto in flat_ontologies(opt) {
         language_consistent(&codes_by_language(&onto.term_definitions), "term")?;
         language_consistent(
@@ -169,7 +172,10 @@ fn codes_by_language(sets: &[Codedefinitionset]) -> Vec<(String, HashSet<String>
         .collect()
 }
 
-fn language_consistent(by_lang: &[(String, HashSet<String>)], kind: &str) -> Result<(), Violation> {
+fn language_consistent(
+    by_lang: &[(String, HashSet<String>)],
+    kind: &str,
+) -> Result<(), RuleViolation> {
     if by_lang.len() < 2 {
         return Ok(());
     }
@@ -182,7 +188,7 @@ fn language_consistent(by_lang: &[(String, HashSet<String>)], kind: &str) -> Res
                 .symmetric_difference(codes)
                 .map(String::as_str)
                 .collect();
-            return Err(Violation::new(
+            return Err(RuleViolation::new(
                 "VTLC",
                 format!(
                     "the {kind} code set differs between languages '{ref_lang}' and '{lang}' \

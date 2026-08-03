@@ -631,11 +631,20 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         let commit_audit = AuditInput {
             system_id: audit.system_id.clone(),
             change_type: audit.change_type.clone(),
-            description: audit.description.clone(),
-            committer: audit.committer.clone(),
-            attestation: audit.attestation.clone(),
+            description: audit
+                .description
+                .as_ref()
+                .map(crate::versioning::audit::decode_description)
+                .transpose()?,
+            committer: crate::versioning::audit::party_proxy(&audit.committer)?,
+            attestation: audit
+                .attestation
+                .as_ref()
+                .map(crate::versioning::attestation::AttestationParts::decode)
+                .transpose()?
+                .map(Box::new),
         }
-        .canonical(&time_committed)?;
+        .canonical(&time_committed);
         (
             contribution_ref(v.contribution_id),
             commit_audit,

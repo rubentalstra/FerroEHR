@@ -136,7 +136,10 @@ impl VersionRead {
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when an imported row's stored wrapped
-/// `ORIGINAL_VERSION` fragment is not decodable.
+/// `ORIGINAL_VERSION` fragment is not decodable, or when a stored commit-audit
+/// jsonb column is not the RM value it holds
+/// ([`crate::versioning::audit::AuditInput::from_meta`] carries the same
+/// rejections for the metadata-only read).
 fn version_read(
     stored: crate::storage::version_repo::read::StoredVersion,
 ) -> Result<VersionRead, ServiceError> {
@@ -161,9 +164,18 @@ fn version_read(
         audit: AuditInput {
             system_id: stored.audit_system_id,
             change_type: stored.audit_change_type,
-            description: stored.audit_description,
-            committer: stored.audit_committer,
-            attestation: stored.audit_attestation,
+            description: stored
+                .audit_description
+                .as_ref()
+                .map(crate::versioning::audit::decode_description)
+                .transpose()?,
+            committer: crate::versioning::audit::party_proxy(&stored.audit_committer)?,
+            attestation: stored
+                .audit_attestation
+                .as_ref()
+                .map(crate::versioning::attestation::AttestationParts::decode)
+                .transpose()?
+                .map(Box::new),
         },
         time_committed: stored.time_committed,
         signature: stored.signature,

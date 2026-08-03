@@ -22,7 +22,7 @@ use serde_json::Value;
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
-use crate::versioning::audit::{AuditInput, description_fragment};
+use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::{TreeId, VersionIdError, object_version_id, version_id};
 use crate::versioning::read::VersionRead;
 
@@ -242,7 +242,7 @@ impl FerroEhrService {
         AuditInput {
             system_id: self.effective_system_id(),
             change_type: change_type.to_owned(),
-            description: Some(description_fragment(description)),
+            description: Some(crate::versioning::audit::dv_text(description)),
             committer: committer(),
             attestation: None,
         }
@@ -254,7 +254,7 @@ impl FerroEhrService {
 /// [`crate::service::committer`] context). A write with no authenticated
 /// principal (auth disabled, or an internal/system write) is attributed to the
 /// system identity (RM common master04 `AUDIT_DETAILS.committer` 1..1).
-pub(in crate::service) fn committer() -> Value {
+pub(in crate::service) fn committer() -> PartyProxy {
     let party = match crate::service::committer::current_committer() {
         Some(identity) => PartyIdentifiedData {
             external_ref: None,
@@ -285,9 +285,7 @@ pub(in crate::service) fn committer() -> Value {
             identifiers: openehr_base::containers::present(Vec::new()),
         },
     };
-    openehr_its::json::to_canonical_value(&PartyProxy::PartyIdentified(
-        PartyIdentified::PartyIdentified(party),
-    ))
+    PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(party))
 }
 
 // ── ITS-REST version-metadata adapter (adapter-support extension) ─────────────

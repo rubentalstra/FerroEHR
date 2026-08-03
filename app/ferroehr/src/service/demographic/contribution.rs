@@ -83,11 +83,20 @@ impl FerroEhrService {
         let audit_details = AuditInput {
             system_id: audit.system_id,
             change_type: audit.change_type,
-            description: audit.description,
-            committer: audit.committer,
-            attestation: audit.attestation,
+            description: audit
+                .description
+                .as_ref()
+                .map(crate::versioning::audit::decode_description)
+                .transpose()?,
+            committer: crate::versioning::audit::party_proxy(&audit.committer)?,
+            attestation: audit
+                .attestation
+                .as_ref()
+                .map(crate::versioning::attestation::AttestationParts::decode)
+                .transpose()?
+                .map(Box::new),
         }
-        .canonical(&audit.time_committed)?;
+        .canonical(&audit.time_committed);
         // NOTE: a JSON-literal envelope over the already-canonical `audit`
         // fragment (see `crate::versioning::contribution` for the same
         // reasoning); every part this builder SYNTHESIZES is built from its

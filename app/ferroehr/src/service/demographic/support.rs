@@ -26,7 +26,7 @@ use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
 use crate::service::version_update::UpdateAudit;
 use crate::storage::version_repo;
-use crate::versioning::audit::{AuditInput, description_fragment};
+use crate::versioning::audit::AuditInput;
 use crate::versioning::change::Committed;
 use crate::versioning::object_version_id::{
     TreeId, VersionIdError, hier_object_id, object_version_id, version_id,
@@ -198,7 +198,7 @@ fn revision_history_item(
         // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history_item.adoc`
         // §Attributes); this item always carries its commit audit.
         audits: openehr_base::containers::NonEmptyVec::of(
-            AuditInput::from_meta(meta).typed(&meta.time_committed)?,
+            AuditInput::from_meta(meta)?.typed(&meta.time_committed),
         ),
     })
 }
@@ -232,7 +232,7 @@ impl FerroEhrService {
             None => Ok(AuditInput {
                 system_id: self.effective_system_id(),
                 change_type: change_type.to_owned(),
-                description: Some(description_fragment(description)),
+                description: Some(crate::versioning::audit::dv_text(description)),
                 committer: CommitEnv::default_committer(self),
                 attestation: None,
             }),
