@@ -116,6 +116,16 @@ pub fn lookup(op: &str) -> Option<Classification> {
         }
 
         // ── CONTRIBUTION (op ids shared by the ehr + demographic groups) ─────
+        //
+        // ADJUDICATED SHARED IDS (#1707): the released OAS reuses these
+        // `operationId`s in BOTH bundles (the vendored artifact is never
+        // edited, so the emitter must not diverge from it), and ONE
+        // classification is deliberately correct for both families — RM
+        // change control governs demographic content exactly as it does EHR
+        // content (RM common master06 applies to every VERSIONED_OBJECT), so
+        // a demographic CONTRIBUTION audits as the same Contribution class.
+        // The `adjudicated_shared_ids` gate below fails on any NEW cross-group
+        // duplicate, so a future reuse must be adjudicated here first.
         "contribution_create" => Classification::audited(Create, Contribution),
         "contribution_get" => Classification::audited(Read, Contribution),
 
@@ -261,6 +271,62 @@ mod tests {
             }
         }
         ops
+    }
+
+    /// The op ids the released OAS deliberately reuses across group bundles,
+    /// each adjudicated to ONE family-invariant classification (see the
+    /// CONTRIBUTION block in [`lookup`]). A NEW cross-group duplicate fails
+    /// [`adjudicated_shared_ids`] until it is adjudicated here (#1707).
+    const ADJUDICATED_SHARED: &[&str] = &["contribution_create", "contribution_get"];
+
+    /// Collision gate (#1707): an op id in more than one generated group
+    /// table is only legal when its shared classification is adjudicated —
+    /// the classifiers are op-id-keyed, so an unadjudicated duplicate could
+    /// silently classify one family as the other.
+    #[test]
+    fn adjudicated_shared_ids() {
+        use std::collections::BTreeMap;
+        let mut owners: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+        for (group, table) in [
+            ("ehr", openehr_its::rest::generated::ehr::ROUTES),
+            (
+                "definition",
+                openehr_its::rest::generated::definition::ROUTES,
+            ),
+            (
+                "demographic",
+                openehr_its::rest::generated::demographic::ROUTES,
+            ),
+            ("query", openehr_its::rest::generated::query::ROUTES),
+            ("admin", openehr_its::rest::generated::admin::ROUTES),
+            ("system", openehr_its::rest::generated::system::ROUTES),
+        ] {
+            for (_m, _p, op) in table {
+                let groups = owners.entry(op).or_default();
+                if !groups.contains(&group) {
+                    groups.push(group);
+                }
+            }
+        }
+        let unadjudicated: Vec<(&str, &Vec<&str>)> = owners
+            .iter()
+            .filter(|(op, groups)| groups.len() > 1 && !ADJUDICATED_SHARED.contains(*op))
+            .map(|(op, groups)| (*op, groups))
+            .collect();
+        assert!(
+            unadjudicated.is_empty(),
+            "op ids reused across generated groups without an adjudicated shared \
+             classification (#1707 — adjudicate in the classifier and extend \
+             ADJUDICATED_SHARED): {unadjudicated:?}"
+        );
+        // …and the adjudicated list itself never rots: every entry is still a
+        // real cross-group duplicate.
+        for op in ADJUDICATED_SHARED {
+            assert!(
+                owners.get(op).is_some_and(|g| g.len() > 1),
+                "{op} is no longer shared across groups — remove it from ADJUDICATED_SHARED"
+            );
+        }
     }
 
     /// Completeness guard: every generated operation id has an **explicit**
