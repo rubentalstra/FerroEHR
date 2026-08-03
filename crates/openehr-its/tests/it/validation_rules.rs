@@ -703,9 +703,12 @@ fn dv_ordered_bad_normal_status_reported() {
 /// RM invariant, surfaced through the composition RM-invariant pass.
 #[test]
 fn dv_duration_fractional_non_seconds_rejected() {
+    // The `_as` entry with the instance's true declared type: the composition
+    // entry now (correctly) refuses a bare DV_DURATION root as
+    // not-a-COMPOSITION, which would shadow the no-Invariant assertion below.
     for bad in ["P1Y3M4DT2.5H", "PT2H14.5M"] {
         let inst = json!({"_type": "DV_DURATION", "value": bad});
-        let msgs = validate_rm_and_terminology(&inst);
+        let msgs = validate_rm_and_terminology_as(&inst, "DV_DURATION");
         assert!(
             msgs.iter()
                 .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Value_valid")),
@@ -715,7 +718,8 @@ fn dv_duration_fractional_non_seconds_rejected() {
     // A fraction on the seconds component is valid.
     let good = json!({"_type": "DV_DURATION", "value": "PT2H30M0.5S"});
     assert!(
-        !kinds(&validate_rm_and_terminology(&good)).contains(&ValidationKind::Invariant),
+        !kinds(&validate_rm_and_terminology_as(&good, "DV_DURATION"))
+            .contains(&ValidationKind::Invariant),
         "a fractional-seconds duration must be accepted"
     );
 }

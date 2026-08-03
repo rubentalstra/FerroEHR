@@ -230,6 +230,67 @@ pub fn nonempty_list_violations(ty: &str, value: &Value, out: &mut Vec<Invariant
     }
 }
 
+/// The declared-slot-type conformance rule, over the BMM-generated attribute
+/// model: a child node's wire `_type` must name the RM type the parent
+/// attribute declares, or a subtype of it (`docs/specs/openehr/ITS-JSON`
+/// discipline: `_type` names the instance's RM class; the attribute's
+/// declared type comes from the RM UML/BMM — e.g. RM ehr
+/// `composition.adoc` §Attributes types `content` `List<CONTENT_ITEM>`, so a
+/// `DV_TEXT` member of `content` is a positive type contradiction). This is
+/// the WRONGNESS half of slot typing — it never relaxes ("data may be
+/// missing, but it may not be wrong", RM common
+/// `master06-change_control_package.adoc` §Incomplete Content); the
+/// presence/lower-bound half lives in [`check_mandatory_containers`] /
+/// [`nonempty_list_violations`].
+///
+/// Returns `None` (no judgement) when the slot is unknown to the model, the
+/// declared type is not a modelled class (a primitive such as `String`), or
+/// the attribute is a keyed map (`Hash` — its JSON object is a map, not an
+/// RM node). An untagged child is judged elsewhere (the effective-type rule,
+/// [`crate::model::declared_concrete_type`]).
+#[must_use]
+pub fn check_declared_slot_type(
+    parent_type: &str,
+    field: &str,
+    wire_type: &str,
+) -> Option<InvariantViolation> {
+    let attr = crate::model::attribute(parent_type, field)?;
+    if matches!(attr.container, crate::model::Container::Hash) {
+        return None;
+    }
+    crate::model::class(attr.declared_type)?;
+    if crate::model::is_a(wire_type, attr.declared_type) {
+        return None;
+    }
+    Some(InvariantViolation::here(format!(
+        "does not conform to RM type {parent_type}: `{field}` is declared \
+         {declared} and this member claims `_type` {wire_type}, which is not \
+         a {declared}",
+        declared = attr.declared_type,
+    )))
+}
+
+/// The scalar-member arm of the declared-slot-type rule: a NON-OBJECT member
+/// of a list slot whose declared element type is a modelled RM class is the
+/// same positive contradiction a foreign `_type` is — no JSON scalar can be
+/// an instance of an RM class (canonical JSON encodes every RM object as a
+/// JSON object; ITS-JSON). Same guards as [`check_declared_slot_type`]:
+/// `None` for unknown slots, primitive-typed slots (a `List<String>` member
+/// IS legitimately a scalar), and keyed maps. Never relaxed.
+#[must_use]
+pub fn check_slot_member_is_object(parent_type: &str, field: &str) -> Option<InvariantViolation> {
+    let attr = crate::model::attribute(parent_type, field)?;
+    if matches!(attr.container, crate::model::Container::Hash) {
+        return None;
+    }
+    crate::model::class(attr.declared_type)?;
+    Some(InvariantViolation::here(format!(
+        "does not conform to RM type {parent_type}: `{field}` is declared \
+         {declared} and this member is not a JSON object",
+        declared = attr.declared_type,
+    )))
+}
+
 /// `LOCATABLE.Archetyped_valid`: `is_archetype_root xor archetype_details =
 /// Void` (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
 /// §Invariants). The enforceable arm on an instance is: a **non-root**
