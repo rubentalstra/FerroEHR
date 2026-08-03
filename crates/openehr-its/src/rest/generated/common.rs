@@ -25,32 +25,6 @@ pub struct Error {
     pub validation_errors: Vec<String>,
 }
 
-/// The `Clstr` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Clstr {
-    /// The `_type` property of `Clstr`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `items` property of `Clstr`.
-    pub items: Vec<openehr_rm::prelude::Item>,
-}
-
-/// The `DvIntervalOfDateTime` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DvIntervalOfDateTime {
-    /// The `_type` property of `DvIntervalOfDateTime`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `lower` property of `DvIntervalOfDateTime`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub lower: Option<openehr_rm::prelude::DvDateTime>,
-    /// The `upper` property of `DvIntervalOfDateTime`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub upper: Option<openehr_rm::prelude::DvDateTime>,
-}
-
 /// The `AbstractEntry` ITS-REST OAS component schema: `_type`-discriminated
 /// polymorphism over its OAS `discriminator.mapping` targets.
 #[derive(Debug, Clone)]
@@ -172,21 +146,6 @@ impl<'de> ::serde::Deserialize<'de> for AbstractEntry {
 /// it is an alias rather than a struct).
 pub type ListOfPartyIdentity = Vec<openehr_rm::prelude::PartyIdentity>;
 
-/// The `DvIntervalOfDate` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DvIntervalOfDate {
-    /// The `_type` property of `DvIntervalOfDate`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `lower` property of `DvIntervalOfDate`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub lower: Option<openehr_rm::prelude::DvDate>,
-    /// The `upper` property of `DvIntervalOfDate`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub upper: Option<openehr_rm::prelude::DvDate>,
-}
-
 /// The `ListOfContact` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
 pub type ListOfContact = Vec<openehr_rm::prelude::Contact>;
@@ -231,15 +190,6 @@ pub struct UpdateItemTag {
 pub struct Identifier {
     /// The `uid` property of `Identifier`.
     pub uid: String,
-}
-
-/// The `ObjectRefOfHierObjectId` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ObjectRefOfHierObjectId {
-    /// The `id` property of `ObjectRefOfHierObjectId`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<openehr_base::prelude::HierObjectId>,
 }
 
 /// The `UpdateAudit` transport DTO of this API group (an ITS-REST OAS
@@ -397,13 +347,4 @@ pub struct UpdateVersion<T> {
     pub data: T,
     /// The `commit_audit` property of `UpdateVersion`.
     pub commit_audit: UpdateAudit,
-}
-
-/// The `ObjectRefOfObjectVersionId` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ObjectRefOfObjectVersionId {
-    /// The `id` property of `ObjectRefOfObjectVersionId`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<openehr_base::prelude::ObjectVersionId>,
 }

@@ -19,6 +19,7 @@
 use std::collections::BTreeMap;
 
 use crate::analyze::invariants::{Bucket, classify};
+use crate::load::bmm::{BmmPropKind, BmmProperty, BmmType};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Primitive type map (spec foundation type → Rust type)
@@ -573,45 +574,174 @@ pub(crate) struct FieldDefault {
     pub reason: &'static str,
 }
 
-/// Serde defaults for fields the canonical wire may omit. `Interval`'s
-/// inclusivity/boundedness flags are mandatory in the BMM but archie/EHRbase
-/// omit them: a bounded limit is *included* by default, an unstated limit is
-/// *bounded* by default. The value is a literal Rust expression consumed by
-/// `#[openehr(default = …)]`.
+/// Serde defaults the vendored BMM does NOT state, for fields the canonical
+/// wire may omit.
+///
+/// **This table is the residue, not the source.** The vendored schemas carry a
+/// `default` facet on 44 properties ([`BmmProperty::default`]), and
+/// [`vendored_default`] renders it wherever it is renderable — that derivation
+/// is the primary path. Entries survive here only where the vendored input
+/// states nothing and a decision is still required.
+///
+/// The four that remain are `Interval`'s inclusivity/boundedness flags. The
+/// BASE 1.3.0 `Interval` primitive type declares all four as mandatory with NO
+/// `default` facet, yet its own `Point_interval` descendant REDECLARES the same
+/// four properties carrying exactly the values below — so the schema states the
+/// convention once, on one descendant, and leaves the inherited sites silent.
+/// These entries propagate that same statement to the inherited sites
+/// (`Proper_interval`, `Multiplicity_interval`), which is also what archie and
+/// EHRbase emit on the wire: a bounded limit is *included* by default, an
+/// unstated limit is *bounded* by default. The value is a literal Rust
+/// expression.
 pub(crate) const FIELD_DEFAULTS: &[FieldDefault] = &[
     FieldDefault {
         owner: "Interval",
         field: "lower_included",
         default: "true",
-        citation: "BASE foundation_types (Interval) for the semantics; no openEHR spec governs \
-                   the wire omission — archie/EHRbase interop convention (our own design)",
+        citation: "BASE docs/UML/classes/org.openehr.base.foundation_types.interval.adoc \
+                   (Interval) for the semantics; the identical value is the vendored `default` \
+                   facet on Point_interval.lower_included. No openEHR spec governs the wire \
+                   omission itself — archie/EHRbase interop convention (our own design)",
         reason: "A bounded interval limit is included by default.",
     },
     FieldDefault {
         owner: "Interval",
         field: "upper_included",
         default: "true",
-        citation: "BASE foundation_types (Interval) for the semantics; no openEHR spec governs \
-                   the wire omission — archie/EHRbase interop convention (our own design)",
+        citation: "BASE docs/UML/classes/org.openehr.base.foundation_types.interval.adoc \
+                   (Interval) for the semantics; the identical value is the vendored `default` \
+                   facet on Point_interval.upper_included. No openEHR spec governs the wire \
+                   omission itself — archie/EHRbase interop convention (our own design)",
         reason: "A bounded interval limit is included by default.",
     },
     FieldDefault {
         owner: "Interval",
         field: "lower_unbounded",
         default: "false",
-        citation: "BASE foundation_types (Interval) for the semantics; no openEHR spec governs \
-                   the wire omission — archie/EHRbase interop convention (our own design)",
+        citation: "BASE docs/UML/classes/org.openehr.base.foundation_types.interval.adoc \
+                   (Interval) for the semantics; the identical value is the vendored `default` \
+                   facet on Point_interval.lower_unbounded. No openEHR spec governs the wire \
+                   omission itself — archie/EHRbase interop convention (our own design)",
         reason: "An unstated interval limit is bounded by default.",
     },
     FieldDefault {
         owner: "Interval",
         field: "upper_unbounded",
         default: "false",
-        citation: "BASE foundation_types (Interval) for the semantics; no openEHR spec governs \
-                   the wire omission — archie/EHRbase interop convention (our own design)",
+        citation: "BASE docs/UML/classes/org.openehr.base.foundation_types.interval.adoc \
+                   (Interval) for the semantics; the identical value is the vendored `default` \
+                   facet on Point_interval.upper_unbounded. No openEHR spec governs the wire \
+                   omission itself — archie/EHRbase interop convention (our own design)",
         reason: "An unstated interval limit is bounded by default.",
     },
 ];
+
+/// Render a property's vendored `default` facet as a literal Rust expression of
+/// the field's own type, or `None` when the facet cannot be one.
+///
+/// The facet is an **undeclared extension**: LANG
+/// `docs/UML/classes/org.openehr.lang.bmm_persistence.p_bmm_property.adoc`
+/// §Attributes declares `name`, `is_mandatory`, `is_computed`,
+/// `is_im_infrastructure`, `is_im_runtime`, `type_def` and `bmm_property` — no
+/// `default` — so the vendored schemas' 44 occurrences carry no normative
+/// reading and the emitter derives from them only where the facet is
+/// unambiguous in the property's own declared type:
+///
+/// * `Boolean` ← the ODIN literals `False`/`True` (the JSON export stringifies
+///   them) or a real JSON boolean.
+/// * `String` ← an ODIN-QUOTED literal (`<"Boolean">` arrives as `"\"Boolean\""`).
+///   The quoting is what distinguishes a string value from a stray annotation:
+///   the one bare non-empty facet in the vendored set is RM
+///   `RESOURCE_DESCRIPTION.parent_resource = "0..1"`, a cardinality that leaked
+///   into the default slot of an `AUTHORED_RESOURCE`-typed property.
+///
+/// Everything else is un-renderable and is listed in [`UNRENDERABLE_DEFAULTS`],
+/// so the vendored set is partitioned totally: derived, or named with a reason.
+pub(crate) fn vendored_default(prop: &BmmProperty) -> Option<String> {
+    let facet = prop.default.as_deref()?;
+    let BmmPropKind::Single(BmmType::Simple(ty)) = &prop.kind else {
+        return None;
+    };
+    match ty.as_str() {
+        "Boolean" => match facet {
+            "False" | "false" => Some("false".to_string()),
+            "True" | "true" => Some("true".to_string()),
+            _ => None,
+        },
+        "String" => {
+            let inner = facet.strip_prefix('"')?.strip_suffix('"')?;
+            (!inner.is_empty()).then(|| format!("::std::string::String::from({inner:?})"))
+        }
+        _ => None,
+    }
+}
+
+/// One vendored `default` facet the emitter deliberately does NOT realize.
+pub(crate) struct UnrenderableDefault {
+    /// The declaring BMM class.
+    pub owner: &'static str,
+    /// The property carrying the facet.
+    pub field: &'static str,
+    /// The spec/schema evidence for leaving it unrealized.
+    pub citation: &'static str,
+    /// One-line reason.
+    pub reason: &'static str,
+}
+
+/// Every vendored `default` facet [`vendored_default`] declines to render, named
+/// and cited — the completeness half of the partition, so a facet is never just
+/// dropped.
+///
+/// A new un-renderable facet (a re-vendored schema, a pin bump) fails the
+/// emitter's own test suite until it is adjudicated here.
+pub(crate) const UNRENDERABLE_DEFAULTS: &[UnrenderableDefault] = &[
+    UnrenderableDefault {
+        owner: "RESOURCE_DESCRIPTION",
+        field: "parent_resource",
+        citation: "The property is typed AUTHORED_RESOURCE, not a primitive: the BASE 1.3.0 \
+                   schema gives it the facet `\"\"` and the RM 1.2.0 schema `\"0..1\"` (a \
+                   cardinality string in the default slot). It is also a designated owner/parent \
+                   back-reference (see BACK_REFERENCES), so no struct field exists to default.",
+        reason: "Class-typed back-reference; both vendored facet values are authoring slips.",
+    },
+    UnrenderableDefault {
+        owner: "CODE_SET",
+        field: "status",
+        citation: "TERM 3.1.0 types the property TERMINOLOGY_STATUS and gives it the facet \
+                   `\"\"`; an empty string is not a value of that type.",
+        reason: "Empty facet on a non-primitive type.",
+    },
+    UnrenderableDefault {
+        owner: "TERMINOLOGY_GROUP",
+        field: "status",
+        citation: "TERM 3.1.0 types the property TERMINOLOGY_STATUS and gives it the facet \
+                   `\"\"`; an empty string is not a value of that type.",
+        reason: "Empty facet on a non-primitive type.",
+    },
+    UnrenderableDefault {
+        owner: "CODE",
+        field: "status",
+        citation: "TERM 3.1.0 types the property TERMINOLOGY_STATUS and gives it the facet \
+                   `\"\"`; an empty string is not a value of that type.",
+        reason: "Empty facet on a non-primitive type.",
+    },
+    UnrenderableDefault {
+        owner: "TERMINOLOGY_CONCEPT",
+        field: "status",
+        citation: "TERM 3.1.0 types the property TERMINOLOGY_STATUS and gives it the facet \
+                   `\"\"`; an empty string is not a value of that type.",
+        reason: "Empty facet on a non-primitive type.",
+    },
+];
+
+/// Whether `(owner, field)`'s vendored `default` facet is an adjudicated
+/// un-renderable one.
+#[must_use]
+pub(crate) fn default_unrenderable(owner: &str, field: &str) -> bool {
+    UNRENDERABLE_DEFAULTS
+        .iter()
+        .any(|u| u.owner == owner && u.field == field)
+}
 
 /// A container attribute whose vendored cardinality lower bound is CONTRADICTED
 /// by the same release's normative syntax, with the citation that resolves it.
@@ -657,13 +787,124 @@ pub(crate) fn cardinality_contradicted(owner: &str, field: &str) -> bool {
         .any(|c| c.owner == owner && c.field == field)
 }
 
-/// The serde default expression for `(owner, field)`, or `None`. Behaviour-
-/// identical to the former inline `field_default`.
-pub(crate) fn field_default(owner: &str, field: &str) -> Option<&'static str> {
-    FIELD_DEFAULTS
+/// The serde default expression for a resolved property, or `None`.
+///
+/// The vendored `default` facet on the DECLARING class wins; [`FIELD_DEFAULTS`]
+/// supplies only what the schemas leave unstated. The two can never disagree —
+/// an entry in the hand table for a property that carries a renderable facet
+/// fails the emitter's own test suite.
+pub(crate) fn field_default(owner: &str, prop: &BmmProperty) -> Option<String> {
+    vendored_default(prop).or_else(|| {
+        FIELD_DEFAULTS
+            .iter()
+            .find(|d| d.owner == owner && d.field == prop.name)
+            .map(|d| d.default.to_string())
+    })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ITS-REST OAS schema names that ARE spec types under a different spelling
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One ITS-REST OAS component schema whose *key* name does not match the spec
+/// class it renders, mapped to the generated spec type it must resolve to.
+pub(crate) struct OasMonomorphization {
+    /// The OAS `components/schemas` key.
+    pub schema: &'static str,
+    /// The `title` that same schema declares — the openEHR spec name, which is
+    /// what grounds the mapping in the vendored input rather than in a guess.
+    pub title: &'static str,
+    /// The fully-qualified generated Rust type.
+    pub rust_type: &'static str,
+    /// The spec/OAS evidence.
+    pub citation: &'static str,
+    /// One-line reason.
+    pub reason: &'static str,
+}
+
+/// OAS component schemas that ARE generated spec types spelled differently.
+///
+/// `emit_rest` binds a `$ref` to a spec type by matching the schema KEY against
+/// the emittable class names, which works for the ~200 schemas the released
+/// bundles name after their class (`Ehr`, `DvText`, …) and fails for the five
+/// below: OAS keys must be unique and ASCII, so the released bundles rename a
+/// class whose Rust name collides (`Clstr`) and give each generic
+/// INSTANTIATION its own key (`DvIntervalOfDate`, `ObjectRefOfHierObjectId`).
+/// Every one of them declares its real spec name in `title`, so the mapping is
+/// read out of the vendored bundle, not invented — the emitter's test suite
+/// asserts each entry's `title` against the bundle.
+///
+/// Without the mapping they emit as DTO structs, which is doubly wrong: the
+/// payload loses the spec type's strict canonical-JSON reader, and the DTO is
+/// `allOf`-truncated (it carries only the schema's OWN `properties`, so
+/// `Clstr` loses every `ITEM`/`LOCATABLE` member and `ObjectRefOfHierObjectId`
+/// loses the mandatory `namespace` and `type`).
+pub(crate) const OAS_MONOMORPHIZATIONS: &[OasMonomorphization] = &[
+    OasMonomorphization {
+        schema: "Clstr",
+        title: "CLUSTER",
+        rust_type: "openehr_rm::prelude::Cluster",
+        citation: "The schema declares `title: CLUSTER` and
+                   `x-discriminator-value: CLUSTER`, and every ITEM discriminator mapping in the \
+                   released bundles routes `CLUSTER: '#/components/schemas/Clstr'`. RM \
+                   docs/data_structures/master03-item_structure_package.adoc §CLUSTER is the \
+                   class; `openehr_rm::prelude::Cluster` is its generated form.",
+        reason: "OAS key abbreviated to avoid a name clash; the class is RM CLUSTER.",
+    },
+    OasMonomorphization {
+        schema: "DvIntervalOfDate",
+        title: "DV_INTERVAL_of_DATE",
+        rust_type: "openehr_rm::prelude::DvInterval<openehr_rm::prelude::DvDate>",
+        citation: "The schema declares `title: DV_INTERVAL_of_DATE`, composes \
+                   `allOf: [DvInterval]`, and narrows `lower`/`upper` to `DvDate`. RM \
+                   docs/data_types/master04-quantity_package.adoc §DV_INTERVAL is the generic \
+                   class `DV_INTERVAL<T: DV_ORDERED>`; this is its DV_DATE instantiation.",
+        reason: "A generic instantiation the OAS must give a flat key; the class is DV_INTERVAL.",
+    },
+    OasMonomorphization {
+        schema: "DvIntervalOfDateTime",
+        title: "DV_INTERVAL_of_DATE_TIME",
+        rust_type: "openehr_rm::prelude::DvInterval<openehr_rm::prelude::DvDateTime>",
+        citation: "The schema declares `title: DV_INTERVAL_of_DATE_TIME`, composes \
+                   `allOf: [DvInterval]`, and narrows `lower`/`upper` to `DvDateTime`. RM \
+                   docs/data_types/master04-quantity_package.adoc §DV_INTERVAL is the generic \
+                   class `DV_INTERVAL<T: DV_ORDERED>`; this is its DV_DATE_TIME instantiation.",
+        reason: "A generic instantiation the OAS must give a flat key; the class is DV_INTERVAL.",
+    },
+    OasMonomorphization {
+        schema: "ObjectRefOfHierObjectId",
+        title: "OBJECT_REF",
+        rust_type: "openehr_base::prelude::ObjectRef",
+        citation: "The schema declares `title: OBJECT_REF`, composes `allOf: [ObjectRef]`, and \
+                   narrows `id` to `HierObjectId`. BASE \
+                   docs/base_types/master05-identification_package.adoc §OBJECT_REF declares \
+                   `id: OBJECT_ID`, of which HIER_OBJECT_ID is a subtype, so the generated \
+                   `openehr_base::prelude::ObjectRef` already accepts this narrowing — and \
+                   carries the mandatory `namespace`/`type` members the truncated DTO dropped.",
+        reason: "An id-narrowed OBJECT_REF given its own OAS key; the class is OBJECT_REF.",
+    },
+    OasMonomorphization {
+        schema: "ObjectRefOfObjectVersionId",
+        title: "OBJECT_REF",
+        rust_type: "openehr_base::prelude::ObjectRef",
+        citation: "The schema declares `title: OBJECT_REF`, composes `allOf: [ObjectRef]`, and \
+                   narrows `id` to `ObjectVersionId`. BASE \
+                   docs/base_types/master05-identification_package.adoc §OBJECT_REF declares \
+                   `id: OBJECT_ID`, of which OBJECT_VERSION_ID is a subtype, so the generated \
+                   `openehr_base::prelude::ObjectRef` already accepts this narrowing — and \
+                   carries the mandatory `namespace`/`type` members the truncated DTO dropped.",
+        reason: "An id-narrowed OBJECT_REF given its own OAS key; the class is OBJECT_REF.",
+    },
+];
+
+/// The generated spec type an OAS component schema key resolves to, or `None`
+/// when the key is not one of the renamed/monomorphized spellings.
+#[must_use]
+pub(crate) fn oas_monomorphization(schema: &str) -> Option<&'static str> {
+    OAS_MONOMORPHIZATIONS
         .iter()
-        .find(|d| d.owner == owner && d.field == field)
-        .map(|d| d.default)
+        .find(|m| m.schema == schema)
+        .map(|m| m.rust_type)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

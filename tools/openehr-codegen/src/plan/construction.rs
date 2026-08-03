@@ -8,12 +8,25 @@
 //! released spec states no constraint over the field values — privacy there
 //! would guarantee nothing and only add ceremony.
 //!
-//! It is *wrong* wherever the released spec defines a **lexical form**: BASE
-//! `base_types/master05-identification_package.adoc` §Syntaxes gives an EBNF
-//! grammar for every identifier class, so a `HIER_OBJECT_ID` whose `value` is
-//! `"1234-5678"` is not a valid instance of the spec type at all. With a public
-//! field the type can hold it anyway, and the validating constructor beside it
-//! is merely *a* door rather than *the* door.
+//! It is *wrong* wherever the released spec states a **constraint over the
+//! field values that is decidable from those fields alone**. Two shapes qualify:
+//!
+//! * a **lexical form** — BASE `base_types/master05-identification_package.adoc`
+//!   §Syntaxes gives an EBNF grammar for every identifier class, so a
+//!   `HIER_OBJECT_ID` whose `value` is `"1234-5678"` is not a valid instance of
+//!   the spec type at all;
+//! * a **class invariant over its own fields** — RM
+//!   `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants states
+//!   `Inv_key_valid` and `Inv_value_valid` over `ITEM_TAG.key`/`.value`, so an
+//!   `ITEM_TAG` with an empty key is likewise not an instance of the class.
+//!
+//! With a public field the type can hold the invalid value anyway, and the
+//! validating constructor beside it is merely *a* door rather than *the* door.
+//!
+//! The boundary is decidability *from the fields*: an invariant that needs
+//! anything the instance does not carry — terminology lookup, the existence of
+//! the `target` an `ITEM_TAG` points at, a parent's node id — cannot move to the
+//! door and stays at the `Validate` tier or in the service layer.
 //!
 //! An entry with [`Door::Validated`] closes that: the emitter renders the
 //! class's fields `pub(crate)` and emits read accessors, so **outside the
@@ -56,12 +69,13 @@ pub(crate) enum Door {
         /// constructor cannot answer.
         params: &'static [&'static str],
         /// `true` when `new` returns `Result` (the normal case: the constructor
-        /// runs a grammar over a raw string). `false` when the field types
-        /// already make an invalid value unrepresentable, so the door exists to
-        /// be the ONLY door, not to reject anything — a `Result` there would be
-        /// a lie the `unnecessary_wraps` lint is right to flag.
+        /// runs a grammar or an invariant over the incoming values). `false`
+        /// when the field types already make an invalid value unrepresentable,
+        /// so the door exists to be the ONLY door, not to reject anything — a
+        /// `Result` there would be a lie the `unnecessary_wraps` lint is right
+        /// to flag.
         fallible: bool,
-        /// The released grammar the constructor runs.
+        /// The released grammar or invariant the constructor runs.
         citation: &'static str,
     },
     /// Fields stay `pub`: the released spec states **no** constraint over this
@@ -94,10 +108,18 @@ pub(crate) struct Construction {
 
 /// Every adjudicated construction decision.
 ///
-/// The identification family is the whole of it today (owner scope pin, issue
-/// #1695): it is the one package where the released spec gives a complete
-/// machine-checkable grammar for the field value, so it is the one package
-/// where a construction door buys a real guarantee.
+/// The identification family is the lexical-form half: it is the package where
+/// the released spec gives a complete machine-checkable grammar for the field
+/// value. `ITEM_TAG` is the invariant half — the RM class whose §Invariants are
+/// stated purely over its OWN fields, so the same door closes them.
+///
+/// **The set is adjudicated per class, never swept.** The emit-validate
+/// classification knows which invariants are mechanically evaluable, but
+/// mechanical evaluability is not sufficient: an invariant may only move to the
+/// door when it is decidable from the class's own fields AND refusing at
+/// construction is the right accept/reject boundary (see [`Door::TierEnforced`]
+/// for a case where it is not). The invariant families still at the `Validate`
+/// tier are recorded in `openehr-rm`'s generated realization register.
 pub(crate) static CONSTRUCTION: &[Construction] = &[
     // ── the UID hierarchy (uid = iso_oid | uuid | internet_id) ──────────────
     Construction {
@@ -169,6 +191,29 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
                        master06-change_control_package.adoc \u{a7}\u{201c}The 'Virtual Version \
                        Tree'\u{201d} starts every part at 1 (`VERSION_TREE_ID.\
                        Trunk_version_valid` / `.Branch_validity`).",
+        },
+    },
+    // ── the invariant half: a class constrained by its OWN §Invariants ──────
+    Construction {
+        class: "ITEM_TAG",
+        door: Door::Validated {
+            params: &[
+                "String",
+                "Option<String>",
+                "openehr_base::prelude::UidBasedId",
+                "Option<String>",
+                "openehr_base::prelude::ObjectRef",
+            ],
+            fallible: true,
+            citation: "docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc \
+                       \u{a7}Invariants: `Inv_key_valid: not key.is_empty and key.is_justified` \
+                       and `Inv_value_valid: value /= Void implies not value.is_empty`. Both are \
+                       stated over ITEM_TAG's own fields and decidable from them alone, so an \
+                       instance violating either is not an instance of the class \u{2014} the \
+                       same standing the \u{a7}Syntaxes grammar has for an identifier. The \
+                       remaining checks an ITEM_TAG needs (does `target` exist, does \
+                       `target_path` resolve within it) read state the instance does NOT carry \
+                       and stay in the service layer.",
         },
     },
     // ── recorded NON-entries: identifier classes that stay plain records ────

@@ -1,13 +1,75 @@
-//! Hand-written RM class invariants for `ITEM_TAG`.
+//! Hand-written validating construction + RM class invariants for `ITEM_TAG`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`:
 //! - `Inv_key_valid`: `not key.is_empty and key.is_justified` (no leading or
 //!   trailing whitespace).
 //! - `Inv_value_valid`: `value /= Void implies not value.is_empty`.
+//!
+//! Both invariants are stated over `ITEM_TAG`'s OWN fields and are decidable
+//! from them alone, so they are enforced at the construction door: the generated
+//! struct's fields are `pub(crate)` (the emitter's construction-door scheme,
+//! `plan::construction`), and [`ItemTag::new`] is the only way to obtain the
+//! type outside `openehr-rm`. The canonical-JSON and canonical-XML readers build
+//! through the same door, so a violating payload refuses at PARSE, path-named,
+//! in every document position — an `ITEM_TAG` can no longer exist in violation
+//! of its own invariants.
+//!
+//! What stays OUTSIDE the door: whether `target` names an existing versioned
+//! object and whether `target_path` resolves inside it. Those read state the
+//! instance does not carry, so they remain service-layer checks.
 
 use crate::common::tags::item_tag::ItemTag;
+use openehr_base::prelude::{ObjectRef, UidBasedId};
 use openehr_base::validate::{InvariantViolation, Validate};
+
+/// Why an [`ItemTag`] could not be constructed — one variant per released
+/// invariant, so a caller branches on the failure instead of matching prose.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ItemTagError {
+    /// `Inv_key_valid` failed: the key was empty, or carried leading/trailing
+    /// whitespace (RM `org.openehr.rm.common.item_tag.adoc` §Invariants).
+    #[error("Inv_key_valid: key {0:?} must be non-empty and free of leading/trailing whitespace")]
+    KeyInvalid(String),
+    /// `Inv_value_valid` failed: the value was present and empty (RM
+    /// `org.openehr.rm.common.item_tag.adoc` §Invariants).
+    #[error("Inv_value_valid: a present value must be non-empty")]
+    ValueEmpty,
+}
+
+impl ItemTag {
+    /// Build an `ITEM_TAG`, checking the two released §Invariants over its own
+    /// fields.
+    ///
+    /// This is THE door: the generated fields are `pub(crate)`, so outside
+    /// `openehr-rm` no other construction exists, and the generated codecs route
+    /// through here.
+    ///
+    /// # Errors
+    /// [`ItemTagError::KeyInvalid`] when `key` violates `Inv_key_valid`, and
+    /// [`ItemTagError::ValueEmpty`] when `value` violates `Inv_value_valid`.
+    pub fn new(
+        key: String,
+        value: Option<String>,
+        target: UidBasedId,
+        target_path: Option<String>,
+        owner_id: ObjectRef,
+    ) -> Result<Self, ItemTagError> {
+        if !Self::key_valid(&key) {
+            return Err(ItemTagError::KeyInvalid(key));
+        }
+        if !Self::value_valid(value.as_deref()) {
+            return Err(ItemTagError::ValueEmpty);
+        }
+        Ok(Self {
+            key,
+            value,
+            target,
+            target_path,
+            owner_id,
+        })
+    }
+}
 
 impl ItemTag {
     /// `Inv_key_valid` as a predicate on a candidate key: `not key.is_empty and
@@ -76,6 +138,62 @@ mod tests {
                 ),
             }),
         }
+    }
+
+    /// The door REFUSES what `Inv_key_valid` forbids, so an `ITEM_TAG` in
+    /// violation of it cannot be constructed at all — the structural half of
+    /// the `key_must_be_non_empty_and_justified` validation test below.
+    #[test]
+    fn the_door_refuses_an_invalid_key() {
+        let t = tag("ok", None);
+        for bad in ["", " padded", "padded ", " both "] {
+            assert_eq!(
+                ItemTag::new(
+                    bad.to_owned(),
+                    None,
+                    t.target.clone(),
+                    None,
+                    t.owner_id.clone(),
+                ),
+                Err(ItemTagError::KeyInvalid(bad.to_owned())),
+                "key {bad:?} must be refused at construction"
+            );
+        }
+    }
+
+    /// The door REFUSES what `Inv_value_valid` forbids.
+    #[test]
+    fn the_door_refuses_a_present_empty_value() {
+        let t = tag("ok", None);
+        assert_eq!(
+            ItemTag::new(
+                "k".to_owned(),
+                Some(String::new()),
+                t.target.clone(),
+                None,
+                t.owner_id.clone(),
+            ),
+            Err(ItemTagError::ValueEmpty),
+        );
+    }
+
+    /// A conforming tag passes the door and reads back exactly what went in.
+    #[test]
+    fn the_door_admits_a_conforming_tag() {
+        let t = tag("ok", None);
+        let built = ItemTag::new(
+            "severity".to_owned(),
+            Some("high".to_owned()),
+            t.target.clone(),
+            Some("/content[0]".to_owned()),
+            t.owner_id.clone(),
+        )
+        .expect("a conforming ITEM_TAG should construct");
+        assert_eq!(built.key(), "severity");
+        assert_eq!(built.value(), Some("high"));
+        assert_eq!(built.target_path(), Some("/content[0]"));
+        assert_eq!(built.target(), &t.target);
+        assert_eq!(built.owner_id(), &t.owner_id);
     }
 
     #[test]

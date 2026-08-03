@@ -10,13 +10,14 @@ use crate::analyze::invariants::{self, Bucket};
 use crate::analyze::{Model, augment_with_reemit, class_paths, cross_schema_reemit};
 use crate::load::bmm::BmmSchema;
 use crate::load::impls::SiblingImpls;
+use crate::load::oas;
 use crate::plan::composition::{self, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
 use crate::render::emit::{
     CrateGeneration, GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate,
 };
-use crate::render::{emit_rm_model, emit_validate, model_query, naming};
+use crate::render::{emit_rest, emit_rm_model, emit_validate, model_query, naming};
 use std::collections::{BTreeMap, BTreeSet};
 
 type Error = Box<dyn std::error::Error>;
@@ -564,8 +565,21 @@ pub fn am24_reemit_mirrors() -> Result<Vec<Mirror>, Error> {
 /// # Errors
 /// Returns an error if the AM/BASE/LANG BMM files cannot be loaded.
 pub fn am24_reemit_closure() -> Result<BTreeSet<String>, Error> {
-    let am24 = compose("am24")?;
-    Ok(cross_schema_reemit(&am24.model, &am24.own_schema))
+    reemit_closure("am24")
+}
+
+/// One composition's raw downstream re-emission closure — the upstream classes
+/// [`cross_schema_reemit`] reports for crate `key`.
+///
+/// Queryable per composition (not just AM 2.4) so the "which compositions have a
+/// non-empty closure, and does the emitter act on it" question is answered from
+/// the analysis itself rather than from a citation that can go stale.
+///
+/// # Errors
+/// Returns an error if the composition's BMM files cannot be loaded.
+pub fn reemit_closure(key: &str) -> Result<BTreeSet<String>, Error> {
+    let c = compose(key)?;
+    Ok(cross_schema_reemit(&c.model, &c.own_schema))
 }
 
 /// The set of type files (`"<crate>/<path>"`) emitted for one composition
@@ -679,6 +693,35 @@ pub fn decision_maps() -> Vec<DeclMap> {
                 .map(|e| DeclEntry {
                     key: format!("{}.{}", e.owner, e.field),
                     decision: format!("default = {}", e.default),
+                    citation: e.citation.to_string(),
+                    reason: e.reason.to_string(),
+                })
+                .collect(),
+        },
+        DeclMap {
+            // The keys are OAS component-schema names, not BMM classes, so
+            // existence is checked against the vendored bundles by
+            // `oas_monomorphizations`, not by the BMM class/field scan.
+            map: "oas_monomorphization",
+            check_existence: false,
+            entries: overrides::OAS_MONOMORPHIZATIONS
+                .iter()
+                .map(|e| DeclEntry {
+                    key: e.schema.to_string(),
+                    decision: format!("{} → {}", e.title, e.rust_type),
+                    citation: e.citation.to_string(),
+                    reason: e.reason.to_string(),
+                })
+                .collect(),
+        },
+        DeclMap {
+            map: "unrenderable_default",
+            check_existence: true,
+            entries: overrides::UNRENDERABLE_DEFAULTS
+                .iter()
+                .map(|e| DeclEntry {
+                    key: format!("{}.{}", e.owner, e.field),
+                    decision: "vendored `default` facet deliberately not realized".to_string(),
                     citation: e.citation.to_string(),
                     reason: e.reason.to_string(),
                 })
@@ -943,6 +986,200 @@ pub fn field_exists(class: &str, field: &str) -> Result<bool, Error> {
         }
     }
     Ok(false)
+}
+
+/// The attribute names composition `key`'s OWN schema declares on `class`
+/// (declared, not inherited), or `None` if that schema declares no such class.
+///
+/// Used to pin the RM/BASE twin classes: five class names are declared by both
+/// components with materially different member sets, and both generations are
+/// emitted deliberately (see `plan::composition`'s module note).
+///
+/// # Errors
+/// Returns an error if the composition's BMM files cannot be loaded.
+pub fn declared_attributes(key: &str, class: &str) -> Result<Option<BTreeSet<String>>, Error> {
+    let c = compose(key)?;
+    Ok(c.own_schema
+        .classes
+        .get(class)
+        .map(|cls| cls.properties.iter().map(|p| p.name.clone()).collect()))
+}
+
+/// One vendored `default` facet, with the emitter's disposition of it.
+#[derive(Debug, Clone)]
+pub struct VendoredDefault {
+    /// Composition key the facet was read from.
+    pub key: String,
+    /// The DECLARING class.
+    pub owner: String,
+    /// The property carrying the facet.
+    pub field: String,
+    /// The facet text, verbatim from the schema.
+    pub facet: String,
+    /// The literal Rust expression the emitter derives, or `None` when the
+    /// facet is not renderable in the property's declared type.
+    pub rendered: Option<String>,
+}
+
+/// Every `default` facet the vendored schemas carry, across every composition
+/// generation, with what the emitter makes of it.
+///
+/// This is the reconciliation surface for the hand-written `field_default`
+/// table: the vendored facet is the source, the table is the residue, and the
+/// two must not overlap.
+///
+/// # Errors
+/// Returns an error if a vendored BMM file cannot be loaded.
+pub fn vendored_defaults() -> Result<Vec<VendoredDefault>, Error> {
+    let mut out = Vec::new();
+    for key in crate_keys() {
+        for g in &compose(key)?.generations {
+            for (owner, class) in &g.schema.classes {
+                for prop in &class.properties {
+                    if let Some(facet) = &prop.default {
+                        out.push(VendoredDefault {
+                            key: key.to_string(),
+                            owner: owner.clone(),
+                            field: prop.name.clone(),
+                            facet: facet.clone(),
+                            rendered: overrides::vendored_default(prop),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Whether `(owner, field)` is an adjudicated un-renderable `default` facet.
+#[must_use]
+pub fn default_unrenderable(owner: &str, field: &str) -> bool {
+    overrides::default_unrenderable(owner, field)
+}
+
+/// The hand-written `field_default` residue as `(owner, field)` pairs.
+#[must_use]
+pub fn hand_written_defaults() -> Vec<(String, String)> {
+    overrides::FIELD_DEFAULTS
+        .iter()
+        .map(|d| (d.owner.to_string(), d.field.to_string()))
+        .collect()
+}
+
+/// One adjudicated OAS monomorphization, paired with what the VENDORED bundles
+/// actually declare for that schema key.
+#[derive(Debug, Clone)]
+pub struct OasMonomorphizationCheck {
+    /// The OAS `components/schemas` key.
+    pub schema: String,
+    /// The `title` the decision map claims the schema declares.
+    pub declared_title: String,
+    /// The generated Rust type the map resolves it to.
+    pub rust_type: String,
+    /// The `title` values the vendored bundles really declare for that key
+    /// (empty when no bundle declares the key at all).
+    pub vendored_titles: BTreeSet<String>,
+}
+
+/// Every `OAS_MONOMORPHIZATIONS` entry checked against the vendored ITS-REST
+/// bundles: the mapping is only legitimate because each schema declares its real
+/// spec name in `title`, so the entry must still match the vendored text.
+///
+/// # Errors
+/// Returns an error if a vendored OAS bundle cannot be read or parsed.
+pub fn oas_monomorphizations() -> Result<Vec<OasMonomorphizationCheck>, Error> {
+    let oas_dir = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../crates/openehr-its/vendor/rest-oas"
+    ))
+    .to_path_buf();
+    let mut bundles = Vec::new();
+    for entry in std::fs::read_dir(&oas_dir).map_err(|e| e.to_string())? {
+        let path = entry.map_err(|e| e.to_string())?.path();
+        if path.extension().is_some_and(|x| x == "yaml") {
+            bundles.push(oas::Oas::parse_file(&path)?);
+        }
+    }
+    Ok(overrides::OAS_MONOMORPHIZATIONS
+        .iter()
+        .map(|m| OasMonomorphizationCheck {
+            schema: m.schema.to_string(),
+            declared_title: m.title.to_string(),
+            rust_type: m.rust_type.to_string(),
+            vendored_titles: bundles
+                .iter()
+                .flat_map(oas::Oas::schemas)
+                .filter(|(name, _)| name == m.schema)
+                .filter_map(|(_, s)| {
+                    s.get("title")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::to_string)
+                })
+                .collect(),
+        })
+        .collect())
+}
+
+/// The schema names the shared-module fallback document carries, paired with
+/// the `allOf` base names the hoisted schemas reach.
+///
+/// The second set must be a subset of the first, or `emit_common` flattens
+/// `allOf` compositions against a document that cannot resolve their bases.
+///
+/// # Errors
+/// Returns an error if a vendored OAS bundle or a BMM file cannot be loaded.
+pub fn merged_fallback_schema_names() -> Result<(BTreeSet<String>, BTreeSet<String>), Error> {
+    let oas_dir = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../crates/openehr-its/vendor/rest-oas"
+    ))
+    .to_path_buf();
+    let mut paths: Vec<std::path::PathBuf> = std::fs::read_dir(&oas_dir)
+        .map_err(|e| e.to_string())?
+        .map(|e| e.map(|e| e.path()))
+        .collect::<Result<_, _>>()
+        .map_err(|e| e.to_string())?;
+    paths.retain(|p| p.extension().is_some_and(|x| x == "yaml"));
+    paths.sort();
+    let mut bundles: Vec<(&str, oas::Oas)> = Vec::new();
+    for path in &paths {
+        bundles.push(("", oas::Oas::parse_file(path)?));
+    }
+
+    let base = compose("base")?;
+    let rm = compose("rm")?;
+    let names = emit_rest::RmNames {
+        base: crate::analyze::emittable_specs(&base.model, &base.own_schema)
+            .iter()
+            .map(|s| naming::type_name(s))
+            .collect(),
+        rm: crate::analyze::emittable_specs(&rm.model, &rm.own_schema)
+            .iter()
+            .map(|s| naming::type_name(s))
+            .collect(),
+    };
+    let hoisted = emit_rest::hoist_set(&bundles, &names);
+    let merged = oas::Oas::merged_schemas(&bundles, &hoisted);
+    let carried: BTreeSet<String> = merged.schemas().iter().map(|(n, _)| n.clone()).collect();
+
+    // The `allOf` bases the hoisted schemas reach, from the source bundles.
+    let mut bases = BTreeSet::new();
+    for (_, o) in &bundles {
+        for (name, schema) in o.schemas() {
+            if !hoisted.contains(&name) {
+                continue;
+            }
+            if let Some(members) = schema
+                .get("allOf")
+                .and_then(serde_json::Value::as_array)
+                .map(|m| m.iter().filter_map(oas::Oas::ref_name).collect::<Vec<_>>())
+            {
+                bases.extend(members);
+            }
+        }
+    }
+    Ok((carried, bases))
 }
 
 // ── model-query report ──────────────────────────────────────────────────────

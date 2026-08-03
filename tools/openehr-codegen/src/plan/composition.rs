@@ -16,6 +16,49 @@
 //! name and discards the other's attributes. The merged
 //! [`BmmSchema::dependency_view`] is built only as the crate's *naming* view
 //! (one type per Rust name for the prelude and for downstream crates).
+//!
+//! # NOTE: the five RM/BASE twin classes are spec-mandated, not accidental
+//!
+//! `AUTHORED_RESOURCE`, `RESOURCE_DESCRIPTION`, `RESOURCE_DESCRIPTION_ITEM`,
+//! `TRANSLATION_DETAILS` and `CODE_PHRASE` are declared by BOTH the RM 1.2.0 and
+//! the BASE 1.3.0 BMM, with materially different shapes, and BOTH generations
+//! are emitted (the RM twin into `openehr-rm`, the BASE twin into
+//! `openehr-base`). That is what the vendored components state, first-hand:
+//!
+//! - **The resource package.** RM `docs/common/master08-resource_package.adoc`
+//!   opens with the normative note that "the version of the Resource package
+//!   described below is used only in ADL 1.4 archetypes, i.e. via the AOM 1.4
+//!   archetype model. A newer version of this package is defined in the openEHR
+//!   Resource Specification in the BASE component, and is used in ADL 2
+//!   archetypes … with the older form here retained only while needed by AOM 1.4
+//!   based archetypes and tools." Two versions of one package, kept side by side
+//!   on purpose — the AM `am14`/`am24` situation, in the components that own
+//!   them. The RM twin is therefore NOT a stale copy to retire, and the two
+//!   member-level differences that look like defects are the older generation's
+//!   real shape: `TRANSLATION_DETAILS.accreditaton` (RM
+//!   `docs/UML/classes/org.openehr.rm.common.translation_details.adoc`) and
+//!   `copyright` on `RESOURCE_DESCRIPTION_ITEM` rather than
+//!   `RESOURCE_DESCRIPTION` (RM
+//!   `docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc`).
+//!   The published ADL-1.4 schema agrees on the second one — `Resource.xsd`
+//!   in the vendored `AM/Release-1.4` bundle declares `copyright` inside
+//!   `RESOURCE_DESCRIPTION_ITEM` — so only the `accreditaton` spelling is a
+//!   genuine upstream defect: BASE `docs/resource/master00-amendment_record.adoc`
+//!   records SPECPUB-6, "Correct spelling error in
+//!   `TRANSLATION_DETAILS._accreditation_`", against the BASE copy alone, and
+//!   every published `Resource.xsd` in BOTH ITS-XML lineages spells the element
+//!   `accreditation`, leaving the RM component's retained copy the only artifact
+//!   still carrying the typo. The emitter reproduces its input; correcting the
+//!   RM spelling is an upstream matter, not an override.
+//! - **`CODE_PHRASE`.** BASE `docs/foundation_types/master00-amendment_record.adoc`
+//!   records SPECAM-82 as "Add **legacy** `CODE_PHRASE` class to Foundation Types
+//!   to support AOM 1.4 model", and the vendored BASE 1.3.0 BMM's own class
+//!   documentation says "Retain for LEGACY only, while ADL1.4 requires
+//!   `CODE_PHRASE`" (that sentence is propagated into the generated
+//!   `openehr_base` type). It is an ADDITION for AM 1.4's benefit — AM's BMM
+//!   includes BASE, not RM — not a relocation of the RM class, so
+//!   `openehr_rm::data_types::text::CODE_PHRASE` stays the live domain type and
+//!   there is no move to finish.
 
 use crate::analyze::{External, Model, emittable_specs};
 use crate::load::bmm::BmmSchema;
@@ -113,7 +156,10 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
         model_deps: &["base"],
         prelude_deps: &["base"],
         doc: RM_DOC,
-        citation: "RM 1.2.0 BMM includes openehr_base_1.3.0 (ancestors resolve to BASE).",
+        citation: "RM 1.2.0 BMM includes openehr_base_1.3.0 (ancestors resolve to BASE). Five \
+                   class names are declared by BOTH files and the RM declaration wins the merge, \
+                   which is correct in every case — see the module NOTE on the RM/BASE \
+                   twin classes.",
         reason: "The domain model; depends on BASE.",
     },
     CrateComposition {

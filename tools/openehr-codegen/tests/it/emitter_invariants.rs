@@ -847,3 +847,255 @@ fn register_records_terminology_invariants_as_enforced() {
         "register split is not total"
     );
 }
+
+// ── ITS-REST OAS monomorphizations ──────────────────────────────────────────
+
+/// Every `OAS_MONOMORPHIZATIONS` entry is grounded in the vendored bundles: the
+/// schema key exists, and the `title` the entry cites is the `title` the bundles
+/// really declare for it. The mapping is only legitimate because the OAS names
+/// its own spec class there — an entry that no longer matches is a guess.
+#[test]
+fn oas_monomorphizations_match_the_vendored_titles() {
+    let checks = testsupport::oas_monomorphizations().unwrap();
+    assert!(!checks.is_empty(), "empty monomorphization map");
+    for c in &checks {
+        assert!(
+            !c.vendored_titles.is_empty(),
+            "{}: no vendored ITS-REST bundle declares this schema (stale entry)",
+            c.schema,
+        );
+        assert!(
+            c.vendored_titles.len() == 1 && c.vendored_titles.contains(&c.declared_title),
+            "{}: the decision map cites title {:?} but the vendored bundles declare {:?}",
+            c.schema,
+            c.declared_title,
+            c.vendored_titles,
+        );
+        assert!(
+            c.rust_type.starts_with("openehr_rm::") || c.rust_type.starts_with("openehr_base::"),
+            "{}: resolves to {:?}, which is not a generated spec type",
+            c.schema,
+            c.rust_type,
+        );
+    }
+}
+
+/// The generated ITS-REST contract carries NO DTO struct for a monomorphized
+/// schema, and the sites that referenced one now name the spec type.
+///
+/// The DTO form was doubly wrong: it lost the spec type's strict canonical-JSON
+/// reader, and it was `allOf`-truncated (only the schema's OWN properties), so
+/// `ObjectRefOfHierObjectId` shipped without the mandatory `namespace`/`type`.
+#[test]
+fn oas_monomorphizations_emit_as_spec_types_not_dtos() {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates/openehr-its/src/rest/generated");
+    let mut bodies = String::new();
+    for entry in std::fs::read_dir(&dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_some_and(|x| x == "rs") {
+            bodies.push_str(&std::fs::read_to_string(&path).unwrap());
+        }
+    }
+    for c in testsupport::oas_monomorphizations().unwrap() {
+        assert!(
+            !bodies.contains(&format!("pub struct {} {{", c.schema)),
+            "{} still emits as a transport DTO instead of resolving to {}",
+            c.schema,
+            c.rust_type,
+        );
+    }
+    assert!(
+        bodies.contains("pub contribution: openehr_base::prelude::ObjectRef,"),
+        "the VERSION `contribution` field no longer resolves to the spec OBJECT_REF",
+    );
+}
+
+/// The shared-module fallback document carries the `allOf` BASE closure of the
+/// hoisted schemas, not the hoisted names alone.
+///
+/// `emit_common` flattens an `allOf` composition by resolving the base `$ref`
+/// through the very document it is emitting from. A document holding only the
+/// hoisted names leaves that ref dangling, and the struct silently ships with
+/// just its own `properties` — the truncation that shipped `Clstr` without a
+/// single `ITEM`/`LOCATABLE` member.
+#[test]
+fn merged_schema_fallback_carries_the_allof_base_closure() {
+    let (names, bases) = testsupport::merged_fallback_schema_names().unwrap();
+    assert!(
+        !bases.is_empty(),
+        "no hoisted schema composes an `allOf` base — this test has lost its subject",
+    );
+    for base in &bases {
+        assert!(
+            names.contains(base),
+            "the merged fallback document omits the `allOf` base {base:?}, so every schema \
+             composing it emits allOf-truncated",
+        );
+    }
+}
+
+// ── vendored `default` facet ↔ the hand-written residue ─────────────────────
+
+/// Every `default` facet the vendored schemas carry is accounted for: either
+/// the emitter renders it into a literal Rust default, or it is a NAMED
+/// un-renderable adjudication. Nothing is silently dropped.
+///
+/// The facet is an undeclared extension to the released persistence model (LANG
+/// `docs/UML/classes/org.openehr.lang.bmm_persistence.p_bmm_property.adoc`
+/// declares no `default` attribute), which is exactly why every occurrence needs
+/// a disposition rather than an assumption.
+#[test]
+fn vendored_default_facets_are_totally_partitioned() {
+    let facets = testsupport::vendored_defaults().unwrap();
+    assert!(
+        !facets.is_empty(),
+        "the vendored schemas carry `default` facets — the loader dropped them again",
+    );
+    for f in &facets {
+        assert!(
+            f.rendered.is_some() || testsupport::default_unrenderable(&f.owner, &f.field),
+            "{}: {}.{} carries the vendored default {:?}, which the emitter neither renders nor \
+             adjudicates as un-renderable — add the derivation or an UNRENDERABLE_DEFAULTS entry",
+            f.key,
+            f.owner,
+            f.field,
+            f.facet,
+        );
+    }
+    // and the reverse: no adjudicated exclusion is stale (it must still be an
+    // un-rendered vendored facet).
+    for (owner, field) in [
+        ("RESOURCE_DESCRIPTION", "parent_resource"),
+        ("CODE_SET", "status"),
+        ("TERMINOLOGY_GROUP", "status"),
+        ("CODE", "status"),
+        ("TERMINOLOGY_CONCEPT", "status"),
+    ] {
+        assert!(
+            facets
+                .iter()
+                .any(|f| f.owner == owner && f.field == field && f.rendered.is_none()),
+            "{owner}.{field} is adjudicated un-renderable but carries no un-rendered vendored \
+             facet — the entry is stale",
+        );
+    }
+}
+
+/// The hand-written `field_default` table is the RESIDUE of the vendored facet,
+/// never a duplicate of it: no entry may name a property that already carries a
+/// renderable vendored `default`.
+///
+/// Without this, the loaded input and the hand table can silently disagree —
+/// which is precisely what happened while the loader dropped the facet
+/// (`Point_interval` declared all four flags WITH defaults and got none, because
+/// the table keyed only the inherited `Interval` sites).
+#[test]
+fn hand_written_field_defaults_never_duplicate_a_vendored_facet() {
+    let facets = testsupport::vendored_defaults().unwrap();
+    for (owner, field) in testsupport::hand_written_defaults() {
+        assert!(
+            !facets
+                .iter()
+                .any(|f| f.owner == owner && f.field == field && f.rendered.is_some()),
+            "field_default entry {owner}.{field} duplicates a renderable vendored `default` \
+             facet — delete it and let the derivation win",
+        );
+    }
+}
+
+/// The vendored facet reaches the emitted canonical-JSON reader: the four
+/// `Point_interval` flags — the ONLY place the BASE schema states the interval
+/// default — now carry it, exactly as the inherited `Proper_interval` sites do.
+#[test]
+fn point_interval_flags_carry_their_vendored_defaults() {
+    let facets = testsupport::vendored_defaults().unwrap();
+    for (field, expected) in [
+        ("lower_unbounded", "false"),
+        ("upper_unbounded", "false"),
+        ("lower_included", "true"),
+        ("upper_included", "true"),
+    ] {
+        let f = facets
+            .iter()
+            .find(|f| f.owner == "Point_interval" && f.field == field)
+            .unwrap_or_else(|| panic!("Point_interval.{field} carries no vendored default"));
+        assert_eq!(
+            f.rendered.as_deref(),
+            Some(expected),
+            "Point_interval.{field}",
+        );
+    }
+}
+
+// ── RM/BASE twin classes (two spec generations, both emitted) ───────────────
+
+/// Five class names are declared by BOTH the RM 1.2.0 and the BASE 1.3.0 BMM.
+/// That is spec-mandated, not accidental duplication (RM
+/// `docs/common/master08-resource_package.adoc` keeps the ADL-1.4 resource
+/// package "retained only while needed by AOM 1.4 based archetypes and tools",
+/// and BASE `docs/foundation_types/master00-amendment_record.adoc` adds
+/// `CODE_PHRASE` to Foundation Types as a LEGACY class for AOM 1.4) — so both
+/// generations are emitted, each into its owning component's crate.
+///
+/// This pins the twin set and the member divergences that motivate it, so a
+/// re-vendored input that silently unifies or further diverges them fails here
+/// with the adjudication in view (`plan::composition`'s module note).
+#[test]
+fn rm_base_twin_classes_keep_both_generations() {
+    let twins = [
+        "AUTHORED_RESOURCE",
+        "CODE_PHRASE",
+        "RESOURCE_DESCRIPTION",
+        "RESOURCE_DESCRIPTION_ITEM",
+        "TRANSLATION_DETAILS",
+    ];
+    for class in twins {
+        for key in ["rm", "base"] {
+            assert!(
+                testsupport::declared_attributes(key, class)
+                    .unwrap()
+                    .is_some(),
+                "{key} no longer declares the twin class {class}",
+            );
+        }
+    }
+
+    // The ADL-1.4 generation's two member placements that look like defects and
+    // are not: the RM twin keeps the pre-SPECPUB-6 spelling, and puts
+    // `copyright` on the ITEM (which the vendored ADL-1.4 `Resource.xsd` also
+    // does), while the BASE twin carries the corrected/relocated forms.
+    let rm_translation = testsupport::declared_attributes("rm", "TRANSLATION_DETAILS")
+        .unwrap()
+        .unwrap();
+    let base_translation = testsupport::declared_attributes("base", "TRANSLATION_DETAILS")
+        .unwrap()
+        .unwrap();
+    assert!(
+        rm_translation.contains("accreditaton") && !rm_translation.contains("accreditation"),
+        "the RM (ADL-1.4) TRANSLATION_DETAILS no longer carries the retained `accreditaton` \
+         spelling — re-adjudicate against RM \
+         docs/UML/classes/org.openehr.rm.common.translation_details.adoc",
+    );
+    assert!(
+        base_translation.contains("accreditation") && !base_translation.contains("accreditaton"),
+        "the BASE TRANSLATION_DETAILS no longer carries the SPECPUB-6-corrected `accreditation` \
+         spelling",
+    );
+
+    let rm_item = testsupport::declared_attributes("rm", "RESOURCE_DESCRIPTION_ITEM")
+        .unwrap()
+        .unwrap();
+    let base_description = testsupport::declared_attributes("base", "RESOURCE_DESCRIPTION")
+        .unwrap()
+        .unwrap();
+    assert!(
+        rm_item.contains("copyright"),
+        "the RM (ADL-1.4) RESOURCE_DESCRIPTION_ITEM lost `copyright`, which the vendored \
+         AM/Release-1.4 Resource.xsd also declares there",
+    );
+    assert!(
+        base_description.contains("copyright"),
+        "the BASE RESOURCE_DESCRIPTION lost `copyright`",
+    );
+}

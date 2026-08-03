@@ -740,8 +740,9 @@ fn render_accessors(
     b.push_str(&format!(
         "\n/// Read access to the `pub(crate)` fields of [`{struct_ty}`].\n\
          ///\n\
-         /// The fields are not `pub`: this class has a released **lexical form**, so\n\
-         /// construction runs a grammar and is the only door \u{2014} {citation}\n\
+         /// The fields are not `pub`: the release states a **constraint over this\n\
+         /// class's own field values** (a lexical form, or a class invariant), so\n\
+         /// construction checks it and is the only door \u{2014} {citation}\n\
          ///\n\
          /// The validating constructor lives in the hand-written `*_impl.rs` sibling\n\
          /// (the generator never writes into it); every generated codec builds this\n\
@@ -752,13 +753,27 @@ fn render_accessors(
         if i > 0 {
             b.push('\n');
         }
-        let (ret, expr) = if rust_ty == "String" {
-            ("&str".to_owned(), format!("&self.{ident}"))
-        } else {
-            (format!("&{rust_ty}"), format!("&self.{ident}"))
+        // `&Option<T>` is never the right accessor return (clippy::ref_option:
+        // it forces the caller to reborrow and blocks passing a plain `Some(&x)`)
+        // — an optional field reads back as `Option<&T>`, with `Option<String>`
+        // borrowing all the way down to `Option<&str>`.
+        let (ret, expr) = match rust_ty
+            .strip_prefix("Option<")
+            .and_then(|inner| inner.strip_suffix('>'))
+        {
+            Some("String") => (
+                "Option<&str>".to_owned(),
+                format!("self.{ident}.as_deref()"),
+            ),
+            Some(inner) => (
+                format!("Option<&{inner}>"),
+                format!("self.{ident}.as_ref()"),
+            ),
+            None if rust_ty == "String" => ("&str".to_owned(), format!("&self.{ident}")),
+            None => (format!("&{rust_ty}"), format!("&self.{ident}")),
         };
         b.push_str(&format!(
-            "    /// The validated `{ident}` this identifier was constructed from.\n    \
+            "    /// The `{ident}` this instance was constructed with, checked at the door.\n    \
              #[must_use]\n    \
              pub fn {ident}(&self) -> {ret} {{\n        {expr}\n    }}\n"
         ));

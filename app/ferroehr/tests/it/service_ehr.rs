@@ -67,7 +67,7 @@ fn uv<T: serde::de::DeserializeOwned>(
 }
 
 fn has_key(tags: &[ItemTag], k: &str) -> bool {
-    tags.iter().any(|t| t.key == k)
+    tags.iter().any(|t| t.key() == k)
 }
 
 /// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
@@ -1400,16 +1400,13 @@ async fn item_tag_identity_is_the_key_and_target_path_pair() {
     let by_path = |path: &str| {
         stored
             .iter()
-            .find(|t| t.target_path.as_deref() == Some(path))
+            .find(|t| t.target_path() == Some(path))
             .unwrap_or_else(|| panic!("tag at {path}"))
             .clone()
     };
+    assert_eq!(by_path("/context/start_time/value").value(), Some("a"));
     assert_eq!(
-        by_path("/context/start_time/value").value.as_deref(),
-        Some("a")
-    );
-    assert_eq!(
-        by_path("/content[0]/name/value").value.as_deref(),
+        by_path("/content[0]/name/value").value(),
         Some("b2"),
         "same (key, path) pair: last wins"
     );
@@ -1466,11 +1463,11 @@ async fn item_tag_version_and_container_targets_are_distinct() {
     // Each collection holds ONLY its own tag (the container PUT did not wipe
     // the version's), and each target carries the RM UID_BASED_ID shape.
     assert_eq!(on_version.len(), 1);
-    let version_target = openehr_its::json::to_canonical_value(&on_version[0].target);
+    let version_target = openehr_its::json::to_canonical_value(&on_version[0].target());
     assert_eq!(version_target["_type"], "OBJECT_VERSION_ID");
     assert_eq!(version_target["value"], version_uid);
     assert_eq!(on_container.len(), 1);
-    let container_target = openehr_its::json::to_canonical_value(&on_container[0].target);
+    let container_target = openehr_its::json::to_canonical_value(&on_container[0].target());
     assert_eq!(container_target["_type"], "HIER_OBJECT_ID");
     assert_eq!(container_target["value"], vo_id);
 
@@ -1479,13 +1476,13 @@ async fn item_tag_version_and_container_targets_are_distinct() {
         .await
         .expect("version list");
     assert_eq!(version_list.len(), 1);
-    assert_eq!(version_list[0].key, "reviewed");
+    assert_eq!(version_list[0].key(), "reviewed");
     let container_list = svc
         .target_tags_get(ehr_uuid, vo_id.clone(), "COMPOSITION")
         .await
         .expect("container list");
     assert_eq!(container_list.len(), 1);
-    assert_eq!(container_list[0].key, "workflow");
+    assert_eq!(container_list[0].key(), "workflow");
 
     // A tag addressed to a NONEXISTENT version is refused.
     let ghost = format!("{vo_id}::ghost.system::9");
@@ -1698,7 +1695,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
         .expect("the valid twins are stored");
     assert_eq!(accepted.len(), 2);
     assert!(
-        accepted.iter().all(|t| t.target_path.is_none()),
+        accepted.iter().all(|t| t.target_path().is_none()),
         "an empty target_path normalizes to absent, got {accepted:?}"
     );
 }

@@ -3013,18 +3013,10 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                 ::core::result::Result::Ok(crate::prelude::PointInterval {
                     lower: __s0.flatten(),
                     upper: __s1.flatten(),
-                    lower_unbounded: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("lower_unbounded"))?,
-                    upper_unbounded: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("upper_unbounded"))?,
-                    lower_included: __s4
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("lower_included"))?,
-                    upper_included: __s5
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("upper_included"))?,
+                    lower_unbounded: __s2.flatten().unwrap_or(false),
+                    upper_unbounded: __s3.flatten().unwrap_or(false),
+                    lower_included: __s4.flatten().unwrap_or(true),
+                    upper_included: __s5.flatten().unwrap_or(true),
                 })
             }
         }
