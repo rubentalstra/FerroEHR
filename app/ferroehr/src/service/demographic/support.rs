@@ -24,7 +24,6 @@ use crate::service::demographic::types::PartyKind;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
-use crate::service::version_update::UpdateAudit;
 use crate::storage::version_repo;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::change::Committed;
@@ -34,6 +33,7 @@ use crate::versioning::object_version_id::{
 use crate::versioning::read::{VersionRead, read_current, read_version, version_at};
 use crate::versioning::wire::version_envelope;
 use crate::versioning::{CommitEnv, Kind};
+use openehr_its::rest::generated::common::UpdateAudit;
 
 /// The versioned-object [`Kind`] for a REST [`PartyKind`].
 pub(super) fn kind_of(kind: PartyKind) -> Kind {

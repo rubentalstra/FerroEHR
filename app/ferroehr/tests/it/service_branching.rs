@@ -36,8 +36,8 @@
 )]
 
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
-use openehr_base::prelude::TerminologyCode;
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -48,30 +48,27 @@ const LOCAL: &str = "ferroehr.local";
 /// The pretend foreign system a copied version tree originates from.
 const FOREIGN: &str = "sysA.example.org";
 
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "branching tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -203,7 +200,7 @@ fn all_versions_spec(ehr: ferroehr::ids::EhrId) -> Value {
 async fn foreign_extract(svc: &FerroEhrService) -> (Value, String) {
     let source = svc.create_ehr(None).await.expect("create source ehr");
     let v1 = svc
-        .create_composition(source, uv(composition("v1"), "249", None))
+        .create_composition(source, uv(&composition("v1"), "249", None))
         .await
         .expect("composition v1")
         .version_uid();
@@ -211,7 +208,7 @@ async fn foreign_extract(svc: &FerroEhrService) -> (Value, String) {
     svc.update_composition(
         source,
         vo.parse().unwrap(),
-        uv(composition("v2"), "251", Some(&v1)),
+        uv(&composition("v2"), "251", Some(&v1)),
     )
     .await
     .expect("composition v2");

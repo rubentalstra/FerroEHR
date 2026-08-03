@@ -45,7 +45,6 @@ use std::sync::Arc;
 
 use serde_json::{Value, json};
 
-use openehr_base::prelude::TerminologyCode;
 use openehr_rm::ehr_extract::common::extract::Extract;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 use openehr_rm::prelude::PartyProxy;
@@ -54,34 +53,33 @@ use ferroehr::service::FerroEhrService;
 use ferroehr::service::ehr_index::types::SubjectRef;
 use ferroehr::service::status::CallStatusType;
 
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use crate::typed_body::typed;
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
 use ferroehr::versioning::signature::signer::Signer;
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -102,7 +100,7 @@ async fn seed_ehr(svc: &FerroEhrService) -> ferroehr::ids::EhrId {
     svc.create_directory(
         ehr_uuid,
         uv(
-            json!({
+            &json!({
                 "_type": "FOLDER",
                 "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
                 "name": { "_type": "DV_TEXT", "value": "root" }
@@ -115,7 +113,7 @@ async fn seed_ehr(svc: &FerroEhrService) -> ferroehr::ids::EhrId {
     .expect("directory");
 
     status["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(status, "251", Some(&status_ovid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&status, "251", Some(&status_ovid)))
         .await
         .expect("status update");
 
@@ -379,7 +377,7 @@ async fn import_ehr_promotes_the_subject_for_lookup_and_uniqueness() {
     let target = FerroEhrService::new(target_db.pool());
 
     let ehr = source
-        .create_ehr(Some(status_for_subject("patient-import-1")))
+        .create_ehr(Some(typed(&status_for_subject("patient-import-1"))))
         .await
         .expect("source EHR for the subject");
     let extract = export_one(&source, ehr).await;
@@ -409,7 +407,10 @@ async fn import_ehr_promotes_the_subject_for_lookup_and_uniqueness() {
     // the extract normalized it to — so a later create naming that same
     // (id, namespace) pair is a 409.
     let dup = target
-        .create_ehr(Some(status_for_subject_in("patient-import-1", "local")))
+        .create_ehr(Some(typed(&status_for_subject_in(
+            "patient-import-1",
+            "local",
+        ))))
         .await;
     assert!(
         matches!(
@@ -437,11 +438,14 @@ async fn import_ehr_conflicting_subject_is_rejected_and_rolled_back() {
     // extract's master09 §Creation Semantics OBJECT_REF rewrite), so the
     // pre-existing holder must own it under that namespace to collide.
     let owner = target
-        .create_ehr(Some(status_for_subject_in("patient-import-2", "local")))
+        .create_ehr(Some(typed(&status_for_subject_in(
+            "patient-import-2",
+            "local",
+        ))))
         .await
         .expect("the target already holds the subject");
     let ehr = source
-        .create_ehr(Some(status_for_subject("patient-import-2")))
+        .create_ehr(Some(typed(&status_for_subject("patient-import-2"))))
         .await
         .expect("source EHR for the same subject");
     let extract = export_one(&source, ehr).await;
@@ -984,7 +988,7 @@ async fn an_as_of_read_before_the_import_does_not_see_the_imported_version() {
     // A plain modifiable source EHR (the seeded fixture ends non-modifiable).
     let ehr = source.create_ehr(None).await.expect("source ehr");
     let composition_uid = source
-        .create_composition(ehr, uv(minimal_composition("as-of"), "249", None))
+        .create_composition(ehr, uv(&minimal_composition("as-of"), "249", None))
         .await
         .expect("source composition")
         .version_uid();

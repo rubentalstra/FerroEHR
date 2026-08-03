@@ -533,8 +533,20 @@ pub(crate) fn text_body(body: &Bytes) -> Result<String, ApiError> {
         .map_err(|e| ApiError::BadRequest(format!("body is not UTF-8: {e}")))
 }
 
-/// Decode an RM-typed body from canonical JSON or XML into the canonical JSON
-/// `Value` the trait expects. `T` is the concrete `openehr-rm` payload type.
+/// Decode an RM-typed body from canonical JSON or XML into the concrete
+/// `openehr-rm` type `T` — the typed commit seam.
+///
+/// **Both branches are typed.** The JSON branch reads through
+/// `openehr_its::json::from_canonical_json`, whose emitted `Deserialize` impls
+/// ARE the strict canonical reader: an undeclared key, a repeated key, an
+/// absent mandatory attribute, a present-but-wrong `_type`, an empty `1..*`
+/// list and a malformed identifier are all refused there, path-named. That is
+/// the PARSE class, so every one of them answers **400**: ITS-REST overview
+/// `Requests_and_responses.md` §HTTP status codes assigns 400 to a request
+/// whose content "could not be parsed or is invalid" and reserves 422 for a
+/// body that is "well-formed but was unable to be followed due to semantic
+/// errors" — a structurally impossible RM instance never becomes an RM value
+/// at all, so it cannot reach the semantic pass.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] if the body cannot be parsed in the declared
@@ -543,18 +555,22 @@ pub(crate) fn text_body(body: &Bytes) -> Result<String, ApiError> {
 /// RM endpoint, Resources.md §Simplified Formats MUST), and for canonical XML
 /// declared in an unrecognized ITS-XML lineage (see
 /// [`require_known_xml_lineage`]).
-pub(crate) fn rm_value<T>(headers: &HeaderMap, body: &Bytes) -> Result<serde_json::Value, ApiError>
+pub(crate) fn rm_value<T>(headers: &HeaderMap, body: &Bytes) -> Result<T, ApiError>
 where
-    T: FromXml + Serialize,
+    T: FromXml + DeserializeOwned,
 {
     match content_type_format(headers) {
-        Some(WireFormat::CanonicalJson) => parse_json(body),
+        Some(WireFormat::CanonicalJson) => {
+            let json = std::str::from_utf8(body)
+                .map_err(|e| ApiError::BadRequest(format!("body is not UTF-8: {e}")))?;
+            openehr_its::json::from_canonical_json::<T>(json)
+                .map_err(|e| ApiError::BadRequest(format!("invalid canonical JSON body: {e}")))
+        }
         Some(WireFormat::CanonicalXml) => {
             require_known_xml_lineage(headers)?;
             let xml = text_body(body)?;
-            let value: T = openehr_its::xml::from_canonical_xml(&xml)
-                .map_err(|e| ApiError::BadRequest(format!("invalid canonical XML body: {e}")))?;
-            Ok(openehr_its::json::to_canonical_value(&value))
+            openehr_its::xml::from_canonical_xml(&xml)
+                .map_err(|e| ApiError::BadRequest(format!("invalid canonical XML body: {e}")))
         }
         _ => Err(ApiError::UnsupportedMediaType(format!(
             "this operation accepts application/json or application/xml only, got {}",
@@ -564,12 +580,12 @@ where
 }
 
 /// Optional RM-typed body (empty → `None`).
-pub(crate) fn optional_rm_value<T>(
-    headers: &HeaderMap,
-    body: &Bytes,
-) -> Result<Option<serde_json::Value>, ApiError>
+///
+/// # Errors
+/// As [`rm_value`], for a non-empty body.
+pub(crate) fn optional_rm_value<T>(headers: &HeaderMap, body: &Bytes) -> Result<Option<T>, ApiError>
 where
-    T: FromXml + Serialize,
+    T: FromXml + DeserializeOwned,
 {
     if body.is_empty() {
         return Ok(None);
@@ -1530,7 +1546,10 @@ mod tests {
             HeaderValue::from_static("application/xml"),
         );
         let from_xml = rm_value::<DvText>(&xml_headers, &Bytes::from(xml)).expect("xml decode");
-        assert_eq!(from_xml["value"], "hello");
+        assert_eq!(
+            ferroehr::service::version_update::text_value(&from_xml),
+            "hello"
+        );
 
         let json = openehr_its::json::to_canonical_json(&dv).into_bytes();
         let mut json_headers = HeaderMap::new();
@@ -1539,7 +1558,10 @@ mod tests {
             HeaderValue::from_static("application/json"),
         );
         let from_json = rm_value::<DvText>(&json_headers, &Bytes::from(json)).expect("json decode");
-        assert_eq!(from_json["value"], "hello");
+        assert_eq!(
+            ferroehr::service::version_update::text_value(&from_json),
+            "hello"
+        );
     }
 
     /// The OPT 1.4 upload reads its XML body verbatim; the retired
@@ -1757,7 +1779,10 @@ mod tests {
                 &Bytes::from(xml.clone()),
             )
             .unwrap_or_else(|e| panic!("{declared} must decode: {e:?} ({xml})"));
-            assert_eq!(decoded["value"], "hello");
+            assert_eq!(
+                ferroehr::service::version_update::text_value(&decoded),
+                "hello"
+            );
         }
 
         let xml = openehr_its::xml::to_canonical_xml(&dv, "value").expect("to xml");

@@ -18,12 +18,13 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::typed_body::typed;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::ehr_index::types::{
     LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
 };
 use ferroehr::service::status::{CallStatusType, SmError};
-use ferroehr::service::version_update::UpdateVersion;
+use openehr_its::rest::generated::common::UpdateVersion;
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn ovid(v: &Value) -> &str {
@@ -84,20 +85,30 @@ async fn seed_ehr(pool: &PgPool) -> Uuid {
 /// a `preceding_version_uid` names an existing one (RM common master06
 /// §Contributions; a contradicting client code is rejected per ITS-REST
 /// overview §"openehr-version and openehr-audit-details").
-fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(data: &Value, preceding: Option<&str>) -> UpdateVersion<T> {
     let change = if preceding.is_some() { "251" } else { "249" };
+    // `lifecycle_state` and `commit_audit.change_type` are `DV_CODED_TEXT` on
+    // the released wire (ITS-REST `schemas/common/UpdateVersion.yaml` /
+    // `UpdateAudit.yaml` both `$ref` `DvCodedText`), not the flat SM
+    // `Terminology_code` spelling.
     let mut v = json!({
-        "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
+        "lifecycle_state": {
+            "value": "complete",
+            "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": "532" }
+        },
         "data": data,
         "commit_audit": {
-            "change_type": { "terminology_id": "openehr", "code_string": change },
+            "change_type": {
+                "value": "commit",
+                "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": change }
+            },
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "sm tester" }
         }
     });
     if let Some(p) = preceding {
         v["preceding_version_uid"] = json!({ "value": p });
     }
-    serde_json::from_value(v).expect("UpdateVersion")
+    openehr_its::json::from_canonical_value(&v).expect("UpdateVersion")
 }
 
 // ─── PARTY_RELATIONSHIP ───────────────────────────────────────────────────────
@@ -189,7 +200,7 @@ async fn relationship_lifecycle_end_to_end() {
 
     // create → v1
     let created = svc
-        .party_relationship_create(relationship("parent-of", src, tgt), None)
+        .party_relationship_create(typed(&relationship("parent-of", src, tgt)), None)
         .await
         .expect("create relationship");
     assert_eq!(created.body["_type"], "PARTY_RELATIONSHIP");
@@ -233,7 +244,7 @@ async fn relationship_lifecycle_end_to_end() {
         .party_relationship_update(
             vo.clone(),
             ovid_v1.clone(),
-            relationship("guardian-of", src, tgt),
+            typed(&relationship("guardian-of", src, tgt)),
             None,
         )
         .await
@@ -254,7 +265,7 @@ async fn relationship_lifecycle_end_to_end() {
         .party_relationship_update(
             vo.clone(),
             ovid_v1.clone(),
-            relationship("stale", src, tgt),
+            typed(&relationship("stale", src, tgt)),
             None,
         )
         .await;
@@ -327,24 +338,28 @@ async fn relationship_error_cases() {
         "unknown relationship is 404, got {unknown:?}"
     );
 
-    // invalid content (missing target) → 422
+    // Invalid content (missing `target`): `PARTY_RELATIONSHIP.target` is a
+    // mandatory `PARTY_REF` (RM demographic `party_relationship.adoc`
+    // §Attributes), so a body without it is not a `PARTY_RELATIONSHIP` at all.
+    // The SM seam's argument is the typed RM value, which makes the defect
+    // unrepresentable past the door; the refusal is the strict canonical
+    // reader's — the PARSE class, answered `400` on the wire (ITS-REST
+    // overview `Requests_and_responses.md` §HTTP status codes: content that
+    // "could not be parsed or is invalid"), never the semantic `422`.
     let mut bad = relationship("no-target", "src", "tgt");
-    bad.as_object_mut().unwrap().remove("target");
-    let invalid = svc.party_relationship_create(bad, None).await;
+    bad.as_object_mut()
+        .expect("the fixture is an object")
+        .remove("target");
+    let refused =
+        openehr_its::json::from_canonical_value::<openehr_rm::prelude::PartyRelationship>(&bad);
     assert!(
-        matches!(
-            invalid,
-            Err(SmError {
-                status: CallStatusType::ContentInvalid,
-                ..
-            })
-        ),
-        "missing target is 422, got {invalid:?}"
+        refused.is_err(),
+        "a PARTY_RELATIONSHIP without its mandatory target must be refused, got {refused:?}"
     );
 
     // a PERSON is not a relationship → wrong-kind get is 404
     let created = svc
-        .party_relationship_create(relationship("r", "a", "b"), None)
+        .party_relationship_create(typed(&relationship("r", "a", "b")), None)
         .await
         .expect("create");
     let vo = vo_uuid(&created.body);

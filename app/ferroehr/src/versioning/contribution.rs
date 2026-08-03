@@ -1062,11 +1062,15 @@ fn coded_value(dv: &Value) -> Option<String> {
     dv.get("defining_code")
         .and_then(|c| c.get("code_string"))
         .and_then(Value::as_str)
-        // NOTE: `UPDATE_AUDIT.change_type` is a `Terminology_code`
-        // (`{terminology_id, code_string}`), not a `DV_CODED_TEXT` (SM
-        // `update_audit.adoc`). The SM glue serializes it to that shape, so read
-        // a top-level `code_string` too; otherwise the client's change type is
-        // lost and defaults to creation/modification.
+        // NOTE: the two released sources spell this attribute differently —
+        // ITS-REST `schemas/common/UpdateAudit.yaml` `$ref`s `DvCodedText`
+        // (the wire form, which the typed commit seam now produces), while SM
+        // `UML/classes/update_audit.adoc` types it `Terminology_code`
+        // (`{terminology_id, code_string}`). This raw-body lane reads BOTH, so
+        // an SM-shaped client's change type is honoured rather than silently
+        // defaulting to creation/modification.
+        // TODO(#1727): adjudicate whether the SM spelling stays accepted on
+        // the CONTRIBUTION wire now that the direct routes are typed.
         .or_else(|| dv.get("code_string").and_then(Value::as_str))
         .or_else(|| dv.get("value").and_then(Value::as_str))
         .map(str::to_owned)
@@ -1074,9 +1078,11 @@ fn coded_value(dv: &Value) -> Option<String> {
 
 /// Extract a VERSION item's `lifecycle_state` token (master06 §Version
 /// Lifecycle), if present. `UPDATE_VERSION.lifecycle_state` is a
-/// `TerminologyCode {terminology_id, code_string}` on the wire; we also accept a
-/// `DV_CODED_TEXT`, a bare `{value}`, or a plain string. `None` → the commit
-/// path defaults to `532|complete|`.
+/// `DV_CODED_TEXT` on the released wire (ITS-REST
+/// `schemas/common/UpdateVersion.yaml`); this raw-body lane also accepts the
+/// SM `Terminology_code` spelling (`{terminology_id, code_string}`,
+/// `UML/classes/update_version.adoc`), a bare `{value}`, or a plain string.
+/// `None` → the commit path defaults to `532|complete|`.
 fn lifecycle_of(version: &Value) -> Option<String> {
     let ls = version.get("lifecycle_state")?;
     if let Some(s) = ls.as_str() {

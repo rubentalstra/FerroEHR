@@ -24,10 +24,12 @@ use crate::service::ehr::tags::tag_target_tail;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::{Committal, UpdateAudit, UpdateVersion};
+use crate::service::version_update::Committal;
 use crate::versioning::object_version_id::{
     components, expected_from_if_match, if_match_token, parse_uid_based_id, parse_version_uid,
 };
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateVersion};
+use openehr_rm::prelude::{Party, PartyRelationship};
 
 /// The `version_uid` a write produced (the new/deleted `OBJECT_VERSION_ID`),
 /// pulled from the response metadata.
@@ -35,23 +37,22 @@ fn version_uid(resp: ServiceResponse) -> String {
     resp.meta.map(|m| m.uid).unwrap_or_default()
 }
 
-/// The [`PartyKind`] a commit envelope routes to, from its payload `_type`
-/// (`i_party.adoc`: parties are addressed by their concrete RM type). An
-/// unknown/absent `_type` is a `content_invalid` precondition failure.
-fn party_kind_from_body(body: &Value) -> Result<PartyKind, SmError> {
-    match body.get("_type").and_then(Value::as_str) {
-        Some("AGENT") => Ok(PartyKind::Agent),
-        Some("GROUP") => Ok(PartyKind::Group),
-        Some("ORGANISATION") => Ok(PartyKind::Organisation),
-        Some("PERSON") => Ok(PartyKind::Person),
-        Some("ROLE") => Ok(PartyKind::Role),
-        other => Err(SmError::new(
-            CallStatusType::ContentInvalid,
-            format!(
-                "not a demographic party _type: {:?}",
-                other.unwrap_or("<none>")
-            ),
-        )),
+/// The [`PartyKind`] a commit envelope routes to, read off the RM `PARTY`
+/// subtype it carries (`i_party.adoc`: parties are addressed by their
+/// concrete RM type).
+///
+/// Total and infallible: `PARTY` is a closed subtype set in the generated RM,
+/// so every value names exactly one resource family. [`PartyKind`] is OUR
+/// route key (the `/demographic/{segment}` URL family + the stored kind
+/// discriminator — `service::demographic::types`), which no openEHR spec or
+/// generated type carries; this is the one mapping between the two.
+fn party_kind_of(body: &Party) -> PartyKind {
+    match body {
+        Party::Agent(_) => PartyKind::Agent,
+        Party::Group(_) => PartyKind::Group,
+        Party::Organisation(_) => PartyKind::Organisation,
+        Party::Person(_) => PartyKind::Person,
+        Party::Role(_) => PartyKind::Role,
     }
 }
 
@@ -110,10 +111,10 @@ fn ensure_full_ovid_if_match(
 /// §"openehr-version and openehr-audit-details"; RM common master06 §Version
 /// Lifecycle). An empty code means the caller stated none, leaving the
 /// operation default.
-fn envelope_committal(a_version: &UpdateVersion) -> Committal {
+fn envelope_committal<T>(a_version: &UpdateVersion<T>) -> Committal {
     Committal {
-        audit: a_version.audit.clone(),
-        lifecycle_state: Some(a_version.lifecycle_state.code_string.clone())
+        audit: a_version.commit_audit.clone(),
+        lifecycle_state: Some(a_version.lifecycle_state.defining_code.code_string.clone())
             .filter(|code| !code.is_empty()),
     }
 }
@@ -167,14 +168,17 @@ impl FerroEhrService {
     ///   demographic party type (AGENT/GROUP/ORGANISATION/PERSON/ROLE),
     ///   `i_party.adoc`.
     /// - [`SmError`] `content_invalid` — the body fails RM validation for the
-    ///   resolved party kind (`validate::validate_party_body`).
+    ///   resolved party kind (`validate::party_check`).
     /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — the
     ///   versioned-create transaction fails (integrity conflict, pool
     ///   exhaustion, or a storage/database fault).
     /// - [`SmError`] `precondition_violation` — the committed version uid does
     ///   not parse (defensive; the uid is server-generated).
-    pub async fn create_party(&self, a_version: UpdateVersion) -> Result<VoId, SmError> {
-        let kind = party_kind_from_body(&a_version.data)?;
+    pub async fn create_party(&self, a_version: UpdateVersion<Party>) -> Result<VoId, SmError> {
+        let kind = party_kind_of(&a_version.data);
+        // The ONE serialization boundary of this commit, taken before any
+        // await (`crate::service::ehr::canonicalize`).
+        let a_version = crate::service::ehr::canonicalize(a_version);
         let committal = envelope_committal(&a_version);
         // Reuse the wire-seam domain logic (validation + versioned create).
         let resp = self
@@ -306,9 +310,12 @@ impl FerroEhrService {
     pub async fn update_party(
         &self,
         a_versioned_party_id: VoId,
-        a_version: UpdateVersion,
+        a_version: UpdateVersion<Party>,
     ) -> Result<String, SmError> {
-        let kind = party_kind_from_body(&a_version.data)?;
+        let kind = party_kind_of(&a_version.data);
+        // The ONE serialization boundary of this commit, taken before any
+        // await (`crate::service::ehr::canonicalize`).
+        let a_version = crate::service::ehr::canonicalize(a_version);
         let expected = match &a_version.preceding_version_uid {
             Some(ovid) => Some(components(ovid)?.1),
             None => None,
@@ -364,9 +371,13 @@ impl FerroEhrService {
     pub async fn party_create(
         &self,
         kind: PartyKind,
-        body: Value,
+        body: Party,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction.
+        let body = openehr_its::json::to_canonical_value(&body);
         // A freshly created party has no stored ITEM_TAGs by construction, so
         // the response seam needs no tag read here; when the request carried
         // `openehr-item-tag` header tags, the wire adapter persists them after
@@ -424,9 +435,13 @@ impl FerroEhrService {
         kind: PartyKind,
         uid_based_id: String,
         if_match: String,
-        body: Value,
+        body: Party,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction.
+        let body = openehr_its::json::to_canonical_value(&body);
         let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         // Resolve the current version ONCE (lean, kind-checked): the same handle
         // serves the `If-Match` `ETag` compare here and the service write gate —
@@ -684,7 +699,7 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         uid_based_id: String,
-        body: Vec<openehr_its::rest::generated::demographic::UpdateItemTag>,
+        body: Vec<openehr_its::rest::generated::common::UpdateItemTag>,
     ) -> Result<Vec<ItemTag>, SmError> {
         let (vo_id, version) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
         Ok(self
@@ -736,14 +751,17 @@ impl FerroEhrService {
     /// # Errors
     /// - [`SmError`] mapped from `422` — the body is not a valid
     ///   `PARTY_RELATIONSHIP` (missing/invalid `source`/`target` `PARTY_REF`s,
-    ///   `validate::validate_relationship_body`).
+    ///   `validate::relationship_check`).
     /// - [`SmError`] `precondition_violation` — the committed version uid does
     ///   not parse (defensive; server-generated).
     /// - [`SmError`] on a storage/database fault during the create transaction.
     pub async fn create_party_relationship(
         &self,
-        a_version: UpdateVersion,
+        a_version: UpdateVersion<PartyRelationship>,
     ) -> Result<VoId, SmError> {
+        // The ONE serialization boundary of this commit, taken before any
+        // await (`crate::service::ehr::canonicalize`).
+        let a_version = crate::service::ehr::canonicalize(a_version);
         let committal = envelope_committal(&a_version);
         let resp = self
             .create_relationship(a_version.data, Some(&committal))
@@ -852,8 +870,11 @@ impl FerroEhrService {
     pub async fn update_party_relationship(
         &self,
         a_versioned_party_rel_id: VoId,
-        a_version: UpdateVersion,
+        a_version: UpdateVersion<PartyRelationship>,
     ) -> Result<String, SmError> {
+        // The ONE serialization boundary of this commit, taken before any
+        // await (`crate::service::ehr::canonicalize`).
+        let a_version = crate::service::ehr::canonicalize(a_version);
         let expected = match &a_version.preceding_version_uid {
             Some(ovid) => Some(components(ovid)?.1),
             None => None,
@@ -910,9 +931,13 @@ impl FerroEhrService {
     /// - [`SmError`] on a storage/database fault during the create transaction.
     pub async fn party_relationship_create(
         &self,
-        body: Value,
+        body: PartyRelationship,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction.
+        let body = openehr_its::json::to_canonical_value(&body);
         Ok(self.create_relationship(body, committal.as_ref()).await?)
     }
 
@@ -954,9 +979,13 @@ impl FerroEhrService {
         &self,
         uid_based_id: String,
         if_match: String,
-        body: Value,
+        body: PartyRelationship,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction.
+        let body = openehr_its::json::to_canonical_value(&body);
         let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         let current = self.relationship_current(vo_id).await?;
         let meta = current.as_ref().map(CurrentRelationship::resource_meta);

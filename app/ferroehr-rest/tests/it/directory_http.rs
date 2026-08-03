@@ -1265,9 +1265,17 @@ async fn details_item_structure_commits_and_reads_back() {
 }
 
 /// The REFUSING twin: a `DV_TEXT` is not an `ITEM_STRUCTURE`, so it may not
-/// occupy `FOLDER.details` — the commit is a 422 naming the slot (RM common
-/// `master05-directory_package.adoc` §Overview;
-/// `org.openehr.rm.common.folder.adoc` `details: ITEM_STRUCTURE [0..1]`).
+/// occupy `FOLDER.details` (RM common `master05-directory_package.adoc`
+/// §Overview; `org.openehr.rm.common.folder.adoc`
+/// `details: ITEM_STRUCTURE [0..1]`).
+///
+/// The slot is a polymorphic one over a CLOSED subtype set, so the refusal is
+/// the strict canonical reader's: the body never becomes a FOLDER, which the
+/// ITS-REST overview (`Requests_and_responses.md` §HTTP status codes) answers
+/// `400` — content that "could not be parsed or is invalid" — rather than the
+/// `422` it reserves for a body that is "well-formed but was unable to be
+/// followed due to semantic errors". The refusal still has to NAME the slot
+/// and its declared type, which is what makes it actionable.
 #[tokio::test]
 async fn details_not_item_structure_refused() {
     let (_pg, app) = common::test_router().await;
@@ -1277,11 +1285,11 @@ async fn details_not_item_structure_refused() {
     let (status, _h, body) = create_directory(&app, &ehr, &folder, None).await;
     assert_eq!(
         status,
-        StatusCode::UNPROCESSABLE_ENTITY,
+        StatusCode::BAD_REQUEST,
         "a DV_TEXT in the ITEM_STRUCTURE slot is refused: {body}"
     );
     assert!(
         body.contains("ITEM_STRUCTURE") && body.contains("details"),
-        "the 422 names the FOLDER.details slot and its declared type: {body}"
+        "the 400 names the FOLDER.details slot and its declared type: {body}"
     );
 }

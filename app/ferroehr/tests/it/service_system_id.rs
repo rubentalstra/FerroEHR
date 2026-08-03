@@ -30,21 +30,11 @@
 )]
 
 use ferroehr::ids::EhrId;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr::service::{DEFAULT_SYSTEM_ID, FerroEhrService};
-use openehr_base::prelude::TerminologyCode;
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
-
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
 
 fn committer(name: &str) -> PartyProxy {
     openehr_its::json::from_canonical_value(&json!({ "_type": "PARTY_IDENTIFIED", "name": name }))
@@ -91,18 +81,20 @@ fn composition(name: &str) -> Value {
 
 /// The SM `UPDATE_VERSION` commit envelope with **no** client-supplied
 /// `system_id` — the case in which the server MUST supply its own.
-fn uv(data: Value) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(data: &Value) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: None,
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term("249"),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded("249"),
             description: None,
             committer: committer("conformance tester"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -114,7 +106,7 @@ async fn stamped_identities(svc: &FerroEhrService) -> (String, String, String) {
     let summary = svc.get_ehr(ehr_id).await.expect("get_ehr");
 
     let ovid = svc
-        .create_composition(ehr_id, uv(composition("system id")))
+        .create_composition(ehr_id, uv(&composition("system id")))
         .await
         .expect("create_composition")
         .version_uid();

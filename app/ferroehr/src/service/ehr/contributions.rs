@@ -15,12 +15,13 @@ use crate::ids::EhrId;
 use crate::service::list::Page;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::SmError;
-use crate::service::version_update::{UpdateAudit, UpdateVersion};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateVersion};
+use openehr_its::rest::generated::ehr::Versionable;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::FerroEhrService;
-use crate::service::error::{ServiceError, internal_fault};
+use crate::service::error::ServiceError;
 use crate::versioning::contribution::{
     commit_version_set, count_contributions, get_contribution, list_contributions,
 };
@@ -146,7 +147,7 @@ impl FerroEhrService {
     pub async fn commit_contribution(
         &self,
         an_ehr_id: EhrId,
-        versions: Vec<UpdateVersion>,
+        versions: Vec<UpdateVersion<Versionable>>,
         an_audit: UpdateAudit,
     ) -> Result<String, SmError> {
         // Reassemble the wire CONTRIBUTION body `commit_version_set` parses:
@@ -155,18 +156,15 @@ impl FerroEhrService {
         // shapes serialize to exactly those field names.
         //
         // NOTE: this typed → wire-JSON → re-parse round-trip is a known
-        // glue seam. The typed shapes differ from the raw wire in two ways
-        // `commit_version_set` tolerates explicitly: `preceding_version_uid:
-        // None` serializes to JSON `null` (not absent), and `change_type` is a
-        // `Terminology_code` (`{terminology_id, code_string}`, SM
-        // `update_audit.adoc`), not a `DV_CODED_TEXT` (see the NOTEs in
-        // `versioning/contribution.rs` `coded_value`/`classify`).
+        // glue seam. It is now shape-faithful in both directions — the
+        // generated DTOs ARE the released wire shape (absent optionals are
+        // omitted rather than emitted as JSON `null`, and `change_type` is
+        // the `DV_CODED_TEXT` the released `UpdateAudit.yaml` declares) — so
+        // what is re-parsed is exactly what a client would have sent.
         // TODO(#1820): replace the serialize→re-parse round trip with a
         // native typed handoff into `commit_version_set`.
-        let versions_json = serde_json::to_value(&versions)
-            .map_err(|e| internal_fault("serialize the CONTRIBUTION version set", &e))?;
-        let audit_json = serde_json::to_value(&an_audit)
-            .map_err(|e| internal_fault("serialize the CONTRIBUTION audit", &e))?;
+        let versions_json = openehr_its::json::to_canonical_value(&versions);
+        let audit_json = openehr_its::json::to_canonical_value(&an_audit);
         let body = json!({ "versions": versions_json, "audit": audit_json });
         let committed = commit_version_set(self, Some(an_ehr_id), &body, false).await?;
         Ok(committed.id.to_string())

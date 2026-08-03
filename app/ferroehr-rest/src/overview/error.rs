@@ -12,7 +12,7 @@
 //!   renders the openEHR `Error` object —
 //!   `docs/specs/openehr/ITS-REST/specifications/schemas/others/Error.yaml`:
 //!   `{ "message", "validationErrors": ["<path>: <message>", …] }` — via the
-//!   generated [`openehr_its::rest::generated::ehr::Error`] DTO.
+//!   generated [`openehr_its::rest::generated::common::Error`] DTO.
 //!
 //!   NOTE: `422_COMPOSITION.yaml` declares no `content`/`schema` (the 422
 //!   body is spec-silent); the `Error` object is formally bound only to the
@@ -28,7 +28,6 @@ use serde::Serialize;
 use ferroehr::service::error::ServiceError;
 use ferroehr::service::status::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
 use ferroehr::versioning::object_version_id::VersionIdError;
-use openehr_its::rest::generated::ehr::Error as ValidationErrorBody;
 use openehr_its::rest::runtime::ApiError;
 
 /// A response-rendering wrapper over the contract's [`ApiError`].
@@ -262,7 +261,7 @@ impl IntoResponse for RestError {
         // per-path violations as `validationErrors` (`schemas/others/Error.yaml`);
         // every other error → the `{ error, message }` shape.
         let json = if let ApiError::ValidationFailed(errors) = self.0 {
-            let body = ValidationErrorBody {
+            let body = openehr_its::rest::generated::common::Error {
                 message,
                 validation_errors: errors
                     .into_iter()

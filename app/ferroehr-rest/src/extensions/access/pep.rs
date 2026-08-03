@@ -441,11 +441,14 @@ fn composition_template(parts: &RequestParts) -> Option<String> {
     if crate::formats::dispatch::is_simplified_body(h) {
         return crate::formats::dispatch::header_template_id(h);
     }
-    let value = negotiate::rm_value::<Composition>(h, &parts.body).ok()?;
-    value
-        .pointer("/archetype_details/template_id/value")
-        .and_then(|v| v.as_str())
-        .map(str::to_owned)
+    // The same typed decode the commit seam performs — the template id is
+    // read off the RM value's own `ARCHETYPED.template_id`, never a JSON
+    // pointer that a shape change could silently stop matching.
+    let composition = negotiate::rm_value::<Composition>(h, &parts.body).ok()?;
+    composition
+        .archetype_details
+        .and_then(|a| a.template_id)
+        .map(|id| id.value)
 }
 
 /// The set of COMPOSITION template ids in a contribution payload. A COMPOSITION

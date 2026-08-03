@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 use openehr_base::prelude::{
     HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, UidBasedId,
 };
-use openehr_its::rest::generated::demographic::UpdateItemTag;
+use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_rm::prelude::ItemTag;
 
 use crate::ids::VoId;

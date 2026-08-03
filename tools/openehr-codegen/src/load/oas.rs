@@ -55,6 +55,28 @@ impl Oas {
         Ok(Self { root })
     }
 
+    /// A synthetic bundle carrying the FIRST declarer's copy of each `keep`
+    /// schema across `bundles` — the shared-module fallback when no single
+    /// bundle declares every hoisted schema (the copies are identical by the
+    /// hoist analysis, so first-declarer is deterministic and lossless).
+    #[must_use]
+    pub(crate) fn merged_schemas(
+        bundles: &[(&str, Oas)],
+        keep: &std::collections::BTreeSet<String>,
+    ) -> Oas {
+        let mut schemas = serde_json::Map::new();
+        for (_, o) in bundles {
+            for (name, schema) in o.schemas() {
+                if keep.contains(&name) && !schemas.contains_key(&name) {
+                    schemas.insert(name, schema.clone());
+                }
+            }
+        }
+        Oas {
+            root: serde_json::json!({ "components": { "schemas": schemas } }),
+        }
+    }
+
     /// The component schemas (`#/components/schemas`), in document order.
     #[must_use]
     pub(crate) fn schemas(&self) -> Vec<(String, &Value)> {

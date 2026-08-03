@@ -29,7 +29,6 @@ use serde_json::{Value, json};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
 use ferroehr::service::FerroEhrService;
@@ -38,7 +37,8 @@ use ferroehr::service::status::CallStatusType;
 use ferroehr::service::terminology::config::{FhirOperation, FhirProviderConfig, ProviderKind};
 use ferroehr::service::terminology::fhir::FhirTerminologyProvider;
 
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The coded leaf path (mirrors the `DV_QUANTITY` leaf in `service_aql.rs`, but at
@@ -46,32 +46,24 @@ const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 const CODE_PATH: &str =
     "data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/defining_code/code_string";
 
-/// An `openehr` terminology code (for the audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv(data: Value) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(data: &Value) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: None,
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term("249"),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded("249"),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -135,7 +127,7 @@ async fn create_coded(
 ) -> String {
     svc.create_composition(
         ehr_id.parse().expect("ehr_id uuid"),
-        uv(composition_coded(name, terminology_id, code)),
+        uv(&composition_coded(name, terminology_id, code)),
     )
     .await
     .unwrap_or_else(|e| panic!("create_composition ({name}, {code}): {e:?}"))

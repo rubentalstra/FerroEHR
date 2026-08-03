@@ -20,7 +20,7 @@ use crate::state::AppState;
 /// The group dispatcher: box the response future and forward to [`run`].
 pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
-        run(state, op, parts)
+        Box::pin(run(state, op, parts))
             .await
             .unwrap_or_else(IntoResponse::into_response)
     })
@@ -34,12 +34,12 @@ async fn run(
     // Our-own-design PARTY_RELATIONSHIP extension routes (no ITS-REST contract):
     // matched before the per-kind party ops (which never share this prefix).
     if op.starts_with("party_relationship") || op.starts_with("versioned_party_relationship") {
-        return super::relationship::run(state, op, parts).await;
+        return Box::pin(super::relationship::run(state, op, parts)).await;
     }
     if let Some((kind, action)) = super::parse_party_op(op) {
         return match action {
             "create" | "get" | "update" | "delete" => {
-                super::party::run(state, kind, action, parts).await
+                Box::pin(super::party::run(state, kind, action, parts)).await
             }
             "tags_get" | "tags_update" | "tags_delete" => {
                 super::tags::run(state, kind, action, parts).await

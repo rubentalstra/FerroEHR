@@ -25,8 +25,11 @@ use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead}
 use ferroehr::versioning::signature::signer::Signer;
 use ferroehr::versioning::signature::verify::Verdict;
 
-use ferroehr::service::version_update::{UpdateAttestation, UpdateAudit, UpdateVersion};
-use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_base::prelude::ObjectVersionId;
+use openehr_its::rest::generated::common::{
+    UpdateAttestation, UpdateAudit, UpdateAuditData, UpdateVersion,
+};
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
 use openehr_rm::prelude::{DvText, PartyProxy};
 use serde_json::{Value, json};
@@ -36,34 +39,30 @@ fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
 }
 
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 fn committer(name: &str) -> PartyProxy {
     openehr_its::json::from_canonical_value(&json!({ "_type": "PARTY_IDENTIFIED", "name": name }))
         .expect("committer")
 }
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: committer("conformance tester"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -74,7 +73,9 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
 /// committal" case of RM common master06 §Attestation.
 fn update_attestation(reason: &str) -> UpdateAttestation {
     UpdateAttestation {
-        change_type: term("666"),
+        _type: None,
+        system_id: None,
+        change_type: change_type_coded("666"),
         description: None,
         committer: committer("witness"),
         attested_view: None,
@@ -90,12 +91,13 @@ fn update_attestation(reason: &str) -> UpdateAttestation {
 
 /// The contribution-level `UPDATE_AUDIT`.
 fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
-    UpdateAudit {
-        change_type: term(change_code),
+    UpdateAudit::UpdateAudit(UpdateAuditData {
+        _type: None,
+        system_id: None,
+        change_type: change_type_coded(change_code),
         description: None,
         committer: committer(committer_name),
-        system_id: None,
-    }
+    })
 }
 
 /// Split an `OBJECT_VERSION_ID` into `(object_id uuid, trunk version)`.
@@ -191,7 +193,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
 
     // Create a composition, then commit a second version.
     let ovid_v1 = svc
-        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -201,7 +203,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
         .update_composition(
             ehr_uuid,
             vo_uuid,
-            uv(composition("v2"), "251", Some(&ovid_v1)),
+            uv(&composition("v2"), "251", Some(&ovid_v1)),
         )
         .await
         .expect("update_composition")
@@ -236,7 +238,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
     // (is_modifiable = false, RM ehr master04 §"EHR Active Status") would
     // refuse the directory commit below.
     body["is_queryable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(body, "251", Some(&status_ovid_v1)))
+    svc.replace_ehr_status(ehr_uuid, uv(&body, "251", Some(&status_ovid_v1)))
         .await
         .expect("status update");
 
@@ -255,7 +257,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
         "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
         "name": { "_type": "DV_TEXT", "value": "root" }
     });
-    svc.create_directory(ehr_uuid, uv(folder, "249", None))
+    svc.create_directory(ehr_uuid, uv(&folder, "249", None))
         .await
         .expect("create_directory");
 
@@ -287,7 +289,7 @@ async fn contribution_versions_are_signed() {
     let contribution_uid = svc
         .commit_contribution(
             ehr_uuid,
-            vec![uv(composition("Via contribution"), "249", None)],
+            vec![uv(&composition("Via contribution"), "249", None)],
             contribution_audit("249", "Dr. Contribution"),
         )
         .await
@@ -326,7 +328,7 @@ async fn client_supplied_signature_is_stored_verbatim() {
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
-    let mut version = uv(composition("Client signed"), "249", None);
+    let mut version = uv(&composition("Client signed"), "249", None);
     version.signature = Some(CLIENT_SIG.to_owned());
     let contribution_uid = svc
         .commit_contribution(
@@ -376,7 +378,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let ovid = svc
-        .create_composition(ehr_uuid, uv(composition("tamper"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("tamper"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -425,7 +427,7 @@ async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let ovid = svc
-        .create_composition(ehr_uuid, uv(composition("tamper-default"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("tamper-default"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -486,7 +488,7 @@ async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
         let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
         let ovid = svc
-            .create_composition(ehr_uuid, uv(composition("tamper-nonstrict"), "249", None))
+            .create_composition(ehr_uuid, uv(&composition("tamper-nonstrict"), "249", None))
             .await
             .expect("create_composition")
             .version_uid();
@@ -584,7 +586,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
 
     // CREATE → the folded path: audit + contribution + vo_version in one CTE.
     let ovid_v1 = svc
-        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -615,7 +617,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         .update_composition(
             ehr_uuid,
             vo_uuid,
-            uv(composition("v2"), "251", Some(&ovid_v1)),
+            uv(&composition("v2"), "251", Some(&ovid_v1)),
         )
         .await
         .expect("update_composition")
@@ -670,7 +672,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let contribution_uid = svc
         .commit_contribution(
             ehr_uuid,
-            vec![uv(composition("Via contribution"), "249", None)],
+            vec![uv(&composition("Via contribution"), "249", None)],
             contribution_audit("249", "Dr. Contribution"),
         )
         .await
@@ -708,7 +710,7 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     let ehr_id = create_ehr(&svc_a).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let ovid = svc_a
-        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -766,7 +768,7 @@ async fn at_committal_attestation_is_signed_and_a_tamper_is_caught() {
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
-    let mut version = uv(composition("attested"), "249", None);
+    let mut version = uv(&composition("attested"), "249", None);
     version.attestations = Some(vec![update_attestation("witnessed")]);
     let ovid = svc
         .create_composition(ehr_uuid, version)
@@ -834,7 +836,7 @@ async fn after_committal_attestation_is_outside_the_signed_form() {
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let ovid = svc
-        .create_composition(ehr_uuid, uv(composition("plain"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("plain"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();

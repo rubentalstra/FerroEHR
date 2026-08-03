@@ -90,9 +90,31 @@ fn missing_template_id() -> RestError {
 /// — well-formed-but-semantically-invalid client content → `422`
 /// (`Requests_and_responses.md §HTTP status codes`, row `422`).
 fn flat_input_err(e: &openehr_its::flat::error::FlatError) -> RestError {
-    RestError(ApiError::Unprocessable(format!(
-        "Simplified-Format conversion failed: {e}"
-    )))
+    // The FLAT input split (owner adjudication 2026-08-03): a
+    // TEMPLATE-INDEPENDENT format violation — a key breaking master04's FLAT
+    // syntax rules, a `ctx/` key outside the master06 vocabulary, or the
+    // master04-forbidden `|other` + `|code`/`|value`/`|terminology`
+    // combination — means the document is not readable AS FLAT, the 400 row
+    // of ITS-REST overview `Requests_and_responses.md` §HTTP status codes
+    // ("malformed request syntax … could not be parsed"). Everything
+    // TEMPLATE- or RM-MEDIATED (a path the Web Template does not declare, a
+    // suffix undefined for the resolved RM type, a closed value set, a
+    // missing mandatory) is the composition endpoints' own 422 sentence —
+    // `responses/422_COMPOSITION.yaml`: "the underlying template is not
+    // known or is not validating the supplied COMPOSITION".
+    use openehr_its::flat::error::FlatError;
+    let syntactic = matches!(
+        e,
+        FlatError::MalformedPath { .. }
+            | FlatError::UnknownContext(_)
+            | FlatError::OtherSuffixConflict(_)
+    );
+    let msg = format!("Simplified-Format conversion failed: {e}");
+    if syntactic {
+        RestError(ApiError::BadRequest(msg))
+    } else {
+        RestError(ApiError::Unprocessable(msg))
+    }
 }
 
 /// A Simplified-Format **output** conversion failure: the server failed to

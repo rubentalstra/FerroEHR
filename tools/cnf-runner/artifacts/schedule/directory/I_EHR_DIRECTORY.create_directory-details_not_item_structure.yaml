@@ -63,7 +63,7 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       directory: "${ds:cnf.directory.invalid.details_not_item_structure}"
-    expect: validation_failed
+    expect: bad_request                  # overview Requests_and_responses §HTTP status codes, the 400 row — the parse class (typed construction refuses; owner ruling 2026-08-03 on the strict commit seam)
   - step: 2                              # nothing was created by the refused request
     call: has_directory
     with: { ehr_id: "${ehr_id}" }

@@ -24,6 +24,9 @@ formats: [canonical-json, canonical-xml]
 # because the same section makes the source a choice ("usually taken from e.g.
 # VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc.").
 outcomes:
+  bad_request:
+    status: 400                             # overview §HTTP status codes, the 400 row — "could not be parsed or is invalid": the parse class (typed construction refuses missing mandatories, empty 1..* lists, foreign _type; owner ruling 2026-08-03)
+    body: error_loose
   created:
     status: 201                           # 201_directory.yaml
     headers:

@@ -17,36 +17,33 @@
 
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::error::ServiceError;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
-use openehr_base::prelude::TerminologyCode;
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "ehr-package tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -97,7 +94,10 @@ async fn versioned_composition_cannot_switch_archetype() {
     let svc = FerroEhrService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
-        .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
+        .create_composition(
+            ehr,
+            uv(&composition(ENCOUNTER, "433", "event"), "249", None),
+        )
         .await
         .expect("v1")
         .version_uid();
@@ -107,7 +107,7 @@ async fn versioned_composition_cannot_switch_archetype() {
         .update_composition(
             ehr,
             vo,
-            uv(composition(REPORT, "433", "event"), "251", Some(&v1)),
+            uv(&composition(REPORT, "433", "event"), "251", Some(&v1)),
         )
         .await
         .expect_err("switching archetype across versions must be rejected");
@@ -127,7 +127,7 @@ async fn versioned_composition_cannot_switch_archetype() {
     svc.update_composition(
         ehr,
         vo,
-        uv(composition(ENCOUNTER, "433", "event"), "251", Some(&v1)),
+        uv(&composition(ENCOUNTER, "433", "event"), "251", Some(&v1)),
     )
     .await
     .expect("same-archetype update");
@@ -141,7 +141,10 @@ async fn versioned_composition_cannot_flip_persistence() {
     let svc = FerroEhrService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
-        .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
+        .create_composition(
+            ehr,
+            uv(&composition(ENCOUNTER, "433", "event"), "249", None),
+        )
         .await
         .expect("v1")
         .version_uid();
@@ -152,7 +155,7 @@ async fn versioned_composition_cannot_flip_persistence() {
             ehr,
             vo,
             uv(
-                composition(ENCOUNTER, "431", "persistent"),
+                &composition(ENCOUNTER, "431", "persistent"),
                 "251",
                 Some(&v1),
             ),
@@ -183,7 +186,7 @@ async fn tag_targets_must_be_within_the_same_ehr() {
     let v1 = svc
         .create_composition(
             ehr_a,
-            uv(composition(ENCOUNTER, "433", "event"), "249", None),
+            uv(&composition(ENCOUNTER, "433", "event"), "249", None),
         )
         .await
         .expect("composition in A")
@@ -234,7 +237,10 @@ async fn tagging_does_not_re_version_or_contribute() {
     let svc = FerroEhrService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
-        .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
+        .create_composition(
+            ehr,
+            uv(&composition(ENCOUNTER, "433", "event"), "249", None),
+        )
         .await
         .expect("v1")
         .version_uid();
