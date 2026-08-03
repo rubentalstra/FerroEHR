@@ -111,6 +111,7 @@ impl FerroEhrService {
         // index (`lower(template_id)`) rejects exact and case-variant duplicates
         // alike (a case variant is the *same* id, §Composite Identifiers
         // and Case) — no row returned means the template already exists → 409.
+        let mut tx = self.pool.begin().await?;
         let row = sqlx::query(
             "INSERT INTO template_store (template_id, concept, root_archetype, content) \
              VALUES ($1, $2, $3, $4) \
@@ -121,13 +122,22 @@ impl FerroEhrService {
         .bind(&concept)
         .bind(&root_archetype)
         .bind(xml)
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *tx)
         .await?
         .ok_or_else(|| {
             ServiceError::Conflict(format!(
                 "an operational template with template_id '{template_id}' already exists"
             ))
         })?;
+        // Register the wire address in `template_ref` (the vo_version.template_id
+        // FK target) in the same transaction — the registry is the union of both
+        // template dialects' addresses, so `DO NOTHING` absorbs an ADL2 claim of
+        // the same id (`0001_baseline.sql` §template_ref).
+        sqlx::query("INSERT INTO template_ref (template_id) VALUES ($1) ON CONFLICT DO NOTHING")
+            .bind(&template_id)
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
 
         // No `WebTemplate`-cache invalidation is needed on the create path: this
         // insert is create-only (`ON CONFLICT DO NOTHING` never overwrites), and

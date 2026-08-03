@@ -136,7 +136,7 @@ async fn seed_scheme(svc: &FerroEhrService, ehr_id: ferroehr::ids::EhrId, scheme
                 "settings": scheme
             }
         } ],
-        "audit": { "committer": committer("alice") }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("alice") }
     });
     svc.create_ehr_contribution(ehr_id, contribution)
         .await
@@ -344,7 +344,7 @@ async fn gate_keeper_guards_ehr_access_commits() {
             "_type": "ORIGINAL_VERSION",
             "data": { "_type": "EHR_ACCESS", "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1" }
         } ],
-        "audit": { "committer": { "_type": "PARTY_IDENTIFIED", "name": "x" } }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": { "_type": "PARTY_IDENTIFIED", "name": "x" } }
     })
     .to_string();
 
@@ -391,7 +391,7 @@ async fn gate_keeper_ignores_non_ehr_access_contributions() {
     let contribution = json!({
         "_type": "CONTRIBUTION",
         "versions": [ { "_type": "ORIGINAL_VERSION", "data": { "_type": "COMPOSITION" } } ],
-        "audit": { "committer": { "_type": "PARTY_IDENTIFIED", "name": "x" } }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": { "_type": "PARTY_IDENTIFIED", "name": "x" } }
     })
     .to_string();
 

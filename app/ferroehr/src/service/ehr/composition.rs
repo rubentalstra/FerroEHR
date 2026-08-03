@@ -73,13 +73,19 @@ impl FerroEhrService {
         self.reject_duplicate_persistent(ehr_id, &composition)
             .await?;
 
+        // The committed template identity is promoted to `vo_version.template_id`
+        // — the ABAC template attribute resolver (`template_of_version`) and the
+        // template-delete guard both read that column, so the direct route
+        // stamps it exactly like the CONTRIBUTION route.
+        let template_id = composition_template_id(&composition).map(str::to_owned);
+
         let mut tx = self.pool.begin().await?;
         let committed = create(
             &mut tx,
             Some(ehr_id),
             Kind::Composition,
             composition,
-            None,
+            template_id.as_deref(),
             &audit,
             envelope,
             &self.signing_ctx(),
@@ -370,6 +376,10 @@ impl FerroEhrService {
         self.validate_composition_for_commit(&composition, incomplete)
             .await?;
 
+        // Same template stamping as the create arm — every version row carries
+        // the template it was committed against.
+        let template_id = composition_template_id(&composition).map(str::to_owned);
+
         let mut tx = self.pool.begin().await?;
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
         // `versioned_composition.adoc`), lifted out of the versioning write
@@ -383,7 +393,7 @@ impl FerroEhrService {
             Kind::Composition,
             composition,
             expected,
-            None,
+            template_id.as_deref(),
             &audit,
             envelope,
             &self.signing_ctx(),

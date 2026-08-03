@@ -514,7 +514,7 @@ async fn template_id_is_read_back_from_vo_version() {
     let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
     // Production sets this on commit (service/vobject.rs); set it directly here.
-    // vo_version.template_id has an FK into template_store — seed the template.
+    // vo_version.template_id has an FK into template_ref — seed the template.
     seed_template(&pool, "org.openehr::vital_signs.v1").await;
     sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
         .bind(vo)
@@ -645,6 +645,13 @@ async fn seed_template(pool: &PgPool, template_id: &str) {
     .execute(pool)
     .await
     .expect("seed template_store");
+    // Register the wire address exactly as `store_template` does — the
+    // vo_version.template_id FK targets the template_ref registry.
+    sqlx::query("INSERT INTO template_ref (template_id) VALUES ($1) ON CONFLICT DO NOTHING")
+        .bind(template_id)
+        .execute(pool)
+        .await
+        .expect("seed template_ref");
 }
 
 async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {

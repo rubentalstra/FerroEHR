@@ -157,10 +157,10 @@ fn attribute_children(attr: &CAttribute) -> &[CObject] {
 /// syntactic `400` branch of `responses/400.yaml`.
 pub(super) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
     check(opt).map_err(|v| {
-        ServiceError::ValidationFailed(vec![openehr_its::rest::runtime::ValidationError {
-            path: v.code.to_string(),
-            message: v.detail,
-        }])
+        ServiceError::ValidationFailed(vec![openehr_base::validate::InvariantViolation::at(
+            v.code.to_string(),
+            v.detail,
+        )])
     })
 }
 

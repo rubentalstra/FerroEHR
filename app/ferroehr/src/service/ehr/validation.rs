@@ -20,6 +20,7 @@
 //! (INVALID class 2) + `master07-func_tc_ehr_composition.adoc` (the
 //! persistent-cardinality convention).
 
+use openehr_base::validate::InvariantViolation;
 use serde_json::Value;
 use sqlx::PgConnection;
 
@@ -198,10 +199,7 @@ impl FerroEhrService {
         }
         let errors = messages
             .into_iter()
-            .map(|m| openehr_its::rest::runtime::ValidationError {
-                path: m.path,
-                message: m.message,
-            })
+            .map(|m| InvariantViolation::at(m.path, m.message))
             .collect();
         Err(ServiceError::ValidationFailed(errors))
     }
@@ -311,10 +309,7 @@ pub(in crate::service) fn validate_rm_invariants_for_commit(
     Err(ServiceError::ValidationFailed(
         messages
             .into_iter()
-            .map(|m| openehr_its::rest::runtime::ValidationError {
-                path: m.path,
-                message: m.message,
-            })
+            .map(|m| InvariantViolation::at(m.path, m.message))
             .collect(),
     ))
 }
@@ -585,22 +580,35 @@ pub(in crate::service) fn validate_ehr_access(
 /// create/update and the CONTRIBUTION FOLDER path). RM common `folder.adoc` +
 /// RM ehr master04 §Folders:
 ///
-/// - each node is a `FOLDER` (a foreign `_type` is rejected: a FOLDER tree
-///   carries only FOLDERs, which the containment shape alone cannot say);
-/// - `items` members are `OBJECT_REF`s — "Folder structures do not contain
-///   Compositions, only references to them" (master04 §Folders): a member must
-///   carry `id` + `namespace` + `type`, and a LOCATABLE-by-value payload is
-///   rejected;
-/// - `folders` members recurse.
+/// - every node of the tree carries a `_type` conforming to the RM-declared
+///   type of the slot it occupies (`FOLDER.items` → `OBJECT_REF`,
+///   `FOLDER.folders` → `FOLDER`), read from the generated RM model
+///   ([`openehr_rm::model::attribute`] / [`openehr_rm::model::is_a`]). This is
+///   the WRONGNESS half of "Folder structures do not contain Compositions,
+///   only references to them" (master04 §Folders): a COMPOSITION committed by
+///   value into `items` is a positive type contradiction and is refused
+///   whatever the lifecycle state (RM common master06 §Incomplete Content —
+///   "data may be missing, but it may not be wrong").
 ///
-/// The `LOCATABLE` rules a FOLDER node inherits are NOT restated here: `name`
-/// mandatoriness, `Archetype_node_id_valid`, `Links_valid`, and the
-/// archetype-root identity rule (`archetype_node_id` is the stringified
-/// `archetype_details.archetype_id`) all come from the whole-instance RM
-/// class-invariant + terminology pass ([`validate_rm_invariants_for_commit`]),
-/// which also reaches `archetype_details`, each `LINK` in `links`, and
-/// `feeder_audit`. `archetype_details` itself stays OPTIONAL on a FOLDER — the
-/// RM types it 0..1 and FOLDER carries no `Is_archetype_root` invariant.
+/// The PRESENCE half is NOT restated here: an `OBJECT_REF`'s mandatory
+/// `id`/`namespace`/`type`, a member carrying a key `OBJECT_REF` does not
+/// declare, `LOCATABLE.name` mandatoriness, `Archetype_node_id_valid`,
+/// `Links_valid`, and the archetype-root identity rule all come from the
+/// whole-instance RM class-invariant + terminology pass
+/// ([`validate_rm_invariants_for_commit`]), which walks `items`, `folders`,
+/// `archetype_details`, each `LINK` in `links`, and `feeder_audit` — and which
+/// relaxes exactly the presence layer on a `553|incomplete|` commit, so no
+/// lifecycle special-casing is needed here. `archetype_details` itself stays
+/// OPTIONAL on a FOLDER — the RM types it 0..1 and FOLDER carries no
+/// `Is_archetype_root` invariant.
+///
+/// NOTE: the type-conformance rule is enforced here rather than in the
+/// whole-instance pass because that pass dispatches each node on its own wire
+/// `_type` (falling back to the declared type only when the tag is absent), so
+/// a tagged node in a concretely-declared slot is validated as the type it
+/// claims to be, never against the slot. TODO(#1816): fold this into the
+/// whole-instance pass once it checks every tagged node against its declared
+/// slot type; this is the FOLDER-shaped instance of that general rule.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] naming the first violated rule and the
@@ -610,59 +618,54 @@ pub(in crate::service) fn validate_folder(
     folder: &Value,
     incomplete: bool,
 ) -> Result<(), ServiceError> {
-    fn walk(node: &Value, path: &str, incomplete: bool) -> Result<(), ServiceError> {
+    /// The RM-declared type of `attr` on `class`, from the generated model.
+    fn declared(class: &str, attr: &str) -> Option<&'static str> {
+        openehr_rm::model::attribute(class, attr).map(|a| a.declared_type)
+    }
+
+    /// Refuse a member whose wire `_type` does not conform to `expected`.
+    fn conforms(member: &Value, expected: &str, path: &str) -> Result<(), ServiceError> {
         let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
-        let obj = node
+        let obj = member
             .as_object()
-            .ok_or_else(|| unproc(format!("{path}: FOLDER must be a JSON object")))?;
-        match obj.get("_type").and_then(Value::as_str) {
-            None | Some("FOLDER") => {}
-            Some(other) => {
-                return Err(unproc(format!(
-                    "{path}: expected a FOLDER, got _type {other:?}"
-                )));
-            }
+            .ok_or_else(|| unproc(format!("{path}: must be a JSON object ({expected})")))?;
+        // An untagged member is legal canonical JSON in a concretely-declared
+        // slot; the whole-instance pass then validates it AS `expected`.
+        let Some(tag) = obj.get("_type").and_then(Value::as_str) else {
+            return Ok(());
+        };
+        if openehr_rm::model::is_a(tag, expected) {
+            return Ok(());
         }
-        if let Some(items) = obj.get("items").and_then(Value::as_array) {
+        Err(unproc(format!(
+            "{path}: expected {expected} (or a subtype), got _type {tag:?} — Folder \
+             structures do not contain Compositions by value, only references to \
+             them (RM ehr master04 §Folders)"
+        )))
+    }
+
+    fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
+        conforms(node, "FOLDER", if path.is_empty() { "/" } else { path })?;
+        let Some(obj) = node.as_object() else {
+            return Ok(());
+        };
+        if let Some((items, ty)) = obj
+            .get("items")
+            .and_then(Value::as_array)
+            .zip(declared("FOLDER", "items"))
+        {
             for (i, item) in items.iter().enumerate() {
-                // The PRESENCE half (`id`/`namespace`/`type` supplied) is a
-                // mandatory-attribute duty, so a `553|incomplete|` commit is
-                // allowed to leave it unmet (RM common master06 §Incomplete
-                // Content). The WRONGNESS half — a LOCATABLE committed by
-                // value rather than by reference — is enforced either way:
-                // "Folder structures do not contain Compositions, only
-                // references to them" (RM ehr master04 §Folders).
-                let present = incomplete
-                    || (item.get("id").is_some_and(Value::is_object)
-                        && item
-                            .get("namespace")
-                            .and_then(Value::as_str)
-                            .is_some_and(|s| !s.is_empty())
-                        && item
-                            .get("type")
-                            .and_then(Value::as_str)
-                            .is_some_and(|s| !s.is_empty()));
-                // A LOCATABLE by value carries archetype_node_id — an
-                // OBJECT_REF never does.
-                let ok = present && item.get("archetype_node_id").is_none();
-                if !ok {
-                    return Err(unproc(format!(
-                        "{path}/items[{i}]: FOLDER.items members must be OBJECT_REFs \
-                         (id + namespace + type) — Folder structures do not contain \
-                         Compositions by value, only references to them \
-                         (RM ehr master04 §Folders)"
-                    )));
-                }
+                conforms(item, ty, &format!("{path}/items[{i}]"))?;
             }
         }
         if let Some(folders) = obj.get("folders").and_then(Value::as_array) {
             for (i, sub) in folders.iter().enumerate() {
-                walk(sub, &format!("{path}/folders[{i}]"), incomplete)?;
+                walk(sub, &format!("{path}/folders[{i}]"))?;
             }
         }
         Ok(())
     }
-    walk(folder, "", incomplete)?;
+    walk(folder, "")?;
     validate_rm_invariants_for_commit(folder, "FOLDER", incomplete)
 }
 
@@ -923,6 +926,31 @@ mod tests {
         bad["folders"][0].as_object_mut().unwrap().remove("name");
         let err = validate_folder(&bad, false).expect_err("nameless sub-folder rejected");
         assert!(format!("{err:?}").contains("name"), "got {err:?}");
+    }
+
+    /// The `FOLDER.items` PRESENCE duty is owned by the whole-instance RM pass
+    /// (`OBJECT_REF`'s mandatory `id`/`namespace`/`type`), which relaxes exactly
+    /// that layer on a `553|incomplete|` commit (RM common master06 §Incomplete
+    /// Content) — so `validate_folder` needs no lifecycle special-casing of its
+    /// own.
+    #[test]
+    fn folder_item_presence_is_owned_by_the_rm_pass() {
+        let missing_id = json!({
+            "_type": "FOLDER",
+            "name": { "_type": "DV_TEXT", "value": "root" },
+            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+            "items": [{
+                "_type": "OBJECT_REF", "namespace": "local", "type": "VERSIONED_COMPOSITION"
+            }]
+        });
+        let err = validate_folder(&missing_id, false)
+            .expect_err("an OBJECT_REF without its mandatory id is refused");
+        assert!(
+            matches!(err, ServiceError::ValidationFailed(_)),
+            "the refusal comes from the RM pass, got {err:?}"
+        );
+        validate_folder(&missing_id, true)
+            .expect("a 553|incomplete| commit may leave mandatory data missing");
     }
 
     /// A minimal valid FOLDER tree the LOCATABLE-rule tests below perturb.

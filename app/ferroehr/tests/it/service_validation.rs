@@ -84,6 +84,10 @@ fn composition(name: &str) -> Value {
 
 const IPS_OPT: &str = "../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt";
 
+/// The `template_id` the IPS OPT declares (and its canonical compositions
+/// carry in `archetype_details.template_id.value`).
+const IPS_TEMPLATE_ID: &str = "International Patient Summary";
+
 /// Count the persisted COMPOSITION versions (kind discriminator on `vo_version`).
 async fn composition_versions(pool: &PgPool) -> i64 {
     sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE kind = 'COMPOSITION'")
@@ -226,6 +230,90 @@ async fn composition_update_is_validated() {
     );
 }
 
+/// The direct COMPOSITION routes stamp `vo_version.template_id` on every
+/// version they commit, exactly like the CONTRIBUTION route — the promoted
+/// column the ABAC template attribute (`template_of_version`) and the
+/// template-delete guard both read.
+///
+/// The silent-unbind twin is pinned by the same assertions: were the stamp to
+/// go back to `NULL`, `template_of_version` would answer `None` and a
+/// template-scoped ABAC rule would stop binding without any error.
+/// (`vo_version.template_id` is our own promoted column — no openEHR spec
+/// governs the storage mechanics.)
+#[tokio::test]
+async fn direct_route_commits_stamp_the_template_id() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+
+    svc.template_adl14_upload(fixture(IPS_OPT))
+        .await
+        .expect("upload IPS OPT");
+    let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    // ── create (direct route) ────────────────────────────────────────────────
+    let ovid_v1 = svc
+        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .await
+        .expect("valid v1")
+        .version_uid();
+    let vo_uuid = ovid_v1
+        .split("::")
+        .next()
+        .expect("vo_id segment")
+        .parse::<ferroehr::ids::VoId>()
+        .expect("vo uuid");
+
+    assert_eq!(
+        svc.template_of_version(vo_uuid, None)
+            .await
+            .expect("resolve template of the current version")
+            .as_deref(),
+        Some(IPS_TEMPLATE_ID),
+        "a direct-route create binds its template attribute"
+    );
+
+    // ── update (direct route) ────────────────────────────────────────────────
+    let ovid_v2 = svc
+        .update_composition(
+            ehr_uuid,
+            vo_uuid,
+            uv(composition("ips_canonical.json"), "251", Some(&ovid_v1)),
+        )
+        .await
+        .expect("valid v2")
+        .version_uid();
+    assert_ne!(ovid_v1, ovid_v2, "the update advanced the version");
+    assert_eq!(
+        svc.template_of_version(vo_uuid, Some("2"))
+            .await
+            .expect("resolve template of version 2")
+            .as_deref(),
+        Some(IPS_TEMPLATE_ID),
+        "a direct-route update stamps the template on the new version too"
+    );
+
+    // Every stored version row carries it — the cheap SQL prefilter the
+    // template-delete guard counts.
+    let stamped: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE template_id = $1")
+        .bind(IPS_TEMPLATE_ID)
+        .fetch_one(&pool)
+        .await
+        .expect("count stamped versions");
+    assert_eq!(stamped, 2, "both direct-route versions are stamped");
+    let unstamped: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_version WHERE kind = 'COMPOSITION' AND template_id IS NULL",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count unstamped versions");
+    assert_eq!(
+        unstamped, 0,
+        "no direct-route COMPOSITION version is left unbound"
+    );
+}
+
 /// A version-item `commit_audit.change_type` as a coded openEHR audit change type.
 fn change_type_coded(code: &str, value: &str) -> Value {
     json!({
@@ -241,7 +329,7 @@ fn change_type_coded(code: &str, value: &str) -> Value {
 /// A `553|incomplete|` CONTRIBUTION carrying a single `creation` version.
 fn incomplete_creation_contribution(data: &Value) -> Value {
     json!({
-        "versions": [{
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
             "data": data,
             "commit_audit": { "change_type": change_type_coded("249", "creation") },
             "lifecycle_state": {
@@ -535,4 +623,103 @@ async fn element_without_value_or_null_flavour_is_rejected_at_commit() {
         0,
         "the RM-invalid composition was not persisted"
     );
+}
+
+/// The ADL2 twin of [`direct_route_commits_stamp_the_template_id`]: a
+/// direct-route commit against an **ADL2-registered** operational template is
+/// accepted and stamps `vo_version.template_id` — the FK target is the
+/// `template_ref` registry (the union of BOTH template dialects' wire
+/// addresses, `0001_baseline.sql`), so the stamp is not refused as a foreign
+/// key violation the way a `template_store`-only FK would (the CNF
+/// `SF-FLAT-adl2_commit` regression). The in-use delete guard then refuses the
+/// ADL2 template's physical delete while the version references it (the same
+/// never-orphan guard the OPT 1.4 delete carries; no openEHR spec governs the
+/// storage mechanics — our own design; FLAT-over-ADL2 is grounded in the AM
+/// side-by-side mandate, BASE `architecture_overview/master05-package_structure.adoc`).
+#[tokio::test]
+async fn direct_route_commit_against_an_adl2_template_stamps_and_guards() {
+    const ADL2_TEMPLATE_ID: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0";
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+
+    // The CNF `SF-FLAT-adl2_commit` provisioning pair + FLAT body, read from
+    // the committed catalogue corpus (golden vectors over hand-written
+    // fixtures, `.claude/rules/testing.md` §Oracles).
+    let artifacts = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/cnf-runner/artifacts/corpus/fixtures");
+    let archetype = std::fs::read_to_string(artifacts.join("adl2/archetype/cnf_count_a.adls"))
+        .expect("CNF count archetype source");
+    let opt2 = std::fs::read_to_string(artifacts.join("adl2/opt/flat_parity_a.adls"))
+        .expect("CNF FLAT-parity OPT2 source");
+    svc.upload_artefact(archetype)
+        .await
+        .expect("upload the ADL2 archetype");
+    svc.upload_artefact(opt2)
+        .await
+        .expect("upload the ADL2 operational template");
+
+    // Convert the FLAT body exactly as the REST edge does (WebTemplate via the
+    // dialect-resolving public seam, `openehr_its::flat` conversion).
+    let wt = svc
+        .web_template(ADL2_TEMPLATE_ID)
+        .await
+        .expect("the ADL2-backed WebTemplate resolves");
+    let flat: serde_json::Map<String, Value> = serde_json::from_str(
+        &std::fs::read_to_string(artifacts.join("sf/flat.adl2_valid.json"))
+            .expect("CNF FLAT fixture"),
+    )
+    .expect("FLAT JSON");
+    let composition =
+        openehr_its::flat::convert::composition_from_flat(&flat, &wt, "2026-08-03T12:00:00Z")
+            .expect("FLAT converts to a canonical COMPOSITION");
+
+    let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+    let ovid = svc
+        .create_composition(ehr_uuid, uv(composition, "249", None))
+        .await
+        .expect("a commit against an ADL2-registered template is accepted")
+        .version_uid();
+    let vo_uuid = ovid
+        .split("::")
+        .next()
+        .expect("vo_id segment")
+        .parse::<ferroehr::ids::VoId>()
+        .expect("vo uuid");
+    assert_eq!(
+        svc.template_of_version(vo_uuid, None)
+            .await
+            .expect("resolve template of the current version")
+            .as_deref(),
+        Some(ADL2_TEMPLATE_ID),
+        "an ADL2-templated direct-route create binds its template attribute"
+    );
+
+    // In use → the physical delete refuses (the 409-class conflict status,
+    // the same mapping every `ServiceError::Conflict` carries), naming the
+    // reference count; the OPT2 row and the registry row both survive.
+    let in_use = svc
+        .delete_artefact(ADL2_TEMPLATE_ID.to_owned())
+        .await
+        .expect_err("an in-use ADL2 template must refuse physical deletion");
+    assert!(
+        matches!(
+            &in_use,
+            SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            }
+        ) && in_use
+            .message
+            .contains("still referenced by 1 committed version"),
+        "got {in_use:?}"
+    );
+    let registered: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM template_ref WHERE template_id = $1")
+            .bind(ADL2_TEMPLATE_ID)
+            .fetch_one(&pool)
+            .await
+            .expect("count registry rows");
+    assert_eq!(registered, 1, "the refused delete left the registry intact");
 }

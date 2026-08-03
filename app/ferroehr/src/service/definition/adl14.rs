@@ -30,7 +30,7 @@ use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::ProductionRmModel;
 use openehr_adl::validate::{ValidationIssue, validate_adl14_source};
 use openehr_base::prelude::ArchetypeId;
-use openehr_its::rest::runtime::ValidationError;
+use openehr_base::validate::InvariantViolation;
 use uuid::Uuid;
 
 use crate::service::FerroEhrService;
@@ -577,8 +577,9 @@ impl FerroEhrService {
         // Resolve, count references, and delete in ONE transaction so the
         // friendly 409 is consistent with the delete (mirroring the admin
         // wire delete, `delete_template_by_id`); the `vo_version.template_id`
-        // foreign key (`0001_baseline.sql`, NO ACTION) remains the underlying
-        // integrity guard even under a concurrent commit. Absent row → 404.
+        // → `template_ref` foreign key (`0001_baseline.sql`, NO ACTION)
+        // remains the underlying integrity guard even under a concurrent
+        // commit. Absent row → 404.
         let mut tx = self.pool.begin().await?;
         let template_id: Option<String> =
             sqlx::query_scalar("SELECT template_id FROM template_store WHERE id = $1")
@@ -609,6 +610,18 @@ impl FerroEhrService {
             .bind(id)
             .execute(&mut *tx)
             .await?;
+        // Deregister the wire address unless a template-kind ADL2 artefact
+        // also claims it (`template_ref` is the union of both dialects'
+        // addresses; the FK blocks the deregistration if a concurrent commit
+        // referenced it after the count above).
+        sqlx::query(
+            "DELETE FROM template_ref WHERE template_id = $1 AND NOT EXISTS \
+             (SELECT 1 FROM adl2_artefact WHERE lower(hrid) = lower($1) \
+              AND kind IN ('template', 'operational_template'))",
+        )
+        .bind(&template_id)
+        .execute(&mut *tx)
+        .await?;
         tx.commit().await?;
         // Delete is the only mutation that ends a stored template's lifetime
         // (uploads are create-only — `store_template`'s `ON CONFLICT DO NOTHING`
@@ -652,7 +665,7 @@ impl FerroEhrService {
 fn archetype_validate(adl: &str) -> Result<(), ServiceError> {
     let issues =
         validate_adl14_source(adl, &ProductionRmModel).map_err(archetype_syntax_failure)?;
-    let errors: Vec<ValidationError> = issues
+    let errors: Vec<InvariantViolation> = issues
         .iter()
         .filter(|i| i.severity == Severity::Error)
         .map(issue_to_validation_error)
@@ -673,25 +686,27 @@ fn archetype_validate(adl: &str) -> Result<(), ServiceError> {
 fn archetype_syntax_failure(errs: Vec<SyntaxError>) -> ServiceError {
     ServiceError::ValidationFailed(
         errs.into_iter()
-            .map(|e| ValidationError {
-                path: e.code.mnemonic().to_owned(),
-                message: format!("{} (line {}, column {})", e.message, e.line, e.column),
+            .map(|e| {
+                InvariantViolation::at(
+                    e.code.mnemonic(),
+                    format!("{} (line {}, column {})", e.message, e.line, e.column),
+                )
             })
             .collect(),
     )
 }
 
-/// Render one [`ValidationIssue`] as a wire [`ValidationError`]: the rule-code
+/// Render one [`ValidationIssue`] as an [`InvariantViolation`]: the rule-code
 /// mnemonic is the machine-readable key, the human detail (plus the archetype
 /// path where derivable) is the message.
-fn issue_to_validation_error(i: &ValidationIssue) -> ValidationError {
-    ValidationError {
-        path: i.code.mnemonic().to_owned(),
-        message: match &i.path {
+fn issue_to_validation_error(i: &ValidationIssue) -> InvariantViolation {
+    InvariantViolation::at(
+        i.code.mnemonic(),
+        match &i.path {
             Some(p) => format!("{} (at {p})", i.message),
             None => i.message.clone(),
         },
-    }
+    )
 }
 
 /// `valid_opt` core — the OPT parses (`opt14::from_xml`) and passes the

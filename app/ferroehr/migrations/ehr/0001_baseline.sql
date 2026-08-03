@@ -227,6 +227,27 @@ CREATE INDEX idx_audit_time_committed ON audit (time_committed);
 COMMENT ON TABLE contribution IS 'The change-set envelope (RM common master06 §Contributions); one per change set, strictly transactional (master06 §Committal and Audits: a Contribution commits only if every member Version/Attestation commits).';
 COMMENT ON COLUMN contribution.ehr_id IS 'Owning EHR, or NULL for a demographic (party) contribution (RM demographic content is not EHR-owned).';
 
+-- ── template_ref ─────────────────────────────────────────────────────────────
+-- The registry of PROVISIONED template wire addresses across BOTH template
+-- dialects: `template_store` rows (OPT 1.4 `template_id`) and `adl2_artefact`
+-- template-kind rows (ADL2 template / operational_template HRIDs — the AM
+-- component keeps the two generations side by side, BASE architecture_overview
+-- master05 §Package Structure). `vo_version.template_id` references THIS
+-- table, so a committed version's template identity is FK-guarded whichever
+-- DEFINITION surface provisioned the template, and a physical delete of an
+-- in-use template fails loud even under a concurrent commit (the NO ACTION
+-- check at delete time) — the same race guard the former template_store-only
+-- FK provided, made dialect-complete. Rows are maintained in the same
+-- transaction as the owning store row (insert on provisioning; delete when the
+-- last owning store row goes). No openEHR spec governs storage integrity —
+-- our own design.
+CREATE TABLE template_ref (
+    template_id text NOT NULL,
+    CONSTRAINT pk_template_ref PRIMARY KEY (template_id)
+);
+
+COMMENT ON TABLE template_ref IS 'Registry of provisioned template wire addresses (union of template_store.template_id and template-kind adl2_artefact.hrid). FK target of vo_version.template_id: the dialect-complete delete/commit race guard (an extension — no openEHR spec governs storage integrity).';
+
 -- ── template_store ───────────────────────────────────────────────────────────
 -- Operational templates (OPT 1.4 XML); the parsed model is built in the
 -- application, not stored here.
@@ -252,14 +273,14 @@ COMMENT ON COLUMN template_store.id IS 'The SM OPT-by-UUID handle (SM openehr_pl
 -- it is the `.vN` version axis of template_id (filter_version: "taken from
 -- template_id"), a pure function of the id, so it is derived on read rather than
 -- denormalised into a column (see crate::templates::identity::template_version).
-COMMENT ON COLUMN template_store.template_id IS 'The wire address (ITS-REST DEFINITION API + vo_version.template_id FK target); also the source of the reported TemplateMetadata.version (its `.vN` axis).';
+COMMENT ON COLUMN template_store.template_id IS 'The wire address (ITS-REST DEFINITION API; registered in template_ref, the vo_version.template_id FK target); also the source of the reported TemplateMetadata.version (its `.vN` axis).';
 -- Case-insensitive uniqueness of TEMPLATE_ID (BASE base_types master05
 -- §Composite Identifiers and Case: identifier equality — and thus uniqueness —
 -- is case-insensitive, so a case variant is the SAME template id and the
 -- upload endpoint rejects it as a duplicate, ITS-REST
--- 409_template_already_exists). The exact-case UNIQUE above stays — it backs
--- the vo_version.template_id foreign key; this functional unique index is the
--- race-free case-insensitive guard.
+-- 409_template_already_exists). The exact-case UNIQUE above stays as the
+-- natural-key anchor; this functional unique index is the race-free
+-- case-insensitive guard.
 CREATE UNIQUE INDEX ux_template_store_template_id_ci
     ON template_store (lower(template_id));
 
@@ -431,7 +452,7 @@ CREATE TABLE vo_version (
     -- the semantics stay master06.
     CONSTRAINT fk_vo_version_contribution FOREIGN KEY (contribution_id) REFERENCES contribution (id),
     CONSTRAINT fk_vo_version_audit FOREIGN KEY (audit_id) REFERENCES audit (id),
-    CONSTRAINT fk_vo_version_template FOREIGN KEY (template_id) REFERENCES template_store (template_id),
+    CONSTRAINT fk_vo_version_template FOREIGN KEY (template_id) REFERENCES template_ref (template_id),
     CONSTRAINT fk_vo_version_ehr FOREIGN KEY (ehr_id) REFERENCES ehr (id) ON DELETE CASCADE
 ) WITH (fillfactor = 90);
 -- LATEST_VERSION (= the current trunk tip, RM common master06

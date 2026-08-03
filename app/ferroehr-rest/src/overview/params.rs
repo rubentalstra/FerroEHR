@@ -57,11 +57,22 @@ pub(crate) fn build<P: DeserializeOwned>(
         // canonical spelling (`Accept`, `Content-Type`, `openehr-item-tag`).
         // Deserialization is case-sensitive on the rename, so expose both the
         // wire name and the canonical spelling used by the contract.
+        // A header value that is not decodable as text is a client defect, not
+        // an absent parameter: dropping it would deserialize the request as if
+        // the header had never been sent. (No openEHR spec governs undecodable
+        // header bytes — our own design: refuse rather than guess.)
         let entry: Vec<String> = headers
             .get_all(name)
             .iter()
-            .filter_map(|v| v.to_str().ok().map(str::to_owned))
-            .collect();
+            .map(|v| {
+                v.to_str().map(str::to_owned).map_err(|e| {
+                    tracing::debug!(header = %name, error = %e, "undecodable header value → 400");
+                    ApiError::BadRequest(format!(
+                        "header {name} carries a value that is not decodable as text"
+                    ))
+                })
+            })
+            .collect::<Result<_, _>>()?;
         if entry.is_empty() {
             continue;
         }
@@ -258,11 +269,21 @@ pub(crate) fn parse_item_tag_header(
     headers: &HeaderMap,
     name: &str,
 ) -> Result<Option<Vec<ItemTagHeaderEntry>>, ApiError> {
+    // An undecodable value is refused, never skipped: silently dropping it
+    // would remove a tag the client believes it set (the same reasoning the
+    // doc comment above gives for a keyless entry).
     let raws: Vec<String> = headers
         .get_all(name)
         .iter()
-        .filter_map(|v| v.to_str().ok().map(str::to_owned))
-        .collect();
+        .map(|v| {
+            v.to_str().map(str::to_owned).map_err(|e| {
+                tracing::debug!(header = name, error = %e, "undecodable header value → 400");
+                ApiError::BadRequest(format!(
+                    "header {name} carries a value that is not decodable as text"
+                ))
+            })
+        })
+        .collect::<Result<_, _>>()?;
     if raws.is_empty() {
         return Ok(None);
     }

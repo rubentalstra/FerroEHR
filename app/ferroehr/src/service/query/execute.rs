@@ -417,9 +417,12 @@ fn map_plan_error(e: AqlError) -> SmError {
     }
 }
 
-/// Map an execution error: a database/assembly/terminology failure is the
-/// server's fault (`500`); a SQL-lowering failure that surfaces here is still
-/// a bad query (`400`).
+/// Map an execution error: an assembly/terminology failure is the server's
+/// fault (`500`); a SQL-lowering failure that surfaces here is still a bad
+/// query (`400`); a raw driver failure is CLASSIFIED like every other database
+/// leg (`crate::storage::error::classify_sqlx`), so a pool-acquire timeout on
+/// the query path sheds as `503 service-overloaded` exactly as it does on the
+/// write paths instead of reporting a blanket `500`.
 ///
 /// The `500` legs carry the curated opaque message: a driver string names the
 /// schema objects the generated SQL touched, an assembly failure names the
@@ -428,7 +431,7 @@ fn map_plan_error(e: AqlError) -> SmError {
 /// ([`internal_fault`]).
 fn map_exec_error(e: AqlError) -> SmError {
     match e {
-        AqlError::Exec(ExecError::Database(db)) => internal_fault("execute the generated SQL", &db),
+        AqlError::Exec(ExecError::Database(db)) => crate::storage::error::classify_sqlx(&db),
         AqlError::Exec(ExecError::Assembly(a)) => internal_fault("assemble the RESULT_SET", &a),
         AqlError::Exec(ExecError::Terminology(msg)) => SmError::exception(msg),
         AqlError::Exec(e @ ExecError::MissingColumnAlias { .. }) => {
@@ -437,5 +440,41 @@ fn map_exec_error(e: AqlError) -> SmError {
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
             SmError::precondition(e.to_string())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AqlError, ExecError, map_exec_error};
+    use crate::service::status::CallStatusType;
+
+    /// The query path's database leg is classified, not blanket-500: a
+    /// pool-acquire timeout sheds as `service_overloaded` (→ 503 +
+    /// `Retry-After`) exactly as every other database leg does, while a
+    /// genuine driver fault stays an `exception` (→ 500) with the curated
+    /// message.
+    #[test]
+    fn query_database_failures_are_classified() {
+        let shed = map_exec_error(AqlError::Exec(ExecError::Database(
+            sqlx::Error::PoolTimedOut,
+        )));
+        assert_eq!(
+            shed.status,
+            CallStatusType::ServiceOverloaded,
+            "a pool-acquire timeout on the query path sheds, got {shed:?}"
+        );
+
+        let fault = map_exec_error(AqlError::Exec(ExecError::Database(
+            sqlx::Error::RowNotFound,
+        )));
+        assert_eq!(
+            fault.status,
+            CallStatusType::Exception,
+            "an unclassified driver failure is still a server fault, got {fault:?}"
+        );
+        assert!(
+            !fault.message.contains("RowNotFound"),
+            "the driver diagnostic never reaches the wire body, got {fault:?}"
+        );
     }
 }

@@ -251,7 +251,7 @@ async fn composition_and_contribution_commits_each_write_one_phi_free_outbox_row
                     "code_string": "532" } },
             "data": composition("c1")
         }],
-        "audit": { "committer": committer("author") }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
     });
     svc.create_ehr_contribution(ehr, contribution)
         .await
@@ -309,7 +309,7 @@ async fn outbox_disabled_writes_no_rows() {
                     "code_string": "532" } },
             "data": composition("c1")
         }],
-        "audit": { "committer": committer("author") }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
     });
     svc.create_ehr_contribution(ehr, contribution)
         .await

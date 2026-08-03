@@ -175,7 +175,7 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
             "data": composition("v1"),
             "attestations": [ attestation("witnessed", false) ]
         }],
-        "audit": { "committer": committer("author") }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
     });
     let created = svc
         .create_ehr_contribution(ehr_id.parse().expect("ehr uuid"), contribution)
@@ -207,7 +207,14 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
                 "reason": { "_type": "DV_TEXT", "value": "authorised" },
                 "is_pending": false
             }
-        }]
+        }],
+        // The change set's own change type is the CLIENT's account of it (the
+        // released commit schema requires it), never a server-derived
+        // aggregate.
+        "audit": {
+            "change_type": change_type("666", "attestation"),
+            "committer": committer("senior reviewer")
+        }
     });
     let attest_created = svc
         .create_ehr_contribution(ehr_id.parse().expect("ehr uuid"), attest_contribution)
@@ -284,7 +291,7 @@ async fn attestation_error_cases() {
 
     // 666 without preceding_version_uid → 400 (cannot name its target).
     let err = attempt(json!({
-        "versions": [{
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
             "commit_audit": {
                 "change_type": change_type("666", "attestation"),
                 "committer": committer("x"),
@@ -308,7 +315,7 @@ async fn attestation_error_cases() {
 
     // 666 carrying data → 422 (attestation adds no content).
     let err = attempt(json!({
-        "versions": [{
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
             "preceding_version_uid": { "value": ovid_v1.clone() },
             "commit_audit": {
                 "change_type": change_type("666", "attestation"),
@@ -334,7 +341,7 @@ async fn attestation_error_cases() {
 
     // Attestation missing reason → 422 (ATTESTATION.reason 1..1).
     let err = attempt(json!({
-        "versions": [{
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
             "preceding_version_uid": { "value": ovid_v1.clone() },
             "commit_audit": {
                 "change_type": change_type("666", "attestation"),
@@ -358,7 +365,7 @@ async fn attestation_error_cases() {
 
     // Attestation missing is_pending → 422 (ATTESTATION.is_pending 1..1).
     let err = attempt(json!({
-        "versions": [{
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
             "preceding_version_uid": { "value": ovid_v1.clone() },
             "commit_audit": {
                 "change_type": change_type("666", "attestation"),
@@ -387,7 +394,7 @@ async fn attestation_error_cases() {
     // `400_CONTRIBUTION`: the modification does not match a stored object).
     let ghost = "00000000-0000-7000-8000-000000000000::ferroehr.local::1";
     let err = attempt(json!({
-        "versions": [{
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
             "preceding_version_uid": { "value": ghost },
             "commit_audit": {
                 "change_type": change_type("666", "attestation"),
@@ -698,7 +705,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
                     "lifecycle_state": lifecycle("553"),
                     "data": composition("incomplete v1")
                 }],
-                "audit": { "committer": committer("author") }
+                "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
             }),
         )
         .await
@@ -741,7 +748,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
                     "lifecycle_state": lifecycle("800"),
                     "data": composition("edited")
                 }],
-                "audit": { "committer": committer("author") }
+                "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
             }),
         )
         .await
@@ -774,7 +781,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
                         "lifecycle_state": lifecycle(code),
                         "data": composition("edited")
                     }],
-                    "audit": { "committer": committer("author") }
+                    "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
                 }),
             )
             .await
@@ -802,7 +809,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
                     "lifecycle_state": lifecycle("999"),
                     "data": composition("bad state")
                 }],
-                "audit": { "committer": committer("author") }
+                "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
             }),
         )
         .await
@@ -831,7 +838,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
                 "lifecycle_state": lifecycle("523"),
                 "preceding_version_uid": { "value": current }
             }],
-            "audit": { "committer": committer("author") }
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
         }),
     )
     .await
@@ -882,7 +889,7 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
                         "data": composition("keeps its own audit")
                     }
                 ],
-                "audit": {
+                "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, 
                     "committer": committer("contribution committer"),
                     "system_id": "contribution.system"
                 }
@@ -994,7 +1001,7 @@ async fn contribution_supplied_uid() {
             "commit_audit": { "change_type": { "value": "creation",
                 "defining_code": { "code_string": "249", "terminology_id": { "value": "openehr" } } } }
         }],
-        "audit": { "committer": { "_type": "PARTY_IDENTIFIED", "name": "T" } }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": { "_type": "PARTY_IDENTIFIED", "name": "T" } }
     });
     let resp = svc
         .create_ehr_contribution(ehr_uuid, body.clone())
@@ -1186,7 +1193,7 @@ async fn contribution_cannot_delete_the_ehr_status() {
                     "lifecycle_state": { "terminology_id": "openehr", "code_string": "523" },
                     "preceding_version_uid": { "value": status_uid }
                 }],
-                "audit": { "committer": committer("author") }
+                "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
             }),
         )
         .await
@@ -1251,7 +1258,7 @@ async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
                     "lifecycle_state": lifecycle("523"),
                     "data": composition("deleted but full")
                 }],
-                "audit": { "committer": committer("author") }
+                "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
             }),
         )
         .await
@@ -1364,7 +1371,7 @@ async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
                 "lifecycle_state": lifecycle(state),
                 "data": data
             }],
-            "audit": { "committer": committer("author") }
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
         })
     };
 
@@ -1462,7 +1469,7 @@ async fn incomplete_relaxes_the_folder_kind_too() {
                 "lifecycle_state": lifecycle(lifecycle_code),
                 "data": nameless
             }],
-            "audit": { "committer": committer("author") }
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
         })
     };
 
@@ -1509,7 +1516,7 @@ async fn contribution_member_without_lifecycle_state_is_refused() {
                     },
                     "data": composition("no lifecycle")
                 }],
-                "audit": { "committer": committer("author") }
+                "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
             }),
         )
         .await
@@ -1537,7 +1544,7 @@ async fn contribution_member_without_lifecycle_state_is_refused() {
                 "lifecycle_state": lifecycle("532"),
                 "data": composition("with lifecycle")
             }],
-            "audit": { "committer": committer("author") }
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
         }),
     )
     .await
@@ -1579,7 +1586,7 @@ async fn merge_provenance_is_refused_on_the_commit_wire() {
         }
         json!({
             "versions": [version],
-            "audit": { "committer": committer("author") }
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
         })
     };
 
@@ -1668,7 +1675,7 @@ async fn foreign_version_identity_is_refused_on_the_commit_wire() {
         }
         json!({
             "versions": [version],
-            "audit": { "committer": committer("author") }
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
         })
     };
 
@@ -1742,9 +1749,90 @@ async fn foreign_version_identity_is_refused_on_the_commit_wire() {
                 "lifecycle_state": lifecycle("532"),
                 "data": composition("v3")
             }],
-            "audit": { "committer": committer("author") }
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("author") }
         }),
     )
     .await
     .expect("a member self-tagged as the class this wire commits is accepted");
+}
+
+/// The CONTRIBUTION's own `audit.change_type` is REQUIRED and never derived.
+///
+/// RM common `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes
+/// types `change_type` 1..1 on the mandatory `CONTRIBUTION.audit`, and the
+/// released commit schema requires it on the wire
+/// (`specifications/schemas/ehr/NewContribution.yaml` `required: [versions,
+/// audit]` over `specifications/schemas/common/UpdateAudit.yaml` `required:
+/// [change_type, committer]`). The ITS-REST docs text is silent on the
+/// contribution BODY — its "None of these headers are mandatory" sentence
+/// governs the direct routes' header merge — so the released OAS grounds the
+/// requirement. master06 §Contributions calls the aggregate value approximate
+/// and "not expected to be used as a computable value", which is precisely why
+/// the server must not invent one under the client's name.
+#[tokio::test]
+async fn contribution_audit_change_type_is_required_not_derived() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+
+    let member = || {
+        json!({
+            "commit_audit": {
+                "change_type": change_type("249", "creation"),
+                "committer": committer("author")
+            },
+            "lifecycle_state": change_type("532", "complete"),
+            "data": composition("audit twin")
+        })
+    };
+
+    // The invalid twin: an audit that names a committer but no change type.
+    let err = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [member()],
+                "audit": { "committer": committer("author") }
+            }),
+        )
+        .await
+        .expect_err("a CONTRIBUTION audit without a change type must be refused");
+    assert_eq!(
+        err.status,
+        CallStatusType::ContentInvalid,
+        "the refusal is the 422 content-invalid row, got {err:?}"
+    );
+    assert!(
+        err.message.contains("CONTRIBUTION.audit.change_type"),
+        "the refusal names the missing attribute, got {err:?}"
+    );
+
+    // …and an entirely absent audit is the same refusal (the change type is
+    // absent either way).
+    let err = svc
+        .create_ehr_contribution(ehr_uuid, json!({ "versions": [member()] }))
+        .await
+        .expect_err("a CONTRIBUTION with no audit at all must be refused");
+    assert_eq!(err.status, CallStatusType::ContentInvalid, "got {err:?}");
+
+    // The valid twin: the client states its own change type and the commit
+    // succeeds, storing that code verbatim.
+    let created = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [member()],
+                "audit": {
+                    "change_type": change_type("249", "creation"),
+                    "committer": committer("author")
+                }
+            }),
+        )
+        .await
+        .expect("a CONTRIBUTION stating its change type commits");
+    assert_eq!(
+        created.body["audit"]["change_type"]["defining_code"]["code_string"], "249",
+        "the client's own change type is stored verbatim"
+    );
 }
