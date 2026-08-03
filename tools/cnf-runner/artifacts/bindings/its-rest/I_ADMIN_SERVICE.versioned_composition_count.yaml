@@ -29,10 +29,10 @@ extension:
     serves the operation on its own /admin/report/versioned_composition/count route,
     which is what the cases drive.
   source: >-
-    SM docs/UML/classes/i_admin_service.adoc (versioned_composition_count) vs released ITS-REST
-    specifications/admin.openapi.yaml (admin_ehr_delete + admin_ehr_delete_all
-    only) + specifications/docs/admin/** (no reporting resource) — no openEHR
-    spec governs the extension route, our own design/extension
+    SM docs/UML/classes/i_admin_service.adoc (versioned_composition_count); ITS-REST
+    specifications/admin.openapi.yaml (the released admin API declares admin_ehr_delete and
+    admin_ehr_delete_all only); ITS-REST specifications/docs/admin (no reporting resource); no
+    openEHR spec governs this — our own design/extension
   ambiguity: AMB-33
 request:
   method: GET

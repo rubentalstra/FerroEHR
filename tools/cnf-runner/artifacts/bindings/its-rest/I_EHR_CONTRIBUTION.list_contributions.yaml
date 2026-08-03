@@ -15,5 +15,7 @@ unrealized:
     (ehr.openapi.yaml wires only contribution_create on the collection path and
     contribution_get on the {contribution_uid} item path); the SM
     list_contributions has no bindable wire realization.
-  source: "SM docs/UML/classes/i_ehr_contribution.adoc (list_contributions) vs ITS-REST specifications/ehr.openapi.yaml (contribution paths: no collection GET)"
+  source: >-
+    SM docs/UML/classes/i_ehr_contribution.adoc (list_contributions); ITS-REST
+    specifications/ehr.openapi.yaml (contribution paths, no collection GET)
   ambiguity: AMB-22

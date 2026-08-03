@@ -16,5 +16,9 @@ unrealized:
     filter, the paging, nor a branch the declared error could wear. Bound
     unrealized rather than folded into the prefix list, which is a different
     operation (`list_queries`) with its own binding.
-  source: "SM docs/UML/classes/i_definition_query.adoc §list_matching_queries (the two regex patterns, the paging pair, the `invalid_id_pattern` error) vs ITS-REST specifications/operations/definition_query_list.yaml (the prefix description + a single '200') and definition.openapi.yaml (no other list path)"
+  source: >-
+    SM docs/UML/classes/i_definition_query.adoc §list_matching_queries (the two regex patterns,
+    the paging pair, the `invalid_id_pattern` error); ITS-REST
+    specifications/operations/definition_query_list.yaml (the prefix description, a single
+    '200'); ITS-REST specifications/definition.openapi.yaml (no other list path)
   ambiguity: AMB-121

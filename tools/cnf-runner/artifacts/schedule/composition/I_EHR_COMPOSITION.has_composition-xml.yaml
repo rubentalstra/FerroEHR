@@ -36,7 +36,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_COMPOSITION.has_composition"
   - "ITS-REST overview Resources.md §XML Format"
   - "ITS-REST overview Resources.md §Data representation"
-  - "ITS-XML components/RM/Release-1.0.2/documents §Validating documents (Composition.xsd — the globally declared `composition` element)"
+  - "ITS-XML components/RM/Release-1.0.2/documents §Validating documents; ITS-XML components/RM/Release-1.0.2/documents/Composition.xsd §composition (the one globally declared element)"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any

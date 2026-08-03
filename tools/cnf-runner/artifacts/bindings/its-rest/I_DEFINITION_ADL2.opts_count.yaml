@@ -9,5 +9,7 @@ unrealized:
   reason: >-
     No artefact/template/OPT count operation exists in ITS-REST 1.1.0; counts
     are derivable from list length client-side but have no dedicated wire.
-  source: "SM docs/UML/classes/i_definition_adl2.adoc (opts_count) vs ITS-REST specifications/operations (no ADL2 count endpoint)"
+  source: >-
+    SM docs/UML/classes/i_definition_adl2.adoc (opts_count); ITS-REST specifications/operations
+    (no ADL2 count endpoint)
   ambiguity: AMB-37

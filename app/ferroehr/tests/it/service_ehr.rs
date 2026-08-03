@@ -722,7 +722,7 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
     // ("could not be parsed or is invalid"), not the semantic `422`. The
     // anonymous empty PARTY_SELF stays accepted.
     // Regression for the upstream diff findings B1/B2 (the X1 upstream
-    // triage ledger; in git history at docs/conformance/upstream-ferroehr/TRIAGE.md).
+    // triage ledger; in git history at the upstream-triage record (git history: docs/conformance/upstream-ehrbase/TRIAGE.md)).
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
