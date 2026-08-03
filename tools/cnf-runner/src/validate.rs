@@ -9,8 +9,10 @@
 //! tree for the two resolution checks); every violation is one typed
 //! [`Finding`].
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use crate::artifacts::ArtifactSet;
 use crate::ids::{CapabilityName, CaseId, CorpusKey, SmOperationRef, ViewName};
@@ -172,6 +174,10 @@ pub struct Context<'a> {
 #[must_use]
 pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     let mut findings = Vec::new();
+    // One memoizing reader for the whole run: the citation gates otherwise
+    // re-read the same SM class exports and re-walk the same vendored
+    // component directories once per case.
+    let spec = ctx.spec_root.map(SpecIndex::new);
 
     for e in ctx.load_errors {
         findings.push(Finding {
@@ -189,9 +195,9 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         check_literals(case, &who, &mut findings);
         check_capability_tier(case, &who, ctx.set, &mut findings);
         check_links(case, &who, ctx.set, &mut findings);
-        if let Some(spec_root) = ctx.spec_root {
-            check_sm_operations(case, &who, spec_root, &mut findings);
-            check_spec_refs(case, &who, spec_root, &mut findings);
+        if let Some(spec) = spec.as_ref() {
+            check_sm_operations(case, &who, spec, &mut findings);
+            check_spec_refs(case, &who, spec, &mut findings);
         }
     }
     check_binding_completeness(ctx.set, &mut findings);
@@ -214,8 +220,8 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
                 ),
             );
         }
-        if let Some(spec_root) = ctx.spec_root {
-            resolve_sm_operation(&binding.sm_operation, &who, spec_root, &mut findings);
+        if let Some(spec) = spec.as_ref() {
+            resolve_sm_operation(&binding.sm_operation, &who, spec, &mut findings);
         }
     }
     check_corpus_integrity(ctx.set, &mut findings);
@@ -225,7 +231,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     check_capability_depth(ctx.set, &mut findings);
     check_workload_coverage(ctx.set, &mut findings);
     check_realization_scope(ctx.set, &mut findings);
-    check_surface_coverage(ctx.set, ctx.spec_root, &mut findings);
+    check_surface_coverage(ctx.set, spec.as_ref(), &mut findings);
 
     findings
 }
@@ -1486,6 +1492,86 @@ fn check_links(case: &CaseCore, who: &str, set: &ArtifactSet, findings: &mut Vec
 
 // ── SM + spec-ref resolution ────────────────────────────────────────────────
 
+/// One SM interface's parsed operation list, or the message explaining why it
+/// could not be read.
+type InterfaceOperations = Result<Rc<[String]>, String>;
+
+/// A memoizing reader over the vendored spec tree.
+///
+/// The citation-resolution gates ask the same questions once per case: the
+/// same handful of SM class exports are read thousands of times, and the same
+/// `(component dir, document token)` pairs are answered by re-walking a whole
+/// vendored component directory each time. The vendored tree is read-only for
+/// the lifetime of a validation run, so every answer is a pure function of the
+/// path — the index caches those answers and nothing else. Findings are
+/// byte-identical to an uncached run, including the io-error text a failed
+/// read produces.
+#[derive(Debug)]
+struct SpecIndex<'a> {
+    root: &'a Path,
+    /// `path → file text`, or the io error's display text.
+    texts: RefCell<BTreeMap<PathBuf, Result<Rc<str>, String>>>,
+    /// `(component dir, lowercased token) → any path under the dir matches`.
+    tokens: RefCell<BTreeMap<(PathBuf, String), bool>>,
+    /// `interface → its parsed SM operation names`.
+    interfaces: RefCell<BTreeMap<String, InterfaceOperations>>,
+}
+
+impl<'a> SpecIndex<'a> {
+    /// An empty index over one vendored spec root.
+    fn new(root: &'a Path) -> Self {
+        Self {
+            root,
+            texts: RefCell::new(BTreeMap::new()),
+            tokens: RefCell::new(BTreeMap::new()),
+            interfaces: RefCell::new(BTreeMap::new()),
+        }
+    }
+
+    /// The vendored spec root this index reads.
+    fn root(&self) -> &Path {
+        self.root
+    }
+
+    /// Read one vendored file, once per run.
+    fn read(&self, path: &Path) -> Result<Rc<str>, String> {
+        if let Some(hit) = self.texts.borrow().get(path) {
+            return hit.clone();
+        }
+        let result = std::fs::read_to_string(path)
+            .map(|text| Rc::from(text.as_str()))
+            .map_err(|error| error.to_string());
+        self.texts
+            .borrow_mut()
+            .insert(path.to_owned(), result.clone());
+        result
+    }
+
+    /// Case-insensitive substring match of `token` against any path under
+    /// `dir`, once per `(dir, token)` pair.
+    fn contains_token(&self, dir: &Path, token: &str) -> bool {
+        let key = (dir.to_owned(), token.to_owned());
+        if let Some(hit) = self.tokens.borrow().get(&key) {
+            return *hit;
+        }
+        let hit = path_contains_token(dir, token);
+        self.tokens.borrow_mut().insert(key, hit);
+        hit
+    }
+
+    /// The service operations of an SM interface, parsed once per run.
+    fn interface_operations(&self, interface: &str) -> InterfaceOperations {
+        if let Some(hit) = self.interfaces.borrow().get(interface) {
+            return hit.clone();
+        }
+        let result = parse_sm_interface_operations(self, interface).map(Rc::from);
+        self.interfaces
+            .borrow_mut()
+            .insert(interface.to_owned(), result.clone());
+        result
+    }
+}
+
 fn sm_class_file(spec_root: &Path, interface: &str) -> PathBuf {
     spec_root
         .join("SM/docs/UML/classes")
@@ -1500,7 +1586,7 @@ fn sm_class_file(spec_root: &Path, interface: &str) -> PathBuf {
 fn resolve_sm_operation(
     op: &SmOperationRef,
     who: &str,
-    spec_root: &Path,
+    spec: &SpecIndex<'_>,
     findings: &mut Vec<Finding>,
 ) {
     if non_sm_operation_source(op).is_some() {
@@ -1520,8 +1606,8 @@ fn resolve_sm_operation(
         );
         return;
     }
-    let file = sm_class_file(spec_root, op.interface());
-    match std::fs::read_to_string(&file) {
+    let file = sm_class_file(spec.root(), op.interface());
+    match spec.read(&file) {
         Err(_) => push(
             findings,
             CheckId::SmOperation,
@@ -1548,11 +1634,16 @@ fn resolve_sm_operation(
     }
 }
 
-fn check_sm_operations(case: &CaseCore, who: &str, spec_root: &Path, findings: &mut Vec<Finding>) {
+fn check_sm_operations(
+    case: &CaseCore,
+    who: &str,
+    spec: &SpecIndex<'_>,
+    findings: &mut Vec<Finding>,
+) {
     let Some(anchor) = &case.sm_operation else {
         return;
     };
-    resolve_sm_operation(anchor, who, spec_root, findings);
+    resolve_sm_operation(anchor, who, spec, findings);
     for step in &case.flow {
         let op = if step.call.contains('.') {
             match SmOperationRef::parse(&step.call) {
@@ -1565,7 +1656,7 @@ fn check_sm_operations(case: &CaseCore, who: &str, spec_root: &Path, findings: &
         } else {
             anchor.sibling(&step.call)
         };
-        resolve_sm_operation(&op, who, spec_root, findings);
+        resolve_sm_operation(&op, who, spec, findings);
     }
 }
 
@@ -1587,7 +1678,7 @@ fn component_dir(token: &str) -> Option<&'static str> {
     })
 }
 
-fn check_spec_refs(case: &CaseCore, who: &str, spec_root: &Path, findings: &mut Vec<Finding>) {
+fn check_spec_refs(case: &CaseCore, who: &str, spec: &SpecIndex<'_>, findings: &mut Vec<Finding>) {
     for citation in &case.spec_refs {
         let mut tokens = citation.split_whitespace();
         let Some(component) = tokens.next() else {
@@ -1603,7 +1694,7 @@ fn check_spec_refs(case: &CaseCore, who: &str, spec_root: &Path, findings: &mut 
             );
             continue;
         };
-        let root = spec_root.join(dir);
+        let root = spec.root().join(dir);
         if !root.is_dir() {
             push(
                 findings,
@@ -1621,7 +1712,7 @@ fn check_spec_refs(case: &CaseCore, who: &str, spec_root: &Path, findings: &mut 
         let Some(doc_token) = doc_token.filter(|t| !t.starts_with('§')) else {
             continue; // component-only citation: dir existence was the check
         };
-        if !path_contains_token(&root, &doc_token.to_lowercase()) {
+        if !spec.contains_token(&root, &doc_token.to_lowercase()) {
             push(
                 findings,
                 CheckId::SpecRef,
@@ -2310,11 +2401,17 @@ fn non_sm_operation_source(op: &SmOperationRef) -> Option<&'static str> {
 /// class export to parse and is enumerated from [`NON_SM_REST_OPERATIONS`]
 /// instead — never through this function.
 ///
+/// Callers go through [`SpecIndex::interface_operations`], which parses each
+/// interface once per run.
+///
 /// # Errors
 /// Returns a message when the interface has no vendored class export.
-fn sm_interface_operations(spec_root: &Path, interface: &str) -> Result<Vec<String>, String> {
-    let file = sm_class_file(spec_root, interface);
-    let text = std::fs::read_to_string(&file).map_err(|error| {
+fn parse_sm_interface_operations(
+    spec: &SpecIndex<'_>,
+    interface: &str,
+) -> Result<Vec<String>, String> {
+    let file = sm_class_file(spec.root(), interface);
+    let text = spec.read(&file).map_err(|error| {
         format!(
             "interface {interface} has no vendored SM class export ({}): {error}",
             file.display()
@@ -2348,14 +2445,14 @@ fn sm_interface_operations(spec_root: &Path, interface: &str) -> Result<Vec<Stri
 /// as a finding rather than passing silently.
 fn check_surface_coverage(
     set: &ArtifactSet,
-    spec_root: Option<&Path>,
+    spec: Option<&SpecIndex<'_>>,
     findings: &mut Vec<Finding>,
 ) {
     let empty = WireSurface::default();
     let wire_surface = set.wire_surface.as_ref().map_or(&empty, |(_, w)| w);
-    if let Some(spec_root) = spec_root {
-        check_surface_sm_operations(set, spec_root, wire_surface, findings);
-        check_axis3_section_derivation(wire_surface, spec_root, AXIS3_SECTION_EXCLUSIONS, findings);
+    if let Some(spec) = spec {
+        check_surface_sm_operations(set, spec, wire_surface, findings);
+        check_axis3_section_derivation(wire_surface, spec, AXIS3_SECTION_EXCLUSIONS, findings);
     }
     check_binding_branch_coverage(set, wire_surface, findings);
     check_wire_surface_elements(set, wire_surface, findings);
@@ -2440,19 +2537,19 @@ fn check_served_extensions(
 /// exception.
 fn check_surface_sm_operations(
     set: &ArtifactSet,
-    spec_root: &Path,
+    spec: &SpecIndex<'_>,
     wire_surface: &WireSurface,
     findings: &mut Vec<Finding>,
 ) {
     for interface in PLATFORM_INTERFACES {
-        let ops = match sm_interface_operations(spec_root, interface) {
+        let ops = match spec.interface_operations(interface) {
             Ok(ops) => ops,
             Err(message) => {
                 push(findings, CheckId::SurfaceCoverage, interface, message);
                 continue;
             }
         };
-        for name in ops {
+        for name in ops.iter() {
             let Ok(op) = SmOperationRef::parse(&format!("{interface}.{name}")) else {
                 continue;
             };
@@ -2838,13 +2935,13 @@ struct DocDerivation {
 /// testable without touching the pinned const.
 fn axis3_derivation(
     wire_surface: &WireSurface,
-    spec_root: &Path,
+    spec: &SpecIndex<'_>,
     exclusions: &[(&str, &str)],
 ) -> Vec<DocDerivation> {
     let sources = wire_surface_source_texts(wire_surface);
     let mut out = Vec::new();
     for doc in AXIS3_OVERVIEW_DOCS.iter().copied() {
-        let Ok(text) = std::fs::read_to_string(spec_root.join(doc)) else {
+        let Ok(text) = spec.read(&spec.root().join(doc)) else {
             out.push(DocDerivation {
                 doc,
                 unreadable: true,
@@ -2888,11 +2985,11 @@ fn axis3_derivation(
 /// or naming no heading at all) are findings too — the table only ratchets.
 fn check_axis3_section_derivation(
     wire_surface: &WireSurface,
-    spec_root: &Path,
+    spec: &SpecIndex<'_>,
     exclusions: &[(&str, &str)],
     findings: &mut Vec<Finding>,
 ) {
-    let derivations = axis3_derivation(wire_surface, spec_root, exclusions);
+    let derivations = axis3_derivation(wire_surface, spec, exclusions);
     let mut every_heading: BTreeSet<String> = BTreeSet::new();
     let mut covered_headings: BTreeSet<String> = BTreeSet::new();
     for derivation in &derivations {
@@ -2977,6 +3074,7 @@ pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> St
 
     let empty = WireSurface::default();
     let wire_surface = set.wire_surface.as_ref().map_or(&empty, |(_, w)| w);
+    let spec = spec_root.map(SpecIndex::new);
 
     let mut out = String::new();
     out.push_str(
@@ -2989,17 +3087,17 @@ pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> St
     );
 
     // ── Axis 1 ──
-    if let Some(spec_root) = spec_root {
+    if let Some(spec) = spec.as_ref() {
         out.push_str("## Axis 1 — SM-operation coverage (per platform interface)\n\n");
         out.push_str("| Interface | Operations | Realized | Unrealized | Off-wire / exception |\n");
         out.push_str("|---|--:|--:|--:|--:|\n");
         for interface in PLATFORM_INTERFACES {
-            let Ok(ops) = sm_interface_operations(spec_root, interface) else {
+            let Ok(ops) = spec.interface_operations(interface) else {
                 let _ = writeln!(out, "| {interface} | (no vendored SM class export) | | | |");
                 continue;
             };
             let (mut realized, mut unrealized, mut excepted) = (0_usize, 0_usize, 0_usize);
-            for name in &ops {
+            for name in ops.iter() {
                 let Ok(op) = SmOperationRef::parse(&format!("{interface}.{name}")) else {
                     continue;
                 };
@@ -3122,7 +3220,7 @@ pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> St
     out.push('\n');
 
     // ── Axis 3, derivation half ──
-    if let Some(spec_root) = spec_root {
+    if let Some(spec) = spec.as_ref() {
         out.push_str("### Axis 3 derivation — RELEASED overview sections\n\n");
         out.push_str(
             "The element list above is AUTHORED; this table is DERIVED — every `#`/`##` section \
@@ -3133,7 +3231,7 @@ pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> St
             "| Chapter | Sections | Named by a source | Excluded (pinned) | Uncovered |\n",
         );
         out.push_str("|---|--:|--:|--:|--:|\n");
-        for derivation in axis3_derivation(wire_surface, spec_root, AXIS3_SECTION_EXCLUSIONS) {
+        for derivation in axis3_derivation(wire_surface, spec, AXIS3_SECTION_EXCLUSIONS) {
             if derivation.unreadable {
                 let _ = writeln!(out, "| `{}` | (not readable) | | | |", derivation.doc);
                 continue;
@@ -3201,10 +3299,14 @@ h|*1..1*\n\
         std::fs::create_dir_all(&classes).unwrap();
         std::fs::write(classes.join("i_fixture.adoc"), adoc).unwrap();
 
-        let ops = sm_interface_operations(dir.path(), "I_FIXTURE").unwrap();
-        assert_eq!(ops, vec!["create_thing".to_owned(), "get_thing".to_owned()]);
+        let spec = SpecIndex::new(dir.path());
+        let ops = spec.interface_operations("I_FIXTURE").unwrap();
+        assert_eq!(
+            *ops,
+            vec!["create_thing".to_owned(), "get_thing".to_owned()]
+        );
         // A missing class export is an error, not an empty list.
-        assert!(sm_interface_operations(dir.path(), "I_ABSENT").is_err());
+        assert!(spec.interface_operations("I_ABSENT").is_err());
     }
 
     fn build_set(with_exception: bool) -> ArtifactSet {
@@ -3354,15 +3456,17 @@ h|*1..1*\n\
     fn pinned_pseudo_operation_resolves_and_an_unpinned_one_is_a_finding() {
         let empty_root = assert_fs::TempDir::new().unwrap();
 
+        let spec = SpecIndex::new(empty_root.path());
+
         let (pinned_name, _) = *NON_SM_REST_OPERATIONS.first().unwrap();
         let pinned = SmOperationRef::parse(pinned_name).unwrap();
         let mut findings = Vec::new();
-        resolve_sm_operation(&pinned, "b.yaml", empty_root.path(), &mut findings);
+        resolve_sm_operation(&pinned, "b.yaml", &spec, &mut findings);
         assert!(findings.is_empty(), "{findings:?}");
 
         let invented = SmOperationRef::parse("I_ITS_REST_SYSTEM.invented").unwrap();
         let mut findings = Vec::new();
-        resolve_sm_operation(&invented, "b.yaml", empty_root.path(), &mut findings);
+        resolve_sm_operation(&invented, "b.yaml", &spec, &mut findings);
         assert!(
             findings
                 .iter()
@@ -3374,7 +3478,7 @@ h|*1..1*\n\
         // A real SM interface is still resolved against the vendored tree.
         let sm = SmOperationRef::parse("I_EHR_SERVICE.create_ehr").unwrap();
         let mut findings = Vec::new();
-        resolve_sm_operation(&sm, "b.yaml", empty_root.path(), &mut findings);
+        resolve_sm_operation(&sm, "b.yaml", &spec, &mut findings);
         assert!(
             findings
                 .iter()
@@ -3393,7 +3497,12 @@ h|*1..1*\n\
         let (pinned, pinned_source) = *NON_SM_REST_OPERATIONS.first().unwrap();
 
         let mut findings = Vec::new();
-        check_surface_sm_operations(&set, empty_root.path(), &empty, &mut findings);
+        check_surface_sm_operations(
+            &set,
+            &SpecIndex::new(empty_root.path()),
+            &empty,
+            &mut findings,
+        );
         assert!(
             findings
                 .iter()
@@ -3411,7 +3520,12 @@ h|*1..1*\n\
         }))
         .unwrap();
         let mut findings = Vec::new();
-        check_surface_sm_operations(&set, empty_root.path(), &excepted, &mut findings);
+        check_surface_sm_operations(
+            &set,
+            &SpecIndex::new(empty_root.path()),
+            &excepted,
+            &mut findings,
+        );
         assert!(
             !findings.iter().any(|f| f.artifact == pinned),
             "the exception should suppress the finding, got: {findings:?}"
@@ -3446,9 +3560,10 @@ h|*1..1*\n\
         // The reservation holds for EVERY pseudo-interface, not just System:
         // an unpinned ITEM_TAGS reference is still a finding naming the table.
         let empty_root = assert_fs::TempDir::new().unwrap();
+        let spec = SpecIndex::new(empty_root.path());
         let invented = SmOperationRef::parse("I_ITS_REST_ITEM_TAGS.folder_tags_get").unwrap();
         let mut findings = Vec::new();
-        resolve_sm_operation(&invented, "b.yaml", empty_root.path(), &mut findings);
+        resolve_sm_operation(&invented, "b.yaml", &spec, &mut findings);
         assert!(
             findings
                 .iter()
@@ -3536,14 +3651,18 @@ some prose\n\
         }))
         .unwrap();
 
-        let derivations = axis3_derivation(&wire, dir.path(), &[]);
+        let derivations = axis3_derivation(&wire, &SpecIndex::new(dir.path()), &[]);
         for derivation in &derivations {
             assert!(!derivation.unreadable);
             assert_eq!(derivation.covered, vec!["Covered Section".to_owned()]);
             assert_eq!(derivation.uncovered, vec!["Silent Section".to_owned()]);
         }
 
-        let excluded = axis3_derivation(&wire, dir.path(), &[("silent section", "why")]);
+        let excluded = axis3_derivation(
+            &wire,
+            &SpecIndex::new(dir.path()),
+            &[("silent section", "why")],
+        );
         for derivation in &excluded {
             assert_eq!(derivation.excluded, vec!["Silent Section".to_owned()]);
             assert!(derivation.uncovered.is_empty());
@@ -3571,7 +3690,7 @@ some prose\n\
         .unwrap();
 
         let mut findings = Vec::new();
-        check_axis3_section_derivation(&wire, dir.path(), &[], &mut findings);
+        check_axis3_section_derivation(&wire, &SpecIndex::new(dir.path()), &[], &mut findings);
         assert!(
             findings
                 .iter()
@@ -3583,7 +3702,7 @@ some prose\n\
         let mut findings = Vec::new();
         check_axis3_section_derivation(
             &wire,
-            dir.path(),
+            &SpecIndex::new(dir.path()),
             &[
                 ("Covered Section", "already named by a source"),
                 ("No Such Section", "names nothing"),
@@ -3614,7 +3733,7 @@ some prose\n\
         let dir = assert_fs::TempDir::new().unwrap();
         let wire = WireSurface::default();
         let mut findings = Vec::new();
-        check_axis3_section_derivation(&wire, dir.path(), &[], &mut findings);
+        check_axis3_section_derivation(&wire, &SpecIndex::new(dir.path()), &[], &mut findings);
         assert_eq!(findings.len(), AXIS3_OVERVIEW_DOCS.len(), "{findings:?}");
         assert!(
             findings.iter().all(|f| f.message.contains("not readable")),
