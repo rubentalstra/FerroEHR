@@ -37,9 +37,12 @@ formats: [canonical-json]
 requires:
   server: any
   ehr: { commits: any }                  # mints ${ehr_id}
+  # Identity-disjoint (fixed-identity import fixtures are single-use per
+  # run), and a COMPOSITION because the requires.ehr target already holds
+  # its own EHR_STATUS (EHR.ehr_status 1..1).
   import:
-    extract: cnf.messaging.ehr_extract.imported_status
-    container: X_VERSIONED_EHR_STATUS
+    extract: cnf.messaging.ehr_extract.imported_composition_attest
+    container: X_VERSIONED_COMPOSITION
 data_sets: [cnf.attestation.witnessed]
 flow:
   - step: 1                              # the attestation names the IMPORTED target
