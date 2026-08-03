@@ -11,7 +11,7 @@ test_purpose: >-
 description: "DV_SCALE against C_DV_SCALE.list = 1.5|[local::at0005], 2.0|[local::at0006]"
 spec_refs:
   - "CNF platform_test_schedule master17.3 §CONT-DV_SCALE-validate_constraint"
-  - "AM AOM1.4 §C_DV_SCALE"
+  - "AM ADL2 master04.4-cadl_second_order §Tuple Constraints (no released AM generation defines C_DV_SCALE; the C_DV_ORDINAL-analogous reading is the schedule's own NOTE)"
   - "RM data_types §DV_SCALE"
 applies: { rm: ">=1.1.0" }
 guards:

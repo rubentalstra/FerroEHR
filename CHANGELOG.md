@@ -54,6 +54,24 @@ workflow refuses a tag that has no matching section here.
   invariant are enforced exactly as before, so an `incomplete` commit carrying
   data that is WRONG rather than merely missing is still refused ("data may be
   missing, but it may not be wrong").
+- **The conformance catalogue can now state a CONTRIBUTION's commit audit.** A
+  case's `audit:` block states only its delta against the derived envelope
+  audit, and the reserved `absent` sentinel omits a member outright — the seam
+  the mandatory-member refusals need (RM common
+  `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes makes
+  `change_type` and `committer` 1..1; the released OAS
+  `specifications/schemas/common/UpdateAudit.yaml` §required lists both on the
+  commit DTO). Three cases land on it: an omitted `change_type`, an
+  out-of-group `change_type` code, and the conformant twin that states both
+  members and proves the client-supplied `time_committed` is not the recorded
+  one. Cases that already authored an `audit:` block now actually put it on
+  the wire.
+- **A case pins which lineage head a default EHR-Extract exports.** With a
+  trunk head and a branch head both open in one container, RM ehr_extract
+  `master04-common_package.adoc` §Version Specification never says which is
+  the "latest available version". The choice — the trunk head — is now
+  adjudicated in the ambiguity register (AMB-206) and pinned by
+  `I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages`.
 
 ### Fixed
 
@@ -70,6 +88,29 @@ workflow refuses a tag that has no matching section here.
   may not be wrong"). The hand-written FOLDER member checks this replaces are
   removed; their refusals now come from the general rule.
 
+
+- **The conformance suite's spec-citation gate now resolves the cited document
+  and section.** It previously took only the second whitespace token of a
+  citation and asked whether ANY path under the component directory contained
+  it as a substring, so a citation naming a real component plus any common word
+  passed even when the document and §section did not exist. The gate now
+  resolves the whole path hint to a real vendored document (or chapter
+  directory) and verifies every `§section` names a real section of it —
+  following the `include::` directives that pull the UML class and interface
+  tables into a chapter, and reading the class tables' own labels, the
+  markdown chapters' titles, the AM validity-rule anchors and the OAS files'
+  keys. It also covers the citations of fixture-set rows and of the corpus
+  manifest, not just case cores. The 104 citations the strengthened gate found
+  unresolvable — phantom chapters, sections that never existed, class tables
+  cited under the wrong directory, and one citation of an internal proposal
+  instead of a released spec — were re-derived first-hand and corrected.
+- **A vendored corpus that had no vendor script has one.** The real-world
+  canonical-JSON corpus under `crates/openehr-its/tests/vendor/` was
+  hand-downloaded; it is now reproduced byte-identically from its pinned
+  upstream commit by `scripts/vendor-openehr-sdk-json.sh` (with `--check` to
+  report drift and write nothing). Its provenance record also named the wrong
+  upstream repository — a product-rename sweep had rewritten `ehrbase/` to
+  `ferroehr/` in the pin — which is corrected.
 - **`authz.abac.enabled = true` now actually enables ABAC.** The server
   binary built an RBAC-only authorization handle unconditionally — the ABAC
   policy engine and its attribute resolvers were never constructed on the

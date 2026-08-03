@@ -12,7 +12,7 @@ use crate::exec::{CaseRecord, RowOutcome, run_case};
 use crate::ids::{CapabilityName, InstanceName, SmOperationRef};
 use crate::ixit::Ixit;
 use crate::model::assertion::assertion_refs;
-use crate::model::case::CaseCore;
+use crate::model::case::{CaseCore, PartyRelationshipRequirement};
 use crate::refgrammar::{IxitField, ValueRef};
 use crate::vocab::CaseStatus;
 
@@ -237,12 +237,72 @@ fn unservable_import(
     ) {
         return None;
     }
-    let statement = statement?;
     // Either receiving situation of master06 §Copying drives the same family;
     // whichever binding the catalogue realizes names it.
-    let decl = ["import_ehr_extract", "import_ehr"]
-        .into_iter()
-        .filter_map(|call| SmOperationRef::parse(&format!("I_EHR_EXTRACT_SERVICE.{call}")).ok())
+    unservable_provisioning(
+        set,
+        statement,
+        &[
+            "I_EHR_EXTRACT_SERVICE.import_ehr_extract",
+            "I_EHR_EXTRACT_SERVICE.import_ehr",
+        ],
+        "requires.import",
+        "the received version this case reads cannot exist here",
+    )
+}
+
+/// Why THIS party cannot have a `requires.party_relationship` case driven:
+/// the relationship create is an EXTENSION route (ITS-REST 1.1.0 surfaces no
+/// `PARTY_RELATIONSHIP` resource — register AMB-32), exactly as
+/// [`unservable_import`]'s extract replay is, so a party that claims none of
+/// the capabilities that family's cases gate has no relationship to
+/// precondition with.
+fn unservable_party_relationship(
+    set: &ArtifactSet,
+    statement: Option<&crate::party::Statement>,
+    case: &CaseCore,
+) -> Option<String> {
+    if !matches!(
+        case.requires.party_relationship,
+        Some(PartyRelationshipRequirement::Exists { .. })
+    ) {
+        return None;
+    }
+    unservable_provisioning(
+        set,
+        statement,
+        &["I_DEMOGRAPHIC_SERVICE.create_party_relationship"],
+        "requires.party_relationship",
+        "the relationship this case reads cannot exist here",
+    )
+}
+
+/// The shared scoping for a PRECONDITION that provisions over an EXTENSION
+/// route: a party claiming none of the capabilities that family's cases gate
+/// serves no such route, so the precondition cannot be established there.
+///
+/// The scoping is the same law the extension arm of [`selection_exception`]
+/// applies to a case's FLOW, moved to its PRECONDITION: the case's own
+/// subject is a released operation, and driving it against a party that
+/// serves no provisioning route would record a red row for a ground that
+/// party never offered to establish. Excused at SELECTION time — never as a
+/// drive-time provisioning refusal, which reads like a SUT defect.
+///
+/// `operations` are the SM operations whose realized binding declares the
+/// family (the first one the catalogue realizes decides); `requirement` names
+/// the precondition for the citation, and `consequence` says what the case
+/// therefore cannot read.
+fn unservable_provisioning(
+    set: &ArtifactSet,
+    statement: Option<&crate::party::Statement>,
+    operations: &[&str],
+    requirement: &str,
+    consequence: &str,
+) -> Option<String> {
+    let statement = statement?;
+    let decl = operations
+        .iter()
+        .filter_map(|call| SmOperationRef::parse(call).ok())
         .find_map(|op| {
             set.bindings
                 .iter()
@@ -258,9 +318,9 @@ fn unservable_import(
         return None;
     }
     Some(format!(
-        "requires.import provisions over the {} extension routes ({}): the ICS claims none of \
+        "{requirement} provisions over the {} extension routes ({}): the ICS claims none of \
          the capabilities those routes' cases gate ({}), and no openEHR specification governs \
-         them, so the received version this case reads cannot exist here",
+         them, so {consequence}",
         decl.family,
         decl.ambiguity,
         claiming
@@ -477,6 +537,39 @@ fn not_applicable_record(case: &CaseCore, citation: &str) -> CaseRecord {
 /// party/deployment, or `None` when the case drives. Each arm carries its
 /// citation inside the returned [`Exception`]; the caller records the same
 /// citation as the case's single not-applicable row.
+/// The EXTENSION arm of [`selection_exception`], covering both places an
+/// extension route can enter a case: its FLOW (the case drives the route) and
+/// its PRECONDITION (a received EHR-Extract, a provisioned party
+/// relationship).
+///
+/// A route no openEHR specification governs is our own design/extension, so it
+/// is behaviour only a party that CLAIMS the capability answers for. Driving it
+/// at another vendor's SUT would publish failures for routes that vendor never
+/// offered to serve — the published comparison must be honest in both
+/// directions, and a spurious red row is not honesty.
+fn unserved_extension(
+    set: &ArtifactSet,
+    statement: Option<&crate::party::Statement>,
+    case: &CaseCore,
+) -> Option<String> {
+    if let Some(stmt) = statement
+        && let Some(family) = extension_family(set, case)
+        && !case
+            .capabilities
+            .iter()
+            .any(|c| stmt.claims.capabilities.contains(c))
+    {
+        return Some(format!(
+            "extension realization ({family}): the ICS claims none of this case's \
+             capabilities, and no openEHR specification governs the route — ISO/IEC 9646 \
+             test selection"
+        ));
+    }
+    unservable_import(set, statement, case)
+        .or_else(|| unservable_party_relationship(set, statement, case))
+        .map(|citation| format!("{citation} — ISO/IEC 9646 test selection"))
+}
+
 fn selection_exception(
     set: &ArtifactSet,
     ixit: &Ixit,
@@ -486,31 +579,8 @@ fn selection_exception(
     if let Some(citation) = fully_unrealized(set, case) {
         return Some(Exception::Unrealized(citation));
     }
-    // The EXTENSION arm: a case that drives a route no openEHR specification
-    // governs is our own design/extension, so it is behaviour only a party
-    // that CLAIMS the capability answers for. Driving it at another vendor's
-    // SUT would publish failures for routes that vendor never offered to
-    // serve — the published comparison must be honest in both directions,
-    // and a spurious red row is not honesty.
-    if let Some(stmt) = statement
-        && let Some(family) = extension_family(set, case)
-        && !case
-            .capabilities
-            .iter()
-            .any(|c| stmt.claims.capabilities.contains(c))
-    {
-        return Some(Exception::Unrealized(format!(
-            "extension realization ({family}): the ICS claims none of this case's \
-             capabilities, and no openEHR specification governs the route — ISO/IEC 9646 \
-             test selection"
-        )));
-    }
-    // The same arm for a case whose PRECONDITION (rather than flow) is
-    // established over an extension route: a received EHR-Extract.
-    if let Some(citation) = unservable_import(set, statement, case) {
-        return Some(Exception::Unrealized(format!(
-            "{citation} — ISO/IEC 9646 test selection"
-        )));
+    if let Some(citation) = unserved_extension(set, statement, case) {
+        return Some(Exception::Unrealized(citation));
     }
     // An option branch the party statement does not declare is not this
     // SUT's behaviour — driving it records a spurious failure the verdict
@@ -1037,6 +1107,108 @@ mod tests {
         }))
         .unwrap();
         assert!(unservable_import(&set, Some(&read_only), &plain).is_none());
+    }
+
+    /// `requires.party_relationship` provisions over the SAME extension seam
+    /// as `requires.import` (register AMB-32: ITS-REST 1.1.0 surfaces no
+    /// `PARTY_RELATIONSHIP` resource), so a party claiming none of that
+    /// family's capabilities is excused at SELECTION time with the citation —
+    /// never driven into a provisioning refusal that reads like a SUT defect.
+    #[test]
+    fn a_party_relationship_precondition_is_scoped_at_selection() {
+        let create: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_DEMOGRAPHIC_SERVICE.create_party_relationship",
+                "its": "its-rest",
+                "extension": {
+                    "family": "party-relationship",
+                    "reason": "the release surfaces no PARTY_RELATIONSHIP resource",
+                    "source": "SM docs/UML/classes/i_demographic_service.adoc",
+                    "ambiguity": "AMB-32"
+                },
+                "request": { "method": "POST", "path": "/demographic/party_relationship" },
+                "outcomes": { "created": { "status": 201 } }
+            }))
+            .unwrap();
+        let released: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_PARTY.get_party",
+                "its": "its-rest",
+                "request": { "method": "GET", "path": "/demographic/party/{party_id}" },
+                "outcomes": { "ok": { "status": 200 } }
+            }))
+            .unwrap();
+        // The family's own case is what says which capability claims it.
+        let creator: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-rel", "kind": "functional", "component": "DEMOGRAPHIC",
+            "sm_operation": "I_DEMOGRAPHIC_SERVICE.create_party_relationship",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["PartyRelationships"],
+            "flow": [{ "step": 1, "call": "create_party_relationship", "expect": "created" }]
+        }))
+        .unwrap();
+        let mut set = ArtifactSet::default();
+        set.bindings
+            .push((std::path::PathBuf::from("c.yaml"), create));
+        set.bindings
+            .push((std::path::PathBuf::from("r.yaml"), released));
+        set.cases
+            .push((std::path::PathBuf::from("c-case.yaml"), creator));
+
+        let reader: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-party-read", "kind": "functional", "component": "DEMOGRAPHIC",
+            "sm_operation": "I_PARTY.get_party",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["Demographics"],
+            "requires": {
+                "party_relationship": {
+                    "source": "cnf.demographic.person.v1",
+                    "target": "cnf.demographic.organisation.v1",
+                    "relationship": "cnf.demographic.party_relationship.v1"
+                }
+            },
+            "flow": [{ "step": 1, "call": "get_party", "expect": "ok" }]
+        }))
+        .unwrap();
+        let statement = |caps: &[&str]| -> crate::party::Statement {
+            serde_json::from_value(serde_json::json!({
+                "product": { "name": "p", "version": "1", "vendor": "v", "identifier": "i" },
+                "schedule_release": "CNF-2.0",
+                "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
+                "claims": { "capabilities": caps, "profiles": ["CORE"] },
+                "tech_profiles": [ { "its": "its-rest", "formats": ["canonical-json"] } ],
+                "options": []
+            }))
+            .unwrap()
+        };
+        let serving = statement(&["PartyRelationships", "Demographics"]);
+        assert!(
+            unservable_party_relationship(&set, Some(&serving), &reader).is_none(),
+            "a party claiming the family's capability drives the case"
+        );
+
+        // Claims the READ capability but not the relationship family — the
+        // case's own capabilities must not be what decides this.
+        let read_only = statement(&["Demographics"]);
+        let citation = unservable_party_relationship(&set, Some(&read_only), &reader)
+            .expect("excused with a citation");
+        assert!(citation.contains("party-relationship"), "{citation}");
+        assert!(
+            citation.contains("AMB-32"),
+            "the citation stays register-linked: {citation}"
+        );
+
+        // `party_relationship: none` provisions nothing and is untouched.
+        let plain: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-plain-party", "kind": "functional", "component": "DEMOGRAPHIC",
+            "sm_operation": "I_PARTY.get_party",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["Demographics"],
+            "requires": { "party_relationship": "none" },
+            "flow": [{ "step": 1, "call": "get_party", "expect": "ok" }]
+        }))
+        .unwrap();
+        assert!(unservable_party_relationship(&set, Some(&read_only), &plain).is_none());
     }
 
     /// The SMART-lane marker is the DECLARATION of a `scopes:` key (empty

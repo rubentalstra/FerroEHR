@@ -12,7 +12,7 @@ test_purpose: "Listing ADL2 artefacts by an id pattern returns the matching oper
 description: "list ADL2 artefacts matching an id pattern"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.list_matching_artefacts"
-  - "ITS-REST definition_template_adl2_list §200 OK"
+  - "ITS-REST OAS operations/definition_template_adl2_list.yaml §responses ('200')"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any

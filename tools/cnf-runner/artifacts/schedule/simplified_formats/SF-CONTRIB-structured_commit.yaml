@@ -29,7 +29,7 @@ test_purpose: >-
   created VERSION reads back as a canonical COMPOSITION.
 description: "CONTRIBUTION commit with STRUCTURED versions[].data, canonical read-back"
 spec_refs:
-  - "ITS-REST overview Amendment_record §SPECITS-84"
+  - "ITS-REST overview Amendment_record.md §Amendment Record (the SPECITS-84 row)"
   - "ITS-REST overview Resources.md §Simplified Formats"
   - "ITS-REST simplified_formats master04 §Structured format"
   - "ITS-REST overview Requests_and_responses §openehr-template-id"

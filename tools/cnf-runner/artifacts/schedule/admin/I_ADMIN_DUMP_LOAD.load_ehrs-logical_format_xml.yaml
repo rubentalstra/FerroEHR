@@ -27,7 +27,7 @@ test_purpose: >-
 description: "Load a canonical-XML export archive"
 spec_refs:
   - "SM openehr_platform §I_ADMIN_DUMP_LOAD.load_ehrs"
-  - "SM openehr_platform UML export_format.adoc (the openehr_canonical_xml member)"
+  - "SM UML/classes/export_format.adoc (the openehr_canonical_xml member)"
   - "SM openehr_platform §DUMP_LOAD_FAIL_REPORT"
 applies: { rm: ">=1.0.2" }
 guards:

@@ -26,7 +26,7 @@ test_purpose: "Retrieving a versioned OPT by a partial template_id returns its l
 description: "retrieve last version of versioned OPT"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
-  - "ITS-REST specifications §definition_template_adl1.4_get"
+  - "ITS-REST OAS operations/definition_template_adl1.4_get.yaml §responses"
   - "CNF platform_test_schedule master04 §get_opt-retrieve_latest_version"
 applies: { rm: ">=1.0.2" }
 requires:

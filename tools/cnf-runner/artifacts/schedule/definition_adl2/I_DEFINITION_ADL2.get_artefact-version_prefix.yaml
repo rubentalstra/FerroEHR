@@ -40,7 +40,7 @@ test_purpose: >-
 description: "get an ADL2 OPT by a partial {major} version prefix"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.get_artefact"
-  - "ITS-REST definition_template_adl2_version_get §200 OK"
+  - "ITS-REST OAS operations/definition_template_adl2_version_get.yaml §responses ('200')"
   - "ITS-REST overview Requests_and_responses §ETag and Last-Modified"
 applies: { rm: ">=1.0.2" }
 requires: { server: any }

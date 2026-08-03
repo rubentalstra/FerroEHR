@@ -26,7 +26,7 @@ test_purpose: "Uploading two OPTs with distinct template_ids succeeds both times
 description: "upload two valid OPTs with distinct template_ids (no conflict)"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.upload_opt"
-  - "ITS-REST definition_template_adl1.4_upload §409 Conflict (the duplicate branch keys on same template_id)"
+  - "ITS-REST OAS operations/definition_template_adl1.4_upload.yaml §responses (the duplicate '409' branch keyed on the same template_id)"
   - "CNF platform_test_schedule master04 §upload_opt-valid_opt_twice_no_conflict"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }              # "No OPTs should be loaded on the system"

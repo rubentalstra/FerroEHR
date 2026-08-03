@@ -32,8 +32,8 @@ description: "Export with EXPORT_FORMAT openehr_canonical_xml"
 spec_refs:
   - "SM openehr_platform §I_ADMIN_DUMP_LOAD.export_ehrs"
   - "SM openehr_platform §EXPORT_SPEC (logical_format: flavour of XML, JSON etc.)"
-  - "SM openehr_platform UML export_format.adoc (the openehr_canonical_xml member)"
-  - "ITS-XML components §RM documents/Version.xsd (the globally declared `version` element over an ABSTRACT VERSION type)"
+  - "SM UML/classes/export_format.adoc (the openehr_canonical_xml member)"
+  - "ITS-XML components/RM/Release-1.0.2/documents §Validating documents (Version.xsd — the globally declared `version` element over an ABSTRACT VERSION type)"
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs /admin/dump or /admin/load; our own design/extension, declared in vocab/wire_surface.yaml served_extensions and adjudicated by register AMB-33. The row gates the EhrDumpLoad CAPABILITY verdict only, never ITS-REST wire conformance"

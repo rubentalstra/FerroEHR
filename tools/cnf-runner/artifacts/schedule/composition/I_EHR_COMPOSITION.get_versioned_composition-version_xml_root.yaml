@@ -67,7 +67,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_COMPOSITION.get_versioned_composition"
   - "ITS-REST overview Resources.md §XML Format"
   - "ITS-REST overview Resources.md §Data representation"
-  - "ITS-XML components §RM documents/Version.xsd (the globally declared `version` element over the abstract VERSION type)"
+  - "ITS-XML components/RM/Release-1.0.2/documents §Validating documents (Version.xsd — the globally declared `version` element over the abstract VERSION type)"
   - "ITS-XML README.adoc §Releases and IM Versions (the v1/v2 lineages)"
   - "RM common §change_control (master06 §Version and its Subtypes — ORIGINAL_VERSION and IMPORTED_VERSION are the concrete VERSION classes)"
 applies: { rm: ">=1.0.2" }

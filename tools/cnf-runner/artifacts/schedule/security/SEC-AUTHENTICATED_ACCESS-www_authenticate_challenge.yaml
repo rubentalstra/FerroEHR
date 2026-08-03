@@ -38,10 +38,10 @@ spec_refs:
   - "ITS-REST overview Requests_and_responses (Authentication and authorization: services MUST properly use the WWW-Authenticate and/or Proxy-Authenticate response headers)"
   - "ITS-REST overview Requests_and_responses (HTTP status codes: 401 — lacks valid authentication credentials for the target resource)"
   - "SM openehr_platform §I_EHR_SERVICE.get_ehr"
-  - "CNF 2.0 security schedule §SEC-BASIC Authenticated access (this proposal; 2017 schedule Security BASIC lineage)"
+  - "CNF profiles master03-profiles §Non-Functional (the Security & Privacy product attribute; the SEC-BASIC tier is our own extension — no released openEHR spec defines it)"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "applies only when the SUT declares the SEC-BASIC security tier — CNF 2.0 security schedule (this proposal; 2017 schedule Security BASIC lineage)"
+  - "applies only when the SUT declares the SEC-BASIC security tier — CNF profiles master03-profiles §Non-Functional (the Security & Privacy product attribute; the SEC-BASIC tier is our own extension — no released openEHR spec defines it)"
   - "the challenge is mandated only when the service requires authentication — ITS-REST overview Requests_and_responses §Authentication and authorization ('If authentication and authorization are required'); a service declaring no authentication framework is not in scope"
 requires:
   server: any

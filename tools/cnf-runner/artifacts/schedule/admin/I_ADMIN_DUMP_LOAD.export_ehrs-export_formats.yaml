@@ -19,7 +19,7 @@ description: "Export all EHRs with explicit logical + compression formats"
 spec_refs:
   - "SM openehr_platform §I_ADMIN_DUMP_LOAD.export_ehrs"
   - "SM openehr_platform §EXPORT_SPEC"
-  - "SM openehr_platform §EXPORT_FORMAT"
+  - "SM UML/classes/export_format.adoc §EXPORT_FORMAT"
   - "SM openehr_platform §COMPRESSION_FORMAT"
   - "CNF platform_test_schedule master12 §export_ehrs"
 applies: { rm: ">=1.0.2" }
