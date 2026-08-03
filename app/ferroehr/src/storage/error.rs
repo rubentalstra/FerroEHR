@@ -161,24 +161,24 @@ const CODEC_MESSAGE: &str = "the server encountered an internal storage-codec er
 ///
 /// - **`23505`** `unique_violation`, **`23503`** `foreign_key_violation`,
 ///   **`23001`** `restrict_violation`, **`23P01`** `exclusion_violation` →
-///   [`CallStatusType::Conflict`] (`409`). These are collisions with data the
+///   `CallStatusType::Conflict` (`409`). These are collisions with data the
 ///   repository already holds — a genuinely client-caused conflict, and exactly
 ///   what `409` means ("the request could not be processed because it might
 ///   generate a duplicate or a conflict", ITS-REST overview §HTTP status codes).
 /// - **`23514`** `check_violation`, **`23502`** `not_null_violation`, the
 ///   generic **`23000`**, and any other class-23 code →
-///   [`CallStatusType::Exception`] (`500`). A CHECK or NOT NULL that reaches
+///   `CallStatusType::Exception` (`500`). A CHECK or NOT NULL that reaches
 ///   the driver is a violated *server-side* invariant: either the service layer
 ///   failed to refuse a value it should have refused with a typed error, or the
 ///   schema and the code have drifted. Neither is a conflict the client can
 ///   resolve, and presenting it as `409` invites an endless retry loop against
 ///   an optimistic-lock failure that never happened.
 /// - **`40001`** `serialization_failure` / **`40P01`** `deadlock_detected` →
-///   [`CallStatusType::Conflict`] (`409`, retryable).
+///   `CallStatusType::Conflict` (`409`, retryable).
 /// - **[`sqlx::Error::PoolTimedOut`]** (pool exhausted under load) →
-///   [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the
+///   `CallStatusType::ServiceOverloaded` (`503` + `Retry-After`; the
 ///   admission contract).
-/// - anything else → [`CallStatusType::Exception`] (`500`, a genuine fault).
+/// - anything else → `CallStatusType::Exception` (`500`, a genuine fault).
 pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError {
     use crate::service::status::{CallStatusType, SmError};
     match e {

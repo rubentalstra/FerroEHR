@@ -59,7 +59,7 @@ use crate::flat::webtemplate::{
 /// Fixed example instants used for the RM temporal leaves (deterministic).
 ///
 /// [`EXAMPLE_DATE_TIME`] doubles as the `now` supplied to
-/// [`composition_from_flat`](crate::flat::convert::composition_from_flat) for the
+/// [`composition_from_flat`] for the
 /// `ctx/time` default, so a generated example is reproducible across calls. No
 /// openEHR spec governs an example's timestamps — our own design (examples must
 /// be deterministic).
@@ -1068,7 +1068,7 @@ fn input_range(input: &WebTemplateInput) -> Option<&WebTemplateRange> {
 /// A plausible, non-zero decimal example value within `range`.
 ///
 /// An unconstrained magnitude gets a deterministic non-zero default
-/// ([`DEFAULT_DECIMAL`]); a range-constrained one is placed at the range
+/// (`DEFAULT_DECIMAL`); a range-constrained one is placed at the range
 /// **midpoint** when both bounds exist (honouring the open-bound `>`/`<`
 /// operators), and clamped toward the single stated bound otherwise. The result
 /// never lands on `0.0` when the range admits a non-zero value: a zero example

@@ -191,7 +191,7 @@ pub(in crate::service) fn canonicalize<T: serde::Serialize>(
 /// CONSUMED so nothing of it outlives this call.
 ///
 /// # Errors
-/// [`ServiceError::Unprocessable`] / [`ServiceError::BadRequest`] — the
+/// `ServiceError::Unprocessable` / `ServiceError::BadRequest` — the
 /// caller's `change_type` is out-of-group / contradicts the operation
 /// (`crate::versioning::audit::AuditInput::from_update`).
 fn resolve_envelope(

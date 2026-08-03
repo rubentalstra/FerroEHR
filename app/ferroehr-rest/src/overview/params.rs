@@ -201,7 +201,7 @@ pub(crate) const H_VERSION_ITEM_TAG: &str = "openehr-version-item-tag";
 /// `Inv_value_valid` forbids a SET-but-empty one — so a valueless tag has no
 /// `value` at all, on the wire in either direction. A header entry spelling
 /// `value=""` normalizes to absent on the way in (the same reading
-/// [`item_tags_from_header_entries`] has always applied), and the echo renders
+/// `item_tags_from_header_entries` has always applied), and the echo renders
 /// no `value` token at all on the way out.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ItemTagHeaderEntry {

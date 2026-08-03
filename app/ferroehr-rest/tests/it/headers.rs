@@ -1558,7 +1558,7 @@ async fn an_undecodable_header_value_is_refused_not_dropped() {
 /// wrapper-header value is the release's "remove all `ITEM_TAG`s" REQUEST
 /// instruction (overview `Requests_and_responses.md` §"openehr-item-tag and
 /// openehr-version-item-tag": "Providing an empty value for this header will
-/// effectively remove all ITEM_TAGs"), so a response echoing one would hand a
+/// effectively remove all `ITEM_TAG`s"), so a response echoing one would hand a
 /// mirroring client the destructive form as if it were state (#1837 — the EHR
 /// echo path emitted it; the guard now lives in `emit_item_tag_header` for
 /// both echo paths).

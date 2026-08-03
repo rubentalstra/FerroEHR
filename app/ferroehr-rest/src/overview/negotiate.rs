@@ -1241,7 +1241,7 @@ fn json_response<T: Serialize>(status: StatusCode, value: &T) -> Response {
     resp
 }
 
-/// Small helper so error rendering here reuses the crate's [`RestError`] body.
+/// Small helper so error rendering here reuses the crate's `RestError` body.
 trait IntoErrorResponse {
     fn into_response_body(self) -> Response;
 }

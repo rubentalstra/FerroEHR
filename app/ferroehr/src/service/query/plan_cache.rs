@@ -42,7 +42,7 @@ use crate::telemetry::prometheus::AQL_PLAN_CACHE_EVENTS;
 /// The default maximum number of distinct query plans held. Bounded so a
 /// churn of one-off ad-hoc queries cannot grow the cache without limit. The
 /// effective capacity comes from `[query].plan_cache_capacity`
-/// ([`super::QueryConfig`]), applied when the binary builds the service; a
+/// (`super::QueryConfig`), applied when the binary builds the service; a
 /// bare service (tests/embeddings) uses this default. No openEHR spec governs
 /// this — our own tuning knob.
 const DEFAULT_CAPACITY: u64 = 256;
