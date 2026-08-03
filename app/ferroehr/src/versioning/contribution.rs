@@ -280,7 +280,38 @@ const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] naming the offending key.
-fn reject_foreign_version_identity(version: &Value) -> Result<(), ServiceError> {
+fn reject_foreign_version_identity(version: &Value, index: usize) -> Result<(), ServiceError> {
+    // THE CLOSED MEMBER READ (#1753): the released commit wire declares
+    // exactly six member properties (ITS-REST `schemas/ehr/UpdateVersion.yaml`
+    // — `preceding_version_uid`, `signature`, `lifecycle_state`,
+    // `attestations`, `data`, `commit_audit`), plus the adjudicated `_type`
+    // self-tag (overview `Resources.md` §Resource representation — the docs
+    // text outranks the OAS). Everything else is refused with the member
+    // index in the path, exactly like the strict reader everywhere else
+    // post-#1702 — the three keys below keep their richer diagnostics.
+    const DECLARED: [&str; 7] = [
+        "preceding_version_uid",
+        "signature",
+        "lifecycle_state",
+        "attestations",
+        "data",
+        "commit_audit",
+        "_type",
+    ];
+    const SPECIFICALLY_REFUSED: [&str; 3] = ["item", "uid", "other_input_version_uids"];
+    if let Some(map) = version.as_object() {
+        for key in map.keys() {
+            if !DECLARED.contains(&key.as_str()) && !SPECIFICALLY_REFUSED.contains(&key.as_str()) {
+                return Err(ServiceError::BadRequest(format!(
+                    "versions[{index}]/{key} is not a member of UPDATE_VERSION — the \
+                     released commit wire declares preceding_version_uid, signature, \
+                     lifecycle_state, attestations, data, commit_audit (ITS-REST \
+                     UpdateVersion.yaml), and a member may additionally self-tag with \
+                     _type; undeclared members are refused, never silently ignored"
+                )));
+            }
+        }
+    }
     if version.get("item").is_some() {
         return Err(ServiceError::BadRequest(
             "item is not a member of UPDATE_VERSION — it is the sole own attribute of \
@@ -430,8 +461,8 @@ pub(crate) async fn commit_version_set(
     // then existence/kind-checked in ONE batched statement, and the plan is
     // resolved to [`Change`]s without re-reading any JSON.
     let mut plan: Vec<PlannedVersion> = Vec::with_capacity(versions.len());
-    for version in versions {
-        reject_foreign_version_identity(version)?;
+    for (index, version) in versions.iter().enumerate() {
+        reject_foreign_version_identity(version, index)?;
         let token = version
             .get("commit_audit")
             .and_then(|a| a.get("change_type"))

@@ -83,6 +83,13 @@ workflow refuses a tag that has no matching section here.
   tag routes' 422 mapping stays); a stored tag row that no longer constructs
   is reported as the server fault it is instead of being served.
 
+- **An undeclared key on a CONTRIBUTION version member is refused (`400`,
+  named at its member path) instead of silently ignored.** The released
+  commit wire declares exactly six member properties
+  (`UpdateVersion.yaml`) plus the adjudicated `_type` self-tag; the member
+  seam was the last non-strict reader, accepting arbitrary extra keys
+  without a diagnostic while every other read surface refuses them.
+
 - **A CONTRIBUTION whose audit omits `committer` is now refused (`422`)
   instead of being attributed to the server's default identity.** The same
   released commit schema that requires `change_type` requires `committer`
