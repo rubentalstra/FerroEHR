@@ -75,6 +75,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Terminology failure bodies no longer disclose deployment configuration on
+  the remaining two surfaces.** A terminology 404 named WHICH configured
+  provider answered, and a commit whose archetype constraint binding had no
+  configured terminology route answered a 500 revealing that routing gap; both
+  bodies now carry only what the client can act on, with the operator detail
+  on the trace record — completing the operator-detail adjudication for the
+  terminology surface.
+
 - **The generated ITS-REST contract is typed end to end.** The `emit-rest`
   generator resolved `$ref`s before emitting, so every request/response body
   and parameter lost its schema name and the trait/DTO surface degraded to
