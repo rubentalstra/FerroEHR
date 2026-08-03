@@ -128,21 +128,6 @@ pub struct AuthzHandle {
 }
 
 impl AuthzHandle {
-    /// Build an RBAC-only handle from config + the REST base path. `None` when
-    /// RBAC is disabled — the caller then leaves the
-    /// [`AppState`](crate::state::AppState) slot empty, preserving auth-only behaviour.
-    /// (The binary uses [`AuthzHandle::build`] to attach ABAC.)
-    #[must_use]
-    pub fn from_config(config: &AuthzConfig, base_path: &str) -> Option<Self> {
-        if !config.rbac.enabled {
-            return None;
-        }
-        Some(Self {
-            rbac: Some(RbacGate::new(config.rbac.clone(), base_path)),
-            abac: None,
-        })
-    }
-
     /// Build the full handle (the binary): the RBAC gate (when enabled) plus the
     /// ABAC gate (when `engine` is `Some`, i.e. `abac.enabled`). `None` when
     /// neither layer is active, so `AppState` stays empty (auth-only).
@@ -172,6 +157,21 @@ impl AuthzHandle {
     /// The fine-grained ABAC gate, if enabled.
     pub(crate) fn abac(&self) -> Option<&AbacGate> {
         self.abac.as_ref()
+    }
+
+    /// Whether the coarse RBAC gate is live on this handle (boot logging +
+    /// wiring tests).
+    #[must_use]
+    pub fn rbac_active(&self) -> bool {
+        self.rbac.is_some()
+    }
+
+    /// Whether the fine-grained ABAC gate is live on this handle — the loud
+    /// counterpart of the silent `abac: None` mis-wiring this seam once
+    /// carried (boot logging + wiring tests).
+    #[must_use]
+    pub fn abac_active(&self) -> bool {
+        self.abac.is_some()
     }
 
     /// The configured JWT role-claim paths (fed into the [`Authenticator`] so
@@ -478,12 +478,27 @@ mod tests {
         );
     }
 
+    /// Inert resolvers for handle-shape tests (nothing resolves).
+    fn inert_resolvers() -> AuthzResolvers {
+        AuthzResolvers {
+            subject: Arc::new(|_| Box::pin(async { Ok::<_, ResolveError>(None) })),
+            template_of_version: Arc::new(|_, _| Box::pin(async { Ok::<_, ResolveError>(None) })),
+        }
+    }
+
     #[test]
     fn handle_absent_when_rbac_disabled() {
         let mut cfg = AuthzConfig::default();
         cfg.rbac.enabled = false;
-        assert!(AuthzHandle::from_config(&cfg, BASE).is_none());
-        assert!(AuthzHandle::from_config(&AuthzConfig::default(), BASE).is_some());
+        let handle = AuthzHandle::build(&cfg, BASE, None, inert_resolvers());
+        assert!(handle.is_none());
+        let default = AuthzHandle::build(&AuthzConfig::default(), BASE, None, inert_resolvers())
+            .expect("RBAC on by default");
+        assert!(default.rbac_active());
+        assert!(
+            !default.abac_active(),
+            "no engine supplied → no ABAC gate on the handle"
+        );
     }
 
     #[test]

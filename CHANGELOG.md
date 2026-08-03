@@ -57,6 +57,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`authz.abac.enabled = true` now actually enables ABAC.** The server
+  binary built an RBAC-only authorization handle unconditionally — the ABAC
+  policy engine and its attribute resolvers were never constructed on the
+  shipped run path, so a deployment that configured attribute-based rules ran
+  without them, silently. The binary now boots the configured engine (Cedar
+  or remote PDP) with database-backed attribute resolvers, logs the active
+  authorization layers at startup, and **refuses to start** when an enabled
+  ABAC block cannot be built (missing/invalid policy directory, unbuildable
+  PDP client) — configuration that promises fine-grained authorization never
+  degrades to authorization-off.
+
 - **A one-group ISO OID now classifies as `ISO_OID`, not `INTERNET_ID`.** BASE
   `base_types` `master05-identification_package.adoc` §Syntaxes gives
   `iso_oid = number, { '.', number }` — one or more groups — while the UID
