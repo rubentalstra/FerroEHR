@@ -35,6 +35,27 @@ use openehr_its::rest::runtime::ApiError;
 #[derive(Debug)]
 pub struct RestError(pub ApiError);
 
+/// The client-visible message of a server-side fault (`500`) raised inside the
+/// protocol adapter. Deliberately opaque, for the same reason the platform's
+/// own 500-class message is: a codec/serializer diagnostic names Rust types,
+/// RM element names and parser offsets — server-internal detail the client can
+/// neither act on nor be trusted with. The detail rides one structured
+/// `tracing` record instead ([`internal_fault`]). ITS-REST overview §HTTP
+/// status codes fixes the `{ error, message }` shape but not the wording; the
+/// opacity is our own design.
+pub(crate) const INTERNAL_MESSAGE: &str = "the server encountered an internal error";
+
+/// Record an adapter-side fault on the trace record and return the curated
+/// opaque `500` [`ApiError`] its body carries.
+///
+/// `context` names the step that failed (a static call-site label); `detail` is
+/// the raw diagnostic — a serde error, an XML codec failure, a middleware error
+/// — which is written to `tracing` and NEVER to the wire.
+pub(crate) fn internal_fault(context: &'static str, detail: &dyn std::fmt::Display) -> ApiError {
+    tracing::error!(context, error = %detail, "protocol adapter: internal fault → 500");
+    ApiError::Internal(INTERNAL_MESSAGE.to_owned())
+}
+
 impl From<ApiError> for RestError {
     fn from(e: ApiError) -> Self {
         Self(e)

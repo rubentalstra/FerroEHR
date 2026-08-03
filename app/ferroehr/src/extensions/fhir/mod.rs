@@ -37,7 +37,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::ehr_index::types::SubjectRef;
-use crate::service::error::{ServiceError, Violation};
+use crate::service::error::{ServiceError, Violation, internal_fault};
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::response::ServiceResponse;
 use crate::service::status::{CallStatusType, SmError};
@@ -228,12 +228,9 @@ impl FerroEhrService {
     async fn ensure_ehr_for_subject(&self, subject: SubjectRef) -> Result<EhrId, SmError> {
         let existing = self.get_ehrs_for_subject(subject.clone()).await?;
         if let Some(summary) = existing.first() {
-            return Uuid::parse_str(&summary.ehr_id).map(EhrId).map_err(|e| {
-                SmError::new(
-                    CallStatusType::Exception,
-                    format!("stored ehr id invalid: {e}"),
-                )
-            });
+            return Uuid::parse_str(&summary.ehr_id)
+                .map(EhrId)
+                .map_err(|e| internal_fault("read a stored EHR id", &e));
         }
         self.create_ehr_for_subject(subject, None).await
     }
@@ -297,12 +294,8 @@ impl FerroEhrService {
         let scope = self.resolve_patient_scope(patient).await?;
         let mut entries: Vec<Value> = Vec::new();
         for raw in self.enabled_definitions_for_type(resource_type).await? {
-            let def: FhirMappingDefinition = serde_json::from_value(raw).map_err(|e| {
-                SmError::new(
-                    CallStatusType::Exception,
-                    format!("stored FHIR mapping definition is invalid: {e}"),
-                )
-            })?;
+            let def: FhirMappingDefinition = serde_json::from_value(raw)
+                .map_err(|e| internal_fault("read a stored FHIR mapping definition", &e))?;
             let wt = self.web_template_for(&def.template_id).await?;
             let request = AqlQueryRequest {
                 ehr_ids: scope.ehr_id.map(|u| u.to_string()).into_iter().collect(),
@@ -357,7 +350,7 @@ impl FerroEhrService {
                     &def,
                     scope.subject_id.as_deref(),
                 )
-                .map_err(|e| SmError::new(CallStatusType::Exception, e.to_string()))?;
+                .map_err(|e| internal_fault("render a stored COMPOSITION as FHIR", &e))?;
                 // The versioned-object id (a UUID) is the FHIR logical id + the
                 // `urn:uuid:` fullUrl.
                 if let Value::Object(m) = &mut fhir {
@@ -606,12 +599,8 @@ impl FerroEhrService {
                     format!("no enabled FHIR mapping for resource type '{resource_type}'"),
                 )
             })?;
-        let def: FhirMappingDefinition = serde_json::from_value(def_value).map_err(|e| {
-            SmError::new(
-                CallStatusType::Exception,
-                format!("stored FHIR mapping definition is invalid: {e}"),
-            )
-        })?;
+        let def: FhirMappingDefinition = serde_json::from_value(def_value)
+            .map_err(|e| internal_fault("read a stored FHIR mapping definition", &e))?;
 
         // 2. Resolve-or-create the target EHR from the resource's subject.
         let subject = mapping::extract_subject(&a_resource, &def)

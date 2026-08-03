@@ -10,6 +10,7 @@
 use serde_json::Value;
 
 use crate::service::FerroEhrService;
+use crate::service::error::internal_fault;
 use crate::service::status::SmError;
 use crate::service::subject_proxy::binding::{DataFrame, EnvBinding};
 use crate::service::subject_proxy::data_set::{DataSetResult, SubjectDataSet};
@@ -105,7 +106,7 @@ impl FerroEhrService {
         .map_err(db_err)?;
         let Some(vars) = vars else { return Ok(None) };
         let map: std::collections::BTreeMap<String, SubjectVariable> = serde_json::from_value(vars)
-            .map_err(|e| SmError::exception(format!("stored data-set variables malformed: {e}")))?;
+            .map_err(|e| internal_fault("read the stored data-set variables", &e))?;
         Ok(Some(map.into_values().collect()))
     }
 }
@@ -237,9 +238,9 @@ impl FerroEhrService {
             using.push(app.clone());
         }
         let using_json = serde_json::to_value(&using)
-            .map_err(|e| SmError::exception(format!("serialize using_app_ids: {e}")))?;
+            .map_err(|e| internal_fault("serialize the data-set app ids", &e))?;
         let vars_json = serde_json::to_value(&definition.variables)
-            .map_err(|e| SmError::exception(format!("serialize data-set variables: {e}")))?;
+            .map_err(|e| internal_fault("serialize the data-set variables", &e))?;
 
         sqlx::query(
             "INSERT INTO sp_data_set (subject_id, id, creating_app_id, using_app_ids, variables) \

@@ -143,7 +143,11 @@ impl AuthError {
     fn to_api_error(&self) -> ApiError {
         match self {
             AuthError::Forbidden(m) => ApiError::Forbidden(m.clone()),
-            AuthError::VerificationUnavailable(m) => ApiError::Internal(m.clone()),
+            // A server fault: the reason names an internal task/KDF failure,
+            // so it is traced and the body carries the curated message.
+            AuthError::VerificationUnavailable(m) => {
+                crate::overview::error::internal_fault("verify the supplied credentials", m)
+            }
             other => ApiError::Unauthorized(other.to_string()),
         }
     }

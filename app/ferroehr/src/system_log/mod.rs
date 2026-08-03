@@ -149,9 +149,8 @@ impl FerroEhrService {
                 "the local audit record repository is not enabled ([audit.store])",
             ));
         };
-        audit_store
-            .search(filter)
-            .await
-            .map_err(|e| crate::service::status::SmError::exception(e.to_string()))
+        audit_store.search(filter).await.map_err(|e| {
+            crate::service::error::internal_fault("search the audit record repository", &e)
+        })
     }
 }

@@ -73,9 +73,10 @@ pub(crate) async fn handle_overload(err: BoxError) -> Response {
         );
         resp
     } else {
-        RestError(ApiError::Internal(format!(
-            "unexpected overload-layer error: {err}"
-        )))
+        RestError(crate::overview::error::internal_fault(
+            "run the overload-shedding layer",
+            &err,
+        ))
         .into_response()
     }
 }

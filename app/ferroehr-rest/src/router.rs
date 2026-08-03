@@ -294,10 +294,7 @@ fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
         "unknown panic payload".to_owned()
     };
     tracing::error!(panic = %detail, "request handler panicked");
-    error::RestError(ApiError::Internal(
-        "the server encountered an internal error".to_owned(),
-    ))
-    .into_response()
+    error::RestError(ApiError::Internal(error::INTERNAL_MESSAGE.to_owned())).into_response()
 }
 
 /// Align the two **transport-layer** error responses the `tower-http` stack

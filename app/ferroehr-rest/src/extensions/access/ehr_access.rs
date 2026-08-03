@@ -263,9 +263,10 @@ fn forbidden(principal: Option<&Principal>, detail: &str) -> Response {
 /// A `500` (fail-closed) when the settings cannot be read — an access decision
 /// must never proceed on unknown policy.
 fn server_error(principal: Option<&Principal>, detail: &str) -> Response {
-    let mut resp = RestError(ApiError::Internal(format!(
-        "authorization unavailable: {detail}"
-    )))
+    let mut resp = RestError(crate::overview::error::internal_fault(
+        "read the EHR access-control settings",
+        &detail,
+    ))
     .into_response();
     if let Some(principal) = principal {
         resp.extensions_mut().insert(principal.clone());
