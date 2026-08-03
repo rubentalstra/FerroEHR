@@ -1903,6 +1903,13 @@
       "rows_total": 8
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attest_imported_version",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_attested_view",
       "format": "canonical-json",
       "status": "passed",
