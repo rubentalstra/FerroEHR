@@ -233,6 +233,26 @@ pub(crate) enum LowerBounds {
 /// The shared body of the two public entry points.
 fn validate_with(root: &Value, declared: &str, bounds: LowerBounds) -> Vec<ValidationMessage> {
     let mut out = Vec::new();
+    // The ROOT arm of the declared-type conformance rule: the commit kind
+    // declares the root's RM type, and a wire `_type` claiming anything else
+    // is the same positive contradiction the per-slot rule refuses (a
+    // COMPOSITION committed to the directory resource is not a FOLDER,
+    // whatever it validates as). Never relaxed — RM common master06
+    // §Incomplete Content: "data may be missing, but it may not be wrong".
+    if let Some(wire) = root.get("_type").and_then(Value::as_str)
+        && openehr_rm::model::class(declared).is_some()
+        && !openehr_rm::model::is_a(wire, declared)
+    {
+        push(
+            &mut out,
+            "/".to_owned(),
+            format!(
+                "does not conform to RM type {declared}: the root claims `_type` \
+                 {wire}, which is not a {declared}"
+            ),
+            ValidationKind::Invariant,
+        );
+    }
     // One reusable path buffer across both passes (each leaves it empty).
     let mut path = String::new();
     rm_invariant_pass(&mut out, root, &mut path, Some(declared), bounds);
@@ -343,13 +363,38 @@ pub(crate) fn rm_invariant_pass(
             continue;
         }
         let child_declared = ty.and_then(|t| declared_concrete_type(t, k));
+        // The declared-slot-type conformance rule (the WRONGNESS half of slot
+        // typing, never relaxed — RM common master06 §Incomplete Content):
+        // a TAGGED child must claim the slot's declared type or a subtype.
+        // One model-driven rule for single slots and list members alike; the
+        // shallow-pruned typed dispatch cannot see it (each pruned member
+        // re-dispatches on its own `_type`), so the walk owns it.
+        let slot_check = |item: &Value, out: &mut Vec<ValidationMessage>, path: &str| {
+            if let (Some(parent), Some(wire)) = (ty, item.get("_type").and_then(Value::as_str))
+                && let Some(iv) = openehr_rm::validate::check_declared_slot_type(parent, k, wire)
+            {
+                push(out, norm_path(path), iv.message, ValidationKind::Invariant);
+            }
+        };
         match val {
             Value::Array(a) => {
                 for (i, item) in a.iter().enumerate() {
                     if item.is_object() {
                         let base = path.len();
                         let _ = write!(path, "/{k}[{i}]");
+                        slot_check(item, out, path);
                         rm_invariant_pass(out, item, path, child_declared, bounds);
+                        path.truncate(base);
+                    } else if let Some(iv) = ty.and_then(|parent| {
+                        openehr_rm::validate::check_slot_member_is_object(parent, k)
+                    }) {
+                        // A scalar member of a class-typed list slot is the
+                        // same positive contradiction a foreign `_type` is —
+                        // its declared type is an RM class, which no JSON
+                        // scalar can be.
+                        let base = path.len();
+                        let _ = write!(path, "/{k}[{i}]");
+                        push(out, norm_path(path), iv.message, ValidationKind::Invariant);
                         path.truncate(base);
                     }
                 }
@@ -357,6 +402,7 @@ pub(crate) fn rm_invariant_pass(
             Value::Object(_) => {
                 let base = path.len();
                 let _ = write!(path, "/{k}");
+                slot_check(val, out, path);
                 rm_invariant_pass(out, val, path, child_declared, bounds);
                 path.truncate(base);
             }
@@ -374,6 +420,87 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::*;
+
+    // ── Declared-slot-type conformance (the WRONGNESS half of slot typing) ───
+
+    /// RM ehr `composition.adoc` §Attributes types `content`
+    /// `List<CONTENT_ITEM>`: a `DV_TEXT` member is a positive type
+    /// contradiction and is refused — the #1655 shape (the shallow-pruned
+    /// typed dispatch validated it as the DV_TEXT it claims to be).
+    #[test]
+    fn foreign_type_in_a_list_slot_rejected() {
+        let inst = json!({
+            "_type": "COMPOSITION",
+            "content": [{ "_type": "DV_TEXT", "value": "not a content item" }]
+        });
+        let out = rm_only(&inst);
+        assert!(
+            out.iter().any(|m| m.path == "/content[0]"
+                && m.message.contains("`content` is declared CONTENT_ITEM")),
+            "the foreign list member must be refused at its own path: {out:?}"
+        );
+    }
+
+    /// The same contradiction on a SINGLE-VALUED slot (the #1816 shape):
+    /// `COMPOSITION.context` is declared `EVENT_CONTEXT`; a tagged foreign
+    /// object there was previously validated as the type it claims to be.
+    #[test]
+    fn foreign_type_in_a_single_slot_rejected() {
+        let inst = json!({
+            "_type": "COMPOSITION",
+            "context": { "_type": "DV_TEXT", "value": "not a context" }
+        });
+        let out = rm_only(&inst);
+        assert!(
+            out.iter().any(|m| m.path == "/context"
+                && m.message.contains("`context` is declared EVENT_CONTEXT")),
+            "the foreign single member must be refused at its own path: {out:?}"
+        );
+    }
+
+    /// A legitimate subtype in an abstract-declared slot stays accepted —
+    /// strict means exact, in both directions (spec-adherence.md).
+    #[test]
+    fn subtype_in_an_abstract_slot_accepted() {
+        let inst = json!({
+            "_type": "COMPOSITION",
+            "content": [{
+                "_type": "OBSERVATION",
+                "name": { "_type": "DV_TEXT", "value": "o" },
+                "archetype_node_id": "at0001"
+            }]
+        });
+        let out = rm_only(&inst);
+        assert!(
+            !out.iter()
+                .any(|m| m.message.contains("is declared CONTENT_ITEM")),
+            "an OBSERVATION is a CONTENT_ITEM — no slot violation: {out:?}"
+        );
+    }
+
+    /// Type WRONGNESS never relaxes on a `553|incomplete|` commit — "data may
+    /// be missing, but it may not be wrong" (RM common master06 §Incomplete
+    /// Content).
+    #[test]
+    fn slot_type_conformance_survives_the_incomplete_relaxation() {
+        let inst = json!({
+            "_type": "COMPOSITION",
+            "content": [{ "_type": "DV_TEXT", "value": "still wrong" }]
+        });
+        let mut out = Vec::new();
+        rm_invariant_pass(
+            &mut out,
+            &inst,
+            &mut String::new(),
+            Some("COMPOSITION"),
+            LowerBounds::Relaxed,
+        );
+        assert!(
+            out.iter()
+                .any(|m| m.message.contains("`content` is declared CONTENT_ITEM")),
+            "the incomplete relaxation must not admit a wrong type: {out:?}"
+        );
+    }
 
     // ── LOCATABLE root identity + Links_valid (RM invariant pass) ─────────────
 

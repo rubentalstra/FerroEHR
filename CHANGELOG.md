@@ -57,6 +57,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A node claiming a `_type` foreign to its slot is now refused everywhere,
+  from the RM model.** The whole-instance validation pass dispatched each
+  node on its own wire `_type`, so a tagged object sitting in a slot declared
+  as something else was validated as the type it *claimed* to be — a
+  `DV_TEXT` inside `COMPOSITION.content` (declared `List<CONTENT_ITEM>`)
+  validated cleanly as a DV_TEXT. One model-driven rule now asserts every
+  tagged node (root, single slots, and list members alike) conforms to its
+  slot's declared RM type, read from the generated BMM attribute model; a
+  scalar member of a class-typed list slot is refused the same way. The rule
+  never relaxes on a `553|incomplete|` commit ("data may be missing, but it
+  may not be wrong"). The hand-written FOLDER member checks this replaces are
+  removed; their refusals now come from the general rule.
+
 - **`authz.abac.enabled = true` now actually enables ABAC.** The server
   binary built an RBAC-only authorization handle unconditionally — the ABAC
   policy engine and its attribute resolvers were never constructed on the
