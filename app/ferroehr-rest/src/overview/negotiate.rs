@@ -477,7 +477,8 @@ pub(crate) fn json_value(headers: &HeaderMap, body: &Bytes) -> Result<serde_json
     parse_json(body)
 }
 
-/// Decode a required JSON array body (e.g. an item-tag list).
+/// Decode a required JSON array body into untyped values (the TDD item list,
+/// which the release binds to no component schema).
 pub(crate) fn json_vec(
     headers: &HeaderMap,
     body: &Bytes,
@@ -485,6 +486,45 @@ pub(crate) fn json_vec(
     require_json(headers)?;
     serde_json::from_slice(body)
         .map_err(|e| ApiError::BadRequest(format!("invalid JSON array body: {e}")))
+}
+
+/// Decode a required JSON **array** body against the generated DTO of the
+/// component schema the release binds to it — strictly.
+///
+/// The generated DTOs carry `#[serde(deny_unknown_fields)]` wherever the OAS
+/// schema declares `additionalProperties: false`, so a member the schema does
+/// not define is REFUSED here rather than silently dropped, and a member of the
+/// wrong JSON type is refused rather than silently read as absent. The refusal
+/// names the offending member by its JSON PATH (`[0].value`) — `serde_json`
+/// alone reports only a line/column, which tells a client nothing about which
+/// array element it must fix.
+///
+/// The one caller family today is the `ITEM_TAG` PUT
+/// (`schemas/common/UpdateItemTag.yaml`: required `key`, optional
+/// `value`/`target_path`, `additionalProperties: false`). The oracle order puts
+/// this on the released OAS: the ITS-REST docs text is silent on the write
+/// body's member set, so the released schema grounds it
+/// (`.claude/rules/spec-adherence.md` §the ITS-REST wire-oracle order).
+///
+/// # Errors
+/// [`ApiError::UnsupportedMediaType`] if the `Content-Type` is not canonical
+/// JSON; [`ApiError::BadRequest`] if the bytes are not a JSON array, or if any
+/// element violates the declared schema.
+pub(crate) fn typed_json_vec<T: DeserializeOwned>(
+    headers: &HeaderMap,
+    body: &Bytes,
+) -> Result<Vec<T>, ApiError> {
+    require_json(headers)?;
+    let mut de = serde_json::Deserializer::from_slice(body);
+    serde_path_to_error::deserialize::<_, Vec<T>>(&mut de).map_err(|e| {
+        let path = e.path().to_string();
+        let inner = e.into_inner();
+        if path == "." {
+            ApiError::BadRequest(format!("invalid JSON array body: {inner}"))
+        } else {
+            ApiError::BadRequest(format!("invalid JSON array body at {path}: {inner}"))
+        }
+    })
 }
 
 /// Decode a plain-text body (e.g. a stored-query YAML document).

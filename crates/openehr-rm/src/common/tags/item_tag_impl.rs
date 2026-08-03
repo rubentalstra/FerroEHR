@@ -9,15 +9,43 @@
 use crate::common::tags::item_tag::ItemTag;
 use crate::validate::{InvariantViolation, Validate};
 
+impl ItemTag {
+    /// `Inv_key_valid` as a predicate on a candidate key: `not key.is_empty and
+    /// key.is_justified`.
+    ///
+    /// This is the ONE implementation of the invariant. [`Validate`] evaluates
+    /// it on a whole instance, and a caller that must judge a key *before* an
+    /// `ITEM_TAG` can be constructed — a wire payload whose `target`/`owner_id`
+    /// the server has not yet assigned — evaluates the same function rather
+    /// than restating the rule.
+    ///
+    /// NOTE: `is_justified` is defined in no released BASE section (`String`
+    /// declares no such function), so the Meaning column of
+    /// `org.openehr.rm.common.item_tag.adoc` is the only text that says what it
+    /// means: "May not be empty or contain leading or trailing whitespace".
+    /// That sentence is what this predicate implements.
+    #[must_use]
+    pub fn key_valid(key: &str) -> bool {
+        !key.is_empty() && key.trim() == key
+    }
+
+    /// `Inv_value_valid` as a predicate on a candidate value:
+    /// `value /= Void implies not value.is_empty`. The ONE implementation, for
+    /// the same reason as [`ItemTag::key_valid`].
+    #[must_use]
+    pub fn value_valid(value: Option<&str>) -> bool {
+        value != Some("")
+    }
+}
+
 impl Validate for ItemTag {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        let justified = self.key.trim() == self.key;
-        if self.key.is_empty() || !justified {
+        if !ItemTag::key_valid(&self.key) {
             out.push(InvariantViolation::here(
                 "Invariant Inv_key_valid failed on type ITEM_TAG",
             ));
         }
-        if self.value.as_deref() == Some("") {
+        if !ItemTag::value_valid(self.value.as_deref()) {
             out.push(InvariantViolation::here(
                 "Invariant Inv_value_valid failed on type ITEM_TAG",
             ));
@@ -76,5 +104,32 @@ mod tests {
                 .any(|m| m.message == "Invariant Inv_value_valid failed on type ITEM_TAG"),
             "got {v:?}"
         );
+    }
+
+    #[test]
+    fn the_predicates_and_the_instance_check_agree() {
+        // The predicates ARE the invariant bodies, so a caller that can only
+        // reach the predicates (a wire payload with no target/owner_id yet)
+        // gets exactly the verdict `Validate` would give on the instance.
+        for key in ["", " padded", "padded ", " both ", "ok"] {
+            assert_eq!(
+                ItemTag::key_valid(key),
+                !tag(key, None)
+                    .invariants()
+                    .iter()
+                    .any(|m| m.message == "Invariant Inv_key_valid failed on type ITEM_TAG"),
+                "key {key:?}"
+            );
+        }
+        for value in [None, Some(""), Some("v")] {
+            assert_eq!(
+                ItemTag::value_valid(value),
+                !tag("k", value)
+                    .invariants()
+                    .iter()
+                    .any(|m| m.message == "Invariant Inv_value_valid failed on type ITEM_TAG"),
+                "value {value:?}"
+            );
+        }
     }
 }

@@ -17,7 +17,7 @@ use openehr_base::prelude::ObjectVersionId;
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
     CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
-    CompositionUpdateParams,
+    CompositionUpdateParams, UpdateItemTag,
 };
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
@@ -108,6 +108,11 @@ pub(super) async fn run(
                 "COMPOSITION creation",
                 None,
             )?;
+            // The item-tag wrapper headers are parsed + invariant-checked
+            // BEFORE the commit, so a defective tag refuses the request while
+            // nothing is durable (the WRITE stays post-commit — see
+            // `pending_item_tags`).
+            let pending_tags = super::pending_item_tags(h)?;
             let committed = state
                 .backend()
                 .create_composition(ehr_id, uv)
@@ -118,7 +123,8 @@ pub(super) async fn run(
             // write-wrapper headers to the committed COMPOSITION
             // (Requests_and_responses.md §…§Usage in Requests).
             let stored_tags =
-                super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &uid, h).await?;
+                super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &uid, pending_tags)
+                    .await?;
             let meta = commit_meta(ehr_id, uid, &committed);
             let mut resp =
                 composition_write_response(&state, h, &base, ehr_id, meta, created, created)
@@ -255,6 +261,9 @@ pub(super) async fn run(
                 "COMPOSITION update",
                 Some(require_if_match(&p.if_match)?),
             )?;
+            // Judge the wrapper-header tags before the commit (see
+            // `pending_item_tags`); the write itself stays post-commit.
+            let pending_tags = super::pending_item_tags(h)?;
             match state
                 .backend()
                 .update_composition(ehr_id, uid.vo_id, uv)
@@ -263,9 +272,14 @@ pub(super) async fn run(
                 Ok(committed) => {
                     let new_uid = committed.version_uid();
                     // apply item-tag write-wrapper headers to the new version.
-                    let stored_tags =
-                        super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &new_uid, h)
-                            .await?;
+                    let stored_tags = super::apply_item_tag_headers(
+                        &state,
+                        ehr_id,
+                        "COMPOSITION",
+                        &new_uid,
+                        pending_tags,
+                    )
+                    .await?;
                     let meta = commit_meta(ehr_id, new_uid, &committed);
                     // The minimal-preference update is 204 — the docs text's
                     // §"Prefer minimal…" ("If no response body is returned,
@@ -368,7 +382,11 @@ pub(super) async fn run(
         "composition_tags_update" => {
             let p = params::build::<CompositionTagsUpdateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            let body = negotiate::json_vec(h, &parts.body)?;
+            // Strict against `schemas/common/UpdateItemTag.yaml`
+            // (`additionalProperties: false`, `key` required): an undeclared
+            // member or a non-string `value`/`target_path` is a 400 naming the
+            // member, never a silent drop.
+            let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
             let tags = state
                 .backend()
                 .target_tags_replace(ehr_id, p.uid_based_id, "COMPOSITION", body)

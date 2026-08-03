@@ -23,6 +23,7 @@ mod canonical_json_literals;
 mod codec_corpus;
 mod events_amqp;
 mod fhir_outbound_amqp;
+mod item_tag_fixture;
 mod multimedia_s3;
 mod persistence;
 mod service_admin;

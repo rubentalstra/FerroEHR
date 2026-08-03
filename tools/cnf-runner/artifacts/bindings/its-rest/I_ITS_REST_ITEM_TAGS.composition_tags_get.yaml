@@ -55,8 +55,28 @@
 #    `uid_based_id` does not exist"; register AMB-91 adjudicates the kind
 #    mismatch as that miss, on GET, PUT and DELETE alike and on all seven typed
 #    families.
+#  - `not_acceptable` 406: the one branch the released RESPONSE set does not
+#    list while the released REQUEST set makes it reachable. The operation's
+#    `Accept` is parameters/header/Accept_canonical.yaml, whose enum carries
+#    `application/xml` beside `application/json`, yet the 200 declares
+#    `content: application/json` only and no ITEM_TAG type exists anywhere in
+#    ITS-XML (grep-verified; register AMB-97 records both facts). The DOCS
+#    TEXT assigns the branch outright — Resources.md §"XML Format": "The
+#    client SHOULD use the `Accept: application/xml` request header to specify
+#    the expected XML response format. If the service cannot fulfill this
+#    aspect of the request, it MUST respond with HTTP status code `406 Not
+#    Acceptable`" — corroborated by Requests_and_responses.md §"HTTP status
+#    codes", the 406 row ("The target resource does not have a current
+#    representation that would be acceptable to the user"). The MUST is the
+#    docs text's, so no register entry is needed for the STATUS; AMB-97 is
+#    cited only for WHY the XML representation cannot exist.
 #
-# The released operation declares NO other response, so no other branch exists.
+# `formats` stays `[canonical-json]`: the 406 arm is the refusal of an XML
+# representation, not the offer of one, so declaring canonical-xml here would
+# claim a representation the tag surface does not have.
+#
+# The released operation declares no further response, so no other branch
+# exists.
 sm_operation: I_ITS_REST_ITEM_TAGS.composition_tags_get
 its: its-rest
 request:
@@ -71,3 +91,4 @@ outcomes:
       Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location: the header "MUST ONLY be used for resource creation (e.g., `201 Created`) or redirect responses"; §Deprecated headers deprecates it on GET responses
     body: present
   not_found: { status: 404 }
+  not_acceptable: { status: 406 }         # Resources.md §XML Format MUST — an Accept the tag surface cannot fulfill (no ITEM_TAG XML type; AMB-97)

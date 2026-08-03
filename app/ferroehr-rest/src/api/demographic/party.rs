@@ -9,7 +9,7 @@ use http::{HeaderMap, StatusCode};
 
 use openehr_base::prelude::ObjectVersionId;
 use openehr_its::rest::generated::demographic::{
-    AgentCreateParams, AgentDeleteParams, AgentGetParams, AgentUpdateParams,
+    AgentCreateParams, AgentDeleteParams, AgentGetParams, AgentUpdateParams, UpdateItemTag,
 };
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Agent, Group, Organisation, Person, Role};
@@ -43,6 +43,9 @@ pub(super) async fn run(
             // All per-kind `*CreateParams` are field-identical; reuse one.
             let _p = params::build::<AgentCreateParams>(&parts.path, q, h)?;
             let body = decode_party_body(kind, h, &parts.body)?;
+            // The wrapper-header tags are judged BEFORE the commit, so a
+            // defective tag refuses the request while nothing is durable.
+            let pending_tags = pending_party_tags(h)?;
             // person_create.yaml declares 201/400/422/404; a service NotFound
             // maps to 404, PreconditionViolation to 400, ContentInvalid to 422
             // (overview::error::sm_api_error) — `?` routes each to its status.
@@ -61,7 +64,7 @@ pub(super) async fn run(
             // carries ITEM_TAGs to persist. The party must exist first
             // (`item_tag.target_vo_id` FK), so tags are persisted after the create
             // and the stored set is reflected on the response metadata seam.
-            persist_request_tags(&state, kind, h, &mut resp).await?;
+            persist_request_tags(&state, kind, pending_tags, &mut resp).await?;
             // 201 + ETag/Location; body per Prefer; + item-tag response headers.
             let mut out = write_party(
                 kind,
@@ -90,6 +93,9 @@ pub(super) async fn run(
             let p = params::build::<AgentUpdateParams>(&parts.path, q, h)?;
             let uid = p.uid_based_id.clone();
             let body = decode_party_body(kind, h, &parts.body)?;
+            // The wrapper-header tags are judged BEFORE the commit, so a
+            // defective tag refuses the request while nothing is durable.
+            let pending_tags = pending_party_tags(h)?;
             match state
                 .backend()
                 .party_update(
@@ -111,7 +117,7 @@ pub(super) async fn run(
                     // persist any `openehr-item-tag` request-header tags
                     // against the updated party and reflect the stored set on the
                     // response metadata (person_update.yaml).
-                    persist_request_tags(&state, kind, h, &mut resp).await?;
+                    persist_request_tags(&state, kind, pending_tags, &mut resp).await?;
                     let mut out = write_party(
                         kind,
                         h,
@@ -159,11 +165,13 @@ pub(super) async fn run(
 async fn persist_request_tags(
     state: &AppState,
     kind: PartyKind,
-    h: &HeaderMap,
+    pending: PendingPartyTags,
     resp: &mut ServiceResponse,
 ) -> Result<(), RestError> {
-    let object_entries = params::parse_item_tag_header(h, params::H_ITEM_TAG);
-    let version_entries = params::parse_item_tag_header(h, params::H_VERSION_ITEM_TAG);
+    let PendingPartyTags {
+        object: object_entries,
+        version: version_entries,
+    } = pending;
     if object_entries.is_none() && version_entries.is_none() {
         return Ok(());
     }
@@ -188,8 +196,7 @@ async fn persist_request_tags(
         .object_id()
         .value()
         .into_owned();
-    if let Some(entries) = object_entries {
-        let tags = params::item_tags_from_header_entries(&entries);
+    if let Some(tags) = object_entries {
         let stored = state
             .backend()
             .party_tags_update(kind, container_uid, tags)
@@ -198,8 +205,7 @@ async fn persist_request_tags(
             meta.item_tags = Some(stored.body);
         }
     }
-    if let Some(entries) = version_entries {
-        let tags = params::item_tags_from_header_entries(&entries);
+    if let Some(tags) = version_entries {
         let stored = state
             .backend()
             .party_tags_update(kind, version_uid, tags)
@@ -209,6 +215,62 @@ async fn persist_request_tags(
         }
     }
     Ok(())
+}
+
+/// The `ITEM_TAG` lists a party write's wrapper headers ask for, parsed and
+/// invariant-checked **before** the party is committed.
+#[derive(Debug, Default)]
+struct PendingPartyTags {
+    /// What `openehr-item-tag` asks to store on the `VERSIONED_OBJECT`.
+    object: Option<Vec<UpdateItemTag>>,
+    /// What `openehr-version-item-tag` asks to store on the committed VERSION.
+    version: Option<Vec<UpdateItemTag>>,
+}
+
+/// Parse and validate both wrapper headers BEFORE the party write, mirroring
+/// the EHR side ([`crate::api::ehr::pending_item_tags`]): a defective tag
+/// header refuses the request while nothing is durable, and the tag WRITE stays
+/// after the commit because the tags target the version that commit mints.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] for a malformed header entry;
+/// [`ApiError::Unprocessable`] for an entry that breaks an RM `ITEM_TAG`
+/// invariant.
+fn pending_party_tags(h: &HeaderMap) -> Result<PendingPartyTags, RestError> {
+    Ok(PendingPartyTags {
+        object: validated_party_entries(
+            params::parse_item_tag_header(h, params::H_ITEM_TAG)?,
+            params::H_ITEM_TAG,
+        )?,
+        version: validated_party_entries(
+            params::parse_item_tag_header(h, params::H_VERSION_ITEM_TAG)?,
+            params::H_VERSION_ITEM_TAG,
+        )?,
+    })
+}
+
+/// One header's parsed entries → the demographic group's write DTOs, refusing
+/// any entry the RM `ITEM_TAG` invariants reject
+/// ([`crate::overview::params::validate_item_tag_entries`] — the one judgement
+/// both tag families share).
+fn validated_party_entries(
+    entries: Option<Vec<params::ItemTagHeaderEntry>>,
+    name: &str,
+) -> Result<Option<Vec<UpdateItemTag>>, RestError> {
+    let Some(entries) = entries else {
+        return Ok(None);
+    };
+    params::validate_item_tag_entries(&entries, name)?;
+    Ok(Some(
+        entries
+            .into_iter()
+            .map(|entry| UpdateItemTag {
+                key: entry.key,
+                value: entry.value,
+                target_path: entry.target_path,
+            })
+            .collect(),
+    ))
 }
 
 /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` + the

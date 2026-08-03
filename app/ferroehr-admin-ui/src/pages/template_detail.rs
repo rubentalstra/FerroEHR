@@ -145,7 +145,7 @@ pub async fn fetch_template_meta(
         uid: opt
             .uid
             .as_ref()
-            .map(|u| u.value.clone())
+            .map(|u| u.value().to_owned())
             .unwrap_or_default(),
         language: opt.language.code_string.clone(),
         version: web_template.version.clone(),

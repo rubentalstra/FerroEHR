@@ -7,12 +7,12 @@ Runner: cnf-runner 3.17.1 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 905 |
+| passed | 936 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 942 |
+| total | 973 |
 
 ## By chapter
 
@@ -20,13 +20,13 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 385 | 0 | 0 | 18 |
+| **EHR** | 416 | 0 | 0 | 18 |
 | — EHR resource | 25 | 0 | 0 | 2 |
 | — EHR_STATUS | 44 | 0 | 0 | 5 |
 | — COMPOSITION | 125 | 0 | 0 | 0 |
-| — DIRECTORY | 69 | 0 | 0 | 6 |
+| — DIRECTORY | 71 | 0 | 0 | 6 |
 | — CONTRIBUTION | 86 | 0 | 0 | 5 |
-| — Item tags | 30 | 0 | 0 | 0 |
+| — Item tags | 59 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 92 | 0 | 0 | 10 |
 | — ADL 1.4 templates | 34 | 0 | 0 | 5 |
@@ -110,7 +110,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | AdminApi | pass | 8 | 0 | 0 | 0 |
 | MessageApi | pass | 4 | 0 | 0 | 0 |
 | SystemApi | pass | 1 | 0 | 0 | 0 |
-| ItemTags | pass | 32 | 0 | 0 | 0 |
+| ItemTags | pass | 63 | 0 | 0 | 0 |
 | Signing | pass | 11 | 0 | 0 | 2 |
 | SimplifiedFormats | pass | 68 | 0 | 0 | 1 |
 | SmartAppLaunch | pass | 3 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 905 of 942 selected cases driven.
+Coverage: 936 of 973 selected cases driven.
 
 Not-executed verdicts (each cited):
 

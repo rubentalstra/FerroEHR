@@ -404,6 +404,77 @@ async fn composition_delete_emits_delete_record() {
 }
 
 #[tokio::test]
+async fn composition_tags_update_emits_update_record() {
+    // A tag mutation IS an audited state change. The openEHR specs are silent
+    // on any audit obligation for tags — RM ehr `master04-ehr_package.adoc`
+    // §Tags puts them outside change control outright ("they do not cause
+    // re-versioning of the content"), so no CONTRIBUTION and no AUDIT_DETAILS
+    // is the spec-correct behaviour, and no released text substitutes anything
+    // in their place. Emitting an IHE ATNA record instead is OUR OWN DESIGN
+    // (no openEHR spec governs this): a tag carries clinical meaning and a
+    // mutation with no trail at all would be a medico-legal blind spot. This
+    // pins that the trail exists.
+    let (socket, sender) = audit_capture(true).await;
+    let (_pg, app, uid) = audit_app_with_composition(sender).await;
+    let vo = uid.split("::").next().unwrap().to_owned();
+    let request = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{EHR}/composition/{vo}/tags"))
+        .header("x-forwarded-for", CLIENT_IP)
+        .header("content-type", "application/json")
+        .header("authorization", BASIC_ALICE)
+        .body(Body::from(
+            json!([{ "key": "reviewed", "value": "true" }]).to_string(),
+        ))
+        .expect("request");
+    let resp = app.oneshot(request).await.expect("resp");
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    let xml = recv_one(&socket).await.expect("audit record");
+    assert!(xml.contains(r#"EventActionCode="U""#), "update: {xml}");
+    assert!(
+        xml.contains(r#"EventOutcomeIndicator="0""#),
+        "success: {xml}"
+    );
+    assert!(xml.contains(r#"UserID="alice""#), "user alice: {xml}");
+}
+
+#[tokio::test]
+async fn composition_tags_delete_emits_delete_record() {
+    let (socket, sender) = audit_capture(true).await;
+    let (_pg, app, uid) = audit_app_with_composition(sender).await;
+    let vo = uid.split("::").next().unwrap().to_owned();
+    // Seed one tag through the audited app, then drain that record.
+    let put = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{EHR}/composition/{vo}/tags"))
+        .header("content-type", "application/json")
+        .header("authorization", BASIC_ALICE)
+        .body(Body::from(json!([{ "key": "reviewed" }]).to_string()))
+        .expect("request");
+    assert_eq!(
+        app.clone().oneshot(put).await.expect("resp").status(),
+        StatusCode::NO_CONTENT
+    );
+    let _seeded = recv_one(&socket).await.expect("the seeding audit record");
+
+    let resp = app
+        .oneshot(req(
+            "DELETE",
+            &format!("/ehr/{EHR}/composition/{vo}/tags/reviewed"),
+            true,
+        ))
+        .await
+        .expect("resp");
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    let xml = recv_one(&socket).await.expect("audit record");
+    assert!(xml.contains(r#"EventActionCode="D""#), "delete: {xml}");
+    assert!(
+        xml.contains(r#"EventOutcomeIndicator="0""#),
+        "success: {xml}"
+    );
+}
+
+#[tokio::test]
 async fn aql_execute_emits_execute_record() {
     let (socket, sender) = audit_capture(true).await;
     let (_pg, app) = audit_app(sender).await;

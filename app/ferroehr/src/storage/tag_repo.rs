@@ -8,6 +8,8 @@
 //! (a tag may address a specific VERSION), so target-ownership checks also
 //! live with the callers.
 
+use std::collections::BTreeMap;
+
 use sqlx::{PgConnection, PgPool, Row};
 
 use crate::ids::{EhrId, VoId};
@@ -28,6 +30,19 @@ pub struct TagRow {
     /// The tag value, absent when the tag is a bare marker.
     pub value: Option<String>,
     /// The path within the target the tag applies to, if it is not whole-object.
+    ///
+    /// NOTE: stored and served **opaque** — never parsed, never resolved
+    /// against the target's content. RM common
+    /// `UML/classes/org.openehr.rm.common.item_tag.adoc` types `target_path` as
+    /// a plain `String` and admits BOTH dialects for it in one attribute
+    /// ("archetype (i.e. AQL) or RM path") with no discriminator, no grammar
+    /// reference, and no statement about when — or whether — it resolves. A
+    /// server that guessed a dialect would reject one of the two the RM
+    /// explicitly allows, and one that resolved paths at commit would invent a
+    /// precondition no released text states. So the value round-trips
+    /// byte-for-byte and participates only in the (`key`, `target_path`)
+    /// identity. (Register AMB-96 covers the one normalization we do apply:
+    /// `""` folds to absent.)
     pub target_path: Option<String>,
 }
 
@@ -102,6 +117,35 @@ pub async fn list_tags(
 /// existing collection, insert the given set (`PUT` full-collection
 /// semantics; an empty set clears all). Runs on the caller's transaction.
 ///
+/// **A tag that SURVIVES the replace keeps its original `created_at`.** The
+/// wire operation is a whole-collection replace, but an `ITEM_TAG` identity —
+/// the (`key`, `target_path`) pair within one target (ITS-REST overview
+/// `Requests_and_responses.md` §item-tag headers: "uniquely identified by their
+/// `key` and `target_path` pair attributes") — that appears in both the stored
+/// and the posted set is the SAME tag, re-asserted, not a new one. Resetting
+/// its creation instant on every unrelated edit to a sibling tag would destroy
+/// when it was first attached, and that instant is observable: the admin
+/// dump/export round-trips `item_tag.created_at`
+/// (`crate::service::admin::dump_load`). An identity absent from the posted set
+/// is genuinely removed, and a new identity is genuinely created, so both get
+/// the current instant.
+///
+/// NOTE: no openEHR spec governs this — our own design. RM common
+/// `master07-tags.adoc` and its normative home (RM ehr
+/// `master04-ehr_package.adoc` §Tags) model `ITEM_TAG` with no timestamp at
+/// all, and no released ITS-REST text assigns a tag a creation instant, so
+/// `created_at` is a storage column of ours and its behaviour across a replace
+/// is ours to fix.
+///
+/// The carry-forward is computed in three statements rather than one
+/// data-modifying CTE on purpose: a `WITH prior AS (DELETE … RETURNING) INSERT
+/// …` would have the insert's unique-index check race the CTE's delete within
+/// one command, which PostgreSQL does not define away
+/// (<https://www.postgresql.org/docs/18/queries-with.html> §Data-Modifying
+/// Statements in WITH: the sub-statements "cannot see one another's effects on
+/// the target tables"). All three run on the caller's transaction, so the
+/// replace stays atomic.
+///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn replace_tags(
@@ -111,6 +155,25 @@ pub async fn replace_tags(
     target_version: Option<&str>,
     tags: &[NewTag<'_>],
 ) -> Result<(), StorageError> {
+    // The creation instants of the collection as it stands, keyed by ITEM_TAG
+    // identity, so a surviving tag can keep its own.
+    let prior = sqlx::query(
+        "SELECT key, target_path, created_at FROM item_tag \
+         WHERE ehr_id IS NOT DISTINCT FROM $1 \
+         AND target_vo_id = $2 AND target_version IS NOT DISTINCT FROM $3",
+    )
+    .bind(ehr_scope)
+    .bind(target_vo_id)
+    .bind(target_version)
+    .fetch_all(&mut *tx)
+    .await?;
+    let mut created_before: BTreeMap<(String, Option<String>), jiff::Timestamp> = BTreeMap::new();
+    for row in &prior {
+        let key: String = row.try_get("key")?;
+        let target_path: Option<String> = row.try_get("target_path")?;
+        let created_at: jiff_sqlx::Timestamp = row.try_get("created_at")?;
+        created_before.insert((key, target_path), created_at.to_jiff());
+    }
     // Replace exactly ONE collection: the container's or one VERSION's —
     // never both (RM ITEM_TAG.target: container or VERSION are distinct
     // targets).
@@ -137,7 +200,9 @@ pub async fn replace_tags(
     for tag in tags {
         last_by_identity.insert((tag.key, tag.target_path), tag);
     }
-    let (mut types, mut keys, mut values, mut paths) = (
+    let now = jiff::Timestamp::now();
+    let (mut types, mut keys, mut values, mut paths, mut created) = (
+        Vec::with_capacity(last_by_identity.len()),
         Vec::with_capacity(last_by_identity.len()),
         Vec::with_capacity(last_by_identity.len()),
         Vec::with_capacity(last_by_identity.len()),
@@ -148,11 +213,19 @@ pub async fn replace_tags(
         keys.push(tag.key);
         values.push(tag.value);
         paths.push(tag.target_path);
+        // A surviving identity keeps its own creation instant; a new one is
+        // created now (see the function doc).
+        let carried = created_before
+            .get(&(tag.key.to_owned(), tag.target_path.map(str::to_owned)))
+            .copied()
+            .unwrap_or(now);
+        created.push(jiff_sqlx::Timestamp::from(carried));
     }
     sqlx::query(
         "INSERT INTO item_tag \
-         (ehr_id, target_vo_id, target_version, target_type, key, value, target_path) \
-         SELECT $1, $2, $3, t.* FROM UNNEST($4::text[], $5::text[], $6::text[], $7::text[]) AS t",
+         (ehr_id, target_vo_id, target_version, target_type, key, value, target_path, created_at) \
+         SELECT $1, $2, $3, t.* \
+         FROM UNNEST($4::text[], $5::text[], $6::text[], $7::text[], $8::timestamptz[]) AS t",
     )
     .bind(ehr_scope)
     .bind(target_vo_id)
@@ -161,6 +234,7 @@ pub async fn replace_tags(
     .bind(&keys)
     .bind(&values)
     .bind(&paths)
+    .bind(&created)
     .execute(&mut *tx)
     .await?;
     Ok(())
@@ -171,6 +245,17 @@ pub async fn replace_tags(
 /// routes carry no path selector), while the `ITEM_TAG` identity is the
 /// (`key`, `target_path`) pair — so a key delete removes EVERY tag under that key
 /// in the addressed collection, a set delete.
+///
+/// NOTE: the delete is PHYSICAL — the row goes. No openEHR spec governs this;
+/// it is our own design, and the alternative is unrepresentable rather than
+/// merely unchosen. "Logical delete" is a change-control concept (a new VERSION
+/// in lifecycle state `523|deleted|`, RM common
+/// `master06-change_control_package.adoc`), and RM ehr
+/// `master04-ehr_package.adoc` §Tags puts `ITEM_TAG` outside change control
+/// entirely: an `ITEM_TAG` is unversioned, carries no `uid` and no lifecycle
+/// state, so there is no object for a tombstone to be a version OF. The
+/// released wire agrees by omission — the tag DELETE's only success branch is
+/// `204`, with no deleted-but-readable form anywhere.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

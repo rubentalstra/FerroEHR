@@ -121,6 +121,19 @@ pub fn lookup(op: &str) -> Option<Classification> {
 
         // ── Item tags (clinical-resource metadata; audited on the parent
         //    resource — PHI-adjacent, so recorded) ─────────────────────────────
+        //
+        // NOTE: no openEHR spec governs this — our own design/extension. RM ehr
+        // `master04-ehr_package.adoc` §Tags puts ITEM_TAGs outside change
+        // control outright ("they do not cause re-versioning of the content"),
+        // so a tag mutation correctly emits NO CONTRIBUTION and NO
+        // AUDIT_DETAILS — and no released text puts anything in their place.
+        // Leaving the whole family unaudited would therefore be spec-conformant
+        // and still wrong for a clinical repository: a tag carries clinical
+        // meaning, and a state change with no trail at all is a medico-legal
+        // blind spot. Every tag operation is therefore audited under its PARENT
+        // resource's DICOM class (an ITEM_TAG has no class of its own in
+        // PS3.15), which is also where an auditor would look for it. Pinned
+        // end-to-end by `tests/it/audit_e2e.rs`.
         "ehr_tags_get" | "ehr_status_tags_get" => Classification::audited(Read, Ehr),
         "ehr_status_tags_update" => Classification::audited(Update, Ehr),
         "ehr_status_tags_delete" => Classification::audited(Delete, Ehr),

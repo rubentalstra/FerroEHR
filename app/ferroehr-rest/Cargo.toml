@@ -41,6 +41,9 @@ tokio = { workspace = true }
 # Serialization & data structures.
 serde = { workspace = true }
 serde_json = { workspace = true }
+# Strict body decodes (the ITEM_TAG PUT) report the JSON PATH of the offending
+# member, not just a line/column, so a refusal names what the client must fix.
+serde_path_to_error = { workspace = true }
 indexmap = { workspace = true }
 
 # Config, errors, observability, time. (Configuration is one root tree owned by

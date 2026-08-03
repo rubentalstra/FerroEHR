@@ -576,7 +576,11 @@ async fn party_tags_crud() {
         .party_tags_update(
             PartyKind::Person,
             vo.clone(),
-            vec![json!({ "key": "priority", "value": "high" })],
+            vec![crate::item_tag_fixture::party_tag(
+                "priority",
+                Some("high"),
+                None,
+            )],
         )
         .await
         .expect("put tags");

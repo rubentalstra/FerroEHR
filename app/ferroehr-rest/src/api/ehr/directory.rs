@@ -79,12 +79,20 @@ pub(super) async fn run(
             )?;
             // 204_directory_updated (default) / 200_directory_updated
             // (representation); ETag + Location on both. 412 → latest version_uid.
+            // Judge the wrapper-header tags before the commit (see
+            // `crate::api::ehr::pending_item_tags`); the write stays after it.
+            let pending_tags = super::pending_item_tags(h)?;
             match state.backend().update_directory(ehr_id, uv).await {
                 Ok(meta) => {
                     // apply item-tag write-wrapper headers to the new version.
-                    let stored_tags =
-                        super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &meta.uid, h)
-                            .await?;
+                    let stored_tags = super::apply_item_tag_headers(
+                        &state,
+                        ehr_id,
+                        "FOLDER",
+                        &meta.uid,
+                        pending_tags,
+                    )
+                    .await?;
                     let repr = if negotiate::prefers_representation(h) {
                         state
                             .backend()
@@ -135,10 +143,14 @@ pub(super) async fn run(
                 "DIRECTORY creation",
                 None,
             )?;
+            // Judge the wrapper-header tags before the commit (see
+            // `crate::api::ehr::pending_item_tags`); the write stays after it.
+            let pending_tags = super::pending_item_tags(h)?;
             let meta = state.backend().create_directory(ehr_id, uv).await?;
             // apply item-tag write-wrapper headers to the committed FOLDER.
             let stored_tags =
-                super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &meta.uid, h).await?;
+                super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &meta.uid, pending_tags)
+                    .await?;
             let repr = if negotiate::prefers_representation(h) {
                 state
                     .backend()
