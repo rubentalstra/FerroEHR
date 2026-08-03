@@ -45,7 +45,7 @@ pub struct ExtractSpec {
     /// * n = follow nth degree links
     pub link_depth: i32,
     /// Queries specifying the contents of this Extract.
-    pub criteria: Vec<DvParsable>,
+    pub criteria: Option<Vec<DvParsable>>,
     /// Other specification items. Archetypable.
     pub other_details: Option<ItemStructure>,
 }

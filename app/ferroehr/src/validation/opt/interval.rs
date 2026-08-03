@@ -9,7 +9,8 @@
 //! `has`). Integer membership is delegated to the BASE
 //! [`MultiplicityInterval`] primitive (`Multiplicity_interval` is an
 //! `Interval<Integer>`, the very interval the occurrence/cardinality validator
-//! interrogates) so the boundary algebra is written once, in the spec crate.
+//! interrogates) and `Real` membership to [`ProperIntervalData::has`], so the
+//! boundary algebra is written once, in the spec crate.
 //!
 //! The `opt14` XSD models an interval as six independent components
 //! (`lower`/`upper` optional, `lower_unbounded`/`upper_unbounded` flags,
@@ -17,7 +18,7 @@
 //! [`iv_lower`]/[`iv_upper`] read those components directly (they surface the
 //! numeric bounds the AOM invariants compare, not a membership decision).
 
-use openehr_base::prelude::MultiplicityInterval;
+use openehr_base::prelude::{MultiplicityInterval, ProperIntervalData};
 use openehr_its::opt14::{Intervalofinteger, Intervalofreal};
 
 /// The effective lower bound of an `opt14` integer interval: an unbounded or
@@ -57,21 +58,26 @@ pub(super) fn int_in_range(v: i32, r: &Intervalofinteger) -> bool {
     .has(v)
 }
 
-/// Real membership `v ∈ interval`, inlining the same `Interval.has` boundary
-/// algebra for `Real` bounds.
+/// Real membership `v ∈ interval`, delegated to the BASE
+/// `Proper_interval.has` primitive over `Real` bounds
+/// ([`ProperIntervalData::has`], `Interval.has` in
+/// `BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`) —
+/// the same boundary algebra [`int_in_range`] uses on the integer side, so the
+/// two never diverge.
 ///
-/// NOTE: the BASE constraint-evaluation primitive built at
-/// `crates/openehr-base/src/foundation_types/interval/` exposes
-/// `Multiplicity_interval` (an `Interval<Integer>`) for integer membership,
-/// which [`int_in_range`] consumes. There is no ergonomic BASE entry point for
-/// `Real` membership — `Interval<Real>` cannot satisfy the `Ord`-style bound
-/// the generated boundary view is written against (`f64` is only `PartialOrd`),
-/// and the generic `Interval<T>` boundary view is crate-private to
-/// `openehr-base`. The boundary algebra is therefore inlined here for `Real`,
-/// faithful to `Interval.has` (`master05-interval.adoc`): an absent/unbounded
-/// limit imposes no constraint; present limits compare inclusively.
+/// The `opt14` interval's six components map onto the BASE type directly. The
+/// AOM leaf ranges (`C_REAL` / `C_DV_QUANTITY` magnitude ranges) are closed
+/// inclusive intervals, so the inclusion flags are set to `true`; an absent or
+/// unbounded limit still imposes no constraint on that side, matching
+/// `Interval.has`.
 pub(super) fn real_in_range(v: f64, r: &Intervalofreal) -> bool {
-    let lower_ok = r.lower_unbounded || r.lower.is_none_or(|l| v >= l);
-    let upper_ok = r.upper_unbounded || r.upper.is_none_or(|u| v <= u);
-    lower_ok && upper_ok
+    ProperIntervalData {
+        lower: r.lower,
+        upper: r.upper,
+        lower_unbounded: r.lower_unbounded,
+        upper_unbounded: r.upper_unbounded,
+        lower_included: true,
+        upper_included: true,
+    }
+    .has(&v)
 }

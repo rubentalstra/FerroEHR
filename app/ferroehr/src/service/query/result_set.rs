@@ -5,9 +5,9 @@
 use std::sync::LazyLock;
 
 use jiff::Timestamp;
+use openehr_its::rest::generated::query::{ResultSet, ResultSetColumn, ResultSetMetadata};
 use regex::Regex;
-use serde_json::{Value, json};
-use uuid::Uuid;
+use serde_json::Value;
 
 use crate::aql::exec::QueryResult;
 use crate::aql::ir::{ParamValue, Params};
@@ -18,6 +18,11 @@ use crate::service::query::request::AqlQueryRequest;
 /// `schemas/query/ResultSet`), i.e. the implemented ITS-REST release, read
 /// from the `openehr-its` crate version so it can never lag a pin bump.
 const RESULT_SET_SCHEMA_VERSION: &str = openehr_its::SPEC_VERSION;
+
+/// The `RESULT_SET.meta._type` discriminator — "the type of the serialized
+/// result object" (ITS-REST `schemas/query/ResultSetMetadata`, whose own
+/// example gives `_type: RESULTSET`).
+const RESULT_SET_META_TYPE: &str = "RESULTSET";
 
 /// Build the typed [`Params`] from the request's `query_parameters` map
 /// (values arrive as JSON scalars; complex values degrade to their JSON
@@ -96,48 +101,76 @@ fn render_param(value: &ParamValue) -> String {
 /// for `_executed_aql`; `name` (a stored query's qualified name) is emitted
 /// only when present.
 ///
-/// `RESULT_SET.id [1..1]` (`result_set.adoc`: "unique identifier of this
-/// result set") is emitted additively as a `uuidv7()`-derived id.
+/// The document is built as the generated ITS-REST contract types
+/// ([`ResultSet`] / [`ResultSetMetadata`] / [`ResultSetColumn`], emitted from
+/// the vendored `query` OAS) and serialized from them, so the served shape is
+/// the contract's shape by construction — a contract change breaks this
+/// function rather than silently diverging from a hand-written literal.
 ///
-/// NOTE: the SM `RESULT_SET` makes `id` mandatory, but the
-/// ITS-REST 1.1.0 `ResultSet` schema omits it; we emit it additively so the
-/// SM requirement is met without breaking the ITS-REST shape (an extra field
-/// a 1.0.3 client ignores).
+/// NOTE: no `id` is emitted. The SM `RESULT_SET` makes `id` mandatory
+/// (`SM/docs/UML/classes/result_set.adoc`), but the released ITS-REST
+/// `ResultSet` schema (`crates/openehr-its/vendor/rest-oas/query-*.openapi.yaml`
+/// §`components.schemas.ResultSet`) declares exactly
+/// `meta`/`name`/`q`/`columns`/`rows` with `required: [rows]` and **no**
+/// `additionalProperties`, so the wire has no slot for it: an `id` key is an
+/// undeclared property on a closed object schema, and the REST wire is what
+/// this function produces. It is therefore dropped rather than emitted
+/// additively.
 pub(super) fn result_set_json(
     aql: &str,
     executed: &str,
     name: Option<&str>,
     result: &QueryResult,
 ) -> Value {
-    let columns: Vec<Value> = result
+    let columns: Vec<ResultSetColumn> = result
         .columns
         .iter()
-        .map(|c| match &c.path {
+        .map(|c| {
             // NOTE (SM `result_set_column.adoc`):
             // `RESULT_SET_COLUMN.archetype_id [0..1]` is optional and omitted —
-            // the engine's `ColumnMeta` carries name + path only, and the spec
-            // itself flags it "check on whether needed". If a future path pass
-            // derives the referenced archetype id, it can be populated here
-            // additively; the optional cardinality means omitting it is
-            // conformant.
-            Some(path) => json!({ "name": c.name, "path": path }),
-            None => json!({ "name": c.name }),
+            // the engine's `ColumnMeta` carries name + path only, the generated
+            // `ResultSetColumn` has no slot for it (the OAS declares only
+            // `name` + `path`), and the SM itself flags it "check on whether
+            // needed". The optional cardinality means omitting it is conformant.
+            ResultSetColumn {
+                name: c.name.clone(),
+                path: c.path.clone(),
+            }
         })
         .collect();
-    let mut out = json!({
-        "id": Uuid::now_v7().to_string(),
-        "meta": {
-            "_type": "RESULTSET",
-            "_schema_version": RESULT_SET_SCHEMA_VERSION,
-            "_created": Timestamp::now().to_string(),
-            "_executed_aql": executed,
-        },
-        "q": aql,
-        "columns": columns,
-        "rows": result.rows,
-    });
-    if let (Some(name), Value::Object(map)) = (name, &mut out) {
-        map.insert("name".to_owned(), Value::String(name.to_owned()));
-    }
-    out
+
+    let set = ResultSet {
+        meta: Some(ResultSetMetadata {
+            // `_href` is "URL of the executed query (only for GET endpoint)"
+            // and this assembler is method-agnostic, so it is left absent.
+            _href: None,
+            _type: Some(RESULT_SET_META_TYPE.to_owned()),
+            _schema_version: Some(RESULT_SET_SCHEMA_VERSION.to_owned()),
+            _created: Some(Timestamp::now().to_string()),
+            // `_generator` is a debugging aid ("some identifier of the
+            // application that generated the result"); nothing depends on it
+            // and it is left absent rather than fabricated.
+            _generator: None,
+            _executed_aql: Some(executed.to_owned()),
+            // The OAS declares `ResultSetMetadata` `additionalProperties: true`
+            // (`crates/openehr-its/vendor/rest-oas/query-*.openapi.yaml`
+            // §`components.schemas.ResultSetMetadata`); this server publishes
+            // no metadata extension, so the map stays empty (and serializes to
+            // nothing).
+            additional_properties: std::collections::BTreeMap::new(),
+        }),
+        name: name.map(ToOwned::to_owned),
+        q: Some(aql.to_owned()),
+        columns: Some(columns),
+        rows: result.rows.clone(),
+    };
+
+    // Every optional property the DTOs leave `None` is OMITTED, not rendered as
+    // `null`: the generated contract types carry
+    // `#[serde(skip_serializing_if = "Option::is_none")]` on each optional
+    // property, because no ITS-REST component schema sets `nullable: true` and
+    // an OpenAPI 3.0 `type: string` property does not admit `null`
+    // (<https://spec.openapis.org/oas/v3.0.3#schema-object>). `rows` cells are
+    // untouched — an unset AQL leaf is a genuine `null` there.
+    serde_json::to_value(&set).unwrap_or(Value::Null)
 }

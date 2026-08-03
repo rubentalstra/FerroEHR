@@ -41,7 +41,7 @@ pub struct BmmIndexedContainerProperty {
     /// True if this feature was synthesised due to generic substitution in an inherited type, or further constraining of a formal generic parameter.
     pub is_synthesised_generic: Option<bool>,
     /// Extensions to feature-level meta-types.
-    pub feature_extensions: Vec<BmmFeatureExtension>,
+    pub feature_extensions: Option<Vec<BmmFeatureExtension>>,
     /// Group containing this feature.
     pub group: BmmFeatureGroup,
 

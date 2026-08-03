@@ -15,9 +15,14 @@
 //!   impls over a hand-written writer/reader runtime — the canonical-JSON
 //!   (de)serialization for every spec type (there is no serde derive on the spec
 //!   types; the codec owns the `_type` / number-typing / omission contract).
-//! - [`rm_validate`] — the wire-boundary RM class-invariant dispatcher: reads a
-//!   canonical-JSON node, deserializes via the codec, and runs the RM invariants
-//!   (the `Validate` impls stay in `openehr-rm`/`openehr-base`).
+//! - [`wire_validate`] — the wire-boundary RM class-invariant dispatch layer:
+//!   reads a canonical-JSON node, deserializes via the codec, and runs the RM
+//!   invariant cores of `openehr_rm::validate` (the `Validate` impls and every
+//!   value-level decision stay in `openehr-rm`/`openehr-base`).
+//! - [`rm_instance`] — the template-independent validation of a whole RM
+//!   instance tree: the RM-invariant and terminology passes, the
+//!   [`rm_instance::ValidationMessage`] report shape, and the composed
+//!   [`rm_instance::validate_composition`] entry point.
 //! - [`xml`] — **ITS-XML**: canonical XML via `quick-xml`, validated against the
 //!   vendored XSDs (`schemas/xml/`). (Implementation is P5.)
 //! - [`rest`] — **ITS-REST**: the openEHR REST API contract. The machine-readable
@@ -65,9 +70,9 @@ pub mod json_codec;
 pub mod opt14;
 pub mod rest;
 #[cfg(feature = "full")]
-pub mod rm_terminology;
+pub mod rm_instance;
 #[cfg(feature = "full")]
-pub mod rm_validate;
+pub mod wire_validate;
 #[cfg(feature = "full")]
 pub mod xml;
 

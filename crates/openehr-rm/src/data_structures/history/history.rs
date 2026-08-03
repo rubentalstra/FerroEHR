@@ -30,7 +30,7 @@ pub struct History<T> {
     /// Optional globally unique object identifier for root points of archetyped structures.
     pub uid: Option<UidBasedId>,
     /// Links to other archetyped structures (data whose root object inherits from `ARCHETYPED`, such as `ENTRY`, `SECTION` and so on). Links may be to structures in other compositions.
-    pub links: Vec<Link>,
+    pub links: Option<Vec<Link>>,
     /// Details of archetyping used on this node.
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
@@ -44,5 +44,5 @@ pub struct History<T> {
     /// Optional summary data that aggregates, organizes, reduces and transforms the event series. This may be a text or image that presents a graphical presentation, or some data that assists with the interpretation of the data.
     pub summary: Option<ItemStructure>,
     /// The events in the series. This attribute is of a generic type whose parameter must be a descendant of `ITEM_SUTRUCTURE`.
-    pub events: Vec<Event<T>>,
+    pub events: Option<Vec<Event<T>>>,
 }

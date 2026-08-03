@@ -11,7 +11,7 @@ use crate::am24::bmm3::core::model::bmm_model::BmmModel;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReferenceModelAccess {
     /// List of directories where all the schemas loaded here are found.
-    pub schema_directories: Vec<String>,
+    pub schema_directories: Option<Vec<String>>,
     /// All schemas found and loaded from `schema_directories`. Keyed by schema_id, i.e. model_publisher '_' schema_name '_' model_release, e.g. openehr_rm_1.0.3.
     pub all_schemas: Option<std::collections::BTreeMap<String, SchemaDescriptor>>,
     /// Top-level (root) models in use. Keyed by logical schema_name, i.e. model_publisher '_' model_name, e.g. "openehr_rm".

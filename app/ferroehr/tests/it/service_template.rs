@@ -219,7 +219,7 @@ async fn required_example_validates_and_converts() {
         // Acceptance bar: the required example is committable — it passes the
         // full validator (RM invariants + terminology + archetype
         // conformance) with no violations.
-        let violations = openehr_its::flat::validation::validate_composition(&comp, &wt);
+        let violations = openehr_its::rm_instance::validate_composition(&comp, &wt);
         assert!(
             violations.is_empty(),
             "{rel}: required example must validate clean, got {} violation(s): {violations:?}",

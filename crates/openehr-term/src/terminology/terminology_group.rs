@@ -13,7 +13,7 @@ pub struct TerminologyGroup {
     /// Name of this vocabulary.
     pub name: String,
     /// List of concepts (i.e. coded terms) in this vocabulary.
-    pub concepts: Vec<TerminologyConcept>,
+    pub concepts: Option<Vec<TerminologyConcept>>,
     /// Identifier used for terminology group in the openEHR Reference Model. The value is inferred from the `_name_` attribute.
     ///
     /// Valid values take the form of an xs:NCName value, i.e. cannot contain:

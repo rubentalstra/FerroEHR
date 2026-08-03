@@ -143,8 +143,9 @@ pub(crate) async fn message_export_ehrs(
     responses(
         (status = 200, description = "The SM `List<EXTRACT>` — one canonical \
                                       `EXTRACT` per manifest entity, in \
-                                      manifest order. An empty manifest yields \
-                                      `[]`.",
+                                      manifest order (`EXTRACT_MANIFEST.\
+                                      entities` is `1..*`, so the list is \
+                                      never empty).",
          body = Vec<serde_json::Value>),
         (status = 400, description = "The body is not a well-formed \
                                       `EXTRACT_SPEC`, an entity names neither \

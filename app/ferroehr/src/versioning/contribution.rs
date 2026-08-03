@@ -10,16 +10,17 @@
 //! `audit_change_type` group and stored **verbatim** (never narrowed), while
 //! the storage branch collapses to create / modify / delete / attest.
 
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::list::Page;
 use crate::service::status::CallStatusType;
 use crate::versioning::attestation::{AttestationParts, PendingAttest};
 use crate::versioning::audit::{
-    AuditInput, change_type, change_type_code, decode_description, description_fragment,
+    AuditInput, change_type, change_type_code, decode_description, dv_text, party_proxy,
     validate_commit_audit,
 };
 use crate::versioning::change::{Change, CommittedContribution};
@@ -77,10 +78,13 @@ fn classify(
 ) -> Result<(Action, String), ServiceError> {
     let code = match token {
         Some(t) => change_type_code(t).ok_or_else(|| {
-            ServiceError::Unprocessable(format!(
-                "change_type {t:?} is not a code in the openEHR audit_change_type group \
-                 (AUDIT_DETAILS.Change_type_valid)"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new(format!(
+                    "{t:?} is not a code in the openEHR audit_change_type group"
+                ))
+                .with_path("change_type")
+                .with_invariant("AUDIT_DETAILS.Change_type_valid"),
+            )
         })?,
         // No client change type: infer creation vs modification from the
         // presence of preceding_version_uid.
@@ -98,15 +102,18 @@ fn classify(
                 // change_control §Contributions: creation commits a NEW
                 // VERSIONED_OBJECT).
                 return Err(ServiceError::Unprocessable(
-                    "change_type 249|creation| is invalid for an existing object \
-                     (preceding_version_uid present); creation commits a new \
-                     VERSIONED_OBJECT (RM change_control §Contributions)"
-                        .to_owned(),
+                    Violation::new(
+                        "249|creation| is invalid for an existing object \
+                         (preceding_version_uid present); creation commits a new \
+                         VERSIONED_OBJECT",
+                    )
+                    .with_path("change_type")
+                    .with_invariant("RM change_control §Contributions"),
                 ));
             }
             if !has_data {
                 return Err(ServiceError::Unprocessable(
-                    "creation version needs data".to_owned(),
+                    Violation::new("is required on a creation version").with_path("data"),
                 ));
             }
             Ok((Action::Create, code))
@@ -126,9 +133,12 @@ fn classify(
             }
             if has_data {
                 return Err(ServiceError::Unprocessable(
-                    "deleted (523) version must not carry data — its data attribute is \
-                     set to Void (RM change_control §Contributions)"
-                        .to_owned(),
+                    Violation::new(
+                        "must not be set on a deleted (523) version — its data attribute \
+                         is set to Void",
+                    )
+                    .with_path("data")
+                    .with_invariant("RM change_control §Contributions"),
                 ));
             }
             Ok((Action::Delete, code))
@@ -157,9 +167,12 @@ fn classify(
             }
             if has_data {
                 return Err(ServiceError::Unprocessable(
-                    "attestation of an existing item adds no content — a 666 version \
-                     item must not carry data (RM change_control §Contributions)"
-                        .to_owned(),
+                    Violation::new(
+                        "must not be set on a 666 attestation version — attesting an \
+                         existing item adds no content",
+                    )
+                    .with_path("data")
+                    .with_invariant("RM change_control §Contributions"),
                 ));
             }
             Ok((Action::Attest, code))
@@ -180,9 +193,10 @@ fn classify(
                 )));
             }
             if !has_data {
-                return Err(ServiceError::Unprocessable(format!(
-                    "change_type {code} version needs data"
-                )));
+                return Err(ServiceError::Unprocessable(
+                    Violation::new(format!("is required on a change_type {code} version"))
+                        .with_path("data"),
+                ));
             }
             Ok((Action::Modify, code))
         }
@@ -248,7 +262,9 @@ pub(crate) async fn commit_version_set(
         .and_then(Value::as_array)
         .filter(|v| !v.is_empty())
         .ok_or_else(|| {
-            ServiceError::Unprocessable("contribution must contain versions".to_owned())
+            ServiceError::Unprocessable(
+                Violation::new("must contain at least one version").with_path("versions"),
+            )
         })?;
 
     // A client-supplied CONTRIBUTION uid is honoured when unused and rejected
@@ -267,9 +283,10 @@ pub(crate) async fn commit_version_set(
                       is not part of the wire contract"
         )]
         Some(raw) => Some(raw.parse::<Uuid>().map_err(|_| {
-            ServiceError::Unprocessable(format!(
-                "CONTRIBUTION uid {raw:?} is not a valid HIER_OBJECT_ID UUID"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new(format!("{raw:?} is not a valid HIER_OBJECT_ID UUID"))
+                    .with_path("CONTRIBUTION.uid"),
+            )
         })?),
     };
 
@@ -278,11 +295,10 @@ pub(crate) async fn commit_version_set(
     // included in the CONTRIBUTION". We default each version's committer/system_id
     // from the CONTRIBUTION's own audit; time_committed is always the server
     // commit-act time.
-    let contrib_committer = body
-        .get("audit")
-        .and_then(|a| a.get("committer"))
-        .cloned()
-        .unwrap_or_else(|| cx.default_committer());
+    let contrib_committer = match body.get("audit").and_then(|a| a.get("committer")) {
+        Some(supplied) => party_proxy(supplied)?,
+        None => cx.default_committer(),
+    };
     let contrib_system_id = body
         .get("audit")
         .and_then(|a| a.get("system_id"))
@@ -418,16 +434,17 @@ pub(crate) async fn commit_version_set(
             check_kind_scope(kind, party_only)?;
             let partial = v.commit_audit.ok_or_else(|| {
                 ServiceError::Unprocessable(
-                    "666 attestation version requires a commit_audit \
-                     (the UPDATE_ATTESTATION)"
-                        .to_owned(),
+                    Violation::new(
+                        "is required on a 666 attestation version (the UPDATE_ATTESTATION)",
+                    )
+                    .with_path("commit_audit"),
                 )
             })?;
             attests.push(PendingAttest {
                 vo_id,
                 kind,
                 expected,
-                partial,
+                partial: crate::versioning::attestation::AttestationInput::decode(&partial)?,
             });
             continue;
         }
@@ -437,7 +454,9 @@ pub(crate) async fn commit_version_set(
         let change = match v.action {
             Action::Create => {
                 let data = v.data.ok_or_else(|| {
-                    ServiceError::Unprocessable("creation version needs data".to_owned())
+                    ServiceError::Unprocessable(
+                        Violation::new("is required on a creation version").with_path("data"),
+                    )
                 })?;
                 let kind = data_kind(&data)?;
                 check_kind_scope(kind, party_only)?;
@@ -468,12 +487,14 @@ pub(crate) async fn commit_version_set(
                     template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
-                    attestations: v.accompanying,
+                    attestations: accompanying(&v.accompanying)?,
                 }
             }
             Action::Modify => {
                 let data = v.data.ok_or_else(|| {
-                    ServiceError::Unprocessable("modification version needs data".to_owned())
+                    ServiceError::Unprocessable(
+                        Violation::new("is required on a modification version").with_path("data"),
+                    )
                 })?;
                 let Some((vo_id, expected)) = v.target else {
                     return Err(ServiceError::Internal(
@@ -499,7 +520,7 @@ pub(crate) async fn commit_version_set(
                     template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
-                    attestations: v.accompanying,
+                    attestations: accompanying(&v.accompanying)?,
                     other_input_version_uids: v.other_input_version_uids,
                 }
             }
@@ -561,10 +582,13 @@ pub(crate) async fn commit_version_set(
         .and_then(coded_value)
     {
         Some(token) => change_type_code(&token).ok_or_else(|| {
-            ServiceError::Unprocessable(format!(
-                "contribution audit change_type {token:?} is not a code in the \
-                 openEHR audit_change_type group (AUDIT_DETAILS.Change_type_valid)"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new(format!(
+                    "{token:?} is not a code in the openEHR audit_change_type group"
+                ))
+                .with_path("contribution audit change_type")
+                .with_invariant("AUDIT_DETAILS.Change_type_valid"),
+            )
         })?,
         None => aggregate_change_type(&version_codes),
     };
@@ -728,11 +752,29 @@ fn commit_audit_is_attestation(audit: &Value) -> Result<bool, ServiceError> {
     match audit.get("_type").and_then(Value::as_str) {
         None | Some("UPDATE_AUDIT" | "AUDIT_DETAILS") => Ok(false),
         Some("UPDATE_ATTESTATION" | "ATTESTATION") => Ok(true),
-        Some(other) => Err(ServiceError::Unprocessable(format!(
-            "VERSION.commit_audit _type {other:?} is not an AUDIT_DETAILS or its \
-             ATTESTATION subtype (RM common master06 §Committal and Audits)"
-        ))),
+        Some(other) => Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "_type {other:?} is not an AUDIT_DETAILS or its ATTESTATION subtype"
+            ))
+            .with_path("VERSION.commit_audit")
+            .with_invariant("RM common master06 §Committal and Audits"),
+        )),
     }
+}
+
+/// Decode a CONTRIBUTION version's `UPDATE_VERSION.attestations` — the
+/// attestations committed WITH the new version (master06 §Attestation, "Signing
+/// content at committal") — into the typed carrier the commit path completes.
+///
+/// # Errors
+/// The [`crate::versioning::attestation::AttestationInput::decode`] rejections.
+fn accompanying(
+    partials: &[Value],
+) -> Result<Vec<crate::versioning::attestation::AttestationInput>, ServiceError> {
+    partials
+        .iter()
+        .map(crate::versioning::attestation::AttestationInput::decode)
+        .collect()
 }
 
 /// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`,
@@ -758,7 +800,7 @@ fn commit_audit_is_attestation(audit: &Value) -> Result<bool, ServiceError> {
 fn parse_audit(
     audit: Option<&Value>,
     change_type: String,
-    default_committer: &Value,
+    default_committer: &openehr_rm::prelude::PartyProxy,
     default_system_id: &str,
     attestable: bool,
 ) -> Result<AuditInput, ServiceError> {
@@ -776,24 +818,22 @@ fn parse_audit(
         .and_then(|a| a.get("description"))
         .filter(|d| !d.is_null())
         .map(|d| match d {
-            Value::String(s) => Ok(description_fragment(s)),
-            other => {
-                decode_description(other).map(|text| openehr_its::json::to_canonical_value(&text))
-            }
+            Value::String(s) => Ok(dv_text(s)),
+            other => decode_description(other),
         })
         .transpose()?;
     let attestation = match audit {
         // The `_type` is checked for EVERY commit audit, attestable or not — an
         // unknown class is refused wherever it appears.
         Some(a) if commit_audit_is_attestation(a)? && attestable => {
-            Some(AttestationParts::decode(a)?.fragment())
+            Some(Box::new(AttestationParts::decode(a)?))
         }
         _ => None,
     };
-    let committer = audit
-        .and_then(|a| a.get("committer"))
-        .cloned()
-        .unwrap_or_else(|| default_committer.clone());
+    let committer = match audit.and_then(|a| a.get("committer")) {
+        Some(supplied) => party_proxy(supplied)?,
+        None => default_committer.clone(),
+    };
     let system_id = audit
         .and_then(|a| a.get("system_id"))
         .and_then(Value::as_str)
@@ -888,16 +928,22 @@ fn aggregate_change_type(version_codes: &[String]) -> String {
 /// direction.
 fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
     if party_only && !kind.is_demographic() {
-        return Err(ServiceError::Unprocessable(format!(
-            "a demographic CONTRIBUTION may only contain demographic versions, got {}",
-            kind.as_str()
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "of a demographic CONTRIBUTION may only be demographic versions, got {}",
+                kind.as_str()
+            ))
+            .with_path("versions"),
+        ));
     }
     if !party_only && kind.is_demographic() {
-        return Err(ServiceError::Unprocessable(format!(
-            "an EHR CONTRIBUTION may not contain demographic versions, got {}",
-            kind.as_str()
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "of an EHR CONTRIBUTION may not be demographic versions, got {}",
+                kind.as_str()
+            ))
+            .with_path("versions"),
+        ));
     }
     Ok(())
 }
@@ -949,7 +995,12 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
         .and_then(Value::as_str)
         .unwrap_or_default();
     Kind::from_type(rm_type).ok_or_else(|| {
-        ServiceError::Unprocessable(format!("not a versioned root type: {rm_type:?}"))
+        ServiceError::Unprocessable(
+            Violation::new(format!(
+                "names {rm_type:?}, which is not a versioned root type"
+            ))
+            .with_path("data._type"),
+        )
     })
 }
 
@@ -972,7 +1023,7 @@ fn parse_preceding(version: &Value) -> Result<(VoId, TreeId), ServiceError> {
         })
         .ok_or_else(|| {
             ServiceError::Unprocessable(
-                "preceding_version_uid required for modify/delete".to_owned(),
+                Violation::new("required for modify/delete").with_path("preceding_version_uid"),
             )
         })?;
     Ok(object_version_id::parse_version_uid(raw)?)
@@ -1048,29 +1099,46 @@ pub(crate) async fn get_contribution(
             // container — not to the ORIGINAL_VERSION it wraps.
             versions.push(version_envelope(&loaded, signer)?);
         } else {
-            versions.push(json!({
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": kind,
-                "id": {
-                    "_type": "OBJECT_VERSION_ID",
-                    "value": object_version_id::object_version_id(vo_id, &creating_system_id, tree)
-                }
-            }));
+            versions.push(openehr_its::json::to_canonical_value(
+                &ObjectRef::ObjectRef(ObjectRefData {
+                    namespace: "local".to_owned(),
+                    r#type: kind.clone(),
+                    id: ObjectId::ObjectVersionId(object_version_id::version_id(
+                        vo_id,
+                        &creating_system_id,
+                        tree,
+                    )?),
+                }),
+            ));
         }
     }
 
     let audit_details = AuditInput {
         system_id: audit.system_id,
         change_type: audit.change_type,
-        description: audit.description,
-        committer: audit.committer,
-        attestation: audit.attestation,
+        description: audit
+            .description
+            .as_ref()
+            .map(decode_description)
+            .transpose()?,
+        committer: party_proxy(&audit.committer)?,
+        attestation: audit
+            .attestation
+            .as_ref()
+            .map(AttestationParts::decode)
+            .transpose()?
+            .map(Box::new),
     }
-    .canonical(&time_committed)?;
+    .canonical(&time_committed);
+    // NOTE: a JSON-literal envelope over already-canonical parts — `audit` is
+    // the canonical `AUDIT_DETAILS` fragment `AuditInput::canonical` produced,
+    // and `versions` holds EITHER `OBJECT_REF`s (built from their generated
+    // type above) OR whole resolved VERSION envelopes, which the generated
+    // `Contribution.versions: Vec<ObjectRef>` cannot express. Decoding those
+    // fragments only to re-encode them would gain nothing.
     Ok(json!({
         "_type": "CONTRIBUTION",
-        "uid": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() },
+        "uid": openehr_its::json::to_canonical_value(&HierObjectId::from(contribution_id)),
         "audit": audit_details,
         "versions": versions
     }))
@@ -1170,6 +1238,7 @@ mod tests {
     #[test]
     fn attestation_commit_audit_round_trips() {
         let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let fallback = party_proxy(&committer).expect("the fixture is a canonical PARTY_PROXY");
         let wire = json!({
             "_type": "ATTESTATION",
             "system_id": "sysA.example.org",
@@ -1189,7 +1258,7 @@ mod tests {
         let audit = parse_audit(
             Some(&wire),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )
@@ -1197,7 +1266,7 @@ mod tests {
         let now: jiff::Timestamp = "2026-08-02T10:11:12Z"
             .parse()
             .expect("the literal is a valid RFC 3339 instant");
-        let rebuilt = audit.canonical(&now).expect("the stored audit rebuilds");
+        let rebuilt = audit.canonical(&now);
         assert_eq!(
             rebuilt.get("_type").and_then(Value::as_str),
             Some("ATTESTATION")
@@ -1230,6 +1299,7 @@ mod tests {
     #[test]
     fn coded_description_round_trips() {
         let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let fallback = party_proxy(&committer).expect("the fixture is a canonical PARTY_PROXY");
         let wire = json!({
             "_type": "UPDATE_AUDIT",
             "committer": committer,
@@ -1240,7 +1310,7 @@ mod tests {
         let audit = parse_audit(
             Some(&wire),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )
@@ -1248,7 +1318,7 @@ mod tests {
         let now: jiff::Timestamp = "2026-08-02T10:11:12Z"
             .parse()
             .expect("the literal is a valid RFC 3339 instant");
-        let rebuilt = audit.canonical(&now).expect("the stored audit rebuilds");
+        let rebuilt = audit.canonical(&now);
         assert_eq!(
             rebuilt
                 .pointer("/description/_type")
@@ -1272,13 +1342,12 @@ mod tests {
         let plain = parse_audit(
             Some(&json!({ "committer": committer, "description": "free text" })),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )
         .expect("a plain-string description is accepted")
-        .canonical(&now)
-        .expect("the stored audit rebuilds");
+        .canonical(&now);
         assert_eq!(
             plain.pointer("/description/_type").and_then(Value::as_str),
             Some("DV_TEXT")
@@ -1295,19 +1364,30 @@ mod tests {
     #[test]
     fn unknown_commit_audit_type_is_refused() {
         let committer = json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" });
+        let fallback = party_proxy(&committer).expect("the fixture is a canonical PARTY_PROXY");
         for bad in ["COMPOSITION", "REVISION_HISTORY_ITEM", "UPDATE_VERSION"] {
             let err = parse_audit(
                 Some(&json!({ "_type": bad, "committer": committer })),
                 change_type::MODIFICATION.to_owned(),
-                &committer,
+                &fallback,
                 "fallback.system",
                 true,
             )
             .expect_err("an unknown commit_audit class must be refused");
-            assert!(
-                matches!(&err, ServiceError::Unprocessable(m) if m.contains(bad)),
-                "{bad}: got {err:?}"
-            );
+            match err {
+                // Asserted as DATA: the refused attribute path, and the
+                // offending `_type` in the violation's own detail.
+                ServiceError::Unprocessable(v) => {
+                    assert_eq!(v.path(), Some("VERSION.commit_audit"), "{bad}");
+                    assert_eq!(
+                        v.invariant(),
+                        Some("RM common master06 §Committal and Audits"),
+                        "{bad}"
+                    );
+                    assert!(v.detail().contains(bad), "{bad}: {v}");
+                }
+                other => panic!("{bad}: expected Unprocessable, got {other:?}"),
+            }
         }
         // An ATTESTATION missing its mandatory attributes is refused too — the
         // subtype's own invariants apply wherever it appears
@@ -1315,20 +1395,20 @@ mod tests {
         let err = parse_audit(
             Some(&json!({ "_type": "ATTESTATION", "committer": committer })),
             change_type::MODIFICATION.to_owned(),
-            &committer,
+            &fallback,
             "fallback.system",
             true,
         )
         .expect_err("an ATTESTATION without reason must be refused");
-        assert!(
-            matches!(&err, ServiceError::Unprocessable(m) if m.contains("ATTESTATION.reason")),
-            "got {err:?}"
-        );
+        match err {
+            ServiceError::Unprocessable(v) => assert_eq!(v.path(), Some("ATTESTATION.reason")),
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
     }
 
-    fn classify_err(token: Option<&str>, has_preceding: bool, has_data: bool) -> String {
+    fn classify_err(token: Option<&str>, has_preceding: bool, has_data: bool) -> Violation {
         match classify(token, has_preceding, has_data) {
-            Err(ServiceError::Unprocessable(msg)) => msg,
+            Err(ServiceError::Unprocessable(v)) => v,
             other => panic!("expected Unprocessable, got {other:?}"),
         }
     }
@@ -1362,12 +1442,29 @@ mod tests {
         // the operation - i.e. first version of a MODIFICATION") → 400;
         // creation WITH a preceding is its unassigned mirror → the
         // register-documented 422 (AMB-54, narrowed).
-        assert!(classify_err(Some("249"), true, true).contains("249|creation|"));
+        // Each refusal is asserted on its DATA — the attribute path it is
+        // about, the named rule it breaks — not on a substring of the prose.
+        let creation_with_preceding = classify_err(Some("249"), true, true);
+        assert_eq!(creation_with_preceding.path(), Some("change_type"));
+        assert_eq!(
+            creation_with_preceding.invariant(),
+            Some("RM change_control §Contributions")
+        );
         assert!(classify_bad_request(Some("250"), false, true).contains("preceding_version_uid"));
-        assert!(classify_err(Some("523"), true, true).contains("must not carry data"));
+        let deleted_with_data = classify_err(Some("523"), true, true);
+        assert_eq!(deleted_with_data.path(), Some("data"));
+        assert_eq!(
+            deleted_with_data.invariant(),
+            Some("RM change_control §Contributions")
+        );
         assert!(classify_bad_request(Some("523"), false, false).contains("preceding_version_uid"));
-        assert!(classify_err(Some("999"), true, true).contains("audit_change_type"));
-        assert!(classify_err(Some("251"), true, false).contains("needs data"));
+        let out_of_group = classify_err(Some("999"), true, true);
+        assert_eq!(out_of_group.path(), Some("change_type"));
+        assert_eq!(
+            out_of_group.invariant(),
+            Some("AUDIT_DETAILS.Change_type_valid")
+        );
+        assert_eq!(classify_err(Some("251"), true, false).path(), Some("data"));
     }
 
     #[test]
@@ -1377,7 +1474,12 @@ mod tests {
         let (action, kept) = classify(Some("attestation"), true, false).unwrap();
         assert_eq!((action, kept.as_str()), (Action::Attest, "666"));
         assert!(classify_bad_request(Some("666"), false, false).contains("preceding_version_uid"));
-        assert!(classify_err(Some("666"), true, true).contains("adds no content"));
+        let attest_with_data = classify_err(Some("666"), true, true);
+        assert_eq!(attest_with_data.path(), Some("data"));
+        assert!(
+            attest_with_data.detail().contains("adds no content"),
+            "{attest_with_data}"
+        );
     }
 
     #[test]

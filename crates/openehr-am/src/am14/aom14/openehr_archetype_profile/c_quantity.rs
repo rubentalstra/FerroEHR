@@ -25,5 +25,5 @@ pub struct CQuantity {
     /// Name of physical property for Quantities being constrained.
     pub property: String,
     /// Value set of allowed individual Quantity item constraints in this Quantity constraint.
-    pub list: Vec<CQuantityItem>,
+    pub list: Option<Vec<CQuantityItem>>,
 }

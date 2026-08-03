@@ -12,7 +12,7 @@ pub struct CInteger {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
     pub assumed_value: Option<i32>,
     /// Set of Integers specifying constraint.
-    pub list: Vec<i32>,
+    pub list: Option<Vec<i32>>,
     /// Range of Integers specifying constraint.
     pub range: Option<Interval<i32>>,
 }

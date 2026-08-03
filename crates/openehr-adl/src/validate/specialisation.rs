@@ -98,7 +98,7 @@ fn value_set_members(
         .as_ref()
         .map(|vs| {
             vs.values()
-                .map(|set| (set.id.clone(), set.members.clone()))
+                .map(|set| (set.id.clone(), set.members.to_vec()))
                 .collect()
         })
         .unwrap_or_default()
@@ -192,7 +192,7 @@ impl<'a> ParentScan<'a> {
                 return;
             }
             // A brand-new attribute (ADD): every child object is a new node.
-            for child in &attr.children {
+            for child in attr.children.iter().flatten() {
                 self.check_new_object(child, &attr_path);
             }
             return;
@@ -246,7 +246,7 @@ impl<'a> ParentScan<'a> {
         // Per child object: match a congruent parent node (or, for a primitive
         // leaf with no node id, the parent attribute's same-type leaf), else a
         // new node.
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let child_path = child_path(&attr_path, object_node_id(child));
             if let Some(parent_obj) = find_congruent(parent_attr, child)
                 .or_else(|| pair_primitive_leaf(parent_attr, child))
@@ -268,6 +268,7 @@ impl<'a> ParentScan<'a> {
                     && parent_attr
                         .children
                         .iter()
+                        .flatten()
                         .any(|p| !object_node_id(p).is_empty())
                 {
                     push_issue(
@@ -562,7 +563,7 @@ impl<'a> ParentScan<'a> {
         let flat_card_upper =
             finite_cardinality_upper(child_attr).or_else(|| finite_cardinality_upper(parent_attr));
 
-        for parent_obj in &parent_attr.children {
+        for parent_obj in parent_attr.children.iter().flatten() {
             let parent_id = object_node_id(parent_obj);
             let parent_occ = effective_occurrences(
                 child_occurrences(parent_obj),
@@ -578,6 +579,7 @@ impl<'a> ParentScan<'a> {
             let has_members = child_attr
                 .children
                 .iter()
+                .flatten()
                 .any(|c| node_id_conforms_to(object_node_id(c), parent_id));
             if !has_members {
                 continue;
@@ -608,17 +610,18 @@ impl<'a> ParentScan<'a> {
         parent_attr: &'a CAttribute,
         path: &str,
     ) {
-        for child in &child_attr.children {
+        for child in child_attr.children.iter().flatten() {
             let Some(order) = sibling_order(child) else {
                 continue;
             };
             let anchor = &order.sibling_node_id;
-            let in_parent = parent_attr.children.iter().any(|p| {
+            let in_parent = parent_attr.children.iter().flatten().any(|p| {
                 node_id_conforms_to(anchor, object_node_id(p)) || object_node_id(p) == anchor
             });
             let redefined_locally = child_attr
                 .children
                 .iter()
+                .flatten()
                 .any(|c| object_node_id(c) == anchor);
             if !in_parent && !redefined_locally {
                 push_issue(
@@ -723,8 +726,11 @@ fn pick_child<'a>(attr: &'a CAttribute, seg: &PathSegment) -> Option<&'a CObject
         Some(nid) => attr
             .children
             .iter()
+            .flatten()
             .find(|c| object_node_id(c) == nid || node_id_conforms_to(nid, object_node_id(c))),
-        None if attr.children.len() == 1 => attr.children.first(),
+        None if attr.children.as_ref().map_or(0, Vec::len) == 1 => {
+            attr.children.iter().flatten().next()
+        }
         None => None,
     }
 }
@@ -740,6 +746,7 @@ fn find_congruent<'a>(parent_attr: &'a CAttribute, child: &CObject) -> Option<&'
     parent_attr
         .children
         .iter()
+        .flatten()
         .find(|p| node_id_conforms_to(cid, object_node_id(p)))
 }
 
@@ -752,7 +759,12 @@ fn pair_primitive_leaf<'a>(parent_attr: &'a CAttribute, child: &CObject) -> Opti
     if !ct.is_primitive() {
         return None;
     }
-    if let Some(same) = parent_attr.children.iter().find(|p| aom_type(p) == ct) {
+    if let Some(same) = parent_attr
+        .children
+        .iter()
+        .flatten()
+        .find(|p| aom_type(p) == ct)
+    {
         return Some(same);
     }
     // No same-type parent leaf: a *type-changing* leaf redefinition (e.g. a
@@ -763,6 +775,7 @@ fn pair_primitive_leaf<'a>(parent_attr: &'a CAttribute, child: &CObject) -> Opti
     let mut prims = parent_attr
         .children
         .iter()
+        .flatten()
         .filter(|p| aom_type(p).is_primitive());
     let first = prims.next()?;
     if prims.next().is_none() {
@@ -1113,9 +1126,9 @@ terminology
             && let AuthoredArchetype::AuthoredArchetype(data) = inner.as_mut()
             && let CComplexObject::CComplexObject(root) = &mut data.definition
         {
-            for a in &mut root.attributes {
+            for a in root.attributes.iter_mut().flatten() {
                 if a.rm_attribute_name == "items" {
-                    for c in &mut a.children {
+                    for c in a.children.iter_mut().flatten() {
                         if let CObject::CComplexObject(CComplexObject::CComplexObject(el)) = c {
                             el.node_id.clear();
                         }

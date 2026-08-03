@@ -27,7 +27,7 @@ pub struct PTemplate {
     /// The terminology of the archetype.
     pub terminology: PArchetypeTerminology,
     /// Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub rules: Vec<ElBooleanExpression>,
+    pub rules: Option<Vec<ElBooleanExpression>>,
 
     // inherited: P_AUTHORED_RESOURCE
     /// Unique identifier of the family of archetypes having the same interface identifier (same major version).
@@ -42,7 +42,7 @@ pub struct PTemplate {
     pub annotations:
         Option<std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>>,
     /// List of details for each natural translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The original_language does not appear in this list.
-    pub translations: Vec<TranslationDetails>,
+    pub translations: Option<Vec<TranslationDetails>>,
 
     // inherited: P_AUTHORED_ARCHETYPE
     /// ADL version if archteype was read in from an ADL sharable archetype.

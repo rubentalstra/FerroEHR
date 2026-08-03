@@ -84,22 +84,57 @@ impl VersionTreeId {
     }
 }
 
+impl VersionTreeId {
+    /// Build a `VERSION_TREE_ID` from its string form, validating the BASE
+    /// `master05-identification_package.adoc` §Syntaxes production
+    /// `version_tree_id = trunk_version, [ '.', branch_number, '.',
+    /// branch_version ]` with every part starting at 1 (RM common
+    /// `master06-change_control_package.adoc` §"The 'Virtual Version Tree'").
+    ///
+    /// This is the **only** construction door: the generated `value` field is
+    /// `pub(crate)`, so no consumer outside this crate can hold a
+    /// `VERSION_TREE_ID` that is not a legal version-tree identifier.
+    ///
+    /// # Errors
+    /// [`IdError::Empty`] for an empty value; [`IdError::VersionTree`] for
+    /// anything that is neither a bare trunk (`N`) nor a full `N.N.N` branch
+    /// with each segment `>= 1`.
+    pub fn new(value: impl Into<String>) -> Result<Self, IdError> {
+        let value = value.into();
+        if value.is_empty() {
+            return Err(IdError::Empty);
+        }
+        if !is_valid_version_tree(&value) {
+            return Err(IdError::VersionTree(value));
+        }
+        Ok(Self { value })
+    }
+}
+
 impl FromStr for VersionTreeId {
     type Err = IdError;
 
-    /// Parse a `VERSION_TREE_ID`, enforcing the lexical form strictly (BASE
-    /// 1.3.0). Returns [`IdError::VersionTree`] for anything that is neither a
-    /// bare trunk nor a full `N.N.N` branch.
+    /// Parse a `VERSION_TREE_ID` — see [`VersionTreeId::new`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
-            return Err(IdError::Empty);
-        }
-        if !is_valid_version_tree(s) {
-            return Err(IdError::VersionTree(s.to_owned()));
-        }
-        Ok(Self {
-            value: s.to_owned(),
-        })
+        Self::new(s)
+    }
+}
+
+impl TryFrom<&str> for VersionTreeId {
+    type Error = IdError;
+
+    /// Parse a `VERSION_TREE_ID` — see [`VersionTreeId::new`].
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Self::new(s)
+    }
+}
+
+impl TryFrom<String> for VersionTreeId {
+    type Error = IdError;
+
+    /// Parse a `VERSION_TREE_ID` — see [`VersionTreeId::new`].
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::new(s)
     }
 }
 

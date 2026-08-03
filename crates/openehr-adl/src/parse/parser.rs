@@ -416,7 +416,7 @@ impl Parser<'_> {
             soc_parent: None,
             rm_attribute_name,
             existence,
-            children,
+            children: openehr_base::containers::present(children),
             differential_path,
             cardinality,
             is_multiple,
@@ -690,7 +690,10 @@ impl Parser<'_> {
             SyntaxErrorCode::Scoat,
             "expecting '}' closing the tuple values",
         )?;
-        Ok(CAttributeTuple { members, tuples })
+        Ok(CAttributeTuple {
+            members: openehr_base::containers::present(members),
+            tuples: openehr_base::containers::present(tuples),
+        })
     }
 
     /// `c_primitive_tuple : '[' c_primitive_tuple_item (',' …)* ']'`;
@@ -733,7 +736,19 @@ impl Parser<'_> {
             SyntaxErrorCode::Scoat,
             "expecting ']' closing a tuple row",
         )?;
-        Ok(CPrimitiveTuple { members: items })
+        // `C_PRIMITIVE_TUPLE.members` is `1..*`; the loop above requires at
+        // least one item before the closing bracket, so an empty row is a
+        // syntax error rather than an empty tuple.
+        let Ok(members) = openehr_base::containers::NonEmptyVec::new(items) else {
+            let span = self.cur_span();
+            self.push(
+                SyntaxErrorCode::Scoat,
+                "a tuple row must state at least one value",
+                span,
+            );
+            return Err(());
+        };
+        Ok(CPrimitiveTuple { members })
     }
 
     /// `c_objects : c_regular_object_ordered+ | c_inline_primitive_object`,
@@ -975,7 +990,7 @@ mod tests {
         let d = data(&cco);
         assert_eq!(d.rm_type_name, "OBSERVATION");
         assert_eq!(d.node_id, "id1");
-        assert!(d.attributes.is_empty());
+        assert!(d.attributes.as_ref().is_none_or(Vec::is_empty));
     }
 
     #[test]
@@ -983,8 +998,11 @@ mod tests {
         let cco = parse("OBSERVATION[at0000] matches {\n value matches { DV_TEXT[at0001] }\n}");
         let d = data(&cco);
         assert_eq!(d.node_id, "at0000");
-        assert_eq!(d.attributes.len(), 1);
-        assert_eq!(d.attributes[0].rm_attribute_name, "value");
+        assert_eq!(d.attributes.as_ref().map_or(0, Vec::len), 1);
+        assert_eq!(
+            d.attributes.as_deref().unwrap_or_default()[0].rm_attribute_name,
+            "value"
+        );
     }
 
     #[test]
@@ -996,14 +1014,14 @@ mod tests {
              }\n}",
         );
         let d = data(&cco);
-        let items = &d.attributes[0];
+        let items = &d.attributes.as_deref().unwrap_or_default()[0];
         assert_eq!(items.rm_attribute_name, "items");
         let card = items.cardinality.as_ref().expect("cardinality");
         assert_eq!(card.interval.lower, Some(1));
         assert!(card.interval.upper_unbounded);
         assert!(!card.is_ordered);
         assert!(items.is_multiple);
-        let elem = &items.children[0];
+        let elem = &items.children.as_deref().unwrap_or_default()[0];
         let (_, node_id, occ, _) = obj_common(elem);
         assert_eq!(node_id, "id2");
         let occ = occ.as_ref().expect("occurrences");
@@ -1044,34 +1062,46 @@ mod tests {
         );
         let d = data(&cco);
         // DV_QUANTITY under value
-        let q = &d.attributes[0].children[0];
+        let q = &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0];
         match q {
             CObject::CComplexObject(CComplexObject::CComplexObject(qd)) => {
-                assert_eq!(qd.attribute_tuples.len(), 1);
-                let t = &qd.attribute_tuples[0];
-                assert_eq!(t.members.len(), 2);
-                assert_eq!(t.members[0].rm_attribute_name, "magnitude");
-                assert_eq!(t.tuples.len(), 2);
-                assert_eq!(t.tuples[0].members.len(), 2);
-                assert!(matches!(t.tuples[0].members[0], CPrimitiveObject::CReal(_)));
+                assert_eq!(qd.attribute_tuples.as_ref().map_or(0, Vec::len), 1);
+                let t = &qd.attribute_tuples.as_deref().unwrap_or_default()[0];
+                assert_eq!(t.members.as_ref().map_or(0, Vec::len), 2);
+                assert_eq!(
+                    t.members.as_deref().unwrap_or_default()[0].rm_attribute_name,
+                    "magnitude"
+                );
+                assert_eq!(t.tuples.as_ref().map_or(0, Vec::len), 2);
+                assert_eq!(t.tuples.as_deref().unwrap_or_default()[0].members.len(), 2);
                 assert!(matches!(
-                    t.tuples[0].members[1],
+                    t.tuples.as_deref().unwrap_or_default()[0].members[0],
+                    CPrimitiveObject::CReal(_)
+                ));
+                assert!(matches!(
+                    t.tuples.as_deref().unwrap_or_default()[0].members[1],
                     CPrimitiveObject::CString(_)
                 ));
             }
             _ => panic!("expected DV_QUANTITY complex object"),
         }
         // DV_ORDINAL tuple with terminology members
-        let o = &d.attributes[1].children[0];
+        let o = &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0];
         match o {
             CObject::CComplexObject(CComplexObject::CComplexObject(od)) => {
-                let t = &od.attribute_tuples[0];
+                let t = &od.attribute_tuples.as_deref().unwrap_or_default()[0];
                 assert!(matches!(
-                    t.tuples[0].members[0],
+                    t.tuples.as_deref().unwrap_or_default()[0].members[0],
                     CPrimitiveObject::CInteger(_)
                 ));
                 assert!(matches!(
-                    t.tuples[0].members[1],
+                    t.tuples.as_deref().unwrap_or_default()[0].members[1],
                     CPrimitiveObject::CTerminologyCode(_)
                 ));
             }
@@ -1104,7 +1134,10 @@ mod tests {
              }\n\
              }",
         );
-        let history = &data(&cco).attributes[0].children[0];
+        let history = &data(&cco).attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0];
         let CObject::CComplexObject(CComplexObject::CComplexObject(h)) = history else {
             panic!("expected the HISTORY complex object")
         };
@@ -1136,7 +1169,7 @@ mod tests {
              }",
         );
         let d = data(&cco);
-        let a = &d.attributes[0];
+        let a = &d.attributes.as_deref().unwrap_or_default()[0];
         assert_eq!(a.rm_attribute_name, "value");
         assert_eq!(
             a.differential_path.as_deref(),

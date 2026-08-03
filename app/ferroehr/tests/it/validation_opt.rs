@@ -20,8 +20,9 @@ use std::path::{Path, PathBuf};
 
 use openehr_base::prelude::{CodePhrase, TerminologyId};
 use openehr_its::opt14::{
-    self, ArchetypeTerm, Codedefinitionset, ConstraintBindingItem, Constraintbindingset,
-    FlatArchetypeOntology, OperationalTemplate, TermBindingItem, Termbindingset,
+    self, ArchetypeTerm, CAttribute, CObject, Codedefinitionset, ConstraintBindingItem,
+    Constraintbindingset, FlatArchetypeOntology, Intervalofinteger, OperationalTemplate,
+    TermBindingItem, Termbindingset,
 };
 
 use ferroehr::service::error::ServiceError;
@@ -204,6 +205,93 @@ fn vcaex_widened_existence_on_mandatory_attribute() {
     expect_code(&parse(&xml), "VCAEX");
 }
 
+// ── VCACA (cardinality conformance to the RM) ───────────────────────────────
+
+/// Retype the minimal fixture's `ITEM_TREE` node as a `CLUSTER` — whose RM
+/// `items` is `List<ITEM> [1..*]`
+/// (`RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+/// §Attributes), i.e. an RM cardinality lower bound of 1 — and restate that
+/// attribute's cardinality interval. Everything else is the vendored valid OPT.
+fn cluster_items_cardinality(lower: i32, upper: Option<i32>) -> OperationalTemplate {
+    fn retype(objects: &mut [CObject], lower: i32, upper: Option<i32>) {
+        for object in objects {
+            let attributes = match object {
+                CObject::CComplexObject(c) => {
+                    if c.rm_type_name == "ITEM_TREE" {
+                        "CLUSTER".clone_into(&mut c.rm_type_name);
+                    }
+                    &mut c.attributes
+                }
+                CObject::CArchetypeRoot(c) => &mut c.attributes,
+                _ => continue,
+            };
+            for attribute in attributes.iter_mut() {
+                if let CAttribute::CMultipleAttribute(multiple) = attribute {
+                    if multiple.rm_attribute_name == "items" {
+                        // `CLUSTER.items` is RM-mandatory, so the fixture's
+                        // `{0..1}` existence must rise with the retype or VCAEX
+                        // (not VCACA) is what fires.
+                        multiple.existence.lower = Some(1);
+                        multiple.cardinality.interval = Intervalofinteger {
+                            lower_included: Some(true),
+                            upper_included: upper.map(|_| true),
+                            lower_unbounded: false,
+                            upper_unbounded: upper.is_none(),
+                            lower: Some(lower),
+                            upper,
+                        };
+                    }
+                    retype(&mut multiple.children, lower, upper);
+                } else if let CAttribute::CSingleAttribute(single) = attribute {
+                    retype(&mut single.children, lower, upper);
+                }
+            }
+        }
+    }
+
+    let mut opt = parse(&minimal_xml());
+    let mut roots = vec![CObject::CArchetypeRoot(opt.definition.clone())];
+    retype(&mut roots, lower, upper);
+    let [CObject::CArchetypeRoot(root)] = &*roots else {
+        panic!("the retyped root is still a C_ARCHETYPE_ROOT");
+    };
+    opt.definition = root.clone();
+    opt
+}
+
+/// VCACA: "the cardinality of an attribute must conform, i.e. be the same or
+/// narrower, to the cardinality of the corresponding attribute in the
+/// underlying information model" (`AOM2/master04.5-…class_definitions.adoc`
+/// line 162; `master08-validation.adoc` line 74). A STATED `{0..3}` on
+/// `CLUSTER.items` admits an empty CLUSTER the RM's `[1..*]` forbids.
+#[test]
+fn vcaca_stated_cardinality_wider_than_the_rm_is_rejected() {
+    expect_code(&cluster_items_cardinality(0, Some(3)), "VCACA");
+}
+
+/// The valid twin of [`vcaca_stated_cardinality_wider_than_the_rm_is_rejected`]:
+/// a stated interval INSIDE the RM's (`{2..3}` ⊂ `{1..*}`) conforms.
+#[test]
+fn vcaca_stated_cardinality_inside_the_rm_is_accepted() {
+    validate_opt_artefact(&cluster_items_cardinality(2, Some(3)))
+        .expect("a narrower stated cardinality conforms");
+}
+
+/// The fully-open `{0..*}` states NO cardinality override and defers to the RM,
+/// so it is not a widening: AOM 1.4 makes the field MANDATORY
+/// (`org.openehr.am.aom14.c_multiple_attribute.adoc` §Attributes,
+/// `cardinality 1..1`) where AOM2 makes it optional and "only set if it
+/// overrides the underlying reference model"
+/// (`org.openehr.am.aom2.c_attribute.adoc` §Attributes), and cADL's open
+/// constraint means "any value permitted by the underlying information model"
+/// (`ADL1.4/master05-cadl.adoc` §"'Any' Constraints"). Real published OPTs in
+/// the vendored corpus carry exactly this shape on `CLUSTER.items`.
+#[test]
+fn vcaca_open_cardinality_defers_to_the_rm() {
+    validate_opt_artefact(&cluster_items_cardinality(0, None))
+        .expect("an open cardinality states no override");
+}
+
 // ── VACMCO / VCOC (occurrences vs cardinality) ──────────────────────────────
 
 #[test]
@@ -359,7 +447,7 @@ fn c_boolean_unsatisfiable() {
         .attributes
         .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
-            existence: opt14::Intervalofinteger {
+            existence: Intervalofinteger {
                 lower_unbounded: false,
                 upper_unbounded: false,
                 lower_included: Some(true),
@@ -393,7 +481,7 @@ fn assumed_value_outside_closed_list() {
         .attributes
         .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
-            existence: opt14::Intervalofinteger {
+            existence: Intervalofinteger {
                 lower_unbounded: false,
                 upper_unbounded: false,
                 lower_included: Some(true),
@@ -428,7 +516,7 @@ fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
         .attributes
         .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
-            existence: opt14::Intervalofinteger {
+            existence: Intervalofinteger {
                 lower_unbounded: false,
                 upper_unbounded: false,
                 lower_included: Some(true),

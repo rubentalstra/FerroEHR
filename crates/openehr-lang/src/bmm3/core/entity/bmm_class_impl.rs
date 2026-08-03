@@ -93,14 +93,14 @@ macro_rules! class_common {
             name: $c.name.as_str(),
             ancestors: $c.ancestors.as_ref(),
             package: &$c.package,
-            features: $c.features.as_slice(),
+            features: $c.features.as_deref().unwrap_or_default(),
             properties: $c.properties.as_ref(),
             static_properties: $c.static_properties.as_ref(),
             functions: $c.functions.as_ref(),
             procedures: $c.procedures.as_ref(),
             creators: $c.creators.as_ref(),
             converters: $c.converters.as_ref(),
-            invariants: $c.invariants.as_slice(),
+            invariants: $c.invariants.as_deref().unwrap_or_default(),
             is_abstract: $c.is_abstract,
             is_primitive: $c.is_primitive,
             source_schema_id: $c.source_schema_id.as_str(),
@@ -215,9 +215,9 @@ impl BmmEnumeration {
     #[must_use]
     pub fn item_names(&self) -> &[String] {
         match self {
-            Self::BmmEnumerationInteger(e) => e.item_names.as_slice(),
-            Self::BmmEnumerationString(e) => e.item_names.as_slice(),
-            Self::BmmEnumeration(e) => e.item_names.as_slice(),
+            Self::BmmEnumerationInteger(e) => e.item_names.as_deref().unwrap_or_default(),
+            Self::BmmEnumerationString(e) => e.item_names.as_deref().unwrap_or_default(),
+            Self::BmmEnumeration(e) => e.item_names.as_deref().unwrap_or_default(),
         }
     }
 
@@ -238,16 +238,19 @@ impl BmmEnumeration {
             Self::BmmEnumerationInteger(e) => e
                 .item_values
                 .iter()
+                .flatten()
                 .map(|v| v.value_literal.as_str())
                 .collect(),
             Self::BmmEnumerationString(e) => e
                 .item_values
                 .iter()
+                .flatten()
                 .map(|v| v.value_literal.as_str())
                 .collect(),
             Self::BmmEnumeration(e) => e
                 .item_values
                 .iter()
+                .flatten()
                 .map(BmmPrimitiveValue::value_literal)
                 .collect(),
         }
@@ -327,16 +330,25 @@ impl BmmGenericClass {
     /// names the model mandates (`…bmm3.bmm_parameter_type.adoc`
     /// `Inv_generic_name`: "`name.count = 1 and name.is_upper`") sorted order IS
     /// declaration order for the conventional `T`, `U`, `V`.
+    /// # Panics
+    /// Never in practice: see the `expect` reason below — a `BMM_GENERIC_CLASS`
+    /// with no formal generic parameter cannot arise from a valid schema.
     #[must_use]
+    #[expect(
+        clippy::expect_used,
+        reason = "unreachable by the model: this method exists only on BMM_GENERIC_CLASS, whose `generic_parameters` is a mandatory Hash the spec describes as the class's formal generic parameters (`docs/specs/openehr/LANG/docs/UML/classes/org.openehr.lang.bmm3.bmm_generic_class.adoc` §Attributes) — a generic class with none is not a generic class, so the empty map cannot arise from a valid schema"
+    )]
     pub fn r#type(&self) -> BmmGenericType {
         BmmGenericType {
             value_constraint: None,
             base_class: self.clone(),
-            generic_parameters: self
-                .generic_parameters
-                .values()
-                .map(|p| BmmUnitaryType::BmmParameterType(Box::new(p.clone())))
-                .collect(),
+            generic_parameters: openehr_base::containers::NonEmptyVec::new(
+                self.generic_parameters
+                    .values()
+                    .map(|p| BmmUnitaryType::BmmParameterType(Box::new(p.clone())))
+                    .collect(),
+            )
+            .expect("a BMM_GENERIC_CLASS should declare at least one formal generic parameter"),
         }
     }
 

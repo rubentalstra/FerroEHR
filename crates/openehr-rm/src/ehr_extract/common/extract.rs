@@ -28,13 +28,13 @@ pub struct Extract {
     /// Optional globally unique object identifier for root points of archetyped structures.
     pub uid: Option<UidBasedId>,
     /// Links to other archetyped structures (data whose root object inherits from `ARCHETYPED`, such as `ENTRY`, `SECTION` and so on). Links may be to structures in other compositions.
-    pub links: Vec<Link>,
+    pub links: Option<Vec<Link>>,
     /// Details of archetyping used on this node.
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
     pub feeder_audit: Option<FeederAudit>,
     /// The content extracted and serialised from the source repository for this Extract.
-    pub chapters: Vec<ExtractChapter>,
+    pub chapters: Option<Vec<ExtractChapter>>,
     /// The specification that this Extract actually conforms to; might not be identical with the specification of the corresponding request.
     pub specification: Option<ExtractSpec>,
     /// Reference to causing Request, if any.
@@ -46,5 +46,5 @@ pub struct Extract {
     /// Number of this Extract response in sequence of responses to Extract request identified by `_request_id_`. If this is the sole response, or there was no request, value is 1.
     pub sequence_nr: i32,
     /// Participations relevant to the creation of this Extract.
-    pub participations: Vec<ExtractParticipation>,
+    pub participations: Option<Vec<ExtractParticipation>>,
 }

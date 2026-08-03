@@ -241,7 +241,7 @@ fn root_children<'a>(def: &'a CComplexObject, attr: &str) -> &'a [CObject] {
     complex_attributes(def)
         .iter()
         .find(|a| a.rm_attribute_name == attr)
-        .map_or(&[], |a| a.children.as_slice())
+        .map_or(&[], |a| a.children.as_deref().unwrap_or_default())
 }
 
 fn attr_names(def: &CComplexObject) -> Vec<&str> {

@@ -323,7 +323,7 @@ fn old_form_translations(art: &SourceArtefact) -> Option<BTreeMap<String, Transl
                 accreditation: None,
                 other_details: None,
                 version_last_translated: None,
-                other_contributors: Vec::new(),
+                other_contributors: openehr_base::containers::present(Vec::new()),
             },
         );
     }
@@ -351,10 +351,11 @@ fn assemble_translations(language: &OdinValue) -> Option<BTreeMap<String, Transl
                 other_details: obj.and_then(|o| o.get("other_details")).map(string_map),
                 version_last_translated: obj
                     .and_then(|o| string_of(o.get("version_last_translated"))),
-                other_contributors: obj
-                    .and_then(|o| o.get("other_contributors"))
-                    .map(string_list)
-                    .unwrap_or_default(),
+                other_contributors: openehr_base::containers::present(
+                    obj.and_then(|o| o.get("other_contributors"))
+                        .map(string_list)
+                        .unwrap_or_default(),
+                ),
             },
         );
     }
@@ -374,10 +375,11 @@ fn assemble_description(desc: &OdinValue) -> ResourceDescription {
         original_author: string_map_of(map, "original_author"),
         original_namespace: string_of(map.get("original_namespace")),
         original_publisher: string_of(map.get("original_publisher")),
-        other_contributors: map
-            .get("other_contributors")
-            .map(string_list)
-            .unwrap_or_default(),
+        other_contributors: openehr_base::containers::present(
+            map.get("other_contributors")
+                .map(string_list)
+                .unwrap_or_default(),
+        ),
         lifecycle_state: string_of(map.get("lifecycle_state")).unwrap_or_default(),
         custodian_namespace: string_of(map.get("custodian_namespace")),
         custodian_organisation: string_of(map.get("custodian_organisation")),
@@ -410,10 +412,11 @@ fn assemble_details(details: &OdinValue) -> Option<BTreeMap<String, ResourceDesc
                 purpose: obj
                     .and_then(|o| string_of(o.get("purpose")))
                     .unwrap_or_default(),
-                keywords: obj
-                    .and_then(|o| o.get("keywords"))
-                    .map(string_list)
-                    .unwrap_or_default(),
+                keywords: openehr_base::containers::present(
+                    obj.and_then(|o| o.get("keywords"))
+                        .map(string_list)
+                        .unwrap_or_default(),
+                ),
                 use_: obj.and_then(|o| string_of(o.get("use"))),
                 misuse: obj.and_then(|o| string_of(o.get("misuse"))),
                 original_resource_uri: obj
@@ -556,10 +559,17 @@ fn merge_value_sets(v: &OdinValue, out: &mut BTreeMap<String, ValueSet>) {
         let id = obj
             .and_then(|o| string_of(o.get("id")))
             .unwrap_or_else(|| id_key.clone());
-        let members = obj
+        // `VALUE_SET.members` is `1..*`
+        // (`docs/specs/openehr/AM/docs/AOM2/master05-terminology.adoc`
+        // §VALUE_SET): a value set stating no member is not a value set, so the
+        // entry is skipped rather than materialised empty.
+        let Some(members) = obj
             .and_then(|o| o.get("members"))
             .map(string_list)
-            .unwrap_or_default();
+            .and_then(|m| openehr_base::containers::NonEmptyVec::new(m).ok())
+        else {
+            continue;
+        };
         out.insert(id_key, ValueSet { id, members });
     }
 }
@@ -694,7 +704,7 @@ fn build_archetype(i: BuildInputs<'_>) -> Archetype {
             is_differential: true,
             definition: i.definition,
             terminology: i.terminology,
-            rules: i.rules,
+            rules: openehr_base::containers::present(i.rules),
             rm_overlay: i.rm_overlay,
         })),
         ArtefactKind::OperationalTemplate => {
@@ -710,7 +720,7 @@ fn build_archetype(i: BuildInputs<'_>) -> Archetype {
                     is_differential: false,
                     definition: i.definition,
                     terminology: *i.terminology,
-                    rules: i.rules,
+                    rules: openehr_base::containers::present(i.rules),
                     rm_overlay: i.rm_overlay,
                     uid: meta.uid,
                     original_language: i.original_language,
@@ -735,7 +745,7 @@ fn build_archetype(i: BuildInputs<'_>) -> Archetype {
                 is_differential: true,
                 definition: i.definition,
                 terminology: *i.terminology,
-                rules: i.rules,
+                rules: openehr_base::containers::present(i.rules),
                 rm_overlay: i.rm_overlay,
                 uid: meta.uid,
                 original_language: i.original_language,
@@ -748,7 +758,7 @@ fn build_archetype(i: BuildInputs<'_>) -> Archetype {
                 rm_release: meta.rm_release,
                 is_generated: meta.is_generated,
                 other_meta_data: meta.other,
-                overlays: i.overlays,
+                overlays: openehr_base::containers::present(i.overlays),
             })),
         )),
         ArtefactKind::Archetype => Archetype::AuthoredArchetype(Box::new(
@@ -758,7 +768,7 @@ fn build_archetype(i: BuildInputs<'_>) -> Archetype {
                 is_differential: true,
                 definition: i.definition,
                 terminology: i.terminology,
-                rules: i.rules,
+                rules: openehr_base::containers::present(i.rules),
                 rm_overlay: i.rm_overlay,
                 uid: meta.uid,
                 original_language: i.original_language,

@@ -7,12 +7,12 @@
 //!
 //! - inherited `System_id_valid` (`not system_id.is_empty`) — realized here.
 //! - inherited `Change_type_valid` (`change_type.defining_code` in the openEHR
-//!   `audit change type` group) — terminology-bound, so it needs a lookup this
-//!   pure-RM crate cannot perform; realized at the wire-boundary dispatcher
-//!   (`openehr-its` `rm_terminology`).
+//!   `audit change type` group) — terminology-bound, so it needs a bundle
+//!   lookup rather than a typed-node property; realized by the binding table in
+//!   [`crate::validate::terminology`].
 //! - `Reason_valid` (a `DV_CODED_TEXT` `reason` must code to the openEHR
-//!   `attestation reason` group) — terminology-bound likewise, and realized at
-//!   the same dispatcher.
+//!   `attestation reason` group) — terminology-bound likewise, and realized in
+//!   the same binding table.
 //! - `Items_valid` (`items /= Void implies not items.is_empty`) — the BMM
 //!   `List` emits as a `Vec`, so absent and present-but-empty are one value
 //!   here and the rule has nothing to distinguish; it is realized where the
@@ -48,7 +48,7 @@ mod tests {
             value: "creation".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -67,7 +67,7 @@ mod tests {
             time_committed: DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: Vec::new(),
+                other_reference_ranges: openehr_base::containers::present(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: "2021-01-01T00:00:00".to_owned(),
@@ -77,12 +77,12 @@ mod tests {
             committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             attested_view: None,
             proof: None,
-            items: Vec::new(),
+            items: openehr_base::containers::present(Vec::new()),
             reason: DvText::DvText(DvTextData {
                 value: "witness".to_owned(),
                 hyperlink: None,
                 formatting: None,
-                mappings: Vec::new(),
+                mappings: openehr_base::containers::present(Vec::new()),
                 language: None,
                 encoding: None,
             }),

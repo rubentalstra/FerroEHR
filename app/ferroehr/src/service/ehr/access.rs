@@ -19,7 +19,8 @@ use crate::service::ehr::access_types::EhrAccessSettings;
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
 use moka::future::Cache;
-use serde_json::{Value, json};
+use openehr_rm::prelude::{DvText, DvTextData, EhrAccess};
+use serde_json::Value;
 use sqlx::PgConnection;
 
 use crate::service::FerroEhrService;
@@ -169,13 +170,26 @@ impl FerroEhrService {
 /// (RM ehr `ehr_access.adoc`), so `Archetyped_valid` (RM common
 /// `locatable.adoc`) requires the `ARCHETYPED` block on the root.
 pub(in crate::service) fn default_ehr_access() -> Value {
-    json!({
-        "_type": "EHR_ACCESS",
-        "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
-        "archetype_details":
-            crate::service::ehr::service::archetyped("openEHR-EHR-EHR_ACCESS.generic.v1"),
-        "name": { "_type": "DV_TEXT", "value": "EHR Access" }
-    })
+    const ARCHETYPE: &str = "openEHR-EHR-EHR_ACCESS.generic.v1";
+    let access = EhrAccess {
+        name: DvText::DvText(DvTextData {
+            value: "EHR Access".to_owned(),
+            hyperlink: None,
+            formatting: None,
+            mappings: openehr_base::containers::present(Vec::new()),
+            language: None,
+            encoding: None,
+        }),
+        archetype_node_id: ARCHETYPE.to_owned(),
+        uid: None,
+        links: openehr_base::containers::present(Vec::new()),
+        archetype_details: Some(crate::service::ehr::service::archetyped(ARCHETYPE)),
+        feeder_audit: None,
+        // `EHR_ACCESS.settings` (0..1) — see the doc comment above: with no
+        // access-control scheme in force the default carries none.
+        settings: None,
+    };
+    openehr_its::json::to_canonical_value(&access)
 }
 
 /// A shared, cloneable per-EHR cache of the current `EHR_ACCESS` scheme

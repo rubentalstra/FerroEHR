@@ -31,13 +31,13 @@ pub struct PBmmSchema {
     /// Description of schema. Persisted attribute.
     pub schema_description: String,
     /// Contributing authors of schema. Persisted attribute.
-    pub schema_contributors: Vec<String>,
+    pub schema_contributors: Option<Vec<String>>,
     /// Name of a parent class used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
     pub archetype_parent_class: Option<String>,
     /// Name of a parent class of logical 'data types' used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
     pub archetype_data_value_parent_class: Option<String>,
     /// List of top-level package paths that provide the RM 'model' part in archetype identifiers, e.g. the path "org.openehr.ehr" gives "EHR" in "openEHR-EHR". Within this namespace, archetypes can be based on any class reachable from classes defined directly in these packages. Persisted attribute.
-    pub archetype_rm_closure_packages: Vec<String>,
+    pub archetype_rm_closure_packages: Option<Vec<String>>,
     /// If archetype_parent_class is not set, designate a class whose descendants should be made visible in tree and grid renderings of the archetype definition. Persisted attribute.
     pub archetype_visualise_descendants_of: Option<String>,
     /// Version of the BMM (P_BMM) meta-model to which this schema conforms, e.g. `2.4`. Persisted attribute.
@@ -45,7 +45,7 @@ pub struct PBmmSchema {
     /// Other schemas included by this schema, keyed by schema id. Persisted attribute.
     pub includes: Option<std::collections::BTreeMap<String, BmmIncludeSpec>>,
     /// Primitive type definitions. Persisted attribute.
-    pub primitive_types: Vec<PBmmClass>,
+    pub primitive_types: Option<Vec<PBmmClass>>,
     /// Class definitions. Persisted attribute.
-    pub class_definitions: Vec<PBmmClass>,
+    pub class_definitions: Option<Vec<PBmmClass>>,
 }

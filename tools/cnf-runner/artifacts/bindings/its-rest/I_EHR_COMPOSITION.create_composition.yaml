@@ -44,6 +44,16 @@ outcomes:
       Preference-Applied: "present?"
     body: prefer_conditional
   not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)
+  # A payload the canonical reader cannot READ — an undeclared wire key, a
+  # malformed identifier — is 400, not 422: ITS-REST overview
+  # `Requests_and_responses.md` §HTTP status codes defines 400 as content that
+  # "could not be parsed or is invalid", while 422 is reserved for content
+  # that is "well-formed but was unable to be followed due to semantic
+  # errors" — i.e. it converted and then failed validation. A document the
+  # reader refuses never converts, so it cannot reach the 422 branch.
+  bad_request:
+    status: 400
+    body: error_loose
   validation_failed:
     status: 422                           # 422.yaml
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation

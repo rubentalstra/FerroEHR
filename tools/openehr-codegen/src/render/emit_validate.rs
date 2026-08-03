@@ -43,6 +43,8 @@ pub(crate) fn emit_files(model: &Model, own_schema: &BmmSchema) -> Vec<GenFile> 
     body.push('\n');
     body.push_str(&proportion_kind_consts(model));
     body.push('\n');
+    body.push_str(&nonempty_list_rules(model));
+    body.push('\n');
     body.push_str(CORES);
     vec![GenFile {
         path: "validate/generated.rs".to_string(),
@@ -81,6 +83,79 @@ fn proportion_kind_consts(model: &Model) -> String {
         ));
     }
     b
+}
+
+/// The **present-implies-non-empty rule table**, derived from the vendored BMM.
+///
+/// The `x /= Void implies not x.is_empty` invariant family has one uniform
+/// assertion shape, so it is READ from the model rather than hand-listed: every
+/// class invariant whose expression is exactly that shape, and whose named
+/// attribute is a CONTAINER (a String-valued twin such as
+/// `PARTY_IDENTIFIED.Name_valid` is a different rule, realized by its own core),
+/// becomes a row `(class, attribute, invariant)`.
+///
+/// The evaluator (`openehr_rm::validate::nonempty_list_violations`) applies a
+/// row to the class itself and to its transitive concrete descendants, so an
+/// inherited rule (`LOCATABLE.Links_valid`, `DV_ORDERED.
+/// Other_reference_ranges_validity`, `ENTRY.Other_participations_valid`) covers
+/// every descendant without being restated — and a class the spec adds to the
+/// hierarchy is covered the moment the model is regenerated.
+fn nonempty_list_rules(model: &Model) -> String {
+    let mut rows: Vec<(String, String, String)> = Vec::new();
+    for (class_name, class) in &model.classes {
+        for (invariant, expression) in &class.invariants {
+            let Some(attribute) = nonempty_list_attribute(expression) else {
+                continue;
+            };
+            // Only a container attribute: the same assertion shape also guards
+            // optional STRINGS, which are not this rule.
+            if !class.properties.iter().any(|p| {
+                p.name == attribute
+                    && matches!(p.kind, crate::load::bmm::BmmPropKind::Container { .. })
+            }) {
+                continue;
+            }
+            rows.push((class_name.clone(), attribute, invariant.clone()));
+        }
+    }
+    rows.sort();
+    let mut b = String::from(
+        "/// The `x /= Void implies not x.is_empty` rules, read from the vendored\n\
+         /// BMM class invariants: `(class, attribute, invariant)`. Applied to the\n\
+         /// class and its transitive concrete descendants by\n\
+         /// [`super::nonempty_list_violations`].\n\
+         pub(crate) const NONEMPTY_LIST_RULES: &[(&str, &str, &str)] = &[\n",
+    );
+    for (class, attribute, invariant) in rows {
+        b.push_str(&format!(
+            "    (\"{class}\", \"{attribute}\", \"{invariant}\"),\n"
+        ));
+    }
+    b.push_str("];\n");
+    b
+}
+
+/// The attribute named by a `x /= Void implies not x.is_empty` assertion, when
+/// the expression has exactly that shape (both operands the same attribute).
+/// `Void` is matched case-insensitively — the RM BMM spells it both ways
+/// (`DV_TEXT.Mappings_valid` uses lowercase `void`).
+fn nonempty_list_attribute(expression: &str) -> Option<String> {
+    let normalized = expression.split_whitespace().collect::<Vec<_>>().join(" ");
+    let (lhs, rhs) = normalized.split_once(" implies ")?;
+    let attribute = lhs
+        .strip_suffix(" /= Void")
+        .or_else(|| lhs.strip_suffix(" /= void"))?;
+    if rhs != format!("not {attribute}.is_empty") {
+        return None;
+    }
+    if attribute.is_empty()
+        || !attribute
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c == '_')
+    {
+        return None;
+    }
+    Some(attribute.to_owned())
 }
 
 /// The **emittable-invariant realization register**: every RM class invariant
@@ -159,16 +234,15 @@ fn realization_register(own_schema: &BmmSchema) -> String {
 /// The class-invariant runtime-hook register, split by adjudication verdict.
 ///
 /// Every RM class invariant the assertion-dialect classifier marks
-/// `runtime-hook-missing` needs a runtime lookup the pure `openehr-rm` core
-/// cannot perform (no `openehr-term` dependency). Since the INV-UNIFY wiring the
-/// terminology/code-set family is **enforced at the wire-boundary dispatcher**
-/// (`openehr-its` `rm_terminology::validate_rm_terminology`, run by
-/// `validate_rm_value` as a post-core check, backed by the openEHR terminology
-/// bundle, TERM 3.1.0), audited clean against the whole corpus before
-/// enforcement. Only the versioned-object aggregate invariants stay unrealized
-/// (they are a versioning/service-layer concern, not a property of one node).
-/// Both groups are named here so nothing the classifier flagged is silently
-/// dropped, sorted `(class, name)`.
+/// `runtime-hook-missing` needs a runtime lookup no generated core can express
+/// mechanically. The terminology/code-set family is **enforced by the sibling
+/// binding table** (`openehr-rm` `validate::terminology::validate_rm_terminology`,
+/// over the openEHR terminology bundle, TERM 3.1.0), which the `openehr-its`
+/// wire-boundary dispatcher runs as a post-core check — audited clean against
+/// the whole corpus before enforcement. Only the versioned-object aggregate
+/// invariants stay unrealized (they are a versioning/service-layer concern, not
+/// a property of one node). Both groups are named here so nothing the classifier
+/// flagged is silently dropped, sorted `(class, name)`.
 fn pending_register(own_schema: &BmmSchema) -> String {
     let mut enforced: Vec<(String, String, &'static str)> = Vec::new();
     let mut aggregate: Vec<(String, String, &'static str)> = Vec::new();
@@ -176,8 +250,8 @@ fn pending_register(own_schema: &BmmSchema) -> String {
         for (name, expr) in &def.invariants {
             if let Bucket::RuntimeHookMissing(reason) = classify(expr) {
                 // The versioned-object aggregate invariants stay pending; the
-                // terminology-service / code-set family is now enforced at the
-                // dispatcher.
+                // terminology-service / code-set family is enforced by the
+                // sibling `validate::terminology` binding table.
                 if reason == "versioned-object aggregate model" {
                     aggregate.push((class.clone(), name.clone(), reason));
                 } else {
@@ -191,21 +265,22 @@ fn pending_register(own_schema: &BmmSchema) -> String {
 
     let mut b = String::from(
         "//!\n\
-         //! # Terminology-backed invariants (enforced at the dispatcher, openEHR-its)\n\
+         //! # Terminology-backed invariants (enforced in `validate::terminology`)\n\
          //!\n\
          //! These BMM class invariants bind a coded value to an openEHR terminology\n\
-         //! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`).\n\
-         //! The pure `openehr-rm` core defers them (it has no `openehr-term`\n\
-         //! dependency); they are realized at the wire-boundary dispatcher —\n\
-         //! `openehr-its` `rm_terminology::validate_rm_terminology`, run by\n\
-         //! `validate_rm_value` as a post-core check over the openEHR terminology\n\
-         //! bundle (TERM 3.1.0). Enforcement was audited clean against the whole\n\
-         //! corpus first, so none newly rejects previously-accepted data:\n\
+         //! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`),\n\
+         //! so no generated core below can evaluate them mechanically. They are\n\
+         //! realized instead by the sibling binding table —\n\
+         //! `crate::validate::terminology::validate_rm_terminology`, over the openEHR\n\
+         //! terminology bundle (TERM 3.1.0) — which the `openehr-its` wire-boundary\n\
+         //! dispatcher runs as a post-core check. Enforcement was audited clean\n\
+         //! against the whole corpus first, so none newly rejects previously-accepted\n\
+         //! data:\n\
          //!\n",
     );
     for (class, name, reason) in &enforced {
         b.push_str(&format!(
-            "//! - `{class}.{name}` — enforced at the dispatcher ({reason}).\n"
+            "//! - `{class}.{name}` — enforced in `validate::terminology` ({reason}).\n"
         ));
     }
     b.push_str(
@@ -268,6 +343,9 @@ const MODULE_DOC_INTRO: &str = "\
 //! - `archetyped_core` — ARCHETYPED `Rm_version_valid`.
 //! - `party_identified_core` — PARTY_IDENTIFIED / PARTY_RELATED `Basic_validity`,
 //!   `Name_valid`.
+//! - `nonempty_list_core` — the whole `x /= Void implies not x.is_empty`
+//!   family, decidable on the typed model now that an optional container emits
+//!   as `Option<Vec<T>>`.
 //!
 //! Complex invariants stay hand-written where the projection is non-trivial:
 //! ELEMENT's null-flavour XOR (`element_impl`), DV_EHR_URI's `Scheme_valid`
@@ -573,6 +651,36 @@ pub(crate) fn party_identified_core(
     if name.is_some_and(str::is_empty) {
         out.push(InvariantViolation::here(format!(
             "Invariant Name_valid failed on type {ty}"
+        )));
+    }
+}
+
+/// The `x /= Void implies not x.is_empty` invariant family, shared by every RM
+/// class that declares one (`LOCATABLE.Links_valid`, `COMPOSITION.Content_valid`,
+/// `SECTION.Items_valid`, `ENTRY.Other_participations_valid`,
+/// `INSTRUCTION.Activities_valid`, `EVENT_CONTEXT.Participations_validity`,
+/// `DV_TEXT.Mappings_valid`, `DV_ORDERED.Other_reference_ranges_validity`,
+/// `PARTY_IDENTIFIED.Identifiers_valid`, `ACTOR.Roles_valid`,
+/// `ATTESTATION.Items_valid`, `ORIGINAL_VERSION.Attestations_valid` /
+/// `Other_input_version_uids_valid`, … — each `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.*`
+/// §Invariants).
+///
+/// `present_and_empty` is the whole rule: the attribute is present on the
+/// instance AND holds zero members. It is decidable on the typed model because
+/// an optional container emits as `Option<Vec<T>>` — `Some(vec![])` is exactly
+/// the forbidden state — so callers pass
+/// `self.attr.as_ref().is_some_and(Vec::is_empty)`.
+pub(crate) fn nonempty_list_core(
+    ty: &str,
+    attribute: &str,
+    invariant: &str,
+    present_and_empty: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if present_and_empty {
+        out.push(InvariantViolation::here(format!(
+            "{ty}.{attribute} is present but empty — a present list must be \
+             non-empty ({ty}.{invariant})"
         )));
     }
 }

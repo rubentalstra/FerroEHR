@@ -20,5 +20,5 @@ pub struct TranslationDetails {
     /// Version of this resource last time it was translated into the language represented by this `TRANSLATION_DETAILS` object.
     pub version_last_translated: Option<String>,
     /// Additional contributors to this translation, each listed in the preferred format of the relevant organisation for the artefacts in question. A typical default is `"name <email>"` if nothing else is specified.
-    pub other_contributors: Vec<String>,
+    pub other_contributors: Option<Vec<String>>,
 }

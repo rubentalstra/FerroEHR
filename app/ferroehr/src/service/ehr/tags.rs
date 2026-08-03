@@ -13,13 +13,17 @@
 //! or one VERSION's, never both. Not an SM-EHR interface. The `item_tag`
 //! table SQL is spec-silent (storage seam — our own design).
 
-use crate::ids::{EhrId, VoId};
-use crate::service::status::{CallStatusType, SmError};
-use serde_json::{Value, json};
+use openehr_base::prelude::{
+    HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, UidBasedId,
+};
+use openehr_rm::prelude::ItemTag;
+use serde_json::Value;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
-use crate::service::error::ServiceError;
-use crate::versioning::object_version_id::parse_uid_based_id;
+use crate::service::error::{ServiceError, Violation};
+use crate::service::status::{CallStatusType, SmError};
+use crate::versioning::object_version_id::{VersionIdError, parse_uid_based_id};
 
 impl FerroEhrService {
     /// All tags in an EHR, optionally filtered by key / value / target path.
@@ -46,7 +50,10 @@ impl FerroEhrService {
             target_path,
         )
         .await?;
-        Ok(rows.iter().map(|r| Self::tag_json(ehr_id, r)).collect())
+        rows.iter()
+            .map(|r| Self::tag_json(ehr_id, r))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     /// Tags on one target object (a COMPOSITION or `EHR_STATUS`). The caller
@@ -71,7 +78,10 @@ impl FerroEhrService {
             None,
         )
         .await?;
-        Ok(rows.iter().map(|r| Self::tag_json(ehr_id, r)).collect())
+        rows.iter()
+            .map(|r| Self::tag_json(ehr_id, r))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     /// Replace the **whole** tag collection of a target with the posted set,
@@ -88,7 +98,7 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         target_vo_id: VoId,
-        target_version: Option<&str>,
+        target_version: Option<&ObjectVersionId>,
         target_type: &str,
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, ServiceError> {
@@ -101,23 +111,30 @@ impl FerroEhrService {
         let mut new_tags: Vec<crate::storage::tag_repo::NewTag<'_>> =
             Vec::with_capacity(tags.len());
         for tag in &tags {
-            let key = tag
-                .get("key")
-                .and_then(Value::as_str)
-                .ok_or_else(|| ServiceError::Unprocessable("item tag requires a key".to_owned()))?;
+            let key = tag.get("key").and_then(Value::as_str).ok_or_else(|| {
+                ServiceError::Unprocessable(
+                    Violation::new("is required on an item tag").with_path("ITEM_TAG.key"),
+                )
+            })?;
             // RM ITEM_TAG Inv_key_valid: "not key.is_empty and key.is_justified"
             // (no leading/trailing whitespace).
             if key.is_empty() || key.trim() != key {
-                return Err(ServiceError::Unprocessable(format!(
-                    "item tag key {key:?} must be non-empty without leading/trailing whitespace"
-                )));
+                return Err(ServiceError::Unprocessable(
+                    Violation::new(format!(
+                        "{key:?} must be non-empty without leading/trailing whitespace"
+                    ))
+                    .with_path("ITEM_TAG.key")
+                    .with_invariant("ITEM_TAG.Inv_key_valid"),
+                ));
             }
             let value = tag.get("value").and_then(Value::as_str);
             // RM ITEM_TAG Inv_value_valid: "value /= Void implies not value.is_empty".
             if value == Some("") {
-                return Err(ServiceError::Unprocessable(format!(
-                    "item tag {key:?}: a value, if set, may not be empty"
-                )));
+                return Err(ServiceError::Unprocessable(
+                    Violation::new(format!("of item tag {key:?}, if set, may not be empty"))
+                        .with_path("ITEM_TAG.value")
+                        .with_invariant("ITEM_TAG.Inv_value_valid"),
+                ));
             }
             // `target_path: ""` normalizes to ABSENT: RM models target_path
             // 0..1 (absent = no path) with no non-empty invariant, while the
@@ -140,12 +157,13 @@ impl FerroEhrService {
             &mut tx,
             Some(ehr_id),
             target_vo_id,
-            target_version,
+            tag_target_tail(target_version),
             &new_tags,
         )
         .await?;
         tx.commit().await?;
-        self.target_tags(ehr_id, target_vo_id, target_version).await
+        self.target_tags(ehr_id, target_vo_id, tag_target_tail(target_version))
+            .await
     }
 
     /// The tag-target guard: the addressed versioned object must exist in
@@ -158,7 +176,7 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         target_vo_id: VoId,
-        target_version: Option<&str>,
+        target_version: Option<&ObjectVersionId>,
         target_type: &str,
     ) -> Result<(), ServiceError> {
         let not_found = || {
@@ -178,13 +196,13 @@ impl FerroEhrService {
         if owner != Some(ehr_id) || kind != target_type {
             return Err(not_found());
         }
-        if let Some(tail) = target_version {
-            let tree = crate::versioning::object_version_id::parse_version_tail(tail)?;
-            let (branch_number, branch_version) = tree.branch.unwrap_or((0, 0));
+        if let Some(version) = target_version {
+            let (_, tree) = crate::versioning::object_version_id::components(version)?;
+            let (trunk, branch_number, branch_version) = tree.columns();
             if !crate::storage::version_repo::meta::version_exists(
                 &self.pool,
                 target_vo_id,
-                tree.trunk,
+                trunk,
                 branch_number,
                 branch_version,
             )
@@ -192,7 +210,7 @@ impl FerroEhrService {
             {
                 return Err(ServiceError::sm(
                     CallStatusType::ObjectVersionDoesNotExist,
-                    format!("tag target version {target_vo_id}::{tail}"),
+                    format!("tag target version {}", version.value()),
                 ));
             }
         }
@@ -213,7 +231,7 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         target_vo_id: VoId,
-        target_version: Option<&str>,
+        target_version: Option<&ObjectVersionId>,
         target_type: &str,
         key: &str,
     ) -> Result<(), ServiceError> {
@@ -228,7 +246,7 @@ impl FerroEhrService {
             &self.pool,
             Some(ehr_id),
             target_vo_id,
-            target_version,
+            tag_target_tail(target_version),
             key,
         )
         .await?
@@ -252,41 +270,54 @@ impl FerroEhrService {
     /// forbids it on a concrete standalone type); the released OAS `ItemTag`
     /// schema disagrees with the RM on `target`'s shape — the RM is the
     /// RELEASED component and wins (owner ruling 2026-07-24).
-    fn tag_json(ehr_id: EhrId, row: &crate::storage::tag_repo::TagRow) -> Value {
-        let target_vo_id = row.target_vo_id;
-        let target = match &row.target_version {
-            Some(tail) => json!({
-                "_type": "OBJECT_VERSION_ID",
-                "value": format!("{target_vo_id}::{tail}")
-            }),
-            None => json!({
-                "_type": "HIER_OBJECT_ID",
-                "value": target_vo_id.to_string()
+    fn tag_json(
+        ehr_id: EhrId,
+        row: &crate::storage::tag_repo::TagRow,
+    ) -> Result<Value, VersionIdError> {
+        let tag = ItemTag {
+            key: row.key.clone(),
+            value: row.value.clone(),
+            target: tag_target(row)?,
+            target_path: row.target_path.clone(),
+            owner_id: ObjectRef::ObjectRef(ObjectRefData {
+                namespace: "local".to_owned(),
+                r#type: "EHR".to_owned(),
+                id: ObjectId::HierObjectId(HierObjectId::from(ehr_id.0)),
             }),
         };
-        let mut tag = json!({
-            "_type": "ITEM_TAG",
-            "key": row.key.as_str(),
-            "target": target,
-            "owner_id": {
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": "EHR",
-                "id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() }
-            },
-        });
-        // `tag` is the object literal above, so the optional fields go in
-        // through its own map rather than a panicking index-assign.
-        if let Some(obj) = tag.as_object_mut() {
-            if let Some(value) = &row.value {
-                obj.insert("value".to_owned(), json!(value.as_str()));
-            }
-            if let Some(path) = &row.target_path {
-                obj.insert("target_path".to_owned(), json!(path.as_str()));
-            }
-        }
-        tag
+        Ok(openehr_its::json::to_canonical_value(&tag))
     }
+}
+
+/// The `ITEM_TAG.target` identifier of a stored tag row: "Identifier of target,
+/// which may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`" (RM common
+/// `UML/classes/org.openehr.rm.common.item_tag.adoc` §Attributes) — a
+/// version-scoped tag names the `OBJECT_VERSION_ID`, an object-scoped one the
+/// container's `HIER_OBJECT_ID`. Shared with the demographic tag surface
+/// (`crate::service::demographic::tags`), which tags the same rows under a
+/// different owner.
+///
+/// # Errors
+/// [`VersionIdError`] when the stored `target_version` tail does not compose
+/// with the target key into a well-formed `OBJECT_VERSION_ID` (BASE
+/// `master05-identification_package.adoc` §Syntaxes) — the identifier is
+/// refused rather than served malformed.
+pub(in crate::service) fn tag_target(
+    row: &crate::storage::tag_repo::TagRow,
+) -> Result<UidBasedId, VersionIdError> {
+    let target_vo_id = row.target_vo_id;
+    Ok(match &row.target_version {
+        Some(tail) => {
+            let raw = format!("{target_vo_id}::{tail}");
+            UidBasedId::ObjectVersionId(
+                ObjectVersionId::new(raw.clone())
+                    .map_err(|source| VersionIdError::Malformed { raw, source })?,
+            )
+        }
+        // A bare container key is a UUID by type, so the conversion is total
+        // (BASE §Syntaxes: `uid = iso_oid | uuid | internet_id`).
+        None => UidBasedId::HierObjectId(HierObjectId::from(target_vo_id.0)),
+    })
 }
 
 // ── The ITS-REST tags call surface ────────────────────────────────────────────
@@ -324,14 +355,16 @@ impl FerroEhrService {
         uid_based_id: String,
         target_type: &str,
     ) -> Result<Vec<Value>, SmError> {
-        let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
+        let (vo_id, version) = parse_tag_target(&uid_based_id)?;
         // The released 404 trigger — "when the `uid_based_id` does not
         // exist" — plus the EHR scope and the route-kind discipline
         // (register-documented): the guard runs on the GET too; an existing
         // target with no tags stays an empty 200 list.
-        self.ensure_tag_target(an_ehr_id, vo_id, tail, target_type)
+        self.ensure_tag_target(an_ehr_id, vo_id, version.as_ref(), target_type)
             .await?;
-        Ok(self.target_tags(an_ehr_id, vo_id, tail).await?)
+        Ok(self
+            .target_tags(an_ehr_id, vo_id, tag_target_tail(version.as_ref()))
+            .await?)
     }
 
     /// `PUT …/{uid_based_id}/tags` — full-collection replace of a target's
@@ -348,9 +381,9 @@ impl FerroEhrService {
         target_type: &str,
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, SmError> {
-        let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
+        let (vo_id, version) = parse_tag_target(&uid_based_id)?;
         Ok(self
-            .replace_tags(an_ehr_id, vo_id, tail, target_type, tags)
+            .replace_tags(an_ehr_id, vo_id, version.as_ref(), target_type, tags)
             .await?)
     }
 
@@ -366,34 +399,39 @@ impl FerroEhrService {
         target_type: &str,
         key: String,
     ) -> Result<(), SmError> {
-        let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
-        self.delete_tag(an_ehr_id, vo_id, tail, target_type, &key)
+        let (vo_id, version) = parse_tag_target(&uid_based_id)?;
+        self.delete_tag(an_ehr_id, vo_id, version.as_ref(), target_type, &key)
             .await?;
         Ok(())
     }
 }
 
-/// Split a tag route's `uid_based_id` into the versioned-object id and — for a
-/// VERSION-addressed target — the verbatim `creating_system_id::version_tree_id`
-/// tail (RM `item_tag.adoc`: `target` "may be a `VERSIONED_OBJECT<T>` or a
-/// `VERSION<T>`"). The tail is validated as a well-formed `OBJECT_VERSION_ID`
-/// before it is kept verbatim.
+/// Decode a tag route's `uid_based_id` into the versioned-object id and — for a
+/// VERSION-addressed target — the full `OBJECT_VERSION_ID` it named (RM
+/// `item_tag.adoc`: `target` "may be a `VERSIONED_OBJECT<T>` or a
+/// `VERSION<T>`"), through the one platform decoder
+/// ([`parse_uid_based_id`]).
+///
+/// The stored tail (`creating_system_id::version_tree_id`) is read back off the
+/// decoded id as [`ObjectVersionId::extension`] — BASE
+/// `master05-identification_package.adoc` `UID_BASED_ID.extension` is exactly
+/// "the part right of the first `::`" — so the verbatim, case-preserving bytes
+/// come from the typed structure rather than a second hand-rolled split
+/// ([`tag_target_tail`]).
+///
+/// # Errors
+/// [`SmError`] (precondition, → `400`) when the value is neither a UUID nor a
+/// well-formed `OBJECT_VERSION_ID`.
 pub(in crate::service) fn parse_tag_target(
     uid_based_id: &str,
-) -> Result<(VoId, Option<&str>), SmError> {
-    let (vo_id, tree) = parse_uid_based_id(uid_based_id)?;
-    if tree.is_none() {
-        return Ok((vo_id, None));
-    }
-    let tail = uid_based_id
-        .split_once("::")
-        .map(|(_, tail)| tail)
-        .filter(|tail| !tail.is_empty())
-        .ok_or_else(|| {
-            SmError::new(
-                CallStatusType::PreconditionViolation,
-                format!("malformed version-addressed tag target {uid_based_id:?}"),
-            )
-        })?;
-    Ok((vo_id, Some(tail)))
+) -> Result<(VoId, Option<ObjectVersionId>), SmError> {
+    let decoded = parse_uid_based_id(uid_based_id)?;
+    Ok((decoded.vo_id, decoded.version))
+}
+
+/// The stored tag-target version tail — `creating_system_id::version_tree_id`,
+/// verbatim (`UID_BASED_ID.extension`, BASE master05) — for a
+/// VERSION-addressed target, or `None` for a container-addressed one.
+pub(in crate::service) fn tag_target_tail(version: Option<&ObjectVersionId>) -> Option<&str> {
+    version.map(ObjectVersionId::extension)
 }

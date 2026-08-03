@@ -40,7 +40,7 @@ pub struct CDuration {
     ///
     pub node_id: String,
     /// Additional identifiers of this node. openEHR archetypes can carry original ALD2 id-codes in this attribute and it can also carry human readable codes for future use. Alternative ids must be unique within the archetype.
-    pub alternative_ids: Vec<String>,
+    pub alternative_ids: Option<Vec<String>>,
     /// True if this node and by implication all sub-nodes are deprecated for use.
     pub is_deprecated: Option<bool>,
     /// Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
@@ -56,7 +56,7 @@ pub struct CDuration {
     /// Formal constraint on the assumed primitive `Iso8601_duration` type, in the form of one or more `Interval<Iso8601_duration>`.
     ///
     /// For a pattern constraint or no constraint, use an empty list.
-    pub constraint: Vec<Interval<Iso8601Duration>>,
+    pub constraint: Option<Vec<Interval<Iso8601Duration>>>,
 
     // inherited: C_TEMPORAL
     /// Optional alternative constraint in the form of a pattern based on ISO8601. See descendants for details.

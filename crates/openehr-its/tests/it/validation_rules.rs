@@ -18,6 +18,7 @@ use openehr_its::flat::webtemplate::{
     WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
     WebTemplateValidation,
 };
+use openehr_its::rm_instance::*;
 
 fn node(rm: &str, path: &str) -> WebTemplateNode {
     WebTemplateNode::new(rm.to_owned(), path.to_owned())

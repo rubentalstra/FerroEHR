@@ -15,8 +15,10 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
-# No serde: the spec types are plain data records; the terminology data model
-# carries no untyped `Any` field, so neither `serde` nor `serde_json` is needed.
+# Canonical-JSON (de)serialization is EMITTED manual `serde` impls on the spec
+# types (`openehr-codegen -- emit-json`, into `src/json_serde.rs`) — never a
+# derive.
+serde.workspace = true
 # Hand-written terminology loader (bundle.rs): read-only XML DOM + error type.
 roxmltree.workspace = true
 thiserror.workspace = true

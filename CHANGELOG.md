@@ -17,6 +17,129 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **`422 Unprocessable Content` messages now follow one uniform shape** —
+  `<RM attribute path> <what is wrong> (<invariant name>)`, for example
+  `ATTESTATION.items must be a non-empty list when present
+  (ATTESTATION.Items_valid)`. Internally the service layer carries every such
+  refusal as structured data (the attribute path, the named openEHR invariant,
+  and the nested class-invariant violations a validation pass produced) instead
+  of a pre-formatted sentence, and renders it into the response body exactly
+  once, at the REST edge. Most messages are byte-identical to before; the
+  remainder were reworded into the uniform shape (chiefly the CONTRIBUTION
+  version rules, item-tag rules, operational-template rules, `PARTY_REF`
+  refusals, and the `VERSIONED_COMPOSITION` cross-version invariants, where an
+  attribute is now written `COMPOSITION.category` rather than `COMPOSITION
+  category`). A `PARTY_RELATIONSHIP` with an absent `source`/`target`, and a
+  party with an empty `identities` list, are now reported by the RM decoder
+  that already refuses them rather than by a second hand-written check — same
+  `422`, different wording. Response body SHAPE, status codes and all
+  `validationErrors[]` contents are unchanged, and the `422` body is spec-silent
+  (`responses/422_COMPOSITION.yaml` declares no schema), so no declared contract
+  changes.
+- **A canonical-JSON object that repeats a member name is now REFUSED with
+  `400`, naming the repeated member.** The reader previously let the last
+  occurrence win. RFC 8259 §4 says object member names "SHOULD be unique" and
+  that "when the names within an object are not unique, the behavior of
+  software that receives such an object is unpredictable", and no conformant
+  openEHR writer emits a repeated member — every attribute is written once, in
+  model declaration order — so a repeated member is refused rather than
+  silently resolved to one of its values. This applies to the `_type`
+  discriminator as well as to modelled attributes.
+- **Canonical-JSON refusal messages now carry the full JSON path to the
+  offending node** (for example `(at $.content[0].data.items[2].value)`), so a
+  client can locate the defect in a large document without bisecting it. The
+  refusal wording itself is unchanged in kind: the offending member, the class
+  that does not declare it, and the members that class does declare.
+- **The canonical-JSON lexeme for a REAL in exponent form now writes a signed
+  exponent** (`1e+21` rather than `1e21`). No openEHR specification governs the
+  rendering of a REAL — both forms denote the same value and RFC 8259 §6 admits
+  both — and the new form is what the reference JSON encoder produces. Only
+  magnitudes outside the plain-decimal window (roughly `1e-5` to `1e16`) are
+  affected; no clinical quantity in the conformance corpus changes by a single
+  byte.
+- **A canonical-JSON payload carrying an attribute the openEHR RM does not
+  declare is now REFUSED with `400`, naming the path and the offending
+  member.** The reader previously ignored an undeclared key. It is refused
+  because that is the only reading under which the JSON and XML encodings of a
+  resource share one data model: `ITS-REST/specifications/docs/overview/
+  Resources.md` requires an XML payload to validate against the ITS-XML
+  schemas, which declare no wildcards — an undeclared element cannot validate —
+  and states the same for the JSON encoding at `SHOULD` strength, while
+  openEHR's own published ITS-JSON schemas close 128 of their 134 object
+  definitions with `additionalProperties: false`. The status is `400` rather
+  than `422` because a document the reader cannot read never converts (the
+  released status table: `400` is content that "could not be parsed or is
+  invalid"; `422` is content that is "well-formed but was unable to be followed
+  due to semantic errors"). The set of accepted attributes is the RM at this
+  server's pinned version, so a payload that is valid openEHR is unaffected;
+  a client sending a private extension member must move it into a modelled slot
+  (for example `ITEM_TREE` `other_details`, or a `FEEDER_AUDIT`).
+- **A malformed identifier is now refused wherever it appears in a document,
+  not only in a request path.** `HIER_OBJECT_ID`, `OBJECT_VERSION_ID`,
+  `VERSION_TREE_ID` and the `UID` family are built through a constructor that
+  runs the released identifier grammar
+  (`BASE/docs/base_types/master05-identification_package.adoc` §Syntaxes), and
+  the canonical JSON and XML readers construct through it — so an identifier
+  such as `PractitionerRole/12345-mock` in a `PARTY_REF`, or a one-part value
+  tagged `OBJECT_VERSION_ID`, is rejected at parse with `400` instead of being
+  stored and served back.
+- **`UpdateItemTag` request bodies reject undeclared members.** The released
+  OAS declares the schema `additionalProperties: false`, so an unexpected
+  member is now a `400` rather than being silently dropped.
+- **A committer `external_ref.id` supplied through the
+  `openehr-audit-details` header must be a well-formed `HIER_OBJECT_ID`.** A
+  malformed value is refused with `400` instead of being written into the
+  commit audit.
+- **`OBJECT_VERSION_ID` values on the wire are now checked against the full
+  openEHR identifier grammar.** A version identifier in a request path, an
+  `If-Match` header or a `VERSION.uid` previously only had to have three
+  `::`-delimited parts with a well-formed version-tree id; its `object_id` and
+  `creating_system_id` parts are now also required to be legal `uid` values —
+  an ISO OID, a UUID, or an internet id
+  (`BASE/docs/base_types/master05-identification_package.adoc` §Syntaxes).
+  Values such as `bad id::sys::1` or `1234-5678::sys::1`, which no conformant
+  client sends, are refused with `400` instead of being accepted; every
+  identifier the spec admits is unaffected. The same grammar now backs the
+  validating constructors of `HIER_OBJECT_ID`, `OBJECT_VERSION_ID` and the
+  `UID` family, so a malformed identifier cannot be built through them.
+
+- **AQL now rejects an `[archetype_node_id='…']` predicate whose value is
+  neither an archetype identifier nor a node code.** `CONTAINS COMPOSITION
+  c[archetype_node_id='openEHR-garbage']` used to be planned as an archetype
+  constraint that could never match (a `200` with an empty result set); such a
+  value is now a `400` naming it. The QUERY spec defines that bracket predicate
+  as equivalent to the archetype (`[openEHR-EHR-…]`) and node (`[at0002]`)
+  shortcut predicates (`QUERY/docs/AQL/master03-syntax.adoc` §"Archetype
+  predicate" / §"Node predicate"), so those two forms are its whole admissible
+  operand set — matching what the RM lets `LOCATABLE.archetype_node_id` hold.
+  Well-formed archetype ids and at/id codes are unaffected.
+
+- **Operational-template upload now enforces AOM2 VCACA's numeric arm.** A
+  template that states a container cardinality wider than the reference
+  model's — for example `CLUSTER.items cardinality {0..3}` against the RM's
+  `List<ITEM> [1..*]` — is refused with `422` naming the rule
+  (`AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc` §VCACA;
+  `master08-validation.adoc` §Validate Definition). The fully-open `{0..*}`
+  that published templates commonly carry is **not** affected: ADL 1.4 makes
+  `C_MULTIPLE_ATTRIBUTE.cardinality` mandatory where AOM2 makes it optional
+  and set "only if it overrides the underlying reference model", and cADL's
+  open constraint means "any value permitted by the underlying information
+  model" (`AM/docs/ADL1.4/master05-cadl.adoc` §"'Any' Constraints"), so an
+  open interval states no override and defers to the RM. Every template that
+  uploaded before still uploads.
+
+- **Commit-audit and EHR-resource validation failures now report through the
+  structured error body.** The `AUDIT_DETAILS.committer` and the
+  `EHR_STATUS` / `EHR_ACCESS` / FOLDER / demographic-party commit checks are
+  now produced by the shared Reference Model validator instead of duplicated
+  by hand, so the same defects are refused with the same `422` status but
+  render as the openEHR `Error` object (`{ message, validationErrors[] }`)
+  rather than a flat message — the shape every other validation failure
+  already used. The one message-detail change: a `PARTY_RELATED` committer
+  whose `relationship` code is outside the openEHR `subject_relationship`
+  group is still refused naming `Relationship_valid`, but no longer echoes the
+  rejected code.
+
 - **System-generated commits are now attributed to the product's own
   identity.** A write with no authenticated principal (auth disabled, or an
   internal write such as an import or a synthesized composition) records an
@@ -187,6 +310,31 @@ workflow refuses a tag that has no matching section here.
   figure missing at the pin fails the vendoring run.
 
 ### Fixed
+
+- **The demographic endpoints accept `PARTY_REF.type` `ANY`.** A `PARTY_REF`
+  inside a party or `PARTY_RELATIONSHIP` body — `ACTOR.roles`,
+  `ROLE.performer`, `PARTY_RELATIONSHIP.source`/`target` — was refused with
+  `422` when its `type` was `ANY`, even though the composition endpoints
+  accepted the same value. The demographic write boundary kept a second copy
+  of the legal `PARTY_REF.type` set that had drifted from the single
+  spec-cited one; it now judges every reference through that one definition,
+  so the two surfaces give the same answer. Unknown type strings are still
+  refused.
+
+- **A `PARTY_REF` missing a mandatory attribute is refused.** A reference in
+  a demographic body without an `id`, `namespace` or `type` (all `1..1` on
+  `OBJECT_REF`) passed the write boundary and was only caught, if at all,
+  further in. It is now a `422` naming the missing attribute.
+
+- **The authorization gate refuses an unaddressable resource id instead of
+  guessing.** A malformed `{uid_based_id}` — not a UUID, and not a
+  well-formed three-part `OBJECT_VERSION_ID` — was previously read as if the
+  whole string were the versioned-object id, so the template attribute the
+  ABAC/SMART policy binds on silently came back empty and the request could
+  pass a template-scoped rule. Such a request is now denied with `403`, in
+  line with the gate's existing fail-closed handling of every other
+  attribute-resolution failure. Well-formed ids (bare `HIER_OBJECT_ID` and
+  full `OBJECT_VERSION_ID`, trunk or branch) are unaffected.
 
 - **A version's digital signature now covers the attestations it was
   committed with.** openEHR signs "the entire Version object", excluding only
@@ -388,6 +536,18 @@ workflow refuses a tag that has no matching section here.
   COMPOSITION. `EHR_ACCESS.settings` is deliberately unaffected — the RM
   leaves that slot's type to the implementation, so it carries no RM rules to
   enforce.
+
+### Removed
+
+- **The AQL `RESULT_SET` no longer carries a top-level `id`.** Responses from
+  `POST/GET /query/aql` and the stored-query execute routes previously added an
+  `id` field holding a freshly minted UUID. The released ITS-REST `ResultSet`
+  schema declares exactly `meta`, `name`, `q`, `columns` and `rows` with no
+  `additionalProperties`, so the wire has no slot for it and the field was an
+  undeclared property on a closed object schema. Clients that read `id` should
+  use the response's `ETag` header instead — the released ITS-REST text names
+  it "a unique identifier of the resultSet" (`query/Request.md` §"Common
+  Headers and Query Parameters"), and it is unchanged by this removal.
 
 ## [3.17.1] - 2026-08-01
 

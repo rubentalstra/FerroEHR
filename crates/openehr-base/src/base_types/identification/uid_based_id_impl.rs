@@ -15,7 +15,7 @@
 //! well-formedness is checked by its own sibling (`object_version_id_impl`).
 
 use super::hier_object_id::HierObjectId;
-use super::lexical::make_uid;
+use super::lexical::{composite_ids_equal, make_uid};
 use super::object_version_id::ObjectVersionId;
 use super::uid::Uid;
 use super::uid_based_id::UidBasedId;
@@ -63,25 +63,19 @@ macro_rules! uid_based_id_accessors {
             }
 
             /// Case-**insensitive** identity: `true` iff this identifier and
-            /// `other` are equal apart from letter case (BASE
-            /// `master05-identification_package.adoc` §"Composite Identifiers and
-            /// Case": "two identifiers identical apart from case are considered
-            /// to be identical, and therefore to identify the same thing").
+            /// `other` are equal apart from letter case — the shared
+            /// composite-identifier rule
+            /// ([`composite_ids_equal`](super::lexical::composite_ids_equal),
+            /// BASE `master05-identification_package.adoc` §"Composite
+            /// Identifiers and Case").
             ///
-            /// The comparison is ASCII case-folding, which is exactly the spec's
-            /// intent: §"Composite Identifiers and Language" restricts the
-            /// human-readable sections to the basic latin character set, and
-            /// §"Composite Identifiers and Case" explicitly carves out languages
-            /// where case does not exist (the Turkish `I/i` caveat) — a
-            /// Unicode-locale fold would *re-introduce* that hazard, so
-            /// [`str::eq_ignore_ascii_case`] is the correct, locale-safe choice.
             /// The stored `value` is left byte-for-byte intact (the sibling
             /// case-**preserving** rule); only the *comparison* folds case, so a
             /// UUID `object_id` differing only in hex case (`…4E3D…` vs
             /// `…4e3d…`) is recognised as the same version.
             #[must_use]
             pub fn is_equal(&self, other: &Self) -> bool {
-                self.value.eq_ignore_ascii_case(&other.value)
+                composite_ids_equal(&self.value, &other.value)
             }
         }
     };
@@ -121,13 +115,13 @@ impl UidBasedId {
     }
 
     /// Case-**insensitive** identity across the `UID_BASED_ID` value, regardless
-    /// of which concrete variant either side is (BASE
+    /// of which concrete variant either side is — the shared
+    /// composite-identifier rule
+    /// ([`composite_ids_equal`], BASE
     /// `master05-identification_package.adoc` §"Composite Identifiers and Case").
-    /// See the concrete-type [`ObjectVersionId::is_equal`] for the ASCII
-    /// case-fold rationale.
     #[must_use]
     pub fn is_equal(&self, other: &Self) -> bool {
-        self.value().eq_ignore_ascii_case(other.value())
+        composite_ids_equal(self.value(), other.value())
     }
 }
 

@@ -10,5 +10,5 @@ use crate::am24::bmm3::statement::bmm_statement_item::BmmStatementItem;
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmStatementBlock {
     /// Child blocks of the current block.
-    pub items: Vec<BmmStatementItem>,
+    pub items: Option<Vec<BmmStatementItem>>,
 }

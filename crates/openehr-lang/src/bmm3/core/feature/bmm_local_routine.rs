@@ -11,7 +11,7 @@ use crate::bmm3::statement::bmm_statement_block::BmmStatementBlock;
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmLocalRoutine {
     /// Local variables of the routine, if there is a body defined.
-    pub locals: Vec<BmmLocal>,
+    pub locals: Option<Vec<BmmLocal>>,
     /// Body of routine declaration.
     pub body: BmmStatementBlock,
 }

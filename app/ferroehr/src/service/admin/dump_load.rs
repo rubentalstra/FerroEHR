@@ -100,9 +100,9 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use openehr_its::json_codec::runtime::{FromJson, ToJson};
 use openehr_its::xml::{FromXml, Namespace, ToXml};
 use openehr_rm::prelude::{Composition, EhrAccess, EhrStatus, Folder, OriginalVersion};
+use serde::de::DeserializeOwned;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
@@ -120,7 +120,7 @@ use crate::versioning::wire::{OriginalVersionParts, build_original_version, cont
 /// Lifecycle-state code of a logically-deleted version (RM common master06
 /// §Logical Deletion) — such versions store no `node` rows, so their exported
 /// `body` is `null`.
-const DELETED_LIFECYCLE: &str = "523";
+const DELETED_LIFECYCLE: &str = crate::versioning::lifecycle::state::DELETED;
 
 /// The archive manifest (`manifest.json`) — enough to read the segments back.
 #[derive(Debug, Serialize, Deserialize)]
@@ -631,18 +631,27 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         let commit_audit = AuditInput {
             system_id: audit.system_id.clone(),
             change_type: audit.change_type.clone(),
-            description: audit.description.clone(),
-            committer: audit.committer.clone(),
-            attestation: audit.attestation.clone(),
+            description: audit
+                .description
+                .as_ref()
+                .map(crate::versioning::audit::decode_description)
+                .transpose()?,
+            committer: crate::versioning::audit::party_proxy(&audit.committer)?,
+            attestation: audit
+                .attestation
+                .as_ref()
+                .map(crate::versioning::attestation::AttestationParts::decode)
+                .transpose()?
+                .map(Box::new),
         }
-        .canonical(&time_committed)?;
+        .canonical(&time_committed);
         (
             contribution_ref(v.contribution_id),
             commit_audit,
             v.signature.clone(),
         )
     };
-    Ok(build_original_version(&OriginalVersionParts {
+    build_original_version(&OriginalVersionParts {
         creating_system_id: &v.creating_system_id,
         vo_id: v.vo_id,
         tree,
@@ -656,7 +665,8 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         // can render an `attestations` list (module docs).
         attestations: &[],
         signature: signature.as_deref(),
-    }))
+    })
+    .map_err(Into::into)
 }
 
 /// Serialize an `ORIGINAL_VERSION` envelope as a canonical-XML document under
@@ -666,7 +676,9 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
 /// # Errors
 /// [`ServiceError::Internal`] when the envelope does not read back as a typed
 /// `ORIGINAL_VERSION<T>`, or the XML writer fails.
-fn version_document_of<T: FromJson + ToXml>(envelope: &Value) -> Result<String, ServiceError> {
+fn version_document_of<T: DeserializeOwned + ToXml>(
+    envelope: &Value,
+) -> Result<String, ServiceError> {
     let typed: OriginalVersion<T> = openehr_its::json::from_canonical_value(envelope)
         .map_err(|e| ServiceError::Internal(format!("typing the ORIGINAL_VERSION: {e}")))?;
     openehr_its::xml::to_canonical_xml_declared(
@@ -704,7 +716,7 @@ fn version_document(kind: &str, envelope: &Value) -> Result<String, ServiceError
 /// # Errors
 /// The parse failure as a human-readable message; the caller turns it into the
 /// record's [`DumpLoadFailReport`].
-fn version_payload_of<T: FromXml + ToJson>(xml: &str) -> Result<Value, String> {
+fn version_payload_of<T: FromXml + Serialize>(xml: &str) -> Result<Value, String> {
     let typed: OriginalVersion<T> =
         openehr_its::xml::from_canonical_xml(xml).map_err(|e| e.to_string())?;
     let data = typed
@@ -1390,9 +1402,11 @@ impl FerroEhrService {
         .fetch_one(&mut *tx)
         .await?;
         if overlap {
-            return Err(ServiceError::Unprocessable(format!(
-                "archive for EHR {ehr_id} carries overlapping version validity periods"
-            )));
+            return Err(ServiceError::Unprocessable(
+                crate::service::error::Violation::new(format!(
+                    "archive for EHR {ehr_id} carries overlapping version validity periods"
+                )),
+            ));
         }
 
         tx.commit().await?;

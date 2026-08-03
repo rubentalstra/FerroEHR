@@ -20,7 +20,7 @@ pub struct DvQuantity {
     /// Optional normal range.
     pub normal_range: Option<Box<DvInterval<DvQuantity>>>,
     /// Optional tagged other reference ranges for this value in its particular measurement context.
-    pub other_reference_ranges: Vec<ReferenceRange>,
+    pub other_reference_ranges: Option<Vec<ReferenceRange>>,
 
     // inherited: DV_QUANTIFIED
     /// Optional status of magnitude with values:

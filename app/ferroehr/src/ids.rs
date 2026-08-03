@@ -12,6 +12,34 @@
 //! the versioned-object id is RM common master06 §Version Identification —
 //! the `object_id` part of an `OBJECT_VERSION_ID` / the
 //! `VERSIONED_OBJECT.uid`.
+//!
+//! NOTE (why the inner type is `Uuid` and not the full `HIER_OBJECT_ID`
+//! lexical space): the RM types `EHR.ehr_id` as a `HIER_OBJECT_ID`, whose
+//! grammar admits an ISO OID or internet-id root and an optional `::extension`
+//! (BASE `base_types/master05-identification_package.adoc` §Syntaxes). These
+//! newtypes deliberately carry only a UUID, on three released grounds:
+//!
+//! * **The wire pins it.** Every ITS-REST 1.1.0 door that names an EHR types
+//!   the parameter `string`/`format: uuid` — the path parameter
+//!   (`ITS-REST specifications/parameters/path/ehr_id.yaml` §schema, the same
+//!   text in the vendored codegen bundle
+//!   `crates/openehr-its/vendor/rest-oas/ehr-codegen.openapi.yaml`
+//!   §`components.parameters.ehr_id`) and the AQL `ehr_id` query parameter
+//!   (`query-codegen.openapi.yaml` §`components.parameters.ehr_id_Query`).
+//! * **We mint them.** A server-created EHR id is a `uuidv7` ([`EhrId::new`]),
+//!   as is every versioned-object id ([`VoId::new`]).
+//! * **We store them.** Both bind to PostgreSQL `uuid` columns.
+//!
+//! The narrowing is therefore real only for a CLIENT-SUPPLIED id on
+//! `PUT /ehr/{ehr_id}`, and there the release contradicts itself: the
+//! operation prose says the id "MUST be valid `HIER_OBJECT_ID` value. It is
+//! strongly RECOMMENDED that an UUID always be used for this"
+//! (`ITS-REST specifications/operations/ehr_create_with_id.yaml`
+//! §description), while the parameter schema it references admits only
+//! `format: uuid`. This file follows the parameter schema — the computable
+//! artifact that binds every ehr_id-carrying operation, not just this one —
+//! so a non-UUID id is refused at the door rather than admitted into a store
+//! and a query surface that cannot represent it.
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

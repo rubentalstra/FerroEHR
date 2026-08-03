@@ -29,7 +29,7 @@ fn duration_from_seconds(secs: f64) -> DvDuration {
     DvDuration {
         normal_status: None,
         normal_range: None,
-        other_reference_ranges: Vec::new(),
+        other_reference_ranges: None,
         magnitude_status: None,
         accuracy: None,
         accuracy_is_percent: None,
@@ -84,7 +84,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -94,7 +94,7 @@ mod tests {
         DvDateTime {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: Vec::new(),
+            other_reference_ranges: None,
             magnitude_status: None,
             accuracy: None,
             value: value.to_owned(),
@@ -106,7 +106,7 @@ mod tests {
             name: text("event"),
             archetype_node_id: "at0002".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             time: date_time(time),

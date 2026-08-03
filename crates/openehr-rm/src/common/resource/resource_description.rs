@@ -12,7 +12,7 @@ pub struct ResourceDescription {
     /// Original author of this resource, with all relevant details, including organisation.
     pub original_author: std::collections::BTreeMap<String, String>,
     /// Other contributors to the resource, probably listed in  `'name <email>'`  form.
-    pub other_contributors: Vec<String>,
+    pub other_contributors: Option<Vec<String>>,
     /// Lifecycle state of the resource, typically including states such as: `initial | submitted | experimental | awaiting_approval | approved | superseded | obsolete`.
     pub lifecycle_state: String,
     /// URI of package to which this resource belongs.

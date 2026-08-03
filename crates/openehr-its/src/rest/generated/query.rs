@@ -25,17 +25,27 @@ pub type QueryParameters = std::collections::BTreeMap<String, serde_json::Value>
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultSetMetadata {
     /// The `_href` property of `ResultSetMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _href: Option<String>,
     /// The `_type` property of `ResultSetMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `_schema_version` property of `ResultSetMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _schema_version: Option<String>,
     /// The `_created` property of `ResultSetMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _created: Option<String>,
     /// The `_generator` property of `ResultSetMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _generator: Option<String>,
     /// The `_executed_aql` property of `ResultSetMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _executed_aql: Option<String>,
+    /// The undeclared (`additionalProperties`) members of `ResultSetMetadata`, which
+    /// its ITS-REST OAS component schema declares as an extension point.
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
 }
 
 /// The `QueryName` ITS-REST OAS component schema (a non-object shape, so
@@ -49,6 +59,7 @@ pub struct ResultSetColumn {
     /// The `name` property of `ResultSetColumn`.
     pub name: String,
     /// The `path` property of `ResultSetColumn`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
 
@@ -61,15 +72,19 @@ pub type ResultSetRow = Vec<serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultSet {
     /// The `meta` property of `ResultSet`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<ResultSetMetadata>,
     /// The `name` property of `ResultSet`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<QueryName>,
     /// The `q` property of `ResultSet`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub q: Option<Aql>,
     /// The `columns` property of `ResultSet`.
-    pub columns: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub columns: Option<Vec<ResultSetColumn>>,
     /// The `rows` property of `ResultSet`.
-    pub rows: Vec<Vec<serde_json::Value>>,
+    pub rows: Vec<ResultSetRow>,
 }
 
 /// The `Offset` ITS-REST OAS component schema (a non-object shape, so
@@ -87,10 +102,13 @@ pub struct AdhocQueryExecute {
     /// The `q` property of `AdhocQueryExecute`.
     pub q: Aql,
     /// The `offset` property of `AdhocQueryExecute`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<Offset>,
     /// The `fetch` property of `AdhocQueryExecute`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub fetch: Option<Fetch>,
     /// The `query_parameters` property of `AdhocQueryExecute`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub query_parameters: Option<QueryParameters>,
 }
 
@@ -101,14 +119,17 @@ pub struct Query {
     /// The `offset` property of `Query`.
     /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Common Headers and Query Parameters — "`offset` … default `0`"
     /// (A required member cannot default; the stored-query execute body must accept `{}` (a parameterless stored query).)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<Offset>,
     /// The `fetch` property of `Query`.
     /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Common Headers and Query Parameters — "`fetch` … default depends on the implementation"
     /// (A required member cannot default; the stored-query execute body must accept `{}`.)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub fetch: Option<Fetch>,
     /// The `query_parameters` property of `Query`.
     /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Query parameters — parameters exist "Depending on each query definition"; a parameterless stored query binds none
     /// (A stored query with no $parameters must be executable with an empty body.)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub query_parameters: Option<QueryParameters>,
 }
 
@@ -117,15 +138,20 @@ pub struct Query {
 pub struct QueryExecuteAdhocQueryParams {
     /// `q` (query)
     pub q: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `offset` (query)
     pub offset: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `fetch` (query)
     pub fetch: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_parameters` (query)
     pub query_parameters: Option<std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -134,9 +160,11 @@ pub struct QueryExecuteAdhocQueryParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteAdhocQueryBodyParams {
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -146,15 +174,20 @@ pub struct QueryExecuteAdhocQueryBodyParams {
 pub struct QueryExecuteStoredQueryParams {
     /// `qualified_query_name` (path)
     pub qualified_query_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `offset` (query)
     pub offset: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `fetch` (query)
     pub fetch: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_parameters` (query)
     pub query_parameters: Option<std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -165,9 +198,11 @@ pub struct QueryExecuteStoredQueryBodyParams {
     /// `qualified_query_name` (path)
     pub qualified_query_name: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -179,15 +214,20 @@ pub struct QueryExecuteStoredQueryVersionParams {
     pub qualified_query_name: String,
     /// `version` (path)
     pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `offset` (query)
     pub offset: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `fetch` (query)
     pub fetch: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_parameters` (query)
     pub query_parameters: Option<std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -200,9 +240,11 @@ pub struct QueryExecuteStoredQueryVersionBodyParams {
     /// `version` (path)
     pub version: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }

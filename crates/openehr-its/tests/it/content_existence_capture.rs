@@ -23,9 +23,10 @@
 
 use std::path::PathBuf;
 
-use openehr_its::flat::validation::{ValidationKind, validate_archetype_conformance};
+use openehr_its::flat::validation::validate_archetype_conformance;
 use openehr_its::flat::webtemplate::{WebTemplate, build_web_template};
 use openehr_its::opt14;
+use openehr_its::rm_instance::ValidationKind;
 use serde_json::{Value, json};
 
 fn base_opt() -> String {

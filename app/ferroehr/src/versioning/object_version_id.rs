@@ -23,7 +23,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use openehr_base::base_types::identification::version_tree_id::VersionTreeId;
-use openehr_base::prelude::{ObjectVersionId, Uid};
+use openehr_base::prelude::{HierObjectId, ObjectVersionId, Uid};
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
 
@@ -127,31 +127,58 @@ pub(crate) fn object_version_id(vo_id: VoId, creating_system_id: &str, tree: Tre
     format!("{vo_id}::{creating_system_id}::{tree}")
 }
 
-/// Composite-identifier equality: case-insensitive comparison of a
-/// `creating_system_id` (BASE `base_types` master05 §"Composite Identifiers and
-/// Case": composite identifiers are "case-preserving" **and** "case-insensitive
-/// — two identifiers identical apart from case … identify the same thing").
+/// A **typed** `HIER_OBJECT_ID` from a raw string — a configured system
+/// identifier, a stored container key, an imported id.
 ///
-/// The stored value is preserved verbatim (case-preserving); this is the one
-/// place versioning decides whether two `creating_system_id`s denote the same
-/// originating system — used by the tree-placement decision to tell "continue
-/// my own lineage" from "fork a branch off a copy made elsewhere". The
-/// characters are basic-latin (master05 §Character Set), so ASCII case-folding
-/// is the correct fold; the Turkish `I/i` caveat (master05 §Composite
-/// Identifiers and Case) does not apply to an ASCII system id.
+/// The generated `HIER_OBJECT_ID` carries a `pub(crate)` field behind a
+/// validating door, so this is the platform library's one adapter from an
+/// untyped string to the spec type. A value the BASE
+/// `master05-identification_package.adoc` §Syntaxes grammar does not admit
+/// (`hier_object_id = uid_based_id`, `root = uid`) is refused here rather than
+/// serialized into a payload this CDR's own reader would then refuse.
 ///
-/// NOTE: the two rules of BASE `base_types`
-/// `master05-identification_package.adoc` §"Composite Identifiers and Case" are
-/// realized in two places, because they pull in opposite directions.
-/// Case-PRESERVING ("not change case due to persistence, copying, transfer or
-/// other computation processes") is storage's: the `creating_system_id` column
-/// keeps exactly the bytes committed, and the version-identity uniqueness index
-/// carries the case-fold so two spellings cannot both claim one version.
-/// Case-INSENSITIVE ("two identifiers identical apart from case are considered
-/// to be identical, and therefore to identify the same thing") is this
-/// function, which is the single place versioning compares two system ids.
-pub(crate) fn eq_composite_id(a: &str, b: &str) -> bool {
-    a.eq_ignore_ascii_case(b)
+/// A `HIER_OBJECT_ID` derived from a value that is a UUID *by type* needs no
+/// adapter — `HierObjectId::from(uuid)` is total (BASE §Syntaxes:
+/// `uid = iso_oid | uuid | internet_id`).
+///
+/// # Errors
+/// [`VersionIdError::Malformed`] when `raw` is not a well-formed
+/// `HIER_OBJECT_ID`.
+pub(crate) fn hier_object_id(raw: &str) -> Result<HierObjectId, VersionIdError> {
+    HierObjectId::new(raw).map_err(|source| VersionIdError::Malformed {
+        raw: raw.to_owned(),
+        source,
+    })
+}
+
+/// The **typed** `OBJECT_VERSION_ID` for a version this CDR minted or stored:
+/// the same three parts [`object_version_id`] formats, composed through the
+/// BASE grammar instead of a struct literal.
+///
+/// The generated `OBJECT_VERSION_ID` carries a `pub(crate)` field behind a
+/// validating door, so this is the one place the platform library turns its
+/// storage triple into the spec type — a malformed identifier can no longer be
+/// smuggled into a served payload by a struct literal.
+///
+/// Two of the three parts are valid by their Rust type ([`VoId`] is a UUID,
+/// [`TreeId`] renders `N` / `N.B.V` with every part `>= 1`). The third,
+/// `creating_system_id`, is a `String` — a config value for a version this
+/// deployment mints, a stored column for one it read back — and BASE
+/// `master05-identification_package.adoc` §Syntaxes types it `creating_system_id
+/// = uid`. It is therefore the only part that can fail, and it fails LOUDLY
+/// rather than producing an identifier the CDR's own reader would refuse.
+///
+/// # Errors
+/// [`VersionIdError::Malformed`] when `creating_system_id` is not a legal
+/// `uid`, so the three parts do not compose into a well-formed
+/// `OBJECT_VERSION_ID`.
+pub(crate) fn version_id(
+    vo_id: VoId,
+    creating_system_id: &str,
+    tree: TreeId,
+) -> Result<ObjectVersionId, VersionIdError> {
+    let raw = object_version_id(vo_id, creating_system_id, tree);
+    ObjectVersionId::new(raw.clone()).map_err(|source| VersionIdError::Malformed { raw, source })
 }
 
 /// Why a version-id string was rejected. Converts into [`ApiError`] (`400`,
@@ -159,17 +186,19 @@ pub(crate) fn eq_composite_id(a: &str, b: &str) -> bool {
 /// [`crate::service::status::SmError`] (`400`, SM catalog arguments) at each call site's
 /// natural severity.
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum VersionIdError {
+pub enum VersionIdError {
     /// Not a well-formed BASE `OBJECT_VERSION_ID` (wrong part count, empty
     /// component, malformed `version_tree_id`).
     #[error("malformed OBJECT_VERSION_ID {raw:?}: {source}")]
     Malformed {
+        /// The rejected wire value, echoed so the client can see what was read.
         raw: String,
+        /// The BASE lexical-form error that rejected it.
         source: openehr_base::base_types::identification::lexical::IdError,
     },
     /// The `object_id` part is not a UUID (this CDR keys versioned objects by
     /// UUID `vo_id`).
-    #[error("OBJECT_VERSION_ID object_id is not a UUID: {0:?}")]
+    #[error("object_id is not a UUID: {0:?}")]
     NotAUuid(String),
     /// A `version_tree_id` part does not fit the storage columns (`i32`).
     #[error("version_tree_id out of range: {0:?}")]
@@ -184,7 +213,7 @@ impl From<VersionIdError> for ApiError {
 
 impl From<VersionIdError> for ServiceError {
     fn from(e: VersionIdError) -> Self {
-        ServiceError::Unprocessable(e.to_string())
+        ServiceError::Unprocessable(crate::service::error::Violation::new(e.to_string()))
     }
 }
 
@@ -232,60 +261,113 @@ pub(crate) fn parse_object_version_id(raw: &str) -> Result<(Uuid, String, TreeId
         raw: raw.to_owned(),
         source,
     })?;
+    components_of(&ovid, raw)
+}
+
+/// Decompose an already-validated [`ObjectVersionId`] into this CDR's storage
+/// typing. `raw` is the wire spelling the errors echo (it equals
+/// `ovid.value()`; the callers already hold it).
+///
+/// The ONE decomposition every caller shares, so a version id can never be
+/// decomposed two different ways.
+fn components_of(
+    ovid: &ObjectVersionId,
+    raw: &str,
+) -> Result<(Uuid, String, TreeId), VersionIdError> {
     let Uid::Uuid(object_id) = ovid.object_id() else {
         return Err(VersionIdError::NotAUuid(raw.to_owned()));
     };
     let tree = TreeId::from_version_tree(&ovid.version_tree_id(), raw)?;
-    // The strict `ObjectVersionId::from_str` above validated exactly three
-    // non-empty `::`-delimited parts, so the middle part is present.
-    let creating_system_id = raw.split("::").nth(1).unwrap_or_default().to_owned();
-    Ok((object_id.value, creating_system_id, tree))
+    // The VERBATIM second component, not the typed `creating_system_id()`:
+    // an imported originating-system id must survive byte-for-byte
+    // (BASE master05 §"Composite Identifiers and Case", case-PRESERVING), and
+    // the typed accessor renders a UUID-shaped system id in the normalised
+    // RFC 4122 lower case.
+    let creating_system_id = ovid.creating_system_id_str().to_owned();
+    Ok((*object_id.value(), creating_system_id, tree))
 }
 
 /// Decompose an already-parsed [`ObjectVersionId`] (the SM catalog's native
 /// version-id argument) into the storage key pair (`vo_id`, [`TreeId`]).
 pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(VoId, TreeId), VersionIdError> {
-    let raw = ovid.value.clone();
-    let Uid::Uuid(object_id) = ovid.object_id() else {
-        return Err(VersionIdError::NotAUuid(raw));
-    };
-    let tree = TreeId::from_version_tree(&ovid.version_tree_id(), &raw)?;
+    let (object_id, _, tree) = components_of(ovid, ovid.value())?;
     // The `object_id` of an `OBJECT_VERSION_ID` is a versioned-object id.
-    Ok((VoId(object_id.value), tree))
+    Ok((VoId(object_id), tree))
 }
 
-/// Parse the `{creating_system_id}::{version_tree_id}` TAIL of an
-/// `OBJECT_VERSION_ID` (everything after the object id) into its [`TreeId`],
-/// validating both parts are present (BASE master05 §Syntaxes — the id has
-/// exactly three `::`-delimited parts).
-pub(crate) fn parse_version_tail(tail: &str) -> Result<TreeId, VersionIdError> {
-    // A tail reaching here came out of a validated three-part
-    // `OBJECT_VERSION_ID`, so the separator is present; the defensive
-    // fallbacks parse the whole tail as a tree id, which produces the
-    // appropriate malformed-id error.
-    match tail.split_once("::") {
-        Some((system, tree)) if !system.is_empty() => parse_tree_id(tree),
-        _ => parse_tree_id(tail),
+/// The storage address a `uid_based_id` / `versioned_object_uid` wire value
+/// names: the versioned-object key, plus the exact VERSION when the value
+/// carried one (BASE `base_types` master05 §Syntaxes — a bare
+/// `HIER_OBJECT_ID` addresses the container, a three-part
+/// `OBJECT_VERSION_ID` addresses one version of it).
+///
+/// Produced by [`parse_uid_based_id`], the ONE decoder for this wire shape:
+/// the platform library owns the policy (this CDR keys versioned objects by
+/// UUID, and a version resolves to a [`TreeId`] storage position), so the
+/// protocol adapter reads a path segment through this type rather than
+/// re-deriving the same rules at the edge.
+#[derive(Debug, Clone)]
+pub struct UidAddress {
+    /// The versioned-object UUID key (the id's `object_id`).
+    pub vo_id: VoId,
+    /// The full `OBJECT_VERSION_ID` when the wire value named one version;
+    /// `None` for a bare container address.
+    pub version: Option<ObjectVersionId>,
+    /// The decoded version-tree position — `Some` exactly when
+    /// [`version`](Self::version) is.
+    tree: Option<TreeId>,
+}
+
+impl UidAddress {
+    /// The addressed version's storage position in the version tree, or `None`
+    /// when the wire value addressed the versioned object as a whole.
+    pub(crate) const fn tree(&self) -> Option<TreeId> {
+        self.tree
     }
 }
 
-/// Parse a `uid_based_id`/`versioned_object_uid` path parameter: either a bare
+/// Parse a `uid_based_id`/`versioned_object_uid` wire value: either a bare
 /// `HIER_OBJECT_ID` (a UUID, → no version) or a full `OBJECT_VERSION_ID`
 /// (strict three-part, → its [`TreeId`]).
+///
+/// # Errors
+/// [`VersionIdError::Malformed`] when a `::`-carrying value is not a
+/// well-formed `OBJECT_VERSION_ID`, [`VersionIdError::NotAUuid`] when the
+/// addressed `object_id` is not a UUID, [`VersionIdError::OutOfRange`] when the
+/// version-tree numbers do not fit the storage columns.
 #[expect(
     clippy::map_err_ignore,
     reason = "the mapped error already names the resource and echoes the \
               rejected token; the discarded `uuid::Error` adds only its own \
               wording, which is not part of the wire contract"
 )]
-pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(VoId, Option<TreeId>), VersionIdError> {
+pub fn parse_uid_based_id(raw: &str) -> Result<UidAddress, VersionIdError> {
     if raw.contains("::") {
-        let (vo_id, tree) = parse_version_uid(raw)?;
-        Ok((vo_id, Some(tree)))
+        // ONE parse, ONE grammar: the strict `OBJECT_VERSION_ID` decode both
+        // validates the wire value and yields the typed id, so the address can
+        // never carry a version id that the BASE grammar did not accept. (The
+        // struct-literal shortcut this replaced re-wrapped `raw` verbatim,
+        // bypassing the constructor; the generated field is `pub(crate)` now,
+        // so that shortcut is not expressible.)
+        let ovid = ObjectVersionId::from_str(raw).map_err(|source| VersionIdError::Malformed {
+            raw: raw.to_owned(),
+            source,
+        })?;
+        let (object_id, _, tree) = components_of(&ovid, raw)?;
+        Ok(UidAddress {
+            // The `object_id` of an `OBJECT_VERSION_ID` is a versioned-object id.
+            vo_id: VoId(object_id),
+            version: Some(ovid),
+            tree: Some(tree),
+        })
     } else {
         let vo_id = Uuid::parse_str(raw).map_err(|_| VersionIdError::NotAUuid(raw.to_owned()))?;
         // A bare UID-based id names a versioned object.
-        Ok((VoId(vo_id), None))
+        Ok(UidAddress {
+            vo_id: VoId(vo_id),
+            version: None,
+            tree: None,
+        })
     }
 }
 
@@ -422,17 +504,36 @@ mod tests {
 
     #[test]
     fn uid_based_id_accepts_bare_hier_object_id() {
-        let (vo_id, version) = parse_uid_based_id(VO).unwrap();
-        assert_eq!(vo_id, VoId(Uuid::parse_str(VO).unwrap()));
-        assert_eq!(version, None);
+        let bare = parse_uid_based_id(VO).unwrap();
+        assert_eq!(bare.vo_id, VoId(Uuid::parse_str(VO).unwrap()));
+        assert_eq!(bare.tree(), None);
+        assert!(bare.version.is_none());
 
-        let (vo_id, version) = parse_uid_based_id(&format!("{VO}::sys::2")).unwrap();
-        assert_eq!(vo_id, VoId(Uuid::parse_str(VO).unwrap()));
-        assert_eq!(version, Some(TreeId::trunk(2)));
+        let versioned = parse_uid_based_id(&format!("{VO}::sys::2")).unwrap();
+        assert_eq!(versioned.vo_id, VoId(Uuid::parse_str(VO).unwrap()));
+        assert_eq!(versioned.tree(), Some(TreeId::trunk(2)));
+        // The full three-part identity is carried through verbatim.
+        assert_eq!(
+            versioned.version.map(|o| o.value().to_owned()),
+            Some(format!("{VO}::sys::2"))
+        );
 
         // A `::`-carrying id must be a *valid* OBJECT_VERSION_ID.
         assert!(parse_uid_based_id(&format!("{VO}::sys")).is_err());
         assert!(parse_uid_based_id("garbage").is_err());
+    }
+
+    /// The verbatim `creating_system_id` survives the decode byte-for-byte —
+    /// the case-PRESERVING half of BASE master05 §"Composite Identifiers and
+    /// Case" (the typed `Uid` accessor would normalise a UUID-shaped system id).
+    #[test]
+    fn creating_system_id_is_preserved_verbatim() {
+        let raw = format!("{VO}::87284370-2D4B-4e3d-A3F3-F303D2F4F34B::1");
+        let (_, csid, _) = parse_object_version_id(&raw).unwrap();
+        assert_eq!(csid, "87284370-2D4B-4e3d-A3F3-F303D2F4F34B");
+        let mixed = format!("{VO}::SourceSystem.Example.ORG::1");
+        let (_, csid, _) = parse_object_version_id(&mixed).unwrap();
+        assert_eq!(csid, "SourceSystem.Example.ORG");
     }
 
     #[test]
@@ -483,14 +584,5 @@ mod tests {
         assert_eq!(if_match_token("  \"abc::sys::3\"  "), "abc::sys::3");
         assert_eq!(if_match_token("abc::sys::3"), "abc::sys::3");
         assert_eq!(if_match_token("\"\""), "");
-    }
-
-    /// composite-identifier equality is case-insensitive
-    /// (BASE `base_types` master05 §"Composite Identifiers and Case").
-    #[test]
-    fn composite_identifier_equality_is_case_insensitive() {
-        assert!(eq_composite_id("FerroEHR.local", "ferroehr.local"));
-        assert!(eq_composite_id("sys", "SYS"));
-        assert!(!eq_composite_id("system.a", "system.b"));
     }
 }

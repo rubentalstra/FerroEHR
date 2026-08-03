@@ -159,8 +159,14 @@ pub fn resolve(root: &CComplexObject, path: &str) -> Resolution {
         };
         // Choose the child object.
         let child = match &seg.node_id {
-            Some(nid) => attr.children.iter().find(|c| object_node_id(c) == nid),
-            None if attr.children.len() == 1 => attr.children.first(),
+            Some(nid) => attr
+                .children
+                .iter()
+                .flatten()
+                .find(|c| object_node_id(c) == nid),
+            None if attr.children.as_ref().map_or(0, Vec::len) == 1 => {
+                attr.children.iter().flatten().next()
+            }
             None => None,
         };
         let Some(child) = child else {
@@ -205,8 +211,14 @@ pub fn locate<'a>(root: &'a CComplexObject, path: &str) -> Option<&'a CObject> {
             .iter()
             .find(|a| a.rm_attribute_name == seg.attribute)?;
         let child = match &seg.node_id {
-            Some(nid) => attr.children.iter().find(|c| object_node_id(c) == nid),
-            None if attr.children.len() == 1 => attr.children.first(),
+            Some(nid) => attr
+                .children
+                .iter()
+                .flatten()
+                .find(|c| object_node_id(c) == nid),
+            None if attr.children.as_ref().map_or(0, Vec::len) == 1 => {
+                attr.children.iter().flatten().next()
+            }
             None => None,
         }?;
         if idx + 1 == segments.len() {
@@ -239,7 +251,7 @@ pub fn enumerate_paths(root: &CComplexObject) -> Vec<String> {
 
 fn walk_paths(node: &CComplexObject, prefix: &str, out: &mut Vec<String>) {
     for attr in complex_attributes(node) {
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let nid = object_node_id(child);
             let seg = if nid.is_empty() {
                 format!("/{}", attr.rm_attribute_name)

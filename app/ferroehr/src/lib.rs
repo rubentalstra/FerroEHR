@@ -35,7 +35,6 @@
 #![doc(test(attr(deny(warnings))))]
 pub mod aql;
 pub mod banner;
-pub mod codec_serde;
 pub mod config;
 pub mod db;
 pub mod extensions;

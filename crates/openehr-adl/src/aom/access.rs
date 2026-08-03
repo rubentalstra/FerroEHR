@@ -237,8 +237,8 @@ pub(crate) fn common_mut(
 #[must_use]
 pub fn complex_attributes(cco: &CComplexObject) -> &[CAttribute] {
     match cco {
-        CComplexObject::CComplexObject(d) => &d.attributes,
-        CComplexObject::CArchetypeRoot(r) => &r.attributes,
+        CComplexObject::CComplexObject(d) => d.attributes.as_deref().unwrap_or_default(),
+        CComplexObject::CArchetypeRoot(r) => r.attributes.as_deref().unwrap_or_default(),
     }
 }
 

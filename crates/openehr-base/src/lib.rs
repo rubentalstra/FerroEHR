@@ -31,4 +31,9 @@ pub mod resource;
 pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // hand-written modules (spec behaviour), auto-declared:
+pub mod containers;
+pub mod serde_support;
 pub mod validate;
+
+// canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:
+mod json_serde;

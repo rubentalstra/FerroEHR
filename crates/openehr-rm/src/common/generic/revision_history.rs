@@ -11,5 +11,5 @@ use crate::common::generic::revision_history_item::RevisionHistoryItem;
 #[derive(Debug, Clone, PartialEq)]
 pub struct RevisionHistory {
     /// The items in this history in most-recent-last order.
-    pub items: Vec<RevisionHistoryItem>,
+    pub items: openehr_base::containers::NonEmptyVec<RevisionHistoryItem>,
 }

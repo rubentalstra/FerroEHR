@@ -41,7 +41,7 @@ mod tests {
             value: v.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -58,7 +58,7 @@ mod tests {
         DvOrdinal {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: Vec::new(),
+            other_reference_ranges: openehr_base::containers::present(Vec::new()),
             symbol: symbol("moderate"),
             value,
         }

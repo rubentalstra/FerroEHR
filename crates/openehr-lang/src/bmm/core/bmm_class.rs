@@ -28,7 +28,7 @@ pub struct BmmClassData {
     /// Reference to original source schema defining this class. Useful for UI tools to determine which original schema file to open for a given class for manual editing.
     pub source_schema_id: String,
     /// List of immediate inheritance descendants.
-    pub immediate_descendants: Vec<String>,
+    pub immediate_descendants: Option<Vec<String>>,
     /// True if this class is abstract in its model.
     pub is_abstract: bool,
     /// True if this class is designated a primitive type within the overall type system of the schema.

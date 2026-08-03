@@ -28,7 +28,7 @@ echo "regenerating spec crates (BMM → RM/BASE/AM/TERM/LANG)…"
 cargo run -q -p openehr-codegen -- emit
 echo "regenerating ITS-XML (ToXml/FromXml impls)…"
 cargo run -q -p openehr-codegen -- emit-xml
-echo "regenerating ITS-JSON (ToJson impls)…"
+echo "regenerating ITS-JSON (the emitted serde impls + the _type dispatch)…"
 cargo run -q -p openehr-codegen -- emit-json
 echo "regenerating ITS-REST (DTOs + traits + routes)…"
 cargo run -q -p openehr-codegen -- emit-rest

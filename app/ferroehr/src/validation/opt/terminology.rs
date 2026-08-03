@@ -21,40 +21,39 @@ use openehr_its::opt14::{
     CArchetypeRoot, CAttribute, CObject, Codedefinitionset, FlatArchetypeOntology,
     OperationalTemplate,
 };
+use openehr_rm::paths::archetype_node_id_is_term_code;
 
-use super::{NodeView, Violation, attribute_children};
+use super::{NodeView, RuleViolation, attribute_children};
 
 // ─── VATID (node-id codes defined in terminology) ───────────────────────────────
 
 /// VATID: "check that all codes mentioned in `definition` are defined in
 /// terminology" (`AOM2/master08-validation.adoc` line 56). Applied to at-code
 /// `node_id`s (the addressable, sibling-identifying codes, AOM14/04 §`Node_id`).
-/// Empty `node_ids` (non-addressable leaves) and non-`at`/`id` codes are exempt.
+/// What counts as a term code is the RM's own reading of `archetype_node_id`
+/// ([`archetype_node_id_is_term_code`] — an `at`/`id` leader followed by
+/// `.`-separated numeric segments), so this pass and the RM path layer can
+/// never disagree about which node ids are codes. Empty `node_ids`
+/// (non-addressable leaves), archetype-root ids, and free text are exempt: VATID
+/// constrains *codes*, and a string outside the code grammar is not one.
 /// The defined-code set is collected globally across the flattened OPT (the
 /// definition roots + every `component_ontologies` set), which is deliberately
 /// lenient about per-archetype scoping — it still catches a `node_id` that is
 /// defined nowhere while never mis-rejecting a correctly-scoped code.
-pub(super) fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Violation> {
-    if !is_at_code(node_id) {
+pub(super) fn check_node_id(
+    node_id: &str,
+    defined_at: &HashSet<String>,
+) -> Result<(), RuleViolation> {
+    if !archetype_node_id_is_term_code(node_id) {
         return Ok(());
     }
     if !defined_at.contains(node_id) {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "VATID",
             format!("node_id '{node_id}' is used in the definition but not defined in terminology"),
         ));
     }
     Ok(())
-}
-
-/// An addressable archetype term code: `at0000`, `at0001.1`, or the ADL2 `id`
-/// form. A bare, empty, or free-text `node_id` is not an at-code.
-fn is_at_code(code: &str) -> bool {
-    let rest = code
-        .strip_prefix("at")
-        .or_else(|| code.strip_prefix("id"))
-        .unwrap_or("");
-    rest.starts_with(|c: char| c.is_ascii_digit())
 }
 
 // ─── VTTBK / VTCBK (binding key validity) ───────────────────────────────────────
@@ -67,19 +66,23 @@ fn is_at_code(code: &str) -> bool {
 pub(super) fn check_term_bindings(
     opt: &OperationalTemplate,
     defined_at: &HashSet<String>,
-) -> Result<(), Violation> {
-    let check = |code: &str| -> Result<(), Violation> {
-        // NOTE (flattened-OPT tolerance): a *specialised* at-code
+) -> Result<(), RuleViolation> {
+    let check = |code: &str| -> Result<(), RuleViolation> {
+        // NOTE (flattened-OPT tolerance): a *specialised* code
         // (`at0.23`, dot-notation — AOM2 §specialisation depth) may be bound
         // without a re-emitted local term definition: archie-era flattening
         // keeps parent-archetype bindings whose definitions live in the parent
         // (the vendored blood-pressure corpus OPTs carry these). A dotted
-        // at-code is therefore accepted as a valid binding key.
-        let specialised = code.starts_with("at") && code.contains('.');
-        if code.starts_with('/') || !is_at_code(code) || specialised || defined_at.contains(code) {
+        // code is therefore accepted as a valid binding key.
+        let specialised = code.contains('.');
+        if code.starts_with('/')
+            || !archetype_node_id_is_term_code(code)
+            || specialised
+            || defined_at.contains(code)
+        {
             return Ok(());
         }
-        Err(Violation::new(
+        Err(RuleViolation::new(
             "VTTBK",
             format!(
                 "term binding key '{code}' is neither a defined archetype term (at-code) nor a path"
@@ -115,12 +118,12 @@ pub(super) fn check_term_bindings(
 pub(super) fn check_constraint_bindings(
     opt: &OperationalTemplate,
     defined_ac: &HashSet<String>,
-) -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
     for onto in flat_ontologies(opt) {
         for set in &onto.constraint_bindings {
             for item in &set.items {
                 if !defined_ac.contains(&item.code) {
-                    return Err(Violation::new(
+                    return Err(RuleViolation::new(
                         "VTCBK",
                         format!(
                             "constraint binding key '{}' is not a defined archetype constraint \
@@ -147,7 +150,7 @@ pub(super) fn check_constraint_bindings(
 /// `Vec<ARCHETYPE_TERM>`, single-language) carry no language grouping, so VTLC
 /// is inert for a single-language OPT — the multi-language code sets live only
 /// in `ontology` / `component_ontologies`.
-pub(super) fn check_language_consistency(opt: &OperationalTemplate) -> Result<(), Violation> {
+pub(super) fn check_language_consistency(opt: &OperationalTemplate) -> Result<(), RuleViolation> {
     for onto in flat_ontologies(opt) {
         language_consistent(&codes_by_language(&onto.term_definitions), "term")?;
         language_consistent(
@@ -169,7 +172,10 @@ fn codes_by_language(sets: &[Codedefinitionset]) -> Vec<(String, HashSet<String>
         .collect()
 }
 
-fn language_consistent(by_lang: &[(String, HashSet<String>)], kind: &str) -> Result<(), Violation> {
+fn language_consistent(
+    by_lang: &[(String, HashSet<String>)],
+    kind: &str,
+) -> Result<(), RuleViolation> {
     if by_lang.len() < 2 {
         return Ok(());
     }
@@ -182,7 +188,7 @@ fn language_consistent(by_lang: &[(String, HashSet<String>)], kind: &str) -> Res
                 .symmetric_difference(codes)
                 .map(String::as_str)
                 .collect();
-            return Err(Violation::new(
+            return Err(RuleViolation::new(
                 "VTLC",
                 format!(
                     "the {kind} code set differs between languages '{ref_lang}' and '{lang}' \

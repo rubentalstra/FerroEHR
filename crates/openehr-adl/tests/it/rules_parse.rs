@@ -18,8 +18,12 @@ use openehr_am::am24::beom::core::statement::Statement;
 
 fn only_assertion(body: &str) -> Expression {
     let set = parse_rules_body(body).unwrap_or_else(|e| panic!("parse {body:?}: {e:?}"));
-    assert_eq!(set.statement.len(), 1, "expected one statement in {body:?}");
-    match set.statement.into_iter().next().unwrap() {
+    assert_eq!(
+        set.statement.as_ref().map_or(0, Vec::len),
+        1,
+        "expected one statement in {body:?}"
+    );
+    match set.statement.into_iter().flatten().next().unwrap() {
         Statement::Assertion(a) => *a.expression,
         other => panic!("expected assertion, got {other:?}"),
     }
@@ -96,7 +100,7 @@ fn dependency_rule_matches_implies_exists() {
 fn tagged_sum_assertion() {
     // The rules_sum shape: `tag: /path = /a + /b`.
     let set = parse_rules_body("score: /data[id3]/x = /data[id3]/a + /data[id3]/b").expect("parse");
-    let Statement::Assertion(a) = set.statement.into_iter().next().unwrap() else {
+    let Statement::Assertion(a) = set.statement.into_iter().flatten().next().unwrap() else {
         panic!("expected assertion");
     };
     assert_eq!(a.tag.as_deref(), Some("score"));
@@ -193,10 +197,12 @@ fn archetype_ref_item_resolves_to_target_node() {
     };
     let stmt = rules
         .into_iter()
+        .flatten()
         .next()
         .expect("a rules statement set")
         .statement
         .into_iter()
+        .flatten()
         .next()
         .expect("a rule statement");
     let Statement::Assertion(a) = stmt else {

@@ -91,6 +91,7 @@ use crate::bmm_persistence::p_bmm_package::PBmmPackage;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::p_bmm_type::PBmmType;
+use openehr_base::containers::present;
 
 /// Materialise the in-memory `BMM_MODEL` of an inclusion-resolved
 /// `P_BMM_SCHEMA`.
@@ -230,8 +231,15 @@ impl<'a> Builder<'a> {
         for (class, is_primitive_type) in schema
             .primitive_types
             .iter()
+            .flatten()
             .map(|class| (class, true))
-            .chain(schema.class_definitions.iter().map(|class| (class, false)))
+            .chain(
+                schema
+                    .class_definitions
+                    .iter()
+                    .flatten()
+                    .map(|class| (class, false)),
+            )
         {
             classes
                 .entry(class.name().to_uppercase())
@@ -302,7 +310,7 @@ impl<'a> Builder<'a> {
             documentation: None,
             packages: None,
             name: path.clone(),
-            classes: Vec::new(),
+            classes: present(Vec::new()),
         })
     }
 
@@ -383,7 +391,7 @@ impl<'a> Builder<'a> {
                 package: core.package,
                 properties: core.properties,
                 source_schema_id: core.source_schema_id,
-                immediate_descendants: core.immediate_descendants,
+                immediate_descendants: present(core.immediate_descendants),
                 is_abstract: core.is_abstract,
                 is_primitive_type: core.is_primitive_type,
                 is_override: core.is_override,
@@ -397,7 +405,7 @@ impl<'a> Builder<'a> {
             package: core.package,
             properties: core.properties,
             source_schema_id: core.source_schema_id,
-            immediate_descendants: core.immediate_descendants,
+            immediate_descendants: present(core.immediate_descendants),
             is_abstract: core.is_abstract,
             is_primitive_type: core.is_primitive_type,
             is_override: core.is_override,
@@ -792,7 +800,7 @@ impl<'a> Builder<'a> {
             });
         };
         let mut generic_parameters: Vec<BmmType> = Vec::new();
-        for name in &generic.generic_parameters {
+        for name in generic.generic_parameters.iter().flatten() {
             generic_parameters.push(self.build_named_type(context, name, owner)?);
         }
         for parameter in &generic.generic_parameter_defs {
@@ -900,7 +908,7 @@ impl<'a> Builder<'a> {
         for package in packages.values() {
             let path = qualify(prefix, &package.name);
             let mut classes = Vec::new();
-            for class in &package.classes {
+            for class in package.classes.iter().flatten() {
                 let entry = self.classes.get(&class.to_uppercase()).ok_or_else(|| {
                     PBmmReadError::ClassNotDefined {
                         package: package.name.clone(),
@@ -920,7 +928,7 @@ impl<'a> Builder<'a> {
                         Some(children)
                     },
                     name: package.name.clone(),
-                    classes,
+                    classes: present(classes),
                 },
             );
         }
@@ -1008,12 +1016,12 @@ fn build_enumeration(core: ClassCore, persisted: &PBmmEnumeration) -> BmmEnumera
                 package: core.package,
                 properties: core.properties,
                 source_schema_id: core.source_schema_id,
-                immediate_descendants: core.immediate_descendants,
+                immediate_descendants: present(core.immediate_descendants),
                 is_abstract: core.is_abstract,
                 is_primitive_type: core.is_primitive_type,
                 is_override: core.is_override,
-                item_names,
-                item_values,
+                item_names: present(item_names),
+                item_values: present(item_values),
                 underlying_type_name,
             })
         }
@@ -1025,12 +1033,12 @@ fn build_enumeration(core: ClassCore, persisted: &PBmmEnumeration) -> BmmEnumera
                 package: core.package,
                 properties: core.properties,
                 source_schema_id: core.source_schema_id,
-                immediate_descendants: core.immediate_descendants,
+                immediate_descendants: present(core.immediate_descendants),
                 is_abstract: core.is_abstract,
                 is_primitive_type: core.is_primitive_type,
                 is_override: core.is_override,
-                item_names,
-                item_values,
+                item_names: present(item_names),
+                item_values: present(item_values),
                 underlying_type_name,
             })
         }
@@ -1041,12 +1049,12 @@ fn build_enumeration(core: ClassCore, persisted: &PBmmEnumeration) -> BmmEnumera
             package: core.package,
             properties: core.properties,
             source_schema_id: core.source_schema_id,
-            immediate_descendants: core.immediate_descendants,
+            immediate_descendants: present(core.immediate_descendants),
             is_abstract: core.is_abstract,
             is_primitive_type: core.is_primitive_type,
             is_override: core.is_override,
-            item_names,
-            item_values,
+            item_names: present(item_names),
+            item_values: present(item_values),
             underlying_type_name,
         }),
     }
@@ -1066,7 +1074,7 @@ fn index_packages(
 ) -> Result<(), PBmmReadError> {
     for package in packages.values() {
         let path = qualify(prefix, &package.name);
-        for class in &package.classes {
+        for class in package.classes.iter().flatten() {
             let key = class.to_uppercase();
             if !classes.contains_key(&key) {
                 return Err(PBmmReadError::ClassNotDefined {

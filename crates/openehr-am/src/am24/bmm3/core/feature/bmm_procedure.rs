@@ -43,21 +43,21 @@ pub struct BmmProcedure {
     /// True if this feature was synthesised due to generic substitution in an inherited type, or further constraining of a formal generic parameter.
     pub is_synthesised_generic: Option<bool>,
     /// Extensions to feature-level meta-types.
-    pub feature_extensions: Vec<BmmFeatureExtension>,
+    pub feature_extensions: Option<Vec<BmmFeatureExtension>>,
     /// Group containing this feature.
     pub group: BmmFeatureGroup,
 
     // inherited: BMM_ROUTINE
     /// Formal parameters of the routine.
-    pub parameters: Vec<BmmParameter>,
+    pub parameters: Option<Vec<BmmParameter>>,
     /// Boolean conditions that must evaluate to True for the routine to execute correctly, May be used to generate exceptions if included in run-time build.
     ///
     /// A False pre-condition implies an error in the passed parameters.
-    pub pre_conditions: Vec<BmmAssertion>,
+    pub pre_conditions: Option<Vec<BmmAssertion>>,
     /// Boolean conditions that will evaluate to True if the routine executed correctly, May be used to generate exceptions if included in run-time build.
     ///
     /// A False post-condition implies an error (i.e. bug) in routine code.
-    pub post_conditions: Vec<BmmAssertion>,
+    pub post_conditions: Option<Vec<BmmAssertion>>,
     /// Body of a routine, i.e. executable program.
     pub definition: Option<BmmRoutineDefinition>,
 }

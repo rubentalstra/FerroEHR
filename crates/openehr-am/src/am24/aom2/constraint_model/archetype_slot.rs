@@ -31,15 +31,15 @@ pub struct ArchetypeSlot {
     ///
     pub node_id: String,
     /// Additional identifiers of this node. openEHR archetypes can carry original ALD2 id-codes in this attribute and it can also carry human readable codes for future use. Alternative ids must be unique within the archetype.
-    pub alternative_ids: Vec<String>,
+    pub alternative_ids: Option<Vec<String>>,
     /// True if this node and by implication all sub-nodes are deprecated for use.
     pub is_deprecated: Option<bool>,
     /// Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
     pub sibling_order: Option<SiblingOrder>,
     /// List of constraints defining other archetypes that could be included at this point. Represented as an `ASSERTION` containing an expression of the form  `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`.
-    pub includes: Vec<Assertion>,
+    pub includes: Option<Vec<Assertion>>,
     /// List of constraints defining other archetypes that cannot be included at this point. Represented as an `ASSERTION` containing an expression of the form  `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`.
-    pub excludes: Vec<Assertion>,
+    pub excludes: Option<Vec<Assertion>>,
     /// True if this slot specification in this artefact is closed to further filling either in further specialisations or at runtime. Default value False, i.e. unless explicitly set, a slot remains open.
     pub is_closed: bool,
 }

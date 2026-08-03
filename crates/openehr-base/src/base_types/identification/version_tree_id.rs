@@ -11,5 +11,21 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct VersionTreeId {
     /// String form of this identifier.
-    pub value: String,
+    pub(crate) value: String,
+}
+
+/// Read access to the `pub(crate)` fields of [`VersionTreeId`].
+///
+/// The fields are not `pub`: this class has a released **lexical form**, so
+/// construction runs a grammar and is the only door — docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc §Syntaxes: `version_tree_id = trunk_version, [ '.', branch_number, '.', branch_version ]`, each part a `number`; RM common master06-change_control_package.adoc §“The 'Virtual Version Tree'” starts every part at 1 (`VERSION_TREE_ID.Trunk_version_valid` / `.Branch_validity`).
+///
+/// The validating constructor lives in the hand-written `*_impl.rs` sibling
+/// (the generator never writes into it); every generated codec builds this
+/// type through that constructor.
+impl VersionTreeId {
+    /// The validated `value` this identifier was constructed from.
+    #[must_use]
+    pub fn value(&self) -> &str {
+        &self.value
+    }
 }

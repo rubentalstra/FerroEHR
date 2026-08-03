@@ -78,10 +78,25 @@ fn ehr_access_archetype_node_id_is_attribute() {
 fn demographic_person_archetype_node_id_is_attribute() {
     // PERSON → ACTOR → PARTY → LOCATABLE (v2 Demographic.xsd); previously
     // uncovered by the v1 bundle (no demographic schema).
+    // `PARTY.identities` is `1..*`
+    // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc`
+    // §Attributes), so a PERSON states at least one identity.
     let json = r#"{
         "_type": "PERSON",
         "name": {"value": "Patient"},
-        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1"
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "identities": [
+            {
+                "_type": "PARTY_IDENTITY",
+                "name": {"value": "legal identity"},
+                "archetype_node_id": "at0001",
+                "details": {
+                    "_type": "ITEM_TREE",
+                    "name": {"value": "identity"},
+                    "archetype_node_id": "at0002"
+                }
+            }
+        ]
     }"#;
     let person: Person =
         openehr_its::json::from_canonical_json(json).expect("deserialize PERSON JSON");

@@ -239,16 +239,12 @@ pub(crate) fn term_code(terminology_id: &str, code: &str) -> TerminologyCode {
 
 /// Parse a textual UUID, or `None` if it is not one.
 pub(crate) fn parse_uuid(s: &str) -> Option<Uuid> {
-    uuid::Uuid::parse_str(s.trim())
-        .ok()
-        .map(|value| Uuid { value })
+    uuid::Uuid::parse_str(s.trim()).ok().map(Uuid::new)
 }
 
 /// The nil UUID (`00000000-0000-0000-0000-000000000000`).
-pub(crate) fn nil_uuid() -> Uuid {
-    Uuid {
-        value: uuid::Uuid::nil(),
-    }
+pub(crate) const fn nil_uuid() -> Uuid {
+    Uuid::new(uuid::Uuid::nil())
 }
 
 /// Whether an ODIN value is an interval, reading through any type cast.

@@ -35,6 +35,7 @@ use crate::load::bmm::{
 };
 use crate::load::impls::SiblingImpls;
 use crate::plan::composition::Composed;
+use crate::plan::construction;
 use crate::plan::overrides::{back_reference, class_binding, type_override, untyped_field};
 use crate::plan::{Emission, decide};
 use crate::render::naming;
@@ -145,7 +146,9 @@ fn emit_version(
     let used = model.used_as_type();
 
     // Spec class names emitted in this version; anything referenced outside it
-    // degrades to `serde_json::Value` so the crate stays self-contained.
+    // degrades to `serde_json::Value` so the crate stays self-contained. This is
+    // the same projection [`crate::analyze::emittable_specs`] computes — the one
+    // the `External` prelude index and the `model-query` report resolve against.
     let mut local: BTreeSet<String> = BTreeSet::new();
     for (name, class) in &schema.classes {
         if !matches!(decide(model, class, &used), Emission::Skip) {
@@ -573,7 +576,7 @@ fn emit_struct(
 }
 
 /// The params a struct is generic over (see `used_generic_params`).
-fn struct_generics(model: &Model, class: &BmmClass) -> Vec<String> {
+pub(crate) fn struct_generics(model: &Model, class: &BmmClass) -> Vec<String> {
     model
         .used_generic_params(&class.name)
         .into_iter()
@@ -610,8 +613,32 @@ fn render_struct_def(
     // No serde/`_type` derive: canonical-JSON (de)serialization is provided by
     // the emitted `ToJson`/`FromJson` impls in `openehr-its` (`emit-json`), not by
     // a per-struct derive. The type is a plain data record.
+    //
+    // A class the construction map records as staying a plain record although a
+    // reader might expect a validating door carries that adjudication here, at
+    // the public fields it is about — silence over an unguarded identifier type
+    // is indistinguishable from an oversight.
+    if let Some(note) = construction::plain_record_note(&class.name) {
+        b.push_str(&format!("// NOTE: {note}\n"));
+    }
     b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
     b.push_str(&format!("pub struct {struct_ty}{gen_decl} {{\n"));
+
+    // A class with a validating construction door (`plan::construction`) emits
+    // its fields `pub(crate)` instead of `pub`: outside this crate the only way
+    // to obtain a value is the hand-written `*_impl.rs` constructor, which runs
+    // the released grammar. `pub(crate)` rather than fully private because the
+    // grammar itself is hand-written spec behaviour in a sibling module of the
+    // same crate, and the generator never writes into `*_impl.rs`.
+    let field_vis = if construction::is_validated(&class.name) {
+        "pub(crate)"
+    } else {
+        "pub"
+    };
+    // `(ident, rust_type)` for each emitted field, in emission order — the read
+    // accessors a validated class needs, and the parameter order its constructor
+    // is called in by the generated codecs.
+    let mut emitted: Vec<(String, String)> = Vec::new();
 
     let props = model.flattened_props(class);
     let mut prev_owner: Option<&str> = None;
@@ -670,9 +697,72 @@ fn render_struct_def(
                 adj.citation, adj.reason
             ));
         }
-        b.push_str(&format!("    pub {ident}: {rust_ty},\n"));
+        b.push_str(&format!("    {field_vis} {ident}: {rust_ty},\n"));
+        emitted.push((ident, rust_ty));
     }
 
+    b.push_str("}\n");
+    if let Some(citation) = construction::validated_citation(&class.name) {
+        b.push_str(&render_accessors(
+            &class.name,
+            struct_ty,
+            &emitted,
+            citation,
+        ));
+    }
+    b
+}
+
+/// The read accessors + door NOTE for a class whose fields are `pub(crate)`
+/// behind a validating constructor (`plan::construction`).
+///
+/// Emitting the accessors here rather than hand-writing one per class keeps the
+/// scheme mechanical: a field added to a validated class by a spec bump gains
+/// its reader automatically, and the accessor set can never drift from the field
+/// set. `String` reads back as `&str` (the idiomatic borrow); every other type
+/// reads back by reference.
+fn render_accessors(
+    spec_name: &str,
+    struct_ty: &str,
+    fields: &[(String, String)],
+    citation: &str,
+) -> String {
+    let arity = construction::validated_ctor(spec_name).map_or(0, |(p, _)| p.len());
+    assert_eq!(
+        arity,
+        fields.len(),
+        "construction map declares arity {arity} for {spec_name}, but the BMM \
+         emits {} field(s): the hand-written constructor and the generated \
+         codec calls would disagree",
+        fields.len()
+    );
+    let mut b = String::new();
+    b.push_str(&format!(
+        "\n/// Read access to the `pub(crate)` fields of [`{struct_ty}`].\n\
+         ///\n\
+         /// The fields are not `pub`: this class has a released **lexical form**, so\n\
+         /// construction runs a grammar and is the only door \u{2014} {citation}\n\
+         ///\n\
+         /// The validating constructor lives in the hand-written `*_impl.rs` sibling\n\
+         /// (the generator never writes into it); every generated codec builds this\n\
+         /// type through that constructor.\n\
+         impl {struct_ty} {{\n"
+    ));
+    for (i, (ident, rust_ty)) in fields.iter().enumerate() {
+        if i > 0 {
+            b.push('\n');
+        }
+        let (ret, expr) = if rust_ty == "String" {
+            ("&str".to_owned(), format!("&self.{ident}"))
+        } else {
+            (format!("&{rust_ty}"), format!("&self.{ident}"))
+        };
+        b.push_str(&format!(
+            "    /// The validated `{ident}` this identifier was constructed from.\n    \
+             #[must_use]\n    \
+             pub fn {ident}(&self) -> {ret} {{\n        {expr}\n    }}\n"
+        ));
+    }
     b.push_str("}\n");
     b
 }
@@ -809,7 +899,11 @@ fn decode_char(inner: &str) -> char {
 
 /// Compute a field's Rust type (the JSON codec handles `None`/empty omission at
 /// its field call sites, so no attribute is needed on the field).
-fn field_type(
+///
+/// This is the single field-shape decision: the struct renderer above calls it
+/// for every flattened property, and [`crate::render::model_query`] calls it to
+/// report the decision, so the report cannot drift from the emitted code.
+pub(crate) fn field_type(
     model: &Model,
     class: &BmmClass,
     p: &crate::load::bmm::BmmProperty,
@@ -852,7 +946,9 @@ fn field_type(
                 format!("Option<{inner}>")
             }
         }
-        BmmPropKind::Container { item, .. } => {
+        BmmPropKind::Container {
+            item, cardinality, ..
+        } => {
             // A byte buffer (`Array<Octet>` / `List<Octet>`, e.g.
             // `DV_MULTIMEDIA.data`) is inline base64 *text* on the canonical
             // wire, not a JSON array — carry the base64 verbatim as a `String`
@@ -865,47 +961,53 @@ fn field_type(
                     "Option<String>".to_string()
                 };
             }
-            // NOTE: a container property is `Vec<T>` regardless of its BMM
-            // optionality. This is the ONE decision point of the
-            // Vec-for-optional-container convention, so the adjudication lives
+            // NOTE: a container property's Rust shape follows its BMM
+            // EXISTENCE, exactly like a single-valued one — `Vec<T>` when the
+            // attribute is mandatory (existence `1..1`), `Option<Vec<T>>` when
+            // it is optional (`0..1`). This is the ONE decision point of the
+            // optionality-aware container convention, so the adjudication lives
             // here.
             //
             // The RM DOES distinguish Void from empty on a `0..1 List<T>`
-            // attribute. FOLDER is the exemplar: RM common
+            // attribute, and states rules that are only expressible when the
+            // two states are distinct: `LOCATABLE.Links_valid: links /= Void
+            // implies not links.is_empty`
+            // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+            // §Invariants) is contentless unless a present-but-empty list is
+            // representable. FOLDER is the structural exemplar: RM common
             // `UML/classes/org.openehr.rm.common.folder.adoc` §Attributes
             // types BOTH `items` ("The list of references to other (usually)
             // versioned objects logically in this folder") and `folders`
             // ("Sub-folders of this Folder") at 0..1, so "no items attribute"
             // and "an empty items list" are two distinct model states.
+            // `Option<Vec<T>>` is the shape that carries them, so the
+            // present-implies-non-empty invariant family becomes a typed check
+            // over the model rather than a JSON-value-only side check.
             //
-            // No released sentence picks a wire form for that distinction —
-            // the ITS-REST docs text and the released OAS are both silent on
-            // absent-versus-empty arrays — so this is OUR OWN DESIGN /
-            // EXTENSION: no openEHR spec governs it. The codec emits
-            // absent-for-empty and reads absent as empty, collapsing the two
-            // states in one direction only, which is lossless everywhere the
-            // Void state carries no meaning of its own.
+            // The WIRE is unaffected: the canonical-JSON writer omits an empty
+            // list whether it is `None` or `Some(vec![])`, per the released
+            // sentence `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+            // §JSON Format ("The RM attributes (even required ones) that are
+            // `Null` or an empty list (array) SHOULD be absent when serialized
+            // as JSON"). The reader is the direction that gains: absent → `None`,
+            // `[]` → `Some(vec![])`.
             //
-            // TODO(#1450): `EL_AGENT.open_args` is the one known site where it IS
-            // lossy — the attribute is `0..1` and its Void state is normatively
-            // load-bearing twice: "If not provided, and the `_name_` refers to
-            // a routine with more arguments than supplied in `_closed_args_`,
-            // the missing arguments are inferred from the `_definition_`"
-            // (`…bmm3.el_agent.adoc` §Attributes), and `is_callable()` is
-            // defined as `Result = open_arguments = Void` (same file
-            // §Functions), which `EL_AGENT_CALL.Inv_valid_call`
-            // (`…bmm3.el_agent_call.adoc` §Invariants),
-            // `EL_FUNCTION_CALL.Inv_valid_agent` (`…bmm3.el_function_call.adoc`
-            // §Invariants) and `BMM_PROCEDURE_CALL.Inv_valid_agent`
-            // (`…bmm3.bmm_procedure_call.adoc` §Invariants) all reduce to. Give
-            // this field `Option<Vec<String>>` (a `type_override`-style entry,
-            // or optionality-aware container rendering) before any EL agent
-            // evaluation or invariant check lands; nothing evaluates EL today,
-            // which is why the convention still stands here.
-            format!(
-                "Vec<{}>",
-                model.render_type(item, generics, subst, local, external)
-            )
+            // A MANDATORY container whose BMM cardinality has a lower bound of
+            // 1 (`CLUSTER.items: List<ITEM> {1..*}`,
+            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+            // §Attributes) emits `NonEmptyVec<T>` instead of `Vec<T>`: the bound
+            // is a structural statement about the model, so the type carries it
+            // and the empty state stops being representable. A mandatory
+            // container with a `0..*` cardinality keeps the plain `Vec<T>` — it
+            // genuinely admits zero members.
+            let item_ty = model.render_type(item, generics, subst, local, external);
+            let lower_bound_one = cardinality.as_ref().is_some_and(|c| c.lower >= 1)
+                && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);
+            match (p.is_mandatory, lower_bound_one) {
+                (true, true) => format!("{}::NonEmptyVec<{item_ty}>", external.containers_path()),
+                (true, false) => format!("Vec<{item_ty}>"),
+                (false, _) => format!("Option<Vec<{item_ty}>>"),
+            }
         }
     }
 }

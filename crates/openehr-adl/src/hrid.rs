@@ -10,10 +10,16 @@
 //!
 //! Two further, deliberately *looser* readings of the same grammar live here so
 //! all three sit side by side and their differences are visible:
-//! `hrid_lookup_key`/`raw_id_lookup_key` (repository keying — version and
-//! namespace insensitive, case-folded) and `is_archetype_id` (the
+//! [`hrid_lookup_key`]/[`raw_id_lookup_key`] (repository keying — version and
+//! namespace insensitive, case-folded) and [`is_archetype_id`] (the
 //! `master04.3` slot/root meta-pattern predicate, which judges shape only and
 //! parses nothing).
+//!
+//! Everything that has to locate the `.v` version boundary in a raw id string —
+//! [`parse_hrid`], [`raw_id_lookup_key`], [`raw_id_concept`],
+//! [`raw_id_version`] — goes through the one primitive [`version_marker`], so
+//! the grammar has exactly one reading. See that function for why the reading
+//! is the LAST `.v<digit>`.
 
 use std::fmt::Write;
 
@@ -34,13 +40,8 @@ pub fn parse_hrid(s: &str) -> Result<ArchetypeHrid, String> {
         None => (None, s),
     };
 
-    let vpos = rest
-        .rfind(".v")
-        .filter(|&i| {
-            rest.get(i + 2..)
-                .is_some_and(|v| v.starts_with(|c: char| c.is_ascii_digit()))
-        })
-        .ok_or_else(|| format!("HRID {s:?} has no `.vN` version segment"))?;
+    let vpos =
+        version_marker(rest).ok_or_else(|| format!("HRID {s:?} has no `.vN` version segment"))?;
     let left = rest.get(..vpos).unwrap_or_default();
     let version = rest.get(vpos + 2..).unwrap_or_default();
 
@@ -143,7 +144,8 @@ pub(crate) fn hrid_to_string(h: &ArchetypeHrid) -> String {
 /// case-insensitive type-name matching of `master03` §Lexical Conventions), so
 /// a reference `openehr-task_planning-DECISION_GROUP.x` resolves the archetype
 /// `openehr-TASK_PLANNING-DECISION_GROUP.x`.
-pub(crate) fn hrid_lookup_key(h: &ArchetypeHrid) -> String {
+#[must_use]
+pub fn hrid_lookup_key(h: &ArchetypeHrid) -> String {
     format!(
         "{}-{}-{}.{}",
         h.rm_publisher, h.rm_package, h.rm_class, h.concept_id
@@ -151,25 +153,104 @@ pub(crate) fn hrid_lookup_key(h: &ArchetypeHrid) -> String {
     .to_ascii_lowercase()
 }
 
-/// The lookup key of a raw archetype-id string (strips an optional `ns::`
-/// namespace prefix and the trailing `.vN…` version; case-folded to match
-/// [`hrid_lookup_key`]).
-pub(crate) fn raw_id_lookup_key(raw: &str) -> String {
-    let no_ns = raw.rsplit("::").next().unwrap_or(raw);
-    match version_marker(no_ns) {
-        Some(idx) => no_ns.get(..idx).unwrap_or(no_ns),
-        None => no_ns,
-    }
-    .to_ascii_lowercase()
+/// The `publisher-package-class.concept` lookup key of a RAW archetype-id
+/// string: the optional `ns::` prefix and the trailing `.vN…` version stripped,
+/// case-folded to match [`hrid_lookup_key`]. This is the family identity that
+/// groups every stored version of one archetype/template.
+#[must_use]
+pub fn raw_id_lookup_key(raw: &str) -> String {
+    strip_namespace_and_version(raw).to_ascii_lowercase()
 }
 
-/// The byte index of the version marker in an archetype id — the first `.v`
-/// immediately followed by a digit (so a concept id starting with `v`, e.g.
-/// `…ENTRY.valc_parent…`, is not mistaken for the version).
-fn version_marker(s: &str) -> Option<usize> {
+/// The `concept` segment of a raw archetype id — the token between the model
+/// part (`publisher-package-class`) and the `.vN…` version. Falls back to the
+/// whole (namespace-stripped) id when the shape carries no `.concept` segment,
+/// so the accessor is total on stored input.
+///
+/// Grammar: `archetype_id = qualified_rm_entity, '.', domain_concept, '.v',
+/// version_id` (BASE `base_types` `master05-identification_package.adoc`
+/// §Syntaxes).
+#[must_use]
+pub fn raw_id_concept(raw: &str) -> &str {
+    let core = raw.rsplit("::").next().unwrap_or(raw);
+    let before_version = split_at_version(core).0;
+    before_version.rsplit_once('.').map_or(core, |(_, c)| c)
+}
+
+/// The numeric release-version segment of a raw archetype id
+/// (`…concept.v1.2.3-rc.4` → `1.2.3`); empty when the id carries no `.v<digit>`
+/// marker.
+///
+/// The pre-release qualifier (`-alpha.N` / `-rc.N`, ADL2
+/// `master07.05-adl_identification.adoc` §Version Identifiers) is dropped —
+/// this is the `major[.minor[.patch]]` release number only.
+#[must_use]
+pub fn raw_id_version(raw: &str) -> &str {
+    let core = raw.rsplit("::").next().unwrap_or(raw);
+    match split_at_version(core).1 {
+        // Skip the `.v`; take up to the pre-release status marker (`-`).
+        Some(marker) => {
+            let tail = marker.get(2..).unwrap_or_default();
+            tail.split('-').next().unwrap_or(tail)
+        }
+        None => "",
+    }
+}
+
+/// A raw archetype id with its optional `ns::` prefix and its `.vN…` version
+/// tail removed — i.e. `qualified_rm_entity '.' domain_concept`.
+fn strip_namespace_and_version(raw: &str) -> &str {
+    let no_ns = raw.rsplit("::").next().unwrap_or(raw);
+    split_at_version(no_ns).0
+}
+
+/// Split a (namespace-stripped) archetype id at its [`version_marker`]:
+/// everything before the marker, and the marker onwards (`None` when the id
+/// carries no version marker, in which case the whole input is the "before"
+/// part). The marker's `.` and `v` are ASCII, so the split is always on a char
+/// boundary.
+#[must_use]
+pub fn split_at_version(core: &str) -> (&str, Option<&str>) {
+    let Some(idx) = version_marker(core) else {
+        return (core, None);
+    };
+    match core.split_at_checked(idx) {
+        Some((before, marker)) => (before, Some(marker)),
+        None => (core, None),
+    }
+}
+
+/// The byte index of the version marker in a (namespace-stripped) archetype id:
+/// the **last** `.v` immediately followed by an ASCII digit.
+///
+/// Why the LAST and not the first — derived from the grammar in BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes:
+///
+/// ```text
+/// archetype_id        = qualified_rm_entity, '.', domain_concept, '.v', version_id ;
+/// qualified_rm_entity = rm_originator, '-', rm_name, '-', rm_entity ;
+/// domain_concept      = concept_name, { '-', specialisation } ;
+/// concept_name        = alphanum-str ;   alphanum-str = letter, { letter | digit | '_' } ;
+/// version_id          = '0' | non-zero-digit, [ number ] ;
+/// ```
+///
+/// `concept_name`/`specialisation` are `alphanum-str`, whose second and later
+/// characters may be digits — so a legal concept may begin with `v` followed by
+/// a digit (`openEHR-EHR-OBSERVATION.v1_score.v1`), and a FIRST-marker scan
+/// binds to the concept boundary and misreads (or rejects) a valid id. The
+/// version tail, by contrast, can never contain a `v`: `version_id` is numeric
+/// in BASE, and ADL2 `master07.05-adl_identification.adoc` §Version Identifiers
+/// widens it only to `N.M.P` with an optional `-alpha.N` / `-rc.N` qualifier.
+/// The last `.v<digit>` is therefore always the version marker, and the reading
+/// is unambiguous.
+///
+/// The digit requirement is what keeps a concept id merely *starting* with `v`
+/// (`…ENTRY.valc_parent`) from being mistaken for a version.
+#[must_use]
+pub fn version_marker(s: &str) -> Option<usize> {
     s.as_bytes()
         .windows(3)
-        .position(|w| matches!(w, [b'.', b'v', third] if third.is_ascii_digit()))
+        .rposition(|w| matches!(w, [b'.', b'v', third] if third.is_ascii_digit()))
 }
 
 /// True if `id` conforms to the archetype-id form
@@ -180,7 +261,8 @@ fn version_marker(s: &str) -> Option<usize> {
 /// admits four or more hyphen-separated model segments and any `concept.version`
 /// tail, because the meta-pattern it mirrors is a regex over the raw text, not
 /// a parse.
-pub(crate) fn is_archetype_id(id: &str) -> bool {
+#[must_use]
+pub fn is_archetype_id(id: &str) -> bool {
     let body = id.rsplit("::").next().unwrap_or(id);
     let Some((prefix, rest)) = body.split_once('.') else {
         return false;
@@ -242,6 +324,59 @@ mod tests {
             raw_id_lookup_key("openEHR-EHR-ENTRY.valc_parent"),
             "openehr-ehr-entry.valc_parent"
         );
+    }
+
+    /// The one reading of the `.v` boundary: the LAST `.v<digit>`.
+    ///
+    /// `concept_name = alphanum-str = letter, { letter | digit | '_' }` (BASE
+    /// `base_types` `master05-identification_package.adoc` §Syntaxes), so a legal
+    /// concept may begin `v` + digit; the version tail can never contain a `v`.
+    /// Every reader of the grammar must therefore agree on the last marker.
+    #[test]
+    fn the_version_marker_is_the_last_v_digit_on_a_concept_that_looks_like_one() {
+        let pathological = "openEHR-EHR-OBSERVATION.v1_score.v1.2.3";
+
+        // The parser: concept keeps its `v1…` prefix, version is the tail.
+        let h = parse_hrid(pathological).expect("a `v<digit>`-leading concept is a legal HRID");
+        assert_eq!(h.concept_id, "v1_score");
+        assert_eq!(h.release_version, "1.2.3");
+
+        // Every raw-string reader agrees with the parser.
+        assert_eq!(
+            version_marker(pathological),
+            Some("openEHR-EHR-OBSERVATION.v1_score".len())
+        );
+        assert_eq!(
+            split_at_version(pathological),
+            ("openEHR-EHR-OBSERVATION.v1_score", Some(".v1.2.3"))
+        );
+        assert_eq!(raw_id_concept(pathological), "v1_score");
+        assert_eq!(raw_id_version(pathological), "1.2.3");
+        assert_eq!(
+            raw_id_lookup_key(pathological),
+            hrid_lookup_key(&h),
+            "the raw-string key and the parsed key must be the same identity"
+        );
+    }
+
+    /// The raw-string projections on the ordinary forms: namespace stripped,
+    /// pre-release qualifier dropped from the release version, and an id with
+    /// no `.v<digit>` marker left whole.
+    #[test]
+    fn raw_id_projections() {
+        let full = "uk.gov::openEHR-EHR-CLUSTER.device.v1.0.0-rc.2";
+        assert_eq!(raw_id_concept(full), "device");
+        assert_eq!(raw_id_version(full), "1.0.0");
+        assert_eq!(raw_id_lookup_key(full), "openehr-ehr-cluster.device");
+
+        // ADL 1.4 single-number version.
+        assert_eq!(raw_id_version("openEHR-EHR-OBSERVATION.bp.v1"), "1");
+
+        // No version marker: nothing is stripped.
+        let unversioned = "openEHR-EHR-ENTRY.valc_parent";
+        assert_eq!(split_at_version(unversioned), (unversioned, None));
+        assert_eq!(raw_id_version(unversioned), "");
+        assert_eq!(raw_id_concept(unversioned), "valc_parent");
     }
 
     #[test]

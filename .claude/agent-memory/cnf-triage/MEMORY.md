@@ -29,4 +29,5 @@
 - [SHOULD headers over-gated](should-headers-over-gated.md) — Last-Modified presence + the 412 ETag are SHOULDs; bare `present` matchers must be `present?`
 - [OPT 1.4 ac-code definedness](opt14-ac-code-definedness.md) — VATDF/VACDF: only a `constraint_definitions` entry defines an ac-code; `term_definitions` is XSD-mandatory; component ontology → `component_ontologies`
 - [`_type`-tag-driven validation walk](type-tag-driven-validation-walk-skips-untagged-nodes.md) — APP defect class: untagged concretely-declared nodes (context/participations/…) escape ALL invariants on the JSON commit path; XML twin refuses
+- [`1..*` containers / NonEmptyVec refusals](nonempty-1star-containers.md) — BMM `cardinality.lower==1` IS item count (RM tables never write `1..*`); the 9-attribute set; empty-manifest row = catalogue bin
 - [AMB-167 documented-family root-name gap](amb167-documented-family-root-name-gap.md) — the handling carve-out contradicts the classification; DOCUMENTED XML root+namespace is a MUST with no case

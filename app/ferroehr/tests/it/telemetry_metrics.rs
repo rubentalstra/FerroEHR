@@ -211,7 +211,7 @@ async fn compositions_committed_total_counts_every_committed_composition_version
         "delete_composition must count one 523|deleted| commit"
     );
     // The stale identity was only ever used for the negative case above.
-    assert_ne!(stale.value, latest.value);
+    assert_ne!(stale.value(), latest.value());
 
     // (5) The CONTRIBUTION route: its COMPOSITION versions are counted too, and
     // its non-COMPOSITION versions (EHR_STATUS here) are not.

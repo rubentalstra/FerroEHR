@@ -28,6 +28,7 @@ use crate::bmm::rm_access::error::RmAccessError;
 use crate::bmm::rm_access::reference_model_access::ReferenceModelAccess;
 use crate::bmm::rm_access::schema_descriptor::SchemaDescriptor;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
+use openehr_base::containers::present;
 
 impl ReferenceModelAccess {
     /// A schema repository over `schema_directories`, with nothing loaded yet.
@@ -40,7 +41,7 @@ impl ReferenceModelAccess {
     #[must_use]
     pub fn new(schema_directories: Vec<String>) -> Self {
         Self {
-            schema_directories,
+            schema_directories: present(schema_directories),
             all_schemas: None,
             valid_models: None,
         }
@@ -69,7 +70,7 @@ impl ReferenceModelAccess {
     /// Returns any [`RmAccessError`] the scan or the descriptor lifecycle raises
     /// (see [`ReferenceModelAccess::initialise_with_load_list`]).
     pub fn initialise_all(&mut self) -> Result<(), RmAccessError> {
-        let directories = self.schema_directories.clone();
+        let directories = self.schema_directories.clone().unwrap_or_default();
         self.initialise(&directories, None)
     }
 
@@ -99,8 +100,8 @@ impl ReferenceModelAccess {
         a_schema_dirs: Vec<String>,
         a_schema_load_list: &[String],
     ) -> Result<(), RmAccessError> {
-        self.schema_directories = a_schema_dirs;
-        let directories = self.schema_directories.clone();
+        self.schema_directories = present(a_schema_dirs);
+        let directories = self.schema_directories.clone().unwrap_or_default();
         self.initialise(&directories, Some(a_schema_load_list))
     }
 
@@ -126,7 +127,7 @@ impl ReferenceModelAccess {
             .flat_map(BTreeMap::keys)
             .cloned()
             .collect();
-        let directories = self.schema_directories.clone();
+        let directories = self.schema_directories.clone().unwrap_or_default();
         if selection.is_empty() {
             return self.initialise(&directories, None);
         }

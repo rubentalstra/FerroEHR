@@ -34,5 +34,5 @@ pub struct BmmPackage {
     /// Child packages; keys all in upper case for guaranteed matching.
     pub packages: Option<std::collections::BTreeMap<String, BmmPackage>>,
     /// Member modules in this package.
-    pub members: Vec<BmmModule>,
+    pub members: Option<Vec<BmmModule>>,
 }

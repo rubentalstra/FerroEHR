@@ -26,5 +26,5 @@ pub struct BmmSchemaDescriptor {
     /// Table of `{key, value}` of schema meta-data, keys are string values defined by `{BMM_DEFINITIONS}.Metadata_*` constants.
     pub meta_data: std::collections::BTreeMap<String, String>,
     /// Identifiers of schemas included by this schema.
-    pub includes: Vec<String>,
+    pub includes: Option<Vec<String>>,
 }

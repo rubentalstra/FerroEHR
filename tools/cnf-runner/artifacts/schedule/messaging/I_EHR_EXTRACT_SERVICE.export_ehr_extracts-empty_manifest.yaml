@@ -17,29 +17,36 @@ component: MESSAGING
 sm_operation: I_EHR_EXTRACT_SERVICE.export_ehr_extracts
 capabilities: [EhrExtract]
 profiles: [OPTIONS]
-test_purpose: "An EXTRACT_SPEC whose manifest names no entity is fulfilled and yields no EXTRACT."
-description: "Export an EXTRACT_SPEC with an empty manifest"
+test_purpose: "An EXTRACT_SPEC whose manifest names no entity is refused — EXTRACT_MANIFEST.entities is 1..*, so the shape is not a valid EXTRACT_SPEC."
+description: "Export an EXTRACT_SPEC with an empty manifest is refused"
 spec_refs:
-  - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.export_ehr_extracts"
-  - "RM ehr_extract master04-common_package §EXTRACT_MANIFEST"
+  - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.export_ehr_extracts (extract_spec: EXTRACT_SPEC[1] — a mandatory, well-formed spec)"
+  - "RM ehr_extract UML/classes/org.openehr.rm.ehr_extract.extract_manifest.adoc §Attributes (entities 1..1 List<EXTRACT_ENTITY_MANIFEST>)"
+  - "RM BMM (1.0.4/1.1.0/1.2.0) EXTRACT_MANIFEST.entities cardinality {lower: 1, upper_unbounded} — the item-count bound (LANG bmm_container_property.adoc §Attributes: cardinality is the container's item count, distinct from existence)"
   - "CNF platform_test_schedule master13 §export_ehr_extracts (chapter: export_ehr_extract)"
 applies: { rm: ">=1.0.2" }
 guards:
   - "EXTENSION ROUTE — no openEHR spec governs the /message/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family message-extract) and adjudicated by register AMB-34. The row gates the CAPABILITY verdicts only, never ITS-REST wire conformance"
-# RE-GROUNDED 2026-07-29 (#659). The case was `-empty_result`, "an
-# EXTRACT_SPEC matching no EHRs on an empty system", carried by a documentary
-# fixture whose single entity named neither `ehr_id` nor `subject_id` — a
-# manifest entity the receiver cannot locate at all, which is a
-# `precondition_violation`, not an empty result (that branch is now the
-# `-unresolvable_entity` sibling). The behaviour that IS an empty result is
-# derivable from extract_manifest.adoc: the manifest is the "List of entity
-# manifests ... included in the Extract" and the operation yields one EXTRACT
-# per entity, so a manifest with no entity is fulfilled with no content.
+# RE-GROUNDED 2026-07-29 (#659), RE-ADJUDICATED 2026-08-03 (phase-close
+# triage). The 2026-07-29 derivation read only the attribute prose ("List of
+# entity manifests ... included in the Extract") and concluded a manifest
+# with no entity is fulfilled with no content — but it never read the
+# MULTIPLICITY in the same class table: EXTRACT_MANIFEST.entities is 1..1
+# List with item-cardinality {lower: 1, upper_unbounded} in every published
+# BMM generation (1.0.4 / released 1.1.0 / 1.2.0), so an empty entity list
+# is not a valid EXTRACT_MANIFEST and the posted body is not a valid
+# EXTRACT_SPEC — the SM signature demands one (extract_spec:
+# EXTRACT_SPEC[1]). This case is therefore the REFUSAL twin; the acceptance
+# twin is the `-by_spec` sibling (byte-identical shape with one entity).
+# The criteria-only request master04-common_package §Content Specification
+# contemplates is unrepresentable under that model — a spec-internal
+# tension registered separately (see the ambiguity register), and not this
+# fixture's case anyway (it carries no criteria).
 requires: { server: any }
 data_sets: [cnf.messaging.extract_spec.empty_manifest]
 flow:
   - step: 1
     call: export_ehr_extracts
     with: { extract_spec: "${ds:cnf.messaging.extract_spec.empty_manifest}" }
-    expect: ok_empty
+    expect: bad_request
 ambiguities: [AMB-34]

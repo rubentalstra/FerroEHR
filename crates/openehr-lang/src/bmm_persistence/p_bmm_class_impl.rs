@@ -88,7 +88,11 @@ impl PBmmClass {
     /// §Attributes) — empty for an interface, which declares none.
     #[must_use]
     pub fn ancestors(&self) -> &[String] {
-        class_leaf!(self, |leaf| leaf.ancestors.as_slice(), &[])
+        class_leaf!(
+            self,
+            |leaf| leaf.ancestors.as_deref().unwrap_or_default(),
+            &[]
+        )
     }
 
     /// `P_BMM_CLASS.ancestor_defs`: "List of structured inheritance ancestors,
@@ -96,7 +100,11 @@ impl PBmmClass {
     /// empty for an interface.
     #[must_use]
     pub fn ancestor_defs(&self) -> &[PBmmGenericType] {
-        class_leaf!(self, |leaf| leaf.ancestor_defs.as_slice(), &[])
+        class_leaf!(
+            self,
+            |leaf| leaf.ancestor_defs.as_deref().unwrap_or_default(),
+            &[]
+        )
     }
 
     /// `P_BMM_CLASS.properties`: "List of attributes defined in this class",
@@ -233,7 +241,7 @@ mod tests {
         PBmmClass::PBmmClass(PBmmClassData {
             documentation: None,
             name: name.to_owned(),
-            ancestors: Vec::new(),
+            ancestors: openehr_base::containers::present(Vec::new()),
             constants: None,
             properties: None,
             functions: None,
@@ -244,7 +252,7 @@ mod tests {
             source_schema_id: "openehr_test_1.0.0".to_owned(),
             bmm_class: None,
             uid: 1,
-            ancestor_defs: Vec::new(),
+            ancestor_defs: openehr_base::containers::present(Vec::new()),
         })
     }
 

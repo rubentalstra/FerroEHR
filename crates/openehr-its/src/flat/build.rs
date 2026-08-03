@@ -1065,10 +1065,21 @@ fn new_struct(
     let node_id = seg.predicate.archetype_node_id.as_deref();
     let mut o = Map::new();
     o.insert("_type".into(), json!(rm_type));
-    let display = name.or(node_id).unwrap_or(rm_type);
-    o.insert("name".into(), name_value(display, coded_name));
-    if let Some(nid) = node_id {
-        o.insert("archetype_node_id".into(), json!(nid));
+    // `name` is `LOCATABLE.name` — a structural node whose class does NOT
+    // inherit LOCATABLE has no such attribute, and stamping one authors a
+    // member the RM does not declare. `ISM_TRANSITION` is the live case: it
+    // inherits PATHABLE, not LOCATABLE
+    // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
+    // §Inherit), and the CKM careflow-state form `ism_transition[at0109,…]`
+    // reaches this builder through a path predicate. The generated RM model is
+    // the oracle rather than a hardcoded class list, so a future non-LOCATABLE
+    // structural type is handled by construction.
+    if is_locatable(rm_type) {
+        let display = name.or(node_id).unwrap_or(rm_type);
+        o.insert("name".into(), name_value(display, coded_name));
+        if let Some(nid) = node_id {
+            o.insert("archetype_node_id".into(), json!(nid));
+        }
     }
     match rm_type {
         "HISTORY" => {
@@ -1103,6 +1114,19 @@ fn infer_type(attr: &str, next: Option<&str>) -> &'static str {
         ("activities", _) => "ACTIVITY",
         _ => "ITEM_TREE",
     }
+}
+
+/// Does `rm_type` inherit `LOCATABLE`, i.e. carry the `name` /
+/// `archetype_node_id` / `uid` / `links` / `feeder_audit` attribute set?
+///
+/// The generated RM model is the oracle rather than a hardcoded class list, so
+/// a structural type that is NOT a LOCATABLE never gets a LOCATABLE member
+/// stamped on it. `ISM_TRANSITION` is the live case — it inherits `PATHABLE`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
+/// §Inherit) and the CKM careflow-state path form `ism_transition[at0109,…]`
+/// reaches these builders through a path predicate.
+pub(crate) fn is_locatable(rm_type: &str) -> bool {
+    openehr_rm::model::is_a(rm_type, "LOCATABLE")
 }
 
 fn set_node_id(v: &mut Value, node_id: Option<&str>) {
@@ -1145,6 +1169,26 @@ fn empty_item_tree() -> Value {
         "name": {"_type": "DV_TEXT", "value": "Tree"},
         "items": []
     })
+}
+
+/// Stamp the two LOCATABLE identity members (`name`, `archetype_node_id`) on a
+/// built node — and ONLY when its class is a LOCATABLE (see [`is_locatable`]).
+fn stamp_locatable_identity(obj: &mut Map<String, Value>, node: &WebTemplateNode, rm_type: &str) {
+    if !is_locatable(rm_type) {
+        return;
+    }
+    obj.entry("name".to_owned()).or_insert_with(|| {
+        let text = node
+            .name
+            .as_deref()
+            .or(node.node_id.as_deref())
+            .unwrap_or(rm_type);
+        name_value(text, node.name_coded.as_ref())
+    });
+    if let Some(nid) = &node.node_id {
+        obj.entry("archetype_node_id".to_owned())
+            .or_insert_with(|| json!(nid));
+    }
 }
 
 /// Fill the mandatory identity/occurrence fields for a built locatable node.
@@ -1197,14 +1241,7 @@ fn finish_identity(
         }
         return;
     }
-    obj.entry("name".to_owned()).or_insert_with(|| {
-        let text = node
-            .name
-            .as_deref()
-            .or(node.node_id.as_deref())
-            .unwrap_or(rm_type);
-        name_value(text, node.name_coded.as_ref())
-    });
+    stamp_locatable_identity(obj, node, rm_type);
     match rm_type {
         "POINT_EVENT" | "INTERVAL_EVENT" => {
             obj.entry("time".to_owned())
@@ -1215,10 +1252,6 @@ fn finish_identity(
                 .or_insert_with(|| dv_date_time(DEFAULT_TIME));
         }
         _ => {}
-    }
-    if let Some(nid) = &node.node_id {
-        obj.entry("archetype_node_id".to_owned())
-            .or_insert_with(|| json!(nid));
     }
     let is_root_arch = node
         .node_id

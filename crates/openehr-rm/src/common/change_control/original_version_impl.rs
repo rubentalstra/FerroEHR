@@ -20,16 +20,18 @@ use crate::common::change_control::original_version::OriginalVersion;
 impl<T> OriginalVersion<T> {
     /// `ORIGINAL_VERSION.is_merged`: whether this version was created from more
     /// than just its preceding version — the derived boolean of
-    /// `other_input_version_uids` (`Is_merged_validity`).
+    /// `other_input_version_uids`.
     ///
-    /// The spec expresses the invariant against `Void`; the BMM `List`
-    /// attribute emits as a `Vec`, in which absent and empty coincide, and
-    /// `Other_input_version_uids_valid` (`other_input_version_uids /= Void
-    /// implies not other_input_version_uids.is_empty`) forbids the one state
-    /// that would tell them apart. So non-empty IS present.
+    /// `Is_merged_validity` (`other_input_version_ids = Void xor is_merged`,
+    /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc`
+    /// §Invariants) is stated against `Void`, and the optional-container
+    /// emission shape (`Option<Vec<T>>`) carries `Void` directly — so this is
+    /// the invariant read verbatim: merged iff the attribute is present. The
+    /// companion `Other_input_version_uids_valid` (`/= Void implies not
+    /// is_empty`) is realized separately, on the same value.
     #[must_use]
     pub fn is_merged(&self) -> bool {
-        !self.other_input_version_uids.is_empty()
+        self.other_input_version_uids.is_some()
     }
 }
 
@@ -51,9 +53,10 @@ mod tests {
             contribution: ObjectRef::ObjectRef(ObjectRefData {
                 namespace: "local".to_owned(),
                 r#type: "CONTRIBUTION".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId {
-                    value: "11111111-1111-4111-8111-111111111111".to_owned(),
-                }),
+                id: ObjectId::HierObjectId(
+                    HierObjectId::new("11111111-1111-4111-8111-111111111111".to_owned())
+                        .expect("a well-formed identifier"),
+                ),
             }),
             signature: None,
             commit_audit: AuditDetails::AuditDetails(AuditDetailsData {
@@ -61,7 +64,7 @@ mod tests {
                 time_committed: DvDateTime {
                     normal_status: None,
                     normal_range: None,
-                    other_reference_ranges: Vec::new(),
+                    other_reference_ranges: openehr_base::containers::present(Vec::new()),
                     magnitude_status: None,
                     accuracy: None,
                     value: "2026-07-07T10:11:12Z".to_owned(),
@@ -70,7 +73,7 @@ mod tests {
                     value: "modification".to_owned(),
                     hyperlink: None,
                     formatting: None,
-                    mappings: Vec::new(),
+                    mappings: openehr_base::containers::present(Vec::new()),
                     language: None,
                     encoding: None,
                     defining_code: CodePhrase {
@@ -84,23 +87,29 @@ mod tests {
                 description: None,
                 committer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             }),
-            uid: ObjectVersionId {
-                value: "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::3".to_owned(),
-            },
-            preceding_version_uid: Some(ObjectVersionId {
-                value: "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2".to_owned(),
-            }),
-            other_input_version_uids: other_input
-                .into_iter()
-                .map(|value| ObjectVersionId {
-                    value: value.to_owned(),
-                })
-                .collect(),
+            uid: ObjectVersionId::new(
+                "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::3".to_owned(),
+            )
+            .expect("a well-formed identifier"),
+            preceding_version_uid: Some(
+                ObjectVersionId::new(
+                    "8849182c-82ad-4088-a07f-48ead4180515::ferroehr.local::2".to_owned(),
+                )
+                .expect("a well-formed identifier"),
+            ),
+            other_input_version_uids: openehr_base::containers::present(
+                other_input
+                    .into_iter()
+                    .map(|value| {
+                        ObjectVersionId::new(value.to_owned()).expect("a well-formed identifier")
+                    })
+                    .collect(),
+            ),
             lifecycle_state: DvCodedText {
                 value: "complete".to_owned(),
                 hyperlink: None,
                 formatting: None,
-                mappings: Vec::new(),
+                mappings: openehr_base::containers::present(Vec::new()),
                 language: None,
                 encoding: None,
                 defining_code: CodePhrase {
@@ -111,7 +120,7 @@ mod tests {
                     preferred_term: None,
                 },
             },
-            attestations: Vec::new(),
+            attestations: openehr_base::containers::present(Vec::new()),
             data: Some("content".to_owned()),
         }
     }

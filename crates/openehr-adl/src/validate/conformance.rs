@@ -149,7 +149,7 @@ pub(crate) fn collective_occurrences_of(
 ) -> Bounds {
     let mut lower: i64 = 0;
     let mut upper_sum: Option<i64> = Some(0);
-    for child in &attr.children {
+    for child in attr.children.iter().flatten() {
         if !node_id_conforms_to(object_node_id(child), parent_node_id) {
             continue;
         }
@@ -240,7 +240,8 @@ pub(crate) fn meta_type_conforms(child: &CObject, parent: &CObject) -> bool {
     match parent {
         // A childless `C_COMPLEX_OBJECT` may be redefined by any non-primitive.
         CObject::CComplexObject(CComplexObject::CComplexObject(d))
-            if d.attributes.is_empty() && d.attribute_tuples.is_empty() =>
+            if d.attributes.as_ref().is_none_or(Vec::is_empty)
+                && d.attribute_tuples.as_ref().is_none_or(Vec::is_empty) =>
         {
             !ct.is_primitive()
         }
@@ -282,27 +283,41 @@ pub(crate) fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueCon
         (CObject::CBoolean(c), CObject::CBoolean(o)) => {
             // `C_BOOLEAN` (L551-557): parent `any_allowed` (empty) ⇒ conform; else
             // child constraint ⊆ parent constraint.
-            if o.constraint.is_empty() {
+            if o.constraint.as_ref().is_none_or(Vec::is_empty) {
                 ValueConformance::Conforms
             } else {
-                bool_from(c.constraint.iter().all(|v| o.constraint.contains(v)))
+                bool_from(
+                    c.constraint
+                        .iter()
+                        .flatten()
+                        .all(|v| o.constraint.as_ref().is_some_and(|oc| oc.contains(v))),
+                )
             }
         }
         (CObject::CString(c), CObject::CString(o)) => {
             // `C_STRING` (L576-582): parent `any_allowed` (empty) ⇒ conform; else
             // child ⊆ parent. A regex-only parent list is opaque here.
-            if o.constraint.is_empty() {
+            if o.constraint.as_ref().is_none_or(Vec::is_empty) {
                 ValueConformance::Conforms
-            } else if c.constraint.is_empty() {
+            } else if c.constraint.as_ref().is_none_or(Vec::is_empty) {
                 ValueConformance::Unknown
             } else {
-                bool_from(c.constraint.iter().all(|v| o.constraint.contains(v)))
+                bool_from(
+                    c.constraint
+                        .iter()
+                        .flatten()
+                        .all(|v| o.constraint.as_ref().is_some_and(|oc| oc.contains(v))),
+                )
             }
         }
-        (CObject::CInteger(c), CObject::CInteger(o)) => {
-            ordered_conforms(&c.constraint, &o.constraint)
-        }
-        (CObject::CReal(c), CObject::CReal(o)) => ordered_conforms(&c.constraint, &o.constraint),
+        (CObject::CInteger(c), CObject::CInteger(o)) => ordered_conforms(
+            c.constraint.as_deref().unwrap_or_default(),
+            o.constraint.as_deref().unwrap_or_default(),
+        ),
+        (CObject::CReal(c), CObject::CReal(o)) => ordered_conforms(
+            c.constraint.as_deref().unwrap_or_default(),
+            o.constraint.as_deref().unwrap_or_default(),
+        ),
         (CObject::CTerminologyCode(c), CObject::CTerminologyCode(o)) => terminology_conforms(
             &c.constraint,
             status_value(c.constraint_status.as_ref()),
@@ -315,27 +330,27 @@ pub(crate) fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueCon
         // `valid_pattern_constraint_replacement(pattern, other.pattern)`).
         (CObject::CDate(c), CObject::CDate(o)) => temporal_conforms(
             c.pattern_constraint.as_deref(),
-            c.constraint.is_empty(),
+            c.constraint.as_ref().is_none_or(Vec::is_empty),
             o.pattern_constraint.as_deref(),
-            o.constraint.is_empty(),
+            o.constraint.as_ref().is_none_or(Vec::is_empty),
         ),
         (CObject::CTime(c), CObject::CTime(o)) => temporal_conforms(
             c.pattern_constraint.as_deref(),
-            c.constraint.is_empty(),
+            c.constraint.as_ref().is_none_or(Vec::is_empty),
             o.pattern_constraint.as_deref(),
-            o.constraint.is_empty(),
+            o.constraint.as_ref().is_none_or(Vec::is_empty),
         ),
         (CObject::CDateTime(c), CObject::CDateTime(o)) => temporal_conforms(
             c.pattern_constraint.as_deref(),
-            c.constraint.is_empty(),
+            c.constraint.as_ref().is_none_or(Vec::is_empty),
             o.pattern_constraint.as_deref(),
-            o.constraint.is_empty(),
+            o.constraint.as_ref().is_none_or(Vec::is_empty),
         ),
         (CObject::CDuration(c), CObject::CDuration(o)) => temporal_conforms(
             c.pattern_constraint.as_deref(),
-            c.constraint.is_empty(),
+            c.constraint.as_ref().is_none_or(Vec::is_empty),
             o.pattern_constraint.as_deref(),
-            o.constraint.is_empty(),
+            o.constraint.as_ref().is_none_or(Vec::is_empty),
         ),
         // Different primitive types (VSONT territory).
         _ => ValueConformance::Unknown,
@@ -596,7 +611,7 @@ mod tests {
         assert_eq!(effective_existence_adl14(&items), Bounds::new(1, Some(1)));
 
         // at0001 states no occurrences ⇒ effective {1..1} (L316).
-        let plain = &items.children[0];
+        let plain = &items.children.as_deref().unwrap_or_default()[0];
         assert!(child_occurrences(plain).is_none());
         assert_eq!(
             effective_occurrences_adl14(&root, plain),
@@ -604,7 +619,7 @@ mod tests {
         );
         // at0002 states {0..2} ⇒ that wins.
         assert_eq!(
-            effective_occurrences_adl14(&root, &items.children[1]),
+            effective_occurrences_adl14(&root, &items.children.as_deref().unwrap_or_default()[1]),
             Bounds::new(0, Some(2))
         );
     }
@@ -620,7 +635,7 @@ mod tests {
             .find(|a| a.rm_attribute_name == "items")
             .unwrap()
             .clone();
-        let proxy = &items.children[2];
+        let proxy = &items.children.as_deref().unwrap_or_default()[2];
         assert!(child_occurrences(proxy).is_none());
         assert_eq!(
             effective_occurrences_adl14(&root, proxy),

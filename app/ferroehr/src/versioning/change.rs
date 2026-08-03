@@ -10,6 +10,8 @@
 //! `crate::storage::node_repo` (canonical decompose/reassemble). No openEHR
 //! spec governs the SQL — our own design.
 
+use openehr_base::base_types::identification::lexical::composite_ids_equal;
+use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -22,7 +24,7 @@ use crate::storage::row::NodeRow;
 use crate::versioning::attestation::{self, PendingAttest};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle::{self, resolve_lifecycle, validate_transition};
-use crate::versioning::object_version_id::{TreeId, eq_composite_id, object_version_id};
+use crate::versioning::object_version_id::{TreeId, VersionIdError, object_version_id};
 use crate::versioning::{Kind, SigningCtx, integrity};
 
 /// The outcome of a versioned-object write: the object id, the new version's
@@ -152,7 +154,7 @@ pub(crate) enum Change {
         lifecycle_state: Option<String>,
         /// Wire `UPDATE_VERSION.attestations` committed with this version
         /// (master06 §Attestation "Signing content at committal").
-        attestations: Vec<Value>,
+        attestations: Vec<attestation::AttestationInput>,
     },
     /// Commit a new version of an existing object.
     Modify {
@@ -163,7 +165,7 @@ pub(crate) enum Change {
         template_id: Option<String>,
         signature: Option<String>,
         lifecycle_state: Option<String>,
-        attestations: Vec<Value>,
+        attestations: Vec<attestation::AttestationInput>,
         /// Wire `ORIGINAL_VERSION.other_input_version_uids` — the merged-in
         /// version ids for a merge commit (master06 §Version Merging); empty for
         /// a plain modification.
@@ -203,7 +205,7 @@ pub(crate) struct WriteEnvelope {
     /// §Digital Signature).
     pub(crate) signature: Option<String>,
     /// `UPDATE_VERSION.attestations` committed with the version.
-    pub(crate) attestations: Vec<Value>,
+    pub(crate) attestations: Vec<attestation::AttestationInput>,
 }
 
 /// The preceding lineage tip read for a tree-placement decision — mapped from
@@ -337,7 +339,7 @@ async fn next_version(
     }
     let preceding_uid = object_version_id(vo_id, &tip.creating_system_id, tip.tree);
 
-    let (tree, close_ordinal) = if eq_composite_id(&tip.creating_system_id, local_system_id) {
+    let (tree, close_ordinal) = if composite_ids_equal(&tip.creating_system_id, local_system_id) {
         // Continue the lineage this system owns; the preceding tip is superseded.
         let tree = match tip.tree.branch {
             None => TreeId::trunk(tip.tree.trunk + 1),
@@ -400,7 +402,7 @@ struct ResolvedWrite {
     /// The decomposed node rows (empty for a logical delete — data Void).
     rows: Vec<NodeRow>,
     /// `UPDATE_VERSION.attestations` committed with this version.
-    attestations: Vec<Value>,
+    attestations: Vec<attestation::AttestationInput>,
     /// A newly created FOLDER hierarchy that joins `EHR.folders` (create only).
     is_first_folder: bool,
     /// The transaction timestamp — the commit instant this transaction stamps
@@ -445,13 +447,25 @@ struct ResolvedWrite {
 /// overwrite at bare read) served two shapes for one object. The EHR Extract
 /// import path does NOT run through here (foreign versions keep their
 /// carried bytes verbatim).
-fn stamp_version_uid(canonical: &mut Value, version_uid: &str) {
+///
+/// # Errors
+/// [`VersionIdError`] when `version_uid` is not a well-formed
+/// `OBJECT_VERSION_ID` — the stamped identity goes through the BASE
+/// construction door, so a malformed one is refused before it is written,
+/// signed and served.
+fn stamp_version_uid(canonical: &mut Value, version_uid: &str) -> Result<(), VersionIdError> {
     if let Value::Object(map) = canonical {
+        let uid =
+            ObjectVersionId::new(version_uid).map_err(|source| VersionIdError::Malformed {
+                raw: version_uid.to_owned(),
+                source,
+            })?;
         map.insert(
             "uid".to_owned(),
-            serde_json::json!({ "_type": "OBJECT_VERSION_ID", "value": version_uid }),
+            openehr_its::json::to_canonical_value(&uid),
         );
     }
+    Ok(())
 }
 
 #[expect(
@@ -471,7 +485,7 @@ async fn apply_change(
     contribution: ContributionCtx,
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
-    committer_fallback: &Value,
+    committer_fallback: &openehr_rm::prelude::PartyProxy,
     known_now: Option<jiff::Timestamp>,
     change: Change,
 ) -> Result<(Committed, Uuid), ServiceError> {
@@ -499,7 +513,7 @@ async fn apply_change(
             stamp_version_uid(
                 &mut canonical,
                 &object_version_id(vo_id, &ctx.system_id, TreeId::trunk(1)),
-            );
+            )?;
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
                 Some(ts) => ts,
@@ -548,7 +562,7 @@ async fn apply_change(
             stamp_version_uid(
                 &mut canonical,
                 &object_version_id(vo_id, &ctx.system_id, next.tree),
-            );
+            )?;
             let rows = decompose(canonical)?;
             ResolvedWrite {
                 kind,
@@ -630,7 +644,7 @@ async fn commit_resolved(
     ctx: &SigningCtx<'_>,
     audit: &AuditInput,
     contribution: ContributionCtx,
-    committer_fallback: &Value,
+    committer_fallback: &openehr_rm::prelude::PartyProxy,
     r: ResolvedWrite,
 ) -> Result<(Committed, Uuid), ServiceError> {
     let audit_row = audit.row();
@@ -660,12 +674,18 @@ async fn commit_resolved(
     // excluded), and reused verbatim for the insert below so the signed bytes
     // and the stored bytes are the same bytes. `r.time_committed` is the
     // transaction timestamp every row of this transaction stamps.
-    let at_committal_attestations = attestation::complete_accompanying(
+    // Completed once, then serialized once: the SAME `Value`s are signed
+    // below and inserted further down, so the signed bytes and the stored
+    // bytes cannot drift.
+    let at_committal_attestations: Vec<Value> = attestation::complete_accompanying(
         &r.attestations,
         &ctx.system_id,
         committer_fallback,
         r.time_committed,
-    )?;
+    )
+    .iter()
+    .map(openehr_its::json::to_canonical_value)
+    .collect();
 
     let (signature, signature_client_supplied) =
         version_signature(ctx, audit, contribution_id, &r, &at_committal_attestations)?;
@@ -1012,7 +1032,7 @@ pub(crate) async fn commit_contribution(
             &ctx.system_id,
             committer_fallback,
             contribution_time,
-        )?;
+        );
         committed.push(
             attestation::attest(
                 tx,

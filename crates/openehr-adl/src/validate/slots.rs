@@ -96,7 +96,8 @@ impl<'a> ParentScan<'a> {
                 // `masterAppB` slot grammar), so a parsed slot is never both
                 // closed and narrowing — this stays as a defensive guard for any
                 // future non-source-parsed AOM input.
-                let narrows = !child_slot.includes.is_empty() || !child_slot.excludes.is_empty();
+                let narrows = !child_slot.includes.as_ref().is_none_or(Vec::is_empty)
+                    || !child_slot.excludes.as_ref().is_none_or(Vec::is_empty);
                 if child_slot.is_closed && narrows {
                     push_issue(
                         &mut self.issues,
@@ -122,9 +123,13 @@ impl<'a> ParentScan<'a> {
                             "a specialised slot must narrow the parent slot or be closed",
                             path,
                         );
-                    } else if slot_assertions_equal(&child_slot.includes, &parent_slot.includes)
-                        && slot_assertions_equal(&child_slot.excludes, &parent_slot.excludes)
-                    {
+                    } else if slot_assertions_equal(
+                        child_slot.includes.as_deref().unwrap_or_default(),
+                        parent_slot.includes.as_deref().unwrap_or_default(),
+                    ) && slot_assertions_equal(
+                        child_slot.excludes.as_deref().unwrap_or_default(),
+                        parent_slot.excludes.as_deref().unwrap_or_default(),
+                    ) {
                         push_issue(
                             &mut self.issues,
                             ValidationCode::Vdssm,
@@ -222,7 +227,7 @@ fn slot_widens_by_literal(
     child_slot: &ArchetypeSlot,
     parent_slot: &ArchetypeSlot,
 ) -> Option<String> {
-    for inc in &child_slot.includes {
+    for inc in child_slot.includes.iter().flatten() {
         let body = assertion_regex(inc)?;
         // Unescape the ADL id-regex `\.` dots; a literal id carries no other
         // regex meta-characters.
@@ -248,14 +253,22 @@ fn slot_admits(slot: &ArchetypeSlot, id: &str) -> bool {
     if slot.is_closed {
         return false;
     }
-    if slot.includes.is_empty() {
+    if slot.includes.as_ref().is_none_or(Vec::is_empty) {
         // An open slot with no includes admits anything not excluded.
-        return !slot.excludes.iter().any(|a| assertion_matches(a, id));
+        return !slot
+            .excludes
+            .iter()
+            .flatten()
+            .any(|a| assertion_matches(a, id));
     }
-    slot.includes.iter().any(|a| assertion_matches(a, id))
+    slot.includes
+        .iter()
+        .flatten()
+        .any(|a| assertion_matches(a, id))
         && !slot
             .excludes
             .iter()
+            .flatten()
             .any(|a| assertion_specific_match(a, id))
 }
 
@@ -402,13 +415,13 @@ fn filler_supports_language(v: &ArchetypeView<'_>, lang: &str) -> bool {
 fn collect_roots<'a>(def: &'a CComplexObject, out: &mut Vec<&'a CArchetypeRoot>) {
     match def {
         CComplexObject::CComplexObject(d) => {
-            for attr in &d.attributes {
+            for attr in d.attributes.iter().flatten() {
                 collect_roots_attr(attr, out);
             }
         }
         CComplexObject::CArchetypeRoot(r) => {
             out.push(r);
-            for attr in &r.attributes {
+            for attr in r.attributes.iter().flatten() {
                 collect_roots_attr(attr, out);
             }
         }
@@ -416,7 +429,7 @@ fn collect_roots<'a>(def: &'a CComplexObject, out: &mut Vec<&'a CArchetypeRoot>)
 }
 
 fn collect_roots_attr<'a>(attr: &'a CAttribute, out: &mut Vec<&'a CArchetypeRoot>) {
-    for child in &attr.children {
+    for child in attr.children.iter().flatten() {
         if let CObject::CComplexObject(cco) = child {
             collect_roots(cco, out);
         }

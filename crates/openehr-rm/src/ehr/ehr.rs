@@ -18,19 +18,19 @@ pub struct Ehr {
     /// NOTE: is is strongly recommended that a UUID always be used for this field.
     pub ehr_id: HierObjectId,
     /// List of contributions causing changes to this EHR. Each contribution contains a list of versions, which may include references to any number of `VERSION` instances, i.e. items of type `VERSIONED_COMPOSITION` and `VERSIONED_FOLDER`.
-    pub contributions: Vec<ObjectRef>,
+    pub contributions: Option<Vec<ObjectRef>>,
     /// Reference to `EHR_STATUS` object for this EHR.
     pub ehr_status: ObjectRef,
     /// Reference to `EHR_ACCESS` object for this EHR.
     pub ehr_access: ObjectRef,
     /// Master list of all Versioned Composition references in this EHR.
-    pub compositions: Vec<ObjectRef>,
+    pub compositions: Option<Vec<ObjectRef>>,
     /// Optional directory structure for this EHR. If present, this is a reference to the first member of `_folders_`.
     pub directory: Option<ObjectRef>,
     /// Time of creation of the EHR.
     pub time_created: DvDateTime,
     /// Optional additional Folder structures for this EHR. If set, the `_directory_` attribute refers to the first member.
-    pub folders: Vec<ObjectRef>,
+    pub folders: Option<Vec<ObjectRef>>,
     /// Optional list of tags associated with this EHR. Tag `_target_` values can only be within the same EHR.
-    pub tags: Vec<ObjectRef>,
+    pub tags: Option<Vec<ObjectRef>>,
 }

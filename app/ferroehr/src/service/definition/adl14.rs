@@ -34,7 +34,7 @@ use openehr_its::rest::runtime::ValidationError;
 use uuid::Uuid;
 
 use crate::service::FerroEhrService;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::list::Page;
 use crate::service::status::{CallStatusType, SmError};
 
@@ -136,8 +136,12 @@ impl FerroEhrService {
     pub async fn adl14_convert_to_adl2(&self, an_id: String) -> Result<String, SmError> {
         let source = self.archetype_get(&an_id).await?;
         let mut log = ConversionLog::new();
-        let converted = parse_and_convert(&source, &ConvertConfig::default(), &mut log)
-            .map_err(|e| ServiceError::Unprocessable(format!("1.4 → 2 conversion failed: {e}")))?;
+        let converted =
+            parse_and_convert(&source, &ConvertConfig::default(), &mut log).map_err(|e| {
+                ServiceError::Unprocessable(Violation::new(format!(
+                    "1.4 → 2 conversion failed: {e}"
+                )))
+            })?;
         Ok(openehr_adl::print::print(&converted))
     }
 
@@ -176,10 +180,14 @@ impl FerroEhrService {
         // boundary re-raise needed.
         let xml = self.opt_get(&an_opt_id).await?;
         let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| {
-            ServiceError::Unprocessable(format!("stored OPT no longer parses: {e:?}"))
+            ServiceError::Unprocessable(Violation::new(format!(
+                "stored OPT no longer parses: {e:?}"
+            )))
         })?;
         let conversion = super::opt14_convert::convert_opt_to_adl2(&opt).map_err(|e| {
-            ServiceError::Unprocessable(format!("OPT 1.4 → 2 conversion failed: {e}"))
+            ServiceError::Unprocessable(Violation::new(format!(
+                "OPT 1.4 → 2 conversion failed: {e}"
+            )))
         })?;
         Ok(conversion.roots.into_iter().map(|r| r.adl2).collect())
     }

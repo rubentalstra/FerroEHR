@@ -11,5 +11,5 @@ pub struct ValueSet {
     /// Code of source term of this relation.
     pub id: String,
     /// List of target terms in this relation.
-    pub members: Vec<String>,
+    pub members: openehr_base::containers::NonEmptyVec<String>,
 }

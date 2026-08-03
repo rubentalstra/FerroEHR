@@ -20,7 +20,7 @@ pub struct PBmmSchemaDescriptor {
     /// Table of {key, value} pairs of schema meta-data (bmm_version, model_publisher, schema_name, model_release, schema_revision, schema_lifecycle_state, schema_description, schema_path).
     pub meta_data: std::collections::BTreeMap<String, String>,
     /// Schema_ids of schemas included by this schema.
-    pub includes: Vec<String>,
+    pub includes: Option<Vec<String>>,
     /// Persistent form of model.
     pub bmm_schema: Option<PBmmSchema>,
 }

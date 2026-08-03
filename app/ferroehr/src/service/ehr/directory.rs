@@ -135,7 +135,7 @@ impl FerroEhrService {
             read.tree,
             read.time_committed,
         );
-        let folder = self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree);
+        let folder = self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree)?;
         match path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
             None => Ok(ServiceResponse::new(folder, meta)),
             Some(path) => select_subfolder(&folder, path)
@@ -178,7 +178,7 @@ impl FerroEhrService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        let mut response = self.version_response(ehr_id, vo_id, read);
+        let mut response = self.version_response(ehr_id, vo_id, read)?;
         if let Some(path) = path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
             response.body = select_subfolder(&response.body, path).ok_or_else(|| {
                 ServiceError::sm(

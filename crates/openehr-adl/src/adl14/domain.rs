@@ -256,11 +256,22 @@ fn partition_list_rows(list: &OdinValue) -> Result<Vec<Partition>, DomainLowerin
                     };
                     prim_members.push(v);
                 }
+                let Ok(prim_members) = openehr_base::containers::NonEmptyVec::new(prim_members)
+                else {
+                    // `C_PRIMITIVE_TUPLE.members` is `1..*`
+                    // (`docs/specs/openehr/AM/docs/AOM2/master04-5-constraint_model.adoc`
+                    // §C_PRIMITIVE_TUPLE); a row that matched no member name is
+                    // not a tuple row.
+                    return Err(DomainLoweringError::Empty);
+                };
                 tuples.push(CPrimitiveTuple {
                     members: prim_members,
                 });
             }
-            attribute_tuples.push(CAttributeTuple { members, tuples });
+            attribute_tuples.push(CAttributeTuple {
+                members: openehr_base::containers::present(members),
+                tuples: openehr_base::containers::present(tuples),
+            });
         } else if let Some(name) = names.first() {
             // Single attribute: merge the partition's values into one constraint.
             let values: Vec<CPrimitiveObject> = rows
@@ -356,7 +367,7 @@ pub(crate) fn lower_adl14_domain(
                 rm_type_name: "Terminology_code".to_owned(),
                 occurrences: None,
                 node_id: "Primitive_node_id".to_owned(),
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
@@ -487,7 +498,7 @@ fn apply_domain_assumed_values(
     // Plain attributes first.
     for (name, leaf) in &leaves {
         if let Some(attr) = attributes.iter_mut().find(|a| &a.rm_attribute_name == name)
-            && let Some(child) = attr.children.first_mut()
+            && let Some(child) = attr.children.as_mut().and_then(|c| c.first_mut())
         {
             set_assumed_on_cobject(child, leaf);
         }
@@ -498,6 +509,7 @@ fn apply_domain_assumed_values(
         let positions: Vec<(usize, &CPrimitiveObject)> = tuple
             .members
             .iter()
+            .flatten()
             .enumerate()
             .filter_map(|(idx, m)| {
                 leaves
@@ -509,7 +521,7 @@ fn apply_domain_assumed_values(
         if positions.is_empty() {
             continue;
         }
-        let row = tuple.tuples.iter().position(|row| {
+        let row = tuple.tuples.iter().flatten().position(|row| {
             positions.iter().all(|(idx, leaf)| {
                 row.members
                     .get(*idx)
@@ -519,14 +531,14 @@ fn apply_domain_assumed_values(
         let Some(row) = row else {
             let named = positions
                 .iter()
-                .filter_map(|(idx, _)| tuple.members.get(*idx))
+                .filter_map(|(idx, _)| tuple.members.as_ref().and_then(|m| m.get(*idx)))
                 .map(|m| m.rm_attribute_name.clone())
                 .collect::<Vec<_>>()
                 .join(", ");
             return Err(DomainLoweringError::AssumedValueUnmatched(named));
         };
         for (idx, leaf) in positions {
-            if let Some(row) = tuple.tuples.get_mut(row)
+            if let Some(row) = tuple.tuples.as_mut().and_then(|t| t.get_mut(row))
                 && let Some(member) = row.members.get_mut(idx)
             {
                 set_assumed_on_primitive(member, leaf);
@@ -546,24 +558,37 @@ fn apply_domain_assumed_values(
 fn primitive_admits(constraint: &CPrimitiveObject, value: &CPrimitiveObject) -> bool {
     match (constraint, value) {
         (CPrimitiveObject::CString(c), CPrimitiveObject::CString(v)) => {
-            c.constraint.is_empty()
+            c.constraint.as_ref().is_none_or(Vec::is_empty)
                 || v.constraint
                     .iter()
-                    .all(|want| c.constraint.iter().any(|have| have == want))
+                    .flatten()
+                    .all(|want| c.constraint.iter().flatten().any(|have| have == want))
         }
         (CPrimitiveObject::CReal(c), CPrimitiveObject::CReal(v)) => {
-            c.constraint.is_empty()
+            c.constraint.as_ref().is_none_or(Vec::is_empty)
                 || v.constraint
                     .iter()
+                    .flatten()
                     .filter_map(point_value_f64)
-                    .all(|p| c.constraint.iter().any(|iv| real_interval_contains(iv, p)))
+                    .all(|p| {
+                        c.constraint
+                            .iter()
+                            .flatten()
+                            .any(|iv| real_interval_contains(iv, p))
+                    })
         }
         (CPrimitiveObject::CInteger(c), CPrimitiveObject::CInteger(v)) => {
-            c.constraint.is_empty()
+            c.constraint.as_ref().is_none_or(Vec::is_empty)
                 || v.constraint
                     .iter()
+                    .flatten()
                     .filter_map(point_value_i32)
-                    .all(|p| c.constraint.iter().any(|iv| int_interval_contains(iv, p)))
+                    .all(|p| {
+                        c.constraint
+                            .iter()
+                            .flatten()
+                            .any(|iv| int_interval_contains(iv, p))
+                    })
         }
         _ => true,
     }
@@ -573,20 +598,27 @@ fn primitive_admits(constraint: &CPrimitiveObject, value: &CPrimitiveObject) -> 
 fn set_assumed_on_primitive(target: &mut CPrimitiveObject, leaf: &CPrimitiveObject) {
     match (target, leaf) {
         (CPrimitiveObject::CString(t), CPrimitiveObject::CString(l)) => {
-            t.assumed_value = l.constraint.first().cloned();
+            t.assumed_value = l.constraint.iter().flatten().next().cloned();
         }
         (CPrimitiveObject::CReal(t), CPrimitiveObject::CReal(l)) => {
-            t.assumed_value = l.constraint.first().and_then(point_value_f64);
+            t.assumed_value = l
+                .constraint
+                .iter()
+                .flatten()
+                .next()
+                .and_then(point_value_f64);
         }
         (CPrimitiveObject::CInteger(t), CPrimitiveObject::CInteger(l)) => {
             t.assumed_value = l
                 .constraint
-                .first()
+                .iter()
+                .flatten()
+                .next()
                 .and_then(point_value_i32)
                 .map(f64::from);
         }
         (CPrimitiveObject::CBoolean(t), CPrimitiveObject::CBoolean(l)) => {
-            t.assumed_value = l.constraint.first().copied();
+            t.assumed_value = l.constraint.iter().flatten().next().copied();
         }
         // Kind mismatch (or a leaf kind the domain lowering never produces):
         // leave the constraint untouched rather than coerce across types.
@@ -600,26 +632,33 @@ fn set_assumed_on_cobject(target: &mut CObject, leaf: &CPrimitiveObject) {
     match target {
         CObject::CString(t) => {
             if let CPrimitiveObject::CString(l) = leaf {
-                t.assumed_value = l.constraint.first().cloned();
+                t.assumed_value = l.constraint.iter().flatten().next().cloned();
             }
         }
         CObject::CReal(t) => {
             if let CPrimitiveObject::CReal(l) = leaf {
-                t.assumed_value = l.constraint.first().and_then(point_value_f64);
+                t.assumed_value = l
+                    .constraint
+                    .iter()
+                    .flatten()
+                    .next()
+                    .and_then(point_value_f64);
             }
         }
         CObject::CInteger(t) => {
             if let CPrimitiveObject::CInteger(l) = leaf {
                 t.assumed_value = l
                     .constraint
-                    .first()
+                    .iter()
+                    .flatten()
+                    .next()
                     .and_then(point_value_i32)
                     .map(f64::from);
             }
         }
         CObject::CBoolean(t) => {
             if let CPrimitiveObject::CBoolean(l) = leaf {
-                t.assumed_value = l.constraint.first().copied();
+                t.assumed_value = l.constraint.iter().flatten().next().copied();
             }
         }
         _ => {}
@@ -699,15 +738,15 @@ fn merge_primitives(mut items: Vec<CPrimitiveObject>) -> Option<CPrimitiveObject
         match it {
             CPrimitiveObject::CString(c) => {
                 kind = 1;
-                strings.extend(c.constraint);
+                strings.extend(c.constraint.into_iter().flatten());
             }
             CPrimitiveObject::CReal(c) => {
                 kind = 2;
-                reals.extend(c.constraint);
+                reals.extend(c.constraint.into_iter().flatten());
             }
             CPrimitiveObject::CInteger(c) => {
                 kind = 3;
-                ints.extend(c.constraint);
+                ints.extend(c.constraint.into_iter().flatten());
             }
             other => return Some(other),
         }
@@ -856,20 +895,24 @@ mod tests {
             panic!("expected a plain complex object root");
         };
         let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
-            &d.attributes[0].children[0]
+            &d.attributes.as_deref().unwrap_or_default()[0]
+                .children
+                .as_deref()
+                .unwrap_or_default()[0]
         else {
             panic!("expected the lowered DV_QUANTITY object");
         };
         let magnitude = quantity
             .attributes
             .iter()
+            .flatten()
             .find(|a| a.rm_attribute_name == "magnitude")
             .expect("magnitude attribute");
-        let CObject::CReal(real) = &magnitude.children[0] else {
+        let CObject::CReal(real) = &magnitude.children.as_deref().unwrap_or_default()[0] else {
             panic!("expected a C_REAL magnitude constraint");
         };
         let [Interval::ProperInterval(ProperInterval::ProperInterval(range))] =
-            real.constraint.as_slice()
+            real.constraint.as_deref().unwrap_or_default()
         else {
             panic!("expected one proper interval, got {:?}", real.constraint);
         };
@@ -906,30 +949,40 @@ mod tests {
             panic!("expected a plain complex object root");
         };
         let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
-            &d.attributes[0].children[0]
+            &d.attributes.as_deref().unwrap_or_default()[0]
+                .children
+                .as_deref()
+                .unwrap_or_default()[0]
         else {
             panic!("expected the lowered DV_QUANTITY object");
         };
-        let tuple = &quantity.attribute_tuples[0];
+        let tuple = &quantity.attribute_tuples.as_deref().unwrap_or_default()[0];
         assert_eq!(
             tuple
                 .members
                 .iter()
+                .flatten()
                 .map(|m| m.rm_attribute_name.as_str())
                 .collect::<Vec<_>>(),
             ["units", "magnitude"]
         );
         // Row 0 (`"C"`, >=4.0) admits the assumed combination; row 1 (`"F"`,
         // >=40.0) does not and must be left untouched.
-        let CPrimitiveObject::CString(units0) = &tuple.tuples[0].members[0] else {
+        let CPrimitiveObject::CString(units0) =
+            &tuple.tuples.as_deref().unwrap_or_default()[0].members[0]
+        else {
             panic!("units is a string constraint");
         };
         assert_eq!(units0.assumed_value.as_deref(), Some("C"));
-        let CPrimitiveObject::CReal(magnitude0) = &tuple.tuples[0].members[1] else {
+        let CPrimitiveObject::CReal(magnitude0) =
+            &tuple.tuples.as_deref().unwrap_or_default()[0].members[1]
+        else {
             panic!("magnitude is a real constraint");
         };
         assert_eq!(magnitude0.assumed_value, Some(8.0));
-        let CPrimitiveObject::CString(units1) = &tuple.tuples[1].members[0] else {
+        let CPrimitiveObject::CString(units1) =
+            &tuple.tuples.as_deref().unwrap_or_default()[1].members[0]
+        else {
             panic!("units is a string constraint");
         };
         assert_eq!(units1.assumed_value, None);
@@ -959,19 +1012,23 @@ mod tests {
             panic!("expected a plain complex object root");
         };
         let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
-            &d.attributes[0].children[0]
+            &d.attributes.as_deref().unwrap_or_default()[0]
+                .children
+                .as_deref()
+                .unwrap_or_default()[0]
         else {
             panic!("expected the lowered DV_QUANTITY object");
         };
         let units = quantity
             .attributes
             .iter()
+            .flatten()
             .find(|a| a.rm_attribute_name == "units")
             .expect("units attribute");
-        let CObject::CString(c) = &units.children[0] else {
+        let CObject::CString(c) = &units.children.as_deref().unwrap_or_default()[0] else {
             panic!("expected a C_STRING units constraint");
         };
-        assert_eq!(c.constraint, vec!["C".to_owned(), "F".to_owned()]);
+        assert_eq!(c.constraint, Some(vec!["C".to_owned(), "F".to_owned()]));
         assert_eq!(c.assumed_value.as_deref(), Some("F"));
     }
 

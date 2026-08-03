@@ -4,7 +4,13 @@ The single deterministic generator behind the whole spec layer. Lives under
 `tools/*` (dev tooling; nothing ships it). Subcommands (`src/cli.rs`):
 
 - `emit` — BMM → `openehr-base/rm/am/term/lang` (incl. the `openehr-rm` model).
-- `emit-json` — BMM → the canonical-JSON `ToJson`/`FromJson` codec in `openehr-its`.
+- `emit-json` — BMM → the canonical-JSON `serde::Serialize`/`Deserialize`
+  impls, as MANUAL long-form impls (a field-identifier enum + a visitor,
+  <https://serde.rs/deserialize-struct.html>), one `src/json_serde.rs` per SPEC
+  CRATE — they must live where the types are defined (orphan rule) — plus the
+  `_type` dispatch + declared-key table in `openehr-its`. Never a serde derive:
+  none of serde's four enum representations expresses the canonical `_type`
+  discriminator. Shared runtime: hand-written `openehr_base::serde_support`.
 - `emit-xml` — XSD + BMM → `ToXml`/`FromXml` in `openehr-its`.
 - `emit-rest` — the vendored OAS → the ITS-REST contract in `openehr-its`.
 - `emit-opt` — the OPT 1.4 model + XML codec (`openehr-its` `opt14`).
@@ -14,6 +20,16 @@ The single deterministic generator behind the whole spec layer. Lives under
 - `emit-rm-model` — the static RM attribute/type model (refreshes the subtree
   `emit` already writes).
 - `emit-validate` — the machine-classified RM invariant cores.
+- `model-query` — read-only report: what the vendored BMM states about every
+  class attribute (declared type, existence, container + cardinality, class
+  abstractness) beside the field shape the emitter currently emits for it;
+  `[--class X] [--attribute Y] [--component KEY] [--flattened]
+  [--format table|tsv|json]`. **`--flattened` is the inheritance dimension**:
+  one row per class × CARRIED attribute (inherited ones included) with the
+  declaring class in `declared_on`, so a per-descendant divergence is
+  queryable instead of assumed — the default view reports DECLARED attributes
+  only, which cannot express it. Use the flattened view for any question of
+  the form "does every class that carries X emit the same shape".
 - `check` / `check-xsd` — input validation.
 
 ## Pipeline structure (four stages + CLI)

@@ -11,7 +11,7 @@ use crate::am24::bmm3::expression::el_tuple_item::ElTupleItem;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ElTuple {
     /// Items in the tuple, potentially with names. Typical use is to represent an argument list to routine call.
-    pub items: Vec<ElTupleItem>,
+    pub items: Option<Vec<ElTupleItem>>,
     /// Static type inferred from literal value.
     pub r#type: BmmTupleType,
 }

@@ -30,14 +30,13 @@ use std::path::{Path, PathBuf};
 use openehr_its::flat::convert::{composition_from_flat, composition_to_flat};
 use openehr_its::flat::error::FlatError;
 use openehr_its::flat::sim::flat::parse_flat;
-use openehr_its::flat::validation::{
-    ValidationKind, ValidationMessage, validate_composition, validate_context,
-};
+use openehr_its::flat::validation::validate_context;
 use openehr_its::flat::webtemplate::{
     WebTemplate, WebTemplateCardinality, WebTemplateClosedAttribute, WebTemplateCodedValue,
     WebTemplateInput, WebTemplateInputType, WebTemplateNode, build_web_template,
 };
 use openehr_its::opt14;
+use openehr_its::rm_instance::{ValidationKind, ValidationMessage, validate_composition};
 use serde_json::{Map, Value, json};
 
 /// Fixed `ctx/time` default for the FLAT build direction (master04 §Context) so
@@ -131,7 +130,7 @@ fn web_templates() -> BTreeMap<String, WebTemplate> {
 }
 
 fn load_composition(name: &str) -> Value {
-    let text = std::fs::read_to_string(composition_dir().join(name))
+    let text = std::fs::read_to_string(crate::common::twinned(&composition_dir().join(name)))
         .unwrap_or_else(|e| panic!("read {name}: {e}"));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {name}: {e}"))
 }

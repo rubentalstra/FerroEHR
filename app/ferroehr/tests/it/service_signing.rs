@@ -513,9 +513,13 @@ async fn canonical_xml_carries_the_signature() {
     use openehr_rm::common::change_control::original_version::OriginalVersion;
     use openehr_rm::composition::composition::Composition;
 
-    // A full corpus COMPOSITION (all mandatory fields) as the version data.
+    // A full corpus COMPOSITION (all mandatory fields) as the version data —
+    // the VALID TWIN of the vendored SDK fixture, whose upstream half carries a
+    // placeholder `OBJECT_VERSION_ID` the identifier grammar refuses
+    // (`crates/openehr-its/tests/it/fixture_twins.rs` carries the adjudication
+    // and pins both halves).
     const CORPUS: &str = include_str!(
-        "../../../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/minimal_persistent.json"
+        "../../../../crates/openehr-its/tests/fixtures/twins/minimal_persistent.valid.json"
     );
     let data: Composition =
         openehr_its::json::from_canonical_json(CORPUS).expect("typed composition");

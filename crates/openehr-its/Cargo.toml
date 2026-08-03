@@ -20,11 +20,9 @@ publish = false
 [dependencies]
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
-# Number formatters for the native canonical-JSON codec (`json_codec`): itoa for
-# integers (byte-identical to serde_json), ryu for reals (our chosen canonical
-# REAL lexeme; see json_codec/runtime.rs).
-itoa = { workspace = true, optional = true }
-ryu = { workspace = true, optional = true }
+# Canonical-JSON reads run through `serde_path_to_error`, so every refusal
+# carries the full JSON path to the offending node (the 400-class wire body).
+serde_path_to_error = { workspace = true, optional = true }
 quick-xml = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 jsonschema = { workspace = true, optional = true }
@@ -68,8 +66,7 @@ default = ["full"]
 full = [
     "dep:serde",
     "dep:serde_json",
-    "dep:itoa",
-    "dep:ryu",
+    "dep:serde_path_to_error",
     "dep:quick-xml",
     "dep:thiserror",
     "dep:jsonschema",
@@ -99,6 +96,5 @@ tokio = { workspace = true, features = ["macros", "rt"] }
 # operational templates (dev-only; the production am24 front end takes an
 # already-created OPT as input).
 openehr-adl = { path = "../openehr-adl" }
-
 [lints]
 workspace = true

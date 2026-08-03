@@ -535,15 +535,24 @@ fn apply_standard(sp: &StandardPredicate, out: &mut NodeConstraint) -> Result<()
         });
         return Ok(());
     }
-    // `archetype_node_id = <code|hrid>`.
+    // `archetype_node_id = <code|hrid>` — the standard-predicate form the
+    // QUERY spec declares equivalent to the archetype/node shortcut predicates
+    // (master03 §Archetype predicate: "These predicates could also be written
+    // as standard predicates"). Which of the two the operand is, is decided by
+    // the RM's own reading of `LOCATABLE.archetype_node_id`
+    // (`openehr_rm::paths`), never a leader guess: an id in `ARCHETYPE_ID`
+    // lexical form is an archetype root, an `at`/`id` term code is an interior
+    // node, and anything else addresses no node at all.
     if sp.op == CompOp::Eq
         && parts == ["archetype_node_id"]
         && let Bind::Literal(TypedLit::String(s)) = &value
     {
-        out.archetype = Some(if s.starts_with("openEHR-") {
+        out.archetype = Some(if openehr_rm::paths::is_archetype_root_node_id(s) {
             ArchetypeConstraint::Archetype(s.clone())
-        } else {
+        } else if openehr_rm::paths::archetype_node_id_is_term_code(s) {
             ArchetypeConstraint::NodeCode(s.clone())
+        } else {
+            return Err(AnalysisError::MalformedArchetypeNodeId(s.clone()).into());
         });
         return Ok(());
     }

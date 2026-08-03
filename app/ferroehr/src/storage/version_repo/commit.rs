@@ -16,10 +16,17 @@ use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
-/// The `AUDIT_DETAILS` fields to persist (master04 §Audit Details). `committer`
-/// and `description` are canonical RM fragments (`PARTY_PROXY` / `DV_TEXT`);
-/// `change_type` is the numeric `audit_change_type` group code, never a rubric
-/// (`Change_type_valid`).
+/// The `AUDIT_DETAILS` fields to persist (master04 §Audit Details), as the
+/// `audit` row's own columns: `change_type` is the numeric `audit_change_type`
+/// group code, never a rubric (`Change_type_valid`), and the three jsonb
+/// columns arrive as the canonical RM fragments they store
+/// (`DV_TEXT` / `PARTY_PROXY` / the `ATTESTATION`-declared attributes).
+///
+/// The fragments are OWNED because the versioning layer holds these attributes
+/// as their RM values and encodes them once, here at its boundary
+/// (`crate::versioning::audit::AuditInput::row`): storage takes plain value
+/// inputs and never decodes RM types (see the module docs), and the
+/// `ATTESTATION`-declared subset is not an RM class it could name.
 #[derive(Debug)]
 pub struct AuditRow<'a> {
     /// `AUDIT_DETAILS.system_id`.
@@ -28,13 +35,13 @@ pub struct AuditRow<'a> {
     pub change_type: &'a str,
     /// The canonical `DV_TEXT` fragment of `AUDIT_DETAILS.description`, when
     /// the committer supplied one.
-    pub description: Option<&'a Value>,
+    pub description: Option<Value>,
     /// The canonical `PARTY_PROXY` JSON of the committer.
-    pub committer: &'a Value,
+    pub committer: Value,
     /// The canonical fragment of the `ATTESTATION`-declared attributes when
     /// this commit audit is an `ATTESTATION` (master06 §Attestation), else
     /// `None`.
-    pub attestation: Option<&'a Value>,
+    pub attestation: Option<Value>,
 }
 
 /// One `vo_version` row's content columns for a local (non-import) write with
@@ -119,9 +126,9 @@ pub async fn insert_audit(
     )
     .bind(audit.system_id)
     .bind(audit.change_type)
-    .bind(audit.description)
-    .bind(audit.committer)
-    .bind(audit.attestation)
+    .bind(&audit.description)
+    .bind(&audit.committer)
+    .bind(&audit.attestation)
     .fetch_one(&mut *tx)
     .await?;
     let id: Uuid = row.try_get("id")?;
@@ -149,9 +156,9 @@ pub async fn insert_audit_at(
     )
     .bind(audit.system_id)
     .bind(audit.change_type)
-    .bind(audit.description)
-    .bind(audit.committer)
-    .bind(audit.attestation)
+    .bind(&audit.description)
+    .bind(&audit.committer)
+    .bind(&audit.attestation)
     .bind(time_committed.to_string())
     .fetch_one(&mut *tx)
     .await?)
@@ -230,9 +237,9 @@ pub async fn write_contribution(
     )
     .bind(audit.system_id)
     .bind(audit.change_type)
-    .bind(audit.description)
-    .bind(audit.committer)
-    .bind(audit.attestation)
+    .bind(&audit.description)
+    .bind(&audit.committer)
+    .bind(&audit.attestation)
     .bind(supplied)
     .bind(ehr_id)
     .fetch_one(&mut *tx)
@@ -372,9 +379,9 @@ pub async fn commit_new_version(
     )
     .bind(audit.system_id)
     .bind(audit.change_type)
-    .bind(audit.description)
-    .bind(audit.committer)
-    .bind(audit.attestation)
+    .bind(&audit.description)
+    .bind(&audit.committer)
+    .bind(&audit.attestation)
     .bind(supplied)
     .bind(v.ehr_id)
     .bind(v.vo_id)
@@ -440,9 +447,9 @@ pub async fn commit_version_into(
     )
     .bind(audit.system_id)
     .bind(audit.change_type)
-    .bind(audit.description)
-    .bind(audit.committer)
-    .bind(audit.attestation)
+    .bind(&audit.description)
+    .bind(&audit.committer)
+    .bind(&audit.attestation)
     .bind(v.vo_id)
     .bind(v.kind)
     .bind(v.ehr_id)

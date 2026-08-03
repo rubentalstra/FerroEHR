@@ -28,6 +28,16 @@ cnf.opt.invalid.removed_mandatory:
     defect: "removed mandatory elements (no definition)"
     spec_ref: "CNF platform_test_schedule master04 (upload_opt invalid data sets); AM AOM1.4 (OPERATIONAL_TEMPLATE.definition is mandatory)"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.opt.invalid.cluster_items_cardinality_widened:
+  source: fixtures/opt/invalid/cluster_items_cardinality_widened.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the CLUSTER node's `items` C_MULTIPLE_ATTRIBUTE states cardinality {0..3}, wider on the lower side than the reference model's CLUSTER.items List<ITEM> [1..*] — it admits an empty CLUSTER the RM forbids"
+    spec_ref: "AM AOM2 master04.5-constraint_model-class_definitions.adoc §VCACA (\"the cardinality of an attribute must conform, i.e. be the same or narrower, to the cardinality of the corresponding attribute in the underlying information model\"); master08-validation.adoc §Validate Definition (\"check that cardinality in C_ATTRIBUTE is valid with respect to RM (VCACA)\"); RM UML/classes/org.openehr.rm.data_structures.cluster.adoc §Attributes (items: List<ITEM> [1..*])"
+  template_id: "cnf.opt.invalid.cluster_items_cardinality_widened"
+  provenance: "authored 2026-08-02 from the openEHR CNF Robot minimal_evaluation.opt skeleton (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin) with three targeted edits: the data-slot node retyped ITEM_TREE -> CLUSTER (the RM class whose items carries a cardinality lower bound of 1), its items existence raised to 1..1 so the artefact carries no VCAEX defect, and the items cardinality interval restated as the FINITE {0..3}. A STATED interval is the case VCACA can decide; the fully-open {0..*} that real published OPTs carry states no cardinality override at all (AOM 1.4 makes C_MULTIPLE_ATTRIBUTE.cardinality mandatory where AOM2 makes it optional and \"only set if it overrides the underlying reference model\", and cADL's open constraint means \"any value permitted by the underlying information model\" - ADL1.4 master05-cadl.adoc §'Any' Constraints), so it is accepted. This row pins the refusal so a server that skips VCACA's numeric arm fails it"
 cnf.opt.invalid.multiple_elements:
   source: fixtures/opt/invalid/multiple_elements.opt
   format: opt-xml
@@ -299,6 +309,26 @@ cnf.composition.minimal_event.setting_invalid.xml:
     spec_ref: "TERM SupportTerminology §Vocabularies (setting); RM ehr (EVENT_CONTEXT Setting_valid)"
   template_id: "minimal_evaluation.en.v1"
   provenance: "codec-derived 2026-08-01 from cnf.composition.minimal_event.setting_invalid (fixtures/composition/minimal_event.setting_invalid.json) via crates/openehr-its/examples/canonical_convert.rs — the gate-proven FromJson + ToXml codec pair; carries the identical single defect so the refusal-symmetry case (#1435) can pin that both canonical formats get the same conformance answer"
+cnf.composition.minimal_event.unknown_key_root:
+  source: fixtures/composition/minimal_event.unknown_key_root.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the COMPOSITION root carries `not_an_rm_attribute`, a member the RM does not declare on COMPOSITION"
+    spec_ref: "ITS-REST overview Resources.md L75/L87 (the payload must validate against the ITS schemas; the ITS-XML schemas are wildcard-free); RM ehr (COMPOSITION attribute set, org.openehr.rm.composition.composition.adoc §Attributes)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-02 from cnf.composition.minimal_event.v1 by adding one undeclared member at the document ROOT — the strict-reader refusal class (#1695), isolated to the root position"
+cnf.composition.minimal_event.unknown_key_nested:
+  source: fixtures/composition/minimal_event.unknown_key_nested.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a nested ELEMENT carries `not_an_rm_attribute`, a member the RM does not declare on ELEMENT"
+    spec_ref: "ITS-REST overview Resources.md L75/L87 (the payload must validate against the ITS schemas; the ITS-XML schemas are wildcard-free); RM data_structures (ELEMENT attribute set, org.openehr.rm.data_structures.element.adoc §Attributes)"
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-08-02 from cnf.composition.minimal_event.v1 by adding one undeclared member on a NESTED ELEMENT — the strict-reader refusal class (#1695), isolated to a deep position so the refusal must name the path, not only the key"
 cnf.composition.lab_result.cluster_no_items:
   source: fixtures/composition/lab_result.cluster_no_items.json
   format: canonical-json
@@ -1922,8 +1952,11 @@ cnf.messaging.extract_spec.empty_manifest:
   source: fixtures/messaging/extract_spec.empty_manifest.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-29 (#659), replacing the documentary cnf.messaging.extract_spec.v1 whose single manifest entity named neither ehr_id nor subject_id (an entity the receiver cannot locate — RM ehr_extract extract_entity_manifest.adoc). This one carries a VALID, EMPTY entity list, which is the shape that makes an export fulfilled-with-no-content: the operation yields one EXTRACT per EXTRACT_ENTITY_MANIFEST (extract_manifest.adoc). The by-spec case builds its own populated spec inline, because a manifest entity must name the EHR the runner minted and a corpus entry carries no reference substitution"
+  validity:
+    verdict: invalid
+    defect: "manifest.entities present and empty — EXTRACT_MANIFEST.entities is 1..*"
+    spec_ref: "RM ehr_extract UML/classes/org.openehr.rm.ehr_extract.extract_manifest.adoc §Attributes (entities 1..1 List<EXTRACT_ENTITY_MANIFEST>) + RM 1.2.0/1.1.0/1.0.4 BMM EXTRACT_MANIFEST.entities cardinality {lower: 1, upper_unbounded}"
+  provenance: "authored 2026-07-29 (#659), replacing the documentary cnf.messaging.extract_spec.v1 whose single manifest entity named neither ehr_id nor subject_id (an entity the receiver cannot locate — RM ehr_extract extract_entity_manifest.adoc). RE-ADJUDICATED 2026-08-03 (phase-close triage): the 2026-07-29 claim that an empty entity list is 'the shape that makes an export fulfilled-with-no-content' read only the attribute prose and never the multiplicity — the BMM declares EXTRACT_MANIFEST.entities with item-cardinality lower bound 1 in every published generation, so this shape is an RM-invalid EXTRACT_SPEC and its case is the refusal twin (the -by_spec sibling, one entity, is the acceptance twin). The by-spec case builds its own populated spec inline, because a manifest entity must name the EHR the runner minted and a corpus entry carries no reference substitution"
 cnf.messaging.tdd.v1:
   source: fixtures/messaging/tdd.v1.xml
   format: canonical-xml

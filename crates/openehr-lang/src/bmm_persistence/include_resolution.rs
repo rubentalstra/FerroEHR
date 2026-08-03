@@ -105,8 +105,16 @@ fn resolve(
 
 /// Merges `included` into `includer`, with `includer` winning every collision.
 fn absorb(target: &mut PBmmSchema, source: PBmmSchema) {
-    absorb_classes(target, source.primitive_types, ClassList::Primitive);
-    absorb_classes(target, source.class_definitions, ClassList::Definitions);
+    absorb_classes(
+        target,
+        source.primitive_types.unwrap_or_default(),
+        ClassList::Primitive,
+    );
+    absorb_classes(
+        target,
+        source.class_definitions.unwrap_or_default(),
+        ClassList::Definitions,
+    );
     merge_packages(&mut target.packages, source.packages);
 }
 
@@ -145,8 +153,11 @@ fn absorb_classes(includer: &mut PBmmSchema, incoming: Vec<PBmmClass>, list: Cla
             continue;
         }
         match list {
-            ClassList::Primitive => includer.primitive_types.push(class),
-            ClassList::Definitions => includer.class_definitions.push(class),
+            ClassList::Primitive => includer.primitive_types.get_or_insert_default().push(class),
+            ClassList::Definitions => includer
+                .class_definitions
+                .get_or_insert_default()
+                .push(class),
         }
     }
 }
@@ -156,7 +167,8 @@ fn find_class_mut<'a>(schema: &'a mut PBmmSchema, name: &str) -> Option<&'a mut 
     schema
         .primitive_types
         .iter_mut()
-        .chain(schema.class_definitions.iter_mut())
+        .flatten()
+        .chain(schema.class_definitions.iter_mut().flatten())
         .find(|class| class.name() == name)
 }
 
@@ -177,9 +189,10 @@ fn merge_packages(
                 target.insert(key, package);
             }
             Some(existing) => {
-                for class in package.classes {
-                    if !existing.classes.contains(&class) {
-                        existing.classes.push(class);
+                for class in package.classes.into_iter().flatten() {
+                    let existing_classes = existing.classes.get_or_insert_default();
+                    if !existing_classes.contains(&class) {
+                        existing_classes.push(class);
                     }
                 }
                 merge_packages(&mut existing.packages, package.packages);
@@ -271,6 +284,7 @@ mod tests {
         let mut names: Vec<&str> = merged
             .class_definitions
             .iter()
+            .flatten()
             .map(PBmmClass::name)
             .collect();
         names.sort_unstable();
@@ -295,10 +309,12 @@ mod tests {
             &[("Any", "from the including schema")],
         ));
         let merged = resolve_includes(root, &loaded(vec![included]))?;
-        assert_eq!(merged.class_definitions.len(), 1);
+        assert_eq!(merged.class_definitions.as_ref().map_or(0, Vec::len), 1);
         let class = merged
             .class_definitions
-            .first()
+            .iter()
+            .flatten()
+            .next()
             .expect("the surviving definition");
         assert_eq!(class.documentation(), Some("from the including schema"));
         assert!(class.is_override());
@@ -317,6 +333,7 @@ mod tests {
         let sources: BTreeMap<&str, Option<&str>> = merged
             .class_definitions
             .iter()
+            .flatten()
             .map(|class| (class.name(), class.source_schema_id()))
             .collect();
         assert_eq!(
@@ -384,6 +401,7 @@ mod tests {
         let mut names: Vec<&str> = merged
             .class_definitions
             .iter()
+            .flatten()
             .map(PBmmClass::name)
             .collect();
         names.sort_unstable();
@@ -391,6 +409,7 @@ mod tests {
         let surviving = merged
             .class_definitions
             .iter()
+            .flatten()
             .find(|class| class.name() == "TERMINOLOGY_ACCESS")
             .expect("the surviving definition");
         assert_eq!(surviving.documentation(), Some("from the including schema"));
@@ -457,7 +476,10 @@ mod tests {
             .packages
             .get("org.openehr.rm")
             .expect("the shared top-level package");
-        assert_eq!(rm.classes, ["ELEMENT".to_owned(), "Any".to_owned()]);
+        assert_eq!(
+            rm.classes,
+            Some(["ELEMENT".to_owned(), "Any".to_owned()].to_vec())
+        );
         assert_eq!(rm.packages.len(), 2);
         assert!(rm.packages.contains_key("composition"));
         assert!(rm.packages.contains_key("support"));

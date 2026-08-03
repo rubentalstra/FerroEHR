@@ -124,12 +124,12 @@ pub(crate) fn complex_object(
         rm_type_name,
         occurrences: None,
         node_id,
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value,
-        attributes,
-        attribute_tuples,
+        attributes: openehr_base::containers::present(attributes),
+        attribute_tuples: openehr_base::containers::present(attribute_tuples),
     }))
 }
 
@@ -147,7 +147,7 @@ pub(crate) fn into_archetype_root(obj: CObject, archetype_ref: String) -> CObjec
         rm_type_name: d.rm_type_name,
         occurrences: d.occurrences,
         node_id: d.node_id,
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: d.default_value,
@@ -164,7 +164,7 @@ pub(crate) fn tuple_member(rm_attribute_name: String) -> CAttribute {
         soc_parent: None,
         rm_attribute_name,
         existence: None,
-        children: Vec::new(),
+        children: openehr_base::containers::present(Vec::new()),
         differential_path: None,
         cardinality: None,
         is_multiple: false,
@@ -178,7 +178,7 @@ pub(crate) fn cattr_single(name: &str, child: CObject) -> CAttribute {
         soc_parent: None,
         rm_attribute_name: name.to_owned(),
         existence: None,
-        children: vec![child],
+        children: Some(vec![child]),
         differential_path: None,
         cardinality: None,
         is_multiple: false,
@@ -192,7 +192,7 @@ pub(crate) fn cattr_empty(name: &str) -> CAttribute {
         soc_parent: None,
         rm_attribute_name: name.to_owned(),
         existence: None,
-        children: Vec::new(),
+        children: openehr_base::containers::present(Vec::new()),
         differential_path: None,
         cardinality: None,
         is_multiple: false,
@@ -207,13 +207,13 @@ pub(crate) fn cstring_regex(regex: String, assumed: Option<String>) -> CString {
         rm_type_name: "String".to_owned(),
         occurrences: None,
         node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value: assumed,
         is_enumerated_type_constraint: None,
-        constraint: vec![regex],
+        constraint: Some(vec![regex]),
     }
 }
 
@@ -225,13 +225,13 @@ pub(crate) fn cstring_values(values: &[String]) -> CString {
         rm_type_name: "String".to_owned(),
         occurrences: None,
         node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value: None,
         is_enumerated_type_constraint: None,
-        constraint: values.to_vec(),
+        constraint: openehr_base::containers::present(values.to_vec()),
     }
 }
 
@@ -243,13 +243,13 @@ pub(crate) fn creal_values(constraint: Vec<Interval<f64>>) -> CReal {
         rm_type_name: "Real".to_owned(),
         occurrences: None,
         node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value: None,
         is_enumerated_type_constraint: None,
-        constraint,
+        constraint: openehr_base::containers::present(constraint),
     }
 }
 
@@ -261,13 +261,13 @@ pub(crate) fn cinteger_values(constraint: Vec<Interval<i32>>) -> CInteger {
         rm_type_name: "Integer".to_owned(),
         occurrences: None,
         node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value: None,
         is_enumerated_type_constraint: None,
-        constraint,
+        constraint: openehr_base::containers::present(constraint),
     }
 }
 

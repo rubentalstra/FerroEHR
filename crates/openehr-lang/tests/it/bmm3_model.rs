@@ -169,11 +169,11 @@ fn an_enumeration_lands_typed_item_values_and_a_name_map() -> Result<(), PBmmRea
     let BmmEnumeration::BmmEnumerationInteger(integer) = enumeration else {
         panic!("PROPORTION_KIND is an integer enumeration");
     };
-    assert_eq!(integer.item_names.len(), 5);
+    assert_eq!(integer.item_names.as_ref().map_or(0, Vec::len), 5);
     // The vendored PROPORTION_KIND states names only, so the spec's assumed
     // values (0, 1, 2, ...) are what the name map reports
     // (`…bmm3.bmm_enumeration.adoc` §Attributes).
-    assert!(integer.item_values.is_empty());
+    assert!(integer.item_values.as_ref().is_none_or(Vec::is_empty));
     let names = enumeration.name_map();
     assert_eq!(names.get("pk_ratio").map(String::as_str), Some("0"));
     assert_eq!(names.get("pk_percent").map(String::as_str), Some("2"));

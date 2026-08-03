@@ -17,7 +17,7 @@ use crate::print::odin::quoted;
 impl Printer {
     // ── rules (master07.11; BEL) ───────────────────────────────────────────
     pub(super) fn rules(&mut self, set: &StatementSet) {
-        for stmt in &set.statement {
+        for stmt in set.statement.iter().flatten() {
             match stmt {
                 Statement::Assertion(a) => {
                     let expr = expression_str(&a.expression);
@@ -84,6 +84,7 @@ fn expression_str(e: &Expression) -> String {
             let args = f
                 .arguments
                 .iter()
+                .flatten()
                 .map(expression_str)
                 .collect::<Vec<_>>()
                 .join(", ");
@@ -115,7 +116,13 @@ fn constraint_leaf_str(c: &ExprConstraint) -> String {
             // A C_STRING regex matcher (`master04.3` §Archetype Slots).
             format!(
                 "{{{}}}",
-                a.item.constraint.first().cloned().unwrap_or_default()
+                a.item
+                    .constraint
+                    .iter()
+                    .flatten()
+                    .next()
+                    .cloned()
+                    .unwrap_or_default()
             )
         }
     }

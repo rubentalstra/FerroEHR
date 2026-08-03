@@ -162,12 +162,12 @@ async fn composition_validation_gates_persistence() {
         .expect_err("unknown template rejected");
     // An unknown template is a 422 `ServiceError::Unprocessable`; the cause
     // still rides in the message.
-    let ServiceError::Unprocessable(message) = &err else {
+    let ServiceError::Unprocessable(violation) = &err else {
         panic!("expected content_invalid (422) for unknown template, got {err:?}");
     };
     assert!(
-        message.contains("not known"),
-        "422 message names the cause: {message}"
+        violation.detail().contains("not known"),
+        "422 detail names the cause: {violation}"
     );
     assert_eq!(
         composition_versions(&pool).await,
@@ -445,12 +445,12 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
         .expect_err("commit against a deleted template is rejected");
-    let ServiceError::Unprocessable(message) = &err else {
+    let ServiceError::Unprocessable(violation) = &err else {
         panic!("expected content_invalid (422) for the deleted template, got {err:?}");
     };
     assert!(
-        message.contains("not known"),
-        "422 names the cause: {message}"
+        violation.detail().contains("not known"),
+        "422 detail names the cause: {violation}"
     );
     assert_eq!(
         composition_versions(&pool).await,

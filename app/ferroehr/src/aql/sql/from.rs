@@ -883,7 +883,18 @@ impl Builder<'_> {
 }
 
 /// The VO-root RM types the store versions independently (RM common master06
-/// versioned objects; the store's `vo_version.kind` discriminants).
+/// versioned objects), decided from the storage domain itself
+/// ([`crate::versioning::Kind`], the `vo_version.kind` discriminants) rather
+/// than a restated list — a kind added there is a VO root here.
+///
+/// The EHR-scoped subset only: the demographic kinds (the five party roots and
+/// `PARTY_RELATIONSHIP`) are versioned objects but are **unreachable** as an
+/// AQL source, because a FROM class must have a concrete descendant the node
+/// store addresses (`openehr_rm::model::is_structure_root`, whose set excludes
+/// the demographic LOCATABLE hierarchy) — `crate::aql::lower` refuses the rest
+/// as [`crate::aql::error::AqlFeatureError::UnsupportedSourceClass`] before any
+/// SQL is built. So the exclusion is that gate's consequence, stated here
+/// explicitly, not a second opinion about what a versioned object is.
 pub(super) fn is_vo_root_type(t: &str) -> bool {
-    matches!(t, "COMPOSITION" | "EHR_STATUS" | "EHR_ACCESS" | "FOLDER")
+    crate::versioning::Kind::from_type(t).is_some_and(|kind| !kind.is_demographic())
 }

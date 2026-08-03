@@ -245,7 +245,7 @@ async fn commit_import_scoped(
     let (contribution_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
     let base = import_time;
-    let local_commit_audit = import_audit.canonical(&import_time)?;
+    let local_commit_audit = import_audit.canonical(&import_time);
     let contribution_id = crate::storage::version_repo::commit::insert_contribution(
         tx,
         ehr_id,
@@ -413,7 +413,7 @@ async fn commit_import_scoped(
                     attestations: &version.attestations,
                     signature: version.signature.as_deref(),
                 },
-            );
+            )?;
             let signature = crate::versioning::integrity::sign_imported_version(
                 ctx,
                 contribution_id,

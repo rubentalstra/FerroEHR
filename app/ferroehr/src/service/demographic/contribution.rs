@@ -15,6 +15,7 @@
 //! existing version), so the list is the full change-set, not the narrower
 //! committed-only rows.
 
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -25,7 +26,7 @@ use crate::service::status::CallStatusType;
 use crate::storage::version_repo;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::contribution::commit_version_set;
-use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::object_version_id::{TreeId, version_id};
 
 impl FerroEhrService {
     /// Commit a demographic CONTRIBUTION (ehr-less): its versions must reference
@@ -67,33 +68,42 @@ impl FerroEhrService {
         let version_refs =
             version_repo::contribution::contribution_version_refs(&self.pool, contribution_id)
                 .await?;
-        let versions: Vec<Value> = version_refs
-            .into_iter()
-            .map(|(vo_id, columns, creating_system_id, kind)| {
-                let tree = TreeId::from_columns(columns.0, columns.1, columns.2);
-                json!({
-                    "_type": "OBJECT_REF",
-                    "namespace": "demographic",
-                    "type": kind,
-                    "id": {
-                        "_type": "OBJECT_VERSION_ID",
-                        "value": object_version_id(vo_id, &creating_system_id, tree)
-                    }
-                })
-            })
-            .collect();
+        let mut versions: Vec<Value> = Vec::with_capacity(version_refs.len());
+        for (vo_id, columns, creating_system_id, kind) in version_refs {
+            let tree = TreeId::from_columns(columns.0, columns.1, columns.2);
+            versions.push(openehr_its::json::to_canonical_value(
+                &ObjectRef::ObjectRef(ObjectRefData {
+                    namespace: "demographic".to_owned(),
+                    r#type: kind.clone(),
+                    id: ObjectId::ObjectVersionId(version_id(vo_id, &creating_system_id, tree)?),
+                }),
+            ));
+        }
 
         let audit_details = AuditInput {
             system_id: audit.system_id,
             change_type: audit.change_type,
-            description: audit.description,
-            committer: audit.committer,
-            attestation: audit.attestation,
+            description: audit
+                .description
+                .as_ref()
+                .map(crate::versioning::audit::decode_description)
+                .transpose()?,
+            committer: crate::versioning::audit::party_proxy(&audit.committer)?,
+            attestation: audit
+                .attestation
+                .as_ref()
+                .map(crate::versioning::attestation::AttestationParts::decode)
+                .transpose()?
+                .map(Box::new),
         }
-        .canonical(&audit.time_committed)?;
+        .canonical(&audit.time_committed);
+        // NOTE: a JSON-literal envelope over the already-canonical `audit`
+        // fragment (see `crate::versioning::contribution` for the same
+        // reasoning); every part this builder SYNTHESIZES is built from its
+        // generated type.
         Ok(json!({
             "_type": "CONTRIBUTION",
-            "uid": { "_type": "HIER_OBJECT_ID", "value": contribution_id.to_string() },
+            "uid": openehr_its::json::to_canonical_value(&HierObjectId::from(contribution_id)),
             "audit": audit_details,
             "versions": versions
         }))

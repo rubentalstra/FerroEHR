@@ -665,12 +665,14 @@ impl<'a> Converter<'a> {
 
         let mut value_sets: BTreeMap<String, ValueSet> = old.value_sets.clone().unwrap_or_default();
         for s in &self.synth {
-            if let Some(members) = &s.value_set_members {
+            if let Some(members) = &s.value_set_members
+                && let Ok(members) = openehr_base::containers::NonEmptyVec::new(members.clone())
+            {
                 value_sets.insert(
                     s.code.clone(),
                     ValueSet {
                         id: s.code.clone(),
-                        members: members.clone(),
+                        members,
                     },
                 );
             }
@@ -739,7 +741,7 @@ impl<'a> Converter<'a> {
         // stays in `other_details` verbatim rather than being guessed at — and
         // an already-populated `build_uid` (a 1.4 header `build_uid=` meta
         // item) is never overwritten by the meta-data section.
-        if data.build_uid.value.is_nil()
+        if data.build_uid.value().is_nil()
             && let Some(other) = data
                 .description
                 .as_mut()
@@ -748,7 +750,7 @@ impl<'a> Converter<'a> {
                 .get("build_uid")
                 .and_then(|raw| uuid::Uuid::parse_str(raw.trim()).ok())
         {
-            data.build_uid = openehr_base::prelude::Uuid { value };
+            data.build_uid = openehr_base::prelude::Uuid::new(value);
             other.remove("build_uid");
         }
 
@@ -772,14 +774,14 @@ impl<'a> Converter<'a> {
 fn renumber_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>) {
     let Some(d) = cco_data_mut(cco) else { return };
     d.node_id = cx.new_node_id(&d.node_id);
-    for attr in &mut d.attributes {
-        for child in &mut attr.children {
+    for attr in d.attributes.iter_mut().flatten() {
+        for child in attr.children.iter_mut().flatten() {
             renumber_obj(child, cx);
         }
     }
-    for tuple in &mut d.attribute_tuples {
-        for member in &mut tuple.members {
-            for child in &mut member.children {
+    for tuple in d.attribute_tuples.iter_mut().flatten() {
+        for member in tuple.members.iter_mut().flatten() {
+            for child in member.children.iter_mut().flatten() {
                 renumber_obj(child, cx);
             }
         }
@@ -801,20 +803,20 @@ fn renumber_obj(obj: &mut CObject, cx: &mut Converter<'_>) {
 fn convert_constraints_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>, owner_text: &str) {
     let Some(d) = cco_data_mut(cco) else { return };
     let node_text = owner_text.to_owned();
-    for attr in &mut d.attributes {
-        for child in &mut attr.children {
+    for attr in d.attributes.iter_mut().flatten() {
+        for child in attr.children.iter_mut().flatten() {
             convert_constraints_obj(child, cx, &node_text);
         }
     }
-    for tuple in &mut d.attribute_tuples {
-        for member in &mut tuple.members {
-            for child in &mut member.children {
+    for tuple in d.attribute_tuples.iter_mut().flatten() {
+        for member in tuple.members.iter_mut().flatten() {
+            for child in member.children.iter_mut().flatten() {
                 convert_constraints_obj(child, cx, &node_text);
             }
         }
         // Tuple ROWS carry the actual primitive constraints — convert their
         // terminology codes (ordinal symbols etc.) like attribute ones.
-        for row in &mut tuple.tuples {
+        for row in tuple.tuples.iter_mut().flatten() {
             for m in &mut row.members {
                 if let CPrimitiveObject::CTerminologyCode(tc) = m {
                     let (constraint, assumed) = cx.convert_constraint(&tc.constraint, &node_text);

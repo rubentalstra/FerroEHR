@@ -37,7 +37,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::ehr_index::types::SubjectRef;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::response::ServiceResponse;
 use crate::service::status::{CallStatusType, SmError};
@@ -457,9 +457,9 @@ impl FerroEhrService {
             let resource_type: String = row.try_get("resource_type")?;
             let definition: Value = row.try_get("definition")?;
             let def: FhirMappingDefinition = serde_json::from_value(definition).map_err(|e| {
-                ServiceError::Unprocessable(format!(
+                ServiceError::Unprocessable(Violation::new(format!(
                     "stored FHIR mapping definition is invalid: {e}"
-                ))
+                )))
             })?;
             let resource = reverse::to_fhir(
                 &resource_type,
@@ -468,7 +468,7 @@ impl FerroEhrService {
                 &def,
                 subject_id.as_deref(),
             )
-            .map_err(|e| ServiceError::Unprocessable(e.to_string()))?;
+            .map_err(|e| ServiceError::Unprocessable(Violation::new(e.to_string())))?;
             out.push((resource_type, template_id.clone(), resource));
         }
         Ok(out)

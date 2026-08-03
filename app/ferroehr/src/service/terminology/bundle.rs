@@ -106,6 +106,7 @@ fn resolve_value_set(
             return Some(
                 g.concepts
                     .iter()
+                    .flatten()
                     .map(|c| (c.id.clone(), Some(c.rubric.clone())))
                     .collect(),
             );
@@ -130,6 +131,7 @@ fn resolve_value_set(
 fn code_set_members(cs: &CodeSet) -> Vec<(String, Option<String>)> {
     cs.codes
         .iter()
+        .flatten()
         .map(|c| (c.value.clone(), c.description.clone()))
         .collect()
 }
@@ -230,10 +232,11 @@ pub(super) fn has_term(terminology_id: &str, code: &str) -> Result<bool, SmError
             .terminology()
             .vocabularies
             .iter()
-            .any(|g| g.concepts.iter().any(|c| c.id == code)))
+            .flatten()
+            .any(|g| g.concepts.iter().flatten().any(|c| c.id == code)))
     } else {
         Ok(external_terminology(terminology_id)
-            .is_some_and(|cs| cs.codes.iter().any(|c| c.value == code)))
+            .is_some_and(|cs| cs.codes.iter().flatten().any(|c| c.value == code)))
     }
 }
 
@@ -254,12 +257,13 @@ pub(super) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyEx
             .terminology()
             .vocabularies
             .iter()
-            .find_map(|g| g.concepts.iter().find(|c| c.id == code))
+            .flatten()
+            .find_map(|g| g.concepts.iter().flatten().find(|c| c.id == code))
             .map(|c| c.rubric.clone());
         (code.to_owned(), rubric)
     } else {
         let description = external_terminology(terminology_id)
-            .and_then(|cs| cs.codes.iter().find(|c| c.value == code))
+            .and_then(|cs| cs.codes.iter().flatten().find(|c| c.value == code))
             .and_then(|c| c.description.clone());
         (code.to_owned(), description)
     };

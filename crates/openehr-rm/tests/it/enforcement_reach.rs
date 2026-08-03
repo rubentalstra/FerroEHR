@@ -13,7 +13,7 @@
 //! nothing measured reach).
 //!
 //! The slot inventory is DERIVED (`openehr_rm::model::classes()` ×
-//! `rm_terminology::slots_for`), never a second hand list; the total is
+//! `validate::terminology::slots_for`), never a second hand list; the total is
 //! pinned so an arm for a type outside the static model cannot vanish
 //! silently. The invariant-core dimension (the generated cores in
 //! `openehr_rm::validate::generated`) is deliberately OUT of constructive
@@ -23,7 +23,9 @@
 //! beside each `*_impl.rs`, and the boundary is recorded here rather than
 //! silently skipped.
 
-use openehr_its::rm_terminology::{Binding, CodeSet, Group, Slot, slot_is_violated, slots_for};
+use openehr_rm::validate::terminology::{
+    Binding, CodeSet, Group, Slot, slot_is_violated, slots_for,
+};
 use serde_json::{Value, json};
 
 /// A known-member code for each vocabulary binding (bundle facts, pinned the
@@ -87,7 +89,7 @@ fn all_slots() -> Vec<(&'static str, &'static Slot)> {
 
 /// **Constructive slot reach:** for EVERY slot, an out-of-vocabulary code is
 /// detected — at the slot predicate itself and through the full per-type
-/// dispatcher — and the valid twin is clean at the slot.
+/// entry point — and the valid twin is clean at the slot.
 #[test]
 fn every_terminology_slot_detects_a_violation_and_passes_its_valid_twin() {
     let slots = all_slots();
@@ -122,14 +124,14 @@ fn every_terminology_slot_detects_a_violation_and_passes_its_valid_twin() {
             slot.invariant,
         );
 
-        // Full-dispatcher reach: the same violation surfaces through
+        // Full binding-table reach: the same violation surfaces through
         // validate_rm_terminology for the owning type.
         let node = json!({ "_type": ty, slot.field: coded(valid_terminology, "no-such-code-999") });
         let mut out = Vec::new();
-        openehr_its::rm_terminology::validate_rm_terminology(ty, &node, &mut out);
+        openehr_rm::validate::terminology::validate_rm_terminology(ty, &node, &mut out);
         assert!(
             out.iter().any(|iv| iv.message.contains(slot.invariant)),
-            "{ty}.{}: the dispatcher did not surface {} (got {out:?})",
+            "{ty}.{}: validate_rm_terminology did not surface {} (got {out:?})",
             slot.field,
             slot.invariant,
         );

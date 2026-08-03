@@ -65,7 +65,7 @@ macro_rules! class_common {
             ancestors: $c.ancestors.as_ref(),
             package: &$c.package,
             properties: $c.properties.as_ref(),
-            immediate_descendants: $c.immediate_descendants.as_slice(),
+            immediate_descendants: $c.immediate_descendants.as_deref().unwrap_or_default(),
             is_abstract: $c.is_abstract,
             is_primitive_type: $c.is_primitive_type,
         }
@@ -418,7 +418,7 @@ mod tests {
             documentation: None,
             packages: None,
             name: name.to_owned(),
-            classes: Vec::new(),
+            classes: openehr_base::containers::present(Vec::new()),
         }
     }
 
@@ -453,7 +453,7 @@ mod tests {
                 )
             },
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type: false,
             is_override: false,
@@ -501,7 +501,7 @@ mod tests {
             package: package("org.openehr.base.foundation_types"),
             properties: None,
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type: false,
             is_override: false,
@@ -521,7 +521,7 @@ mod tests {
             package: package("org.openehr.rm.common.archetyped"),
             properties: None,
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: vec!["ENTRY".to_owned()],
+            immediate_descendants: Some(vec!["ENTRY".to_owned()]),
             is_abstract: true,
             is_primitive_type: false,
             is_override: false,
@@ -645,7 +645,7 @@ mod tests {
             package: package("Org.OpenEHR.RM.EHR"),
             properties: None,
             source_schema_id: "openehr_test_1.0.0".to_owned(),
-            immediate_descendants: Vec::new(),
+            immediate_descendants: openehr_base::containers::present(Vec::new()),
             is_abstract: false,
             is_primitive_type: false,
             is_override: false,

@@ -10,5 +10,21 @@
 pub struct InternetId {
     // inherited: UID
     /// The value of the id.
-    pub value: String,
+    pub(crate) value: String,
+}
+
+/// Read access to the `pub(crate)` fields of [`InternetId`].
+///
+/// The fields are not `pub`: this class has a released **lexical form**, so
+/// construction runs a grammar and is the only door — docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc §Syntaxes: `internet_id = subdomain`, `subdomain = label | subdomain, '.', label`.
+///
+/// The validating constructor lives in the hand-written `*_impl.rs` sibling
+/// (the generator never writes into it); every generated codec builds this
+/// type through that constructor.
+impl InternetId {
+    /// The validated `value` this identifier was constructed from.
+    #[must_use]
+    pub fn value(&self) -> &str {
+        &self.value
+    }
 }

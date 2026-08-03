@@ -43,6 +43,7 @@
 //! own design).
 
 pub(in crate::service) mod access;
+pub(in crate::service) mod category;
 mod composition;
 mod contributions;
 mod directory;
@@ -56,11 +57,14 @@ pub(crate) mod validation;
 pub mod access_types;
 pub mod handle;
 
+use openehr_base::base_types::identification::lexical::composite_ids_equal;
+use openehr_base::prelude::{GenericId, ObjectId, PartyRef};
+use openehr_rm::prelude::{PartyProxy, PartySelf};
+use serde_json::Value;
+
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;
 use crate::service::status::SmError;
-use serde_json::{Value, json};
-
 use crate::versioning::contribution::TimeRange;
 
 /// The committed version's full [`ResourceMeta`] (version uid + commit
@@ -79,19 +83,20 @@ fn committed_meta(
 /// three-part identity — `object_id :: creating_system_id ::
 /// version_tree_id` (ITS-REST overview `Resources.md` §Identifier types:
 /// the `version_uid` "uniquely identifies a VERSION") — compared
-/// case-insensitively (BASE `base_types` master05 §"Composite Identifiers
+/// case-insensitively — the shared composite-identifier rule
+/// ([`composite_ids_equal`], BASE `base_types` master05 §"Composite Identifiers
 /// and Case"). A tree-id-only fetch would satisfy a fabricated
 /// `creating_system_id`; that names no VERSION in this repository → 404.
 fn ensure_addressed_version(
     addressed: &openehr_base::prelude::ObjectVersionId,
     served_uid: &str,
 ) -> Result<(), crate::service::error::ServiceError> {
-    if served_uid.eq_ignore_ascii_case(&addressed.value) {
+    if composite_ids_equal(served_uid, addressed.value()) {
         Ok(())
     } else {
         Err(crate::service::error::ServiceError::sm(
             crate::service::status::CallStatusType::ObjectVersionDoesNotExist,
-            format!("version {}", addressed.value),
+            format!("version {}", addressed.value()),
         ))
     }
 }
@@ -112,11 +117,12 @@ fn ensure_if_match(
         // Composite identifiers compare case-INsensitively (BASE
         // base_types master05 §"Composite Identifiers and Case": two
         // identifiers identical apart from case identify the same thing).
-        Some(meta) if meta.uid.eq_ignore_ascii_case(&pre.value) => Ok(()),
+        Some(meta) if composite_ids_equal(&meta.uid, pre.value()) => Ok(()),
         Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(
             format!(
                 "If-Match {:?} does not match the current latest version {:?}",
-                pre.value, meta.uid
+                pre.value(),
+                meta.uid
             ),
         )),
         None => Ok(()),
@@ -166,15 +172,14 @@ fn resolve_envelope(
         default_description,
         system_id,
     )?;
+    // Every supplied attestation is converted — never a `filter_map` that
+    // would drop one silently.
     let attestations = version
         .attestations
-        .as_ref()
-        .map(|a| {
-            a.iter()
-                .filter_map(|x| serde_json::to_value(x).ok())
-                .collect()
-        })
-        .unwrap_or_default();
+        .iter()
+        .flatten()
+        .map(crate::versioning::attestation::AttestationInput::from_update)
+        .collect::<Result<Vec<_>, _>>()?;
     let envelope = crate::versioning::change::WriteEnvelope {
         lifecycle_state: Some(version.lifecycle_state.code_string.clone()),
         signature: version.signature.clone(),
@@ -192,19 +197,16 @@ fn status_for_subject(base: Value, subject: &SubjectRef) -> Value {
     if let Value::Object(map) = &mut status {
         map.insert(
             "subject".to_owned(),
-            json!({
-                "_type": "PARTY_SELF",
-                "external_ref": {
-                    "_type": "PARTY_REF",
-                    "namespace": subject.namespace,
-                    "type": subject.r#type,
-                    "id": {
-                        "_type": "GENERIC_ID",
-                        "value": subject.id,
-                        "scheme": subject.namespace
-                    }
-                }
-            }),
+            openehr_its::json::to_canonical_value(&PartyProxy::PartySelf(PartySelf {
+                external_ref: Some(PartyRef {
+                    namespace: subject.namespace.clone(),
+                    r#type: subject.r#type.clone(),
+                    id: ObjectId::GenericId(GenericId {
+                        value: subject.id.clone(),
+                        scheme: subject.namespace.clone(),
+                    }),
+                }),
+            })),
         );
     }
     status

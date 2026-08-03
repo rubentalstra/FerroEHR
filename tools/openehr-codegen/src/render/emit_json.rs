@@ -1,19 +1,42 @@
-//! JSON emitter: emits `impl ToJson` + `impl FromJson` for the generated spec
-//! types (BASE / RM / AM / TERM / LANG), into
-//! `openehr-its/src/json_codec/generated/`.
+//! JSON emitter: emits `impl serde::Serialize` + `impl serde::Deserialize` for
+//! the generated spec types (BASE / RM / AM / TERM / LANG), into each spec
+//! crate's own `src/json_serde.rs`, plus the `_type`-keyed structural dispatch
+//! in `openehr-its`.
 //!
 //! Every fact comes from the BMM ([`Model::json_types`]): field idents, wire
 //! names, omission kind, field defaults, enum variants + `_type` dispatch,
 //! generics. There is no XSD input — the canonical-JSON wire shape is `_type`
-//! first then BMM declaration order, with `None`/empty-`Vec` fields omitted. The
-//! emitted impls are the byte-for-byte replacement for the
-//! `#[derive(OpenEhrType)]` serde `Serialize`/`Deserialize` (`openehr-derive`);
-//! the parity gate in `openehr-its/tests/json_codec_parity.rs` proves the
-//! equivalence in both directions.
+//! first then BMM declaration order, with absent (rather than null or empty)
+//! optional attributes
+//! (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+//! §JSON Format).
 //!
-//! The read side reproduces the retired derive's tolerance rules verbatim:
-//! unknown wire keys ignored (a deliberate superset of the ITS-JSON schema's
-//! `additionalProperties: false` — RM-version skew), out-of-order members,
+//! # Why manual impls and never a derive
+//!
+//! The canonical wire is not any of serde's four enum representations
+//! (<https://serde.rs/enum-representations.html>): the discriminator is a
+//! *member of the object* whose PRESENCE is context-dependent (mandatory on an
+//! abstract slot, optional on a concretely-typed one), it routes DEEP
+//! descendants onto an intermediate variant, and the closed key set has to be
+//! enforced alongside it (`deny_unknown_fields` is incompatible with
+//! `flatten`). So the emitter writes the long form from
+//! <https://serde.rs/deserialize-struct.html> — a field-identifier enum plus a
+//! visitor — per class, as plain explicit Rust: greppable, auditable, no
+//! attributes, no macros.
+//!
+//! # Why the impls live in the SPEC crates
+//!
+//! `serde::Serialize`/`Deserialize` and the spec types are both foreign to
+//! `openehr-its`, so an impl there would violate the orphan rule (E0117). The
+//! emitted impls therefore land in the crate that DEFINES each type, which also
+//! lets them construct through `pub(crate)` fields and the validated
+//! constructors ([`construction`]).
+//!
+//! The read side is STRICT over the generated RM model at our pin: an undeclared
+//! wire key is a refusal naming the offending key and the declared set (see
+//! [`emit_struct_deserialize`] for the released grounding), a repeated key is a
+//! refusal, and a mandatory attribute that is absent is a refusal. It keeps the
+//! remaining tolerance rules verbatim: out-of-order members,
 //! present-but-wrong `_type` = error, absent `_type` accepted on a concrete slot,
 //! `Option`/`Vec` defaulting, the `Interval` `*_included`/`*_unbounded` literal
 //! defaults, and `_type`-keyed polymorphic-slot dispatch (abstract slots reject a
@@ -21,6 +44,7 @@
 
 use crate::analyze::Model;
 use crate::load::bmm::BmmSchema;
+use crate::plan::construction;
 use crate::plan::{JsonEnumDispatch, JsonField, JsonFieldKind, JsonType};
 use std::fmt::Write as _;
 
@@ -38,47 +62,61 @@ pub(crate) struct JsonSchema<'a> {
     /// from its prelude, so for a class name both generations declare only one
     /// twin is reachable as `<crate>::prelude::<Ident>`; the other is named here
     /// by its full module path. Both twins are covered: they are distinct Rust
-    /// types, so their `ToJson`/`FromJson` impls do not conflict, and the whole
-    /// emitted model stays codec-complete.
+    /// types, so their `Serialize`/`Deserialize` impls do not conflict, and the
+    /// whole emitted model stays codec-complete.
     ///
     /// NOTE (adjudicated): the two twins share a canonical `_type` string (the
     /// BMM class name is the same in both generations), and that is not an
-    /// ambiguity: `FromJson` is always invoked at a statically known Rust type,
-    /// and `_type`-keyed dispatch only ever chooses among the variants of ONE
-    /// enum — never across generations. No openEHR spec governs a BMM-model
+    /// ambiguity: `Deserialize` is always invoked at a statically known Rust
+    /// type, and `_type`-keyed dispatch only ever chooses among the variants of
+    /// ONE enum — never across generations. No openEHR spec governs a BMM-model
     /// canonical-JSON wire at all (this codec is our own extension), so there is
     /// no cross-generation wire contract to break.
     pub unexported: &'a std::collections::BTreeMap<String, String>,
 }
 
 impl JsonSchema<'_> {
-    /// The Rust path prefix a spec class's type is named by.
+    /// The Rust path prefix a spec class's type is named by, as seen from
+    /// OUTSIDE the defining crate (the structural dispatch in `openehr-its`).
     fn path_of(&self, spec: &str) -> &str {
         self.unexported
             .get(spec)
             .map_or(self.prelude, String::as_str)
     }
+
+    /// The same path as seen from INSIDE the defining crate: the leading crate
+    /// segment becomes `crate` (`openehr_am::am14::prelude` →
+    /// `crate::am14::prelude`), which is how the emitted impls — which live in
+    /// the defining crate — name their own types.
+    fn local_path_of(&self, spec: &str) -> String {
+        let absolute = self.path_of(spec);
+        absolute
+            .split_once("::")
+            .map_or_else(|| "crate".to_owned(), |(_, rest)| format!("crate::{rest}"))
+    }
 }
 
-/// The `ToJson` trait path in the target crate.
-const TO_JSON: &str = "crate::json_codec::runtime::ToJson";
-/// The `JsonWriter` path in the target crate.
-const WRITER: &str = "crate::json_codec::runtime::JsonWriter";
-/// The `FromJson` trait path in the target crate.
-const FROM_JSON: &str = "crate::json_codec::runtime::FromJson";
-/// The `JsonNode` trait path in the target crate.
-const NODE: &str = "crate::json_codec::runtime::JsonNode";
-/// The `JsonParseError` type path in the target crate.
-const ERR: &str = "crate::json_codec::runtime::JsonParseError";
+/// The shared hand-written runtime path, as named from inside the crate being
+/// emitted (`openehr-base` cannot refer to itself by crate name).
+fn support_path(krate: &str) -> &'static str {
+    if krate == "openehr_base" {
+        "crate::serde_support"
+    } else {
+        "::openehr_base::serde_support"
+    }
+}
 
-/// Emit the whole generated impl file: one `impl ToJson` + one `impl FromJson`
-/// per instantiable type, in schema then class order.
-pub(crate) fn emit_file(schemas: &[JsonSchema<'_>]) -> String {
+/// Emit one spec crate's whole `json_serde.rs`: an `impl Serialize` + an
+/// `impl Deserialize` per instantiable type, in schema then class order.
+///
+/// `krate` is the crate's Rust ident (`openehr_rm`), used only to decide how the
+/// shared runtime is named.
+pub(crate) fn emit_file(schemas: &[JsonSchema<'_>], krate: &str) -> String {
+    let support = support_path(krate);
     let mut b = String::new();
-    // `unused_qualifications`: the emitted impls name every runtime item by its
-    // full path so the emitter never has to reason about import scope — inherent
-    // to text generation, not a defect in the output. `unused_imports` covers a
-    // schema set that happens not to need every runtime item.
+    // `unused_qualifications`: the emitted impls name every item by its full
+    // path so the emitter never has to reason about import scope — inherent to
+    // text generation, not a defect in the output.
     // The whole set is ONE file-level `#![allow(…, reason = "…")]`: `reason` is
     // mandatory (`clippy::allow_attributes_without_reason` is deny workspace-
     // wide), an inner attribute is exempt from `clippy::allow_attributes`, and
@@ -86,7 +124,14 @@ pub(crate) fn emit_file(schemas: &[JsonSchema<'_>]) -> String {
     // every listed lint.
     b.push_str(
         "// @generated by openehr-codegen (emit-json) — DO NOT EDIT.\n\
-         // Canonical-JSON `ToJson`/`FromJson` impls for the RM/BASE/AM/TERM/LANG spec types.\n\n\
+         //! Canonical-JSON `serde::Serialize`/`serde::Deserialize` impls for this\n\
+         //! crate's generated spec types.\n\
+         //!\n\
+         //! Manual (never derived) long-form impls per\n\
+         //! <https://serde.rs/deserialize-struct.html>: the canonical wire's\n\
+         //! `_type` discriminator, its context-dependent presence, deep-descendant\n\
+         //! dispatch and closed key set are not expressible with serde attributes.\n\
+         //! The shared runtime is `openehr_base::serde_support`.\n\n\
          #![allow(\n    \
          clippy::all,\n    \
          clippy::pedantic,\n    \
@@ -94,19 +139,17 @@ pub(crate) fn emit_file(schemas: &[JsonSchema<'_>]) -> String {
          unused_variables,\n    \
          unused_mut,\n    \
          unused_qualifications,\n    \
-         unused_imports,\n    \
-         reason = \"mechanically generated codec text: every runtime item is named \
-         by its full path and every branch shape is emitted uniformly, so style \
-         and unused-binding lints do not apply — the hand-written runtime carries \
-         the lint bar\"\n\
-         )]\n\
-         use crate::json_codec::runtime::{self, FromJson, JsonNode, JsonParseError, JsonWriter, ToJson};\n\n",
+         reason = \"mechanically generated codec text: every item is named by its \
+         full path and every branch shape is emitted uniformly, so style and \
+         unused-binding lints do not apply — the hand-written runtime carries the \
+         lint bar\"\n\
+         )]\n\n",
     );
     for s in schemas {
         for ty in s.model.json_types(s.schema) {
-            let prelude = s.path_of(json_type_spec(&ty));
-            emit_to_json(&mut b, &ty, prelude);
-            emit_from_json(&mut b, &ty, prelude);
+            let path = s.local_path_of(json_type_spec(&ty));
+            emit_serialize(&mut b, &ty, &path);
+            emit_deserialize(&mut b, &ty, &path, support);
         }
     }
     b
@@ -126,8 +169,8 @@ pub(crate) fn emit_file(schemas: &[JsonSchema<'_>]) -> String {
 /// monomorphization the hand-written typed dispatch uses for the same classes.
 const GENERIC_FILL: &str = "::serde_json::Value";
 
-/// Emit the generated `structural_check` dispatch file: `_type` → decode the
-/// node into that class's generated Rust type and discard the value, so the
+/// Emit the generated `structural_check` dispatch file: `_type` → deserialize
+/// the node into that class's generated Rust type and discard the value, so the
 /// codec is the single structural-conformance authority for EVERY emitted class
 /// rather than only the invariant-bearing ones.
 ///
@@ -138,12 +181,18 @@ const GENERIC_FILL: &str = "::serde_json::Value";
 /// the emitted header, never dropped silently.
 pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
     let mut arms: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    // `spec class -> its sorted declared wire keys`, the SAME closure the
+    // reader's undeclared-key refusal is emitted from — so the validation
+    // dispatcher can answer "is this key declared?" without a decode, and can
+    // never disagree with the reader.
+    let mut declared: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
     let mut shadowed: Vec<(String, String, String)> = Vec::new();
     let mut skipped: Vec<(String, &'static str)> = Vec::new();
     for s in schemas {
         for ty in s.model.json_types(s.schema) {
             // A newtype / literal-enum shape writes its BARE payload (no `_type`
-            // member — see `emit_to_json`), and an untagged enum carries no
+            // member — see `emit_serialize`), and an untagged enum carries no
             // `_type` of its own either (the active variant's payload supplies
             // it, and every such payload is itself an emitted struct with its
             // own arm). Neither is reachable as a `_type` dispatch key, so
@@ -153,8 +202,14 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
                     spec,
                     rust,
                     generics,
-                    ..
-                } => (spec, rust, generics),
+                    fields,
+                } => {
+                    let mut keys: Vec<String> =
+                        fields.iter().map(|f| f.wire_name.clone()).collect();
+                    keys.sort();
+                    declared.entry(spec.clone()).or_insert(keys);
+                    (spec, rust, generics)
+                }
                 JsonType::Enum { rust, .. } => {
                     skipped.push((
                         rust.clone(),
@@ -199,7 +254,7 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
     let mut b = String::new();
     b.push_str(
         "// @generated by openehr-codegen (emit-json) — DO NOT EDIT.\n\
-         //! Structural conformance dispatch: `_type` → the emitted `FromJson` decode\n\
+         //! Structural conformance dispatch: `_type` → the emitted `Deserialize`\n\
          //! of that spec class.\n\
          //!\n\
          //! The canonical-JSON codec is the structural-conformance authority for a\n\
@@ -248,29 +303,54 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
         let _ = writeln!(b, "//   {rust}: {why}");
     }
     b.push('\n');
-    let _ = write!(
-        b,
-        "/// Decode `node` as the emitted spec class named by `ty` and discard the\n\
+    b.push_str(
+        "/// Deserialize `node` as the emitted spec class named by `ty` and discard the\n\
          /// value: `Some(Ok(()))` when the node conforms structurally,\n\
          /// `Some(Err(_))` when it does not, `None` when `ty` names no emitted\n\
          /// class.\n\
          ///\n\
          /// # Errors\n\
-         /// The inner `Err` is the codec's [`{ERR}`] for a node that does not\n\
-         /// decode as `ty` (a missing mandatory attribute, a wrong JSON kind, an\n\
-         /// unresolvable nested slot `_type`).\n\
+         /// The inner `Err` is the canonical reader's error for a node that does not\n\
+         /// deserialize as `ty` (a missing mandatory attribute, an undeclared or\n\
+         /// repeated key, a wrong JSON kind, an unresolvable nested slot `_type`),\n\
+         /// carrying the JSON path to the offending node — the same door, and the\n\
+         /// same message, as a direct `crate::json::from_canonical_value` read.\n\
          pub fn structural_check(\n    \
          ty: &str,\n    \
          node: &::serde_json::Value,\n\
-         ) -> ::core::option::Option<::core::result::Result<(), {ERR}>> {{\n    \
-         match ty {{\n"
+         ) -> ::core::option::Option<::core::result::Result<(), crate::json::JsonParseError>> {\n    \
+         match ty {\n",
     );
     for (spec, expr) in &arms {
         let _ = writeln!(
             b,
             "{spec:?} => ::core::option::Option::Some(\
-             crate::json_codec::runtime::from_json_value::<{expr}>(node).map(|_| ())),"
+             crate::json::from_canonical_value::<{expr}>(node).map(|_| ())),"
         );
+    }
+    b.push_str("_ => ::core::option::Option::None,\n}\n}\n");
+
+    // The declared-key table.
+    b.push_str(
+        "\n/// The wire keys the spec class `ty` declares, sorted, or `None` when\n\
+         /// `ty` names no emitted struct.\n\
+         ///\n\
+         /// Emitted from the SAME field view as the reader's undeclared-key refusal,\n\
+         /// so a caller that must answer \"is this key declared?\" WITHOUT decoding —\n\
+         /// the validation dispatcher's allocation-free fast path — can never\n\
+         /// disagree with the reader that would decode it. `_type` is the canonical\n\
+         /// discriminator, not a modelled attribute, and is never listed.\n\
+         #[must_use]\n\
+         pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static str]> {\n    \
+         match ty {\n",
+    );
+    for (spec, keys) in &declared {
+        let list = keys
+            .iter()
+            .map(|k| format!("{k:?}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = writeln!(b, "{spec:?} => ::core::option::Option::Some(&[{list}]),");
     }
     b.push_str("_ => ::core::option::Option::None,\n}\n}\n");
     b
@@ -300,10 +380,48 @@ fn generic_header(generics: &[String], bound: &str) -> (String, String) {
     }
 }
 
-// ── Serialize side (`ToJson`) ────────────────────────────────────────────────
+/// The `impl<'de, …>` header + type-args suffix for a `Deserialize` impl.
+///
+/// Generic parameters are bound by `DeserializeOwned`, not `Deserialize<'de>`:
+/// every emitted spec type owns its data (no borrowed fields anywhere — see
+/// <https://serde.rs/lifetimes.html>), and the untagged structural fallback has
+/// to deserialize a parameter from a LOCAL buffered value whose lifetime is
+/// shorter than `'de`, which only the `for<'a>` bound permits.
+fn deserialize_header(generics: &[String]) -> (String, String) {
+    if generics.is_empty() {
+        ("<'de>".to_owned(), String::new())
+    } else {
+        let bounded = generics
+            .iter()
+            .map(|g| format!("{g}: ::serde::de::DeserializeOwned"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        (
+            format!("<'de, {bounded}>"),
+            format!("<{}>", generics.join(", ")),
+        )
+    }
+}
 
-/// Emit `impl ToJson` for one [`JsonType`].
-fn emit_to_json(b: &mut String, ty: &JsonType, prelude: &str) {
+/// `PhantomData<(T, U)>` for a visitor that must carry the impl's generic
+/// parameters (an item declared inside a function body does not inherit them).
+fn phantom(generics: &[String]) -> (String, String, String) {
+    if generics.is_empty() {
+        (String::new(), String::new(), String::new())
+    } else {
+        let params = generics.join(", ");
+        (
+            format!("<{params}>"),
+            format!("(::core::marker::PhantomData<({params},)>)"),
+            "(::core::marker::PhantomData)".to_owned(),
+        )
+    }
+}
+
+// ── Serialize side ───────────────────────────────────────────────────────────
+
+/// Emit `impl serde::Serialize` for one [`JsonType`].
+fn emit_serialize(b: &mut String, ty: &JsonType, path: &str) {
     match ty {
         JsonType::Struct {
             spec,
@@ -311,19 +429,36 @@ fn emit_to_json(b: &mut String, ty: &JsonType, prelude: &str) {
             generics,
             fields,
         } => {
-            let (hdr, args) = generic_header(generics, TO_JSON);
+            let (hdr, args) = generic_header(generics, "::serde::Serialize");
             let _ = write!(
                 b,
-                "impl{hdr} {TO_JSON} for {prelude}::{rust}{args} {{\n\
-                 fn json_type_name(&self) -> &'static str {{ \"{spec}\" }}\n\
-                 fn write_json(&self, w: &mut {WRITER}) {{\n\
-                 w.begin_object();\n\
-                 w.field_str(\"_type\", \"{spec}\");\n"
+                "impl{hdr} ::serde::Serialize for {path}::{rust}{args} {{\n\
+                 fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) \
+                 -> ::core::result::Result<__S::Ok, __S::Error> {{\n"
+            );
+            // `_type` plus every unconditionally-written field.
+            let fixed = 1 + fields
+                .iter()
+                .filter(|f| {
+                    matches!(
+                        f.kind,
+                        JsonFieldKind::Plain | JsonFieldKind::NonEmptyContainer
+                    )
+                })
+                .count();
+            let _ = writeln!(b, "let mut __n = {fixed}usize;");
+            for f in fields {
+                emit_count_field(b, f);
+            }
+            let _ = write!(
+                b,
+                "let mut __st = ::serde::Serializer::serialize_struct(__serializer, \"{spec}\", __n)?;\n\
+                 ::serde::ser::SerializeStruct::serialize_field(&mut __st, \"_type\", \"{spec}\")?;\n"
             );
             for f in fields {
                 emit_write_field(b, f);
             }
-            b.push_str("w.end_object();\n}\n}\n\n");
+            b.push_str("::serde::ser::SerializeStruct::end(__st)\n}\n}\n\n");
         }
         JsonType::Enum {
             rust,
@@ -331,27 +466,28 @@ fn emit_to_json(b: &mut String, ty: &JsonType, prelude: &str) {
             variant_idents,
             ..
         } => {
-            let (hdr, args) = generic_header(generics, TO_JSON);
+            let (hdr, args) = generic_header(generics, "::serde::Serialize");
             let _ = write!(
                 b,
-                "impl{hdr} {TO_JSON} for {prelude}::{rust}{args} {{\n\
-                 fn json_type_name(&self) -> &'static str {{ match self {{\n"
+                "impl{hdr} ::serde::Serialize for {path}::{rust}{args} {{\n\
+                 fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) \
+                 -> ::core::result::Result<__S::Ok, __S::Error> {{ match self {{\n"
             );
             for ident in variant_idents {
-                let _ = writeln!(b, "{prelude}::{rust}::{ident}(x) => x.json_type_name(),");
-            }
-            b.push_str("} }\n");
-            let _ = writeln!(b, "fn write_json(&self, w: &mut {WRITER}) {{ match self {{");
-            for ident in variant_idents {
-                let _ = writeln!(b, "{prelude}::{rust}::{ident}(x) => x.write_json(w),");
+                let _ = writeln!(
+                    b,
+                    "{path}::{rust}::{ident}(__x) => ::serde::Serialize::serialize(__x, __serializer),"
+                );
             }
             b.push_str("} }\n}\n\n");
         }
         JsonType::Newtype { rust } => {
             let _ = write!(
                 b,
-                "impl {TO_JSON} for {prelude}::{rust} {{\n\
-                 fn write_json(&self, w: &mut {WRITER}) {{ self.0.write_json(w) }}\n}}\n\n"
+                "impl ::serde::Serialize for {path}::{rust} {{\n\
+                 fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) \
+                 -> ::core::result::Result<__S::Ok, __S::Error> {{\n\
+                 ::serde::Serialize::serialize(&self.0, __serializer)\n}}\n}}\n\n"
             );
         }
         JsonType::EnumLiterals {
@@ -360,68 +496,117 @@ fn emit_to_json(b: &mut String, ty: &JsonType, prelude: &str) {
         } => {
             // Byte-identical to the bare primitive it replaces: `as_str` = the
             // constant token (verbatim payload for `Other`), `value` = the
-            // constant integer — matching the enum's hand-written serde.
+            // constant integer.
             let body = if *string_backed {
-                "w.write_str(self.as_str())"
+                "::serde::Serializer::serialize_str(__serializer, self.as_str())"
             } else {
-                "w.write_i32(self.value())"
+                "::serde::Serializer::serialize_i32(__serializer, self.value())"
             };
             let _ = write!(
                 b,
-                "impl {TO_JSON} for {prelude}::{rust} {{\n\
-                 fn write_json(&self, w: &mut {WRITER}) {{ {body}; }}\n}}\n\n"
+                "impl ::serde::Serialize for {path}::{rust} {{\n\
+                 fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) \
+                 -> ::core::result::Result<__S::Ok, __S::Error> {{ {body} }}\n}}\n\n"
             );
         }
     }
 }
 
-/// Emit the write call for one struct field, per its omission kind (mirroring the
-/// derive: `None`/empty-`Vec` omitted, everything else always written).
-fn emit_write_field(b: &mut String, f: &JsonField) {
-    let (wire, rust) = (&f.wire_name, &f.rust_name);
+/// Emit the member-count contribution of one conditionally-written field.
+///
+/// `serialize_struct` takes the number of members that will actually be written,
+/// so a field the omission rules drop must not be counted. The unconditional
+/// fields are folded into the initial constant by the caller.
+fn emit_count_field(b: &mut String, f: &JsonField) {
+    let rust = &f.rust_name;
     match f.kind {
-        JsonFieldKind::Plain => {
-            let _ = writeln!(b, "w.field(\"{wire}\", &self.{rust});");
+        JsonFieldKind::Plain | JsonFieldKind::NonEmptyContainer => {}
+        JsonFieldKind::Optional => {
+            let _ = writeln!(b, "if self.{rust}.is_some() {{ __n += 1; }}");
+        }
+        JsonFieldKind::Container => {
+            let _ = writeln!(b, "if !self.{rust}.is_empty() {{ __n += 1; }}");
+        }
+        JsonFieldKind::OptionalContainer => {
+            let _ = writeln!(
+                b,
+                "if self.{rust}.as_ref().is_some_and(|__v| !__v.is_empty()) {{ __n += 1; }}"
+            );
+        }
+    }
+}
+
+/// Emit the write call for one struct field, per its omission kind (`None` /
+/// empty-list attributes are absent, never `null` and never `[]`).
+fn emit_write_field(b: &mut String, f: &JsonField) {
+    let wire = &f.wire_name;
+    let rust = &f.rust_name;
+    match f.kind {
+        // `Plain` and `NonEmptyContainer` share a body deliberately: a `1..*`
+        // container is non-empty by construction, so like a mandatory scalar it
+        // is always written — there is no omit-when-empty branch to emit.
+        JsonFieldKind::Plain | JsonFieldKind::NonEmptyContainer => {
+            let _ = writeln!(
+                b,
+                "::serde::ser::SerializeStruct::serialize_field(&mut __st, \"{wire}\", &self.{rust})?;"
+            );
         }
         JsonFieldKind::Optional => {
             let _ = writeln!(
                 b,
-                "if let Some(v) = &self.{rust} {{ w.field(\"{wire}\", v); }}"
+                "if let Some(__v) = &self.{rust} {{ ::serde::ser::SerializeStruct::serialize_field(&mut __st, \"{wire}\", __v)?; }}"
             );
         }
         JsonFieldKind::Container => {
             let _ = writeln!(
                 b,
-                "if !self.{rust}.is_empty() {{ w.field(\"{wire}\", &self.{rust}); }}"
+                "if !self.{rust}.is_empty() {{ ::serde::ser::SerializeStruct::serialize_field(&mut __st, \"{wire}\", &self.{rust})?; }}"
+            );
+        }
+        // An optional container omits BOTH states an empty array could carry —
+        // `None` and `Some(vec![])` — because the released serialization rule is
+        // about emptiness, not about optionality:
+        // `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+        // §JSON Format, "The RM attributes (even required ones) that are `Null`
+        // or an empty list (array) SHOULD be absent when serialized as JSON."
+        // The present-but-empty state therefore lives in the typed model (where
+        // the `x /= Void implies not x.is_empty` invariants judge it) and never
+        // reaches the wire.
+        JsonFieldKind::OptionalContainer => {
+            let _ = writeln!(
+                b,
+                "if let Some(__v) = &self.{rust} && !__v.is_empty() {{ ::serde::ser::SerializeStruct::serialize_field(&mut __st, \"{wire}\", __v)?; }}"
             );
         }
     }
 }
 
-// ── Deserialize side (`FromJson`) ────────────────────────────────────────────
+// ── Deserialize side ─────────────────────────────────────────────────────────
 
-/// Emit `impl FromJson` for one [`JsonType`].
-fn emit_from_json(b: &mut String, ty: &JsonType, prelude: &str) {
+/// Emit `impl serde::Deserialize` for one [`JsonType`].
+fn emit_deserialize(b: &mut String, ty: &JsonType, path: &str, support: &str) {
     match ty {
         JsonType::Struct {
             spec,
             rust,
             generics,
             fields,
-        } => emit_struct_from_json(b, spec, rust, generics, fields, prelude),
+        } => emit_struct_deserialize(b, spec, rust, generics, fields, path, support),
         JsonType::Enum {
             spec: _,
             rust,
             generics,
             variant_idents,
             dispatch,
-        } => emit_enum_from_json(b, rust, generics, variant_idents, dispatch, prelude),
+        } => emit_enum_deserialize(b, rust, generics, variant_idents, dispatch, path, support),
         JsonType::Newtype { rust } => {
             let _ = write!(
                 b,
-                "impl {FROM_JSON} for {prelude}::{rust} {{\n\
-                 fn from_json<__N: {NODE}>(node: &__N) -> ::core::result::Result<Self, {ERR}> {{\n\
-                 ::core::result::Result::Ok({prelude}::{rust}({FROM_JSON}::from_json(node)?))\n}}\n}}\n\n"
+                "impl<'de> ::serde::Deserialize<'de> for {path}::{rust} {{\n\
+                 fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) \
+                 -> ::core::result::Result<Self, __D::Error> {{\n\
+                 ::core::result::Result::Ok({path}::{rust}(::serde::Deserialize::deserialize(__deserializer)?))\n\
+                 }}\n}}\n\n"
             );
         }
         JsonType::EnumLiterals {
@@ -430,84 +615,279 @@ fn emit_from_json(b: &mut String, ty: &JsonType, prelude: &str) {
         } => {
             let body = if *string_backed {
                 format!(
-                    "let __s = node.as_str().ok_or_else(|| {ERR}::type_error(\"a string\", node.kind()))?;\n\
-                     ::core::result::Result::Ok({prelude}::{rust}::from_wire(__s))"
+                    "struct __V;\n\
+                     impl<'de> ::serde::de::Visitor<'de> for __V {{\n\
+                     type Value = {path}::{rust};\n\
+                     fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{\n\
+                     __f.write_str(\"a `{rust}` token\")\n}}\n\
+                     fn visit_str<__E: ::serde::de::Error>(self, __v: &str) \
+                     -> ::core::result::Result<Self::Value, __E> {{\n\
+                     ::core::result::Result::Ok({path}::{rust}::from_wire(__v))\n}}\n}}\n\
+                     ::serde::Deserializer::deserialize_str(__deserializer, __V)"
                 )
             } else {
                 format!(
-                    // The `TryFromIntError` cause is carried into the message
-                    // rather than discarded (`clippy::map_err_ignore`), so the
-                    // generated reader loses no diagnostic information.
-                    "let __v = node.as_i64().ok_or_else(|| {ERR}::type_error(\"an integer\", node.kind()))?;\n\
-                     let __v = i32::try_from(__v).map_err(|__e| {ERR}::custom(::std::format!(\"integer {{__v}} out of range for i32: {{__e}}\")))?;\n\
-                     ::core::result::Result::Ok({prelude}::{rust}::from_value(__v))"
+                    "let __v: i32 = ::serde::Deserialize::deserialize(__deserializer)?;\n\
+                     ::core::result::Result::Ok({path}::{rust}::from_value(__v))"
                 )
             };
             let _ = write!(
                 b,
-                "impl {FROM_JSON} for {prelude}::{rust} {{\n\
-                 fn from_json<__N: {NODE}>(node: &__N) -> ::core::result::Result<Self, {ERR}> {{\n\
-                 {body}\n}}\n}}\n\n"
+                "impl<'de> ::serde::Deserialize<'de> for {path}::{rust} {{\n\
+                 fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) \
+                 -> ::core::result::Result<Self, __D::Error> {{\n{body}\n}}\n}}\n\n"
             );
         }
     }
 }
 
-/// Emit `impl FromJson` for a struct (a polymorphic-concrete `Data` struct, or a
-/// plain struct). Object-required, `_type` validated, fields read by key per kind.
-fn emit_struct_from_json(
+/// The `Option<…>` a field's map slot is read into, and the expression that
+/// turns the slot into the final field value.
+///
+/// Every slot is an `Option`, so a REPEATED key is detected uniformly
+/// (`de::Error::duplicate_field`) — stricter than the retired reader, which let
+/// the last occurrence win. RFC 8259 §4 leaves a repeated name undefined and no
+/// canonical writer emits one, so refusing is the never-lax reading.
+struct FieldSlot {
+    /// The Rust type the map slot holds.
+    slot_ty: String,
+    /// How the slot's value is read from the map (`::serde::de::MapAccess::next_value`
+    /// at the slot type).
+    read: &'static str,
+}
+
+/// The slot type + finalizer for one field, per its omission kind.
+///
+/// A `null` member is read as absence wherever the retired reader did so (a
+/// mandatory field's `null` is a missing field, an optional field's `null` is
+/// `None`, a defaulted flag's `null` is the default), by reading the slot as
+/// `Option<T>`; a container's `null` stays an error, because `null` is not an
+/// array and no conformant producer writes one
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §JSON Format).
+fn field_slot(f: &JsonField, elem: &str) -> FieldSlot {
+    match f.kind {
+        JsonFieldKind::Plain | JsonFieldKind::NonEmptyContainer | JsonFieldKind::Optional => {
+            FieldSlot {
+                slot_ty: format!("::core::option::Option<::core::option::Option<{elem}>>"),
+                read: "next_value",
+            }
+        }
+        JsonFieldKind::Container | JsonFieldKind::OptionalContainer => FieldSlot {
+            slot_ty: format!("::core::option::Option<{elem}>"),
+            read: "next_value",
+        },
+    }
+}
+
+/// Emit `impl serde::Deserialize` for a struct (a polymorphic-concrete `Data`
+/// struct, or a plain struct): the long form from
+/// <https://serde.rs/deserialize-struct.html> — a field-identifier enum whose
+/// default arm refuses the key, plus a `visit_map` visitor.
+///
+/// The STRICT reader: a key this class does not declare is a refusal, not a
+/// silently ignored member. Grounded on the RELEASED artifacts, in this order:
+///
+/// * `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+///   L75 (XML) — the ITS-XML schemas are wildcard-free, so an undeclared
+///   element cannot validate; L87 (JSON) — "SHOULD" for the JSON encoding.
+/// * The openEHR-published ITS-JSON schemas close 128 of their 134 object
+///   definitions with `additionalProperties: false`, i.e. the wire model is
+///   closed BY DESIGN, not by omission.
+///
+/// The closure is over the GENERATED RM MODEL at our pin, never over the
+/// vendored ITS-JSON 1.1.0 schema, which is stale in both directions (it
+/// declares `property`/`reverse_relationships`, removed in RM 1.2.0, and
+/// lacks `EHR.tags`). NOTE: refusing where the released text says SHOULD is
+/// OUR decision at a SHOULD anchor — it is the only reading under which the
+/// JSON and XML encodings share one data model, and nothing released
+/// requires tolerance. The two-artifact upstream contradiction it exposes is
+/// reported as issue #1696.
+fn emit_struct_deserialize(
     b: &mut String,
     spec: &str,
     rust: &str,
     generics: &[String],
     fields: &[JsonField],
-    prelude: &str,
+    path: &str,
+    support: &str,
 ) {
-    let (hdr, args) = generic_header(generics, FROM_JSON);
+    let (hdr, args) = deserialize_header(generics);
+    let (vis_args, vis_body, vis_ctor) = phantom(generics);
+    let mut known: Vec<&str> = fields.iter().map(|f| f.wire_name.as_str()).collect();
+    known.sort_unstable();
+    let known_list = known
+        .iter()
+        .map(|k| format!("{k:?}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+
     let _ = write!(
         b,
-        "impl{hdr} {FROM_JSON} for {prelude}::{rust}{args} {{\n\
-         fn from_json<__N: {NODE}>(node: &__N) -> ::core::result::Result<Self, {ERR}> {{\n\
-         runtime::expect_object(node, \"{spec}\")?;\n\
-         runtime::check_type(node, \"{spec}\")?;\n\
-         ::core::result::Result::Ok(Self {{\n"
+        "impl{hdr} ::serde::Deserialize<'de> for {path}::{rust}{args} {{\n\
+         fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) \
+         -> ::core::result::Result<Self, __D::Error> {{\n\
+         const __FIELDS: &[&str] = &[{known_list}];\n"
     );
-    for f in fields {
-        let (wire, rust_name) = (&f.wire_name, &f.rust_name);
-        let read = match (&f.kind, &f.default) {
-            (JsonFieldKind::Plain, Some(default)) => {
-                format!("runtime::defaulted_field(node, \"{wire}\", {default})?")
-            }
-            (JsonFieldKind::Plain, None) => {
-                format!("runtime::required_field(node, \"{wire}\", \"{spec}\")?")
-            }
-            (JsonFieldKind::Optional, _) => format!("runtime::optional_field(node, \"{wire}\")?"),
-            (JsonFieldKind::Container, _) => {
-                format!("runtime::container_field(node, \"{wire}\")?")
-            }
-        };
-        let _ = writeln!(b, "{rust_name}: {read},");
+
+    // The field-identifier enum: the closed key set plus the discriminator.
+    b.push_str("enum __Field { __Type, ");
+    for (i, _) in fields.iter().enumerate() {
+        let _ = write!(b, "__F{i}, ");
     }
-    b.push_str("})\n}\n}\n\n");
+    b.push_str("}\n");
+    b.push_str(
+        "impl<'de> ::serde::Deserialize<'de> for __Field {\n\
+         fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) \
+         -> ::core::result::Result<Self, __D::Error> {\n\
+         struct __KeyVisitor;\n\
+         impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {\n\
+         type Value = __Field;\n\
+         fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {\n\
+         __f.write_str(\"an object member name\")\n}\n\
+         fn visit_str<__E: ::serde::de::Error>(self, __v: &str) \
+         -> ::core::result::Result<__Field, __E> {\n\
+         match __v {\n\
+         \"_type\" => ::core::result::Result::Ok(__Field::__Type),\n",
+    );
+    for (i, f) in fields.iter().enumerate() {
+        let _ = writeln!(
+            b,
+            "{:?} => ::core::result::Result::Ok(__Field::__F{i}),",
+            f.wire_name
+        );
+    }
+    let _ = write!(
+        b,
+        "_ => ::core::result::Result::Err({support}::unknown_field(__v, {spec:?}, __FIELDS)),\n\
+         }}\n}}\n}}\n\
+         ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)\n\
+         }}\n}}\n"
+    );
+
+    // The visitor.
+    let _ = write!(
+        b,
+        "struct __Visitor{vis_args}{vis_body};\n\
+         impl{hdr} ::serde::de::Visitor<'de> for __Visitor{args} {{\n\
+         type Value = {path}::{rust}{args};\n\
+         fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{\n\
+         __f.write_str(\"an openEHR `{spec}` object\")\n}}\n\
+         fn visit_map<__A: ::serde::de::MapAccess<'de>>(self, mut __map: __A) \
+         -> ::core::result::Result<Self::Value, __A::Error> {{\n\
+         let mut __seen_type = false;\n"
+    );
+    let slots: Vec<FieldSlot> = fields.iter().map(|f| field_slot(f, "_")).collect();
+    for (i, slot) in slots.iter().enumerate() {
+        let _ = writeln!(b, "let mut __s{i}: {} = None;", slot.slot_ty);
+    }
+    b.push_str("while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {\n match __key {\n");
+    let _ = write!(
+        b,
+        "__Field::__Type => {{\n\
+         if __seen_type {{ return ::core::result::Result::Err(::serde::de::Error::duplicate_field(\"_type\")); }}\n\
+         __seen_type = true;\n\
+         ::serde::de::MapAccess::next_value_seed(&mut __map, {support}::ExpectedType({spec:?}))?;\n\
+         }}\n"
+    );
+    for (i, (f, slot)) in fields.iter().zip(&slots).enumerate() {
+        let _ = write!(
+            b,
+            "__Field::__F{i} => {{\n\
+             if __s{i}.is_some() {{ return ::core::result::Result::Err(::serde::de::Error::duplicate_field({:?})); }}\n\
+             __s{i} = Some(::serde::de::MapAccess::{}(&mut __map)?);\n\
+             }}\n",
+            f.wire_name, slot.read
+        );
+    }
+    b.push_str("}\n}\n");
+
+    // Build the value — through the validating constructor when the class has
+    // one (`plan::construction`), so a malformed identifier refuses at PARSE,
+    // path-named, in every document position.
+    let door = construction::validated_ctor(spec);
+    let finals: Vec<String> = fields
+        .iter()
+        .enumerate()
+        .map(|(i, f)| field_final(f, i))
+        .collect();
+    if let Some((params, fallible)) = door {
+        assert_eq!(
+            params.len(),
+            finals.len(),
+            "construction map declares {} constructor parameter(s) for {spec}, but the \
+             canonical-JSON field view has {} field(s)",
+            params.len(),
+            finals.len(),
+        );
+        let mut locals = String::new();
+        let mut names = Vec::new();
+        for (i, (ty, value)) in params.iter().zip(&finals).enumerate() {
+            let _ = writeln!(locals, "let __a{i}: {ty} = {value};");
+            names.push(format!("__a{i}"));
+        }
+        let tail = if fallible {
+            format!(
+                "__built.map_err(|__e| ::serde::de::Error::custom(::std::format!(\"{spec}: {{__e}}\")))"
+            )
+        } else {
+            "::core::result::Result::Ok(__built)".to_owned()
+        };
+        let _ = write!(
+            b,
+            "{locals}let __built = {path}::{rust}::new({});\n{tail}\n",
+            names.join(", ")
+        );
+    } else {
+        let _ = writeln!(b, "::core::result::Result::Ok({path}::{rust} {{");
+        for (f, value) in fields.iter().zip(&finals) {
+            let _ = writeln!(b, "{}: {value},", f.rust_name);
+        }
+        b.push_str("})\n");
+    }
+    b.push_str("}\n}\n");
+    let _ = write!(
+        b,
+        "::serde::Deserializer::deserialize_struct(__deserializer, {spec:?}, __FIELDS, __Visitor{vis_ctor})\n\
+         }}\n}}\n\n"
+    );
 }
 
-/// Emit `impl FromJson` for a closed-subtype-set / polymorphic enum, reproducing
-/// the derive's `_type`-dispatch (or structural-untagged) reader.
-fn emit_enum_from_json(
+/// The expression that turns field `i`'s map slot into the final field value.
+fn field_final(f: &JsonField, i: usize) -> String {
+    let wire = &f.wire_name;
+    match (&f.kind, &f.default) {
+        (JsonFieldKind::Plain, Some(default)) => {
+            format!("__s{i}.flatten().unwrap_or({default})")
+        }
+        (JsonFieldKind::Plain, None) | (JsonFieldKind::NonEmptyContainer, _) => {
+            format!("__s{i}.flatten().ok_or_else(|| ::serde::de::Error::missing_field({wire:?}))?")
+        }
+        (JsonFieldKind::Optional, _) => format!("__s{i}.flatten()"),
+        (JsonFieldKind::Container, _) => format!("__s{i}.unwrap_or_default()"),
+        (JsonFieldKind::OptionalContainer, _) => format!("__s{i}"),
+    }
+}
+
+/// Emit `impl serde::Deserialize` for a closed-subtype-set / polymorphic enum:
+/// `_type`-keyed dispatch with the two-path reader (see
+/// `openehr_base::serde_support`), or the structural untagged fallback.
+fn emit_enum_deserialize(
     b: &mut String,
     rust: &str,
     generics: &[String],
     variant_idents: &[String],
     dispatch: &JsonEnumDispatch,
-    prelude: &str,
+    path: &str,
+    support: &str,
 ) {
-    let (hdr, args) = generic_header(generics, FROM_JSON);
+    let (hdr, args) = deserialize_header(generics);
+    let (vis_args, vis_body, vis_ctor) = phantom(generics);
     let _ = write!(
         b,
-        // `clippy::match_same_arms` is already covered by the file-level
-        // `clippy::pedantic` allow, so the dispatch fn needs no attribute.
-        "impl{hdr} {FROM_JSON} for {prelude}::{rust}{args} {{\n\
-         fn from_json<__N: {NODE}>(node: &__N) -> ::core::result::Result<Self, {ERR}> {{\n"
+        "impl{hdr} ::serde::Deserialize<'de> for {path}::{rust}{args} {{\n\
+         fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) \
+         -> ::core::result::Result<Self, __D::Error> {{\n"
     );
     match dispatch {
         JsonEnumDispatch::ByType {
@@ -516,56 +896,80 @@ fn emit_enum_from_json(
             spec_name,
             expected,
         } => {
-            b.push_str("match runtime::slot_type(node) {\n");
+            let tags = arms
+                .iter()
+                .map(|(s, _)| format!("{s:?}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let _ = write!(
+                b,
+                "const __TAGS: &[&str] = &[{tags}];\n\
+                 struct __Visitor{vis_args}{vis_body};\n\
+                 impl{hdr} ::serde::de::Visitor<'de> for __Visitor{args} {{\n\
+                 type Value = {path}::{rust}{args};\n\
+                 fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{\n\
+                 __f.write_str(\"an openEHR `{spec_name}` object\")\n}}\n\
+                 fn visit_map<__A: ::serde::de::MapAccess<'de>>(self, mut __map: __A) \
+                 -> ::core::result::Result<Self::Value, __A::Error> {{\n\
+                 let (__tag, __buffered) = {support}::read_slot_tag(&mut __map, __TAGS)?;\n\
+                 match __tag {{\n\
+                 Some({support}::TagMatch::Known(__t)) => {{\n\
+                 let __rest = {support}::TaggedRest::new(Some(__t), __buffered, __map);\n\
+                 match __t {{\n"
+            );
             for (spec, ident) in arms {
                 let _ = writeln!(
                     b,
-                    "::core::option::Option::Some({spec:?}) => ::core::result::Result::Ok(Self::{ident}({FROM_JSON}::from_json(node)?)),"
+                    "{spec:?} => ::core::result::Result::Ok({path}::{rust}::{ident}(::serde::Deserialize::deserialize(__rest)?)),"
                 );
             }
+            let _ = write!(
+                b,
+                "__other => ::core::result::Result::Err({support}::unexpected_type(\
+                 {spec_name:?}, __other, {expected:?})),\n\
+                 }}\n}}\n\
+                 Some({support}::TagMatch::Unknown(__other)) => ::core::result::Result::Err(\
+                 {support}::unexpected_type({spec_name:?}, &__other, {expected:?})),\n"
+            );
             if let Some(ident) = self_ident {
-                let _ = writeln!(
+                let _ = write!(
                     b,
-                    "::core::option::Option::None => ::core::result::Result::Ok(Self::{ident}({FROM_JSON}::from_json(node)?)),"
+                    "None => {{\n\
+                     let __rest = {support}::TaggedRest::new(None, __buffered, __map);\n\
+                     ::core::result::Result::Ok({path}::{rust}::{ident}(::serde::Deserialize::deserialize(__rest)?))\n\
+                     }}\n"
                 );
             } else {
-                let msg = format!(
-                    "{spec_name}: missing required `_type` on polymorphic slot (expected one of: {expected})"
-                );
                 let _ = writeln!(
                     b,
-                    "::core::option::Option::None => ::core::result::Result::Err({ERR}::custom({msg:?})),"
+                    "None => ::core::result::Result::Err({support}::missing_type({spec_name:?}, {expected:?})),"
                 );
             }
-            // Inline the binding so the emitted `format!` is clippy-clean.
-            let fmt = format!(
-                "{spec_name}: unexpected `_type` {{__other:?}} (expected one of: {expected})"
-            );
-            let _ = writeln!(
+            let _ = write!(
                 b,
-                "::core::option::Option::Some(__other) => ::core::result::Result::Err({ERR}::custom(::std::format!({fmt:?}))),"
+                "}}\n}}\n}}\n\
+                 ::serde::Deserializer::deserialize_map(__deserializer, __Visitor{vis_ctor})\n"
             );
-            b.push_str("}\n");
         }
         JsonEnumDispatch::Structural { variant_idents: sv } => {
-            // Structural `#[serde(untagged)]` fallback: try each variant in
-            // declaration order, first success wins.
-            let _ = writeln!(
-                b,
-                "// no `_type` on the targets — structural untagged: first matching variant wins."
+            // Structural untagged fallback: the targets carry no `_type`, so the
+            // value is buffered once and each variant is tried in declaration
+            // order, first success wins — serde's own untagged representation
+            // does exactly this (<https://serde.rs/enum-representations.html>),
+            // and it is the only shape that can backtrack.
+            let _ = variant_idents; // Serialize-order idents; `sv` is the same list
+            b.push_str(
+                "let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(__deserializer)?;\n",
             );
-            let _ = variant_idents; // ToJson-order idents; `sv` is the same list
             for ident in sv {
-                // `.map(Constructor)` pins the payload type, so the target
-                // `FromJson` impl resolves without a turbofish.
                 let _ = writeln!(
                     b,
-                    "if let ::core::result::Result::Ok(__v) = {FROM_JSON}::from_json(node).map({prelude}::{rust}::{ident}) {{ return ::core::result::Result::Ok(__v); }}"
+                    "if let ::core::result::Result::Ok(__v) = ::serde::Deserialize::deserialize(&__value).map({path}::{rust}::{ident}) {{ return ::core::result::Result::Ok(__v); }}"
                 );
             }
             let _ = writeln!(
                 b,
-                "::core::result::Result::Err({ERR}::custom(\"no variant of `{rust}` matched the JSON value\"))"
+                "::core::result::Result::Err(::serde::de::Error::custom(\"no variant of `{rust}` matched the JSON value\"))"
             );
         }
     }

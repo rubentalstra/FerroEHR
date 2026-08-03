@@ -22,7 +22,7 @@ files — that is what this regenerates.
    ```
    cargo run -p openehr-codegen -- emit           # openehr-base/rm/am/term/lang (rm incl. src/model)
    cargo run -p openehr-codegen -- emit-xml        # openehr-its XML ToXml/FromXml
-   cargo run -p openehr-codegen -- emit-json       # openehr-its canonical-JSON ToJson/FromJson codec
+   cargo run -p openehr-codegen -- emit-json       # canonical-JSON manual serde impls (per-crate json_serde.rs)
    cargo run -p openehr-codegen -- emit-rest       # openehr-its ITS-REST contract
    cargo run -p openehr-codegen -- emit-opt        # openehr-its opt14 (OPT 1.4 model + XML codec)
    cargo run -p openehr-codegen -- emit-aom2       # openehr-its aom2 + aom2_model (both AOM2 archetype XML serializations)

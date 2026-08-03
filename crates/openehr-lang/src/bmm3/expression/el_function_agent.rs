@@ -25,7 +25,7 @@ pub struct ElFunctionAgent {
     /// Closed arguments of a routine call as a tuple of objects.
     pub closed_args: Option<ElTuple>,
     /// Optional list of names of open arguments of the call. If not provided, and the `_name_` refers to a routine with more arguments than supplied in `_closed_args_`, the missing arguments are inferred from the `_definition_`.
-    pub open_args: Vec<String>,
+    pub open_args: Option<Vec<String>>,
     /// Reference to definition of a routine for which this is a direct call instance, if one exists.
     pub definition: Option<BmmFunction>,
 }

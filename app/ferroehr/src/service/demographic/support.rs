@@ -12,7 +12,7 @@
 //! `versioned_object` builders are EHR-scoped, so this chapter maps the
 //! ehr-less `VersionMeta` rows into the wire shape itself.
 
-use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use openehr_rm::prelude::{
     RevisionHistory, RevisionHistoryItem, VersionedObject, VersionedObjectData, VersionedParty,
 };
@@ -26,9 +26,11 @@ use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
 use crate::service::version_update::UpdateAudit;
 use crate::storage::version_repo;
-use crate::versioning::audit::{AuditInput, description_fragment};
+use crate::versioning::audit::AuditInput;
 use crate::versioning::change::Committed;
-use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::object_version_id::{
+    TreeId, VersionIdError, hier_object_id, object_version_id, version_id,
+};
 use crate::versioning::read::{VersionRead, read_current, read_version, version_at};
 use crate::versioning::wire::version_envelope;
 use crate::versioning::{CommitEnv, Kind};
@@ -60,22 +62,24 @@ pub(super) fn party_kind_of(kind: Kind) -> Option<PartyKind> {
 /// Inject the `uid` (`OBJECT_VERSION_ID`) into a versioned object's JSON on read
 /// — PARTY `Uid_mandatory` (`demographic.party.adoc`), the party's identity
 /// copied from its enclosing VERSION.
+///
+/// # Errors
+/// [`VersionIdError`] when the stored `creating_system_id` is not a legal BASE
+/// `uid`, so the three parts do not compose into a well-formed
+/// `OBJECT_VERSION_ID` (`crate::versioning::object_version_id::version_id`).
 pub(super) fn inject_uid(
     mut canonical: Value,
     vo_id: VoId,
     creating_system_id: &str,
     tree: TreeId,
-) -> Value {
+) -> Result<Value, VersionIdError> {
     if let Value::Object(map) = &mut canonical {
         map.insert(
             "uid".to_owned(),
-            serde_json::json!({
-                "_type": "OBJECT_VERSION_ID",
-                "value": object_version_id(vo_id, creating_system_id, tree)
-            }),
+            openehr_its::json::to_canonical_value(&version_id(vo_id, creating_system_id, tree)?),
         );
     }
-    canonical
+    Ok(canonical)
 }
 
 /// Load one **ehr-less** version of a versioned object: a specific `version`,
@@ -104,16 +108,23 @@ pub(super) async fn load_ehrless(
 /// canonical body with the `uid` injected (PARTY `Uid_mandatory`) plus the
 /// resource metadata (an empty `ehr_id` — demographic objects are not
 /// EHR-scoped).
-pub(super) fn version_response(vo_id: VoId, read: VersionRead) -> ServiceResponse {
+///
+/// # Errors
+/// [`VersionIdError`] when the stored `creating_system_id` is not a legal BASE
+/// `uid` (see [`inject_uid`]).
+pub(super) fn version_response(
+    vo_id: VoId,
+    read: VersionRead,
+) -> Result<ServiceResponse, VersionIdError> {
     let meta = ResourceMeta::new(
         String::new(),
         object_version_id(vo_id, &read.creating_system_id, read.tree),
     )
     .with_last_modified(read.time_committed);
-    ServiceResponse::new(
-        inject_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
+    Ok(ServiceResponse::new(
+        inject_uid(read.canonical, vo_id, &read.creating_system_id, read.tree)?,
         meta,
-    )
+    ))
 }
 
 /// The create/update representation built **from the commit result**, never a
@@ -126,22 +137,29 @@ pub(super) fn version_response(vo_id: VoId, read: VersionRead) -> ServiceRespons
 /// the pre-write `canonical`; the multimedia-externalization fallback (where
 /// the stored form is offloaded and the in-memory body would diverge) stays in
 /// the party write paths.
-pub(super) fn committed_response(canonical: Value, committed: &Committed) -> ServiceResponse {
+///
+/// # Errors
+/// [`VersionIdError`] when the committed `creating_system_id` is not a legal
+/// BASE `uid` (see [`inject_uid`]).
+pub(super) fn committed_response(
+    canonical: Value,
+    committed: &Committed,
+) -> Result<ServiceResponse, VersionIdError> {
     let vo_id = committed.vo_id;
     let meta = ResourceMeta::new(
         String::new(),
         object_version_id(vo_id, &committed.creating_system_id, committed.tree),
     )
     .with_last_modified(committed.time_committed);
-    ServiceResponse::new(
+    Ok(ServiceResponse::new(
         inject_uid(
             canonical,
             vo_id,
             &committed.creating_system_id,
             committed.tree,
-        ),
+        )?,
         meta,
-    )
+    ))
 }
 
 /// Count one committed write transaction — the `db_transactions` outcome
@@ -175,10 +193,13 @@ fn revision_history_item(
     // whose `666|attestation|` members do, joins `read_attestations_all` after
     // the commit audit — `crate::versioning::wire::revision_history`.)
     Ok(RevisionHistoryItem {
-        version_id: ObjectVersionId {
-            value: object_version_id(vo_id, &meta.creating_system_id, tree),
-        },
-        audits: vec![AuditInput::from_meta(meta).typed(&meta.time_committed)?],
+        version_id: version_id(vo_id, &meta.creating_system_id, tree)?,
+        // `REVISION_HISTORY_ITEM.audits` is `1..*`
+        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history_item.adoc`
+        // §Attributes); this item always carries its commit audit.
+        audits: openehr_base::containers::NonEmptyVec::of(
+            AuditInput::from_meta(meta)?.typed(&meta.time_committed),
+        ),
     })
 }
 
@@ -211,7 +232,7 @@ impl FerroEhrService {
             None => Ok(AuditInput {
                 system_id: self.effective_system_id(),
                 change_type: change_type.to_owned(),
-                description: Some(description_fragment(description)),
+                description: Some(crate::versioning::audit::dv_text(description)),
                 committer: CommitEnv::default_committer(self),
                 attestation: None,
             }),
@@ -261,15 +282,11 @@ impl FerroEhrService {
                     format!("{label} {vo_id}"),
                 )
             })?;
-        let uid = HierObjectId {
-            value: vo_id.to_string(),
-        };
+        let uid = HierObjectId::from(vo_id.0);
         let owner_id = ObjectRef::ObjectRef(ObjectRefData {
             namespace: "local".to_owned(),
             r#type: "SYSTEM".to_owned(),
-            id: ObjectId::HierObjectId(HierObjectId {
-                value: self.effective_system_id(),
-            }),
+            id: ObjectId::HierObjectId(hier_object_id(&self.effective_system_id())?),
         });
         let time_created = crate::versioning::audit::dv_date_time(&time_created);
         let container = match type_name {
@@ -308,6 +325,16 @@ impl FerroEhrService {
             .iter()
             .map(|meta| revision_history_item(vo_id, meta))
             .collect::<Result<Vec<_>, _>>()?;
+        // `REVISION_HISTORY.items` is `1..*`
+        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history.adoc`
+        // §Attributes): a versioned object with no versions has no revision
+        // history resource to return.
+        let items = openehr_base::containers::NonEmptyVec::new(items).map_err(|empty| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("versioned object {vo_id}: {empty}"),
+            )
+        })?;
         Ok(openehr_its::json::to_canonical_value(&RevisionHistory {
             items,
         }))

@@ -30,13 +30,13 @@
 //!   `at_committal = false` and appended to the served version AFTER
 //!   verification, never entering its canonical form.
 
-use openehr_rm::prelude::{Attestation, DvEhrUri, DvMultimedia, DvText};
+use openehr_rm::prelude::{Attestation, DvEhrUri, DvMultimedia, DvText, PartyProxy};
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::status::CallStatusType;
 use crate::versioning::Kind;
 use crate::versioning::audit::{
@@ -55,9 +55,9 @@ pub(crate) struct PendingAttest {
     /// The target version to attest (from `preceding_version_uid` — trunk or
     /// branch).
     pub(crate) expected: TreeId,
-    /// The wire `UPDATE_ATTESTATION` partial, completed into a full RM
+    /// The client-supplied half of the attestation, completed into a full RM
     /// `ATTESTATION` at commit time.
-    pub(crate) partial: Value,
+    pub(crate) partial: AttestationInput,
 }
 
 /// Attach an `ATTESTATION` to an **existing** `ORIGINAL_VERSION` (a
@@ -81,7 +81,7 @@ pub(crate) async fn attest(
     vo_id: VoId,
     kind: Kind,
     expected: TreeId,
-    attestation: &Value,
+    attestation: &Attestation,
     contribution_id: Uuid,
     time_committed: jiff::Timestamp,
 ) -> Result<Committed, ServiceError> {
@@ -111,7 +111,7 @@ pub(crate) async fn attest(
         // `ORIGINAL_VERSION`"), so the attestation post-dates that version's
         // signature and stays outside its canonical form.
         false,
-        attestation,
+        &openehr_its::json::to_canonical_value(attestation),
     )
     .await?;
     Ok(Committed {
@@ -143,14 +143,14 @@ pub(crate) async fn attest(
 /// — one completion, so the signed bytes and the served bytes cannot drift
 /// (master06 §Digital Signature).
 ///
-/// # Errors
-/// The [`complete_attestation`] `Unprocessable` rejections.
+/// Infallible: each partial was decoded into its RM types when its
+/// [`AttestationInput`] was built.
 pub(crate) fn complete_accompanying(
-    partials: &[Value],
+    partials: &[AttestationInput],
     system_id: &str,
-    committer_fallback: &Value,
+    committer_fallback: &PartyProxy,
     now: jiff::Timestamp,
-) -> Result<Vec<Value>, ServiceError> {
+) -> Vec<Attestation> {
     partials
         .iter()
         .map(|partial| complete_attestation(partial, system_id, committer_fallback, now))
@@ -230,21 +230,19 @@ impl AttestationParts {
     pub(crate) fn decode(partial: &Value) -> Result<Self, ServiceError> {
         // reason (1..1)
         let reason = partial.get("reason").ok_or_else(|| {
-            ServiceError::Unprocessable("ATTESTATION.reason is required (1..1)".to_owned())
+            ServiceError::Unprocessable(
+                Violation::new("is required (1..1)").with_path("ATTESTATION.reason"),
+            )
         })?;
         // Reason_valid: a coded reason's defining_code must be a member of the
         // openEHR `attestation reason` group.
         if reason.get("_type").and_then(Value::as_str) == Some("DV_CODED_TEXT") {
-            let code = reason
-                .pointer("/defining_code/code_string")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            if !openehr_term::bundle::openehr().is_valid_attestation_reason(code) {
-                return Err(ServiceError::Unprocessable(format!(
-                    "ATTESTATION.reason.defining_code {code:?} is not in the openEHR \
-                     `attestation reason` group (ATTESTATION.Reason_valid)"
-                )));
-            }
+            reason_code_valid(
+                reason
+                    .pointer("/defining_code/code_string")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default(),
+            )?;
         }
         // is_pending (1..1, Boolean)
         let is_pending = partial
@@ -252,7 +250,8 @@ impl AttestationParts {
             .and_then(Value::as_bool)
             .ok_or_else(|| {
                 ServiceError::Unprocessable(
-                    "ATTESTATION.is_pending is required (1..1 Boolean)".to_owned(),
+                    Violation::new("is required (1..1 Boolean)")
+                        .with_path("ATTESTATION.is_pending"),
                 )
             })?;
         // items (0..1); Items_valid: non-empty when present.
@@ -284,11 +283,7 @@ impl AttestationParts {
         if let Some(items) = items
             && items.as_array().is_none_or(Vec::is_empty)
         {
-            return Err(ServiceError::Unprocessable(
-                "ATTESTATION.items must be a non-empty list when present \
-                 (ATTESTATION.Items_valid)"
-                    .to_owned(),
-            ));
+            return Err(items_valid_violation());
         }
         Ok(Self {
             attested_view: partial
@@ -318,7 +313,8 @@ impl AttestationParts {
                 .map(|v| {
                     v.as_str().map(str::to_owned).ok_or_else(|| {
                         ServiceError::Unprocessable(
-                            "ATTESTATION.proof must be a String (0..1)".to_owned(),
+                            Violation::new("must be a String (0..1)")
+                                .with_path("ATTESTATION.proof"),
                         )
                     })
                 })
@@ -373,84 +369,198 @@ impl AttestationParts {
     }
 }
 
-/// Complete a wire `UPDATE_ATTESTATION` partial into a full canonical RM
-/// `ATTESTATION` (RM common master04 §Attestation; ITS-REST
-/// `UpdateAttestation`). The server supplies the inherited `AUDIT_DETAILS`
-/// fields it owns — `system_id`, `time_committed`, and the `666|attestation|`
-/// `change_type` — exactly as `UPDATE_AUDIT` → `AUDIT_DETAILS` (master06
-/// §Version Update Semantics), then adds the `ATTESTATION`-specific attributes.
-/// `committer` comes from the partial when present, else the CONTRIBUTION's
-/// committer (master06 §Committal).
+/// The COMPLETE client-supplied half of an `ATTESTATION`: the
+/// `ATTESTATION`-declared attributes ([`AttestationParts`]) plus the two
+/// inherited `AUDIT_DETAILS` attributes a client may state — `committer`
+/// (0..1 here; the CONTRIBUTION's committer stands in when absent, master06
+/// §Committal) and `description` (0..1). The rest of `AUDIT_DETAILS` —
+/// `system_id`, `time_committed`, `change_type` — is the server's.
 ///
-/// The completed value is built as the generated `openehr-rm` [`Attestation`]
-/// and serialized through the native codec, so it carries `_type` first and the
-/// BMM's own attribute order — and so every attribute the client supplied is
-/// decoded into its RM type rather than passed through unread.
-///
-/// # Errors
-/// The [`AttestationParts::decode`] rejections, and
-/// [`ServiceError::Unprocessable`] when `committer` is not a canonical
-/// `PARTY_PROXY` or `description` is neither a string nor a canonical
-/// `DV_TEXT`.
-pub(crate) fn complete_attestation(
-    partial: &Value,
-    system_id: &str,
-    committer_fallback: &Value,
-    now: jiff::Timestamp,
-) -> Result<Value, ServiceError> {
-    let parts = AttestationParts::decode(partial)?;
-    // committer: from the partial if present, else the CONTRIBUTION committer.
-    let committer = partial
-        .get("committer")
-        .cloned()
-        .unwrap_or_else(|| committer_fallback.clone());
-    // description: the inherited AUDIT_DETAILS.description (0..1). ITS-REST
-    // types it `UDvText` — `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`]
-    // (`specifications/schemas/data_types/UDvText.yaml`, an object, never a bare
-    // string) — while SM `UPDATE_AUDIT.description` is `String [0..1]`
-    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes), which grounds the
-    // plain-string branch. Both spellings are read, and the object spelling is
-    // decoded WHOLE: `description` is typed `DV_TEXT` at 0..1 (RM common
-    // `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes,
-    // inherited by `…org.openehr.rm.common.attestation.adoc`), and
-    // `DV_CODED_TEXT` is a substitutable subtype — reducing it to its `value`
-    // would drop the `defining_code` of a committed attestation permanently.
-    let description = partial
-        .get("description")
-        .filter(|d| !d.is_null())
-        .map(|d| match d {
-            Value::String(s) => Ok(dv_text(s)),
-            other => decode_description(other),
+/// This is the carrier the two arrival routes converge on
+/// ([`Self::decode`] for a CONTRIBUTION-body attestation, [`Self::from_update`]
+/// for `UPDATE_VERSION.attestations`), so completion
+/// ([`complete_attestation`]) is a pure build with nothing left to fail.
+#[derive(Debug, Clone)]
+pub(crate) struct AttestationInput {
+    /// The `ATTESTATION`-declared attributes.
+    pub(crate) parts: AttestationParts,
+    /// The inherited `AUDIT_DETAILS.committer`, when the client stated one.
+    pub(crate) committer: Option<PartyProxy>,
+    /// The inherited `AUDIT_DETAILS.description` (0..1).
+    pub(crate) description: Option<DvText>,
+}
+
+impl AttestationInput {
+    /// Decode a CONTRIBUTION-body attestation payload — a wire
+    /// `UPDATE_ATTESTATION` or an RM `ATTESTATION` used as a version's
+    /// `commit_audit`.
+    ///
+    /// # Errors
+    /// The [`AttestationParts::decode`] rejections, and
+    /// [`ServiceError::Unprocessable`] when `committer` is not a canonical
+    /// `PARTY_PROXY` or `description` is neither a string nor a canonical
+    /// `DV_TEXT`.
+    pub(crate) fn decode(partial: &Value) -> Result<Self, ServiceError> {
+        // description: the inherited AUDIT_DETAILS.description (0..1). ITS-REST
+        // types it `UDvText` — `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`]
+        // (`specifications/schemas/data_types/UDvText.yaml`, an object, never a
+        // bare string) — while SM `UPDATE_AUDIT.description` is `String [0..1]`
+        // (`SM/docs/UML/classes/update_audit.adoc` §Attributes), which grounds
+        // the plain-string branch. Both spellings are read, and the object
+        // spelling is decoded WHOLE: `description` is typed `DV_TEXT` at 0..1
+        // (RM common `UML/classes/org.openehr.rm.common.audit_details.adoc`
+        // §Attributes, inherited by `…org.openehr.rm.common.attestation.adoc`),
+        // and `DV_CODED_TEXT` is a substitutable subtype — reducing it to its
+        // `value` would drop the `defining_code` of a committed attestation
+        // permanently.
+        let description = partial
+            .get("description")
+            .filter(|d| !d.is_null())
+            .map(|d| match d {
+                Value::String(s) => Ok(dv_text(s)),
+                other => decode_description(other),
+            })
+            .transpose()?;
+        Ok(Self {
+            parts: AttestationParts::decode(partial)?,
+            committer: partial.get("committer").map(party_proxy).transpose()?,
+            description,
         })
-        .transpose()?;
-    // The inherited AUDIT_DETAILS fields are the server's, exactly as any
-    // audit's; `openehr-its` writes the whole ATTESTATION in BMM order.
-    Ok(openehr_its::json::to_canonical_value(&Attestation {
+    }
+
+    /// The same carrier from the native `UPDATE_ATTESTATION`
+    /// (`UPDATE_VERSION.attestations`, SM `UML/classes/update_version.adoc`
+    /// §Attributes), whose attributes are already their RM types. Only the two
+    /// invariants the wire-partial type cannot express are evaluated here; the
+    /// mandatory `reason` / `is_pending` need no check at all, because the type
+    /// makes their absence unrepresentable.
+    ///
+    /// # Errors
+    /// [`ServiceError::Unprocessable`] for a coded `reason` outside the openEHR
+    /// `attestation reason` group (`ATTESTATION.Reason_valid`) or a
+    /// present-but-empty `items` list (`ATTESTATION.Items_valid`) — RM common
+    /// `UML/classes/org.openehr.rm.common.attestation.adoc` §Invariants.
+    pub(crate) fn from_update(
+        update: &crate::service::version_update::UpdateAttestation,
+    ) -> Result<Self, ServiceError> {
+        reason_valid(&update.reason)?;
+        if update.items.as_ref().is_some_and(Vec::is_empty) {
+            return Err(items_valid_violation());
+        }
+        Ok(Self {
+            parts: AttestationParts {
+                attested_view: update.attested_view.clone(),
+                proof: update.proof.clone(),
+                items: update.items.clone().unwrap_or_default(),
+                reason: update.reason.clone(),
+                is_pending: update.is_pending,
+            },
+            committer: Some(update.committer.clone()),
+            // The native type carries the SM `String [0..1]` spelling of the
+            // inherited attribute (see `crate::service::version_update`), which
+            // denotes a plain `DV_TEXT`.
+            description: update.description.as_deref().map(dv_text),
+        })
+    }
+}
+
+/// Complete a client-supplied attestation into a full RM `ATTESTATION` (RM
+/// common master04 §Attestation; ITS-REST `UpdateAttestation`). The server
+/// supplies the inherited `AUDIT_DETAILS` fields it owns — `system_id`,
+/// `time_committed`, and the `666|attestation|` `change_type` — exactly as
+/// `UPDATE_AUDIT` → `AUDIT_DETAILS` (master06 §Version Update Semantics), then
+/// adds the `ATTESTATION`-specific attributes. `committer` comes from the
+/// partial when it stated one, else the CONTRIBUTION's committer (master06
+/// §Committal).
+///
+/// Infallible: every client-supplied attribute was decoded into its RM type
+/// when the [`AttestationInput`] was built, so completion has nothing left to
+/// reject. The result is the generated `openehr-rm` [`Attestation`], which
+/// serializes with `_type` first and in the BMM's own attribute order.
+pub(crate) fn complete_attestation(
+    partial: &AttestationInput,
+    system_id: &str,
+    committer_fallback: &PartyProxy,
+    now: jiff::Timestamp,
+) -> Attestation {
+    Attestation {
         system_id: system_id.to_owned(),
         time_committed: dv_date_time(&now),
         change_type: openehr_coded_text(
             change_type::ATTESTATION,
             change_type_rubric(change_type::ATTESTATION),
         ),
-        description,
-        committer: party_proxy(&committer)?,
-        attested_view: parts.attested_view,
-        proof: parts.proof,
-        items: parts.items,
-        reason: parts.reason,
-        is_pending: parts.is_pending,
-    }))
+        description: partial.description.clone(),
+        committer: partial
+            .committer
+            .clone()
+            .unwrap_or_else(|| committer_fallback.clone()),
+        attested_view: partial.parts.attested_view.clone(),
+        proof: partial.parts.proof.clone(),
+        items: openehr_base::containers::present(partial.parts.items.clone()),
+        reason: partial.parts.reason.clone(),
+        is_pending: partial.parts.is_pending,
+    }
+}
+
+/// `ATTESTATION.Reason_valid` — the ONE statement of the rule both arrival
+/// routes evaluate: a coded `reason`'s `defining_code` must be a member of the
+/// openEHR `attestation reason` group (RM common
+/// `UML/classes/org.openehr.rm.common.attestation.adoc` §Invariants). The
+/// routes differ only in how they reach the code string (a JSON pointer on a
+/// body payload, the typed `DV_CODED_TEXT` on a native partial).
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when `code` is not a group member.
+fn reason_code_valid(code: &str) -> Result<(), ServiceError> {
+    if openehr_term::bundle::openehr().is_valid_attestation_reason(code) {
+        return Ok(());
+    }
+    Err(ServiceError::Unprocessable(
+        Violation::new(format!(
+            "{code:?} is not in the openEHR `attestation reason` group"
+        ))
+        .with_path("ATTESTATION.reason.defining_code")
+        .with_invariant("ATTESTATION.Reason_valid"),
+    ))
+}
+
+/// [`reason_code_valid`] for an already-typed `reason`; a plain `DV_TEXT`
+/// carries no `defining_code` and so cannot break the invariant.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the coded reason is out of group.
+fn reason_valid(reason: &DvText) -> Result<(), ServiceError> {
+    match reason {
+        DvText::DvText(_) => Ok(()),
+        DvText::DvCodedText(coded) => reason_code_valid(&coded.defining_code.code_string),
+    }
+}
+
+/// `ATTESTATION.Items_valid` (`items /= Void implies not items.is_empty`, RM
+/// common `UML/classes/org.openehr.rm.common.attestation.adoc` §Invariants) —
+/// the single violation both arrival routes raise for a present-but-empty list.
+fn items_valid_violation() -> ServiceError {
+    ServiceError::Unprocessable(
+        Violation::new("must be a non-empty list when present")
+            .with_path("ATTESTATION.items")
+            .with_invariant("ATTESTATION.Items_valid"),
+    )
 }
 
 /// Decode one client-supplied `ATTESTATION` attribute into its RM type,
 /// reporting the attribute by name so a `422` says which field was wrong.
-fn decode<T: openehr_its::json_codec::runtime::FromJson>(
+fn decode<T: serde::de::DeserializeOwned>(
     value: &Value,
     attribute: &str,
     rm_type: &str,
 ) -> Result<T, ServiceError> {
     openehr_its::json::from_canonical_value::<T>(value).map_err(|e| {
-        ServiceError::Unprocessable(format!("{attribute} is not a valid {rm_type}: {e}"))
+        ServiceError::Unprocessable(
+            Violation::new(format!("is not a valid {rm_type}"))
+                .with_path(attribute)
+                .with_decode_failure(&e),
+        )
     })
 }
 
@@ -462,14 +572,25 @@ mod tests {
 
     /// A committer the fallback path can use — `PARTY_IDENTIFIED` with a name
     /// satisfies `Basic_validity` + `Name_valid`.
-    fn committer() -> Value {
-        json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" })
+    fn committer() -> PartyProxy {
+        party_proxy(&json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }))
+            .expect("the fixture is a canonical PARTY_PROXY")
     }
 
     fn now() -> jiff::Timestamp {
         "2026-07-07T10:11:12Z"
             .parse()
             .expect("the literal is a valid RFC 3339 instant")
+    }
+
+    /// Decode a CONTRIBUTION-body attestation payload and complete it, as the
+    /// `666|attestation|` route does, returning the canonical form the store
+    /// and the wire carry.
+    fn complete(partial: &Value) -> Result<Value, ServiceError> {
+        let input = AttestationInput::decode(partial)?;
+        Ok(openehr_its::json::to_canonical_value(
+            &complete_attestation(&input, "ferroehr.local", &committer(), now()),
+        ))
     }
 
     /// The completed `ATTESTATION` is the canonical serialization of the
@@ -479,17 +600,12 @@ mod tests {
     /// `UML/classes/org.openehr.rm.common.attestation.adoc` §Attributes).
     #[test]
     fn completed_attestation_is_in_bmm_attribute_order() {
-        let att = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "proof": "signed-by-hand",
-                "items": [{ "_type": "DV_EHR_URI", "value": "ehr://x/y" }]
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let att = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "proof": "signed-by-hand",
+            "items": [{ "_type": "DV_EHR_URI", "value": "ehr://x/y" }]
+        }))
         .expect("a complete, well-typed UPDATE_ATTESTATION partial");
         let keys: Vec<&str> = att
             .as_object()
@@ -533,16 +649,11 @@ mod tests {
                 "code_string": "at0004"
             }
         });
-        let att = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "description": description.clone()
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let att = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "description": description.clone()
+        }))
         .expect("a coded description is a valid DV_TEXT");
         assert_eq!(att.get("description"), Some(&description));
     }
@@ -552,16 +663,11 @@ mod tests {
     /// still completes into the plain `DV_TEXT` it denotes.
     #[test]
     fn string_description_becomes_plain_dv_text() {
-        let att = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "description": "countersigned"
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let att = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "description": "countersigned"
+        }))
         .expect("the SM string spelling is accepted");
         assert_eq!(
             att.get("description"),
@@ -573,21 +679,21 @@ mod tests {
     /// refused (422) instead of silently dropped.
     #[test]
     fn malformed_description_is_refused() {
-        let err = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "description": { "_type": "DV_CODED_TEXT", "value": "no defining_code" }
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let err = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "description": { "_type": "DV_CODED_TEXT", "value": "no defining_code" }
+        }))
         .expect_err("a DV_CODED_TEXT without its mandatory defining_code must be refused");
-        assert!(
-            matches!(&err, ServiceError::Unprocessable(m) if m.contains("AUDIT_DETAILS.description")),
-            "got {err:?}"
-        );
+        // Asserted as DATA: the refused attribute path, and the decode
+        // failure's own JSON path carried in the causes.
+        match err {
+            ServiceError::Unprocessable(v) => {
+                assert_eq!(v.path(), Some("AUDIT_DETAILS.description"));
+                assert_eq!(v.causes().len(), 1, "the decode failure is the cause");
+            }
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
     }
 
     /// `ATTESTATION.attested_view` is a `DV_MULTIMEDIA` (0..1). A value that
@@ -599,22 +705,17 @@ mod tests {
         // DV_MULTIMEDIA.media_type is 1..1 (attestation.adoc §Attributes →
         // dv_multimedia.adoc), so this object cannot be one.
         for bad in [json!({ "_type": "DV_MULTIMEDIA" }), json!("a screenshot")] {
-            let err = complete_attestation(
-                &json!({
-                    "reason": { "_type": "DV_TEXT", "value": "witness" },
-                    "is_pending": false,
-                    "attested_view": bad
-                }),
-                "ferroehr.local",
-                &committer(),
-                now(),
-            )
+            let err = complete(&json!({
+                "reason": { "_type": "DV_TEXT", "value": "witness" },
+                "is_pending": false,
+                "attested_view": bad
+            }))
             .expect_err("a malformed attested_view must be refused");
             match err {
-                ServiceError::Unprocessable(msg) => assert!(
-                    msg.contains("ATTESTATION.attested_view") && msg.contains("DV_MULTIMEDIA"),
-                    "should name the attribute and its RM type, got {msg}"
-                ),
+                ServiceError::Unprocessable(v) => {
+                    assert_eq!(v.path(), Some("ATTESTATION.attested_view"));
+                    assert_eq!(v.detail(), "is not a valid DV_MULTIMEDIA");
+                }
                 other => panic!("expected Unprocessable, got {other:?}"),
             }
         }
@@ -623,42 +724,36 @@ mod tests {
     /// `ATTESTATION.proof` is a `String` (0..1) — a non-string is refused.
     #[test]
     fn non_string_proof_is_refused() {
-        let err = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "proof": { "value": "not-a-string" }
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let err = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "proof": { "value": "not-a-string" }
+        }))
         .expect_err("a non-string proof must be refused");
-        assert!(
-            matches!(&err, ServiceError::Unprocessable(m) if m.contains("ATTESTATION.proof")),
-            "got {err:?}"
-        );
+        match err {
+            ServiceError::Unprocessable(v) => {
+                assert_eq!(v.path(), Some("ATTESTATION.proof"));
+                assert_eq!(v.detail(), "must be a String (0..1)");
+            }
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
     }
 
     /// `ATTESTATION.items` is a `List<DV_EHR_URI>` — a member that is not one
     /// is refused, naming its index.
     #[test]
     fn malformed_items_member_is_refused() {
-        let err = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "items": [{ "_type": "DV_EHR_URI", "value": "ehr://x/y" }, 7]
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let err = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "items": [{ "_type": "DV_EHR_URI", "value": "ehr://x/y" }, 7]
+        }))
         .expect_err("a malformed items member must be refused");
-        assert!(
-            matches!(&err, ServiceError::Unprocessable(m) if m.contains("ATTESTATION.items[1]")),
-            "got {err:?}"
-        );
+        match err {
+            // The offending INDEX is data on the path, not a substring hunt.
+            ServiceError::Unprocessable(v) => assert_eq!(v.path(), Some("ATTESTATION.items[1]")),
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
     }
 
     /// A coded `reason` whose `defining_code` is outside the openEHR
@@ -666,30 +761,28 @@ mod tests {
     /// `org.openehr.rm.common.attestation.adoc` §Invariants).
     #[test]
     fn out_of_group_coded_reason_is_refused() {
-        let err = complete_attestation(
-            &json!({
-                "reason": {
-                    "_type": "DV_CODED_TEXT",
-                    "value": "signed",
-                    "defining_code": {
-                        "_type": "CODE_PHRASE",
-                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                        // 249 is `creation` (audit change type), not an
-                        // `attestation reason` member ({240 signed, 648 witnessed}).
-                        "code_string": "249"
-                    }
-                },
-                "is_pending": false
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let err = complete(&json!({
+            "reason": {
+                "_type": "DV_CODED_TEXT",
+                "value": "signed",
+                "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    // 249 is `creation` (audit change type), not an
+                    // `attestation reason` member ({240 signed, 648 witnessed}).
+                    "code_string": "249"
+                }
+            },
+            "is_pending": false
+        }))
         .expect_err("an out-of-group coded reason must be refused");
-        assert!(
-            matches!(&err, ServiceError::Unprocessable(m) if m.contains("Reason_valid")),
-            "got {err:?}"
-        );
+        match err {
+            ServiceError::Unprocessable(v) => {
+                assert_eq!(v.path(), Some("ATTESTATION.reason.defining_code"));
+                assert_eq!(v.invariant(), Some("ATTESTATION.Reason_valid"));
+            }
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
     }
 
     /// A JSON `null` `items` is the ABSENT encoding of the 0..1 attribute, so
@@ -701,21 +794,112 @@ mod tests {
     /// unreachable through the typed API.
     #[test]
     fn null_items_is_absent_not_invalid() {
-        let att = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "items": Value::Null,
-                "proof": Value::Null,
-                "attested_view": Value::Null,
-                "description": Value::Null
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let att = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "items": Value::Null,
+            "proof": Value::Null,
+            "attested_view": Value::Null,
+            "description": Value::Null
+        }))
         .expect("a null optional is absent, not invalid");
         assert_eq!(att.get("items"), None, "no items list is serialized");
+    }
+
+    /// The native `UPDATE_VERSION.attestations` partial, as the direct-write
+    /// route supplies it.
+    fn update_attestation(body: &Value) -> crate::service::version_update::UpdateAttestation {
+        let mut wire = json!({
+            "change_type": { "terminology_id": "openehr", "code_string": "666" },
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }
+        });
+        for (k, v) in body.as_object().expect("the fixture is an object") {
+            wire.as_object_mut()
+                .expect("built as an object above")
+                .insert(k.clone(), v.clone());
+        }
+        serde_json::from_value(wire).expect("the fixture is a well-typed UPDATE_ATTESTATION")
+    }
+
+    /// The native route reaches the SAME invariants as the body route: a coded
+    /// `reason` outside the openEHR `attestation reason` group is refused
+    /// (`ATTESTATION.Reason_valid`).
+    #[test]
+    fn native_partial_refuses_out_of_group_coded_reason() {
+        let update = update_attestation(&json!({
+            "reason": {
+                "_type": "DV_CODED_TEXT", "value": "signed",
+                "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "249"
+                }
+            },
+            "is_pending": false
+        }));
+        match AttestationInput::from_update(&update) {
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("ATTESTATION.reason.defining_code"));
+                assert_eq!(v.invariant(), Some("ATTESTATION.Reason_valid"));
+            }
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
+    }
+
+    /// `ATTESTATION.Items_valid` on the native route: a present-but-empty list
+    /// is refused, an absent one is not.
+    #[test]
+    fn native_partial_enforces_items_valid() {
+        let base = json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": true
+        });
+        let mut empty = base.clone();
+        empty
+            .as_object_mut()
+            .expect("built as an object above")
+            .insert("items".to_owned(), json!([]));
+        match AttestationInput::from_update(&update_attestation(&empty)) {
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("ATTESTATION.items"));
+                assert_eq!(v.invariant(), Some("ATTESTATION.Items_valid"));
+            }
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
+        let absent = AttestationInput::from_update(&update_attestation(&base))
+            .expect("an absent items list is legal");
+        assert!(absent.parts.items.is_empty());
+    }
+
+    /// A native partial completes into the same `ATTESTATION` shape the body
+    /// route produces: the partial's own committer wins over the fallback, and
+    /// the SM `String` description denotes a plain `DV_TEXT`.
+    #[test]
+    fn native_partial_completes_into_an_attestation() {
+        let update = update_attestation(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "description": "countersigned"
+        }));
+        let input =
+            AttestationInput::from_update(&update).expect("a well-typed partial is accepted");
+        let att = openehr_its::json::to_canonical_value(&complete_attestation(
+            &input,
+            "ferroehr.local",
+            &party_proxy(&json!({ "_type": "PARTY_SELF" }))
+                .expect("the fixture is a canonical PARTY_PROXY"),
+            now(),
+        ));
+        assert_eq!(
+            att.get("description"),
+            Some(&json!({ "_type": "DV_TEXT", "value": "countersigned" }))
+        );
+        // The partial stated a committer, so the fallback is not used.
+        assert_eq!(
+            att.pointer("/committer/_type").and_then(Value::as_str),
+            Some("PARTY_IDENTIFIED")
+        );
+        assert_eq!(att.get("items"), None);
     }
 
     /// A present-but-empty `items` list is refused (`ATTESTATION.Items_valid`:
@@ -723,20 +907,18 @@ mod tests {
     /// `org.openehr.rm.common.attestation.adoc` §Invariants).
     #[test]
     fn present_but_empty_items_is_refused() {
-        let err = complete_attestation(
-            &json!({
-                "reason": { "_type": "DV_TEXT", "value": "witness" },
-                "is_pending": false,
-                "items": []
-            }),
-            "ferroehr.local",
-            &committer(),
-            now(),
-        )
+        let err = complete(&json!({
+            "reason": { "_type": "DV_TEXT", "value": "witness" },
+            "is_pending": false,
+            "items": []
+        }))
         .expect_err("a present-but-empty items list must be refused");
-        assert!(
-            matches!(&err, ServiceError::Unprocessable(m) if m.contains("Items_valid")),
-            "got {err:?}"
-        );
+        match err {
+            ServiceError::Unprocessable(v) => {
+                assert_eq!(v.path(), Some("ATTESTATION.items"));
+                assert_eq!(v.invariant(), Some("ATTESTATION.Items_valid"));
+            }
+            other => panic!("expected Unprocessable, got {other:?}"),
+        }
     }
 }

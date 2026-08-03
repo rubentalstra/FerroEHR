@@ -385,10 +385,10 @@ fn collect_from_complex(cco: &CComplexObject, out: &mut Vec<String>) {
     let CComplexObject::CComplexObject(data) = cco else {
         return;
     };
-    for attr in &data.attributes {
-        for child in &attr.children {
+    for attr in data.attributes.iter().flatten() {
+        for child in attr.children.iter().flatten() {
             match child {
-                CObject::CString(c) => out.extend(c.constraint.iter().cloned()),
+                CObject::CString(c) => out.extend(c.constraint.iter().flatten().cloned()),
                 CObject::CComplexObject(inner) => collect_from_complex(inner, out),
                 _ => {}
             }

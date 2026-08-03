@@ -2,10 +2,10 @@
 //! typed dispatch tier.
 //!
 //! This is a wire-boundary operation: it consumes a canonical-JSON node and
-//! *deserializes* it into its concrete RM type via the native canonical-JSON
-//! codec ([`crate::json_codec::runtime::from_json_value`]), then runs that type's
+//! *deserializes* it into its concrete RM type through the emitted canonical-JSON
+//! `serde` impls ([`crate::json::from_canonical_value`]), then runs that type's
 //! RM class invariants. It lives in `openehr-its` (not `openehr-rm`) because it
-//! drives the codec, which is defined here; the `Validate` trait and the
+//! drives the codec's entry points, which are defined here; the `Validate` trait and the
 //! invariant impls (`*_impl.rs`) stay in `openehr-rm`/`openehr-base` as pure RM
 //! model semantics. The two-tier entry point [`validate_rm_value`] calls the
 //! allocation-free fast path ([`openehr_rm::validate::try_fast_validate`]) first
@@ -22,8 +22,10 @@ use serde_json::Value;
 
 use openehr_base::validate::{InvariantViolation, Validate};
 
-use crate::json_codec::generated::structural::structural_check;
-use crate::json_codec::runtime::{FromJson, JsonParseError, from_json_value};
+use serde::de::DeserializeOwned;
+
+use crate::json::{JsonParseError, from_canonical_value};
+use crate::json_codec::generated::structural::{declared_fields, structural_check};
 
 /// Record a typed-deserialize failure as a validation violation.
 ///
@@ -38,14 +40,14 @@ use crate::json_codec::runtime::{FromJson, JsonParseError, from_json_value};
 /// corpus deserializes cleanly at every node, so this never rejects a valid
 /// input; if it ever did, that would expose a codegen field-optionality bug to
 /// fix in the emitter.)
-fn record_type_mismatch(ty: &str, err: &JsonParseError, out: &mut Vec<InvariantViolation>) {
+fn record_type_mismatch(ty: &str, err: &dyn std::fmt::Display, out: &mut Vec<InvariantViolation>) {
     out.push(InvariantViolation::here(format!(
         "does not conform to RM type {ty}: {err}"
     )));
 }
 
-fn run<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
-    match from_json_value::<T>(value) {
+fn run<T: DeserializeOwned + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    match from_canonical_value::<T>(value) {
         Ok(v) => v.validate_invariants(out),
         Err(e) => record_type_mismatch(ty, &e, out),
     }
@@ -85,8 +87,12 @@ fn run<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantV
 /// byte-identical, and the ITS-JSON schema gate remains the exhaustive
 /// structural oracle where one is required (this pass is the RM class-invariant
 /// check, not a schema validator — `422_COMPOSITION.yaml`).
-fn run_shallow<T: FromJson + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
-    match from_json_value::<T>(&prune_child_nodes(value)) {
+fn run_shallow<T: DeserializeOwned + Validate>(
+    ty: &str,
+    value: &Value,
+    out: &mut Vec<InvariantViolation>,
+) {
+    match from_canonical_value::<T>(&prune_child_nodes(value)) {
         Ok(v) => v.validate_invariants(out),
         Err(e) => record_type_mismatch(ty, &e, out),
     }
@@ -101,13 +107,35 @@ fn prune_child_nodes(value: &Value) -> Value {
     let Value::Object(map) = value else {
         return value.clone();
     };
+    let ty = map.get("_type").and_then(Value::as_str);
     let mut out = serde_json::Map::with_capacity(map.len());
     for (key, child) in map {
         let pruned = match child {
             // An array of RM nodes: the children are recursed into (and fully
             // validated) individually by the composition validator, so this
-            // node's own invariants never need them — drop them.
-            Value::Array(items) if items.iter().any(Value::is_object) => Value::Array(Vec::new()),
+            // node's own invariants never need them.
+            //
+            // A `1..*` container keeps ONE member (itself pruned), because its
+            // emission shape is non-empty by construction
+            // (`openehr_base::containers::NonEmptyVec`) and an emptied array
+            // would fail to decode — a false structural violation on valid
+            // input. Everything else is emptied outright.
+            //
+            // NOTE: emptying leaves an OPTIONAL container decoding to
+            // `Some(vec![])` — a present-but-empty list, the state
+            // `x /= Void implies not x.is_empty` forbids. That is safe here
+            // because the run_shallow classes' own invariants never read a child
+            // collection (this function's documented precondition), and that
+            // invariant family is judged on the RAW node by
+            // `openehr_rm::validate::nonempty_list_violations`, a layer outside
+            // the fast/typed pair — never on this pruned copy.
+            Value::Array(items) if items.iter().any(Value::is_object) => {
+                if ty.is_some_and(|t| lower_bound_one(t, key)) {
+                    Value::Array(items.first().map(prune_child_nodes).into_iter().collect())
+                } else {
+                    Value::Array(Vec::new())
+                }
+            }
             // A single nested node: keep it (its presence is a structural
             // constraint this node's deserialize must still enforce), but recurse
             // to empty ITS child collections.
@@ -118,6 +146,14 @@ fn prune_child_nodes(value: &Value) -> Value {
         out.insert(key.clone(), pruned);
     }
     Value::Object(out)
+}
+
+/// Whether the static RM model declares `attribute` of `ty` as a container with
+/// a cardinality lower bound of 1 — the attributes whose emission shape is
+/// `NonEmptyVec<T>` and which therefore cannot decode from an emptied array.
+fn lower_bound_one(ty: &str, attribute: &str) -> bool {
+    openehr_rm::model::attributes(ty)
+        .any(|a| a.name == attribute && a.cardinality.is_some_and(|c| c.lower >= 1))
 }
 
 /// Run the **core** (non-terminology) RM class invariants for a single
@@ -140,8 +176,8 @@ fn prune_child_nodes(value: &Value) -> Value {
 ///
 /// This is the tier the fast-path equivalence battery pins (the fast path must
 /// vouch only when byte-identical to the typed oracle). The terminology-backed
-/// invariants ([`crate::rm_terminology`]) are an orthogonal layer added by
-/// [`validate_rm_value`], not part of the fast/typed equivalence.
+/// invariants ([`openehr_rm::validate::terminology`]) are an orthogonal layer
+/// added by [`validate_rm_value`], not part of the fast/typed equivalence.
 pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
@@ -152,97 +188,65 @@ pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) 
 /// [`validate_rm_invariants`] with the node's RM type supplied by the caller —
 /// the entry a tree walker uses for a node whose wire `_type` is legitimately
 /// absent (canonical JSON requires `_type` only where the declared attribute
-/// type is abstract; see [`declared_concrete_type`]). The `_type`-reading
+/// type is abstract; see [`openehr_rm::model::declared_concrete_type`]). The
+/// `_type`-reading
 /// wrapper stays for callers with no declaration context.
 pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    // The strict reader refuses an undeclared wire key, so a node carrying one
+    // is not a conformant instance — and the FAST path never decodes, so it
+    // would not see it. Checking here, against the generated declared-key table
+    // (`declared_fields`, emitted from the SAME field view as the reader's own
+    // refusal), keeps the two tiers byte-identical without paying for a decode.
+    if let Some(violation) = undeclared_key(ty, value) {
+        out.push(violation);
+        return;
+    }
     if !openehr_rm::validate::try_fast_validate(ty, value, out) {
         validate_rm_value_typed(ty, value, out);
     }
 }
 
-/// The model-driven mandatory-container lower-bound check: every attribute the
-/// static RM model declares as a MANDATORY container must be present, and one
-/// whose BMM cardinality has a lower bound ≥ 1 must be non-empty — e.g.
-/// `CLUSTER.items: List<ITEM>` is `1..*`
-/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
-/// §Attributes), so a CLUSTER with an absent or empty `items` does not conform.
+/// The violation for the first undeclared member of `value` under class `ty`,
+/// or `None` when every member is declared (or `ty` names no emitted struct).
 ///
-/// This is a distinct mechanism from the codec decode: the canonical-JSON
-/// reader deliberately treats an absent array as an empty `Vec` (wire
-/// tolerance), so the omission is invisible to [`structural_check`]-style
-/// typed decoding — the lower bound is enforced HERE, from the model, for
-/// every class uniformly. The optional-attribute family
-/// (`x /= Void implies not x.is_empty`, e.g. `COMPOSITION.content`) stays with
-/// the invariant checks — this function only judges MANDATORY containers, so
-/// the two never double-report. `List<Octet>` is exempt by shape: canonical
-/// JSON renders it as an inline base64 string, which presence-checks as a
-/// non-array member.
-pub fn check_mandatory_containers(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
-    for attr in openehr_rm::model::attributes(ty) {
-        if !attr.is_mandatory
-            || matches!(attr.container, openehr_rm::model::Container::None)
-            || attr.declared_type == "Octet"
-        {
-            continue;
-        }
-        match value.get(attr.name) {
-            None | Some(Value::Null) => {
-                out.push(InvariantViolation::here(format!(
-                    "does not conform to RM type {ty}: mandatory container `{}` is absent",
-                    attr.name
-                )));
-            }
-            Some(Value::Array(a))
-                if a.is_empty() && attr.cardinality.is_some_and(|c| c.lower >= 1) =>
-            {
-                out.push(InvariantViolation::here(format!(
-                    "does not conform to RM type {ty}: mandatory container `{}` is empty \
-                     (cardinality lower bound 1)",
-                    attr.name
-                )));
-            }
-            _ => {}
-        }
-    }
-}
-
-/// The declared RM type of `field` on `parent_type` when that type is
-/// concrete, else `None`.
-///
-/// This is the effective-type rule for an UNTAGGED canonical-JSON node: the
-/// ITS-JSON schema requires `_type` only on polymorphic slots, so a node under
-/// a concretely-declared attribute (`COMPOSITION.context` → `EVENT_CONTEXT`,
-/// `EVENT_CONTEXT.participations` → `PARTICIPATION`, …) may legally omit it —
-/// and a validation walk that dispatches on the wire tag alone would skip every
-/// RM invariant on such a node. The BMM-generated static RM model
-/// ([`openehr_rm::model`]) supplies the declaration; an abstract declared type
-/// yields `None` (there the wire MUST tag, and an untagged node is unreadable
-/// rather than silently valid).
-#[must_use]
-pub fn declared_concrete_type(parent_type: &str, field: &str) -> Option<&'static str> {
-    let attr = openehr_rm::model::attribute(parent_type, field)?;
-    let class = openehr_rm::model::class(attr.declared_type)?;
-    (!class.is_abstract).then_some(class.name)
+/// Byte-identical to what the typed tier reports for the same node: it builds
+/// the reader's own error and runs it through [`record_type_mismatch`].
+fn undeclared_key(ty: &str, value: &Value) -> Option<InvariantViolation> {
+    let members = value.as_object()?;
+    let declared = declared_fields(ty)?;
+    let offending = members
+        .keys()
+        .find(|k| k.as_str() != "_type" && declared.binary_search(&k.as_str()).is_err())?;
+    let mut out = Vec::new();
+    record_type_mismatch(
+        ty,
+        &JsonParseError::unknown_field(offending, ty, declared).in_field(offending),
+        &mut out,
+    );
+    out.pop()
 }
 
 /// Run **all** RM class invariants for a single canonical-JSON node — the core
 /// (fast/typed) invariants ([`validate_rm_invariants`]) plus the
-/// terminology-backed invariants ([`crate::rm_terminology::validate_rm_terminology`],
-/// the openEHR-terminology group and code-set membership checks the pure
-/// `openehr-rm` layer defers). This is the unified dispatcher every consumer
-/// calls; the composition validator invokes it per node and prefixes the
-/// absolute RM path onto each [`InvariantViolation`].
+/// terminology-backed invariants
+/// ([`openehr_rm::validate::terminology::validate_rm_terminology`], the
+/// openEHR-terminology group and code-set membership checks the generated
+/// invariant cores cannot express mechanically). This is the unified dispatcher
+/// every consumer calls; the composition validator invokes it per node and
+/// prefixes the absolute RM path onto each [`InvariantViolation`].
 pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
     };
-    // The core path (fast/typed), then the two orthogonal layers — the
-    // model-driven mandatory-container lower bounds and the terminology-backed
-    // invariants (each dispatches on the same `_type`). The core tiers stay a
-    // pure pair so the fast-vs-typed equivalence property holds exactly.
+    // The core path (fast/typed), then the three orthogonal layers — the
+    // model-driven mandatory-container lower bounds, the model-driven
+    // present-implies-non-empty family, and the terminology-backed invariants
+    // (each dispatches on the same `_type`). The core tiers stay a pure pair so
+    // the fast-vs-typed equivalence property holds exactly.
     validate_rm_invariants_as(ty, value, out);
-    check_mandatory_containers(ty, value, out);
-    crate::rm_terminology::validate_rm_terminology(ty, value, out);
+    openehr_rm::validate::check_mandatory_containers(ty, value, out);
+    openehr_rm::validate::nonempty_list_violations(ty, value, out);
+    openehr_rm::validate::terminology::validate_rm_terminology(ty, value, out);
 }
 
 /// The typed dispatch tier of [`validate_rm_value`]: deserialize the node into
@@ -288,6 +292,18 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// classes whose evaluator already calls the same core, so both tiers report
 /// the same single violation.
 pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    // The undeclared-key refusal is raised here too, ahead of the decode, so
+    // this tier's verdict does not depend on WHERE the offending member sits in
+    // the object: the reader streams members in document order (it never
+    // materializes the whole object first), so a node that is BOTH structurally
+    // defective and carries an undeclared key would otherwise report whichever
+    // defect the writer happened to put first. The tier above
+    // ([`validate_rm_invariants_as`]) applies the same check, so on that path
+    // this one never fires.
+    if let Some(violation) = undeclared_key(ty, value) {
+        out.push(violation);
+        return;
+    }
     let before = out.len();
     dispatch_typed(ty, value, out);
     if let Some(v) = openehr_rm::validate::locatable_node_id_violation(ty, value)
@@ -387,7 +403,7 @@ fn dispatch_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
         // Limits_consistent ordering invariant runs; fall back to
         // Value elements (boundary flags only) for non-DV_ORDERED payloads.
         "DV_INTERVAL" => {
-            if let Ok(v) = from_json_value::<DvInterval<DvOrdered>>(value) {
+            if let Ok(v) = from_canonical_value::<DvInterval<DvOrdered>>(value) {
                 v.validate_invariants(out);
             } else {
                 run::<DvInterval<Value>>(ty, value, out);

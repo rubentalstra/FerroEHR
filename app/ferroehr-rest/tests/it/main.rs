@@ -14,6 +14,7 @@
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
+mod canonical_json_literals;
 mod common;
 
 mod abac_e2e;

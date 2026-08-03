@@ -350,9 +350,12 @@ mod tests {
         let BmmEnumeration::BmmEnumerationString(string) = enumeration else {
             panic!("a (P_BMM_ENUMERATION_STRING) maps onto BMM_ENUMERATION_STRING");
         };
-        assert_eq!(string.item_names, ["le", "ge", "eq"]);
+        assert_eq!(
+            string.item_names,
+            Some(["le", "ge", "eq"].to_vec()).map(|v| v.into_iter().map(str::to_owned).collect())
+        );
         assert_eq!(string.underlying_type_name, "STRING");
-        assert_eq!(string.item_values.len(), 3);
+        assert_eq!(string.item_values.as_ref().map_or(0, Vec::len), 3);
         Ok(())
     }
 
@@ -375,7 +378,7 @@ mod tests {
             .package_at_path("org.openehr.rm.data_types.item_structure")
             .expect("the nested package resolves from the model root");
         assert_eq!(nested.name, "item_structure");
-        assert_eq!(nested.classes.len(), 1);
+        assert_eq!(nested.classes.as_ref().map_or(0, Vec::len), 1);
         Ok(())
     }
 

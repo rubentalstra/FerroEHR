@@ -12,7 +12,7 @@ pub struct CReal {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
     pub assumed_value: Option<f64>,
     /// Set of Reals specifying constraint.
-    pub list: Vec<f64>,
+    pub list: Option<Vec<f64>>,
     /// Range of Real specifying constraint.
     pub range: Option<Interval<f64>>,
 }

@@ -41,12 +41,12 @@ impl Printer {
         if let Some(uid) = parts.uid
             && !is_nil(uid)
         {
-            push_meta(&mut meta, &format!("uid={}", uid.value));
+            push_meta(&mut meta, &format!("uid={}", uid.value()));
         }
         if let Some(build) = parts.build_uid
             && !is_nil(build)
         {
-            push_meta(&mut meta, &format!("build_uid={}", build.value));
+            push_meta(&mut meta, &format!("build_uid={}", build.value()));
         }
         if parts.is_generated {
             push_meta(&mut meta, "generated");
@@ -113,7 +113,11 @@ impl Printer {
                 &format!("version_last_translated = <{}>", quoted(v)),
             );
         }
-        self.odin_string_list(depth + 1, "other_contributors", &td.other_contributors);
+        self.odin_string_list(
+            depth + 1,
+            "other_contributors",
+            td.other_contributors.as_deref().unwrap_or_default(),
+        );
         if let Some(od) = &td.other_details {
             self.odin_string_map(depth + 1, "other_details", od);
         }
@@ -131,7 +135,11 @@ impl Printer {
         self.odin_string_map(1, "original_author", &d.original_author);
         self.opt_string(1, "original_namespace", d.original_namespace.as_deref());
         self.opt_string(1, "original_publisher", d.original_publisher.as_deref());
-        self.odin_string_list(1, "other_contributors", &d.other_contributors);
+        self.odin_string_list(
+            1,
+            "other_contributors",
+            d.other_contributors.as_deref().unwrap_or_default(),
+        );
         self.line(
             1,
             &format!("lifecycle_state = <{}>", quoted(&d.lifecycle_state)),
@@ -173,7 +181,11 @@ impl Printer {
             &format!("language = <{}>", term_code_str(&item.language)),
         );
         self.line(depth + 1, &format!("purpose = <{}>", quoted(&item.purpose)));
-        self.odin_string_list(depth + 1, "keywords", &item.keywords);
+        self.odin_string_list(
+            depth + 1,
+            "keywords",
+            item.keywords.as_deref().unwrap_or_default(),
+        );
         if let Some(u) = &item.use_ {
             self.line(depth + 1, &format!("use = <{}>", quoted(u)));
         }
@@ -262,5 +274,5 @@ fn push_meta(meta: &mut String, item: &str) {
 /// Whether a UUID is the nil UUID — the absent-value spelling the assembler
 /// stores for a missing `uid`/`build_uid`, which never prints.
 fn is_nil(u: &Uuid) -> bool {
-    u.value.is_nil()
+    u.value().is_nil()
 }

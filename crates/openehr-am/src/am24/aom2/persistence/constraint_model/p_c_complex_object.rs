@@ -27,9 +27,9 @@ pub struct PCComplexObjectData {
     /// The `default_value` attribute of openEHR `P_C_DEFINED_OBJECT` (the vendored BMM carries no documentation for it).
     pub default_value: serde_json::Value,
     /// List of constraints on attributes of the reference model type represented by this object.
-    pub attributes: Vec<PCAttribute>,
+    pub attributes: Option<Vec<PCAttribute>>,
     /// List of attribute tuple constraints under this object constraint, if any.
-    pub attribute_tuples: Vec<PCAttributeTuple>,
+    pub attribute_tuples: Option<Vec<PCAttributeTuple>>,
 }
 
 /// Polymorphic slot of `P_C_COMPLEX_OBJECT`, dispatched on each payload's `_type`.

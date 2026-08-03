@@ -21,7 +21,7 @@ use openehr_rm::prelude::{
 use openehr_term::bundle::openehr;
 use serde_json::Value;
 
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use crate::versioning::attestation::AttestationParts;
 
 /// The openEHR internal terminology id (`Terminology_id_openehr`).
@@ -105,10 +105,13 @@ fn merged_change_type(supplied: &str, operation: &str) -> Result<String, Service
         return Ok(operation.to_owned());
     }
     let code = change_type_code(token).ok_or_else(|| {
-        ServiceError::Unprocessable(format!(
-            "change_type {token:?} is not a code in the openEHR audit_change_type group \
-             (AUDIT_DETAILS.Change_type_valid)"
-        ))
+        ServiceError::Unprocessable(
+            Violation::new(format!(
+                "{token:?} is not a code in the openEHR audit_change_type group"
+            ))
+            .with_path("change_type")
+            .with_invariant("AUDIT_DETAILS.Change_type_valid"),
+        )
     })?;
     let compatible = match operation {
         change_type::CREATION => code == change_type::CREATION,
@@ -168,19 +171,24 @@ pub(crate) struct AuditInput {
     /// The numeric `audit_change_type` group code (`249`/`251`/`523`/…) — never
     /// a rubric string (`AUDIT_DETAILS.Change_type_valid`).
     pub(crate) change_type: String,
-    /// `AUDIT_DETAILS.description` (0..1) as its canonical `DV_TEXT` fragment —
-    /// whole, because the attribute's `DV_CODED_TEXT` subtype carries a
-    /// `defining_code` a bare string would discard (RM common
+    /// `AUDIT_DETAILS.description` (0..1) as its RM value — whole, because the
+    /// attribute's `DV_CODED_TEXT` subtype carries a `defining_code` a bare
+    /// string would discard (RM common
     /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes).
-    pub(crate) description: Option<Value>,
-    /// Canonical `PARTY_PROXY` of the committer (`AUDIT_DETAILS.committer`, 1..1).
-    pub(crate) committer: Value,
-    /// The canonical fragment of the `ATTESTATION`-declared attributes
-    /// ([`crate::versioning::attestation::AttestationParts::fragment`]) when
-    /// this commit audit is an `ATTESTATION`, else `None`. `ATTESTATION` is the
-    /// only `AUDIT_DETAILS` subtype RM 1.2.0 declares, so presence IS the
-    /// concrete class.
-    pub(crate) attestation: Option<Value>,
+    pub(crate) description: Option<DvText>,
+    /// The committer (`AUDIT_DETAILS.committer`, 1..1).
+    pub(crate) committer: PartyProxy,
+    /// The `ATTESTATION`-declared attributes
+    /// ([`crate::versioning::attestation::AttestationParts`]) when this commit
+    /// audit is an `ATTESTATION`, else `None`. `ATTESTATION` is the only
+    /// `AUDIT_DETAILS` subtype RM 1.2.0 declares, so presence IS the concrete
+    /// class.
+    ///
+    /// Boxed because it is the rare case and by far the widest: it carries a
+    /// `DV_MULTIMEDIA` (`attested_view`), which would otherwise put hundreds of
+    /// bytes of attestation payload on the stack of every commit — including
+    /// the overwhelming majority that are plain `AUDIT_DETAILS`.
+    pub(crate) attestation: Option<Box<AttestationParts>>,
 }
 
 impl AuditInput {
@@ -216,8 +224,6 @@ impl AuditInput {
     ) -> Result<Self, ServiceError> {
         let change_type =
             merged_change_type(&update.change_type.code_string, operation_change_type)?;
-        // The native codec serializes a PARTY_PROXY infallibly.
-        let committer = openehr_its::json::to_canonical_value(&update.committer);
         Ok(Self {
             system_id: update
                 .system_id
@@ -225,14 +231,14 @@ impl AuditInput {
                 .filter(|s| !s.is_empty())
                 .unwrap_or_else(|| fallback_system_id.to_owned()),
             change_type,
-            description: Some(description_fragment(
+            description: Some(dv_text(
                 update
                     .description
                     .as_deref()
                     .filter(|d| !d.is_empty())
                     .unwrap_or(default_description),
             )),
-            committer,
+            committer: update.committer.clone(),
             // NOTE: an `UPDATE_AUDIT` cannot express an `ATTESTATION` commit
             // audit, and the routes that build one need no such expression: on
             // a direct `PUT`/`POST`/`DELETE` the committal metadata comes from
@@ -246,26 +252,50 @@ impl AuditInput {
         })
     }
 
-    /// The commit audit of a stored version-metadata row.
-    pub(crate) fn from_meta(meta: &crate::storage::version_repo::meta::VersionMeta) -> Self {
-        Self {
+    /// The commit audit of a stored version-metadata row: the three jsonb
+    /// columns decoded back into the RM values they hold.
+    ///
+    /// # Errors
+    /// [`ServiceError::Unprocessable`] when a stored fragment is not the RM
+    /// value its column holds — the [`party_proxy`] / [`decode_description`]
+    /// rejections, or the
+    /// [`crate::versioning::attestation::AttestationParts::decode`] ones.
+    pub(crate) fn from_meta(
+        meta: &crate::storage::version_repo::meta::VersionMeta,
+    ) -> Result<Self, ServiceError> {
+        Ok(Self {
             system_id: meta.audit_system_id.clone(),
             change_type: meta.audit_change_type.clone(),
-            description: meta.audit_description.clone(),
-            committer: meta.audit_committer.clone(),
-            attestation: meta.audit_attestation.clone(),
-        }
+            description: meta
+                .audit_description
+                .as_ref()
+                .map(decode_description)
+                .transpose()?,
+            committer: party_proxy(&meta.audit_committer)?,
+            attestation: meta
+                .audit_attestation
+                .as_ref()
+                .map(AttestationParts::decode)
+                .transpose()?
+                .map(Box::new),
+        })
     }
 
-    /// The borrowed storage row shape ([`crate::storage::version_repo::commit::AuditRow`])
-    /// this audit persists as.
+    /// The storage row shape ([`crate::storage::version_repo::commit::AuditRow`])
+    /// this audit persists as — the three jsonb columns encoded ONCE here, at
+    /// the versioning→storage boundary, because storage is plumbing that takes
+    /// plain values (`crate::storage::version_repo` module docs) and the
+    /// `ATTESTATION`-declared subset has no RM class of its own to hand it.
     pub(crate) fn row(&self) -> crate::storage::version_repo::commit::AuditRow<'_> {
         crate::storage::version_repo::commit::AuditRow {
             system_id: &self.system_id,
             change_type: &self.change_type,
-            description: self.description.as_ref(),
-            committer: &self.committer,
-            attestation: self.attestation.as_ref(),
+            description: self
+                .description
+                .as_ref()
+                .map(openehr_its::json::to_canonical_value),
+            committer: openehr_its::json::to_canonical_value(&self.committer),
+            attestation: self.attestation.as_ref().map(|parts| parts.fragment()),
         }
     }
 
@@ -277,74 +307,44 @@ impl AuditInput {
     /// `defining_code.code_string` (`AUDIT_DETAILS.Change_type_valid`) with the
     /// group rubric — resolved from the `openehr-term` bundle — as its `value`.
     ///
-    /// # Errors
-    /// The [`party_proxy`] rejection when `committer` is not a canonical
-    /// `PARTY_PROXY`; [`ServiceError::Unprocessable`] when the stored
-    /// `description` is not a canonical `DV_TEXT` or the stored attestation
-    /// attributes do not decode
-    /// ([`crate::versioning::attestation::AttestationParts::decode`]).
-    pub(crate) fn typed(
-        &self,
-        time_committed: &jiff::Timestamp,
-    ) -> Result<AuditDetails, ServiceError> {
+    /// Infallible: every attribute is already the RM value it will be served
+    /// as, so building the `AUDIT_DETAILS` is a move, never a decode.
+    pub(crate) fn typed(&self, time_committed: &jiff::Timestamp) -> AuditDetails {
         let system_id = self.system_id.clone();
         let time_committed = dv_date_time(time_committed);
         let change_type =
             openehr_coded_text(&self.change_type, change_type_rubric(&self.change_type));
-        let description = self
-            .description
-            .as_ref()
-            .map(decode_description)
-            .transpose()?;
-        let committer = party_proxy(&self.committer)?;
+        let description = self.description.clone();
+        let committer = self.committer.clone();
         match &self.attestation {
-            None => Ok(AuditDetails::AuditDetails(AuditDetailsData {
+            None => AuditDetails::AuditDetails(AuditDetailsData {
                 system_id,
                 time_committed,
                 change_type,
                 description,
                 committer,
-            })),
-            Some(fragment) => {
-                let parts = AttestationParts::decode(fragment)?;
-                Ok(AuditDetails::Attestation(Attestation {
-                    system_id,
-                    time_committed,
-                    change_type,
-                    description,
-                    committer,
-                    attested_view: parts.attested_view,
-                    proof: parts.proof,
-                    items: parts.items,
-                    reason: parts.reason,
-                    is_pending: parts.is_pending,
-                }))
-            }
+            }),
+            Some(parts) => AuditDetails::Attestation(Attestation {
+                system_id,
+                time_committed,
+                change_type,
+                description,
+                committer,
+                attested_view: parts.attested_view.clone(),
+                proof: parts.proof.clone(),
+                items: openehr_base::containers::present(parts.items.clone()),
+                reason: parts.reason.clone(),
+                is_pending: parts.is_pending,
+            }),
         }
     }
 
     /// The canonical-JSON form of [`Self::typed`], serialized through the
     /// native codec so the wire body carries `_type` first — `ATTESTATION` when
     /// the version was committed with one — and the BMM's own attribute order.
-    ///
-    /// # Errors
-    /// The [`Self::typed`] rejections.
-    pub(crate) fn canonical(
-        &self,
-        time_committed: &jiff::Timestamp,
-    ) -> Result<Value, ServiceError> {
-        Ok(openehr_its::json::to_canonical_value(
-            &self.typed(time_committed)?,
-        ))
+    pub(crate) fn canonical(&self, time_committed: &jiff::Timestamp) -> Value {
+        openehr_its::json::to_canonical_value(&self.typed(time_committed))
     }
-}
-
-/// A plain-string `AUDIT_DETAILS.description` as the canonical `DV_TEXT`
-/// fragment stored for it — the shape a server default, an
-/// `openehr-audit-details` header value, or an SM `String` description takes
-/// (RM common master04 §Audit Details: `description` is a `DV_TEXT`).
-pub(crate) fn description_fragment(value: &str) -> Value {
-    openehr_its::json::to_canonical_value(&dv_text(value))
 }
 
 /// Decode a stored/wire `AUDIT_DETAILS.description` fragment into its RM type,
@@ -356,9 +356,11 @@ pub(crate) fn description_fragment(value: &str) -> Value {
 /// §Attributes).
 pub(crate) fn decode_description(fragment: &Value) -> Result<DvText, ServiceError> {
     openehr_its::json::from_canonical_value::<DvText>(fragment).map_err(|e| {
-        ServiceError::Unprocessable(format!(
-            "AUDIT_DETAILS.description is not a canonical DV_TEXT: {e}"
-        ))
+        ServiceError::Unprocessable(
+            Violation::new("is not a canonical DV_TEXT")
+                .with_path("AUDIT_DETAILS.description")
+                .with_decode_failure(&e),
+        )
     })
 }
 
@@ -373,7 +375,7 @@ pub(crate) fn openehr_coded_text(code: &str, rubric: String) -> DvCodedText {
         value: rubric,
         hyperlink: None,
         formatting: None,
-        mappings: Vec::new(),
+        mappings: openehr_base::containers::present(Vec::new()),
         language: None,
         encoding: None,
         defining_code: CodePhrase {
@@ -392,7 +394,7 @@ pub(crate) fn dv_date_time(instant: &jiff::Timestamp) -> DvDateTime {
     DvDateTime {
         normal_status: None,
         normal_range: None,
-        other_reference_ranges: Vec::new(),
+        other_reference_ranges: openehr_base::containers::present(Vec::new()),
         magnitude_status: None,
         accuracy: None,
         value: instant.to_string(),
@@ -406,7 +408,7 @@ pub(crate) fn dv_text(value: &str) -> DvText {
         value: value.to_owned(),
         hyperlink: None,
         formatting: None,
-        mappings: Vec::new(),
+        mappings: openehr_base::containers::present(Vec::new()),
         language: None,
         encoding: None,
     })
@@ -424,9 +426,11 @@ pub(crate) fn dv_text(value: &str) -> DvText {
 /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes).
 pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError> {
     openehr_its::json::from_canonical_value::<PartyProxy>(committer).map_err(|e| {
-        ServiceError::Unprocessable(format!(
-            "AUDIT_DETAILS.committer is not a canonical PARTY_PROXY: {e}"
-        ))
+        ServiceError::Unprocessable(
+            Violation::new("is not a canonical PARTY_PROXY")
+                .with_path("AUDIT_DETAILS.committer")
+                .with_decode_failure(&e),
+        )
     })
 }
 
@@ -454,89 +458,59 @@ pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError>
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
         return Err(ServiceError::Unprocessable(
-            "AUDIT_DETAILS.system_id is mandatory and non-void \
-             (AUDIT_DETAILS.System_id_valid)"
-                .to_owned(),
+            Violation::new("is mandatory and non-void")
+                .with_path("AUDIT_DETAILS.system_id")
+                .with_invariant("AUDIT_DETAILS.System_id_valid"),
         ));
     }
     validate_committer(&audit.committer)
 }
 
-/// Enforce the committer `PARTY_PROXY`'s `Basic_validity` + `Name_valid`
-/// (RM `UML/classes/org.openehr.rm.common.party_identified.adoc` §Invariants): a
-/// `PARTY_IDENTIFIED`/`PARTY_RELATED` committer must carry at least one of
-/// `name` / `identifiers` / `external_ref`, and a present `name` must be
-/// non-empty. A `PARTY_RELATED` committer additionally requires its
-/// `relationship` (1..1) with `Relationship_valid`. `PARTY_SELF` has no such
-/// invariant and is accepted unconditionally.
-fn validate_committer(committer: &Value) -> Result<(), ServiceError> {
-    let party_type = committer.get("_type").and_then(Value::as_str);
-    if !matches!(party_type, Some("PARTY_IDENTIFIED" | "PARTY_RELATED")) {
+/// Run the committer `PARTY_PROXY`'s OWN RM class invariants + terminology
+/// bindings — `PARTY_IDENTIFIED.Basic_validity` / `.Name_valid`
+/// (`RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc`
+/// §Invariants), `PARTY_RELATED.Relationship_valid`
+/// (`…org.openehr.rm.common.party_related.adoc` §Invariants), and the
+/// structural conformance of the concrete `PARTY_PROXY` subtype.
+///
+/// The rules are NOT restated here: the value goes through the unified
+/// dispatcher [`openehr_its::wire_validate::validate_rm_value`], the same one the
+/// whole-instance commit pass runs on every node of a committed RM document
+/// (`openehr_its::rm_instance::validate_rm_and_terminology_as`). That
+/// dispatcher is what runs the generated structural check, the typed invariant
+/// cores, the model-driven mandatory-container bounds and the
+/// terminology-backed invariants (all defined in `openehr_rm::validate`).
+///
+/// It has to be invoked EXPLICITLY here because a commit audit is not part of
+/// any committed RM document: the `AUDIT_DETAILS` is written to its own row and
+/// never walked by the content pass, so without this call the committer would
+/// be the one `PARTY_PROXY` in the system that reaches storage unvalidated.
+///
+/// NOTE: the dispatcher's whole surface — the fast path, the typed tier, the
+/// mandatory-container bounds and the terminology-backed invariants — is
+/// canonical-JSON-valued ([`openehr_its::wire_validate::validate_rm_value`]
+/// takes a `&Value`), so a typed committer is serialized here to be judged. The
+/// alternative, running only [`openehr_base::validate::Validate`] on the typed
+/// value, would silently drop the terminology tier that decides
+/// `PARTY_RELATED.Relationship_valid` (RM
+/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Invariants) — a
+/// weakening, not a simplification.
+fn validate_committer(committer: &PartyProxy) -> Result<(), ServiceError> {
+    let mut violations = Vec::new();
+    openehr_its::wire_validate::validate_rm_value(
+        &openehr_its::json::to_canonical_value(committer),
+        &mut violations,
+    );
+    if violations.is_empty() {
         return Ok(());
     }
-    let name = committer.get("name").filter(|v| !v.is_null());
-    let has_identifiers = committer
-        .get("identifiers")
-        .and_then(Value::as_array)
-        .is_some_and(|a| !a.is_empty());
-    let has_external_ref = committer.get("external_ref").is_some_and(|v| !v.is_null());
-    // Basic_validity: at least one of name / identifiers / external_ref.
-    if name.is_none() && !has_identifiers && !has_external_ref {
-        return Err(ServiceError::Unprocessable(
-            "AUDIT_DETAILS.committer (PARTY_IDENTIFIED) requires at least one of \
-             name, identifiers, external_ref (PARTY_IDENTIFIED.Basic_validity)"
-                .to_owned(),
-        ));
-    }
-    // Name_valid: a present name must be non-empty.
-    if name.and_then(Value::as_str) == Some("") {
-        return Err(ServiceError::Unprocessable(
-            "AUDIT_DETAILS.committer name must be non-empty when present \
-             (PARTY_IDENTIFIED.Name_valid)"
-                .to_owned(),
-        ));
-    }
-    if party_type == Some("PARTY_RELATED") {
-        validate_party_related_relationship(committer)?;
-    }
-    Ok(())
-}
-
-/// `PARTY_RELATED.relationship` (1..1 `DV_CODED_TEXT`) + `Relationship_valid`
-/// for an audit committer. The invariant is
-/// `terminology(openehr).has_code_for_group_id(subject_relationship,
-/// relationship.defining_code)` (RM
-/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Invariants) — the
-/// code must BE an openEHR `subject_relationship` group
-/// member, so a `defining_code` from any other terminology fails the invariant
-/// too (the spec formula has no terminology escape hatch; openEHR specs are
-/// leading).
-fn validate_party_related_relationship(committer: &Value) -> Result<(), ServiceError> {
-    let Some(relationship) = committer.get("relationship").filter(|v| !v.is_null()) else {
-        return Err(ServiceError::Unprocessable(
-            "PARTY_RELATED.relationship is mandatory (1..1 DV_CODED_TEXT)".to_owned(),
-        ));
-    };
-    let code = relationship
-        .pointer("/defining_code/code_string")
-        .and_then(Value::as_str)
-        .ok_or_else(|| {
-            ServiceError::Unprocessable(
-                "PARTY_RELATED.relationship must be a DV_CODED_TEXT with a defining_code"
-                    .to_owned(),
-            )
-        })?;
-    let terminology = relationship
-        .pointer("/defining_code/terminology_id/value")
-        .and_then(Value::as_str)
-        .unwrap_or("");
-    if terminology != OPENEHR || !openehr().is_valid_subject_relationship(code) {
-        return Err(ServiceError::Unprocessable(format!(
-            "PARTY_RELATED.relationship code {code:?} (terminology {terminology:?}) is not \
-             in the openEHR subject relationship group (Relationship_valid)"
-        )));
-    }
-    Ok(())
+    // The dispatcher's own `InvariantViolation`s travel on as DATA — the
+    // service never flattens them into a sentence here.
+    Err(ServiceError::Unprocessable(
+        Violation::new("is not a valid PARTY_PROXY")
+            .with_path("AUDIT_DETAILS.committer")
+            .with_causes(violations),
+    ))
 }
 
 #[cfg(test)]
@@ -602,11 +576,19 @@ mod tests {
     #[test]
     fn merged_change_type_rejects_out_of_group_as_unprocessable() {
         for token in ["999", "banana", "creation-x"] {
-            let err = merged_change_type(token, change_type::MODIFICATION).unwrap_err();
-            assert!(
-                matches!(err, ServiceError::Unprocessable(_)),
-                "{token}: {err:?}"
-            );
+            match merged_change_type(token, change_type::MODIFICATION) {
+                // The refusal is asserted as DATA: the attribute path and the
+                // named RM invariant, not a fragment of the sentence.
+                Err(ServiceError::Unprocessable(v)) => {
+                    assert_eq!(v.path(), Some("change_type"), "{token}");
+                    assert_eq!(
+                        v.invariant(),
+                        Some("AUDIT_DETAILS.Change_type_valid"),
+                        "{token}"
+                    );
+                }
+                other => panic!("{token}: expected Unprocessable, got {other:?}"),
+            }
         }
     }
 
@@ -668,12 +650,17 @@ mod tests {
         assert_eq!(change_type_rubric(change_type::DELETED), "deleted");
     }
 
-    fn audit_input(system_id: &str, committer: Value) -> AuditInput {
+    /// A commit audit whose committer is the canonical `PARTY_PROXY` the
+    /// fragment denotes. The decode is `expect`ed because every caller below
+    /// passes a structurally well-formed proxy; a committer that is NOT
+    /// structurally a `PARTY_PROXY` is refused by [`party_proxy`] itself, which
+    /// [`committer_decode_refuses_structurally_invalid_party`] pins.
+    fn audit_input(system_id: &str, committer: &Value) -> AuditInput {
         AuditInput {
             system_id: system_id.to_owned(),
             change_type: change_type::CREATION.to_owned(),
             description: None,
-            committer,
+            committer: party_proxy(committer).expect("the fixture is a canonical PARTY_PROXY"),
             attestation: None,
         }
     }
@@ -682,25 +669,33 @@ mod tests {
     fn commit_audit_rejects_empty_system_id() {
         let audit = audit_input(
             "",
-            json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
+            &json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
         );
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("System_id_valid"),
-                "should cite System_id_valid, got {msg}"
-            ),
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("AUDIT_DETAILS.system_id"));
+                assert_eq!(v.invariant(), Some("AUDIT_DETAILS.System_id_valid"));
+            }
             other => panic!("expected Unprocessable(System_id_valid), got {other:?}"),
         }
     }
 
     #[test]
     fn commit_audit_rejects_committer_without_identity() {
-        let audit = audit_input("ferroehr.local", json!({ "_type": "PARTY_IDENTIFIED" }));
+        let audit = audit_input("ferroehr.local", &json!({ "_type": "PARTY_IDENTIFIED" }));
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("Basic_validity"),
-                "should cite Basic_validity, got {msg}"
-            ),
+            // The nested dispatcher violations survive as DATA: the causes
+            // list is asserted, not a substring of the rendered message.
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("AUDIT_DETAILS.committer"));
+                assert!(
+                    v.causes()
+                        .iter()
+                        .any(|c| c.message.contains("Basic_validity")),
+                    "causes must carry the PARTY_IDENTIFIED invariant, got {:?}",
+                    v.causes()
+                );
+            }
             other => panic!("expected Unprocessable(Basic_validity), got {other:?}"),
         }
     }
@@ -709,51 +704,74 @@ mod tests {
     fn commit_audit_rejects_empty_committer_name() {
         let audit = audit_input(
             "ferroehr.local",
-            json!({ "_type": "PARTY_IDENTIFIED", "name": "" }),
+            &json!({ "_type": "PARTY_IDENTIFIED", "name": "" }),
         );
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("Name_valid"),
-                "should cite Name_valid, got {msg}"
+            Err(ServiceError::Unprocessable(v)) => assert!(
+                v.causes().iter().any(|c| c.message.contains("Name_valid")),
+                "causes must carry Name_valid, got {:?}",
+                v.causes()
             ),
             other => panic!("expected Unprocessable(Name_valid), got {other:?}"),
         }
     }
 
+    /// `PARTY_RELATED.relationship` is a mandatory `DV_CODED_TEXT` (1..1 — RM
+    /// `UML/classes/org.openehr.rm.common.party_related.adoc` §Attributes), so
+    /// a committer that omits it, or supplies an uncoded `DV_TEXT`, is not a
+    /// `PARTY_PROXY` at all: the strict reader refuses it before any invariant
+    /// runs, naming the attribute. The refusal is asserted as DATA (the
+    /// committer path plus the decode failure's own JSON path).
+    #[test]
+    fn committer_decode_refuses_structurally_invalid_party() {
+        for bad in [
+            json!({ "_type": "PARTY_RELATED", "name": "Mum" }),
+            json!({ "_type": "PARTY_RELATED", "name": "Mum",
+                    "relationship": { "_type": "DV_TEXT", "value": "mother" } }),
+        ] {
+            match party_proxy(&bad) {
+                Err(ServiceError::Unprocessable(v)) => {
+                    assert_eq!(v.path(), Some("AUDIT_DETAILS.committer"));
+                    assert!(
+                        v.causes().iter().any(|c| c.message.contains("relationship")
+                            || c.path.contains("relationship")),
+                        "causes must name the offending attribute, got {:?}",
+                        v.causes()
+                    );
+                }
+                other => panic!("{bad}: expected Unprocessable, got {other:?}"),
+            }
+        }
+    }
+
     #[test]
     fn commit_audit_party_related_relationship_is_enforced() {
-        // Group member 10 = "mother"; a non-member / uncoded / missing
-        // relationship is a 422 (Relationship_valid, party proxies).
+        // Group member 10 = "mother"; a non-member relationship code is a 422
+        // (Relationship_valid, party proxies).
         let related = |relationship: Value| {
             let mut c = json!({ "_type": "PARTY_RELATED", "name": "Mum" });
-            if !relationship.is_null() {
-                c.as_object_mut()
-                    .unwrap()
-                    .insert("relationship".into(), relationship);
-            }
-            audit_input("sys", c)
+            c.as_object_mut()
+                .unwrap()
+                .insert("relationship".into(), relationship);
+            audit_input("sys", &c)
         };
-        match validate_commit_audit(&related(Value::Null)) {
-            Err(ServiceError::Unprocessable(msg)) => {
-                assert!(msg.contains("relationship"), "got {msg}");
-            }
-            other => panic!("missing relationship must be Unprocessable, got {other:?}"),
-        }
-        assert!(
-            validate_commit_audit(&related(json!({ "_type": "DV_TEXT", "value": "mother" })))
-                .is_err(),
-            "an uncoded relationship must be rejected (1..1 DV_CODED_TEXT)"
-        );
         let bad = related(json!({
             "_type": "DV_CODED_TEXT", "value": "colleague",
             "defining_code": { "_type": "CODE_PHRASE", "code_string": "99999",
                                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" } }
         }));
+        // The refusal is produced by the generated `PARTY_RELATED` core, whose
+        // violation message names the invariant, not the rejected code.
         match validate_commit_audit(&bad) {
-            Err(ServiceError::Unprocessable(msg)) => assert!(
-                msg.contains("Relationship_valid") && msg.contains("99999"),
-                "got {msg}"
-            ),
+            Err(ServiceError::Unprocessable(v)) => {
+                assert!(
+                    v.causes()
+                        .iter()
+                        .any(|c| c.message.contains("Relationship_valid")),
+                    "causes must carry Relationship_valid, got {:?}",
+                    v.causes()
+                );
+            }
             other => panic!("non-member relationship code must be 422, got {other:?}"),
         }
         validate_commit_audit(&related(json!({
@@ -768,17 +786,17 @@ mod tests {
     fn commit_audit_accepts_valid_committers() {
         validate_commit_audit(&audit_input(
             "sys",
-            json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
+            &json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
         ))
         .expect("named committer");
         validate_commit_audit(&audit_input(
             "sys",
-            json!({ "_type": "PARTY_IDENTIFIED", "identifiers": [
+            &json!({ "_type": "PARTY_IDENTIFIED", "identifiers": [
                 { "_type": "DV_IDENTIFIER", "id": "42", "issuer": "x", "type": "id" }
             ] }),
         ))
         .expect("identifier-only committer");
-        validate_commit_audit(&audit_input("sys", json!({ "_type": "PARTY_SELF" })))
+        validate_commit_audit(&audit_input("sys", &json!({ "_type": "PARTY_SELF" })))
             .expect("PARTY_SELF committer");
     }
 }
