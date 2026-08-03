@@ -8333,3 +8333,149 @@ AMB-193:
     reported upstream rather than silently resolved.
   disposition: report_only
   upstream_issue: 1735
+
+AMB-194:
+  ambiguity: >-
+    SPEC SILENCE on the STATUS CODE of the §Incomplete Content rejection. RM
+    common master06-change_control_package.adoc states the rejection itself in
+    the indicative — content "missing mandatory data fields with respect to its
+    generating archetypes … If being committed in the `complete` state, such
+    data would be treated as invalid by the repository and rejected by the API"
+    — but neither the ITS-REST docs text nor the released OAS assigns a status
+    to it. The contribution operation's declared error responses
+    (400_CONTRIBUTION, 404, 409, 422_COMPOSITION) never name this trigger, and
+    the overview's §HTTP status codes table describes the codes generically
+    rather than per-rule. Two conformant implementations may therefore answer
+    the same complete-but-incomplete commit 400 or 422.
+  source: >-
+    RM common master06-change_control_package.adoc §Incomplete Content ("would
+    be treated as invalid by the repository and rejected by the API")
+    contrasted with ITS-REST specifications/docs/overview/
+    Requests_and_responses.md §HTTP status codes and
+    specifications/operations/contribution_create.yaml §responses +
+    specifications/responses/{400_CONTRIBUTION,422_COMPOSITION}.yaml — none of
+    which names the trigger. All read first-hand.
+  handling: >-
+    Fixed handling: 422. The overview's own 422 row is written for exactly
+    this shape — "The request was well-formed but was unable to be followed due
+    to semantic errors" — and the released 422_COMPOSITION.yaml assigns 422 to
+    committed content the server converts but cannot validate ("information
+    about the errors in the provided COMPOSITION"), which is what a
+    missing-mandatory-data commit is. 400 is reserved on this route for the
+    SHAPE class the released 400_CONTRIBUTION.yaml enumerates ("could not be
+    parsed … syntactically invalid header, parameter or content"), and a
+    complete-but-incomplete body parses. The catalogue pins both directions:
+    -complete_missing_mandatory (refused) beside -incomplete_missing_mandatory
+    (the same content accepted at 553).
+  disposition: fixed_handling
+
+AMB-195:
+  ambiguity: >-
+    SPEC SILENCE on the WIRE TREATMENT of version-lifecycle transitions. RM
+    common master06 §Version Lifecycle defines a formal state machine (its
+    diagram) and §Abandoned and Inactive States tabulates seven transitions
+    with named triggers (`abandon`, `retrieve`, `deactivate`, `reactivate`,
+    `delete`), but the released REST surface exposes NONE of them as an
+    operation: the only channel is the open `lifecycle_state` code on the
+    commit wire (`openehr-version` header / `UPDATE_VERSION.lifecycle_state`).
+    Two consequences are both unaddressed by released text: (a) nothing says
+    whether a server must ENFORCE the table at all, and (b) no status code is
+    assigned to a commit that asserts a transition the table does not list.
+    The released error responses on the contribution and composition routes
+    never name a lifecycle trigger.
+  source: >-
+    RM common master06-change_control_package.adoc §Version Lifecycle (the
+    state-machine diagram, RM-version_lifecycle.svg) + §Abandoned and Inactive
+    States (the seven-row transition table) contrasted with ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §"openehr-version
+    and openehr-audit-details" (which offers only the code channel and says
+    "None of these headers are mandatory, but whatever is provided it MUST be
+    merged") and the released operations/responses for
+    contribution_create / composition_{create,update,delete} — none of which
+    declares a transition-legality branch. All read first-hand.
+  handling: >-
+    Fixed handling: the table is ENFORCED and an unlisted transition is 422.
+    Enforcement follows from the state machine being NORMATIVE model content
+    rather than commentary — a server that accepts any code from any state has
+    not implemented `ORIGINAL_VERSION.lifecycle_state` as a state machine at
+    all, only as a free-text field — and 422 is the overview's own row for a
+    well-formed request whose semantics cannot be followed ("The request was
+    well-formed but was unable to be followed due to semantic errors"). The
+    catalogue carries one accepting case per named transition
+    (-lifecycle_deactivate / -reactivate / -abandon / -retrieve) beside the
+    refusal (-lifecycle_illegal_transition), plus -lifecycle_restore_from_deleted,
+    which pins the implemented reading of the diagram's `revert` arrow out of
+    `deleted` while that arrow's conflict with the §Logical Deletion prose is
+    carried upstream.
+  disposition: fixed_handling
+
+AMB-196:
+  ambiguity: >-
+    The released COMMIT wire declares NO merge shape, while the RM defines
+    merge provenance and the released READ wire serves it. RM common master06
+    §Version Merging defines `ORIGINAL_VERSION.other_input_version_uids` with
+    the derived `is_merged` and the `Is_merged_validity` invariant, and
+    ITS-REST `schemas/ehr/OriginalVersion.yaml` declares the property on
+    reads — but `schemas/ehr/UpdateVersion.yaml` declares no such property and
+    `schemas/ehr/NewContribution.yaml` types `versions` items as
+    `UpdateVersion` with no `oneOf` and no `_type` discriminator. A locally
+    performed merge is therefore unrepresentable on the released wire: merge
+    provenance is produce-only. This is the same absence AMB-89 records for the
+    IMPORT commit, one property over.
+  source: >-
+    RM common master06-change_control_package.adoc §Version Merging +
+    UML/classes/org.openehr.rm.common.original_version.adoc §Attributes
+    (other_input_version_uids) / §Invariants (Is_merged_validity) contrasted
+    with ITS-REST specifications/schemas/ehr/{UpdateVersion,NewContribution}.yaml
+    (no merge shape) vs specifications/schemas/ehr/OriginalVersion.yaml (the
+    property declared on the read side); SM UML/classes/update_version.adoc
+    likewise carries no such attribute. All read first-hand.
+  handling: >-
+    Fixed handling, mirroring AMB-89: this server does NOT accept
+    `other_input_version_uids` on the commit wire — an undeclared member on a
+    released schema is refused as the shape failure the released
+    400_CONTRIBUTION.yaml describes ("syntactically invalid … content").
+    Accepting it would let a client stamp provenance the repository never
+    performed onto a version, feeding `Is_merged_validity` and the VERSION
+    signature. Merge provenance stays PRODUCE-only: it is served on reads, and
+    it reaches storage only through the routes that reproduce a FOREIGN
+    `ORIGINAL_VERSION` verbatim (master06 §Copying — "the `ORIGINAL_VERSION`
+    instance is never modified") — our own-design EHR-Extract import and
+    archive load. The catalogue carries the refusal beside its accepting twin
+    (-merge_provenance_member).
+  disposition: fixed_handling
+
+AMB-197:
+  ambiguity: >-
+    MODEL CONTRADICTION between the version-identification prose and the two
+    invariants that read the same identifier. BASE `VERSION_TREE_ID` declares
+    `Is_first_validity`: `not is_first xor trunk_version.is_equal("1")` — so
+    `is_first` is TRUE for EVERY version whose trunk part is 1, branch versions
+    included. RM `VERSION` then declares `Preceding_version_uid_validity`:
+    `uid.version_tree_id.is_first xor preceding_version_uid /= Void` — so a
+    version with `is_first` TRUE must have NO preceding version. Together they
+    forbid a `preceding_version_uid` on `1.1.1`, `1.1.2`, `1.2.1` … — every
+    version on every branch off trunk node 1. Yet master06 §Local Versioning
+    presents exactly `1.1.1` as a normal identifier ("first version of first
+    branch from trunk node 1"), and a branch version by definition succeeds the
+    trunk node it branches from. The model as written makes the whole
+    first-trunk-node branch family unrepresentable.
+  source: >-
+    BASE UML/classes/org.openehr.base.base_types.version_tree_id.adoc
+    §Invariants (Is_first_validity) + RM UML/classes/
+    org.openehr.rm.common.version.adoc §Invariants
+    (Preceding_version_uid_validity) contrasted with RM common
+    master06-change_control_package.adoc §Local Versioning ("version numbers
+    like '1.1.1' (first version of first branch from trunk node 1) … are
+    possible"). All read first-hand.
+  handling: >-
+    Report only — the PROSE governs and the implementation follows it: a branch
+    version off trunk node 1 is minted with its true `preceding_version_uid`,
+    which is what makes the version tree navigable at all and what §Local
+    Versioning's own example requires. `is_first` is implemented as the BASE
+    accessor the class table defines (`trunk_version = "1"`), so no local
+    rewriting of either invariant hides the contradiction; the conflict is
+    reported upstream rather than silently resolved, and no catalogue case
+    gates on the invariant pair.
+  disposition: report_only
+  upstream_issue: 1749

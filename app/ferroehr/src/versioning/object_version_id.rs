@@ -32,7 +32,8 @@ use crate::service::error::ServiceError;
 
 /// A decoded `VERSION_TREE_ID`: the trunk version plus, for a branch version,
 /// the `(branch_number, branch_version)` pair (both `>= 1` per BASE
-/// `VERSION_TREE_ID`; RM common master06 §The 'Virtual Version Tree').
+/// `VERSION_TREE_ID`; RM common master06 §Local Versioning: "a further pair of
+/// numbers is added … Both of these numbers also start at '1'").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TreeId {
     /// The trunk version this id sits on (first lexical part).
@@ -485,8 +486,8 @@ mod tests {
     }
 
     /// Branch `version_tree_id`s decode into their `(trunk, branch, version)`
-    /// triple and round-trip through the wire form (RM common master06 §Version
-    /// tree — branch ids are first-class).
+    /// triple and round-trip through the wire form (RM common master06 §Local
+    /// Versioning — "version numbers like '1.1.1' … '2.3.3' … are possible").
     #[test]
     fn branch_ids_are_first_class() {
         let (vo_id, tree) = parse_version_uid(&format!("{VO}::sys::2.1.4")).unwrap();

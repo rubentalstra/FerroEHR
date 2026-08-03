@@ -68,7 +68,7 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
 /// mismatch → `422`) and enforce the enforceable PARTY/ACTOR/ROLE invariants.
 /// `Uid_mandatory` is met by the server injecting the `uid` on read (mirroring
 /// the COMPOSITION service), so an incoming body need not carry one.
-fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
+fn party_check(rm_type: &str, data: &Value, incomplete: bool) -> Result<(), ServiceError> {
     use openehr_rm::prelude::{Agent, Group, Organisation, Person, Role};
     let typed = match rm_type {
         "AGENT" => openehr_its::json::from_canonical_value::<Agent>(data).map(drop),
@@ -83,11 +83,21 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
             ));
         }
     };
-    typed.map_err(|e| {
-        ServiceError::Unprocessable(
-            Violation::new(format!("body does not validate as {rm_type}")).with_decode_failure(&e),
-        )
-    })?;
+    // NOTE: on a `553|incomplete|` commit the TYPED construction is not the
+    // gate — the generated party types make `PARTY.identities [1..*]` and every
+    // mandatory attribute structural, and those are precisely the bounds RM
+    // common master06 §Incomplete Content lifts ("mandatory attributes may be
+    // absent … container attributes may be empty"). A body that DOES construct
+    // is still fully judged; one that does not is handed to the relaxed
+    // whole-instance pass below, which enforces everything except presence.
+    if !incomplete {
+        typed.map_err(|e| {
+            ServiceError::Unprocessable(
+                Violation::new(format!("body does not validate as {rm_type}"))
+                    .with_decode_failure(&e),
+            )
+        })?;
+    }
 
     // PARTY is unconditionally an archetype root (`demographic.party.adoc`
     // §Invariants `Is_archetype_root: is_archetype_root` — no antecedent), so
@@ -112,21 +122,30 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
     // JSON (post-deserialize an absent and a present-empty list are the same
     // Vec): PARTY.Contacts_valid + Relationships_validity (party.adoc),
     // ACTOR.Roles_valid (actor.adoc), ROLE.Capabilities_valid (role.adoc).
-    for (attr, invariant) in [
-        ("contacts", "Contacts_valid"),
-        ("relationships", "Relationships_validity"),
-        ("roles", "Roles_valid"),
-        ("capabilities", "Capabilities_valid"),
-    ] {
+    // The same family `openehr_rm::validate::nonempty_list_violations` covers
+    // for every other kind, so it relaxes with it on a `553|incomplete|`
+    // commit (master06 §Incomplete Content: "container attributes may be
+    // empty, even though they may have minimum … cardinality … of one").
+    for (attr, invariant) in if incomplete {
+        [].as_slice()
+    } else {
+        [
+            ("contacts", "Contacts_valid"),
+            ("relationships", "Relationships_validity"),
+            ("roles", "Roles_valid"),
+            ("capabilities", "Capabilities_valid"),
+        ]
+        .as_slice()
+    } {
         if data
-            .get(attr)
+            .get(*attr)
             .and_then(Value::as_array)
             .is_some_and(Vec::is_empty)
         {
             return Err(ServiceError::Unprocessable(
                 Violation::new("is present but empty — a present list must be non-empty")
                     .with_path(format!("{rm_type}.{attr}"))
-                    .with_invariant(invariant),
+                    .with_invariant(*invariant),
             ));
         }
     }
@@ -175,7 +194,7 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
     // `FEEDER_AUDIT_DETAILS.System_id_valid`, …), so an identity, contact or
     // nested CLUSTER below the root is judged by the same rules a COMPOSITION's
     // nodes are.
-    crate::service::ehr::validation::validate_rm_invariants_for_commit(data, rm_type)
+    crate::service::ehr::validation::validate_rm_invariants_for_commit(data, rm_type, incomplete)
 }
 
 /// Structurally validate a candidate `PARTY_RELATIONSHIP` body: deserialize into
@@ -183,7 +202,7 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
 /// and `target` `PARTY_REF`s are present continuant refs, and enforce their
 /// `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
 /// injects it on read, mirroring the PARTY / COMPOSITION services.
-fn relationship_check(data: &Value) -> Result<(), ServiceError> {
+fn relationship_check(data: &Value, incomplete: bool) -> Result<(), ServiceError> {
     use openehr_base::prelude::ObjectId;
     use openehr_rm::prelude::PartyRelationship;
     // The decode is the validating ACT, and its result is the carrier the two
@@ -192,14 +211,28 @@ fn relationship_check(data: &Value) -> Result<(), ServiceError> {
     // their `PARTY_REF` SHAPE are facts of the type, not things to re-check
     // (the Rust Book ch9.3 custom-validation-type pattern: a downstream
     // function "wouldn't need to do any additional checks in its body").
-    let typed =
-        openehr_its::json::from_canonical_value::<PartyRelationship>(data).map_err(|e| {
-            ServiceError::Unprocessable(
+    //
+    // NOTE: on a `553|incomplete|` commit the decode is not the gate — mandatory
+    // `source`/`target` may be absent (RM common master06 §Incomplete Content:
+    // "single-valued attributes may have null values"), which is exactly what
+    // the decode refuses. A body that DOES construct is still fully judged by
+    // the two ref rules below; one that does not is handed to the relaxed
+    // whole-instance pass, which enforces everything except presence.
+    let decoded = openehr_its::json::from_canonical_value::<PartyRelationship>(data);
+    let typed = match decoded {
+        Ok(typed) => Some(typed),
+        Err(_) if incomplete => None,
+        Err(e) => {
+            return Err(ServiceError::Unprocessable(
                 Violation::new("body does not validate as PARTY_RELATIONSHIP")
                     .with_decode_failure(&e),
-            )
-        })?;
-    for (field, reference) in [("source", &typed.source), ("target", &typed.target)] {
+            ));
+        }
+    };
+    for (field, reference) in typed
+        .iter()
+        .flat_map(|t| [("source", &t.source), ("target", &t.target)])
+    {
         // The refs denote the Version CONTAINER of a Party — an OBJECT_REF
         // carrying a HIER_OBJECT_ID (the continuant), never an
         // OBJECT_VERSION_ID (one particular version) — RM demographic
@@ -229,7 +262,11 @@ fn relationship_check(data: &Value) -> Result<(), ServiceError> {
     // `PARTY_RELATIONSHIP` is a LOCATABLE too
     // (`RM/docs/UML/classes/org.openehr.rm.demographic.party_relationship.adoc`),
     // so the same whole-instance RM class-invariant pass applies.
-    crate::service::ehr::validation::validate_rm_invariants_for_commit(data, RELATIONSHIP_RM_TYPE)
+    crate::service::ehr::validation::validate_rm_invariants_for_commit(
+        data,
+        RELATIONSHIP_RM_TYPE,
+        incomplete,
+    )
 }
 
 /// Validate a party body for a create/update: its root `_type` must equal the
@@ -248,7 +285,7 @@ pub(super) fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), S
             .with_path("_type"),
         ));
     }
-    party_check(kind.rm_type(), body)
+    party_check(kind.rm_type(), body, false)
 }
 
 /// Validate a relationship body for a direct create/update: its root `_type`
@@ -264,7 +301,7 @@ pub(super) fn validate_relationship_body(body: &Value) -> Result<(), ServiceErro
             .with_path("_type"),
         ));
     }
-    relationship_check(body)
+    relationship_check(body, false)
 }
 
 /// Validate a party version reached through the CONTRIBUTION path, where the
@@ -278,8 +315,12 @@ pub(super) fn validate_relationship_body(body: &Value) -> Result<(), ServiceErro
 /// [`ServiceError::Unprocessable`] when the body does not deserialize as the
 /// kind's RM type or violates an enforceable PARTY/ACTOR/ROLE invariant
 /// ([`party_check`]).
-pub(crate) fn validate_party_kind_for_commit(kind: Kind, data: &Value) -> Result<(), ServiceError> {
-    party_check(kind.as_str(), data)
+pub(crate) fn validate_party_kind_for_commit(
+    kind: Kind,
+    data: &Value,
+    incomplete: bool,
+) -> Result<(), ServiceError> {
+    party_check(kind.as_str(), data, incomplete)
 }
 
 /// Validate a relationship version reached through the CONTRIBUTION path (the
@@ -292,8 +333,11 @@ pub(crate) fn validate_party_kind_for_commit(kind: Kind, data: &Value) -> Result
 /// `PARTY_RELATIONSHIP`, misses a `source`/`target` `PARTY_REF`, carries an
 /// `OBJECT_VERSION_ID` ref, or violates `PARTY_REF.Type_validity` /
 /// `OBJECT_REF.namespace` ([`relationship_check`]).
-pub(crate) fn validate_relationship_for_commit(data: &Value) -> Result<(), ServiceError> {
-    relationship_check(data)
+pub(crate) fn validate_relationship_for_commit(
+    data: &Value,
+    incomplete: bool,
+) -> Result<(), ServiceError> {
+    relationship_check(data, incomplete)
 }
 
 #[cfg(test)]
@@ -348,7 +392,7 @@ mod tests {
             .as_object_mut()
             .unwrap()
             .remove("archetype_details");
-        let msg = match party_check("PERSON", &no_details) {
+        let msg = match party_check("PERSON", &no_details, false) {
             Err(ServiceError::Unprocessable(v)) => v,
             other => panic!("expected Unprocessable, got {other:?}"),
         };
@@ -359,7 +403,7 @@ mod tests {
         // surfaces as the structured `ValidationFailed` report.
         let mut mismatched = person(&json!([identity()]));
         mismatched["archetype_node_id"] = json!("openEHR-DEMOGRAPHIC-PERSON.other.v1");
-        let err = party_check("PERSON", &mismatched)
+        let err = party_check("PERSON", &mismatched, false)
             .expect_err("a contradicting root identity is rejected");
         assert!(
             format!("{err:?}").contains("archetype_node_id"),
@@ -374,7 +418,7 @@ mod tests {
     #[test]
     fn identities_valid_is_enforced() {
         for bad in [person(&json!([])), json!({ "_type": "PERSON" })] {
-            match party_check("PERSON", &bad) {
+            match party_check("PERSON", &bad, false) {
                 Err(ServiceError::Unprocessable(v)) => assert!(
                     v.detail().contains("does not validate as PERSON"),
                     "the decode is the enforcement point, got {v}"
@@ -382,7 +426,7 @@ mod tests {
                 other => panic!("empty identities must be 422, got {other:?}"),
             }
         }
-        party_check("PERSON", &person(&json!([identity()])))
+        party_check("PERSON", &person(&json!([identity()])), false)
             .expect("a party with one identity is valid");
     }
 
@@ -390,7 +434,7 @@ mod tests {
     fn present_but_empty_lists_are_rejected() {
         let mut body = person(&json!([identity()]));
         body["contacts"] = json!([]);
-        let msg = match party_check("PERSON", &body) {
+        let msg = match party_check("PERSON", &body, false) {
             Err(ServiceError::Unprocessable(v)) => v,
             other => panic!("expected Unprocessable, got {other:?}"),
         };
@@ -494,8 +538,8 @@ mod tests {
                     "id": { "_type": "HIER_OBJECT_ID", "value": "performer-id" } }
             })
         };
-        party_check("ROLE", &role("PERSON")).expect("a legal performer ref is accepted");
-        match party_check("ROLE", &role("COMPOSITION")) {
+        party_check("ROLE", &role("PERSON"), false).expect("a legal performer ref is accepted");
+        match party_check("ROLE", &role("COMPOSITION"), false) {
             Err(ServiceError::Unprocessable(v)) => assert!(
                 v.causes()
                     .iter()
@@ -514,11 +558,12 @@ mod tests {
     /// nested identity are both 422s, and the valid twins are accepted.
     #[test]
     fn party_rm_invariants_below_the_root_are_enforced() {
-        party_check("PERSON", &person(&json!([identity()]))).expect("the baseline person is valid");
+        party_check("PERSON", &person(&json!([identity()])), false)
+            .expect("the baseline person is valid");
 
         let mut empty_rm_version = person(&json!([identity()]));
         empty_rm_version["archetype_details"]["rm_version"] = json!("");
-        let err = party_check("PERSON", &empty_rm_version)
+        let err = party_check("PERSON", &empty_rm_version, false)
             .expect_err("an empty rm_version must be refused");
         assert!(
             format!("{err:?}").contains("Rm_version_valid"),
@@ -530,8 +575,8 @@ mod tests {
             .as_object_mut()
             .unwrap()
             .insert("links".into(), json!([]));
-        let err =
-            party_check("PERSON", &nested_links).expect_err("an empty links list must be refused");
+        let err = party_check("PERSON", &nested_links, false)
+            .expect_err("an empty links list must be refused");
         assert!(
             format!("{err:?}").contains("Links_valid"),
             "the refusal should name the invariant, got {err:?}"

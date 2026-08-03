@@ -185,7 +185,12 @@ pub(crate) async fn ehr_get_by_subject(
          description = "Committal metadata for the EHR_STATUS VERSION the \
                         creation commits, as an attribute-path list — e.g. \
                         `lifecycle_state.code_string=\"532\"`. Merged with the \
-                        server defaults."),
+                        server defaults.\
+                        A `lifecycle_state` of `523|deleted|` is REFUSED here \
+                        (`422`): logical deletion removes the version's data and \
+                        sets that state in one act (RM common master06 \
+                        §\"Logical Deletion\"), so a commit that carries content \
+                        cannot claim it."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the creating CONTRIBUTION, \
                         as an attribute-path list; the header MAY repeat — e.g. \
@@ -452,7 +457,12 @@ pub(crate) async fn ehr_get_by_id(
          description = "Committal metadata for the EHR_STATUS VERSION the \
                         creation commits, as an attribute-path list — e.g. \
                         `lifecycle_state.code_string=\"532\"`. Merged with the \
-                        server defaults."),
+                        server defaults.\
+                        A `lifecycle_state` of `523|deleted|` is REFUSED here \
+                        (`422`): logical deletion removes the version's data and \
+                        sets that state in one act (RM common master06 \
+                        §\"Logical Deletion\"), so a commit that carries content \
+                        cannot claim it."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the creating CONTRIBUTION, \
                         as an attribute-path list; the header MAY repeat — e.g. \
@@ -874,7 +884,12 @@ pub(crate) async fn ehr_status_get_at_time(
                         server defaults (`Requests_and_responses.md` \
                         §\"openehr-version and openehr-audit-details\": whatever \
                         is provided \"MUST be merged with the default VERSION and \
-                        VERSION.audit_details attributes on commit runtime\")."),
+                        VERSION.audit_details attributes on commit runtime\").\
+                        A `lifecycle_state` of `523|deleted|` is REFUSED here \
+                        (`422`): logical deletion removes the version's data and \
+                        sets that state in one act (RM common master06 \
+                        §\"Logical Deletion\"), so a commit that carries content \
+                        cannot claim it."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
                         commits, as an attribute-path list; the header MAY repeat \
@@ -1635,7 +1650,12 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id(
                         the server defaults (`Requests_and_responses.md` \
                         §\"openehr-version and openehr-audit-details\": whatever \
                         is provided \"MUST be merged with the default VERSION and \
-                        VERSION.audit_details attributes on commit runtime\")."),
+                        VERSION.audit_details attributes on commit runtime\").\
+                        A `lifecycle_state` of `523|deleted|` is REFUSED here \
+                        (`422`): logical deletion removes the version's data and \
+                        sets that state in one act (RM common master06 \
+                        §\"Logical Deletion\"), so a commit that carries content \
+                        cannot claim it."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the CONTRIBUTION this \
                         creation commits, as an attribute-path list; the header \
@@ -2243,7 +2263,12 @@ pub(crate) async fn composition_get(
                         (`Requests_and_responses.md` §\"openehr-version and \
                         openehr-audit-details\": whatever is provided \"MUST be \
                         merged with the default VERSION and \
-                        VERSION.audit_details attributes on commit runtime\")."),
+                        VERSION.audit_details attributes on commit runtime\").\
+                        A `lifecycle_state` of `523|deleted|` is REFUSED here \
+                        (`422`): logical deletion removes the version's data and \
+                        sets that state in one act (RM common master06 \
+                        §\"Logical Deletion\"), so a commit that carries content \
+                        cannot claim it."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
                         commits, as an attribute-path list; the header MAY repeat \
@@ -2651,8 +2676,12 @@ pub(crate) async fn composition_update(
                         The deleting version's `lifecycle_state` is not client-\
                         selectable, though: a logical deletion sets it to \
                         `523|deleted|` by definition (RM common master06 \
-                        §\"Logical Deletion\"), so a supplied `lifecycle_state` \
-                        does not override it."),
+                        §\"Logical Deletion\"). A supplied `lifecycle_state` \
+                        naming any OTHER state contradicts the operation and is \
+                        refused `400` rather than silently discarded — the same \
+                        section makes the merge a MUST, and a value that cannot \
+                        be merged is reported, not dropped; `523|deleted|` \
+                        itself is accepted as the redundant statement it is."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the CONTRIBUTION this \
                         deletion commits, as an attribute-path list; the header \
@@ -3610,7 +3639,12 @@ pub(crate) async fn directory_get_at_time(
                         default VERSION and VERSION.audit_details attributes on \
                         commit runtime\"). The released directory operations \
                         declare neither header — an OAS-side omission the docs \
-                        text overrides."),
+                        text overrides.\
+                        A `lifecycle_state` of `523|deleted|` is REFUSED here \
+                        (`422`): logical deletion removes the version's data and \
+                        sets that state in one act (RM common master06 \
+                        §\"Logical Deletion\"), so a commit that carries content \
+                        cannot claim it."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
                         commits, as an attribute-path list; the header MAY \
@@ -3960,7 +3994,12 @@ pub(crate) async fn directory_update(
                         default VERSION and VERSION.audit_details attributes on \
                         commit runtime\"). The released directory operations \
                         declare neither header — an OAS-side omission the docs \
-                        text overrides."),
+                        text overrides.\
+                        A `lifecycle_state` of `523|deleted|` is REFUSED here \
+                        (`422`): logical deletion removes the version's data and \
+                        sets that state in one act (RM common master06 \
+                        §\"Logical Deletion\"), so a commit that carries content \
+                        cannot claim it."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the CONTRIBUTION this \
                         creation commits, as an attribute-path list; the header \
@@ -4251,8 +4290,12 @@ pub(crate) async fn directory_create(
                         explicitly. The deleting version's `lifecycle_state` is \
                         not client-selectable, though: a logical deletion sets \
                         it to `523|deleted|` by definition (RM common master06 \
-                        §\"Logical Deletion\"), so a supplied `lifecycle_state` \
-                        does not override it."),
+                        §\"Logical Deletion\"). A supplied `lifecycle_state` \
+                        naming any OTHER state contradicts the operation and is \
+                        refused `400` rather than silently discarded — the same \
+                        section makes the merge a MUST, and a value that cannot \
+                        be merged is reported, not dropped; `523|deleted|` \
+                        itself is accepted as the redundant statement it is."),
         ("openehr-audit-details" = Option<String>, Header,
          description = "Committal AUDIT_DETAILS for the CONTRIBUTION this \
                         deletion commits, as an attribute-path list; the header \
@@ -5069,7 +5112,13 @@ pub(crate) async fn directory_get_by_version_id(
                                       exactly as the direct commit route would \
                                       validate it, relaxed for a \
                                       `553|incomplete|` lifecycle (master06 \
-                                      §\"Incomplete Content\").",
+                                      §\"Incomplete Content\"). A member that \
+                                      OMITS the required `lifecycle_state`, or \
+                                      that carries `other_input_version_uids` \
+                                      (a property the released `UPDATE_VERSION` \
+                                      does not declare — merge provenance is \
+                                      served on reads only), is a `400` shape \
+                                      failure, not a `422`.",
          body = serde_json::Value)
     )
 )]

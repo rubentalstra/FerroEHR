@@ -131,8 +131,17 @@ impl VersionRead {
 /// Compose a [`VersionRead`] from the storage read shape
 /// ([`crate::storage::version_repo::read::StoredVersion`]): the tree id is rebuilt
 /// from its column ints and the flattened audit becomes the `commit_audit`.
-/// A deleted version (lifecycle `523`) stores no node rows, so storage already
-/// yields `canonical = Value::Null` (master06 §Logical Deletion).
+/// A LOCALLY committed deleted version (lifecycle `523`) stores no node rows,
+/// so storage already yields `canonical = Value::Null`: the delete route writes
+/// an empty row set, and every content-carrying local route refuses the
+/// `deleted` state outright
+/// ([`crate::versioning::lifecycle::reject_deleted_with_data`]) — master06
+/// §Logical Deletion states the two as one act ("delete its `_data_` … set the
+/// `_lifecycle_state_` value to the code for `deleted`"). The EHR-Extract
+/// IMPORT replay is the one exception, and a spec-mandated one: it reproduces a
+/// foreign `ORIGINAL_VERSION` verbatim (master06 §Copying — "the
+/// `ORIGINAL_VERSION` instance is never modified"), so a foreign `523` version
+/// that arrived carrying data keeps it and reads back with that content.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when an imported row's stored wrapped

@@ -23,7 +23,9 @@ use crate::storage::codec::{decompose, reassemble};
 use crate::storage::row::NodeRow;
 use crate::versioning::attestation::{self, PendingAttest};
 use crate::versioning::audit::AuditInput;
-use crate::versioning::lifecycle::{self, resolve_lifecycle, validate_transition};
+use crate::versioning::lifecycle::{
+    self, reject_deleted_with_data, resolve_lifecycle, validate_transition,
+};
 use crate::versioning::object_version_id::{TreeId, VersionIdError, object_version_id};
 use crate::versioning::{Kind, SigningCtx, integrity};
 
@@ -166,10 +168,6 @@ pub(crate) enum Change {
         signature: Option<String>,
         lifecycle_state: Option<String>,
         attestations: Vec<attestation::AttestationInput>,
-        /// Wire `ORIGINAL_VERSION.other_input_version_uids` — the merged-in
-        /// version ids for a merge commit (master06 §Version Merging); empty for
-        /// a plain modification.
-        other_input_version_uids: Vec<String>,
     },
     /// Logically delete an object (a content-less `deleted` version — master06
     /// §Logical Deletion).
@@ -391,6 +389,15 @@ struct ResolvedWrite {
     lifecycle: String,
     /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
     preceding_uid: Option<String>,
+    /// `ORIGINAL_VERSION.other_input_version_uids` — merge provenance
+    /// (master06 §Version Merging). Always EMPTY on this path: the released
+    /// commit wire declares no merge shape at all
+    /// (ITS-REST `schemas/ehr/UpdateVersion.yaml` has no such property, and
+    /// `NewContribution.versions` items are `UpdateVersion`), so a locally
+    /// committed version is never a merge. Merge provenance reaches storage
+    /// only through the routes that carry a FOREIGN `ORIGINAL_VERSION`
+    /// verbatim — the EHR-Extract import and the archive load — which write
+    /// their own rows (`storage::version_repo::import`).
     other_input_version_uids: Vec<String>,
     template_id: Option<String>,
     /// The lineage tip storage ordinal to supersede at `now()` — `None` for a
@@ -434,8 +441,10 @@ struct ResolvedWrite {
 /// # Errors
 /// The [`next_version`] placement errors (`NotFound` / `VersionConflict`) on
 /// modify/delete; [`ServiceError::Unprocessable`] for an out-of-group or
-/// illegal lifecycle transition; [`ServiceError::Internal`] on a multimedia
-/// offload failure; plus the storage/signing errors of [`commit_resolved`].
+/// illegal lifecycle transition, or a `523|deleted|` state on a data-carrying
+/// commit ([`reject_deleted_with_data`]); [`ServiceError::Internal`] on a
+/// multimedia offload failure; plus the storage/signing errors of
+/// [`commit_resolved`].
 /// Stamp the version's own `OBJECT_VERSION_ID` into the canonical's root
 /// `uid` BEFORE decompose/sign, so the stored, signed, and served bytes all
 /// carry it — the copied-uid recommendation for top-level types (RM common
@@ -507,6 +516,10 @@ async fn apply_change(
                     .map_err(|e| ServiceError::Internal(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
+            // This arm commits CONTENT, so the deleted state is refused here
+            // before the state machine speaks (master06 §Logical Deletion:
+            // deleting the data and setting the state are one act).
+            reject_deleted_with_data(&lifecycle)?;
             // a first version can only be `complete`/`incomplete`.
             validate_transition(None, &lifecycle)?;
             let vo_id = VoId::new();
@@ -546,7 +559,6 @@ async fn apply_change(
             signature,
             lifecycle_state,
             attestations,
-            other_input_version_uids,
         } => {
             if let Some(engine) = ctx.multimedia {
                 engine
@@ -555,6 +567,11 @@ async fn apply_change(
                     .map_err(|e| ServiceError::Internal(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
+            // Same coupling as the create arm: a modification carries content,
+            // so it can never be the `deleted` version (master06 §Logical
+            // Deletion). Refused before the placement read, so a data-carrying
+            // `523` never reaches storage.
+            reject_deleted_with_data(&lifecycle)?;
             let next = next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
             // the transition from the preceding version's state must be
             // legal (master06 §Version Lifecycle state machine).
@@ -572,7 +589,7 @@ async fn apply_change(
                 tree: next.tree,
                 lifecycle,
                 preceding_uid: Some(next.preceding_uid),
-                other_input_version_uids,
+                other_input_version_uids: Vec::new(),
                 template_id,
                 close_ordinal: next.close_ordinal,
                 client_signature: signature,
@@ -919,7 +936,6 @@ pub(crate) async fn update(
             signature: envelope.signature,
             lifecycle_state: envelope.lifecycle_state,
             attestations: envelope.attestations,
-            other_input_version_uids: Vec::new(),
         },
     )
     .await?;

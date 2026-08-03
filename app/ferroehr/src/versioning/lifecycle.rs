@@ -81,6 +81,44 @@ pub(crate) fn resolve_lifecycle(token: Option<String>) -> Result<String, Service
     }
 }
 
+/// Refuse `523|deleted|` on a commit that carries `data`.
+///
+/// master06 §Logical Deletion states deletion as ONE indivisible procedure —
+/// "create a new Version in the normal way; delete its `_data_` (which will by
+/// default be a copy of the data of the previous Version); set the
+/// `_lifecycle_state_` value to the code for `deleted`; commit in the normal
+/// way". The state and the data-Void are two steps of the same act, so a
+/// data-carrying version in the `deleted` state is not producible by the
+/// spec's own procedure: it would leave the repository serving `204` for the
+/// resource (the version says the item is gone) while its content stays
+/// stored and AQL-queryable. `ORIGINAL_VERSION.data` is typed `0..1`
+/// (`RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc`
+/// §Attributes) precisely so the deleted version can carry none.
+///
+/// The mirror of the CONTRIBUTION `classify` rule that already couples change
+/// type `523` to data-absence, applied to the *lifecycle* axis so both the
+/// CONTRIBUTION member (`UPDATE_VERSION.lifecycle_state`) and the direct
+/// route's `openehr-version: lifecycle_state.code_string="523"` header reach
+/// the same refusal. The code is the ITS-REST overview 422 row
+/// (`Requests_and_responses.md` §HTTP status codes: "The request was
+/// well-formed but was unable to be followed due to semantic errors").
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when `lifecycle` is `523|deleted|`.
+pub(crate) fn reject_deleted_with_data(lifecycle: &str) -> Result<(), ServiceError> {
+    if lifecycle != state::DELETED {
+        return Ok(());
+    }
+    Err(ServiceError::Unprocessable(
+        Violation::new(
+            "523|deleted| is invalid on a version that carries data — logical deletion \
+             deletes the version's data and sets the deleted state in one act",
+        )
+        .with_path("lifecycle_state")
+        .with_invariant("RM common master06 §Logical Deletion"),
+    ))
+}
+
 /// Whether a `version_lifecycle_state` transition `from -> to` is sanctioned by
 /// the master06 §Version Lifecycle state machine.
 ///
@@ -210,6 +248,33 @@ mod tests {
                 assert!(v.detail().contains("\"nonsense\""), "{v}");
             }
             other => panic!("an out-of-group lifecycle token must be 422, got {other:?}"),
+        }
+    }
+
+    /// master06 §Logical Deletion couples the `deleted` state to the data-Void
+    /// in ONE act, so `523` is refused on a data-carrying commit — twinned
+    /// against every other state, which passes unchanged.
+    #[test]
+    fn deleted_state_is_refused_on_a_data_carrying_commit() {
+        // The refusal, asserted as DATA (path + named spec rule).
+        match reject_deleted_with_data(state::DELETED) {
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("lifecycle_state"));
+                assert_eq!(v.invariant(), Some("RM common master06 §Logical Deletion"));
+            }
+            other => panic!("523 on a data-carrying version must be 422, got {other:?}"),
+        }
+        // The accepting twins: every other lifecycle state carries data.
+        for code in [
+            state::COMPLETE,
+            state::INCOMPLETE,
+            state::INACTIVE,
+            state::ABANDONED,
+        ] {
+            assert!(
+                reject_deleted_with_data(code).is_ok(),
+                "state {code} carries data legitimately"
+            );
         }
     }
 

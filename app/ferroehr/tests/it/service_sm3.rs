@@ -373,6 +373,7 @@ async fn relationship_via_demographic_contribution() {
     let body = json!({
         "_type": "CONTRIBUTION",
         "versions": [{
+            "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
             "_type": "ORIGINAL_VERSION",
             "commit_audit": {
                 "change_type": {

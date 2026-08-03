@@ -15,8 +15,62 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **A `553|incomplete|` commit may now omit mandatory data for every
+  committable kind.** RM common `master06` §Incomplete Content states that in
+  the `incomplete` state "mandatory attributes may be absent … single-valued
+  attributes may have null values and container attributes may be empty, even
+  though they may have minimum existence and cardinality respectively of one",
+  and that such data "respects the same template and archetype(s), but with all
+  existence and cardinality lower limits set to zero". Until now only the
+  template/archetype layer relaxed, and only for COMPOSITION: a `553` commit
+  whose content left a mandatory attribute absent or a `1..*` container empty
+  was still refused `422` by the reference-model layer. It is now accepted —
+  for COMPOSITION, FOLDER, `EHR_ACCESS` and the demographic party /
+  relationship kinds, on the CONTRIBUTION route and on the direct
+  COMPOSITION/DIRECTORY routes (via `openehr-version:
+  lifecycle_state.code_string="553"`). `EHR_STATUS` is unchanged: the CNF
+  schedule holds that the incomplete state does not apply to it, pending
+  SPECPR-368. Only the presence and lower-bound checks relax — types, `_type`
+  slots, terminology bindings, patterns, coded values and every other class
+  invariant are enforced exactly as before, so an `incomplete` commit carrying
+  data that is WRONG rather than merely missing is still refused ("data may be
+  missing, but it may not be wrong").
+
+### Fixed
+
+- **A version that carries data can no longer claim the `523|deleted|`
+  lifecycle state** (`422`). `master06` §Logical Deletion states deletion as one
+  procedure — create a new version, delete its data, set the state to `deleted`,
+  commit — so a data-carrying deleted version is not producible by the spec's own
+  steps. Previously such a commit was accepted through a CONTRIBUTION member
+  pairing a content change type with the deleted state, or through
+  `openehr-version: lifecycle_state.code_string="523"` on a `PUT`; the resource
+  then read back as deleted (`204`) while its content stayed stored and
+  AQL-queryable. Both routes now refuse it. Deleting through `DELETE`, or
+  through a data-less `523` CONTRIBUTION member, is unaffected.
+
 ### Changed
 
+- **`lifecycle_state` is now required on every CONTRIBUTION version**
+  (`400`). SM `master03` §Version Update Semantics says "The `lifecycle_state`
+  must be supplied in all cases", and the released `UpdateVersion` schema lists
+  it under `required`; a member that omitted it was previously accepted and
+  silently defaulted to `532|complete|`. A `666|attestation|` member is exempt —
+  it commits no new version, so it has no version lifecycle state to supply.
+- **A `DELETE` on a change-controlled resource now refuses a committal header
+  that names a lifecycle other than `523|deleted|`** (`400`). The header was
+  previously parsed and discarded, leaving a client believing an instruction had
+  been merged that was not; a `DELETE` commits the logical-deletion procedure,
+  which fixes the state. A `DELETE` with no lifecycle attribute is unaffected.
+- **`other_input_version_uids` is refused on the CONTRIBUTION write wire**
+  (`400`). The released `UPDATE_VERSION` schema declares no such property (and
+  `NewContribution.versions` items are `UpdateVersion`), so the merge commit has
+  no released shape — the same absence the import commit has. Merge provenance
+  stays produce-only: it is still served on `ORIGINAL_VERSION` reads, and it is
+  still preserved verbatim by the EHR-Extract import and the archive load, which
+  reproduce a foreign version unchanged.
 - **`422 Unprocessable Content` messages now follow one uniform shape** —
   `<RM attribute path> <what is wrong> (<invariant name>)`, for example
   `ATTESTATION.items must be a non-empty list when present

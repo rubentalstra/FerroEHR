@@ -22,6 +22,12 @@
 //!    equivalence property between those two stays exactly the core property.
 //! 3. **The terminology-backed invariants**, in the sibling [`terminology`]
 //!    module (they need the openEHR terminology bundle, not just the node).
+//! 4. **The `553|incomplete|` presence relaxation predicates**, in the sibling
+//!    [`incomplete`] module: the pair of pure model-driven questions ("is
+//!    anything missing?" / "is anything wrong?") that RM common
+//!    `master06-change_control_package.adoc` §Incomplete Content splits a
+//!    node's structural judgement into. Used only by the relaxed
+//!    (`553|incomplete|`) commit path; the strict path never calls them.
 //!
 //! Kept OUT of this crate, in `openehr-its`: the typed-dispatch tier that
 //! *deserializes* a node into its concrete RM type, because it drives the
@@ -69,6 +75,11 @@ mod fast;
 /// the cores call (`invariant_failed`, the ISO-8601 validators, the dialect
 /// predicates) stay hand-written below.
 pub(crate) mod generated;
+// The `553|incomplete|` presence relaxation predicates (its own `//!` module
+// docs carry the detail — an outer doc attribute here would force rustdoc to
+// resolve the module's intra-doc links in THIS module's scope instead of its
+// own).
+pub mod incomplete;
 // The terminology-backed RM class invariants (its own `//!` module docs carry
 // the detail — an outer doc attribute here would force rustdoc to resolve the
 // module's intra-doc links in THIS module's scope instead of its own).
@@ -289,12 +300,29 @@ pub fn check_archetyped_valid(
     out
 }
 
+/// The `CLUSTER.items` PRESENCE duty, split out of
+/// [`check_data_structure_shapes`] because it is a mandatory-presence rule and
+/// therefore the one shape duty the `553|incomplete|` state relaxes (RM common
+/// `master06-change_control_package.adoc` §Incomplete Content: "container
+/// attributes may be empty, even though they may have minimum existence and
+/// cardinality respectively of one").
+///
+/// `CLUSTER.items` is 1..1 (RM `data_structures` `cluster.adoc`; the ITS-JSON
+/// CLUSTER schema lists `items` as required) — after deserialize an absent
+/// list collapses into an empty `Vec`, so presence is only checkable here.
+/// Reported on the node itself; the caller prefixes the absolute RM path.
+#[must_use]
+pub fn check_cluster_items_present(
+    obj: &serde_json::Map<String, Value>,
+    ty: Option<&str>,
+) -> Option<InvariantViolation> {
+    (ty == Some("CLUSTER") && obj.get("items").and_then(Value::as_array).is_none()).then(|| {
+        InvariantViolation::here("CLUSTER.items is mandatory (1..1 List<ITEM>, cluster.adoc)")
+    })
+}
+
 /// JSON-level data-structure shape duties the typed model cannot express:
 ///
-/// - `CLUSTER.items` is 1..1 (RM `data_structures` `cluster.adoc`; the
-///   ITS-JSON CLUSTER schema lists `items` as required) — after
-///   deserialize an absent list collapses into an empty `Vec`, so
-///   presence is only checkable here;
 /// - one `HISTORY`'s events all carry the SAME `ITEM_STRUCTURE` subtype
 ///   in `data` — "A History of type `HISTORY<ITEM_LIST>` … constrains the
 ///   type of the data at each Event to be of type `ITEM_LIST` and nothing
@@ -302,9 +330,10 @@ pub fn check_archetyped_valid(
 ///   `history.adoc` generic parameter) — the monomorphized runtime type
 ///   cannot see `T`.
 ///
-/// The CLUSTER violation is reported on the node itself; a HISTORY violation
-/// carries the `events[i]` sub-path of the offending event. The caller
-/// prefixes the absolute RM path onto both.
+/// The `CLUSTER.items` presence duty is [`check_cluster_items_present`]'s (it
+/// is a mandatory-presence rule, so the incomplete-commit path relaxes it while
+/// keeping every duty here). A HISTORY violation carries the `events[i]`
+/// sub-path of the offending event; the caller prefixes the absolute RM path.
 #[must_use]
 pub fn check_data_structure_shapes(
     obj: &serde_json::Map<String, Value>,
@@ -314,11 +343,6 @@ pub fn check_data_structure_shapes(
     let Some(ty) = ty else {
         return out;
     };
-    if ty == "CLUSTER" && obj.get("items").and_then(Value::as_array).is_none() {
-        out.push(InvariantViolation::here(
-            "CLUSTER.items is mandatory (1..1 List<ITEM>, cluster.adoc)",
-        ));
-    }
     if ty == "HISTORY"
         && let Some(events) = obj.get("events").and_then(Value::as_array)
     {
