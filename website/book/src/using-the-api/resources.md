@@ -253,9 +253,9 @@ curl -u ferroehr:ferroehr \
 each describe a change (the RM object, its `change_type`, its `lifecycle_state`,
 and per-version `commit_audit`) plus a shared `audit`. The audit objects are of
 type `UPDATE_AUDIT` (the server fills in `time_committed` and `system_id`). The
-shared `audit` must carry its own `change_type`: it is your account of the
-change set as a whole and is never derived by the server — omitting it is a
-**422**. It returns **201** with the contribution id in `ETag`, or
+shared `audit` must carry its own `change_type` **and** `committer`: they
+are your account of the change set as a whole and are never derived or
+invented by the server — omitting either is a **422**. It returns **201** with the contribution id in `ETag`, or
 **400**/**404**/**409** on invalid input, unknown EHR, or a uid conflict.
 
 Two things about a version entry are worth calling out:
