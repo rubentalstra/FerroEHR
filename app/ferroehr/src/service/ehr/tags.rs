@@ -21,7 +21,7 @@ use openehr_base::prelude::{
     HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, UidBasedId,
 };
 use openehr_base::validate::Validate;
-use openehr_its::rest::generated::ehr::UpdateItemTag;
+use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_rm::prelude::ItemTag;
 
 use crate::ids::{EhrId, VoId};

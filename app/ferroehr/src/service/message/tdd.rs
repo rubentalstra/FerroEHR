@@ -49,7 +49,21 @@ use crate::ids::EhrId;
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::UpdateVersion;
+use crate::service::version_update::direct_envelope;
+
+/// Re-type a converted TDD body as the RM `COMPOSITION` the commit seam takes.
+///
+/// `from_tdd` emits a canonical COMPOSITION fragment; the strict canonical
+/// reader is what turns it into the typed value (a conversion that produced
+/// anything else is `content_invalid`, refused before any commit).
+fn typed_composition(composition: &Value) -> Result<openehr_rm::prelude::Composition, SmError> {
+    openehr_its::json::from_canonical_value(composition).map_err(|e| {
+        SmError::new(
+            CallStatusType::ContentInvalid,
+            format!("the TDD did not convert to a valid COMPOSITION: {e}"),
+        )
+    })
+}
 
 /// The Ocean/Marand operational-template-data XML namespace every TDD root
 /// declares (the corpus TDD instances use exactly this default `xmlns`).
@@ -188,9 +202,12 @@ impl FerroEhrService {
         let composition = self.prepare_one_tdd(an_ehr_id, &tdd).await?;
         // The validated commit path (WebTemplate + RM-invariant + terminology
         // validation, contribution/audit).
-        let resp = self
-            .create_composition(an_ehr_id, UpdateVersion::direct(composition))
-            .await?;
+        // Boxed: the typed COMPOSITION envelope makes this future large enough
+        // to matter on the stack (clippy `large_futures`).
+        let resp = Box::pin(
+            self.create_composition(an_ehr_id, direct_envelope(typed_composition(&composition)?)),
+        )
+        .await?;
         Ok(resp.version_uid())
     }
 
@@ -223,8 +240,12 @@ impl FerroEhrService {
         let mut ids = Vec::with_capacity(prepared.len());
         for composition in prepared {
             // The validated commit path (as in `import_tdd`).
-            let resp = self
-                .create_composition(an_ehr_id, UpdateVersion::direct(composition))
+            // Boxed, as in `import_tdd` (clippy `large_futures`).
+            let resp =
+                Box::pin(self.create_composition(
+                    an_ehr_id,
+                    direct_envelope(typed_composition(&composition)?),
+                ))
                 .await?;
             ids.push(resp.version_uid());
         }

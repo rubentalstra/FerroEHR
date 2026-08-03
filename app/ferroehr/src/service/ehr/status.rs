@@ -12,7 +12,8 @@
 use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::UpdateVersion;
+use openehr_its::rest::generated::common::UpdateVersion;
+use openehr_rm::prelude::EhrStatus;
 use serde_json::Value;
 use sqlx::PgConnection;
 
@@ -105,16 +106,24 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
-        version: UpdateVersion,
+        version: UpdateVersion<EhrStatus>,
         if_match: &str,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
-        let (audit, envelope) = super::resolve_envelope(
-            &version,
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction (`super::canonicalize`).
+        let version = super::canonicalize(version);
+        let super::CommitParts {
+            audit,
+            envelope,
+            canonical: body,
+            ..
+        } = super::resolve_envelope(
+            version,
             change_type::MODIFICATION,
             "EHR_STATUS update",
             &self.effective_system_id(),
         )?;
-        let body = version.data;
         super::validation::validate_ehr_status(&body)?;
         let expected = expected_from_if_match(if_match)?;
 
@@ -200,8 +209,20 @@ impl FerroEhrService {
         // audit resolves without a client envelope (the `direct()` placeholder
         // is `249|creation|`, which would contradict this update —
         // `versioning::audit::merged_change_type`).
-        let mut version = UpdateVersion::direct(body);
-        change_type::MODIFICATION.clone_into(&mut version.audit.change_type.code_string);
+        // The mutated root is re-typed through the strict canonical reader:
+        // a mutation that broke the EHR_STATUS shape (an `other_details` that
+        // is not an ITEM_STRUCTURE — SM `i_ehr_status.adoc`
+        // §update_other_details) is refused here rather than committed.
+        let status: EhrStatus = openehr_its::json::from_canonical_value(&body).map_err(|e| {
+            ServiceError::Unprocessable(
+                crate::service::error::Violation::new("is not a canonical EHR_STATUS")
+                    .with_path("EHR_STATUS")
+                    .with_decode_failure(&e),
+            )
+        })?;
+        let mut version = crate::service::version_update::direct_envelope(status);
+        *crate::service::version_update::audit_base_mut(&mut version.commit_audit).change_type =
+            crate::service::version_update::change_type_coded(change_type::MODIFICATION);
         self.commit_status(ehr_id, vo_id, version, &preceding).await
     }
 
@@ -719,12 +740,13 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         a_details: Value,
     ) -> Result<String, SmError> {
-        Ok(self
-            .status_mutate(an_ehr_id, move |m| {
-                m.insert("other_details".to_owned(), a_details);
-            })
-            .await?
-            .version_uid())
+        // Boxed: the typed EHR_STATUS envelope makes the mutate future large
+        // enough to matter on the stack (clippy `large_futures`).
+        Ok(Box::pin(self.status_mutate(an_ehr_id, move |m| {
+            m.insert("other_details".to_owned(), a_details);
+        }))
+        .await?
+        .version_uid())
     }
 
     /// Replace the whole `EHR_STATUS` in one commit (`PUT …/ehr_status`),
@@ -738,9 +760,11 @@ impl FerroEhrService {
     pub async fn replace_ehr_status(
         &self,
         an_ehr_id: EhrId,
-        a_status: UpdateVersion,
+        a_status: UpdateVersion<EhrStatus>,
     ) -> Result<String, SmError> {
-        Ok(self.replace_ehr_status_meta(an_ehr_id, a_status).await?.uid)
+        Ok(Box::pin(self.replace_ehr_status_meta(an_ehr_id, a_status))
+            .await?
+            .uid)
     }
 
     /// The `REVISION_HISTORY` of the EHR's `EHR_STATUS`. SM defines no
@@ -879,7 +903,7 @@ impl FerroEhrService {
     pub async fn replace_ehr_status_meta(
         &self,
         an_ehr_id: EhrId,
-        a_status: UpdateVersion,
+        a_status: UpdateVersion<EhrStatus>,
     ) -> Result<ResourceMeta, SmError> {
         // NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT
         // — the aggregate of the five discrete SM mutators (formal

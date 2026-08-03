@@ -21,7 +21,7 @@
 
 use serde_json::{Value, json};
 
-use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
+use openehr_base::prelude::ObjectVersionId;
 use openehr_rm::prelude::{ItemTag, PartyProxy};
 
 use ferroehr::service::FerroEhrService;
@@ -31,39 +31,37 @@ use ferroehr::versioning::change::Committed;
 
 use crate::item_tag_fixture::ehr_tag;
 
-use ferroehr::service::version_update::{Committal, UpdateAudit, UpdateVersion};
+use crate::typed_body::typed;
+use ferroehr::service::version_update::{Committal, change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
 }
 
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -166,7 +164,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // NOTE: `replace_ehr_status` returns the new version_uid (the
     // old `.meta.uid`); the content is re-read to assert it.
     let status_v2_uid = svc
-        .replace_ehr_status(ehr_uuid, uv(status_v2_body, "251", Some(&status_ovid_v1)))
+        .replace_ehr_status(ehr_uuid, uv(&status_v2_body, "251", Some(&status_ovid_v1)))
         .await
         .expect("status update");
     assert!(status_v2_uid.ends_with("::2"));
@@ -180,7 +178,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let stale = svc
         .replace_ehr_status(
             ehr_uuid,
-            uv(status_v1.clone(), "251", Some(&status_ovid_v1)),
+            uv(&status_v1.clone(), "251", Some(&status_ovid_v1)),
         )
         .await;
     assert!(
@@ -203,7 +201,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     status_v3_body.as_object_mut().unwrap().remove("uid");
     status_v3_body["is_modifiable"] = json!(true);
     let status_v3_uid = svc
-        .replace_ehr_status(ehr_uuid, uv(status_v3_body, "251", Some(&status_v2_uid)))
+        .replace_ehr_status(ehr_uuid, uv(&status_v3_body, "251", Some(&status_v2_uid)))
         .await
         .expect("status reactivate");
     assert!(status_v3_uid.ends_with("::3"));
@@ -220,7 +218,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
 
     // ── COMPOSITION: create, update, version reads ──────────────────────────
     let comp_ovid_v1 = svc
-        .create_composition(ehr_uuid, uv(composition("Encounter"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Encounter"), "249", None))
         .await
         .expect("composition_create")
         .version_uid();
@@ -237,7 +235,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .update_composition(
             ehr_uuid,
             comp_vo_uuid,
-            uv(composition("Encounter v2"), "251", Some(&comp_ovid_v1)),
+            uv(&composition("Encounter v2"), "251", Some(&comp_ovid_v1)),
         )
         .await
         .expect("composition_update")
@@ -408,7 +406,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // ── DIRECTORY (FOLDER) create/get/update/delete ──────────────────────────
     let folder = json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } });
     let dir_ovid = svc
-        .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
+        .create_directory(ehr_uuid, uv(&folder.clone(), "249", None))
         .await
         .expect("directory_create")
         .uid;
@@ -422,7 +420,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let mut folder_v2 = folder;
     folder_v2["name"]["value"] = json!("root-renamed");
     let dir_ovid_v2 = svc
-        .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_ovid)))
+        .update_directory(ehr_uuid, uv(&folder_v2, "251", Some(&dir_ovid)))
         .await
         .expect("directory_update")
         .uid;
@@ -449,7 +447,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     // Seed a COMPOSITION and a directory while the EHR is active (default
     // is_modifiable = true), so update/delete have a target once deactivated.
     let comp_ovid = svc
-        .create_composition(ehr_uuid, uv(composition("Active"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Active"), "249", None))
         .await
         .expect("composition while active")
         .version_uid();
@@ -461,7 +459,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .expect("vo uuid");
     let folder = json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } });
     let dir_ovid = svc
-        .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
+        .create_directory(ehr_uuid, uv(&folder.clone(), "249", None))
         .await
         .expect("directory while active")
         .uid;
@@ -477,7 +475,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     deactivate.as_object_mut().unwrap().remove("uid");
     deactivate["is_modifiable"] = json!(false);
     let status_v2_ovid = svc
-        .replace_ehr_status(ehr_uuid, uv(deactivate, "251", Some(&status_ovid_v1)))
+        .replace_ehr_status(ehr_uuid, uv(&deactivate, "251", Some(&status_ovid_v1)))
         .await
         .expect("deactivating EHR_STATUS is allowed");
 
@@ -498,7 +496,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
 
     // Every EHR-content write is now refused (409).
     let create = svc
-        .create_composition(ehr_uuid, uv(composition("Blocked"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Blocked"), "249", None))
         .await;
     assert!(
         comp_blocked(&create),
@@ -509,7 +507,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .update_composition(
             ehr_uuid,
             comp_vo,
-            uv(composition("Blocked update"), "251", Some(&comp_ovid)),
+            uv(&composition("Blocked update"), "251", Some(&comp_ovid)),
         )
         .await;
     assert!(
@@ -525,7 +523,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     );
 
     let dir_update = svc
-        .update_directory(ehr_uuid, uv(folder, "251", Some(&dir_ovid)))
+        .update_directory(ehr_uuid, uv(&folder, "251", Some(&dir_ovid)))
         .await;
     assert!(
         dir_blocked(&dir_update),
@@ -566,12 +564,12 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     let mut reactivate = status_v2.clone();
     reactivate.as_object_mut().unwrap().remove("uid");
     reactivate["is_modifiable"] = json!(true);
-    svc.replace_ehr_status(ehr_uuid, uv(reactivate, "251", Some(&status_v2_ovid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&reactivate, "251", Some(&status_v2_ovid)))
         .await
         .expect("reactivating EHR_STATUS is allowed while inactive");
 
     // Reactivated → content writes work again.
-    svc.create_composition(ehr_uuid, uv(composition("Reactivated"), "249", None))
+    svc.create_composition(ehr_uuid, uv(&composition("Reactivated"), "249", None))
         .await
         .expect("content writes resume once reactivated");
 }
@@ -605,17 +603,20 @@ async fn ehr_creation_merges_the_committal_metadata() {
     let svc = FerroEhrService::new(db.pool());
 
     let committal = Committal {
-        audit: UpdateAudit {
+        audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
             // Empty = the client supplied no change_type (what the header
             // layer produces), so the operation default applies.
-            change_type: term(""),
-            description: Some("EHR opened at triage".to_owned()),
+            change_type: ferroehr::service::version_update::unstated_code(),
+            description: Some(ferroehr::service::version_update::plain_text(
+                "EHR opened at triage",
+            )),
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Chart" }),
             )
             .expect("committer"),
             system_id: Some("example.openehr.systemid".to_owned()),
-        },
+        }),
         // `553|incomplete|` — a legal first-version lifecycle state (master06
         // §Incomplete Content), so the merge is visible against the
         // `532|complete|` default.
@@ -676,15 +677,16 @@ async fn ehr_creation_rejects_a_change_type_that_is_not_a_creation() {
     let svc = FerroEhrService::new(db.pool());
 
     let committal = |code: &str| Committal {
-        audit: UpdateAudit {
-            change_type: term(code),
+        audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Chart" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         lifecycle_state: None,
     };
 
@@ -711,10 +713,14 @@ async fn unknown_ehr_is_not_found() {
 #[tokio::test]
 async fn ehr_status_subject_type_is_enforced_end_to_end() {
     // RM ehr master04 §EHR Status: EHR_STATUS.subject is a (monomorphic)
-    // PARTY_SELF. Through the real service seam (the same path the REST layer
-    // calls), a foreign concrete _type (PARTY_IDENTIFIED) in that slot is a
-    // 422 (SM ContentInvalid) naming the mismatch — on both EHR create and
-    // EHR_STATUS PUT — while an anonymous empty PARTY_SELF is accepted.
+    // PARTY_SELF. A foreign concrete `_type` (PARTY_IDENTIFIED) in that slot
+    // is refused by the strict canonical reader — the slot's declared type is
+    // concrete, so a present-but-wrong `_type` never becomes an EHR_STATUS at
+    // all. Both commit seams (EHR create and EHR_STATUS PUT) take the TYPED
+    // value, so that refusal is what a client meets, and the ITS-REST overview
+    // (`Requests_and_responses.md` §HTTP status codes) answers it `400`
+    // ("could not be parsed or is invalid"), not the semantic `422`. The
+    // anonymous empty PARTY_SELF stays accepted.
     // Regression for the upstream diff findings B1/B2 (the X1 upstream
     // triage ledger; in git history at docs/conformance/upstream-ferroehr/TRIAGE.md).
     let db = testkit::db().await.expect("testkit database");
@@ -743,41 +749,40 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
         "is_modifiable": true
     });
 
-    // (1) EHR create with a PARTY_IDENTIFIED subject → 422 naming the mismatch.
-    let created = svc.create_ehr(Some(wrong_subject.clone())).await;
-    match created {
-        Err(SmError {
-            status: CallStatusType::ContentInvalid,
-            message,
-        }) => assert!(
-            message.contains("PARTY_SELF") && message.contains("PARTY_IDENTIFIED"),
-            "rejection should name the type mismatch, got: {message}"
-        ),
-        other => panic!("PARTY_IDENTIFIED subject on create must be 422, got {other:?}"),
-    }
+    // (1) The body never becomes an EHR_STATUS: the reader refuses it naming
+    //     both the declared and the found type, at the offending path.
+    let refused =
+        openehr_its::json::from_canonical_value::<openehr_rm::prelude::EhrStatus>(&wrong_subject)
+            .expect_err("a PARTY_IDENTIFIED subject must be refused");
+    let message = refused.to_string();
+    assert!(
+        message.contains("PARTY_SELF")
+            && message.contains("PARTY_IDENTIFIED")
+            && message.contains("subject"),
+        "the refusal should name the slot and the type mismatch, got: {message}"
+    );
 
-    // (2) EHR_STATUS PUT with a PARTY_IDENTIFIED subject → 422 naming the mismatch.
+    // (2) The PUT seam is the same typed door, so the same body is
+    //     unrepresentable there too — an EHR_STATUS commit cannot carry it.
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
     let status_v1 = svc
         .get_ehr_status_at_time(ehr_uuid, None)
         .await
         .expect("status v1");
-    let ovid_v1 = uid(&status_v1).to_owned();
+    assert!(
+        !uid(&status_v1).is_empty(),
+        "the bootstrap status has a uid"
+    );
     let mut put_body = wrong_subject;
-    put_body.as_object_mut().unwrap().remove("uid");
-    let put = svc
-        .replace_ehr_status(ehr_uuid, uv(put_body, "251", Some(&ovid_v1)))
-        .await;
-    match put {
-        Err(SmError {
-            status: CallStatusType::ContentInvalid,
-            message,
-        }) => assert!(
-            message.contains("PARTY_SELF") && message.contains("PARTY_IDENTIFIED"),
-            "PUT rejection should name the type mismatch, got: {message}"
-        ),
-        other => panic!("PARTY_IDENTIFIED subject on PUT must be 422, got {other:?}"),
-    }
+    put_body
+        .as_object_mut()
+        .expect("the fixture is an object")
+        .remove("uid");
+    assert!(
+        openehr_its::json::from_canonical_value::<openehr_rm::prelude::EhrStatus>(&put_body)
+            .is_err(),
+        "the PUT body carries the same refused subject shape"
+    );
 
     // (3) An anonymous empty PARTY_SELF subject is accepted on create
     // ("PARTY_SELF … enabling it to be made completely anonymous", master04).
@@ -795,7 +800,7 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
         "is_queryable": true,
         "is_modifiable": true
     });
-    svc.create_ehr(Some(anonymous))
+    svc.create_ehr(Some(typed(&anonymous)))
         .await
         .expect("an anonymous PARTY_SELF EHR_STATUS is accepted");
 }
@@ -999,14 +1004,14 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let bad = svc
-        .create_composition(ehr_uuid, uv(composition_with_bad_category(), "249", None))
+        .create_composition(ehr_uuid, uv(&composition_with_bad_category(), "249", None))
         .await;
     assert!(
         matches!(bad, Err(ServiceError::ValidationFailed(_))),
         "templateless composition with bad category must 422, got {bad:?}"
     );
 
-    svc.create_composition(ehr_uuid, uv(composition("valid"), "249", None))
+    svc.create_composition(ehr_uuid, uv(&composition("valid"), "249", None))
         .await
         .expect("a valid templateless composition still commits");
 }
@@ -1059,7 +1064,7 @@ async fn revision_history_lists_every_version() {
         .expect("status");
     let ovid_v1 = uid(&status).to_owned();
     status.as_object_mut().unwrap().remove("uid");
-    svc.replace_ehr_status(ehr_uuid, uv(status, "251", Some(&ovid_v1)))
+    svc.replace_ehr_status(ehr_uuid, uv(&status, "251", Some(&ovid_v1)))
         .await
         .expect("status update");
 
@@ -1103,7 +1108,11 @@ async fn ehr_get_by_subject_finds_the_ehr() {
         "is_queryable": true,
         "is_modifiable": true
     });
-    let ehr_id = svc.create_ehr(Some(status)).await.expect("ehr").to_string();
+    let ehr_id = svc
+        .create_ehr(Some(typed(&status)))
+        .await
+        .expect("ehr")
+        .to_string();
 
     let found = svc
         .ehr_object_for_subject("patient-123", "patients")
@@ -1255,7 +1264,7 @@ async fn item_tag_crud() {
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
-        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Tagged"), "249", None))
         .await
         .expect("composition")
         .version_uid();
@@ -1310,7 +1319,7 @@ async fn item_tag_wire_shape_is_the_rm_item_tag() {
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
-        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Tagged"), "249", None))
         .await
         .expect("composition")
         .version_uid();
@@ -1366,7 +1375,7 @@ async fn item_tag_identity_is_the_key_and_target_path_pair() {
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
-        .create_composition(ehr_uuid, uv(composition("PairTagged"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("PairTagged"), "249", None))
         .await
         .expect("composition")
         .version_uid();
@@ -1428,7 +1437,7 @@ async fn item_tag_version_and_container_targets_are_distinct() {
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let version_uid = svc
-        .create_composition(ehr_uuid, uv(composition("VersionTagged"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("VersionTagged"), "249", None))
         .await
         .expect("composition")
         .version_uid();
@@ -1526,7 +1535,7 @@ async fn a_surviving_tag_keeps_its_creation_instant_across_a_replace() {
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
-        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Tagged"), "249", None))
         .await
         .expect("composition")
         .version_uid();
@@ -1610,7 +1619,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
-        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Tagged"), "249", None))
         .await
         .expect("composition")
         .version_uid();
@@ -1754,10 +1763,10 @@ async fn duplicate_subject_ehr_creation_conflicts() {
         })
     };
 
-    svc.create_ehr(Some(status("patient-1")))
+    svc.create_ehr(Some(typed(&status("patient-1"))))
         .await
         .expect("first EHR for the subject");
-    let dup = svc.create_ehr(Some(status("patient-1"))).await;
+    let dup = svc.create_ehr(Some(typed(&status("patient-1")))).await;
     assert!(
         matches!(
             dup,
@@ -1770,7 +1779,7 @@ async fn duplicate_subject_ehr_creation_conflicts() {
     );
 
     // A different subject — and the subject-less default — still create fine.
-    svc.create_ehr(Some(status("patient-2")))
+    svc.create_ehr(Some(typed(&status("patient-2"))))
         .await
         .expect("different subject creates");
     svc.create_ehr(None)
@@ -1840,7 +1849,7 @@ async fn version_get_at_time_returns_the_original_version() {
 
     // COMPOSITION: after an update, the latest VERSION is v2.
     let comp_ovid_v1 = svc
-        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
         .expect("composition")
         .version_uid();
@@ -1849,7 +1858,7 @@ async fn version_get_at_time_returns_the_original_version() {
     svc.update_composition(
         ehr_uuid,
         comp_vo_uuid,
-        uv(composition("v2"), "251", Some(&comp_ovid_v1)),
+        uv(&composition("v2"), "251", Some(&comp_ovid_v1)),
     )
     .await
     .expect("update");
@@ -1893,7 +1902,7 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
 
     // Hierarchy 1 (rank 1) via the directory endpoint.
     let dir1_ovid = svc
-        .create_directory(ehr_uuid, uv(folder("primary"), "249", None))
+        .create_directory(ehr_uuid, uv(&folder("primary"), "249", None))
         .await
         .expect("directory_create (hierarchy 1)")
         .uid;
@@ -2099,12 +2108,12 @@ async fn directory_endpoint_rejects_a_second_directory_create() {
     let svc = FerroEhrService::new(db.pool());
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
-    svc.create_directory(ehr_uuid, uv(folder("root"), "249", None))
+    svc.create_directory(ehr_uuid, uv(&folder("root"), "249", None))
         .await
         .expect("first directory");
 
     let second = svc
-        .create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .create_directory(ehr_uuid, uv(&folder("root"), "249", None))
         .await;
     assert!(
         matches!(
@@ -2130,7 +2139,7 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
 
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
     let comp_ovid = svc
-        .create_composition(ehr_uuid, uv(composition("Uri target"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("Uri target"), "249", None))
         .await
         .expect("composition_create")
         .version_uid();
@@ -2162,7 +2171,7 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
     // The attribute-only `directory` locator resolves EHR.directory once a
     // hierarchy exists (= folders.item(1), RM ehr §EHR Class
     // Directory_in_folders).
-    svc.create_directory(ehr_uuid, uv(folder("root"), "249", None))
+    svc.create_directory(ehr_uuid, uv(&folder("root"), "249", None))
         .await
         .expect("directory create");
     let uri: openehr_rm::paths::EhrUri = format!("ehr:/{ehr_uuid}/directory")
@@ -2246,7 +2255,7 @@ async fn ehr_status_discrete_mutators() {
 
     // With the EHR deactivated, a CONTENT write is refused (write guard) …
     let blocked = svc
-        .create_composition(ehr_uuid, uv(composition("blocked"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("blocked"), "249", None))
         .await;
     assert!(
         blocked.is_err(),
@@ -2266,7 +2275,7 @@ async fn ehr_status_discrete_mutators() {
         json!(true)
     );
     // Reactivated: content writes now succeed.
-    svc.create_composition(ehr_uuid, uv(composition("allowed"), "249", None))
+    svc.create_composition(ehr_uuid, uv(&composition("allowed"), "249", None))
         .await
         .expect("content write after reactivation");
 
@@ -2302,7 +2311,7 @@ async fn directory_versioned_and_has_version() {
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
 
     let dir_v1 = svc
-        .create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .create_directory(ehr_uuid, uv(&folder("root"), "249", None))
         .await
         .expect("directory_create")
         .uid;
@@ -2340,7 +2349,7 @@ async fn directory_versioned_and_has_version() {
     let mut folder_v2 = folder("root");
     folder_v2["name"]["value"] = json!("root-renamed");
     let dir_v2 = svc
-        .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_v1)))
+        .update_directory(ehr_uuid, uv(&folder_v2, "251", Some(&dir_v1)))
         .await
         .expect("directory_update")
         .uid;
@@ -2402,7 +2411,7 @@ async fn write_responses_match_a_fresh_read() {
 
     // Fix D — directory create response uid == fresh read uid.
     let dir_v1 = svc
-        .create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .create_directory(ehr_uuid, uv(&folder("root"), "249", None))
         .await
         .expect("directory_create")
         .uid;
@@ -2420,7 +2429,7 @@ async fn write_responses_match_a_fresh_read() {
     let mut folder_v2 = folder("root");
     folder_v2["name"]["value"] = json!("root2");
     let dir_v2 = svc
-        .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_v1)))
+        .update_directory(ehr_uuid, uv(&folder_v2, "251", Some(&dir_v1)))
         .await
         .expect("directory_update")
         .uid;
@@ -2453,7 +2462,7 @@ async fn write_responses_match_a_fresh_read() {
         .remove("uid");
     status_body["is_queryable"] = json!(false);
     let status_uid_v2 = svc
-        .replace_ehr_status(ehr_uuid, uv(status_body, "251", Some(&status_uid_v1)))
+        .replace_ehr_status(ehr_uuid, uv(&status_body, "251", Some(&status_uid_v1)))
         .await
         .expect("replace_ehr_status");
     assert!(
@@ -2625,20 +2634,20 @@ async fn subject_identity_is_matched_exactly_and_never_case_folded() {
     };
 
     let lower = svc
-        .create_ehr(Some(status("case-subject-a", "patients")))
+        .create_ehr(Some(typed(&status("case-subject-a", "patients"))))
         .await
         .expect("lower-case subject");
     // A case VARIANT of the same string is a DIFFERENT subject: it creates a
     // second EHR instead of colliding with the first.
     let upper = svc
-        .create_ehr(Some(status("Case-Subject-A", "patients")))
+        .create_ehr(Some(typed(&status("Case-Subject-A", "patients"))))
         .await
         .expect("case-variant subject is a distinct subject, not a duplicate");
     assert_ne!(lower, upper);
 
     // The namespace half of the key is exact too.
     let other_ns = svc
-        .create_ehr(Some(status("case-subject-a", "Patients")))
+        .create_ehr(Some(typed(&status("case-subject-a", "Patients"))))
         .await
         .expect("case-variant namespace is a distinct key");
     assert_ne!(lower, other_ns);
@@ -2660,7 +2669,7 @@ async fn subject_identity_is_matched_exactly_and_never_case_folded() {
     // And re-using an EXACT spelling still conflicts — the exactness narrows
     // the key, it does not disable the uniqueness rule.
     let dup = svc
-        .create_ehr(Some(status("case-subject-a", "patients")))
+        .create_ehr(Some(typed(&status("case-subject-a", "patients"))))
         .await;
     assert!(
         matches!(
@@ -2720,7 +2729,7 @@ async fn the_bootstrap_ehr_status_version_has_no_preceding_version_uid() {
     next.as_object_mut().expect("status object").remove("uid");
     next["is_queryable"] = json!(false);
     let ovid_v2 = svc
-        .replace_ehr_status(ehr_uuid, uv(next, "251", Some(&ovid_v1)))
+        .replace_ehr_status(ehr_uuid, uv(&next, "251", Some(&ovid_v1)))
         .await
         .expect("status v2");
     let parts_v2: Vec<&str> = ovid_v2.split("::").collect();

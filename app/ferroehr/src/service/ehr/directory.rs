@@ -27,8 +27,9 @@ use crate::ids::{EhrId, VoId};
 use crate::service::response::ResourceMeta;
 use crate::service::response::ServiceResponse;
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
+use openehr_its::rest::generated::common::UpdateVersion;
+use openehr_rm::prelude::Folder;
 use serde_json::Value;
 
 use crate::service::FerroEhrService;
@@ -55,20 +56,26 @@ impl FerroEhrService {
     pub(in crate::service) async fn commit_new_directory(
         &self,
         ehr_id: EhrId,
-        version: UpdateVersion,
+        version: UpdateVersion<Folder>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let (audit, envelope) = resolve_envelope(
-            &version,
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction (`super::canonicalize`).
+        let version = super::canonicalize(version);
+        // 553|incomplete| relaxes the existence/cardinality lower bounds
+        // (RM common master06 §Incomplete Content), exactly as on the
+        // COMPOSITION direct route.
+        let super::CommitParts {
+            audit,
+            envelope,
+            incomplete,
+            canonical: folder,
+        } = resolve_envelope(
+            version,
             change_type::CREATION,
             "FOLDER directory creation",
             &self.effective_system_id(),
         )?;
-        // 553|incomplete| relaxes the existence/cardinality lower bounds
-        // (RM common master06 §Incomplete Content), exactly as on the
-        // COMPOSITION direct route.
-        let incomplete =
-            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
-        let folder = version.data;
         self.ensure_ehr_exists(ehr_id).await?;
         validate_folder(&folder, incomplete)?;
         // is_modifiable = False forbids content writes; the directory is EHR
@@ -257,19 +264,25 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
-        version: UpdateVersion,
+        version: UpdateVersion<Folder>,
         expected: Option<TreeId>,
         is_modifiable: bool,
     ) -> Result<ServiceResponse, ServiceError> {
-        let (audit, envelope) = resolve_envelope(
-            &version,
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction (`super::canonicalize`).
+        let version = super::canonicalize(version);
+        let super::CommitParts {
+            audit,
+            envelope,
+            incomplete,
+            canonical: folder,
+        } = resolve_envelope(
+            version,
             change_type::MODIFICATION,
             "FOLDER directory update",
             &self.effective_system_id(),
         )?;
-        let incomplete =
-            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
-        let folder = version.data;
         validate_folder(&folder, incomplete)?;
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — the directory is EHR content. Folded from the
@@ -316,7 +329,7 @@ impl FerroEhrService {
         vo_id: VoId,
         expected: Option<TreeId>,
         is_modifiable: bool,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&openehr_its::rest::generated::common::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — folded from the standalone `ensure_content_writable`
@@ -494,7 +507,7 @@ impl FerroEhrService {
     pub async fn create_directory(
         &self,
         an_ehr_id: EhrId,
-        a_dir_struct: UpdateVersion,
+        a_dir_struct: UpdateVersion<Folder>,
     ) -> Result<ResourceMeta, SmError> {
         super::committed_meta(self.commit_new_directory(an_ehr_id, a_dir_struct).await?)
     }
@@ -532,7 +545,7 @@ impl FerroEhrService {
     pub async fn update_directory(
         &self,
         an_ehr_id: EhrId,
-        a_dir_struct: UpdateVersion,
+        a_dir_struct: UpdateVersion<Folder>,
     ) -> Result<ResourceMeta, SmError> {
         // Resolve the directory-slot vo_id + its current version metadata + the
         // EHR's is_modifiable flag ONCE (the `If-Match` pre-read); a missing
@@ -574,7 +587,7 @@ impl FerroEhrService {
         &self,
         an_ehr_id: EhrId,
         preceding_version_uid: Option<ObjectVersionId>,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&openehr_its::rest::generated::common::UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
         let Some((vo_id, is_modifiable, latest)) = self.directory_meta_with_vo(an_ehr_id).await?
         else {

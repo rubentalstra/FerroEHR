@@ -17,10 +17,11 @@
 use serde_json::{Value, json};
 use sqlx::PgPool;
 
+use crate::typed_body::typed;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::demographic::types::PartyKind;
 use ferroehr::service::status::{CallStatusType, SmError};
-use ferroehr::service::version_update::UpdateVersion;
+use openehr_its::rest::generated::common::UpdateVersion;
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn ovid(v: &Value) -> &str {
@@ -137,20 +138,30 @@ fn role(name: &str) -> Value {
 /// (RM common master06 §Contributions; a client-supplied contradicting code
 /// is rejected per ITS-REST overview §"openehr-version and
 /// openehr-audit-details" + `AUDIT_DETAILS.Change_type_valid`).
-fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(data: &Value, preceding: Option<&str>) -> UpdateVersion<T> {
     let change = if preceding.is_some() { "251" } else { "249" };
+    // `lifecycle_state` and `commit_audit.change_type` are `DV_CODED_TEXT` on
+    // the released wire (ITS-REST `schemas/common/UpdateVersion.yaml` /
+    // `UpdateAudit.yaml` both `$ref` `DvCodedText`), not the flat SM
+    // `Terminology_code` spelling.
     let mut v = json!({
-        "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
+        "lifecycle_state": {
+            "value": "complete",
+            "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": "532" }
+        },
         "data": data,
         "commit_audit": {
-            "change_type": { "terminology_id": "openehr", "code_string": change },
+            "change_type": {
+                "value": "commit",
+                "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": change }
+            },
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "sm tester" }
         }
     });
     if let Some(p) = preceding {
         v["preceding_version_uid"] = json!({ "value": p });
     }
-    serde_json::from_value(v).expect("UpdateVersion")
+    openehr_its::json::from_canonical_value(&v).expect("UpdateVersion")
 }
 
 /// The literal SM `I_DEMOGRAPHIC_SERVICE` + `I_PARTY` calls (typed Uuid/version
@@ -164,8 +175,9 @@ async fn party_sm_calls_round_trip() {
     let svc = FerroEhrService::new(db.pool());
 
     // create_party(UV_PARTY) → the new VERSIONED_OBJECT's id.
-    let vo_id = svc
-        .create_party(uv(&person("Jane"), None))
+    // Boxed: the typed `UPDATE_VERSION<PARTY>` argument rides the SM future
+    // (clippy `large_futures`).
+    let vo_id = Box::pin(svc.create_party(uv(&person("Jane"), None)))
         .await
         .expect("create_party");
 
@@ -204,8 +216,7 @@ async fn party_sm_calls_round_trip() {
     );
 
     // update_party(UV_PARTY with preceding_version_uid) → the new version uid.
-    let v2 = svc
-        .update_party(vo_id, uv(&person("Jane Roe"), Some(&v1)))
+    let v2 = Box::pin(svc.update_party(vo_id, uv(&person("Jane Roe"), Some(&v1))))
         .await
         .expect("update_party");
     assert!(v2.ends_with("::2"), "second version, got {v2}");
@@ -246,7 +257,7 @@ async fn person_lifecycle_end_to_end() {
 
     // create → v1
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"), None)
+        .party_create(PartyKind::Person, typed(&person("Jane")), None)
         .await
         .expect("create person");
     assert_eq!(created.body["_type"], "PERSON");
@@ -289,7 +300,7 @@ async fn person_lifecycle_end_to_end() {
             PartyKind::Person,
             vo.clone(),
             ovid_v1.clone(),
-            person("Jane Roe"),
+            typed(&person("Jane Roe")),
             None,
         )
         .await
@@ -310,7 +321,7 @@ async fn person_lifecycle_end_to_end() {
             PartyKind::Person,
             vo.clone(),
             ovid_v1.clone(),
-            person("stale"),
+            typed(&person("stale")),
             None,
         )
         .await;
@@ -384,7 +395,7 @@ async fn party_write_responses_match_a_fresh_read() {
 
     // create → the built-from-commit body equals a fresh read.
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"), None)
+        .party_create(PartyKind::Person, typed(&person("Jane")), None)
         .await
         .expect("create person");
     let ovid_v1 = ovid(&created.body).to_owned();
@@ -409,7 +420,7 @@ async fn party_write_responses_match_a_fresh_read() {
             PartyKind::Person,
             vo.clone(),
             ovid_v1,
-            person("Jane Roe"),
+            typed(&person("Jane Roe")),
             None,
         )
         .await
@@ -429,7 +440,7 @@ async fn party_write_responses_match_a_fresh_read() {
 
     // ORGANISATION sibling — the same create path keyed by PartyKind.
     let created_org = svc
-        .party_create(PartyKind::Organisation, organisation("Acme"), None)
+        .party_create(PartyKind::Organisation, typed(&organisation("Acme")), None)
         .await
         .expect("create organisation");
     let vo_org = vo_uuid(&created_org.body);
@@ -453,7 +464,7 @@ async fn person_delete_by_versioned_uid_with_if_match() {
     let svc = FerroEhrService::new(db.pool());
 
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"), None)
+        .party_create(PartyKind::Person, typed(&person("Jane")), None)
         .await
         .expect("create person");
     let ovid = ovid(&created.body).to_owned();
@@ -480,7 +491,7 @@ async fn role_create_and_get() {
     let svc = FerroEhrService::new(db.pool());
 
     let created = svc
-        .party_create(PartyKind::Role, role("Clinician"), None)
+        .party_create(PartyKind::Role, typed(&role("Clinician")), None)
         .await
         .expect("create role");
     assert_eq!(created.body["_type"], "ROLE");
@@ -566,7 +577,7 @@ async fn party_tags_crud() {
     let svc = FerroEhrService::new(db.pool());
 
     let created = svc
-        .party_create(PartyKind::Person, person("Tagged"), None)
+        .party_create(PartyKind::Person, typed(&person("Tagged")), None)
         .await
         .expect("create person");
     let vo = vo_uuid(&created.body);
@@ -625,7 +636,7 @@ async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
     let svc = FerroEhrService::new(db.pool());
 
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"), None)
+        .party_create(PartyKind::Person, typed(&person("Jane")), None)
         .await
         .expect("create person");
     let ovid_v1 = ovid(&created.body).to_owned();
@@ -639,7 +650,7 @@ async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
             PartyKind::Person,
             vo.clone(),
             upper,
-            person("Jane Roe"),
+            typed(&person("Jane Roe")),
             None,
         )
         .await
@@ -653,7 +664,7 @@ async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
             PartyKind::Person,
             vo.clone(),
             format!("\"{ovid_v2}\""),
-            person("Jane Doe"),
+            typed(&person("Jane Doe")),
             None,
         )
         .await
@@ -662,7 +673,13 @@ async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
 
     // A stale full OVID is still the precondition failure (412).
     let stale = svc
-        .party_update(PartyKind::Person, vo, ovid_v1, person("stale"), None)
+        .party_update(
+            PartyKind::Person,
+            vo,
+            ovid_v1,
+            typed(&person("stale")),
+            None,
+        )
         .await;
     assert!(
         matches!(
@@ -718,7 +735,7 @@ async fn inline_relationships_are_stored_and_served_verbatim() {
     // ACCEPTED: a by-value relationships list is ordinary PARTY content
     // (PARTY.Relationships_validity only forbids a PRESENT-EMPTY list).
     let created = svc
-        .party_create(PartyKind::Person, body, None)
+        .party_create(PartyKind::Person, typed(&body), None)
         .await
         .expect("a party carrying an inline relationships list is accepted");
     let vo = vo_uuid(&created.body);
@@ -772,7 +789,7 @@ async fn inline_relationship_source_matches_the_version_container_not_the_versio
     let svc = FerroEhrService::new(db.pool());
 
     let created = svc
-        .party_create(PartyKind::Person, person("Jane Container"), None)
+        .party_create(PartyKind::Person, typed(&person("Jane Container")), None)
         .await
         .expect("create person");
     let vo = vo_uuid(&created.body);
@@ -805,7 +822,13 @@ async fn inline_relationship_source_matches_the_version_container_not_the_versio
     let mut body = served.body.clone();
     body["relationships"] = json!([relationship(&vo)]);
     let updated = svc
-        .party_update(PartyKind::Person, vo.clone(), ovid_v1.clone(), body, None)
+        .party_update(
+            PartyKind::Person,
+            vo.clone(),
+            ovid_v1.clone(),
+            typed(&body),
+            None,
+        )
         .await
         .expect(
             "a round-tripped party whose inline relationship names its own version \
@@ -822,7 +845,13 @@ async fn inline_relationship_source_matches_the_version_container_not_the_versio
         .body;
     foreign["relationships"] = json!([relationship("33333333-3333-4333-8333-333333333333")]);
     let refused = svc
-        .party_update(PartyKind::Person, vo.clone(), ovid_v2, foreign, None)
+        .party_update(
+            PartyKind::Person,
+            vo.clone(),
+            ovid_v2,
+            typed(&foreign),
+            None,
+        )
         .await;
     assert!(
         matches!(
@@ -860,7 +889,7 @@ async fn versioned_party_owner_id_names_the_serving_system() {
     let svc = FerroEhrService::new(db.pool());
 
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"), None)
+        .party_create(PartyKind::Person, typed(&person("Jane")), None)
         .await
         .expect("create person");
     let vo = vo_uuid(&created.body);

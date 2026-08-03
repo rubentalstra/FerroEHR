@@ -89,6 +89,15 @@ cnf.composition.minimal_event.v1:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.composition.dv_text_in_content:
+  source: fixtures/composition/minimal_event.dv_text_in_content.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a DV_TEXT member inside COMPOSITION.content — the slot is declared List<CONTENT_ITEM>, and a DV_TEXT is not a CONTENT_ITEM"
+    spec_ref: "RM ehr master05-composition_package (COMPOSITION content: List<CONTENT_ITEM>); overview Requests_and_responses §HTTP status codes, the 400 row"
+  provenance: "authored 2026-08-03 from minimal_event — the declared-slot-type invalid twin (#1655): typed construction refuses the foreign member at parse (the 400 class per the owner ruling 2026-08-03)"
 cnf.composition.minimal_event.comma_fraction:
   source: fixtures/composition/minimal_event.comma_fraction.json
   format: canonical-json
@@ -1862,6 +1871,15 @@ cnf.demographic.party_relationship.invalid:
 # is a TBD stub, so every payload below is authored FIRST-HAND from the RM
 # demographic + RM common class model, and each invalid one names the exact
 # invariant or attribute declaration it breaches.
+cnf.demographic.party_relationship.root_identity_mismatch:
+  source: fixtures/demographic/party_relationship.root_identity_mismatch.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the archetype root's node_id and its archetype_details.archetype_id disagree — construction-valid, refused by the semantic pass"
+    spec_ref: "RM common UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (archetype_node_id: at an archetype root, the stringified archetype_details.archetype_id)"
+  provenance: "authored 2026-08-03 from party_relationship.v1 — the semantic (422-class) twin restoring validation_failed coverage after the structural cases moved to the 400 parse class (owner ruling 2026-08-03)"
 cnf.demographic.person.no_archetype_details:
   source: fixtures/demographic/person.no_archetype_details.json
   format: canonical-json
@@ -2354,6 +2372,15 @@ cnf.sf.flat.missing_territory:
     spec_ref: "ITS-REST simplified_formats master04 §Validation (mandatory context fields language, territory are present)"
   provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Validation (mandatory context fields language, territory) by removing ctx/territory from a minimal FLAT commit"
 
+cnf.sf.flat.malformed_path:
+  source: fixtures/sf/flat.malformed_path.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "a FLAT key breaks the master04 field-identifier grammar (an empty path segment and a bare trailing pipe carrying no attribute name) — the document is not readable AS FLAT"
+    spec_ref: "ITS-REST simplified_formats master04 §Flat Format (field-identifier syntax); overview Requests_and_responses §HTTP status codes, the 400 row"
+  provenance: "authored 2026-08-03 from flat.missing_territory (ctx completed) — the SYNTAX twin of the FLAT input split: template-independent format violations answer 400, template-/RM-mediated failures answer 422 (owner split 2026-08-03)"
 cnf.sf.flat.multi_event:
   source: fixtures/sf/flat.multi_event.json
   format: wt-flat

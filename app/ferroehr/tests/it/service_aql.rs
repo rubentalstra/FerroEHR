@@ -44,7 +44,6 @@ use std::collections::BTreeMap;
 
 use serde_json::{Value, json};
 
-use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use uuid::Uuid;
 
@@ -52,7 +51,8 @@ use ferroehr::service::FerroEhrService;
 use ferroehr::service::query::request::AqlQueryRequest;
 use ferroehr::service::status::{CallStatusType, SmError};
 
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
 use crate::adl2_fixture::adl2_source;
 
@@ -60,34 +60,30 @@ const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).
 const MAG_PATH: &str = "data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/magnitude";
 
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM write, mirroring the
 /// adapter's `mk_update_version` (the RM object is the `data`, `If-Match` is the
 /// `preceding_version_uid`, and the audit carries the change type + committer).
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -144,7 +140,7 @@ async fn create_comp(svc: &FerroEhrService, ehr_id: &str, name: &str, magnitude:
     // / `.meta.uid`).
     svc.create_composition(
         ehr_id.parse().expect("ehr_id uuid"),
-        uv(composition(name, magnitude), "249", None),
+        uv(&composition(name, magnitude), "249", None),
     )
     .await
     .unwrap_or_else(|e| panic!("create_composition ({name}, {magnitude}): {e:?}"))
@@ -165,7 +161,7 @@ async fn create_comp_arch(
     let mut c = composition(name, magnitude);
     c["content"][0]["archetype_node_id"] = json!(archetype);
     c["content"][0]["archetype_details"]["archetype_id"]["value"] = json!(archetype);
-    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(c, "249", None))
+    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(&c, "249", None))
         .await
         .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
         .version_uid()
@@ -203,7 +199,7 @@ async fn set_not_queryable(svc: &FerroEhrService, ehr_id: &str) {
     let obj = body.as_object_mut().expect("EHR_STATUS object");
     obj.remove("uid");
     obj.insert("is_queryable".to_owned(), json!(false));
-    svc.replace_ehr_status(ehr_uuid, uv(body, "251", Some(&if_match)))
+    svc.replace_ehr_status(ehr_uuid, uv(&body, "251", Some(&if_match)))
         .await
         .expect("replace_ehr_status is_queryable=false");
 }
@@ -754,7 +750,7 @@ async fn latest_versus_all_versions() {
             .update_composition(
                 ehr_uuid,
                 vo_uuid,
-                uv(composition("v", magnitude), "251", Some(&current)),
+                uv(&composition("v", magnitude), "251", Some(&current)),
             )
             .await
             .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}"))
@@ -1310,7 +1306,7 @@ fn composition_persistent(name: &str, magnitude: f64) -> Value {
 }
 
 async fn create_comp_body(svc: &FerroEhrService, ehr_id: &str, body: Value, name: &str) -> String {
-    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(body, "249", None))
+    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(&body, "249", None))
         .await
         .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
         .version_uid()

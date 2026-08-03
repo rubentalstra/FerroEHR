@@ -246,15 +246,16 @@ impl FerroEhrService {
             Kind::EhrStatus => validate_ehr_status(data),
             Kind::EhrAccess => validate_ehr_access(data, incomplete),
             Kind::Folder => validate_folder(data, incomplete),
+            // The demographic kinds arrive here from the raw-body
+            // CONTRIBUTION lane only (the `Kind` was derived from the
+            // payload's own `_type`), so they take the full check — decode
+            // included; the direct routes enter at `party_invariants`, having
+            // decoded already.
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
-                crate::service::demographic::validate::validate_party_kind_for_commit(
-                    kind, data, incomplete,
-                )
+                crate::service::demographic::validate::party_check(kind.as_str(), data, incomplete)
             }
             Kind::PartyRelationship => {
-                crate::service::demographic::validate::validate_relationship_for_commit(
-                    data, incomplete,
-                )
+                crate::service::demographic::validate::relationship_check(data, incomplete)
             }
         }
     }

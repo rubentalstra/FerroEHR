@@ -13,17 +13,18 @@ use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::demographic::support;
 use crate::service::demographic::types::PartyKind;
-use crate::service::demographic::validate::validate_party_body;
+use crate::service::demographic::validate::party_invariants;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
-use crate::service::version_update::{Committal, UpdateAudit};
+use crate::service::version_update::Committal;
 use crate::versioning::CommitEnv;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::WriteEnvelope;
 use crate::versioning::change::{create, delete, update};
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::{VersionRead, demographic_current, object_kind};
+use openehr_its::rest::generated::common::UpdateAudit;
 
 /// The current version of a demographic party, resolved in ONE lean
 /// `vo_version`⋈`audit` read (no node reassembly). Carries the kind-checked
@@ -142,7 +143,7 @@ impl FerroEhrService {
         body: Value,
         committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
-        validate_party_body(kind, &body)?;
+        party_invariants(kind.rm_type(), &body, false)?;
 
         // The caller's UPDATE_VERSION attributes merge with the server rules —
         // BOTH halves the committal headers carry: the `UPDATE_AUDIT`
@@ -277,7 +278,7 @@ impl FerroEhrService {
                 format!("{} {} is deleted", kind.rm_type(), current.vo_id),
             ));
         }
-        validate_party_body(kind, &body)?;
+        party_invariants(kind.rm_type(), &body, false)?;
 
         let audit = self.demographic_audit(
             committal.map(|c| &c.audit),

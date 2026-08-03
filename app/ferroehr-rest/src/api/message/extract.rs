@@ -328,11 +328,7 @@ async fn run(
             Ok(negotiate::respond(h, StatusCode::OK, &extracts))
         }
         "message_export_ehr_extracts" => {
-            let value = negotiate::rm_value::<ExtractSpec>(h, &parts.body)?;
-            let spec: ExtractSpec =
-                openehr_its::json::from_canonical_value(&value).map_err(|e| {
-                    RestError(ApiError::BadRequest(format!("invalid EXTRACT_SPEC: {e}")))
-                })?;
+            let spec = negotiate::rm_value::<ExtractSpec>(h, &parts.body)?;
             let extracts = state.backend().export_ehr_extracts(spec).await?;
             Ok(negotiate::respond(h, StatusCode::OK, &extracts))
         }
@@ -361,9 +357,7 @@ async fn run(
 /// Decode the request body as a canonical `EXTRACT` (JSON or XML, per the
 /// shared RM body negotiation).
 fn read_extract(parts: &RequestParts) -> Result<Extract, RestError> {
-    let value = negotiate::rm_value::<Extract>(&parts.headers, &parts.body)?;
-    openehr_its::json::from_canonical_value(&value)
-        .map_err(|e| RestError(ApiError::BadRequest(format!("invalid EXTRACT: {e}"))))
+    Ok(negotiate::rm_value::<Extract>(&parts.headers, &parts.body)?)
 }
 
 /// The OPTIONAL `ehr_id` query parameter of `import_ehr` (SM `[0..1]`).

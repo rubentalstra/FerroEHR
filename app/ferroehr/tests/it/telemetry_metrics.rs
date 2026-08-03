@@ -21,11 +21,12 @@
 use std::sync::OnceLock;
 
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::prometheus::install;
 use metrics_exporter_prometheus::PrometheusHandle;
-use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
+use openehr_base::prelude::ObjectVersionId;
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 
@@ -49,16 +50,6 @@ fn committed(handle: &PrometheusHandle, change_type: &str) -> u64 {
         .unwrap_or(0)
 }
 
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 fn committer(name: &str) -> Value {
     json!({ "_type": "PARTY_IDENTIFIED", "name": name })
 }
@@ -76,21 +67,27 @@ fn change_type(code: &str, value: &str) -> Value {
 }
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM composition write.
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(&committer(
                 "metrics tester",
             ))
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -153,7 +150,7 @@ async fn compositions_committed_total_counts_every_committed_composition_version
 
     // (1) The direct create route: one 249|creation| version.
     let v1 = svc
-        .create_composition(ehr_id, uv(composition("v1"), "249", None))
+        .create_composition(ehr_id, uv(&composition("v1"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -168,7 +165,7 @@ async fn compositions_committed_total_counts_every_committed_composition_version
         .update_composition(
             ehr_id,
             vo_of(&v1).parse().expect("vo uuid"),
-            uv(composition("v2"), "251", Some(&v1)),
+            uv(&composition("v2"), "251", Some(&v1)),
         )
         .await
         .expect("update_composition")
@@ -187,7 +184,7 @@ async fn compositions_committed_total_counts_every_committed_composition_version
         .update_composition(
             ehr_id,
             vo_of(&v1).parse().expect("vo uuid"),
-            uv(composition("stale"), "251", Some(&v1)),
+            uv(&composition("stale"), "251", Some(&v1)),
         )
         .await;
     assert!(

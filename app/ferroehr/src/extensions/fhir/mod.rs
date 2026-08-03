@@ -639,12 +639,25 @@ impl FerroEhrService {
         // 5. Commit through the NORMAL validated path — a resource that maps to
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored.
-        let committed = self
-            .create_composition(
-                ehr_id,
-                crate::service::version_update::UpdateVersion::direct(composition),
-            )
-            .await?;
+        // The converter emits a canonical COMPOSITION fragment; re-typing it
+        // through the strict reader is what hands the commit seam a typed
+        // value (a mapping that produced something else is content-invalid,
+        // never partially stored).
+        let typed: openehr_rm::prelude::Composition =
+            openehr_its::json::from_canonical_value(&composition).map_err(|e| {
+                SmError::new(
+                    CallStatusType::ContentInvalid,
+                    format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
+                )
+            })?;
+        // Boxed: the typed COMPOSITION envelope makes this future large enough
+        // to matter on the stack of an async ingest path (clippy
+        // `large_futures`).
+        let committed = Box::pin(self.create_composition(
+            ehr_id,
+            crate::service::version_update::direct_envelope(typed),
+        ))
+        .await?;
         Ok(self.committed_response(ehr_id, &committed))
     }
 

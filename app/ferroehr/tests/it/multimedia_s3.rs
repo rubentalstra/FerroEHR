@@ -171,7 +171,13 @@ fn multimedia(n: usize) -> Value {
     reason = "the helper takes an owned Value so call sites can pass a json! \
               literal directly"
 )]
-fn status_with_media(media: Value) -> Value {
+fn status_with_media(media: Value) -> openehr_rm::prelude::EhrStatus {
+    openehr_its::json::from_canonical_value(&status_with_media_value(&media))
+        .expect("the fixture EHR_STATUS decodes")
+}
+
+/// The same fixture as its canonical JSON (what a client would post).
+fn status_with_media_value(media: &Value) -> Value {
     json!({
         "_type": "EHR_STATUS",
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },

@@ -375,6 +375,42 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **BREAKING: a structurally invalid RM request body now answers `400`, not
+  `422`, and the commit audit's coded members carry their released wire
+  shape.** The commit routes (COMPOSITION, `EHR_STATUS`, DIRECTORY, EHR
+  creation, the demographic party and relationship routes, and the EHR-Extract
+  import) decode the request body into the concrete openEHR type before
+  anything else runs, so the strict canonical reader is what judges its shape.
+  A body that is not an instance of the addressed class at all — a wrong or
+  missing `_type`, an undeclared member, a repeated member, an absent mandatory
+  attribute, an empty `1..*` container, a malformed identifier, a PERSON posted
+  to `/demographic/agent` — is refused there, and the ITS-REST overview
+  (`Requests_and_responses.md` §HTTP status codes) assigns that class `400`
+  ("could not be parsed or is invalid"), reserving `422` for a body that is
+  "well-formed but was unable to be followed due to semantic errors". Bodies
+  that ARE valid instances but break a semantic rule — a terminology binding, a
+  template mismatch, a body `uid` naming a different versioned object — keep
+  their `422` exactly as before. In the same change the commit envelope adopts
+  the released `UpdateVersion.yaml` / `UpdateAudit.yaml` shapes end to end:
+  `lifecycle_state` and `commit_audit.change_type` are `DV_CODED_TEXT`
+  (`{"value": …, "defining_code": {"terminology_id": {"value": "openehr"},
+  "code_string": "532"}}`) rather than the flat `TERMINOLOGY_CODE` spelling,
+  `commit_audit.description` is a `DV_TEXT` object rather than a bare string
+  (so a description may now be CODED when it travels in the body — the
+  `openehr-audit-details` header still carries only the plain
+  `description.value`), and `commit_audit` accepts its `UPDATE_ATTESTATION`
+  subtype, which the released schema's discriminator has always allowed and
+  which RM common `master06` §Committal and Audits names ("`AUDIT_DETAILS` …
+  or its subtype `ATTESTATION`"). The committal request headers, the
+  CONTRIBUTION route and every response body are unchanged. Simplified-Format
+  (FLAT/STRUCTURED) input failures split along the same line: a
+  TEMPLATE-INDEPENDENT format violation — a key breaking the FLAT
+  field-identifier grammar, a `ctx/` key outside the master06 vocabulary, the
+  forbidden `|other` + `|code`/`|value`/`|terminology` combination — is `400`
+  (the document is not readable as FLAT), while template- or RM-mediated
+  conversion failures (an unknown path, an undefined suffix, a missing
+  mandatory `ctx` field, a closed value set) keep the composition endpoints'
+  own `422`.
 - **BREAKING (canonical XML): a version read now serves the `<version>`
   document element the published XSDs declare, instead of
   `<original_version>` / `<imported_version>`.** ITS-REST overview

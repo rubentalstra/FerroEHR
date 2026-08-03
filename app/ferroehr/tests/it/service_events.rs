@@ -27,45 +27,39 @@ use async_trait::async_trait;
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
 
+use crate::typed_body::typed;
 use ferroehr::extensions::events::config::EventsConfig;
 use ferroehr::extensions::events::publisher::start_with_publisher;
 use ferroehr::extensions::events::{EventError, EventPublisher};
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
-use openehr_base::prelude::TerminologyCode;
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
-
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
 
 fn committer(name: &str) -> Value {
     json!({ "_type": "PARTY_IDENTIFIED", "name": name })
 }
 
 /// An SM `UPDATE_VERSION` wrapping bare-RM `data`.
-fn uv(data: Value, change_code: &str) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(data: &Value, change_code: &str) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: None,
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(&committer(
                 "event tester",
             ))
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -217,7 +211,7 @@ async fn composition_and_contribution_commits_each_write_one_phi_free_outbox_row
     assert_eq!(after_ehr, 1, "EHR creation writes one outbox row");
 
     // (a) A direct composition commit writes exactly one more row.
-    svc.create_composition(ehr, uv(composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
         .expect("create_composition");
     assert_eq!(
@@ -283,7 +277,7 @@ async fn outbox_disabled_writes_no_rows() {
     let ehr = create_ehr(&svc).await;
     assert_eq!(total_count(&pool).await, 0, "EHR creation writes none");
 
-    svc.create_composition(ehr, uv(composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
         .expect("create_composition");
     assert_eq!(
@@ -350,7 +344,7 @@ async fn rolled_back_commit_writes_no_outbox_row() {
         "is_queryable": true,
         "is_modifiable": true
     });
-    svc.create_ehr(Some(status.clone()))
+    svc.create_ehr(Some(typed(&status)))
         .await
         .expect("first EHR for subject-42");
     let baseline = total_count(&pool).await;
@@ -359,7 +353,7 @@ async fn rolled_back_commit_writes_no_outbox_row() {
     // A second EHR for the SAME subject violates uq_ehr_subject during the
     // EHR_STATUS write, aborting the whole transaction (the commit path,
     // including its outbox insert) — a rolled-back commit.
-    svc.create_ehr(Some(status))
+    svc.create_ehr(Some(typed(&status)))
         .await
         .expect_err("duplicate subject must conflict");
     assert_eq!(
@@ -427,10 +421,10 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
 
     // Commit some work: an EHR + two compositions ⇒ three outbox rows.
     let ehr = create_ehr(&svc).await;
-    svc.create_composition(ehr, uv(composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
         .expect("comp 1");
-    svc.create_composition(ehr, uv(composition("v2"), "249"))
+    svc.create_composition(ehr, uv(&composition("v2"), "249"))
         .await
         .expect("comp 2");
     let committed = total_count(&pool).await;
@@ -536,7 +530,7 @@ async fn import_writes_one_phi_free_outbox_row() {
     status.as_object_mut().unwrap().remove("uid");
     status["is_modifiable"] = json!(false);
     source
-        .replace_ehr_status(ehr, uv_precede(status, "251", &ovid))
+        .replace_ehr_status(ehr, uv_precede(&status, "251", &ovid))
         .await
         .expect("status update");
 
@@ -568,7 +562,11 @@ async fn import_writes_one_phi_free_outbox_row() {
 }
 
 /// An `UpdateVersion` with a preceding-version uid (for updates).
-fn uv_precede(data: Value, change_code: &str, preceding: &str) -> UpdateVersion {
+fn uv_precede<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: &str,
+) -> UpdateVersion<T> {
     let mut v = uv(data, change_code);
     v.preceding_version_uid = Some(preceding.parse().expect("OBJECT_VERSION_ID"));
     v

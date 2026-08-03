@@ -18,6 +18,9 @@ request:
     Prefer: "return=representation"
 formats: [canonical-json, canonical-xml]
 outcomes:
+  bad_request:
+    status: 400                             # overview §HTTP status codes, the 400 row — "could not be parsed or is invalid": the parse class (typed construction refuses missing mandatories, empty 1..* lists, foreign _type; owner ruling 2026-08-03)
+    body: error_loose
   created:
     status: 201                           # 201_PERSON.yaml
     headers:

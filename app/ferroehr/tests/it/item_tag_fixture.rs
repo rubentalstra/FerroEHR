@@ -12,8 +12,8 @@ pub(crate) fn ehr_tag(
     key: &str,
     value: Option<&str>,
     target_path: Option<&str>,
-) -> openehr_its::rest::generated::ehr::UpdateItemTag {
-    openehr_its::rest::generated::ehr::UpdateItemTag {
+) -> openehr_its::rest::generated::common::UpdateItemTag {
+    openehr_its::rest::generated::common::UpdateItemTag {
         key: key.to_owned(),
         value: value.map(str::to_owned),
         target_path: target_path.map(str::to_owned),
@@ -25,8 +25,8 @@ pub(crate) fn party_tag(
     key: &str,
     value: Option<&str>,
     target_path: Option<&str>,
-) -> openehr_its::rest::generated::demographic::UpdateItemTag {
-    openehr_its::rest::generated::demographic::UpdateItemTag {
+) -> openehr_its::rest::generated::common::UpdateItemTag {
+    openehr_its::rest::generated::common::UpdateItemTag {
         key: key.to_owned(),
         value: value.map(str::to_owned),
         target_path: target_path.map(str::to_owned),

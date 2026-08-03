@@ -119,9 +119,13 @@ curl -u ferroehr:ferroehr \
 ```
 
 `POST /ehr/{ehr_id}/composition` returns **201 Created** with the version id in
-`ETag`. Validation failures against the template return **422 Unprocessable
-Entity** (with the errors); a malformed request returns **400**; an unknown EHR,
-**404**.
+`ETag`. A body that cannot be **constructed** as a COMPOSITION — malformed
+JSON, an undeclared or repeated member, a missing mandatory attribute, an
+empty list the model requires non-empty, a `_type` foreign to its slot — is
+**400 Bad Request**: parsing is the shape check, so structural defects never
+reach validation. A body that constructs but fails **semantic** validation
+(template constraints, RM invariants, terminology bindings) returns **422
+Unprocessable Entity** with the errors; an unknown EHR, **404**.
 
 ### Retrieve a composition
 

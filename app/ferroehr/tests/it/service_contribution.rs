@@ -30,37 +30,33 @@ use ferroehr::service::error::ServiceError;
 use ferroehr::service::status::{CallStatusType, SmError};
 
 use ferroehr::service::list::Page;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
-use openehr_base::prelude::TerminologyCode;
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM composition write.
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -273,7 +269,7 @@ async fn attestation_error_cases() {
     let v1 = svc
         .create_composition(
             ehr_id.parse().expect("ehr uuid"),
-            uv(composition("v1"), "249", None),
+            uv(&composition("v1"), "249", None),
         )
         .await
         .expect("composition_create")
@@ -484,11 +480,11 @@ async fn contribution_listing_count_and_ehr_summary() {
         .as_str()
         .expect("status uid")
         .to_owned();
-    svc.replace_ehr_status(ehr_uuid, uv(ehr_status(false), "251", Some(&status_uid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&ehr_status(false), "251", Some(&status_uid)))
         .await
         .expect("EHR_STATUS update"); // contribution #2
 
-    svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+    svc.create_composition(ehr_uuid, uv(&composition("obs"), "249", None))
         .await
         .expect("composition_create"); // contribution #3
 
@@ -606,10 +602,10 @@ async fn ehr_contribution_list_page_extension() {
         .as_str()
         .expect("status uid")
         .to_owned();
-    svc.replace_ehr_status(ehr_uuid, uv(ehr_status(false), "251", Some(&status_uid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&ehr_status(false), "251", Some(&status_uid)))
         .await
         .expect("EHR_STATUS update");
-    svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+    svc.create_composition(ehr_uuid, uv(&composition("obs"), "249", None))
         .await
         .expect("composition_create");
 
@@ -666,8 +662,10 @@ async fn ehr_contribution_list_page_extension() {
     );
 }
 
-/// A `TerminologyCode`-shaped `UPDATE_VERSION.lifecycle_state` (the wire shape
-/// per ITS-REST `UpdateVersion.yaml`): `{terminology_id, code_string}`.
+/// The SM `Terminology_code` spelling of `UPDATE_VERSION.lifecycle_state`
+/// (`UML/classes/update_version.adoc`: `{terminology_id, code_string}`), which
+/// the raw-body CONTRIBUTION lane accepts beside the `DV_CODED_TEXT` the
+/// released ITS-REST `UpdateVersion.yaml` declares.
 fn lifecycle(code: &str) -> Value {
     json!({ "terminology_id": "openehr", "code_string": code })
 }
@@ -940,7 +938,7 @@ async fn contribution_resolve_refs() {
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp_uid = svc
-        .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("obs"), "249", None))
         .await
         .expect("composition_create")
         .version_uid();
@@ -1040,7 +1038,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
         .parse::<ferroehr::ids::EhrId>()
         .expect("uuid");
     let missing = svc
-        .create_composition(ghost, uv(composition("obs"), "249", None))
+        .create_composition(ghost, uv(&composition("obs"), "249", None))
         .await
         .expect_err("unknown EHR rejected");
     assert!(
@@ -1052,7 +1050,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     // block — is_modifiable = None/true → writable).
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
-    svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+    svc.create_composition(ehr_uuid, uv(&composition("obs"), "249", None))
         .await
         .expect("modifiable EHR accepts a composition");
 
@@ -1080,12 +1078,12 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
         "is_queryable": true,
         "is_modifiable": false
     });
-    svc.replace_ehr_status(ehr_uuid, uv(deactivated, "251", Some(&status_uid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&deactivated, "251", Some(&status_uid)))
         .await
         .expect("EHR_STATUS deactivation");
 
     let blocked = svc
-        .create_composition(ehr_uuid, uv(composition("obs2"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("obs2"), "249", None))
         .await
         .expect_err("non-modifiable EHR blocks content writes");
     let ServiceError::Conflict(message) = &blocked else {
@@ -1110,7 +1108,7 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let created = svc
-        .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("obs"), "249", None))
         .await
         .expect("create")
         .version_uid();
@@ -1125,7 +1123,7 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
                     .expect("vo id part")
                     .parse()
                     .expect("vo uuid"),
-                uv(composition(&format!("obs-v{i}")), "251", Some(&preceding)),
+                uv(&composition(&format!("obs-v{i}")), "251", Some(&preceding)),
             )
             .await
             .expect("update")
@@ -1232,7 +1230,7 @@ async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let v1 = svc
-        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
         .expect("create")
         .version_uid();
@@ -1276,8 +1274,8 @@ async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
 
     // (2) The direct route reaches the same refusal through the
     // `openehr-version: lifecycle_state.code_string="523"` header.
-    let mut direct = uv(composition("deleted but full"), "251", Some(&v1));
-    direct.lifecycle_state = term("523");
+    let mut direct = uv(&composition("deleted but full"), "251", Some(&v1));
+    direct.lifecycle_state = lifecycle_state_coded("523");
     let err = svc
         .update_composition(ehr_uuid, vo_uuid, direct)
         .await
@@ -1307,7 +1305,7 @@ async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
         .update_composition(
             ehr_uuid,
             vo_uuid,
-            uv(composition("deleted but full"), "251", Some(&v1)),
+            uv(&composition("deleted but full"), "251", Some(&v1)),
         )
         .await
         .expect("the same content commits as 532|complete|")
@@ -1566,7 +1564,7 @@ async fn merge_provenance_is_refused_on_the_commit_wire() {
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let v1 = svc
-        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
         .expect("create")
         .version_uid();
@@ -1651,7 +1649,7 @@ async fn foreign_version_identity_is_refused_on_the_commit_wire() {
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let v1 = svc
-        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
         .expect("create")
         .version_uid();

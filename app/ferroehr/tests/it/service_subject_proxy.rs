@@ -36,38 +36,31 @@ use ferroehr::service::subject_proxy::data_set::SubjectDataSet;
 use ferroehr::service::subject_proxy::sample::FramePayload;
 use ferroehr::service::subject_proxy::value::VariableValue;
 use ferroehr::service::subject_proxy::variable::SubjectVariable;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
-use openehr_base::prelude::TerminologyCode;
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 // ── committed-data helpers (mirror service_aql.rs) ───────────────────────────
 
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn uv(data: Value) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(data: &Value) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: None,
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term("249"),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded("249"),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "sps tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -141,7 +134,7 @@ async fn subject_proxy_pulls_variable_through_openehr_frame() {
     // Committed data: an EHR with one COMPOSITION named "vitals".
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let subject = ehr.to_string();
-    svc.create_composition(ehr, uv(composition("vitals")))
+    svc.create_composition(ehr, uv(&composition("vitals")))
         .await
         .expect("commit composition");
 
@@ -198,7 +191,7 @@ async fn subject_proxy_application_data_set_round_trip() {
 
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let subject = ehr.to_string();
-    svc.create_composition(ehr, uv(composition("vitals")))
+    svc.create_composition(ehr, uv(&composition("vitals")))
         .await
         .expect("commit composition");
 

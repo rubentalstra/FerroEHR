@@ -37,7 +37,7 @@
 //! - `update_party_relationship` retains the SM's `definitions_valid`
 //!   precondition (structural validity of the new version) rather than the
 //!   PARTY's `valid_content`; both reduce to the same structural check here
-//!   (`validate::validate_relationship_body`), so the normalization is
+//!   (`validate::relationship_check`), so the normalization is
 //!   behaviour-preserving.
 
 use serde_json::Value;
@@ -45,17 +45,18 @@ use serde_json::Value;
 use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::demographic::support;
-use crate::service::demographic::validate::validate_relationship_body;
+use crate::service::demographic::validate::relationship_check;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
-use crate::service::version_update::{Committal, UpdateAudit};
+use crate::service::version_update::Committal;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::WriteEnvelope;
 use crate::versioning::change::{create, delete, update};
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::{VersionRead, demographic_current, object_kind};
 use crate::versioning::{CommitEnv, Kind};
+use openehr_its::rest::generated::common::UpdateAudit;
 
 /// The current version of a `PARTY_RELATIONSHIP`, resolved in ONE lean
 /// `vo_version`⋈`audit` read (no node reassembly) — the relationship analogue
@@ -183,7 +184,7 @@ impl FerroEhrService {
         body: Value,
         committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
-        validate_relationship_body(&body)?;
+        relationship_check(&body, false)?;
 
         // Both halves of the committal merge — the `UPDATE_AUDIT` attributes
         // and the VERSION `lifecycle_state` (ITS-REST overview
@@ -276,7 +277,7 @@ impl FerroEhrService {
                 format!("PARTY_RELATIONSHIP {} is deleted", current.vo_id),
             ));
         }
-        validate_relationship_body(&body)?;
+        relationship_check(&body, false)?;
 
         let audit = self.demographic_audit(
             committal.map(|c| &c.audit),

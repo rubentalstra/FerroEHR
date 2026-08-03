@@ -25,6 +25,7 @@ use axum::body::Body;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
+use serde_json::json;
 use tower::ServiceExt;
 
 use ferroehr::config::auth::{AuthConfig, BasicConfig, BasicUser, OidcConfig};
@@ -318,9 +319,35 @@ fn etag_uid(h: &header::HeaderMap) -> Option<String> {
 
 #[tokio::test]
 async fn json_composition_body_is_accepted_and_reaches_handler() {
-    // RE-TARGET: was a Mock `501`. The JSON body is decoded and the handler
-    // reached; the EHR does not exist so the real service answers `404` (not a
-    // 400/415 negotiation error — which is what "reaches the handler" asserts).
+    // The JSON body is decoded into the RM type and the handler is reached:
+    // the EHR does not exist, so the real service answers `404` — not a
+    // negotiation error, which is what "reaches the handler" asserts. The body
+    // must therefore be a COMPLETE COMPOSITION: a `{"_type":"COMPOSITION"}`
+    // stub carries none of the class's mandatory attributes, and since the
+    // typed commit seam the strict reader refuses that at the door (`400`,
+    // pinned by `bare_type_composition_stub_is_400` below) — which would prove
+    // nothing about the handler.
+    let (_pg, app) = app(true).await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header(header::AUTHORIZATION, basic("alice", "pw"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(minimal_composition_json()))
+        .unwrap();
+    let (status, _h, _b) = send(app, req).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+/// The refusing twin of the body above: a bare `{"_type":"COMPOSITION"}` names
+/// the class but carries none of its mandatory attributes (`language`,
+/// `territory`, `category`, `composer`, `name`, `archetype_node_id` — RM
+/// composition `org.openehr.rm.composition.composition.adoc` §Attributes), so
+/// it is not a COMPOSITION at all. The strict canonical reader refuses it at
+/// the commit seam's door, which the ITS-REST overview
+/// (`Requests_and_responses.md` §HTTP status codes) answers `400`.
+#[tokio::test]
+async fn bare_type_composition_stub_is_400() {
     let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("POST")
@@ -329,8 +356,41 @@ async fn json_composition_body_is_accepted_and_reaches_handler() {
         .header(header::CONTENT_TYPE, "application/json")
         .body(Body::from(r#"{"_type":"COMPOSITION"}"#))
         .unwrap();
-    let (status, _h, _b) = send(app, req).await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
+    let (status, _h, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert!(
+        body.contains("missing field"),
+        "the refusal names the absent mandatory attribute: {body}"
+    );
+}
+
+/// A minimal COMPOSITION that satisfies every mandatory attribute of the RM
+/// class, as canonical JSON (the wire form a client posts).
+fn minimal_composition_json() -> String {
+    json!({
+        "_type": "COMPOSITION",
+        "name": { "_type": "DV_TEXT", "value": "Encounter" },
+        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-COMPOSITION.encounter.v1" },
+            "rm_version": "1.2.0"
+        },
+        "language": { "_type": "CODE_PHRASE",
+                      "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+                      "code_string": "en" },
+        "territory": { "_type": "CODE_PHRASE",
+                       "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+                       "code_string": "NL" },
+        "category": { "_type": "DV_CODED_TEXT", "value": "event",
+                      "defining_code": { "_type": "CODE_PHRASE",
+                                         "terminology_id": { "_type": "TERMINOLOGY_ID",
+                                                             "value": "openehr" },
+                                         "code_string": "433" } },
+        "composer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Author" }
+    })
+    .to_string()
 }
 
 #[tokio::test]

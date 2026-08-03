@@ -44,16 +44,17 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
 
+use crate::typed_body::typed;
 use ferroehr::service::admin::types::{CompressionFormat, ExportFormat, ExportSpec};
 use ferroehr::service::ehr_index::types::SubjectRef;
 use ferroehr::service::status::CallStatusType;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
 /// A unique temporary directory path for one archive (best-effort cleaned up by
 /// the OS temp dir; the round-trip does not depend on removal).
@@ -68,30 +69,27 @@ fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
 }
 
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -127,7 +125,7 @@ async fn seed_full_ehr(svc: &FerroEhrService) -> EhrId {
     svc.create_directory(
         ehr_uuid,
         uv(
-            json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            &json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
             "249",
             None,
         ),
@@ -136,7 +134,7 @@ async fn seed_full_ehr(svc: &FerroEhrService) -> EhrId {
     .expect("directory");
 
     updated["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(updated, "251", Some(&status_ovid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&updated, "251", Some(&status_ovid)))
         .await
         .expect("status update");
 
@@ -334,7 +332,7 @@ async fn load_promotes_the_subject_from_the_loaded_status() {
     let target = FerroEhrService::new(dst_db.pool());
 
     let ehr = source
-        .create_ehr(Some(status_for_subject("patient-dump-1")))
+        .create_ehr(Some(typed(&status_for_subject("patient-dump-1"))))
         .await
         .expect("source EHR for the subject");
 
@@ -390,14 +388,14 @@ async fn load_reports_an_ehr_whose_subject_the_repository_already_holds() {
     let target = FerroEhrService::new(dst_db.pool());
 
     let clashing = source
-        .create_ehr(Some(status_for_subject("patient-dump-2")))
+        .create_ehr(Some(typed(&status_for_subject("patient-dump-2"))))
         .await
         .expect("source EHR for the subject");
     let innocent = seed_full_ehr(&source).await;
 
     // The target already holds that subject under a DIFFERENT EHR.
     let owner = target
-        .create_ehr(Some(status_for_subject("patient-dump-2")))
+        .create_ehr(Some(typed(&status_for_subject("patient-dump-2"))))
         .await
         .expect("target EHR for the same subject");
 
@@ -641,7 +639,7 @@ async fn seed_mixed_kind_ehr(svc: &FerroEhrService) -> (EhrId, Vec<String>) {
     svc.create_directory(
         ehr,
         uv(
-            json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            &json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
             "249",
             None,
         ),
@@ -650,7 +648,7 @@ async fn seed_mixed_kind_ehr(svc: &FerroEhrService) -> (EhrId, Vec<String>) {
     .expect("directory");
 
     let created = svc
-        .create_composition(ehr, uv(composition("encounter v1"), "249", None))
+        .create_composition(ehr, uv(&composition("encounter v1"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -659,7 +657,7 @@ async fn seed_mixed_kind_ehr(svc: &FerroEhrService) -> (EhrId, Vec<String>) {
         .update_composition(
             ehr,
             vo,
-            uv(composition("encounter v2"), "251", Some(&created)),
+            uv(&composition("encounter v2"), "251", Some(&created)),
         )
         .await
         .expect("update_composition")
@@ -668,7 +666,7 @@ async fn seed_mixed_kind_ehr(svc: &FerroEhrService) -> (EhrId, Vec<String>) {
     // A second COMPOSITION, logically deleted: the deleted version stores no
     // node rows, so the archive must carry it with NO payload document.
     let doomed = svc
-        .create_composition(ehr, uv(composition("to be deleted"), "249", None))
+        .create_composition(ehr, uv(&composition("to be deleted"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
@@ -682,7 +680,7 @@ async fn seed_mixed_kind_ehr(svc: &FerroEhrService) -> (EhrId, Vec<String>) {
     // (`is_modifiable = false`, RM ehr master04 §EHR Active Status), which
     // forbids every content write above.
     status["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr, uv(status, "251", Some(&status_ovid)))
+    svc.replace_ehr_status(ehr, uv(&status, "251", Some(&status_ovid)))
         .await
         .expect("status update");
 

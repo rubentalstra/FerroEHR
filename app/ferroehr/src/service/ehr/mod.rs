@@ -143,49 +143,95 @@ fn parse_time_range(raw: handle::TimeRange) -> Result<TimeRange, SmError> {
     raw.map(|(lo, hi)| Ok((parse(lo)?, parse(hi)?))).transpose()
 }
 
-/// The caller's `UPDATE_VERSION` envelope resolved for a direct commit: the
-/// commit audit (caller attributes merged with the server rules — ITS-REST
-/// overview §"openehr-version and openehr-audit-details" MUST, including a
-/// caller-supplied `change_type` after group + operation validation) and the
-/// write envelope (lifecycle / verbatim signature / attestations). Shared by
-/// the COMPOSITION, `EHR_STATUS`, and DIRECTORY direct-write paths.
+/// Everything a direct-commit write path carries from the caller's
+/// `UPDATE_VERSION` envelope across its transaction.
+pub(in crate::service) struct CommitParts {
+    /// The commit audit — the caller's attributes merged with the server rules
+    /// (ITS-REST overview §"openehr-version and openehr-audit-details" MUST,
+    /// including a caller-supplied `change_type` after group + operation
+    /// validation).
+    pub(in crate::service) audit: crate::versioning::audit::AuditInput,
+    /// The write envelope: lifecycle state, verbatim client signature, and the
+    /// attestations committed WITH the version.
+    pub(in crate::service) envelope: crate::versioning::change::WriteEnvelope,
+    /// `553|incomplete|` — the lifecycle state that relaxes the existence and
+    /// cardinality lower bounds (RM common master06 §Incomplete Content).
+    pub(in crate::service) incomplete: bool,
+    /// The content as its canonical openEHR JSON fragment.
+    pub(in crate::service) canonical: Value,
+}
+
+/// Encode an envelope's TYPED content into its canonical openEHR JSON
+/// fragment — **the one serialization boundary of a commit**.
+///
+/// Every downstream pass (whole-instance validation, template conformance,
+/// node decomposition, the signed canonical form) reads the fragment this
+/// produces, so the content is encoded exactly once per write. Doing it at the
+/// TOP of a write path also drops the RM value immediately: held alongside its
+/// canonical form for the length of the transaction, a COMPOSITION-sized
+/// instance lands in the future of every caller.
+pub(in crate::service) fn canonicalize<T: serde::Serialize>(
+    version: openehr_its::rest::generated::common::UpdateVersion<T>,
+) -> openehr_its::rest::generated::common::UpdateVersion<Value> {
+    openehr_its::rest::generated::common::UpdateVersion {
+        preceding_version_uid: version.preceding_version_uid,
+        signature: version.signature,
+        lifecycle_state: version.lifecycle_state,
+        attestations: version.attestations,
+        data: openehr_its::json::to_canonical_value(&version.data),
+        commit_audit: version.commit_audit,
+    }
+}
+
+/// Resolve the caller's canonicalized `UPDATE_VERSION` envelope into the parts
+/// a direct commit holds. Shared by the COMPOSITION, `EHR_STATUS`, and DIRECTORY
+/// direct-write paths.
+///
+/// The content arrives already encoded ([`canonicalize`]); the envelope is
+/// CONSUMED so nothing of it outlives this call.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] / [`ServiceError::BadRequest`] — the
 /// caller's `change_type` is out-of-group / contradicts the operation
 /// (`crate::versioning::audit::AuditInput::from_update`).
 fn resolve_envelope(
-    version: &crate::service::version_update::UpdateVersion,
+    version: openehr_its::rest::generated::common::UpdateVersion<Value>,
     operation_change_type: &str,
     default_description: &str,
     system_id: &str,
-) -> Result<
-    (
-        crate::versioning::audit::AuditInput,
-        crate::versioning::change::WriteEnvelope,
-    ),
-    crate::service::error::ServiceError,
-> {
+) -> Result<CommitParts, crate::service::error::ServiceError> {
+    let openehr_its::rest::generated::common::UpdateVersion {
+        lifecycle_state,
+        attestations,
+        data,
+        commit_audit,
+        signature,
+        preceding_version_uid: _,
+    } = version;
     let audit = crate::versioning::audit::AuditInput::from_update(
-        &version.audit,
+        &commit_audit,
         operation_change_type,
         default_description,
         system_id,
     )?;
     // Every supplied attestation is converted — never a `filter_map` that
     // would drop one silently.
-    let attestations = version
-        .attestations
+    let attestations = attestations
         .iter()
         .flatten()
         .map(crate::versioning::attestation::AttestationInput::from_update)
         .collect::<Result<Vec<_>, _>>()?;
-    let envelope = crate::versioning::change::WriteEnvelope {
-        lifecycle_state: Some(version.lifecycle_state.code_string.clone()),
-        signature: version.signature.clone(),
-        attestations,
-    };
-    Ok((audit, envelope))
+    let lifecycle = lifecycle_state.defining_code.code_string;
+    Ok(CommitParts {
+        audit,
+        incomplete: lifecycle == crate::versioning::lifecycle::state::INCOMPLETE,
+        envelope: crate::versioning::change::WriteEnvelope {
+            lifecycle_state: Some(lifecycle),
+            signature,
+            attestations,
+        },
+        canonical: data,
+    })
 }
 
 /// Build the `EHR_STATUS` for a subject-scoped EHR creation: the base status

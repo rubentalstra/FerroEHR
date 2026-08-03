@@ -34,8 +34,8 @@ use testcontainers_modules::rabbitmq::RabbitMq;
 use ferroehr::extensions::events::config::EventsConfig;
 use ferroehr::extensions::events::publisher::{start, subscription_queue_name};
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
-use openehr_base::prelude::TerminologyCode;
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 
 const EXCHANGE: &str = "ferroehr.events";
@@ -50,30 +50,23 @@ async fn amqp_url(rmq: &ContainerAsync<RabbitMq>) -> String {
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn uv(data: Value, change_code: &str) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(data: &Value, change_code: &str) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: None,
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "event tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -280,7 +273,7 @@ async fn end_to_end_publish_and_consume() {
     // Commit an EHR (→ EHR_STATUS event, not COMPOSITION) then a composition.
     let svc = FerroEhrService::new(pool.clone());
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
-    svc.create_composition(ehr, uv(composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
         .expect("create_composition");
 
@@ -320,7 +313,7 @@ async fn broker_down_then_up_delivers_without_loss() {
     // Commit an EHR + a composition ⇒ two pending outbox rows.
     let svc = FerroEhrService::new(pool.clone());
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
-    svc.create_composition(ehr, uv(composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
         .expect("create_composition");
     let committed = pending_count(&pool).await;
@@ -393,7 +386,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
 
     // Commit an EHR (EHR_STATUS + EHR_ACCESS ⇒ 2 versions) + a composition (1).
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
-    svc.create_composition(ehr, uv(composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
         .expect("create_composition");
     let expected_all = version_count(&pool).await; // 3 per-version messages

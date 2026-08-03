@@ -9,9 +9,10 @@ use axum::response::Response;
 use http::StatusCode;
 use serde_json::Value;
 
+use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::ehr::{
     EhrStatusGetAtTimeParams, EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams,
-    EhrStatusTagsGetParams, EhrStatusTagsUpdateParams, EhrStatusUpdateParams, UpdateItemTag,
+    EhrStatusTagsGetParams, EhrStatusTagsUpdateParams, EhrStatusUpdateParams,
 };
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::EhrStatus;

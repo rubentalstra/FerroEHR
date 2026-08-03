@@ -39,6 +39,9 @@ formats: [canonical-json]
 # I_PARTY_RELATIONSHIP.get_party_relationship.yaml: a floor dates a RELEASED
 # rule, and nothing released governs this route.
 outcomes:
+  bad_request:
+    status: 400                             # overview §HTTP status codes, the 400 row — "could not be parsed or is invalid": the parse class (typed construction refuses missing mandatories, empty 1..* lists, foreign _type; owner ruling 2026-08-03)
+    body: error_loose
   updated:
     status: 200
     headers:

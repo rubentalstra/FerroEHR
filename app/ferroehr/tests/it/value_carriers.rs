@@ -6,14 +6,15 @@
 //! stored-content serving (byte-stability of stored canonical fragments —
 //! no openEHR spec governs storage mechanics, our own design), genuinely
 //! dynamic shapes (AQL projections over a user-written SELECT list, external
-//! FHIR resources, archive rows), and the commit seam whose typed conversion
-//! is gated on the 400/422 owner decision (#1727). Everything else carries
+//! FHIR resources, archive rows), and the commit INTERIOR — which now begins
+//! at the single serialization boundary the typed commit seam takes (#1727),
+//! so what it carries is a canonical fragment, never an unparsed body.
+//! Everything else carries
 //! generated `openehr-*` types — the strict reader (#1702) makes typed
 //! carriers lossless by construction, so a NEW `Value` seam is a design
 //! regression, not a convenience.
 //!
-//! This gate scans this crate's own `src/service/` + `src/versioning/`
-//! production code for mentions of `serde_json::Value` and requires every
+//! This gate scans this crate's WHOLE `src/` production tree for mentions of `serde_json::Value` and requires every
 //! carrying file to fall under an [`ALLOWLIST`] prefix, each carrying its
 //! classification. A stale prefix (no remaining carriers under it) fails
 //! too, so the list ratchets DOWN as seams convert (#1727, #1712) and
@@ -33,7 +34,7 @@ const ALLOWLIST: &[(&str, &str)] = &[
     ),
     (
         "service/commit_env.rs",
-        "commit-environment fragments feed the Value-based commit seam (#1727)",
+        "commit-environment fragments are the canonical form the commit interior carries (stored-content class)",
     ),
     (
         "service/definition/",
@@ -41,11 +42,11 @@ const ALLOWLIST: &[(&str, &str)] = &[
     ),
     (
         "service/demographic/",
-        "commit bodies pending the typed seam (#1727); stored canonical fragments",
+        "the commit interior carries the canonical fragment the seam produced once; stored-content serving",
     ),
     (
         "service/ehr/",
-        "commit bodies pending the typed seam (#1727); stored fragment serving",
+        "the commit interior carries the canonical fragment the seam produced once; stored-content serving",
     ),
     (
         "service/message/",
@@ -53,7 +54,7 @@ const ALLOWLIST: &[(&str, &str)] = &[
     ),
     (
         "service/mod.rs",
-        "service-surface signatures over the Value-based commit seam (#1727)",
+        "service-surface signatures over stored canonical fragments and dynamic shapes",
     ),
     (
         "service/query/",
@@ -76,26 +77,70 @@ const ALLOWLIST: &[(&str, &str)] = &[
         "the validity checker's input is arbitrary submitted JSON by contract",
     ),
     (
-        "service/version_update.rs",
-        "UpdateVersion<T = Value>'s default instantiation is the #1727 seam",
-    ),
-    (
         "versioning/",
         "stored canonical envelopes; the serialized form is what gets signed \
          (RM common master06 §Digital Signature), so byte-stability governs",
     ),
+    (
+        "storage/",
+        "the node table's verbatim canonical fragments (release-strategy \
+         superset skew: a typed round-trip would drop forward-compatible \
+         keys — owner-approved family 1, #1694)",
+    ),
+    (
+        "extensions/",
+        "external FHIR resources, tenancy/event CRUD rows, multimedia \
+         offload over stored fragments (owner-approved families 3/6/8, \
+         #1694; fixed-shape ops rows convert to DTOs per the family-8 \
+         condition)",
+    ),
+    (
+        "aql/",
+        "AQL result rows are arbitrary projections by specification \
+         (QUERY 1.1 — owner-approved family 5, #1694)",
+    ),
+    (
+        "system_log/",
+        "FHIR AuditEvent/BALP renderings and syslog payloads are external \
+         formats (owner-approved families 6/8, #1694)",
+    ),
+    (
+        "templates/",
+        "stored OPT/WebTemplate artefacts served verbatim (owner-approved \
+         families 1/8, #1694)",
+    ),
+    (
+        "config/",
+        "the redacted config dump is genuinely open operational JSON \
+         (owner-approved family 8, #1694)",
+    ),
 ];
 
-/// Every production file under `src/service/` + `src/versioning/` mentioning
-/// `serde_json::Value`, as crate-`src/`-relative paths.
+/// Every production file under the crate's WHOLE `src/` tree mentioning
+/// `serde_json::Value`, as crate-`src/`-relative paths (extended from
+/// `service/` + `versioning/` to full coverage — the #1694 owner directive:
+/// zero unadjudicated `Value` seams anywhere).
 ///
 /// # Errors
 /// Any I/O failure walking or reading the crate's own `src/` tree.
 fn carrying_files() -> std::io::Result<Vec<String>> {
     let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut out = Vec::new();
-    for root in ["service", "versioning"] {
-        collect(&src.join(root), root, &mut out)?;
+    for entry in std::fs::read_dir(&src)? {
+        let entry = entry?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.path().is_dir() {
+            collect(&entry.path(), &name, &mut out)?;
+        } else if Path::new(&name).extension().is_some_and(|e| e == "rs") {
+            let text = std::fs::read_to_string(entry.path())?;
+            let production = match text.find("\n#[cfg(test)]") {
+                Some(at) => text.get(..at).unwrap_or(&text),
+                None => &text,
+            };
+            if production.contains("serde_json::Value") {
+                out.push(name);
+            }
+        }
     }
     out.sort();
     Ok(out)

@@ -137,10 +137,180 @@ pub(crate) struct RmNames {
     pub base: BTreeSet<String>,
 }
 
+/// Component schemas the OAS declares GENERIC through a discriminator-typed
+/// field, per the SM's own class definition — the one live case is
+/// `UPDATE_VERSION<T>` (SM `update_version.adoc`: "An object representing an
+/// update to an existing `VERSION` … The back-end will construct a full
+/// `VERSION<T>` object"), whose OAS rendering flattens `T` into the per-group
+/// `data: Versionable` ref. The hoisted shared module emits the struct with
+/// the real generic parameter; each group aliases it at its own `Versionable`.
+const GENERIC_OVER: &[(&str, &str)] = &[("UpdateVersion", "data")];
+
+/// The `$ref` names a schema reaches, skipping a genericized field's subtree.
+fn ref_names_of(name: &str, schema: &Value, out: &mut BTreeSet<String>) {
+    fn walk(v: &Value, skip_field: Option<&str>, out: &mut BTreeSet<String>) {
+        match v {
+            Value::Object(m) => {
+                if let Some(r) = m.get("$ref").and_then(Value::as_str)
+                    && let Some(n) = r.rsplit('/').next()
+                {
+                    out.insert(n.to_string());
+                }
+                for (k, val) in m {
+                    if skip_field == Some(k.as_str()) {
+                        continue;
+                    }
+                    // Only skip the generic field at the `properties` level;
+                    // pass the skip marker just one level below `properties`.
+                    if k == "properties"
+                        && let Value::Object(props) = val
+                    {
+                        for (pk, pv) in props {
+                            if skip_field == Some(pk.as_str()) {
+                                continue;
+                            }
+                            walk(pv, None, out);
+                        }
+                        continue;
+                    }
+                    walk(val, None, out);
+                }
+            }
+            Value::Array(a) => {
+                for item in a {
+                    walk(item, skip_field, out);
+                }
+            }
+            _ => {}
+        }
+    }
+    let skip = GENERIC_OVER
+        .iter()
+        .find(|(n, _)| *n == name)
+        .map(|(_, f)| *f);
+    walk(schema, skip, out);
+}
+
+/// A canonical (key-sorted) representation for schema-identity comparison.
+fn stable_repr(v: &Value) -> String {
+    fn sort(v: &Value) -> Value {
+        match v {
+            Value::Object(m) => Value::Object(
+                m.iter()
+                    .map(|(k, val)| (k.clone(), sort(val)))
+                    .collect::<std::collections::BTreeMap<_, _>>()
+                    .into_iter()
+                    .collect(),
+            ),
+            Value::Array(a) => Value::Array(a.iter().map(sort).collect()),
+            other => other.clone(),
+        }
+    }
+    sort(v).to_string()
+}
+
+/// The cross-group HOIST set: component schemas that appear in more than one
+/// group bundle with byte-identical definitions (key-order-independent), are
+/// not RM/BASE-resolved, and whose transitive `$ref` closure (minus a
+/// genericized field) stays inside {RM, BASE, the hoist set} — so the shared
+/// module is self-contained. Everything else keeps per-group emission (a
+/// schema like `Versionable` is textually shared but semantically per-group:
+/// its discriminator mapping differs).
+pub(crate) fn hoist_set(bundles: &[(&str, Oas)], names: &RmNames) -> BTreeSet<String> {
+    use std::collections::BTreeMap;
+    let mut reprs: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut counts: BTreeMap<String, usize> = BTreeMap::new();
+    let mut refs: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for (_, oas) in bundles {
+        for (name, schema) in oas.schemas() {
+            *counts.entry(name.clone()).or_default() += 1;
+            reprs
+                .entry(name.clone())
+                .or_default()
+                .insert(stable_repr(schema));
+            let mut r = BTreeSet::new();
+            ref_names_of(&name, schema, &mut r);
+            refs.entry(name).or_default().extend(r);
+        }
+    }
+    let mut hoisted: BTreeSet<String> = counts
+        .iter()
+        .filter(|(n, c)| {
+            **c > 1
+                && reprs.get(*n).is_some_and(|r| r.len() == 1)
+                && !names.rm.contains(*n)
+                && !names.base.contains(*n)
+        })
+        .map(|(n, _)| n.clone())
+        .collect();
+    // Fixpoint: drop any candidate whose refs leave {RM, BASE, hoisted}.
+    loop {
+        let snapshot = hoisted.clone();
+        hoisted.retain(|n| {
+            refs.get(n).is_some_and(|rs| {
+                rs.iter()
+                    .all(|r| names.rm.contains(r) || names.base.contains(r) || snapshot.contains(r))
+            })
+        });
+        if hoisted.len() == snapshot.len() {
+            break;
+        }
+    }
+    hoisted
+}
+
+/// Emit the shared `common` module: the cross-group hoisted DTOs (byte-identical
+/// component schemas whose ref closure is self-contained — [`hoist_set`]), each
+/// emitted exactly once. The one genericized schema ([`GENERIC_OVER`]) emits
+/// with its real SM generic parameter; the groups alias it at their own type
+/// argument.
+#[must_use]
+pub(crate) fn emit_common(oas: &Oas, names: &RmNames, hoisted: &BTreeSet<String>) -> String {
+    let ctx = Ctx {
+        oas,
+        names,
+        dtos: hoisted,
+        hoisted,
+        in_common: true,
+    };
+    let mut b = String::new();
+    let _ = write!(
+        b,
+        "// @generated by openehr-codegen (emit-rest) — DO NOT EDIT.\n\
+         //! ITS-REST contract, shared component schemas: DTOs that appear in more\n\
+         //! than one API group's OAS bundle with identical definitions, hoisted so\n\
+         //! one Rust type serves every group (the per-group bundles duplicate\n\
+         //! shared schemas verbatim).\n\n\
+         #![allow(\n    \
+         clippy::all,\n    \
+         clippy::pedantic,\n    \
+         clippy::nursery,\n    \
+         dead_code,\n    \
+         unused_variables,\n    \
+         reason = \"mechanically generated contract text: the OAS is emitted in \
+         full (every DTO, param struct and route, whether or not this workspace \
+         consumes it yet), so style and dead-code lints do not apply — the \
+         hand-written runtime and the implementing adapter carry the lint bar\"\n\
+         )]\n\
+         use serde::{{Deserialize, Serialize}};\n\n"
+    );
+    for (name, schema) in oas.schemas() {
+        if hoisted.contains(&name) {
+            emit_dto(&mut b, &name, schema, &ctx);
+        }
+    }
+    b
+}
+
 /// Emit the generated module for one API group. `dtos` is the set of component
 /// schema names this group defines that are *not* RM types (i.e. real DTOs).
 #[must_use]
-pub(crate) fn emit_group(oas: &Oas, group: &str, names: &RmNames) -> String {
+pub(crate) fn emit_group(
+    oas: &Oas,
+    group: &str,
+    names: &RmNames,
+    hoisted: &BTreeSet<String>,
+) -> String {
     let trait_name = format!("{}Api", naming::type_name(group));
     // Component schemas split into RM-resolved vs local DTOs.
     let dtos: BTreeSet<String> = oas
@@ -153,6 +323,8 @@ pub(crate) fn emit_group(oas: &Oas, group: &str, names: &RmNames) -> String {
         oas,
         names,
         dtos: &dtos,
+        hoisted,
+        in_common: false,
     };
 
     let mut b = String::new();
@@ -177,9 +349,31 @@ pub(crate) fn emit_group(oas: &Oas, group: &str, names: &RmNames) -> String {
 
     // ── DTOs ──
     for (name, schema) in oas.schemas() {
-        if ctx.dtos.contains(&name) {
-            emit_dto(&mut b, &name, schema, &ctx);
+        if !ctx.dtos.contains(&name) {
+            continue;
         }
+        if ctx.hoisted.contains(&name) {
+            // Hoisted into `common`; a GENERIC-over schema gets a group-local
+            // alias binding the group's own type argument (the flattened
+            // `data` ref — e.g. this group's `Versionable`), so group refs
+            // keep using the bare name.
+            if let Some((_, field)) = GENERIC_OVER.iter().find(|(n, _)| *n == name) {
+                let arg = ctx
+                    .oas
+                    .resolve(schema)
+                    .pointer(&format!("/properties/{field}"))
+                    .map_or_else(|| "serde_json::Value".to_string(), |s| ctx.rust_type(s));
+                let ty = dto_type(&name);
+                let _ = writeln!(
+                    b,
+                    "/// This group's instantiation of the shared generic `{name}` envelope\n\
+                     /// (`super::common::{ty}`), bound at this group's own content union.\n\
+                     pub type {ty} = super::common::{ty}<{arg}>;\n"
+                );
+            }
+            continue;
+        }
+        emit_dto(&mut b, &name, schema, &ctx);
     }
 
     // ── per-operation param structs ──
@@ -227,6 +421,13 @@ struct Ctx<'a> {
     oas: &'a Oas,
     names: &'a RmNames,
     dtos: &'a BTreeSet<String>,
+    /// The cross-group hoisted schema names ([`hoist_set`]).
+    hoisted: &'a BTreeSet<String>,
+    /// Whether we are emitting the shared `common` module itself (hoisted
+    /// names render bare) or a group module (hoisted names render
+    /// `super::common::…`, except a [`GENERIC_OVER`] name, which the group
+    /// aliases locally).
+    in_common: bool,
 }
 
 impl Ctx<'_> {
@@ -248,6 +449,14 @@ impl Ctx<'_> {
             }
             if self.names.base.contains(&name) {
                 return format!("openehr_base::prelude::{name}");
+            }
+            if self.hoisted.contains(&name) && !self.in_common {
+                // A GENERIC-over schema has a group-local alias (bare name);
+                // every other hoisted schema lives in `super::common`.
+                if GENERIC_OVER.iter().any(|(n, _)| *n == name) {
+                    return dto_type(&name);
+                }
+                return format!("super::common::{}", dto_type(&name));
             }
             if self.dtos.contains(&name) {
                 return dto_type(&name);
@@ -327,6 +536,71 @@ impl Ctx<'_> {
         }
     }
 
+    /// The `allOf`-flattened object shape of a component schema: the members it
+    /// accepts (ancestors first, then its own, in document order) and the union
+    /// of every `required` list on the chain.
+    ///
+    /// OAS 3.0 models inheritance as `allOf` composition — a derived schema is
+    /// "validated against all the schemas" it composes plus its own definition,
+    /// and `discriminator` "can be used to aid in serialization,
+    /// deserialization, and validation" of exactly that construct
+    /// (<https://spec.openapis.org/oas/v3.0.3#composition-and-inheritance-polymorphism>).
+    /// The released ITS-REST bundles use it for the whole RM subtype chain and
+    /// for `UpdateAttestation` extending `UpdateAudit`, so a DTO emitted from
+    /// its OWN `properties` alone silently loses every inherited member (an
+    /// `UPDATE_ATTESTATION` without `change_type`/`committer`).
+    ///
+    /// A member redeclared by a descendant (the `_type` enum narrowing) keeps
+    /// the ancestor's position and takes the descendant's schema, so the
+    /// emitted field order stays deterministic.
+    fn merged_object(&self, schema: &Value) -> (Vec<(String, Value)>, BTreeSet<String>) {
+        let mut props: Vec<(String, Value)> = Vec::new();
+        let mut required: BTreeSet<String> = BTreeSet::new();
+        let mut seen: BTreeSet<String> = BTreeSet::new();
+        self.collect_object(schema, &mut props, &mut required, &mut seen);
+        (props, required)
+    }
+
+    /// Accumulate one link of the [`Ctx::merged_object`] chain: ancestors first
+    /// (depth-first through `allOf`), then this schema's own contribution.
+    /// `seen` breaks a cyclic or diamond `$ref` chain.
+    fn collect_object(
+        &self,
+        schema: &Value,
+        props: &mut Vec<(String, Value)>,
+        required: &mut BTreeSet<String>,
+        seen: &mut BTreeSet<String>,
+    ) {
+        if let Some(members) = schema.get("allOf").and_then(Value::as_array) {
+            for member in members {
+                if let Some(name) = Oas::ref_name(member)
+                    && !seen.insert(name)
+                {
+                    continue;
+                }
+                self.collect_object(self.oas.resolve(member), props, required, seen);
+            }
+        }
+        if let Some(own) = schema.get("properties").and_then(Value::as_object) {
+            for (pname, pschema) in own {
+                if let Some(slot) = props.iter_mut().find(|(n, _)| n == pname) {
+                    slot.1 = pschema.clone();
+                } else {
+                    props.push((pname.clone(), pschema.clone()));
+                }
+            }
+        }
+        required.extend(
+            schema
+                .get("required")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .map(str::to_owned),
+        );
+    }
+
     /// Map an OAS **parameter** schema to a Rust type.
     ///
     /// A parameter is transported as TEXT, not as JSON: its wire form is fixed
@@ -364,79 +638,61 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
         .and_then(|d| d.get("mapping"))
         .and_then(Value::as_object)
     {
-        emit_discriminator_enum(b, name, mapping, ctx);
+        // A base that carries `x-discriminator-value` is INSTANTIABLE IN ITS
+        // OWN RIGHT — the OAS extension names the `_type` an instance of the
+        // base itself sends (`UpdateAudit` → `UPDATE_AUDIT`, whose own
+        // `example` block is a bare `UPDATE_AUDIT` object), exactly as
+        // `x-discriminator-value` marks every concrete RM class in the same
+        // bundles. Its own members therefore have to survive: the base emits
+        // as a `…Data` struct and joins the enum as one more variant (the
+        // shape the BMM emitter already uses for a concrete class with
+        // concrete descendants, e.g. `PartyIdentified::PartyIdentified(
+        // PartyIdentifiedData)`). A base with NO `x-discriminator-value` is
+        // abstract (`DataValue`, `Versionable`, `AbstractEntry`) and stays a
+        // pure union over its mapping.
+        let base_tag = schema
+            .get("x-discriminator-value")
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+        let (props, required) = ctx.merged_object(schema);
+        let base = match (base_tag, props.is_empty()) {
+            (Some(tag), false) => {
+                let data_ty = format!("{}Data", dto_type(name));
+                emit_struct(b, name, &data_ty, None, &props, &required, schema, ctx);
+                Some((tag, data_ty))
+            }
+            _ => None,
+        };
+        emit_discriminator_enum(b, name, mapping, base.as_ref(), ctx);
         return;
     }
     // object with named properties → struct; everything else → an alias.
     if schema.get("type").and_then(Value::as_str) == Some("object")
-        && let Some(props) = schema.get("properties").and_then(Value::as_object)
+        && schema.get("properties").is_some()
     {
         let ty_name = dto_type(name);
-        // The vendored OAS `required` list, minus the docs-text-wins
-        // corrections (`plan::overrides::REST_OPTIONAL_OVERRIDES` — the
-        // ITS-REST docs text wins every conflict with the released OAS; where
-        // it contradicts the OAS shape, the field is emitted optional).
-        let required: BTreeSet<&str> = schema
-            .get("required")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-            .filter_map(Value::as_str)
-            .filter(|f| crate::plan::overrides::rest_optional_override(&ty_name, f).is_none())
-            .collect();
-        // A schema that declares `additionalProperties: false` is CLOSED by the
-        // released OAS, and a closed object must refuse an undeclared member —
-        // otherwise the generated DTO silently accepts payloads the
-        // specification's own computable artifact rejects. serde's
-        // `deny_unknown_fields` is the exact realization
-        // (<https://serde.rs/container-attrs.html#deny_unknown_fields>), and it
-        // is mutually exclusive with the `#[serde(flatten)]` extension map by
-        // construction: that map is emitted only when `additionalProperties` is
-        // present and NOT `false`.
-        let closed = schema.get("additionalProperties") == Some(&Value::Bool(false));
-        let (deny_doc, deny_attr) = if closed {
-            (
-                "///\n\
-                 /// The OAS declares this schema `additionalProperties: false`, so an\n\
-                 /// undeclared member is refused rather than silently ignored.\n",
-                "#[serde(deny_unknown_fields)]\n",
-            )
+        let (props, required) = ctx.merged_object(schema);
+        // The SM-generic hoisted schema ([`GENERIC_OVER`]) emits with its real
+        // type parameter in the shared module; the flattened field types as
+        // `T` and each group binds it via a local alias.
+        let generic_field = if ctx.in_common {
+            GENERIC_OVER
+                .iter()
+                .find(|(n, _)| *n == name)
+                .map(|(_, f)| *f)
         } else {
-            ("", "")
+            None
         };
-        let _ = write!(
+        emit_struct(
             b,
-            "/// The `{name}` transport DTO of this API group (an ITS-REST OAS\n\
-             /// component schema).\n\
-             {deny_doc}#[derive(Debug, Clone, Serialize, Deserialize)]\n\
-             {deny_attr}pub struct {ty_name} {{\n"
+            name,
+            &ty_name,
+            generic_field,
+            &props,
+            &required,
+            schema,
+            ctx,
         );
-        for (pname, pschema) in props {
-            let ident = field_id(pname);
-            let mut ty = ctx.rust_type(pschema);
-            if !required.contains(pname.as_str()) {
-                ty = format!("Option<{ty}>");
-            }
-            // A struct field is a public item `missing_docs` checks; the OAS
-            // property name is the honest, deterministic summary.
-            let _ = writeln!(b, "    /// The `{pname}` property of `{name}`.");
-            // A docs-text-wins correction carries its citation into the
-            // generated code (the OAS lists the field as required; the
-            // ITS-REST docs text wins).
-            if let Some(ov) = crate::plan::overrides::rest_optional_override(&ty_name, pname) {
-                let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
-                let _ = writeln!(b, "    /// ({})", ov.reason);
-            }
-            if let Some(rename) = naming::serde_rename(pname, &ident) {
-                let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
-            }
-            if !required.contains(pname.as_str()) {
-                b.push_str(SKIP_NONE_ATTR);
-            }
-            let _ = writeln!(b, "    pub {ident}: {ty},");
-        }
-        emit_additional_properties(b, name, schema, ctx);
-        b.push_str("}\n\n");
     } else {
         // string/array/map/ref alias.
         let _ = writeln!(
@@ -450,6 +706,93 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
     }
 }
 
+/// Emit one transport-DTO struct: `props`/`required` are the `allOf`-flattened
+/// shape ([`Ctx::merged_object`]), `generic_field` names the property carried as
+/// the type parameter `T` (the [`GENERIC_OVER`] envelope), and `schema` is the
+/// declaring schema, read for its `additionalProperties` policy.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one emission site each for the schema's identity, its Rust name, the generic binding, the flattened shape and the declaring schema — bundling them into a struct would only rename the same arguments"
+)]
+fn emit_struct(
+    b: &mut String,
+    name: &str,
+    ty_name: &str,
+    generic_field: Option<&str>,
+    props: &[(String, Value)],
+    all_required: &BTreeSet<String>,
+    schema: &Value,
+    ctx: &Ctx,
+) {
+    // The vendored OAS `required` list, minus the docs-text-wins
+    // corrections (`plan::overrides::REST_OPTIONAL_OVERRIDES` — the
+    // ITS-REST docs text wins every conflict with the released OAS; where
+    // it contradicts the OAS shape, the field is emitted optional).
+    let required: BTreeSet<&str> = all_required
+        .iter()
+        .map(String::as_str)
+        .filter(|f| crate::plan::overrides::rest_optional_override(ty_name, f).is_none())
+        .collect();
+    // A schema that declares `additionalProperties: false` is CLOSED by the
+    // released OAS, and a closed object must refuse an undeclared member —
+    // otherwise the generated DTO silently accepts payloads the
+    // specification's own computable artifact rejects. serde's
+    // `deny_unknown_fields` is the exact realization
+    // (<https://serde.rs/container-attrs.html#deny_unknown_fields>), and it
+    // is mutually exclusive with the `#[serde(flatten)]` extension map by
+    // construction: that map is emitted only when `additionalProperties` is
+    // present and NOT `false`.
+    let closed = schema.get("additionalProperties") == Some(&Value::Bool(false));
+    let (deny_doc, deny_attr) = if closed {
+        (
+            "///\n\
+             /// The OAS declares this schema `additionalProperties: false`, so an\n\
+             /// undeclared member is refused rather than silently ignored.\n",
+            "#[serde(deny_unknown_fields)]\n",
+        )
+    } else {
+        ("", "")
+    };
+    let generics = if generic_field.is_some() { "<T>" } else { "" };
+    let _ = write!(
+        b,
+        "/// The `{name}` transport DTO of this API group (an ITS-REST OAS\n\
+         /// component schema).\n\
+         {deny_doc}#[derive(Debug, Clone, Serialize, Deserialize)]\n\
+         {deny_attr}pub struct {ty_name}{generics} {{\n"
+    );
+    for (pname, pschema) in props {
+        let ident = field_id(pname);
+        let mut ty = if generic_field == Some(pname.as_str()) {
+            "T".to_string()
+        } else {
+            ctx.rust_type(pschema)
+        };
+        if !required.contains(pname.as_str()) {
+            ty = format!("Option<{ty}>");
+        }
+        // A struct field is a public item `missing_docs` checks; the OAS
+        // property name is the honest, deterministic summary.
+        let _ = writeln!(b, "    /// The `{pname}` property of `{name}`.");
+        // A docs-text-wins correction carries its citation into the
+        // generated code (the OAS lists the field as required; the
+        // ITS-REST docs text wins).
+        if let Some(ov) = crate::plan::overrides::rest_optional_override(ty_name, pname) {
+            let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
+            let _ = writeln!(b, "    /// ({})", ov.reason);
+        }
+        if let Some(rename) = naming::serde_rename(pname, &ident) {
+            let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
+        }
+        if !required.contains(pname.as_str()) {
+            b.push_str(SKIP_NONE_ATTR);
+        }
+        let _ = writeln!(b, "    pub {ident}: {ty},");
+    }
+    emit_additional_properties(b, name, schema, ctx);
+    b.push_str("}\n\n");
+}
+
 /// Emit an OAS `discriminator.mapping` schema as a `_type`-dispatched enum.
 ///
 /// One variant per mapping entry, in document order; each carries the mapped
@@ -457,16 +800,25 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
 /// [`Ctx::rust_type`]). Serialization delegates to the inner value (whose
 /// emitted impl writes its own `_type`); deserialization dispatches on the
 /// mapping keys with the shared strict tag-anywhere runtime
-/// (`openehr_base::serde_support`) — an unknown or missing `_type` is refused
-/// naming the legal set, exactly like the spec crates' own closed-set enums.
+/// (`openehr_base::serde_support`) — an unknown `_type` is refused naming the
+/// legal set, exactly like the spec crates' own closed-set enums.
+///
+/// `base` is `Some((tag, data_type))` when the schema is INSTANTIABLE ITSELF
+/// (it carries `x-discriminator-value`): the base joins the union as a final
+/// variant over its own `…Data` struct, and — because the OAS leaves `_type`
+/// out of such a base's `required` list and gives it a `default` — an object
+/// with NO discriminator reads as that base variant instead of being refused.
+/// For a purely abstract base (no `x-discriminator-value`) a missing `_type` is
+/// still an error: nothing could be constructed from it.
 fn emit_discriminator_enum(
     b: &mut String,
     name: &str,
     mapping: &serde_json::Map<String, Value>,
+    base: Option<&(String, String)>,
     ctx: &Ctx,
 ) {
     let ty_name = dto_type(name);
-    let variants: Vec<(String, String, String)> = mapping
+    let mut variants: Vec<(String, String, String)> = mapping
         .iter()
         .filter_map(|(tag, target)| {
             let target = target.as_str()?;
@@ -475,6 +827,10 @@ fn emit_discriminator_enum(
             Some((tag.clone(), ref_name, rust_ty))
         })
         .collect();
+    if let Some((tag, data_ty)) = base {
+        variants.push((tag.clone(), ty_name.clone(), data_ty.clone()));
+    }
+    let variants = variants;
     let tag_list = variants
         .iter()
         .map(|(t, _, _)| t.as_str())
@@ -540,6 +896,27 @@ fn emit_discriminator_enum(
              ::serde::Deserialize::deserialize(__rest)?,\n                            )),\n"
         );
     }
+    // An object with no `_type` at all: the concrete base's own form when the
+    // schema declares one, otherwise a refusal (an abstract slot cannot pick a
+    // variant without its discriminator).
+    let none_arm = base.map_or_else(
+        || {
+            format!(
+                "                        \
+                 ::core::result::Result::Err(::openehr_base::serde_support::missing_type(\n                            \
+                 \"{name}\",\n                            \"{tag_list}\",\n                        ))\n"
+            )
+        },
+        |(_, _)| {
+            format!(
+                "                        \
+                 let __rest =\n                            \
+                 ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);\n                        \
+                 ::core::result::Result::Ok({ty_name}::{ty_name}(\n                            \
+                 ::serde::Deserialize::deserialize(__rest)?,\n                        ))\n"
+            )
+        },
+    );
     let _ = write!(
         b,
         "                            __other => ::core::result::Result::Err(\n                                \
@@ -551,9 +928,7 @@ fn emit_discriminator_enum(
          ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(\n                            \
          \"{name}\",\n                            &__other,\n                            \"{tag_list}\",\n                        \
          ))\n                    }}\n                    \
-         None => {{\n                        \
-         ::core::result::Result::Err(::openehr_base::serde_support::missing_type(\n                            \
-         \"{name}\",\n                            \"{tag_list}\",\n                        ))\n                    \
+         None => {{\n{none_arm}                    \
          }}\n                }}\n            }}\n        }}\n        \
          ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)\n    }}\n}}\n\n"
     );
