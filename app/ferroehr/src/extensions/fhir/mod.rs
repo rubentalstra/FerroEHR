@@ -449,10 +449,15 @@ impl FerroEhrService {
         for row in &rows {
             let resource_type: String = row.try_get("resource_type")?;
             let definition: Value = row.try_get("definition")?;
+            // A STORED mapping definition that no longer parses is a
+            // server-side fault, not a client error: the caller supplied
+            // nothing wrong, so the class is `exception` (500) with the
+            // diagnostic traced — the sibling read paths already classify it
+            // that way.
             let def: FhirMappingDefinition = serde_json::from_value(definition).map_err(|e| {
-                ServiceError::Unprocessable(Violation::new(format!(
-                    "stored FHIR mapping definition is invalid: {e}"
-                )))
+                ServiceError::Internal(format!(
+                    "read a stored FHIR mapping definition for {resource_type}: {e}"
+                ))
             })?;
             let resource = reverse::to_fhir(
                 &resource_type,

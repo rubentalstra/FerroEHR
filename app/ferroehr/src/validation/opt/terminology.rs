@@ -68,12 +68,14 @@ pub(super) fn check_term_bindings(
     defined_at: &HashSet<String>,
 ) -> Result<(), RuleViolation> {
     let check = |code: &str| -> Result<(), RuleViolation> {
-        // NOTE (flattened-OPT tolerance): a *specialised* code
-        // (`at0.23`, dot-notation — AOM2 §specialisation depth) may be bound
-        // without a re-emitted local term definition: archie-era flattening
-        // keeps parent-archetype bindings whose definitions live in the parent
-        // (the vendored blood-pressure corpus OPTs carry these). A dotted
-        // code is therefore accepted as a valid binding key.
+        // NOTE (flattened-OPT tolerance): a *specialised* code (`at0.23`,
+        // dot-notation — AOM2 §specialisation depth) names a code DEFINED IN
+        // THE PARENT archetype, so a flattened template legitimately binds it
+        // without re-emitting the definition locally; the released AM text
+        // never requires the definition to be repeated at the specialisation
+        // level. A dotted code is therefore accepted as a valid binding key.
+        // (Observed in the vendored blood-pressure corpus OPTs — evidence that
+        // the shape occurs, never the authority for accepting it.)
         let specialised = code.contains('.');
         if code.starts_with('/')
             || !archetype_node_id_is_term_code(code)

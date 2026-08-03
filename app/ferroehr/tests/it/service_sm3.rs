@@ -388,7 +388,7 @@ async fn relationship_via_demographic_contribution() {
             },
             "data": relationship("colleague-of", "p1", "p2")
         }],
-        "audit": { "committer": { "_type": "PARTY_IDENTIFIED", "name": "tester" } }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": { "_type": "PARTY_IDENTIFIED", "name": "tester" } }
     });
 
     let created = svc

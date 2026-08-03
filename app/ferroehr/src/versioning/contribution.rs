@@ -412,7 +412,6 @@ pub(crate) async fn commit_version_set(
     // then existence/kind-checked in ONE batched statement, and the plan is
     // resolved to [`Change`]s without re-reading any JSON.
     let mut plan: Vec<PlannedVersion> = Vec::with_capacity(versions.len());
-    let mut version_codes: Vec<String> = Vec::with_capacity(versions.len());
     for version in versions {
         reject_foreign_version_identity(version)?;
         let token = version
@@ -430,7 +429,6 @@ pub(crate) async fn commit_version_set(
             .get("preceding_version_uid")
             .is_some_and(|v| !v.is_null());
         let (action, code) = classify(token.as_deref(), has_preceding, data.is_some())?;
-        version_codes.push(code.clone());
 
         let target = if action == Action::Create {
             None
@@ -707,15 +705,38 @@ pub(crate) async fn commit_version_set(
         cx.ensure_content_writable(ehr_id).await?;
     }
 
-    // The CONTRIBUTION's own audit: a client change_type is validated and
-    // preserved; otherwise the spec's aggregate guidance applies (master06
-    // §Contributions).
-    let contribution_code = match body
-        .get("audit")
-        .and_then(|a| a.get("change_type"))
-        .and_then(coded_value)
-    {
-        Some(token) => change_type_code(&token).ok_or_else(|| {
+    // The CONTRIBUTION's own audit change type is the CLIENT's account of its
+    // change set, and it is REQUIRED: RM common
+    // `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes types
+    // `change_type` 1..1 on the mandatory `CONTRIBUTION.audit`, and the released
+    // commit schema says the same on the wire —
+    // `specifications/schemas/ehr/NewContribution.yaml` (`required: [versions,
+    // audit]`) over `specifications/schemas/common/UpdateAudit.yaml`
+    // (`required: [change_type, committer]`), the demographic
+    // `NewContribution.yaml` identically. The ITS-REST docs text is silent on
+    // the contribution BODY (its `openehr-audit-details` §"None of these headers
+    // are mandatory" sentence governs the DIRECT resource routes' header merge,
+    // where the server does supply the default), so the released OAS grounds
+    // the requirement — and an omitted change type is refused rather than
+    // derived: master06 §Contributions itself says the aggregate "may sometimes
+    // be approximate, and is not expected to be used as a computable value", so
+    // a server-guessed aggregate would put an approximation into the audit trail
+    // under the client's name.
+    let contribution_code = {
+        let token = body
+            .get("audit")
+            .and_then(|a| a.get("change_type"))
+            .and_then(coded_value)
+            .ok_or_else(|| {
+                ServiceError::Unprocessable(
+                    Violation::new(
+                        "is required on a CONTRIBUTION audit — the change set's own change \
+                         type is the client's account of it and is never derived by the server",
+                    )
+                    .with_path("CONTRIBUTION.audit.change_type"),
+                )
+            })?;
+        change_type_code(&token).ok_or_else(|| {
             ServiceError::Unprocessable(
                 Violation::new(format!(
                     "{token:?} is not a code in the openEHR audit_change_type group"
@@ -723,8 +744,7 @@ pub(crate) async fn commit_version_set(
                 .with_path("contribution audit change_type")
                 .with_invariant("AUDIT_DETAILS.Change_type_valid"),
             )
-        })?,
-        None => aggregate_change_type(&version_codes),
+        })?
     };
     let contribution_audit = parse_audit(
         body.get("audit"),
@@ -981,62 +1001,16 @@ fn parse_audit(
     })
 }
 
-/// The CONTRIBUTION-level aggregate change type when the client supplied none.
-///
-/// RM common `master06-change_control_package.adoc` §Contributions gives the
-/// rule as a list of "typical values", in this order:
-///
-/// * "any code: when all member versions have the same change type, that change
-///   type may be used for the Contribution as well" — the uniform case;
-/// * "`250|amendment|`: corresponds to a mixture of amendments and deletions
-///   that logically constitute a correction to the content" — the one NAMED
-///   mixture, and therefore the one mixture that does not fall to the general
-///   rule below;
-/// * "`251|modification|`: this accommodates cases where there is a mixture of
-///   creation, deletion, modification that constitute a change of content" —
-///   the general mixture.
-///
-/// (`666|attestation|` — "used when the only changes are attestation of one or
-/// more of the member versions" — is the uniform case of the first bullet: an
-/// attestation-only change set has no member version codes other than 666.)
-///
-/// NOTE: the same section states its own limit — the aggregate "may sometimes
-/// be approximate, and is not expected to be used as a computable value" — so
-/// this derivation is a best statement of the change set, never a datum a
-/// caller may reason over. A client-supplied `CONTRIBUTION.audit.change_type`
-/// always wins (the caller's own account of its change set); this runs only
-/// when none was supplied.
-///
-/// NOTE (why this is not asserted on the wire): on the ITS-REST contribution
-/// route it is unreachable from a conformant request. The released schema makes
-/// the change set's audit mandatory and its change type a required member —
-/// `specifications/schemas/ehr/NewContribution.yaml` (`required: [versions,
-/// audit]`) over `specifications/schemas/common/UpdateAudit.yaml` (`required:
-/// [change_type, committer]`) — so a conformant client always states the
-/// aggregate itself and this fallback never fires. On the direct
-/// resource routes the server does supply the default (ITS-REST overview
-/// `Requests_and_responses.md` §"openehr-version and openehr-audit-details":
-/// "None of these headers are mandatory, but whatever is provided it MUST be
-/// merged with the default VERSION and `VERSION.audit_details` attributes on
-/// commit runtime"), but each such write is a single-version change set, so
-/// only the uniform arm can be reached there. The mixture arms are therefore
-/// pinned by the unit tests below rather than by a CNF case.
-fn aggregate_change_type(version_codes: &[String]) -> String {
-    match version_codes.split_first() {
-        Some((first, rest)) if rest.iter().all(|c| c == first) => first.clone(),
-        // The named amendment/deletion mixture: every member is an amendment or
-        // a deletion, and (by the arm above) they are not all the same code, so
-        // both kinds are present — "a mixture of amendments and deletions".
-        Some(_)
-            if version_codes
-                .iter()
-                .all(|c| c == change_type::AMENDMENT || c == change_type::DELETED) =>
-        {
-            change_type::AMENDMENT.to_owned()
-        }
-        _ => change_type::MODIFICATION.to_owned(),
-    }
-}
+// NOTE (the aggregate derivation is deliberately absent): RM common
+// `master06-change_control_package.adoc` §Contributions describes what a
+// CONTRIBUTION-level change type typically holds for a mixed change set, and
+// says in the same breath that the value "may sometimes be approximate, and is
+// not expected to be used as a computable value". That makes it the client's
+// statement about its own change set, never a server derivation — so the commit
+// path above REFUSES an omitted `CONTRIBUTION.audit.change_type` (the released
+// commit schema requires it: `schemas/ehr/NewContribution.yaml` +
+// `schemas/common/UpdateAudit.yaml`) instead of guessing an aggregate into the
+// audit trail under the client's name.
 
 /// Enforce that a version's object kind matches the contribution's scope: a
 /// demographic contribution (`party_only`) may carry only party roots +
@@ -1622,42 +1596,5 @@ mod tests {
         assert_eq!((action, code.as_str()), (Action::Create, "249"));
         let (action, code) = classify(None, true, true).unwrap();
         assert_eq!((action, code.as_str()), (Action::Modify, "251"));
-    }
-
-    /// The three aggregate outcomes RM common master06 §Contributions lists,
-    /// each on the shape its own sentence describes.
-    #[test]
-    fn contribution_aggregate_change_type() {
-        // "any code: when all member versions have the same change type, that
-        // change type may be used for the Contribution as well"
-        let same = vec!["250".to_owned(), "250".to_owned()];
-        assert_eq!(aggregate_change_type(&same), "250");
-        assert_eq!(
-            aggregate_change_type(&["666".to_owned(), "666".to_owned()]),
-            "666",
-            "an attestation-only change set is the uniform case"
-        );
-        // "251|modification|: this accommodates cases where there is a mixture
-        // of creation, deletion, modification that constitute a change of
-        // content"
-        let mixed = vec!["249".to_owned(), "523".to_owned()];
-        assert_eq!(aggregate_change_type(&mixed), "251");
-        assert_eq!(aggregate_change_type(&[]), "251");
-        // "250|amendment|: corresponds to a mixture of amendments and
-        // deletions that logically constitute a correction to the content"
-        assert_eq!(
-            aggregate_change_type(&["250".to_owned(), "523".to_owned()]),
-            "250"
-        );
-        assert_eq!(
-            aggregate_change_type(&["523".to_owned(), "250".to_owned(), "523".to_owned()]),
-            "250"
-        );
-        // …but only that mixture: add any other kind and the general mixture
-        // rule applies again.
-        assert_eq!(
-            aggregate_change_type(&["250".to_owned(), "523".to_owned(), "249".to_owned()]),
-            "251"
-        );
     }
 }

@@ -26,9 +26,9 @@ use openehr_adl::validate::{validate_source, validate_source_integrity};
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_base::validate::InvariantViolation;
 use openehr_its::flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
 use openehr_its::flat::webtemplate::{WebTemplate, build_web_template_am24};
-use openehr_its::rest::runtime::ValidationError;
 use serde_json::Value;
 use sqlx::Row;
 
@@ -323,17 +323,19 @@ impl FerroEhrService {
         }
         .map_err(|errs| syntax_bad_request(&errs))?;
 
-        let errors: Vec<ValidationError> = issues
+        let errors: Vec<InvariantViolation> = issues
             .iter()
             .filter(|i| i.severity == Severity::Error)
-            .map(|i| ValidationError {
+            .map(|i| {
                 // The rule-code mnemonic is the machine-readable key; the human
                 // detail (and the archetype path where derivable) is the message.
-                path: i.code.mnemonic().to_owned(),
-                message: match &i.path {
-                    Some(p) => format!("{} (at {p})", i.message),
-                    None => i.message.clone(),
-                },
+                InvariantViolation::at(
+                    i.code.mnemonic(),
+                    match &i.path {
+                        Some(p) => format!("{} (at {p})", i.message),
+                        None => i.message.clone(),
+                    },
+                )
             })
             .collect();
         if !errors.is_empty() {
@@ -398,6 +400,28 @@ impl FerroEhrService {
         .bind(summary.parent_archetype_id.as_deref())
         .execute(&mut *tx)
         .await?;
+        // Maintain the `template_ref` registry (the vo_version.template_id FK
+        // target) in the same transaction: a template-kind HRID is a commit
+        // addressable wire identity (`0001_baseline.sql` §template_ref). A
+        // replace that DEMOTES a template to an archetype deregisters the id
+        // unless the OPT 1.4 store also claims it — and the FK blocks the
+        // deregistration loudly when committed versions still reference it.
+        if matches!(kind, "template" | "operational_template") {
+            sqlx::query(
+                "INSERT INTO template_ref (template_id) VALUES ($1) ON CONFLICT DO NOTHING",
+            )
+            .bind(&summary.archetype_id)
+            .execute(&mut *tx)
+            .await?;
+        } else if replace {
+            sqlx::query(
+                "DELETE FROM template_ref WHERE template_id = $1 AND NOT EXISTS \
+                 (SELECT 1 FROM template_store WHERE lower(template_id) = lower($1))",
+            )
+            .bind(&summary.archetype_id)
+            .execute(&mut *tx)
+            .await?;
+        }
         tx.commit().await?;
         self.invalidate_archetype_lineage().await;
         Ok(())
@@ -750,18 +774,69 @@ impl FerroEhrService {
     }
 
     /// Delete the ADL2 artefact with `ARCHETYPE_HRID` `an_id`
-    /// (case-insensitive); absent → `artefact_does_not_exist` (`404`).
+    /// (case-insensitive); absent → `artefact_does_not_exist` (`404`); a
+    /// template-kind artefact still referenced by committed versions →
+    /// `Conflict` (`409`, with the reference count — the same
+    /// never-orphan-clinical-data guard the OPT 1.4 delete carries; no openEHR
+    /// spec governs the in-use refusal, our own integrity design).
     async fn adl2_delete(&self, an_id: &str) -> Result<(), ServiceError> {
-        let deleted = sqlx::query("DELETE FROM adl2_artefact WHERE lower(hrid) = lower($1)")
-            .bind(an_id)
-            .execute(&self.pool)
-            .await?
-            .rows_affected();
-        if deleted == 0 {
+        // Resolve the stored (case-preserved) HRID + kind, count references,
+        // and delete in ONE transaction, mirroring `opt_delete`; the
+        // `vo_version.template_id` → `template_ref` foreign key (NO ACTION)
+        // remains the race-free backstop under a concurrent commit.
+        let mut tx = self.pool.begin().await?;
+        let stored: Option<(String, String)> =
+            sqlx::query_as("SELECT hrid, kind FROM adl2_artefact WHERE lower(hrid) = lower($1)")
+                .bind(an_id)
+                .fetch_optional(&mut *tx)
+                .await?;
+        let Some((hrid, kind)) = stored else {
             return Err(ServiceError::sm(
                 CallStatusType::ArtefactDoesNotExist,
                 format!("ADL2 artefact {an_id}"),
             ));
+        };
+        let is_template = matches!(kind.as_str(), "template" | "operational_template");
+        if is_template {
+            let refs: i64 = sqlx::query_scalar(
+                "SELECT count(*) FROM vo_version WHERE lower(template_id) = lower($1)",
+            )
+            .bind(&hrid)
+            .fetch_one(&mut *tx)
+            .await?;
+            if refs > 0 {
+                return Err(ServiceError::Conflict(format!(
+                    "template '{hrid}' is still referenced by {refs} committed version(s); \
+                     delete those compositions before deleting the template"
+                )));
+            }
+        }
+        sqlx::query("DELETE FROM adl2_artefact WHERE hrid = $1")
+            .bind(&hrid)
+            .execute(&mut *tx)
+            .await?;
+        if is_template {
+            // Deregister the wire address unless the OPT 1.4 store also claims
+            // it (`template_ref` is the union of both dialects' addresses).
+            sqlx::query(
+                "DELETE FROM template_ref WHERE template_id = $1 AND NOT EXISTS \
+                 (SELECT 1 FROM template_store WHERE lower(template_id) = lower($1))",
+            )
+            .bind(&hrid)
+            .execute(&mut *tx)
+            .await?;
+        }
+        tx.commit().await?;
+        if is_template {
+            // Evict the built `WebTemplate` so a re-uploaded template is never
+            // served from the deleted artefact's compiled form (the OPT 1.4
+            // delete paths do the same; no openEHR spec governs the cache).
+            self.web_templates
+                .invalidate(&format!(
+                    "{ADL2_CACHE_NS}{}",
+                    crate::templates::identity::canonical_key(&hrid)
+                ))
+                .await;
         }
         self.invalidate_archetype_lineage().await;
         Ok(())

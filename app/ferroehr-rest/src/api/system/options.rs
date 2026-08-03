@@ -14,10 +14,10 @@
 //! bundle is `emit-rest` codegen-input provenance only, never a behavioural
 //! oracle.
 //!
-//! The System API is **not** part of the generated ITS-REST contract — the
-//! `emit-rest` groups are `ehr`/`query`/`definition`/`admin`/`demographic`
-//! only (`crates/openehr-its/src/rest/generated/` has no `system` group) — so
-//! this one standalone operation is hand-written here, correctly.
+//! TODO(#1822): the generated ITS-REST contract now emits the System group
+//! (`crates/openehr-its/src/rest/generated/system.rs`, `SystemApi::options`);
+//! this module predates it and is still hand-written — adopt the generated
+//! trait and diff [`SystemManifest`] against the emitted `Options` DTO.
 //!
 //! This module owns the manifest's *shape and content*; the wiring layer
 //! (`crate::router::router`) constructs the [`SystemManifest`] from config plus the

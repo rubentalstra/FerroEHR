@@ -30,8 +30,9 @@ use super::interval::{iv_lower, iv_upper};
 use super::{NodeView, RuleViolation};
 
 /// LOCATABLE meta attributes tolerated on any RM class (see the NOTE in
-/// [`check_attribute`]: archie-era OPTs constrain these on PATHABLE-only
-/// classes) — the class's OWN attribute set, read from the BMM-generated static
+/// [`check_attribute`]: the constraint binds to a serialized meta field the
+/// canonical form of a PATHABLE-only node still carries) — the class's OWN
+/// attribute set, read from the BMM-generated static
 /// RM model, never a hand-kept list: a LOCATABLE attribute added or renamed by
 /// a spec-pin bump follows automatically. PATHABLE's inherited members
 /// (`parent`, which the flattened model also reports) are excluded, since the
@@ -134,15 +135,18 @@ pub(super) fn check_attribute(
         return Ok(());
     }
     match model::attribute(parent_rm, attr_name) {
-        // NOTE (prior-art OPT tolerance): archie/openEHR-SDK tooling
-        // models every constrainable node as Locatable, so published OPTs
-        // (incl. the vendored IPS template) constrain LOCATABLE meta attributes
-        // (`name`, `archetype_node_id`, …) on classes the RM derives from
-        // PATHABLE only (e.g. ISM_TRANSITION —
-        // org.openehr.rm.composition.ism_transition.adoc inherits PATHABLE).
-        // Rejecting them per strict VCARM would refuse real-world templates; the
-        // constraints are tolerated (they bind to the serialized meta fields,
-        // which canonical JSON carries).
+        // NOTE (why this is not a VCARM violation): a LOCATABLE meta attribute
+        // (`name`, `archetype_node_id`, …) constrained on a class the RM
+        // derives from PATHABLE only (e.g. ISM_TRANSITION —
+        // `RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
+        // inherits PATHABLE) binds to a field the canonical serialization of
+        // that node carries, so the constraint has a referent and nothing in
+        // the released text makes it invalid. The tolerance is therefore
+        // grounded on the RM + the serialization, not on any implementation.
+        // (Prior art, named only as where the shape is OBSERVED and never as
+        // its authority: archie/openEHR-SDK-generated OPTs — including the
+        // vendored IPS template — model every constrainable node as Locatable
+        // and emit exactly these constraints.)
         None if LOCATABLE_META_ATTRS.contains(attr_name)
             || is_us_orthography_of_rm_attribute(parent_rm, attr_name)
             || LEGACY_RM_ATTRS.contains(&(parent_rm, attr_name)) =>

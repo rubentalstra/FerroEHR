@@ -32,7 +32,8 @@
 -- multi-tenant mode").
 --
 -- NOTE: the pre-existing service-wide UNIQUE
--- constraints (uq_ehr_subject, uq_template_store_template_id,
+-- constraints (uq_ehr_subject, uq_template_store_template_id, pk_template_ref
+-- (the template registry mirrors the global template_store/adl2_artefact keys),
 -- pk_stored_query, uq_event_subscription_name, uq_sp_data_frame_frame_id,
 -- and uq_item_tag_identity — practically unreachable cross-tenant since a
 -- target_vo_id belongs to one tenant, listed for completeness)

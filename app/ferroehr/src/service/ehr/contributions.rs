@@ -160,8 +160,9 @@ impl FerroEhrService {
         // None` serializes to JSON `null` (not absent), and `change_type` is a
         // `Terminology_code` (`{terminology_id, code_string}`, SM
         // `update_audit.adoc`), not a `DV_CODED_TEXT` (see the NOTEs in
-        // `versioning/contribution.rs` `coded_value`/`classify`). A native
-        // typed path skipping the JSON round-trip is a future cleanup.
+        // `versioning/contribution.rs` `coded_value`/`classify`).
+        // TODO(#1820): replace the serialize→re-parse round trip with a
+        // native typed handoff into `commit_version_set`.
         let versions_json = serde_json::to_value(&versions)
             .map_err(|e| internal_fault("serialize the CONTRIBUTION version set", &e))?;
         let audit_json = serde_json::to_value(&an_audit)

@@ -62,7 +62,10 @@ conformance). An invalid artefact is rejected with **422 Unprocessable
 Entity** whose error body lists the offending rule codes in `validationErrors`
 (the S-codes for a source that cannot be parsed, the V-codes for a
 validation-phase failure, e.g. `VARD`, `VCORM`, `VACSD`). A duplicate ADL2
-template id returns **409 Conflict** on this endpoint.
+template id returns **409 Conflict** on this endpoint. Deleting an ADL2
+template that committed compositions still reference is also a
+**409 Conflict** naming the reference count — the same never-orphan guard the
+OPT 1.4 delete applies; delete the compositions first.
 
 A loaded ADL2 template is retrieved in either of two representations, chosen
 by `Accept`: the stored ADL2 **source** (`text/plain`, the default) or the

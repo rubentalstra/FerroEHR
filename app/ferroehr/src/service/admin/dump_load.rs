@@ -67,10 +67,10 @@
 //! `vo_version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
 //! ehr master04 §Folders), `item_tag`, and any `vo_archive` markers for the
 //! EHR's versioned objects. Global DEFINITION artefacts a version references
-//! (`template_store` OPTs via `vo_version.template_id`, `stored_query`) are NOT
-//! carried — they are provisioned through the DEFINITION API and must pre-exist
-//! (a COMPOSITION referencing an absent template fails its FK on load, reported
-//! per EHR). Demographic parties (ehr-less versioned objects) and
+//! (OPT 1.4 / ADL2 templates via `vo_version.template_id` → `template_ref`,
+//! `stored_query`) are NOT carried — they are provisioned through the
+//! DEFINITION API and must pre-exist (a COMPOSITION referencing an absent
+//! template fails its FK on load, reported per EHR). Demographic parties (ehr-less versioned objects) and
 //! `vo_attestation` rows are out of this EHR-scoped dump; a whole-repository
 //! back-up would need a demographic dump wave (deferred).
 //! TODO(#1685): carry the `vo_attestation` rows (with their `at_committal`
@@ -300,13 +300,24 @@ fn plan_segments(sizes: &[usize], limit_bytes: usize) -> Vec<std::ops::Range<usi
     segments
 }
 
+/// The wire message of every filesystem-access failure of these operations.
+/// Deliberately opaque: the configured `file_sys_loc` is SERVER deployment
+/// layout, and the OS error names the same path — neither belongs in a
+/// response body. The path and the OS diagnostic go to the trace record.
+const LOCATION_MESSAGE: &str =
+    "the configured archive location could not be read or written; see the server log";
+
 /// Build a `file_not_writable` [`SmError`] (the only error `I_ADMIN_DUMP_LOAD`
 /// declares) for a failed filesystem access to `path`.
+///
+/// The body carries [`LOCATION_MESSAGE`]; `path` + `err` are traced.
 fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
-    SmError::new(
-        CallStatusType::FileNotWritable,
-        format!("{}: {err}", path.display()),
-    )
+    tracing::error!(
+        path = %path.display(),
+        error = %err,
+        "dump/load: archive location access failed → file_not_writable"
+    );
+    SmError::new(CallStatusType::FileNotWritable, LOCATION_MESSAGE.to_owned())
 }
 
 /// Build a `file_not_writable` [`SmError`] for an archive entry that was read
@@ -320,13 +331,21 @@ fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
 /// a readable archive — so they carry the SAME SM error. Reporting a corrupt
 /// input as `exception` instead would blame the server for the caller's
 /// archive.
+///
+/// The body NAMES THE ENTRY — that is the caller-actionable fact about the
+/// caller's own archive — but carries neither the server path nor the serde
+/// diagnostic (offsets and Rust field names of our archive structs); both are
+/// traced.
 fn unreadable_archive_entry(path: &Path, entry: &str, err: &serde_json::Error) -> SmError {
+    tracing::warn!(
+        path = %path.display(),
+        entry,
+        error = %err,
+        "dump/load: archive entry is not parseable → file_not_writable"
+    );
     SmError::new(
         CallStatusType::FileNotWritable,
-        format!(
-            "{}/{entry} is not readable as part of this export archive: {err}",
-            path.display()
-        ),
+        format!("archive entry {entry} is not readable as part of this export archive"),
     )
 }
 
@@ -530,17 +549,23 @@ impl ArchiveReader {
 /// same SM error the loose form raises, since from the operation's point of
 /// view the archive file could not be written/read either way.
 fn sevenz_fault(path: &Path, what: &str, err: &sevenz_rust2::Error) -> SmError {
-    SmError::new(
-        CallStatusType::FileNotWritable,
-        format!("{} ({what}): {err}", path.display()),
-    )
+    tracing::error!(
+        path = %path.display(),
+        operation = what,
+        error = %err,
+        "dump/load: 7z container fault → file_not_writable"
+    );
+    SmError::new(CallStatusType::FileNotWritable, LOCATION_MESSAGE.to_owned())
 }
 
 fn zip_fault(path: &Path, what: &str, err: &zip::result::ZipError) -> SmError {
-    SmError::new(
-        CallStatusType::FileNotWritable,
-        format!("{} ({what}): {err}", path.display()),
-    )
+    tracing::error!(
+        path = %path.display(),
+        operation = what,
+        error = %err,
+        "dump/load: zip container fault → file_not_writable"
+    );
+    SmError::new(CallStatusType::FileNotWritable, LOCATION_MESSAGE.to_owned())
 }
 
 // ── the openehr_canonical_xml payload form ───────────────────────────────────
@@ -589,10 +614,21 @@ fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
 /// missing a mandatory `VERSION` attribute; the [`AuditInput::canonical`]
 /// rejection when the committer is not a canonical `PARTY_PROXY`.
 fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Value, ServiceError> {
+    // Same discipline as the version read-back: an archived
+    // `other_input_version_uids` that does not decode is a corrupt record, not
+    // an absent merge list — restoring the version without its merge inputs
+    // would silently rewrite history (RM common master06 §Distributed
+    // Versioning).
     let other_input_version_uids: Vec<String> = v
         .other_input_version_uids
         .as_ref()
-        .and_then(|value| serde_json::from_value(value.clone()).ok())
+        .map(|value| serde_json::from_value(value.clone()))
+        .transpose()
+        .map_err(|e| {
+            ServiceError::Internal(format!(
+                "archived other_input_version_uids is not a list of version uids: {e}"
+            ))
+        })?
         .unwrap_or_default();
     let tree = TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version);
     // An IMPORTED_VERSION row's document is the WRAPPED original — its own
@@ -956,12 +992,13 @@ impl FerroEhrService {
         // The manifest's own EXPORT_FORMAT member is what tells the format-less
         // operation which payload form the segments carry.
         let format: ExportFormat = manifest.format.parse().map_err(|()| {
+            // The manifest's declared value IS the caller's archive content, so
+            // the body names it; the server path stays out of the body.
             SmError::new(
                 CallStatusType::FileNotWritable,
                 format!(
-                    "{}/{MANIFEST_ENTRY} declares logical format {:?}, which names no \
-                     EXPORT_FORMAT member",
-                    dir.display(),
+                    "archive entry {MANIFEST_ENTRY} declares logical format {:?}, which names \
+                     no EXPORT_FORMAT member",
                     manifest.format
                 ),
             )
@@ -1048,11 +1085,9 @@ impl FerroEhrService {
         keys.sort_unstable();
         keys.dedup();
         for hex in &keys {
-            let bytes = engine
-                .store()
-                .get(hex)
-                .await
-                .map_err(|e| SmError::exception(format!("exporting blob {hex}: {e}")))?;
+            let bytes = engine.store().get(hex).await.map_err(|e| {
+                crate::service::error::internal_fault("export a multimedia blob", &e)
+            })?;
             archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
         }
         Ok(keys)
@@ -1082,7 +1117,9 @@ impl FerroEhrService {
                 .store()
                 .put_if_absent(hex, bytes)
                 .await
-                .map_err(|e| SmError::exception(format!("importing blob {hex}: {e}")))?;
+                .map_err(|e| {
+                    crate::service::error::internal_fault("import a multimedia blob", &e)
+                })?;
         }
         Ok(())
     }

@@ -162,9 +162,12 @@ pub enum ServiceError {
     #[error("unprocessable: {0}")]
     Unprocessable(Violation),
     /// A well-formed payload that fails semantic (template/RM/terminology)
-    /// validation — carries the per-path violations for the ITS-REST 422 body.
+    /// validation — carries the per-path violations as the RM validation data
+    /// type ([`InvariantViolation`]), which the protocol bridges below render
+    /// into the ITS-REST 422 body. The service layer never names a protocol
+    /// type: the wire shape is chosen at the edge, not at the throw site.
     #[error("{} validation error(s)", .0.len())]
-    ValidationFailed(Vec<openehr_its::rest::runtime::ValidationError>),
+    ValidationFailed(Vec<InvariantViolation>),
     /// A storage/codec failure.
     #[error("storage: {0}")]
     Storage(#[from] crate::storage::error::StorageError),
@@ -393,7 +396,17 @@ impl From<ServiceError> for ApiError {
             ServiceError::VersionConflict(m) => ApiError::PreconditionFailed(m),
             // The ONE rendering point of a `Violation` on the wire bridge.
             ServiceError::Unprocessable(v) => ApiError::Unprocessable(v.to_string()),
-            ServiceError::ValidationFailed(v) => ApiError::ValidationFailed(v),
+            // The ONE place the RM violation data becomes the protocol's
+            // `validationErrors[]` shape (the two carry the same `{path,
+            // message}` facts).
+            ServiceError::ValidationFailed(v) => ApiError::ValidationFailed(
+                v.into_iter()
+                    .map(|e| openehr_its::rest::runtime::ValidationError {
+                        path: e.path,
+                        message: e.message,
+                    })
+                    .collect(),
+            ),
             // Storage/DB failures carry SQLSTATE/constraint detail: classify
             // them (integrity/serialization conflict → 409, pool exhaustion →
             // 503) rather than blanket-500. A genuine fault stays 500. This
@@ -504,14 +517,8 @@ mod tests {
     fn validation_failed_renders_two_bodies_but_one_status() {
         let violations = || {
             vec![
-                openehr_its::rest::runtime::ValidationError {
-                    path: "/content[0]/data".to_owned(),
-                    message: "missing mandatory attribute".to_owned(),
-                },
-                openehr_its::rest::runtime::ValidationError {
-                    path: "/context/start_time".to_owned(),
-                    message: "not a valid DV_DATE_TIME".to_owned(),
-                },
+                InvariantViolation::at("/content[0]/data", "missing mandatory attribute"),
+                InvariantViolation::at("/context/start_time", "not a valid DV_DATE_TIME"),
             ]
         };
 

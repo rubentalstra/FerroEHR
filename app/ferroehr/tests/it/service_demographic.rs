@@ -534,7 +534,7 @@ async fn demographic_contribution_multi_version() {
                 "data": role("Nurse")
             }
         ],
-        "audit": {
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "tester" }
         }
     });

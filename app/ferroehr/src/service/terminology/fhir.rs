@@ -174,12 +174,8 @@ impl FhirTerminologyProvider {
         op_path: &str,
         query: &[(&str, &str)],
     ) -> Result<Option<T>, SmError> {
-        let mut url = reqwest::Url::parse(&format!("{}{op_path}", self.base)).map_err(|e| {
-            SmError::exception(format!(
-                "terminology provider '{}': invalid url for {op_path}: {e}",
-                self.name
-            ))
-        })?;
+        let mut url = reqwest::Url::parse(&format!("{}{op_path}", self.base))
+            .map_err(|e| self.provider_fault(op_path, &format_args!("invalid url: {e}")))?;
         {
             let mut pairs = url.query_pairs_mut();
             for (k, v) in query {
@@ -191,10 +187,7 @@ impl FhirTerminologyProvider {
         {
             return match hit {
                 Some(body) => serde_json::from_value(body).map(Some).map_err(|e| {
-                    SmError::exception(format!(
-                        "terminology provider '{}' {op_path}: cached response decode: {e}",
-                        self.name
-                    ))
+                    self.provider_fault(op_path, &format_args!("cached response decode: {e}"))
                 }),
                 None => Ok(None),
             };
@@ -222,26 +215,19 @@ impl FhirTerminologyProvider {
             return Ok(None);
         }
         if !status.is_success() {
-            return Err(SmError::exception(format!(
-                "terminology provider '{}' {op_path} returned HTTP {}",
-                self.name,
-                status.as_u16()
-            )));
+            return Err(self.provider_fault(
+                op_path,
+                &format_args!("upstream returned HTTP {}", status.as_u16()),
+            ));
         }
         let body = response.json::<serde_json::Value>().await.map_err(|e| {
-            SmError::exception(format!(
-                "terminology provider '{}' {op_path}: malformed FHIR response: {e}",
-                self.name
-            ))
+            self.provider_fault(op_path, &format_args!("malformed FHIR response: {e}"))
         })?;
         if let Some(cache) = &self.cache {
             cache.insert(cache_key, Some(body.clone())).await;
         }
         serde_json::from_value(body).map(Some).map_err(|e| {
-            SmError::exception(format!(
-                "terminology provider '{}' {op_path}: malformed FHIR response: {e}",
-                self.name
-            ))
+            self.provider_fault(op_path, &format_args!("malformed FHIR response: {e}"))
         })
     }
 
@@ -254,10 +240,30 @@ impl FhirTerminologyProvider {
         } else {
             "transport error"
         };
-        SmError::exception(format!(
-            "terminology provider '{}' {op_path}: {kind}: {e}",
-            self.name
-        ))
+        self.provider_fault(op_path, &format_args!("{kind}: {e}"))
+    }
+
+    /// A `500` for an upstream-terminology fault, with the OPERATOR detail
+    /// (which provider, which operation, the upstream diagnostic) on the trace
+    /// record and NOT on the wire.
+    ///
+    /// The detail here is the deployment's own configuration — the provider's
+    /// configured name and the upstream server's error — which is exactly the
+    /// class of fact a tenant's clients must not be able to read out of a
+    /// response body, while the operator still needs it in full. The server
+    /// carries no per-request diagnostic surface (`/management` mounts
+    /// info/prometheus/metrics/env/loggers only), so the trace record IS the
+    /// operator channel. (No openEHR spec governs the content of a `500` body
+    /// — our own design/extension; the status itself is the ITS-REST overview
+    /// `Requests_and_responses.md` §HTTP status codes row.)
+    fn provider_fault(&self, op_path: &str, detail: &dyn std::fmt::Display) -> SmError {
+        tracing::error!(
+            provider = %self.name,
+            operation = op_path,
+            error = %detail,
+            "terminology provider fault → 500"
+        );
+        SmError::exception(crate::service::error::INTERNAL_MESSAGE.to_owned())
     }
 
     /// A `Pre_has_*` precondition failure (`VersionedObjectDoesNotExist`).

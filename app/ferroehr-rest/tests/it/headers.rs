@@ -1504,3 +1504,52 @@ async fn tag_collection_disciplines() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body.trim(), "[]", "an empty list clears all: {body}");
 }
+
+/// A request header whose value is not decodable as text is REFUSED, never
+/// silently skipped — a skipped committal/tag header would commit a version
+/// whose attributes differ from the ones the client sent, with nothing on the
+/// wire saying so. (No openEHR spec governs undecodable header bytes — our own
+/// design.)
+#[tokio::test]
+async fn an_undecodable_header_value_is_refused_not_dropped() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+
+    // `0xFF` is not valid in a `to_str`-decodable header value.
+    let opaque = http::HeaderValue::from_bytes(&[0xff]).expect("a byte header value");
+
+    for header_name in [
+        "openehr-audit-details",
+        "openehr-item-tag",
+        "openEHR-VERSION.lifecycle_state",
+    ] {
+        let req = Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header_name, opaque.clone())
+            .body(Body::from(canonical_composition().to_string()))
+            .unwrap();
+        let (status, _h, body) = send(&app, req).await;
+        assert_eq!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "an undecodable {header_name} value must be refused, got {status} {body}"
+        );
+    }
+
+    // The twin: the same write with no undecodable header commits.
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(canonical_composition().to_string()))
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::CREATED,
+        "the clean twin commits: {body}"
+    );
+}

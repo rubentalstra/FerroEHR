@@ -844,7 +844,7 @@ async fn after_committal_attestation_is_outside_the_signed_form() {
     svc.create_ehr_contribution(
         ehr_uuid,
         json!({
-            "versions": [{
+            "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
                 "preceding_version_uid": { "value": ovid.clone() },
                 "commit_audit": {
                     "change_type": change_type("666", "attestation"),
