@@ -952,11 +952,23 @@ async fn load_from_a_location_with_no_archive_is_file_not_writable() {
     let db = testkit::db().await.expect("testkit database");
     let service = FerroEhrService::new(db.pool());
 
+    let dir = archive_dir();
     let err = service
-        .load_ehrs(archive_dir())
+        .load_ehrs(dir.clone())
         .await
         .expect_err("no archive at the location");
     assert_eq!(err.status, CallStatusType::FileNotWritable);
+    // The SERVER FILESYSTEM PATH never reaches the body: it is deployment
+    // layout, and the caller supplied only the configured location name. The
+    // path + the OS diagnostic ride the trace record instead.
+    assert!(
+        !err.message.contains(&dir),
+        "the configured server path must not reach the wire body, got {err:?}"
+    );
+    assert!(
+        !err.message.contains('/'),
+        "no filesystem path fragment reaches the wire body, got {err:?}"
+    );
 }
 
 /// Whether the target repository holds an EHR row — the no-partial-write proof
@@ -1006,6 +1018,20 @@ async fn load_from_an_archive_with_a_mangled_manifest_is_file_not_writable() {
         .await
         .expect_err("a mangled manifest is refused");
     assert_eq!(err.status, CallStatusType::FileNotWritable);
+    // The caller's-archive defect NAMES THE ENTRY (that is what the caller can
+    // act on) and nothing else: no server path, no serde offsets/field names.
+    assert!(
+        err.message.contains("manifest.json"),
+        "the refusal names the offending archive entry, got {err:?}"
+    );
+    assert!(
+        !err.message.contains(&dir),
+        "the server path must not reach the wire body, got {err:?}"
+    );
+    assert!(
+        !err.message.contains("column") && !err.message.contains("line "),
+        "the serde diagnostic must not reach the wire body, got {err:?}"
+    );
     assert!(
         !ehr_row_exists(&dst_pool, ehr.into()).await,
         "a refused load commits nothing"
@@ -1050,6 +1076,10 @@ async fn load_from_a_truncated_container_is_file_not_writable() {
         .await
         .expect_err("a truncated container is refused");
     assert_eq!(err.status, CallStatusType::FileNotWritable);
+    assert!(
+        !err.message.contains(&dir) && !err.message.contains("archive.zip"),
+        "the container path must not reach the wire body, got {err:?}"
+    );
     assert!(
         !ehr_row_exists(&dst_pool, ehr.into()).await,
         "a refused load commits nothing"

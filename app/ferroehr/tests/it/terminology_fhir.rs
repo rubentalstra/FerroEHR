@@ -277,6 +277,18 @@ async fn server_5xx_is_an_exception() {
         .await
         .expect_err("5xx → exception");
     assert_eq!(err.status, CallStatusType::Exception);
+    // The OPERATOR detail stays off the wire: a 500 body names neither the
+    // configured provider, nor its URL, nor the upstream status — a tenant's
+    // clients cannot read the deployment's terminology configuration out of a
+    // failure. (The operator gets all of it on the trace record.)
+    assert!(
+        !err.message.contains("test"),
+        "the configured provider name must not reach the body, got {err:?}"
+    );
+    assert!(
+        !err.message.contains(&server.uri()) && !err.message.contains("503"),
+        "the upstream URL/status must not reach the body, got {err:?}"
+    );
 }
 
 #[tokio::test]

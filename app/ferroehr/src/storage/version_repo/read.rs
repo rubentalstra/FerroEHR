@@ -143,9 +143,21 @@ async fn stored_version(
     row: &PgRow,
 ) -> Result<StoredVersion, StorageError> {
     let sys_version: i32 = row.try_get("sys_version")?;
+    // A stored `other_input_version_uids` that does not decode is OUR data
+    // gone wrong (the merge inputs of an IMPORTED_VERSION, RM common master06
+    // §Distributed Versioning) — serving the version with an empty merge list
+    // would answer wrongly rather than loudly, so the decode failure is a codec
+    // fault, not a default.
     let other_input_version_uids: Vec<String> = row
         .try_get::<Option<Value>, _>("other_input_version_uids")?
-        .and_then(|v| serde_json::from_value(v).ok())
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|e| {
+            StorageError::InvalidRows(format!(
+                "vo_version.other_input_version_uids of {vo_id} is not a list of \
+                 version uids: {e}"
+            ))
+        })?
         .unwrap_or_default();
     let canonical = read_version_canonical(pool, vo_id, sys_version).await?;
     // The attestations arrive folded into the version-select row (the LATERAL

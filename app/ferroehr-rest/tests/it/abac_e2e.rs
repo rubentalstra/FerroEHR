@@ -39,7 +39,7 @@ use ferroehr::system_log::config::{AuditConfig, FailMode, StoreConfig, SyslogCon
 use ferroehr::system_log::sender::{AuditSender, start};
 use ferroehr_rest::config::AppConfig;
 use ferroehr_rest::extensions::access::authz::engine::{AuthzError, PolicyEngine};
-use ferroehr_rest::extensions::access::authz::request::{AuthzRequest, Decision};
+use ferroehr_rest::extensions::access::authz::request::{Attr, AuthzRequest, Decision};
 use ferroehr_rest::extensions::access::authz::{AuthzHandle, AuthzResolvers, ResolveError};
 use ferroehr_rest::extensions::management::Observability;
 use ferroehr_rest::{build_full, build_with};
@@ -166,12 +166,47 @@ fn resolvers() -> AuthzResolvers {
     }
 }
 
+/// The same subject map, with the template attribute resolved from the REAL
+/// service — i.e. from the `vo_version.template_id` the commit routes stamp.
+fn service_resolvers(svc: Arc<FerroEhrService>) -> AuthzResolvers {
+    AuthzResolvers {
+        template_of_version: Arc::new(move |vo: String, version: Option<String>| {
+            let svc = Arc::clone(&svc);
+            Box::pin(async move {
+                let vo_id = vo
+                    .parse::<ferroehr::ids::VoId>()
+                    .map_err(|e| ResolveError(format!("vo id: {e}")))?;
+                svc.template_of_version(vo_id, version.as_deref())
+                    .await
+                    .map_err(|e| ResolveError(format!("{e}")))
+            })
+        }),
+        ..resolvers()
+    }
+}
+
 fn authz(abac_enabled: bool) -> Option<Arc<AuthzHandle>> {
     let mut cfg = AuthzConfig::default();
     cfg.abac.enabled = abac_enabled;
     let engine: Option<Arc<dyn PolicyEngine>> =
         abac_enabled.then(|| -> Arc<dyn PolicyEngine> { Arc::new(PermitAll) });
     AuthzHandle::build(&cfg, &rest_config().server.base_path, engine, resolvers()).map(Arc::new)
+}
+
+/// An ABAC handle with a caller-chosen PDP engine and resolvers.
+fn authz_with(
+    engine: Arc<dyn PolicyEngine>,
+    resolvers: AuthzResolvers,
+) -> Option<Arc<AuthzHandle>> {
+    let mut cfg = AuthzConfig::default();
+    cfg.abac.enabled = true;
+    AuthzHandle::build(
+        &cfg,
+        &rest_config().server.base_path,
+        Some(engine),
+        resolvers,
+    )
+    .map(Arc::new)
 }
 
 /// A real service over a fresh DB, optionally wired with an ATNA audit sender.
@@ -467,5 +502,150 @@ async fn abac_deny_is_audited() {
             .any(|xml| xml.contains(r#"EventOutcomeIndicator="4""#)
                 && xml.contains(r#"UserID="svc""#)),
         "expected a minor-failure audit for `svc`, got {records:?}"
+    );
+}
+
+// ── the template attribute binds on direct-route compositions ────────────────
+
+/// The `template_id` the vendored IPS operational template declares.
+const IPS_TEMPLATE_ID: &str = "International Patient Summary";
+
+fn ips_opt_xml() -> String {
+    std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt"),
+    )
+    .expect("ips.v0.opt vendored in openehr-its")
+}
+
+fn ips_composition() -> Value {
+    let text = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+            "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
+        ),
+    )
+    .expect("ips_canonical.json vendored in openehr-its");
+    serde_json::from_str(&text).expect("valid canonical composition")
+}
+
+/// A PDP that permits ONLY when the request carries the IPS template attribute
+/// — a template-scoped rule. With `vo_version.template_id` unstamped the
+/// attribute resolves to `None` and the rule silently stops binding, which is
+/// exactly the defect this pins.
+#[derive(Debug)]
+struct RequireIpsTemplate;
+
+#[async_trait]
+impl PolicyEngine for RequireIpsTemplate {
+    async fn decide(&self, req: &AuthzRequest<'_>) -> Result<Decision, AuthzError> {
+        let bound = match &req.template {
+            Some(Attr::One(t)) => t == IPS_TEMPLATE_ID,
+            Some(Attr::Set(set)) => set.iter().any(|t| t == IPS_TEMPLATE_ID),
+            None => false,
+        };
+        Ok(if bound {
+            Decision::Permit
+        } else {
+            Decision::Deny
+        })
+    }
+}
+
+/// Upload the IPS OPT and commit one of its compositions through the DIRECT
+/// composition route; return the committed version uid.
+async fn seed_templated_composition(seed: &Router, ehr_id: &str) -> String {
+    let upload = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl1.4"))
+        .header("content-type", "application/xml")
+        .body(Body::from(ips_opt_xml()))
+        .expect("request");
+    let resp = seed.clone().oneshot(upload).await.expect("upload OPT");
+    assert_eq!(resp.status(), StatusCode::CREATED, "IPS OPT upload");
+
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+        .header("content-type", "application/json")
+        .body(Body::from(ips_composition().to_string()))
+        .expect("request");
+    let resp = seed.clone().oneshot(req).await.expect("seed composition");
+    assert_eq!(
+        resp.status(),
+        StatusCode::CREATED,
+        "seed templated composition in {ehr_id}"
+    );
+    let etag = resp
+        .headers()
+        .get(http::header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .expect("ETag on create");
+    etag.trim_start_matches("W/").trim_matches('"').to_owned()
+}
+
+#[tokio::test]
+async fn template_scoped_rule_binds_on_a_direct_route_composition() {
+    let (_pg, svc) = service(None).await;
+    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    seed_ehr(&seed, EHR_OWN).await;
+    let uid = seed_templated_composition(&seed, EHR_OWN).await;
+
+    let app = build_full(
+        rest_config(),
+        Arc::clone(&svc),
+        authz_with(Arc::new(RequireIpsTemplate), service_resolvers(svc)),
+        Observability::default(),
+    )
+    .expect("build app");
+
+    let s = status(
+        &app,
+        request(
+            "GET",
+            &format!("/ehr/{EHR_OWN}/composition/{uid}"),
+            &bearer(Some(PATIENT_OWN)),
+        ),
+    )
+    .await;
+    assert_eq!(
+        s,
+        StatusCode::OK,
+        "the template-scoped rule must bind: the direct-route commit stamps \
+         vo_version.template_id, so the post-check resolves the attribute"
+    );
+}
+
+#[tokio::test]
+async fn template_scoped_rule_does_not_bind_a_templateless_composition() {
+    // The refusing twin: a composition carrying no `archetype_details.template_id`
+    // genuinely has no template attribute, so the same rule denies — the
+    // resolver answering `None` must mean "no template", never "unstamped".
+    let (_pg, svc) = service(None).await;
+    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    seed_ehr(&seed, EHR_OWN).await;
+    let uid = seed_composition(&seed, EHR_OWN).await;
+
+    let app = build_full(
+        rest_config(),
+        Arc::clone(&svc),
+        authz_with(Arc::new(RequireIpsTemplate), service_resolvers(svc)),
+        Observability::default(),
+    )
+    .expect("build app");
+
+    let s = status(
+        &app,
+        request(
+            "GET",
+            &format!("/ehr/{EHR_OWN}/composition/{uid}"),
+            &bearer(Some(PATIENT_OWN)),
+        ),
+    )
+    .await;
+    assert_eq!(
+        s,
+        StatusCode::FORBIDDEN,
+        "a templateless composition carries no template attribute, so the \
+         template-scoped rule must deny"
     );
 }

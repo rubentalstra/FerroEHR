@@ -80,6 +80,62 @@ workflow refuses a tag that has no matching section here.
   Conformance), which the contract generator skipped: its group list omitted
   `system` and its HTTP-method table omitted `OPTIONS` entirely.
 
+- **A composition committed against an ADL2-registered template is no longer
+  refused with a `409`, and an in-use ADL2 template now refuses physical
+  deletion.** The stored template identity on a version row was
+  foreign-key-checked against the OPT 1.4 store only, so a commit whose
+  template was provisioned through the ADL2 DEFINITION surface failed the
+  constraint; the key now targets a registry spanning both template dialects.
+  With that, the ADL2 template delete gains the same never-orphan guard the
+  OPT 1.4 delete always had — deleting a template still referenced by
+  committed versions answers `409` with the reference count (previously the
+  row was deleted silently) — and it now also evicts the template's compiled
+  WebTemplate, so a re-uploaded template is never served from the deleted
+  artefact's cached form.
+
+- **Template-scoped authorization rules now bind to compositions committed
+  through the direct routes.** A COMPOSITION committed with `POST`/`PUT
+  /ehr/{ehr_id}/composition` stored no template identity alongside its version,
+  while the same composition committed inside a CONTRIBUTION did — so an ABAC
+  policy scoped to a template silently failed to match direct-route
+  compositions (the attribute resolved to "no template" rather than to the
+  template the composition declares). Both direct routes now record the
+  template the version was committed against, exactly as the CONTRIBUTION
+  route always has. Compositions committed before this release carry no
+  template identity on their existing version rows; re-committing a new
+  version records it.
+
+- **A CONTRIBUTION whose audit omits `change_type` is now refused (`422`)
+  instead of being given a server-invented one.** The released commit schema
+  makes the change set's audit mandatory and its `change_type` a required
+  member (`NewContribution.yaml` over `UpdateAudit.yaml`, for both the EHR and
+  the demographic contribution routes), and RM common `master06`
+  §Contributions calls the contribution-level value approximate and "not
+  expected to be used as a computable value" — it is the client's account of
+  its own change set. The server previously derived an aggregate from the
+  member versions when the attribute was absent, putting an approximation into
+  the audit trail under the client's name; it now answers `422` naming
+  `CONTRIBUTION.audit.change_type`. A conformant client is unaffected. (The
+  direct COMPOSITION/DIRECTORY routes are unchanged: there the committal
+  headers stay optional and the server default still applies, exactly as the
+  ITS-REST overview requires.)
+
+- **An undecodable request-header value is refused instead of silently
+  ignored.** A header whose bytes are not decodable as text — including the
+  committal (`openehr-version`, `openehr-audit-details`) and item-tag wrapper
+  headers — was dropped from the request as if it had never been sent, so a
+  commit could carry different audit attributes or tags than the client
+  supplied, with nothing on the wire saying so. Such a request now answers
+  `400` naming the header.
+
+- **An AQL query that cannot get a database connection now sheds with `503` +
+  `Retry-After` instead of reporting `500`.** The query path's database leg is
+  classified like every other one, so a pool-acquire timeout is reported as a
+  temporary overload (retryable) rather than as a server fault. A corrupt
+  stored FHIR mapping definition is likewise reported as a server fault
+  (`500`) rather than as a client error (`422`) — it is not something the
+  caller supplied.
+
 - **A round-tripped demographic party carrying inline relationships is no
   longer refused.** `PARTY.Relationships_validity` requires every inline
   `relationships[i].source` to reference the party itself, and RM demographic
@@ -221,6 +277,24 @@ workflow refuses a tag that has no matching section here.
   then read back as deleted (`204`) while its content stayed stored and
   AQL-queryable. Both routes now refuse it. Deleting through `DELETE`, or
   through a data-less `523` CONTRIBUTION member, is unaffected.
+
+### Security
+
+- **Admin dump/load failures no longer expose server filesystem paths.** The
+  `file_not_writable` and container-fault bodies of the EHR export/import
+  operations carried the configured archive path (server deployment layout)
+  and the raw archive-parse diagnostics. The bodies now carry a curated message
+  — a defect in the CALLER's archive still names the offending archive ENTRY,
+  which is the actionable fact — and the path plus the underlying diagnostic go
+  to the server's trace record only.
+
+- **Terminology-server failures no longer expose the deployment's terminology
+  configuration.** A `500` raised by an upstream FHIR terminology server (or by
+  its OAuth2 client-credentials grant) named the configured provider, its
+  operation and the upstream error in the response body. The body is now the
+  curated internal-error message; the operator detail (provider name,
+  operation, upstream diagnostic) is emitted on the trace record. Boot-time
+  configuration errors are unchanged — they never reach a response body.
 
 ### Changed
 

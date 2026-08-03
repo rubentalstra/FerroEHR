@@ -98,7 +98,7 @@ async fn ehr_access_settings_round_trip_through_contribution() {
             "preceding_version_uid": preceding,
             "data": ehr_access_with_settings()
         } ],
-        "audit": { "committer": committer("alice") }
+        "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } },  "committer": committer("alice") }
     });
     svc.create_ehr_contribution(ehr_id, contribution)
         .await

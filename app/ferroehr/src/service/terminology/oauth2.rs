@@ -170,10 +170,18 @@ impl TokenSource {
             .request_async(&self.http)
             .await
             .map_err(|e| {
-                SmError::exception(format!(
-                    "terminology oauth2 client '{}': client-credentials grant failed: {e}",
-                    self.name
-                ))
+                // The OPERATOR detail — which configured client, and the
+                // upstream authorization server's own error — goes to the
+                // trace record; the wire body stays the curated 500 message.
+                // A tenant's clients must not be able to read the deployment's
+                // credential configuration out of a response. (No openEHR spec
+                // governs 500 body content — our own design/extension.)
+                tracing::error!(
+                    oauth2_client = %self.name,
+                    error = %e,
+                    "terminology oauth2 client-credentials grant failed → 500"
+                );
+                SmError::exception(crate::service::error::INTERNAL_MESSAGE.to_owned())
             })?;
         // Refresh a leeway before the stated expiry so an in-flight request
         // never carries a token that expires mid-call. A leeway at or beyond

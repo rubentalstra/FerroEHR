@@ -5,8 +5,10 @@
 //! * [`AqlFeatureError`] — the feature-envelope rejections. Every variant names
 //!   the rejected construct and cites the governing QUERY 1.1 spec section, so a
 //!   rejection is always explainable against the vendored spec
-//!   (`docs/specs/openehr/QUERY/docs/AQL/`). The accept/reject envelope must remain
-//!   a superset of `EHRbase`'s.
+//!   (`docs/specs/openehr/QUERY/docs/AQL/`), which is the ONLY authority for the
+//!   accept/reject envelope: a construct the released QUERY 1.1 text defines is
+//!   accepted or rejected on that text alone. Other implementations' envelopes
+//!   are prior art and never widen or narrow this one.
 //! * [`AnalysisError`] — path analysis / typing failures (unknown class or
 //!   variable, unresolvable attribute, type mismatch, unbound parameter).
 //! * [`SqlError`] — IR→SQL lowering failures (a construct the planner accepted

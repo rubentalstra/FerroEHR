@@ -97,9 +97,9 @@ impl FerroEhrService {
     /// Delete one template by its wire id, refusing (409) while any committed
     /// version still references it. The reference count and the delete run in
     /// one transaction so the friendly 409 is consistent with the delete; the
-    /// `vo_version.template_id` foreign key (`0001_baseline.sql`, NO ACTION) is
-    /// the underlying integrity guard that makes orphaning impossible even under
-    /// a concurrent commit.
+    /// `vo_version.template_id` → `template_ref` foreign key
+    /// (`0001_baseline.sql`, NO ACTION) is the underlying integrity guard that
+    /// makes orphaning impossible even under a concurrent commit.
     async fn delete_template_by_id(&self, template_id: &str) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
         // Resolve the stored (case-preserved) id; absent → 404 (§Composite
@@ -133,6 +133,18 @@ impl FerroEhrService {
             .bind(&stored)
             .execute(&mut *tx)
             .await?;
+        // Deregister the wire address unless a template-kind ADL2 artefact
+        // also claims it (`template_ref` is the union of both dialects'
+        // addresses; the FK blocks the deregistration if a concurrent commit
+        // referenced it after the count above).
+        sqlx::query(
+            "DELETE FROM template_ref WHERE template_id = $1 AND NOT EXISTS \
+             (SELECT 1 FROM adl2_artefact WHERE lower(hrid) = lower($1) \
+              AND kind IN ('template', 'operational_template'))",
+        )
+        .bind(&stored)
+        .execute(&mut *tx)
+        .await?;
         tx.commit().await?;
         // Evict the derived-runtime cache for the deleted id (case-canonical key,
         // matching the SM delete path). No openEHR spec governs the cache.

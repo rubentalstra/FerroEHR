@@ -39,6 +39,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use ferroehr::service::status::CallStatusType;
 use ferroehr::service::terminology::config::{
     ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, ProviderKind,
 };
@@ -380,9 +381,13 @@ async fn the_same_server_refuses_a_provider_without_the_identity() {
     let err = lookup(cfg)
         .await
         .expect_err("a client-authenticating server must refuse an anonymous client");
+    // The failure is typed and loud (never a silent success), while the
+    // OPERATOR detail — which configured provider, and the TLS diagnostic —
+    // stays on the trace record and off the wire body.
+    assert_eq!(err.status, CallStatusType::Exception, "got {err:?}");
     assert!(
-        err.message.contains("terminology provider 'default'"),
-        "got {}",
+        !err.message.contains("terminology provider 'default'"),
+        "the configured provider must not be named on the wire, got {}",
         err.message
     );
     assert_eq!(
@@ -422,9 +427,10 @@ async fn a_custom_ca_bundle_trusts_a_private_server_that_default_trust_refuses()
     let err = lookup(untrusted)
         .await
         .expect_err("default trust must refuse a privately-issued certificate");
+    assert_eq!(err.status, CallStatusType::Exception, "got {err:?}");
     assert!(
-        err.message.contains("terminology provider 'default'"),
-        "got {}",
+        !err.message.contains("terminology provider 'default'"),
+        "the configured provider must not be named on the wire, got {}",
         err.message
     );
 }

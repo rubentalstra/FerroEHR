@@ -116,7 +116,7 @@ pub(crate) fn merge_committal_headers(
     uv: &mut UpdateVersion,
     headers: &HeaderMap,
 ) -> Result<(), ApiError> {
-    apply_attrs(uv, &collect_attrs(headers))
+    apply_attrs(uv, &collect_attrs(headers)?)
 }
 
 /// Overlay already-collected committal attributes onto a commit envelope —
@@ -229,7 +229,7 @@ fn merged_committal(
     headers: &HeaderMap,
     committer: Option<PartyProxy>,
 ) -> Result<Option<ferroehr::service::version_update::Committal>, ApiError> {
-    let attrs = collect_attrs(headers);
+    let attrs = collect_attrs(headers)?;
     if attrs.is_empty() {
         return Ok(None);
     }
@@ -258,7 +258,11 @@ fn merged_committal(
 /// Collect all committal-header attributes into `target → [(subkey, value)]`,
 /// deprecated forms first and the development-edition forms last so the new form
 /// wins on conflict.
-fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>> {
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a committal header carries an undecodable
+/// value ([`header_values`]).
+fn collect_attrs(headers: &HeaderMap) -> Result<IndexMap<String, Vec<(String, String)>>, ApiError> {
     // Deprecated forms: the attribute target is the header NAME suffix; the value
     // is a bare `key="value"` list (subkeys carry no `target.` prefix).
     let mut attrs: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
@@ -269,7 +273,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
         (H_DEP_COMMITTER, T_COMMITTER),
         (H_DEP_SYSTEM_ID, T_SYSTEM_ID),
     ] {
-        for raw in header_values(headers, name) {
+        for raw in header_values(headers, name)? {
             attrs.insert(target.to_owned(), key_value_pairs(&raw));
         }
     }
@@ -283,7 +287,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
     // dotted < bare-deprecated < new. (`openEHR-VERSION` needs no entry —
     // it lowercases to the new `openehr-version` name and is read there.)
     let mut bare_dep: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
-    for raw in header_values(headers, H_DEP_AUDIT_DETAILS_BARE) {
+    for raw in header_values(headers, H_DEP_AUDIT_DETAILS_BARE)? {
         collect_path_pairs(&raw, &mut bare_dep);
     }
     for (target, pairs) in bare_dep {
@@ -298,7 +302,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
     // new form wins), rather than being appended to it.
     let mut dev: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
     for name in [H_VERSION, H_AUDIT_DETAILS] {
-        for raw in header_values(headers, name) {
+        for raw in header_values(headers, name)? {
             collect_path_pairs(&raw, &mut dev);
         }
     }
@@ -306,7 +310,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
         attrs.insert(target, pairs);
     }
 
-    attrs
+    Ok(attrs)
 }
 
 /// Parse an attribute-path-in-value header (`change_type.code_string="251"`)
@@ -322,12 +326,28 @@ fn collect_path_pairs(raw: &str, map: &mut IndexMap<String, Vec<(String, String)
     }
 }
 
-/// All decodable values of a (possibly repeated) request header.
-fn header_values(headers: &HeaderMap, name: &str) -> Vec<String> {
+/// Every value of a (possibly repeated) request header.
+///
+/// A value that is not decodable as text is a client defect the caller must
+/// hear about: dropping it silently would commit a version whose audit
+/// attributes differ from the ones the client sent, with nothing on the wire
+/// saying so. (No openEHR spec governs undecodable header bytes — our own
+/// design: refuse rather than guess.)
+///
+/// # Errors
+/// [`ApiError::BadRequest`] naming the header whose value is not decodable.
+fn header_values(headers: &HeaderMap, name: &str) -> Result<Vec<String>, ApiError> {
     headers
         .get_all(name)
         .iter()
-        .filter_map(|v| v.to_str().ok().map(str::to_owned))
+        .map(|v| {
+            v.to_str().map(str::to_owned).map_err(|e| {
+                tracing::debug!(header = name, error = %e, "undecodable header value → 400");
+                ApiError::BadRequest(format!(
+                    "header {name} carries a value that is not decodable as text"
+                ))
+            })
+        })
         .collect()
 }
 
