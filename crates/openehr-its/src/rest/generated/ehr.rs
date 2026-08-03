@@ -25,9 +25,9 @@ pub struct VersionOfComposition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `commit_audit` property of `VersionOfComposition`.
-    pub commit_audit: serde_json::Value,
+    pub commit_audit: openehr_rm::prelude::AuditDetails,
     /// The `data` property of `VersionOfComposition`.
-    pub data: serde_json::Value,
+    pub data: openehr_rm::prelude::Composition,
 }
 
 /// The `VersionOfEhrStatus` transport DTO of this API group (an ITS-REST OAS
@@ -43,9 +43,9 @@ pub struct VersionOfEhrStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `commit_audit` property of `VersionOfEhrStatus`.
-    pub commit_audit: serde_json::Value,
+    pub commit_audit: openehr_rm::prelude::AuditDetails,
     /// The `data` property of `VersionOfEhrStatus`.
-    pub data: serde_json::Value,
+    pub data: openehr_rm::prelude::EhrStatus,
 }
 
 /// The `ObjectRefOfObjectVersionId` transport DTO of this API group (an ITS-REST OAS
@@ -54,7 +54,7 @@ pub struct VersionOfEhrStatus {
 pub struct ObjectRefOfObjectVersionId {
     /// The `id` property of `ObjectRefOfObjectVersionId`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<serde_json::Value>,
+    pub id: Option<openehr_base::prelude::ObjectVersionId>,
 }
 
 /// The `Clstr` transport DTO of this API group (an ITS-REST OAS
@@ -65,12 +65,96 @@ pub struct Clstr {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `items` property of `Clstr`.
-    pub items: Vec<serde_json::Value>,
+    pub items: Vec<openehr_rm::prelude::Item>,
 }
 
-/// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type Versionable = serde_json::Value;
+/// The `Versionable` ITS-REST OAS component schema: `_type`-discriminated
+/// polymorphism over its OAS `discriminator.mapping` targets.
+#[derive(Debug, Clone)]
+pub enum Versionable {
+    /// `_type: "COMPOSITION"`
+    Composition(openehr_rm::prelude::Composition),
+    /// `_type: "EHR_STATUS"`
+    EhrStatus(openehr_rm::prelude::EhrStatus),
+    /// `_type: "FOLDER"`
+    Folder(openehr_rm::prelude::Folder),
+}
+
+impl ::serde::Serialize for Versionable {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            Self::Composition(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::EhrStatus(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Folder(__x) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for Versionable {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["COMPOSITION", "EHR_STATUS", "FOLDER"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = Versionable;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an ITS-REST `Versionable` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "COMPOSITION" => ::core::result::Result::Ok(Versionable::Composition(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "EHR_STATUS" => ::core::result::Result::Ok(Versionable::EhrStatus(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "FOLDER" => ::core::result::Result::Ok(Versionable::Folder(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Versionable",
+                                    __other,
+                                    "COMPOSITION, EHR_STATUS, FOLDER",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Versionable",
+                            &__other,
+                            "COMPOSITION, EHR_STATUS, FOLDER",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "Versionable",
+                            "COMPOSITION, EHR_STATUS, FOLDER",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
 
 /// The `Identifier` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -115,7 +199,7 @@ pub struct UpdateItemTag {
 pub struct ObjectRefOfHierObjectId {
     /// The `id` property of `ObjectRefOfHierObjectId`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<serde_json::Value>,
+    pub id: Option<openehr_base::prelude::HierObjectId>,
 }
 
 /// The `DvIntervalOfDateTime` transport DTO of this API group (an ITS-REST OAS
@@ -127,50 +211,205 @@ pub struct DvIntervalOfDateTime {
     pub _type: Option<String>,
     /// The `lower` property of `DvIntervalOfDateTime`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub lower: Option<serde_json::Value>,
+    pub lower: Option<openehr_rm::prelude::DvDateTime>,
     /// The `upper` property of `DvIntervalOfDateTime`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub upper: Option<serde_json::Value>,
+    pub upper: Option<openehr_rm::prelude::DvDateTime>,
 }
 
-/// The `AbstractEntry` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AbstractEntry {
-    /// The `language` property of `AbstractEntry`.
-    pub language: serde_json::Value,
-    /// The `encoding` property of `AbstractEntry`.
-    pub encoding: serde_json::Value,
-    /// The `other_participations` property of `AbstractEntry`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub other_participations: Option<Vec<serde_json::Value>>,
-    /// The `workflow_id` property of `AbstractEntry`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub workflow_id: Option<serde_json::Value>,
-    /// The `subject` property of `AbstractEntry`.
-    pub subject: serde_json::Value,
-    /// The `provider` property of `AbstractEntry`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provider: Option<serde_json::Value>,
+/// The `AbstractEntry` ITS-REST OAS component schema: `_type`-discriminated
+/// polymorphism over its OAS `discriminator.mapping` targets.
+#[derive(Debug, Clone)]
+pub enum AbstractEntry {
+    /// `_type: "ACTION"`
+    Action(openehr_rm::prelude::Action),
+    /// `_type: "ADMIN_ENTRY"`
+    AdminEntry(openehr_rm::prelude::AdminEntry),
+    /// `_type: "CARE_ENTRY"`
+    CareEntry(openehr_rm::prelude::CareEntry),
+    /// `_type: "EVALUATION"`
+    Evaluation(openehr_rm::prelude::Evaluation),
+    /// `_type: "INSTRUCTION"`
+    Instruction(openehr_rm::prelude::Instruction),
+    /// `_type: "OBSERVATION"`
+    Observation(openehr_rm::prelude::Observation),
 }
 
-/// The `UpdateAudit` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateAudit {
-    /// The `_type` property of `UpdateAudit`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `system_id` property of `UpdateAudit`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_id: Option<String>,
-    /// The `change_type` property of `UpdateAudit`.
-    pub change_type: serde_json::Value,
-    /// The `description` property of `UpdateAudit`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<serde_json::Value>,
-    /// The `committer` property of `UpdateAudit`.
-    pub committer: serde_json::Value,
+impl ::serde::Serialize for AbstractEntry {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            Self::Action(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::AdminEntry(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::CareEntry(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Evaluation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Instruction(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Observation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for AbstractEntry {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "ACTION",
+            "ADMIN_ENTRY",
+            "CARE_ENTRY",
+            "EVALUATION",
+            "INSTRUCTION",
+            "OBSERVATION",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = AbstractEntry;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an ITS-REST `AbstractEntry` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "ACTION" => ::core::result::Result::Ok(AbstractEntry::Action(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "ADMIN_ENTRY" => ::core::result::Result::Ok(AbstractEntry::AdminEntry(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "CARE_ENTRY" => ::core::result::Result::Ok(AbstractEntry::CareEntry(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "EVALUATION" => ::core::result::Result::Ok(AbstractEntry::Evaluation(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "INSTRUCTION" => {
+                                ::core::result::Result::Ok(AbstractEntry::Instruction(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "OBSERVATION" => {
+                                ::core::result::Result::Ok(AbstractEntry::Observation(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "AbstractEntry",
+                                    __other,
+                                    "ACTION, ADMIN_ENTRY, CARE_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "AbstractEntry",
+                            &__other,
+                            "ACTION, ADMIN_ENTRY, CARE_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "AbstractEntry",
+                            "ACTION, ADMIN_ENTRY, CARE_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+/// The `UpdateAudit` ITS-REST OAS component schema: `_type`-discriminated
+/// polymorphism over its OAS `discriminator.mapping` targets.
+#[derive(Debug, Clone)]
+pub enum UpdateAudit {
+    /// `_type: "UPDATE_ATTESTATION"`
+    UpdateAttestation(UpdateAttestation),
+}
+
+impl ::serde::Serialize for UpdateAudit {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            Self::UpdateAttestation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for UpdateAudit {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["UPDATE_ATTESTATION"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = UpdateAudit;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an ITS-REST `UpdateAudit` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "UPDATE_ATTESTATION" => {
+                                ::core::result::Result::Ok(UpdateAudit::UpdateAttestation(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "UpdateAudit",
+                                    __other,
+                                    "UPDATE_ATTESTATION",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "UpdateAudit",
+                            &__other,
+                            "UPDATE_ATTESTATION",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "UpdateAudit",
+                            "UPDATE_ATTESTATION",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
 }
 
 /// The `UpdateAttestation` transport DTO of this API group (an ITS-REST OAS
@@ -182,15 +421,15 @@ pub struct UpdateAttestation {
     pub _type: Option<String>,
     /// The `attested_view` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attested_view: Option<serde_json::Value>,
+    pub attested_view: Option<openehr_rm::prelude::DvMultimedia>,
     /// The `proof` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
     /// The `items` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Value>>,
+    pub items: Option<Vec<openehr_rm::prelude::DvEhrUri>>,
     /// The `reason` property of `UpdateAttestation`.
-    pub reason: serde_json::Value,
+    pub reason: openehr_rm::prelude::DvText,
     /// The `is_pending` property of `UpdateAttestation`.
     pub is_pending: bool,
 }
@@ -201,12 +440,12 @@ pub struct UpdateAttestation {
 pub struct UpdateVersion {
     /// The `preceding_version_uid` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub preceding_version_uid: Option<serde_json::Value>,
+    pub preceding_version_uid: Option<openehr_base::prelude::ObjectVersionId>,
     /// The `signature` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `lifecycle_state` property of `UpdateVersion`.
-    pub lifecycle_state: serde_json::Value,
+    pub lifecycle_state: openehr_rm::prelude::DvCodedText,
     /// The `attestations` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attestations: Option<Vec<UpdateAttestation>>,
@@ -222,7 +461,7 @@ pub struct UpdateVersion {
 pub struct NewContribution {
     /// The `uid` property of `NewContribution`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub uid: Option<serde_json::Value>,
+    pub uid: Option<openehr_base::prelude::HierObjectId>,
     /// The `versions` property of `NewContribution`.
     pub versions: Vec<UpdateVersion>,
     /// The `audit` property of `NewContribution`.
@@ -231,11 +470,11 @@ pub struct NewContribution {
 
 /// The `ItemTagOfComposition` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfComposition = serde_json::Value;
+pub type ItemTagOfComposition = openehr_rm::prelude::ItemTag;
 
 /// The `ItemTagOfEhrStatus` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfEhrStatus = serde_json::Value;
+pub type ItemTagOfEhrStatus = openehr_rm::prelude::ItemTag;
 
 /// Parameters for `ehr_get_by_subject` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -812,14 +1051,14 @@ pub trait EhrApi {
     async fn ehr_get_by_subject(
         &self,
         params: EhrGetBySubjectParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Ehr, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /ehr`
     async fn ehr_create(
         &self,
         params: EhrCreateParams,
-        body: Option<serde_json::Value>,
+        body: Option<openehr_rm::prelude::EhrStatus>,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -827,14 +1066,14 @@ pub trait EhrApi {
     async fn ehr_get_by_id(
         &self,
         params: EhrGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Ehr, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}`
     async fn ehr_create_with_id(
         &self,
         params: EhrCreateWithIdParams,
-        body: Option<serde_json::Value>,
+        body: Option<openehr_rm::prelude::EhrStatus>,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -842,21 +1081,21 @@ pub trait EhrApi {
     async fn ehr_status_get_by_version_id(
         &self,
         params: EhrStatusGetByVersionIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::EhrStatus, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/ehr_status`
     async fn ehr_status_get_at_time(
         &self,
         params: EhrStatusGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::EhrStatus, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}/ehr_status`
     async fn ehr_status_update(
         &self,
         params: EhrStatusUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::EhrStatus,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -864,35 +1103,35 @@ pub trait EhrApi {
     async fn versioned_ehr_status_get(
         &self,
         params: VersionedEhrStatusGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::VersionedEhrStatus, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`
     async fn versioned_ehr_status_revision_history(
         &self,
         params: VersionedEhrStatusRevisionHistoryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::RevisionHistory, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/version`
     async fn versioned_ehr_status_version_get_at_time(
         &self,
         params: VersionedEhrStatusVersionGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<VersionOfEhrStatus, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}`
     async fn versioned_ehr_status_version_get_by_id(
         &self,
         params: VersionedEhrStatusVersionGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<VersionOfEhrStatus, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /ehr/{ehr_id}/composition`
     async fn composition_create(
         &self,
         params: CompositionCreateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Composition,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -900,14 +1139,14 @@ pub trait EhrApi {
     async fn composition_get(
         &self,
         params: CompositionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Composition, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}`
     async fn composition_update(
         &self,
         params: CompositionUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Composition,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -922,42 +1161,42 @@ pub trait EhrApi {
     async fn versioned_composition_get(
         &self,
         params: VersionedCompositionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::VersionedComposition, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`
     async fn versioned_composition_revision_history(
         &self,
         params: VersionedCompositionRevisionHistoryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::RevisionHistory, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version`
     async fn versioned_composition_version_get_at_time(
         &self,
         params: VersionedCompositionVersionGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<VersionOfComposition, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}`
     async fn versioned_composition_version_get_by_id(
         &self,
         params: VersionedCompositionVersionGetByIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<VersionOfComposition, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/directory`
     async fn directory_get_at_time(
         &self,
         params: DirectoryGetAtTimeParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Folder, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}/directory`
     async fn directory_update(
         &self,
         params: DirectoryUpdateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Folder,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -965,7 +1204,7 @@ pub trait EhrApi {
     async fn directory_create(
         &self,
         params: DirectoryCreateParams,
-        body: serde_json::Value,
+        body: openehr_rm::prelude::Folder,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -980,14 +1219,14 @@ pub trait EhrApi {
     async fn directory_get_by_version_id(
         &self,
         params: DirectoryGetByVersionIdParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Folder, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /ehr/{ehr_id}/contribution`
     async fn contribution_create(
         &self,
         params: ContributionCreateParams,
-        body: serde_json::Value,
+        body: NewContribution,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -995,7 +1234,7 @@ pub trait EhrApi {
     async fn contribution_get(
         &self,
         params: ContributionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::prelude::Contribution, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/tags`

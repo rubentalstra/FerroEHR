@@ -572,12 +572,151 @@ pub struct Clstr {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `items` property of `Clstr`.
-    pub items: Vec<serde_json::Value>,
+    pub items: Vec<openehr_rm::prelude::Item>,
 }
 
-/// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type Versionable = serde_json::Value;
+/// The `Versionable` ITS-REST OAS component schema: `_type`-discriminated
+/// polymorphism over its OAS `discriminator.mapping` targets.
+#[derive(Debug, Clone)]
+pub enum Versionable {
+    /// `_type: "ACTOR"`
+    Actor(openehr_rm::prelude::Actor),
+    /// `_type: "AGENT"`
+    Agent(openehr_rm::prelude::Agent),
+    /// `_type: "COMPOSITION"`
+    Composition(openehr_rm::prelude::Composition),
+    /// `_type: "EHR_STATUS"`
+    EhrStatus(openehr_rm::prelude::EhrStatus),
+    /// `_type: "FOLDER"`
+    Folder(openehr_rm::prelude::Folder),
+    /// `_type: "GROUP"`
+    Group(openehr_rm::prelude::Group),
+    /// `_type: "ORGANISATION"`
+    Organisation(openehr_rm::prelude::Organisation),
+    /// `_type: "PARTY"`
+    Party(openehr_rm::prelude::Party),
+    /// `_type: "PERSON"`
+    Person(openehr_rm::prelude::Person),
+    /// `_type: "ROLE"`
+    Role(openehr_rm::prelude::Role),
+}
+
+impl ::serde::Serialize for Versionable {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            Self::Actor(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Agent(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Composition(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::EhrStatus(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Folder(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Group(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Organisation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Party(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Person(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Role(__x) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for Versionable {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "ACTOR",
+            "AGENT",
+            "COMPOSITION",
+            "EHR_STATUS",
+            "FOLDER",
+            "GROUP",
+            "ORGANISATION",
+            "PARTY",
+            "PERSON",
+            "ROLE",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = Versionable;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an ITS-REST `Versionable` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "ACTOR" => ::core::result::Result::Ok(Versionable::Actor(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "AGENT" => ::core::result::Result::Ok(Versionable::Agent(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "COMPOSITION" => ::core::result::Result::Ok(Versionable::Composition(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "EHR_STATUS" => ::core::result::Result::Ok(Versionable::EhrStatus(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "FOLDER" => ::core::result::Result::Ok(Versionable::Folder(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "GROUP" => ::core::result::Result::Ok(Versionable::Group(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "ORGANISATION" => {
+                                ::core::result::Result::Ok(Versionable::Organisation(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "PARTY" => ::core::result::Result::Ok(Versionable::Party(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "PERSON" => ::core::result::Result::Ok(Versionable::Person(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "ROLE" => ::core::result::Result::Ok(Versionable::Role(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Versionable",
+                                    __other,
+                                    "ACTOR, AGENT, COMPOSITION, EHR_STATUS, FOLDER, GROUP, ORGANISATION, PARTY, PERSON, ROLE",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Versionable",
+                            &__other,
+                            "ACTOR, AGENT, COMPOSITION, EHR_STATUS, FOLDER, GROUP, ORGANISATION, PARTY, PERSON, ROLE",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "Versionable",
+                            "ACTOR, AGENT, COMPOSITION, EHR_STATUS, FOLDER, GROUP, ORGANISATION, PARTY, PERSON, ROLE",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
 
 /// The `DvIntervalOfDateTime` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -588,36 +727,132 @@ pub struct DvIntervalOfDateTime {
     pub _type: Option<String>,
     /// The `lower` property of `DvIntervalOfDateTime`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub lower: Option<serde_json::Value>,
+    pub lower: Option<openehr_rm::prelude::DvDateTime>,
     /// The `upper` property of `DvIntervalOfDateTime`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub upper: Option<serde_json::Value>,
+    pub upper: Option<openehr_rm::prelude::DvDateTime>,
 }
 
-/// The `AbstractEntry` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AbstractEntry {
-    /// The `language` property of `AbstractEntry`.
-    pub language: serde_json::Value,
-    /// The `encoding` property of `AbstractEntry`.
-    pub encoding: serde_json::Value,
-    /// The `other_participations` property of `AbstractEntry`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub other_participations: Option<Vec<serde_json::Value>>,
-    /// The `workflow_id` property of `AbstractEntry`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub workflow_id: Option<serde_json::Value>,
-    /// The `subject` property of `AbstractEntry`.
-    pub subject: serde_json::Value,
-    /// The `provider` property of `AbstractEntry`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provider: Option<serde_json::Value>,
+/// The `AbstractEntry` ITS-REST OAS component schema: `_type`-discriminated
+/// polymorphism over its OAS `discriminator.mapping` targets.
+#[derive(Debug, Clone)]
+pub enum AbstractEntry {
+    /// `_type: "ACTION"`
+    Action(openehr_rm::prelude::Action),
+    /// `_type: "ADMIN_ENTRY"`
+    AdminEntry(openehr_rm::prelude::AdminEntry),
+    /// `_type: "CARE_ENTRY"`
+    CareEntry(openehr_rm::prelude::CareEntry),
+    /// `_type: "EVALUATION"`
+    Evaluation(openehr_rm::prelude::Evaluation),
+    /// `_type: "INSTRUCTION"`
+    Instruction(openehr_rm::prelude::Instruction),
+    /// `_type: "OBSERVATION"`
+    Observation(openehr_rm::prelude::Observation),
+}
+
+impl ::serde::Serialize for AbstractEntry {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            Self::Action(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::AdminEntry(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::CareEntry(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Evaluation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Instruction(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            Self::Observation(__x) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for AbstractEntry {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "ACTION",
+            "ADMIN_ENTRY",
+            "CARE_ENTRY",
+            "EVALUATION",
+            "INSTRUCTION",
+            "OBSERVATION",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = AbstractEntry;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an ITS-REST `AbstractEntry` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "ACTION" => ::core::result::Result::Ok(AbstractEntry::Action(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "ADMIN_ENTRY" => ::core::result::Result::Ok(AbstractEntry::AdminEntry(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "CARE_ENTRY" => ::core::result::Result::Ok(AbstractEntry::CareEntry(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "EVALUATION" => ::core::result::Result::Ok(AbstractEntry::Evaluation(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            )),
+                            "INSTRUCTION" => {
+                                ::core::result::Result::Ok(AbstractEntry::Instruction(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "OBSERVATION" => {
+                                ::core::result::Result::Ok(AbstractEntry::Observation(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "AbstractEntry",
+                                    __other,
+                                    "ACTION, ADMIN_ENTRY, CARE_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "AbstractEntry",
+                            &__other,
+                            "ACTION, ADMIN_ENTRY, CARE_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "AbstractEntry",
+                            "ACTION, ADMIN_ENTRY, CARE_ENTRY, EVALUATION, INSTRUCTION, OBSERVATION",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
 }
 
 /// The `ListOfPartyIdentity` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfPartyIdentity = Vec<serde_json::Value>;
+pub type ListOfPartyIdentity = Vec<openehr_rm::prelude::PartyIdentity>;
 
 /// The `DvIntervalOfDate` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -628,23 +863,23 @@ pub struct DvIntervalOfDate {
     pub _type: Option<String>,
     /// The `lower` property of `DvIntervalOfDate`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub lower: Option<serde_json::Value>,
+    pub lower: Option<openehr_rm::prelude::DvDate>,
     /// The `upper` property of `DvIntervalOfDate`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub upper: Option<serde_json::Value>,
+    pub upper: Option<openehr_rm::prelude::DvDate>,
 }
 
 /// The `ListOfContact` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfContact = Vec<serde_json::Value>;
+pub type ListOfContact = Vec<openehr_rm::prelude::Contact>;
 
 /// The `ListOfPartyRelationship` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfPartyRelationship = Vec<serde_json::Value>;
+pub type ListOfPartyRelationship = Vec<openehr_rm::prelude::PartyRelationship>;
 
 /// The `ListOfCapability` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfCapability = Vec<serde_json::Value>;
+pub type ListOfCapability = Vec<openehr_rm::prelude::Capability>;
 
 /// The `OperationalTemplateV2` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
@@ -844,7 +1079,7 @@ pub struct DefinitionTemplateAdl2VersionGetParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionQueryListParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     #[serde(rename = "Accept")]
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
@@ -855,7 +1090,7 @@ pub struct DefinitionQueryListParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionQueryStoreYamlParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_type` (query)
     pub query_type: Option<String>,
@@ -873,7 +1108,7 @@ pub struct DefinitionQueryStoreYamlParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionQueryVersionGetParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     /// `version` (path)
     pub version: String,
     #[serde(rename = "Accept")]
@@ -886,7 +1121,7 @@ pub struct DefinitionQueryVersionGetParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionQueryVersionStoreYamlParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     /// `version` (path)
     pub version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -908,7 +1143,7 @@ pub trait DefinitionApi {
     async fn definition_template_adl1_4_list(
         &self,
         params: DefinitionTemplateAdl14ListParams,
-    ) -> Result<Vec<TemplateMetadata>, crate::rest::runtime::ApiError> {
+    ) -> Result<TemplateList, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /definition/template/adl1.4`
@@ -916,7 +1151,7 @@ pub trait DefinitionApi {
         &self,
         params: DefinitionTemplateAdl14UploadParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<TemplateIdentifier, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /definition/template/adl1.4/{template_id}`
@@ -937,7 +1172,7 @@ pub trait DefinitionApi {
     async fn definition_template_adl2_list(
         &self,
         params: DefinitionTemplateAdl2ListParams,
-    ) -> Result<Vec<TemplateMetadata>, crate::rest::runtime::ApiError> {
+    ) -> Result<TemplateList, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /definition/template/adl2`
@@ -945,15 +1180,14 @@ pub trait DefinitionApi {
         &self,
         params: DefinitionTemplateAdl2UploadParams,
         body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<TemplateIdentifier, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /definition/template/adl2/{template_id}`
     async fn definition_template_adl2_get(
         &self,
         params: DefinitionTemplateAdl2GetParams,
-    ) -> Result<std::collections::BTreeMap<String, serde_json::Value>, crate::rest::runtime::ApiError>
-    {
+    ) -> Result<OperationalTemplateV2, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /definition/template/adl2/{template_id}/example`
@@ -967,22 +1201,21 @@ pub trait DefinitionApi {
     async fn definition_template_adl2_version_get(
         &self,
         params: DefinitionTemplateAdl2VersionGetParams,
-    ) -> Result<std::collections::BTreeMap<String, serde_json::Value>, crate::rest::runtime::ApiError>
-    {
+    ) -> Result<OperationalTemplateV2, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /definition/query/{qualified_query_name}`
     async fn definition_query_list(
         &self,
         params: DefinitionQueryListParams,
-    ) -> Result<Vec<StoredQuery>, crate::rest::runtime::ApiError> {
+    ) -> Result<QueryList, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /definition/query/{qualified_query_name}`
     async fn definition_query_store_yaml(
         &self,
         params: DefinitionQueryStoreYamlParams,
-        body: String,
+        body: Aql,
     ) -> Result<(), crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -990,14 +1223,14 @@ pub trait DefinitionApi {
     async fn definition_query_version_get(
         &self,
         params: DefinitionQueryVersionGetParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<StoredQuery, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /definition/query/{qualified_query_name}/{version}`
     async fn definition_query_version_store_yaml(
         &self,
         params: DefinitionQueryVersionStoreYamlParams,
-        body: String,
+        body: Aql,
     ) -> Result<(), crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }

@@ -75,6 +75,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The generated ITS-REST contract is typed end to end.** The `emit-rest`
+  generator resolved `$ref`s before emitting, so every request/response body
+  and parameter lost its schema name and the trait/DTO surface degraded to
+  untyped JSON values; RM/BASE payload references likewise degraded on a
+  rationale that expired with the foundation rewrite (the spec types carry
+  emitted strict serde impls). Body and parameter references now keep their
+  names, RM/BASE references resolve to the typed spec structs — making every
+  DTO field strict by construction — and a `discriminator.mapping` schema
+  (`Versionable`) emits a real `_type`-dispatched enum instead of an untyped
+  alias. Remaining untyped spots are honest: anonymous `oneOf` responses,
+  query result rows, and schema-less OPT objects.
+
 - **A node claiming a `_type` foreign to its slot is now refused everywhere,
   from the RM model.** The whole-instance validation pass dispatched each
   node on its own wire `_type`, so a tagged object sitting in a slot declared

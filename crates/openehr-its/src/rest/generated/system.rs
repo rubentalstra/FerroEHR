@@ -55,7 +55,7 @@ pub trait SystemApi {
     async fn options(
         &self,
         params: OptionsParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<Options, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
 }
