@@ -131,7 +131,7 @@ fn carrying_files() -> std::io::Result<Vec<String>> {
         let name = entry.file_name().to_string_lossy().into_owned();
         if entry.path().is_dir() {
             collect(&entry.path(), &name, &mut out)?;
-        } else if std::path::Path::new(&name).extension().is_some_and(|e| e == "rs") {
+        } else if Path::new(&name).extension().is_some_and(|e| e == "rs") {
             let text = std::fs::read_to_string(entry.path())?;
             let production = match text.find("\n#[cfg(test)]") {
                 Some(at) => text.get(..at).unwrap_or(&text),
