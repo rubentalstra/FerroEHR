@@ -1125,3 +1125,76 @@ async fn a_two_hop_copy_wraps_at_each_system_over_one_unchanged_original() {
         "the two wrappers record two different local committal instants"
     );
 }
+
+/// The `is_original_version(a_ver_id)` half of the
+/// `VERSIONED_OBJECT.commit_attestation` precondition
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc`
+/// §Functions: "Attestations can only be added to Original versions"): a
+/// `666|attestation|` CONTRIBUTION member naming an `IMPORTED_VERSION` target is
+/// refused, with the violation carried as data. The accepting twin — a 666
+/// member naming an `ORIGINAL_VERSION` — is
+/// `service_contribution::accompanying_attestation_then_standalone_666_attestation`.
+#[tokio::test]
+async fn attesting_an_imported_version_is_refused() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    let imported_uid = find_by_xtype(&exported[0], "X_VERSIONED_EHR_STATUS")
+        .expect("exported EHR_STATUS")["item"]["versions"][0]["uid"]["value"]
+        .as_str()
+        .expect("source version uid")
+        .to_owned();
+
+    target
+        .import_ehr(None, export_one(&source, ehr).await)
+        .await
+        .expect("import_ehr");
+
+    let attest_contribution = json!({
+        "versions": [{
+            "preceding_version_uid": { "value": imported_uid },
+            "commit_audit": {
+                "change_type": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "attestation",
+                    "defining_code": {
+                        "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "666"
+                    }
+                },
+                "committer": {
+                    "_type": "PARTY_IDENTIFIED",
+                    "name": "senior reviewer"
+                },
+                "reason": { "_type": "DV_TEXT", "value": "authorised" },
+                "is_pending": false
+            }
+        }]
+    });
+    let err = target
+        .create_ehr_contribution(ehr, attest_contribution)
+        .await
+        .expect_err("attesting an IMPORTED_VERSION must be refused");
+    // The SM seam carries status + message (the documented lossy seam,
+    // #1729); the status class and both violation facts must survive.
+    assert_eq!(
+        err.status,
+        ferroehr::service::status::CallStatusType::ContentInvalid,
+        "the refusal is the semantic 422 class, got {err:?}"
+    );
+    assert!(
+        err.message.contains("preceding_version_uid"),
+        "the refusal names the target-bearing member, got: {}",
+        err.message
+    );
+    assert!(
+        err.message.contains("VERSIONED_OBJECT.commit_attestation"),
+        "the refusal names the precondition, got: {}",
+        err.message
+    );
+}
