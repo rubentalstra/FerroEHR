@@ -98,6 +98,18 @@ workflow refuses a tag that has no matching section here.
   version identifiers this server's own reader refuses. The configured value is
   now validated against the openEHR `uid` grammar itself
   (`iso_oid | uuid | internet_id`).
+- **`500`-class responses no longer echo internal diagnostics.** A server-side
+  fault previously rendered whatever produced it straight into the response
+  body: serde's parser message (naming Rust fields and byte offsets), the AQL
+  executor's PostgreSQL driver string (naming generated SQL and schema
+  objects), the node codec's RM attribute names and internal row shape, the
+  authorization engine's failure reason, and the XML/Simplified-Format
+  serializers' diagnostics. Every `500`-class body now carries a curated,
+  opaque message and the full detail goes to the server's own log instead.
+  `4xx` refusals are unchanged and still name the client-caused defect — a
+  malformed request payload is still refused `400` with the parse error that
+  explains it, which is the only thing a caller can act on.
+
 - **A tag PUT body is now validated against the released write schema.**
   `schemas/common/UpdateItemTag.yaml` declares exactly `key` (required),
   `value` and `target_path`, with `additionalProperties: false`. Previously the

@@ -537,11 +537,14 @@ fn forbidden(principal: &Principal, detail: &str) -> Response {
     resp
 }
 
-/// A 500 (fail-closed) carrying the principal.
+/// A 500 (fail-closed) carrying the principal. `detail` names why the policy
+/// engine could not decide — server-internal, so it goes to the trace record
+/// and the body carries the curated opaque message.
 fn engine_error(principal: &Principal, detail: &str) -> Response {
-    let mut resp = RestError(ApiError::Internal(format!(
-        "authorization unavailable: {detail}"
-    )))
+    let mut resp = RestError(crate::overview::error::internal_fault(
+        "reach an authorization decision",
+        &detail,
+    ))
     .into_response();
     resp.extensions_mut().insert(principal.clone());
     resp

@@ -188,10 +188,10 @@ async fn persist_request_tags(
     // never a client one.
     let container_uid = ObjectVersionId::new(version_uid.clone())
         .map_err(|e| {
-            ApiError::Internal(format!(
-                "the committed version uid {version_uid:?} is not a well-formed \
-                 OBJECT_VERSION_ID: {e}"
-            ))
+            crate::overview::error::internal_fault(
+                "read the committed version uid",
+                &format!("{version_uid:?}: {e}"),
+            )
         })?
         .object_id()
         .value()

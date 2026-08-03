@@ -22,6 +22,7 @@ use crate::aql::error::{AqlError, ExecError};
 use crate::aql::ir::{Params, QueryIr};
 use crate::aql::sql::SqlCtx;
 use crate::service::FerroEhrService;
+use crate::service::error::internal_fault;
 use crate::service::query::request::{AqlQueryRequest, QueryOutcome};
 use crate::service::status::{QUERY_TIMEOUT_TAG, SmError};
 use crate::telemetry::prometheus::{AQL_QUERIES, AQL_QUERY_DURATION};
@@ -264,7 +265,7 @@ impl FerroEhrService {
             .bind(&ids)
             .fetch_all(&self.pool)
             .await
-            .map_err(|e| Failure::analysis(SmError::exception(e.to_string())))?;
+            .map_err(|e| Failure::analysis(internal_fault("resolve the requested ehr_ids", &e)))?;
         if let Some(missing) = ids.iter().find(|id| !present.contains(id)) {
             return Err(Failure::analysis(SmError::ehr_not_found(format!(
                 "no EHR with id {missing}"
@@ -419,13 +420,19 @@ fn map_plan_error(e: AqlError) -> SmError {
 /// Map an execution error: a database/assembly/terminology failure is the
 /// server's fault (`500`); a SQL-lowering failure that surfaces here is still
 /// a bad query (`400`).
+///
+/// The `500` legs carry the curated opaque message: a driver string names the
+/// schema objects the generated SQL touched, an assembly failure names the
+/// internal node-row shape, and a missing column alias names a generated SQL
+/// alias — server-internal detail that goes to `tracing` instead
+/// ([`internal_fault`]).
 fn map_exec_error(e: AqlError) -> SmError {
     match e {
-        AqlError::Exec(ExecError::Database(db)) => SmError::exception(db.to_string()),
-        AqlError::Exec(ExecError::Assembly(a)) => SmError::exception(a.to_string()),
+        AqlError::Exec(ExecError::Database(db)) => internal_fault("execute the generated SQL", &db),
+        AqlError::Exec(ExecError::Assembly(a)) => internal_fault("assemble the RESULT_SET", &a),
         AqlError::Exec(ExecError::Terminology(msg)) => SmError::exception(msg),
         AqlError::Exec(e @ ExecError::MissingColumnAlias { .. }) => {
-            SmError::exception(e.to_string())
+            internal_fault("bind a RESULT_SET column to its generated SQL alias", &e)
         }
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
             SmError::precondition(e.to_string())

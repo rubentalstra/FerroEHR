@@ -685,9 +685,8 @@ pub(crate) fn respond<T: Serialize>(
                 );
                 resp
             }
-            Err(e) => {
-                ApiError::Internal(format!("JSON serialization failed: {e}")).into_response_body()
-            }
+            Err(e) => crate::overview::error::internal_fault("serialize the JSON response", &e)
+                .into_response_body(),
         },
         None => ApiError::NotAcceptable(
             "this response is available as application/json only".to_owned(),
@@ -768,9 +767,10 @@ where
             let typed: T = match openehr_its::json::from_canonical_value(value) {
                 Ok(t) => t,
                 Err(e) => {
-                    return ApiError::Internal(format!(
-                        "re-typing canonical JSON to <{root_tag}> for the XML response failed: {e}"
-                    ))
+                    return crate::overview::error::internal_fault(
+                        "re-type the canonical JSON for the XML response",
+                        &format!("<{root_tag}>: {e}"),
+                    )
                     .into_response_body();
                 }
             };
@@ -782,7 +782,7 @@ where
             };
             match serialized {
                 Ok(xml) => xml_body_ns(status, xml, ns),
-                Err(e) => ApiError::Internal(format!("XML serialization failed: {e}"))
+                Err(e) => crate::overview::error::internal_fault("serialize the XML response", &e)
                     .into_response_body(),
             }
         }

@@ -9,7 +9,7 @@ use serde_json::Value;
 use sqlx::Row;
 
 use crate::service::FerroEhrService;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, internal_fault};
 use crate::service::status::SmError;
 use crate::service::subject_proxy::binding::{DataFrame, SystemCall};
 use crate::service::subject_proxy::sample::{DataFrameSample, VariableSample};
@@ -103,7 +103,7 @@ impl FerroEhrService {
         .flatten();
         let Some(def) = def else { return Ok(None) };
         let var: SubjectVariable = serde_json::from_value(def)
-            .map_err(|e| SmError::exception(format!("stored data-set variable malformed: {e}")))?;
+            .map_err(|e| internal_fault("read a stored subject variable", &e))?;
         Ok(Some(var.canonical_name()))
     }
 
@@ -190,9 +190,10 @@ impl FerroEhrService {
         let parse_method = |v: Option<Value>, which: &str| -> Result<Option<SystemCall>, SmError> {
             v.map(|v| {
                 serde_json::from_value(v).map_err(|e| {
-                    SmError::exception(format!(
-                        "stored {which} method for frame {frame_id:?} is malformed: {e}"
-                    ))
+                    internal_fault(
+                        "read a stored data-frame method",
+                        &format!("{which} method of frame {frame_id:?}: {e}"),
+                    )
                 })
             })
             .transpose()
@@ -253,11 +254,11 @@ impl FerroEhrService {
         frame_sample: Option<&DataFrameSample>,
     ) -> Result<(), SmError> {
         let sample_json = serde_json::to_value(sample)
-            .map_err(|e| SmError::exception(format!("serialize variable sample: {e}")))?;
+            .map_err(|e| internal_fault("serialize a variable sample", &e))?;
         let frame_json = frame_sample
             .map(serde_json::to_value)
             .transpose()
-            .map_err(|e| SmError::exception(format!("serialize frame sample: {e}")))?;
+            .map_err(|e| internal_fault("serialize a data-frame sample", &e))?;
         let mut tx = self.pool.begin().await.map_err(db_err)?;
         sqlx::query(
             "INSERT INTO sp_sample (subject_id, canonical_name, frame_id, retrieve_time, \
@@ -340,11 +341,11 @@ fn parse_sample_row(
     let sample: Value = row.try_get("sample").map_err(db_err)?;
     let frame: Option<Value> = row.try_get("frame_sample").map_err(db_err)?;
     let sample: VariableSample = serde_json::from_value(sample)
-        .map_err(|e| SmError::exception(format!("stored variable sample malformed: {e}")))?;
+        .map_err(|e| internal_fault("read a stored variable sample", &e))?;
     let frame: Option<DataFrameSample> = frame
         .map(serde_json::from_value)
         .transpose()
-        .map_err(|e| SmError::exception(format!("stored frame sample malformed: {e}")))?;
+        .map_err(|e| internal_fault("read a stored data-frame sample", &e))?;
     Ok((sample, frame))
 }
 
@@ -393,13 +394,13 @@ pub(super) async fn insert_frame(
         .as_ref()
         .map(serde_json::to_value)
         .transpose()
-        .map_err(|e| SmError::exception(format!("serialize frame primary_method: {e}")))?;
+        .map_err(|e| internal_fault("serialize a data-frame primary method", &e))?;
     let fallback = frame
         .fallback_method
         .as_ref()
         .map(serde_json::to_value)
         .transpose()
-        .map_err(|e| SmError::exception(format!("serialize frame fallback_method: {e}")))?;
+        .map_err(|e| internal_fault("serialize a data-frame fallback method", &e))?;
     sqlx::query(
         "INSERT INTO sp_data_frame (env_id, frame_id, model_type, primary_method, fallback_method) \
          VALUES ($1, $2, $3, $4, $5)",

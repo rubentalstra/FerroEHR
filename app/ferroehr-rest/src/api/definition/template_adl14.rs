@@ -286,9 +286,10 @@ async fn web_template_response(
         .await
         .map_err(RestError::from)?;
     let json = serde_json::to_string(&*built).map_err(|e| {
-        RestError(ApiError::Internal(format!(
-            "WebTemplate JSON serialization failed: {e}"
-        )))
+        RestError(crate::overview::error::internal_fault(
+            "serialize the WebTemplate response",
+            &e,
+        ))
     })?;
     let mut resp = match fmt {
         WireFormat::CanonicalJson => negotiate::json_body(StatusCode::OK, json),

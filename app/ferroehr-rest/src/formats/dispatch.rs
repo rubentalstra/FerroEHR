@@ -59,8 +59,16 @@ fn now() -> String {
     jiff::Timestamp::now().to_string()
 }
 
-fn internal(msg: impl Into<String>) -> RestError {
-    RestError(ApiError::Internal(msg.into()))
+/// A server-side fault raised while converting between the canonical and
+/// simplified representations. `detail` (a serde diagnostic, a missing stored
+/// attribute, an unreachable branch) is server-internal, so it goes to the
+/// trace record and the `500` body carries the curated opaque message
+/// ([`crate::overview::error::internal_fault`]).
+fn internal(detail: impl std::fmt::Display) -> RestError {
+    RestError(crate::overview::error::internal_fault(
+        "convert between the canonical and Simplified Formats",
+        &detail,
+    ))
 }
 
 /// The `422` for a simplified COMPOSITION commit that supplies no template id.
@@ -93,9 +101,7 @@ fn flat_input_err(e: &openehr_its::flat::error::FlatError) -> RestError {
 /// a server fault → `500` (`Requests_and_responses.md §HTTP status codes`, row
 /// `500`).
 fn flat_output_err(e: &openehr_its::flat::error::FlatError) -> RestError {
-    RestError(ApiError::Internal(format!(
-        "Simplified-Format conversion failed: {e}"
-    )))
+    internal(e)
 }
 
 // ── COMPOSITION: request side ──────────────────────────────────────────────
