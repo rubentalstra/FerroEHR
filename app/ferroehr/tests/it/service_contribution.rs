@@ -1806,6 +1806,29 @@ async fn contribution_audit_change_type_is_required_not_derived() {
         "the refusal names the missing attribute, got {err:?}"
     );
 
+    // The committer sibling (#1817 — the same UpdateAudit.yaml `required`
+    // member): an audit naming a change type but NO committer is refused; the
+    // server never invents the committing identity.
+    let err = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [member()],
+                "audit": { "change_type": change_type("249", "creation") }
+            }),
+        )
+        .await
+        .expect_err("a CONTRIBUTION audit without a committer must be refused");
+    assert_eq!(
+        err.status,
+        CallStatusType::ContentInvalid,
+        "the refusal is the 422 content-invalid row, got {err:?}"
+    );
+    assert!(
+        err.message.contains("CONTRIBUTION.audit.committer"),
+        "the refusal names the missing attribute, got {err:?}"
+    );
+
     // …and an entirely absent audit is the same refusal (the change type is
     // absent either way).
     let err = svc

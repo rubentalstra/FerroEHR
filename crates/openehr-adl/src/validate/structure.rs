@@ -35,7 +35,7 @@ use crate::parse::Dialect;
 use crate::paths::child_path;
 
 /// raises issues; the terminology checks re-derive code usage in a second pass
-/// ([`collect_usage`]), so no code sets are accumulated here.
+/// (`collect_usage`), so no code sets are accumulated here.
 struct StructureScan<'a> {
     v: &'a ArchetypeView<'a>,
     dialect: Dialect,

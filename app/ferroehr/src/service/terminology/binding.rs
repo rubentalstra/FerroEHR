@@ -137,10 +137,17 @@ impl FerroEhrService {
             .or_else(|| self.terminology_route(&check.query_uri))
             .or_else(|| self.terminology_default_provider())
             .ok_or_else(|| {
-                SmError::exception(format!(
-                    "no terminology server is configured for '{}'",
-                    check.binding_terminology
-                ))
+                // The 500-class body stays opaque about the deployment's
+                // terminology routing (the #1809 adjudication, #1819); the
+                // operator sees which terminology had no route on the trace.
+                tracing::error!(
+                    terminology = %check.binding_terminology,
+                    "constraint binding: no terminology server is configured for this terminology"
+                );
+                SmError::exception(
+                    "the archetype constraint binding could not be resolved; see the server log"
+                        .to_owned(),
+                )
             })?;
         provider
             .value_set_validate(

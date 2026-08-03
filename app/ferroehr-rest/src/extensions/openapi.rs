@@ -61,7 +61,6 @@ use crate::config::AppConfig;
 use crate::extensions::health;
 use crate::extensions::management;
 use crate::overview::status;
-use crate::smart::discovery as smart_discovery;
 use crate::state::AppState;
 use ferroehr::config::auth::AuthConfig;
 use ferroehr::telemetry::provenance;
@@ -209,7 +208,7 @@ pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
         .strip_suffix("/openehr/v1")
         .unwrap_or(&cfg.server.base_path);
     doc.merge(status::openapi(rest_root));
-    doc.merge(smart_discovery::openapi(cfg, rest_root));
+    doc.merge(crate::smart::discovery::openapi(cfg, rest_root));
     // The System API's OPTIONS operation — a closure route mounted outside
     // OpenApiRouter (above CORS), documented via its twin.
     doc.merge(crate::api::system::options::openapi(&cfg.server.base_path));

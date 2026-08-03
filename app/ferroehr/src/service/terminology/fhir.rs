@@ -267,13 +267,16 @@ impl FhirTerminologyProvider {
     }
 
     /// A `Pre_has_*` precondition failure (`VersionedObjectDoesNotExist`).
+    ///
+    /// The body carries only what the CLIENT can act on — the kind and id it
+    /// asked about; WHICH configured provider answered is deployment
+    /// configuration and goes to the trace record only (the #1809 adjudication
+    /// extended to the 4xx class, #1819).
     fn not_found(&self, what: &str, id: &str) -> SmError {
+        tracing::debug!(provider = %self.name, what, id, "terminology lookup: not found");
         SmError::new(
             CallStatusType::VersionedObjectDoesNotExist,
-            format!(
-                "terminology provider '{}': {what} '{id}' not found",
-                self.name
-            ),
+            format!("{what} '{id}' not found"),
         )
     }
 

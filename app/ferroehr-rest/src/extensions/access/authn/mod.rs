@@ -161,7 +161,7 @@ pub struct Authenticator {
     /// Verified Basic-credential cache: SHA-256 of the presented
     /// `Authorization` header → the verified [`Principal`]. An entry exists
     /// only after a successful Argon2 verification; the TTL
-    /// ([`config::AuthConfig::verified_cache_ttl_seconds`]) bounds revocation
+    /// (`config::AuthConfig::verified_cache_ttl_seconds`) bounds revocation
     /// lag. `None` when the TTL is `0` (cache disabled). Argon2 verification
     /// is tens of milliseconds of CPU per call by design — without this, a
     /// busy client's request rate is capped by the KDF's work factor.

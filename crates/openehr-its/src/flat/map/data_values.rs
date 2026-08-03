@@ -302,8 +302,8 @@ fn emit_code_phrase_sub(cp: Option<&Value>, name: &str, out: &mut SimNode) {
     emit_leaf(cp, "CODE_PHRASE", None, out.occurrence_mut(name, None));
 }
 
-/// `_normal_range` (DV_INTERVAL<T>) + `_other_reference_ranges:i`
-/// (REFERENCE_RANGE<T>), endpoints emitted via [`emit_leaf`] for `T`
+/// `_normal_range` (DV_INTERVAL`<T>`) + `_other_reference_ranges:i`
+/// (REFERENCE_RANGE`<T>`), endpoints emitted via [`emit_leaf`] for `T`
 /// (master05 §§DV_INTERVAL, REFERENCE_RANGE).
 fn emit_reference_ranges(rm: &Value, t: &str, out: &mut SimNode) {
     if let Some(nr) = rm.get("normal_range").filter(|v| !v.is_null()) {
@@ -824,7 +824,7 @@ pub(super) fn build_interval(node: &SimNode, t: &str) -> Value {
     Value::Object(iv)
 }
 
-/// master05 §REFERENCE_RANGE: a `range` (DV_INTERVAL<T>) + a `meaning` (DV_TEXT,
+/// master05 §REFERENCE_RANGE: a `range` (DV_INTERVAL`<T>`) + a `meaning` (DV_TEXT,
 /// or DV_CODED_TEXT when coded). `pub(super)` — reused for the
 /// `_other_reference_ranges:i` family in [`super::structures`].
 pub(super) fn build_reference_range(node: &SimNode, t: &str) -> Value {

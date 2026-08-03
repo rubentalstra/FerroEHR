@@ -15,7 +15,7 @@
 //! permit (the permit is held for the request's whole lifetime);
 //! [`tower::load_shed::LoadShed`] wraps it and — because `ConcurrencyLimit`
 //! reports "not ready" when no permit is free — returns an
-//! [`Overloaded`](tower::load_shed::error::Overloaded) error synchronously
+//! [`Overloaded`] error synchronously
 //! instead of waiting. [`axum::error_handling::HandleErrorLayer`] turns that
 //! error back into an infallible response via [`handle_overload`]. The layer is
 //! wired in [`crate::router::router`]; see that module's doc for the layer order.
@@ -55,7 +55,7 @@ pub(crate) fn shed_layer(api: Router<AppState>, max_in_flight: usize) -> Router<
     )
 }
 
-/// [`HandleErrorLayer`](axum::error_handling::HandleErrorLayer) handler for the
+/// [`HandleErrorLayer`] handler for the
 /// overload-shedding stack: map a shed request to `503 Service Unavailable`
 /// with the standard openEHR `{ error, message }` body (via [`RestError`]) and
 /// a `Retry-After` header (RFC 9110 §15.6.4). Any other error is not expected

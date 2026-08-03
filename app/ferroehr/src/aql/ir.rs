@@ -26,7 +26,7 @@
 
 use std::collections::HashMap;
 
-use openehr_query::lexer::CompOp as CmpOp;
+use openehr_query::lexer::CompOp;
 
 /// A dense index identifying a [`Source`] within a [`QueryIr`]'s `sources` vec.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -132,7 +132,7 @@ pub struct EhrPredicate {
     /// The addressed EHR field.
     pub field: EhrField,
     /// The comparison operator.
-    pub op: CmpOp,
+    pub op: CompOp,
     /// The right-hand value.
     pub value: Bind,
 }
@@ -215,7 +215,7 @@ pub struct VersionMetaPredicate {
     /// The addressed version-metadata field.
     pub field: VersionField,
     /// The comparison operator.
-    pub op: CmpOp,
+    pub op: CompOp,
     /// The right-hand value.
     pub value: Bind,
 }
@@ -414,7 +414,7 @@ pub struct StdPredicate {
     /// `value/defining_code/code_string`.
     pub path: Vec<String>,
     /// The operator.
-    pub op: CmpOp,
+    pub op: CompOp,
     /// The right-hand value.
     pub value: Bind,
 }
@@ -452,7 +452,7 @@ pub enum Expr {
         /// Left operand.
         lhs: Operand,
         /// Operator.
-        op: CmpOp,
+        op: CompOp,
         /// Right operand.
         rhs: Operand,
         /// The typed comparison strategy.

@@ -151,7 +151,7 @@ struct ErrorBody {
 /// Used for the method-status responses (`405`/`501`) that have no dedicated
 /// [`ApiError`] variant (the contract's `ApiError` cannot represent `405`), and
 /// for the transport-layer statuses (`408`/`413`) whose middleware default body
-/// is aligned onto this shape ([`crate::router`]).
+/// is aligned onto this shape ([`crate::router()`]).
 pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Response {
     let body = ErrorBody {
         error: status.canonical_reason().unwrap_or("Error").to_owned(),

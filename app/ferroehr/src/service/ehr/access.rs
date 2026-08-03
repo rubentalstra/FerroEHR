@@ -48,7 +48,7 @@ impl FerroEhrService {
 
     /// Pre-warm the `EHR_ACCESS` cache for a just-created EHR as default-open
     /// (`None`). Every EHR is created with the settings-less
-    /// [`super::default_ehr_access`] (there is no direct `EHR_ACCESS` write —
+    /// `super::default_ehr_access` (there is no direct `EHR_ACCESS` write —
     /// RM ehr master04 §EHR Access), so a fresh EHR is unconditionally
     /// default-open; seeding that entry saves the first-access DB miss. A
     /// later `EHR_ACCESS` commit evicts it through

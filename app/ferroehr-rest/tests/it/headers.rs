@@ -1553,3 +1553,59 @@ async fn an_undecodable_header_value_is_refused_not_dropped() {
         "the clean twin commits: {body}"
     );
 }
+
+/// An EMPTIED stored collection is echoed as NO header at all: the empty
+/// wrapper-header value is the release's "remove all `ITEM_TAG`s" REQUEST
+/// instruction (overview `Requests_and_responses.md` §"openehr-item-tag and
+/// openehr-version-item-tag": "Providing an empty value for this header will
+/// effectively remove all `ITEM_TAG`s"), so a response echoing one would hand a
+/// mirroring client the destructive form as if it were state (#1837 — the EHR
+/// echo path emitted it; the guard now lives in `emit_item_tag_header` for
+/// both echo paths).
+#[tokio::test]
+async fn an_emptied_item_tag_collection_echoes_no_header_not_an_empty_one() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let ovid = commit_composition(&app, &ehr_id).await;
+    let vo = vo_of(&ovid).to_owned();
+
+    // Tag the VERSIONED_OBJECT, then update with an EMPTY openehr-item-tag —
+    // the remove-all instruction — so the stored collection empties.
+    let mut updated = canonical_composition();
+    updated.as_object_mut().unwrap().remove("uid");
+    let tag_first = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{ovid}\""))
+        .header("openehr-item-tag", "key=\"category\",value=\"final\"")
+        .body(Body::from(updated.clone().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, tag_first).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "tagging update: {body}");
+    let second_ovid = etag_uid(&h);
+
+    let wipe = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{second_ovid}\""))
+        .header("openehr-item-tag", "")
+        .body(Body::from(updated.to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, wipe).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "remove-all update: {body}");
+    assert!(
+        raw(&h, "openehr-item-tag").is_none(),
+        "an emptied collection must echo NO header — an empty value is the \
+         remove-all REQUEST instruction, not state; got {:?}",
+        raw(&h, "openehr-item-tag")
+    );
+    // …and the wipe really happened.
+    assert_eq!(
+        stored_tag_keys(&app, &ehr_id, &vo).await,
+        Vec::<String>::new(),
+        "the empty header removed the VERSIONED_OBJECT's tags"
+    );
+}

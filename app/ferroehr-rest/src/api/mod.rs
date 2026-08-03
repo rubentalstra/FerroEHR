@@ -174,7 +174,7 @@ pub(crate) fn api_doc(base_path: &str) -> utoipa::openapi::OpenApi {
 }
 
 /// Run one operation through the uniform per-request stack the extension
-/// handlers and [`mount`] share: the spec-grounded `EHR_ACCESS` gate first (RM
+/// handlers and `mount` share: the spec-grounded `EHR_ACCESS` gate first (RM
 /// `org.openehr.rm.ehr.ehr_access.adoc` — "All access decisions to data in the
 /// EHR must be made in accordance with the policies and rules in this object"),
 /// then the ABAC PEP pre-check (short-circuits before the backend on a deny),
