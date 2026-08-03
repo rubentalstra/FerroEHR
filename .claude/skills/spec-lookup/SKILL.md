@@ -48,3 +48,21 @@ Answer spec questions from the vendored normative text at
    is genuinely silent or ambiguous, say so explicitly — that is the signal to
    record a `// NOTE:` decision, with EHRbase consulted only as
    prior art.
+
+## Figures are normative and NOT uniformly text-extractable
+
+Some vendored spec figures carry normative content found nowhere in prose
+(the RM version-lifecycle state machine's nine transitions, four of which no
+text names). Extraction method varies PER FIGURE — never assume one works:
+
+- Path-rendered SVGs (`RM-version_lifecycle.svg`): zero text nodes — rasterize
+  (`rsvg-convert -w 3200`) and READ AS AN IMAGE.
+- draw.io exports (`ehr/diagrams/tags_example.svg`): labels live in
+  `<foreignObject>` HTML; the `<text>` nodes are truncated stubs ("Viewer does
+  not support full SVG 1.1") — grep the foreignObject content, or rasterize.
+- Some figures are referenced via the remote `{uml_diagrams_uri}` and are NOT
+  vendored at all (ch.7 `RM-common.tags.svg`) — say so honestly rather than
+  claiming figure content.
+
+A `<text>`-only extraction that returns nothing is a signal to try the other
+methods, never evidence the figure is empty.
