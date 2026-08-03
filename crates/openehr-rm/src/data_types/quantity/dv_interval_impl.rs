@@ -25,7 +25,7 @@
 
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered_impl::OrderedLimit;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl<T: OrderedLimit> DvInterval<T> {
     /// The base `Interval.has(v)` membership test: `true` when `v` lies inside

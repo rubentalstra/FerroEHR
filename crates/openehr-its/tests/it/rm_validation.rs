@@ -394,6 +394,17 @@ fn collect_nodes<'a>(v: &'a Value, out: &mut Vec<&'a Value>) {
     }
 }
 
+/// The documents this gate (and its mutation battery) may use as a base.
+///
+/// Routed through the single exclusion registry: a document
+/// [`crate::common::excluded`] has adjudicated NOT a canonical RM 1.2 object
+/// (a raw-DB/ITS-REST shape, a deliberately-invalid fixture, a defective
+/// vendored one) is a spec-forbidden state, so asserting validation behaviour
+/// on it — or MUTATING it — asserts behaviour on a document the spec already
+/// refuses. Where the adjudication produced a repo-authored VALID TWIN,
+/// [`crate::common::twinned`] substitutes it, so honouring the exclusions
+/// costs the battery no coverage; an excluded document with no twin is
+/// dropped.
 fn corpus_files() -> Vec<std::path::PathBuf> {
     let mut roots = vec![std::path::PathBuf::from(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -413,11 +424,19 @@ fn corpus_files() -> Vec<std::path::PathBuf> {
             if path.is_dir() {
                 roots.push(path);
             } else if path.extension().and_then(|e| e.to_str()) == Some("json") {
+                if crate::common::excluded(&crate::common::corpus_rel(&path)).is_some() {
+                    let twin = crate::common::twinned(&path);
+                    if twin != path {
+                        files.push(twin);
+                    }
+                    continue;
+                }
                 files.push(path);
             }
         }
     }
     files.sort();
+    files.dedup();
     assert!(
         files.len() >= 50,
         "corpus went missing? found only {} json files",

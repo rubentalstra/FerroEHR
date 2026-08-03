@@ -4,7 +4,7 @@
 //! `system_id` must be non-empty.
 
 use crate::common::archetyped::feeder_audit_details::FeederAuditDetails;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for FeederAuditDetails {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

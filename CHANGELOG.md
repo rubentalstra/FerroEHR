@@ -57,6 +57,29 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A one-group ISO OID now classifies as `ISO_OID`, not `INTERNET_ID`.** BASE
+  `base_types` `master05-identification_package.adoc` §Syntaxes gives
+  `iso_oid = number, { '.', number }` — one or more groups — while the UID
+  subtype dispatch required two, so a bare numeric root such as `12345` was
+  tagged `INTERNET_ID`, whose own production it violates (a multi-character
+  `internet_id` label must begin with a letter). This picks the `_type` on the
+  wire, so the value now round-trips under the subtype the grammar assigns.
+- **Non-finite `Real` values now serialize to canonical XML in the `xs:double`
+  lexical form.** The vendored XSDs type every `Real` element `xs:double`,
+  whose lexical space spells the special values `INF`, `-INF` and `NaN`
+  (XML Schema Part 2 §3.2.5); the serializer emitted Rust's `inf`/`-inf`
+  spellings, producing a schema-invalid document. Finite values are unchanged
+  (a whole `Real` still writes `120.0`).
+- **The generated ITS-REST contract no longer drops single-`$ref` `allOf`
+  composition.** Seven DTOs the released OAS defines as a named alias of
+  another schema — `ItemTagOfComposition`, `ItemTagOfEhrStatus`, the five
+  demographic `ItemTagOf*` — degraded to an untyped string map instead of
+  resolving to their referent.
+- **The generated ITS-REST contract now includes the SYSTEM API group.** The
+  STABLE System API declares one operation, `OPTIONS /` (Options and
+  Conformance), which the contract generator skipped: its group list omitted
+  `system` and its HTTP-method table omitted `OPTIONS` entirely.
+
 - **A round-tripped demographic party carrying inline relationships is no
   longer refused.** `PARTY.Relationships_validity` requires every inline
   `relationships[i].source` to reference the party itself, and RM demographic

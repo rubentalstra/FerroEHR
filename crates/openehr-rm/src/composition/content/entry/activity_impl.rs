@@ -5,7 +5,7 @@
 //! - `Archetype_node_id_valid`: inherited LOCATABLE.
 
 use crate::composition::content::entry::activity::Activity;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Activity {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

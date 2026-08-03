@@ -219,9 +219,9 @@
 //! - `VERSIONED_OBJECT.Version_count_valid` — versioned-object aggregate model.
 
 use super::{
-    InvariantViolation, invariant_failed, is_integral, valid_magnitude_status, valid_percentage,
-    valid_proportion_kind,
+    invariant_failed, is_integral, valid_magnitude_status, valid_percentage, valid_proportion_kind,
 };
+use openehr_base::validate::InvariantViolation;
 
 // `PROPORTION_KIND` codes, generated from the RM BMM enumeration
 // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.proportion_kind.adoc`).

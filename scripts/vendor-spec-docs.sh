@@ -61,7 +61,10 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # Upstream repo tooling is not spec text: exclude agent configs and CI.
-rsync_args=(--exclude='.git' --exclude='.claude' --exclude='.junie' --exclude='.github' --exclude='AGENTS.md')
+# `tmp-*` is upstream's own scratch-note prefix (e.g. the CNF repo's
+# tmp-docs-how-to-get-code-coverage-from-all-tests.md, a JaCoCo/Java how-to
+# with no conformance content) — noise in a tree we treat as an oracle.
+rsync_args=(--exclude='.git' --exclude='.claude' --exclude='.junie' --exclude='.github' --exclude='AGENTS.md' --exclude='tmp-*')
 for ext in "${INCLUDE_EXT[@]}"; do
   rsync_args+=(--include="*.$ext")
 done

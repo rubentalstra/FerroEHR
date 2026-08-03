@@ -7,7 +7,7 @@ paths:
   - "app/ferroehr/assets/ferroehr.default.toml"
 ---
 
-# Configuration discipline — one `ferroehr.toml`, one loader (W-13)
+# Configuration discipline — one `ferroehr.toml`, one loader
 
 No openEHR spec governs configuration — this is entirely our own design.
 The implementation contract is the loader itself

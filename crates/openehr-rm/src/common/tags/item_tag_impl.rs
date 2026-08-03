@@ -7,7 +7,7 @@
 //! - `Inv_value_valid`: `value /= Void implies not value.is_empty`.
 
 use crate::common::tags::item_tag::ItemTag;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl ItemTag {
     /// `Inv_key_valid` as a predicate on a candidate key: `not key.is_empty and

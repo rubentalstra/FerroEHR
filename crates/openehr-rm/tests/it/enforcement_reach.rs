@@ -4,7 +4,7 @@
     clippy::panic,
     reason = "test assertions/diagnostics/fixtures"
 )]
-//! Enforcement-reach instrumentation (Lane 4 of the hardening program):
+//! Enforcement-reach instrumentation:
 //! every terminology slot in the RM binding table is PROVABLY reachable —
 //! a violating instance is detected and its valid twin is clean — so a
 //! never-exercised enforcement site is a failing test instead of a latent

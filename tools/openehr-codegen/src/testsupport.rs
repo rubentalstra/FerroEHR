@@ -967,12 +967,12 @@ pub fn model_query(
     model_query_view(component, class, attribute, format, false)
 }
 
-/// [`model_query`] with the view selectable: `flattened` reports one row per
+/// [`model_query()`] with the view selectable: `flattened` reports one row per
 /// class × CARRIED attribute (inherited ones included, each with its declaring
 /// class) instead of one row per class × declared attribute.
 ///
 /// # Errors
-/// Same as [`model_query`].
+/// Same as [`model_query()`].
 pub fn model_query_view(
     component: Option<&str>,
     class: Option<&str>,

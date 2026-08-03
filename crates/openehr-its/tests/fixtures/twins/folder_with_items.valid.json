@@ -16,7 +16,7 @@
           "namespace": "namespace1",
           "type": "FOLDER",
           "id": {
-            "_type": "OBJECT_REF_ID",
+            "_type": "HIER_OBJECT_ID",
             "value": "48282ddd-4c7d-444a-8159-458a03c9827f"
           }
         }
@@ -34,7 +34,7 @@
               "namespace": "namespace2",
               "type": "COMPOSITION",
               "id": {
-                "_type": "OBJECT_REF_ID",
+                "_type": "HIER_OBJECT_ID",
                 "value": "076f09ee-8da3-ae1b-0072-3ee18965fbb9"
               }
             }

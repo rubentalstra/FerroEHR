@@ -248,17 +248,104 @@ macro_rules! impl_to_xml_display {
 }
 impl_to_xml_display!(bool, i32, i64, u8, char, f32);
 
+/// The `xs:double` lexical form of an openEHR `Real`.
+///
+/// The vendored XSDs type every `Real`-valued element `xs:double`
+/// (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/BaseTypes.xsd`
+/// — e.g. `DV_QUANTITY/magnitude`), whose lexical space is defined by XML
+/// Schema Part 2 §3.2.5 (<https://www.w3.org/TR/xmlschema-2/#double>):
+///
+/// * finite values are the `decimal`/scientific forms — the mantissa carries a
+///   decimal point, which is why a whole Real is written `120.0` and not `120`
+///   (Rust's `f64` `Display` drops the point);
+/// * the three special values have EXACTLY the spellings `INF`, `-INF` and
+///   `NaN` — `inf`/`-inf`/`NAN`, which `f64::to_string` produces, are not in
+///   the lexical space at all.
+///
+/// NOTE (the #1453 fidelity-corpus revisit, settled): the finite half is
+/// corpus-proven — every `Real` in the vendored canonical-JSON corpus is
+/// finite, and `xml_roundtrip` + the XSD-validity gate exercise them — so no
+/// change was warranted there. The non-finite half is unreachable from
+/// canonical JSON (RFC 8259 admits no infinity or NaN literal) but IS
+/// reachable by constructing an RM value in Rust, and `f64::to_string` would
+/// have emitted a schema-invalid document; that is corrected here rather than
+/// left to the number-parity marker. The READ direction already accepted the
+/// XSD spellings: `f64::from_str` parses `INF`/`-INF`/`NaN` case-insensitively
+/// (<https://doc.rust-lang.org/std/primitive.f64.html#method.from_str>).
+fn xsd_double_lexical(v: f64) -> String {
+    if v.is_nan() {
+        return "NaN".to_owned();
+    }
+    if v.is_infinite() {
+        return if v.is_sign_negative() { "-INF" } else { "INF" }.to_owned();
+    }
+    if v.fract() == 0.0 {
+        format!("{v:.1}")
+    } else {
+        v.to_string()
+    }
+}
+
 impl ToXml for f64 {
     fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
-        // openEHR emits a decimal point on whole reals (`120.0`, not `120`);
-        // Rust's default `f64` Display drops it.
-        // TODO(#1453, perf): revisit against the fidelity corpus for exact number parity.
-        let s = if self.fract() == 0.0 && self.is_finite() {
-            format!("{self:.1}")
-        } else {
-            self.to_string()
-        };
-        w.write_text_element(tag, &s)
+        w.write_text_element(tag, &xsd_double_lexical(*self))
+    }
+}
+
+#[cfg(test)]
+mod real_lexical_tests {
+    use super::xsd_double_lexical;
+
+    /// Every `Real` shape against the `xs:double` lexical space (XML Schema
+    /// Part 2 §3.2.5), including the three special values a bare
+    /// `f64::to_string` spells wrongly.
+    #[test]
+    fn real_values_take_the_xsd_double_lexical_form() {
+        // Whole reals keep the decimal point openEHR writes.
+        assert_eq!(xsd_double_lexical(120.0), "120.0");
+        assert_eq!(xsd_double_lexical(0.0), "0.0");
+        assert_eq!(xsd_double_lexical(-0.0), "-0.0");
+        assert_eq!(xsd_double_lexical(-7.0), "-7.0");
+        // Fractional reals round-trip through the shortest form.
+        assert_eq!(xsd_double_lexical(5.66), "5.66");
+        assert_eq!(
+            xsd_double_lexical(32.299_869_242_485_19),
+            "32.29986924248519"
+        );
+        // The special values: `INF` / `-INF` / `NaN`, never Rust's spellings.
+        assert_eq!(xsd_double_lexical(f64::INFINITY), "INF");
+        assert_eq!(xsd_double_lexical(f64::NEG_INFINITY), "-INF");
+        assert_eq!(xsd_double_lexical(f64::NAN), "NaN");
+        assert_ne!(xsd_double_lexical(f64::INFINITY), f64::INFINITY.to_string());
+    }
+
+    /// The emitted lexeme must parse back to the same value — the fidelity
+    /// property the round-trip gates rest on.
+    #[test]
+    fn every_emitted_lexeme_parses_back() {
+        for v in [
+            120.0_f64,
+            -0.0,
+            5.66,
+            32.299_869_242_485_19,
+            1e21,
+            1e-7,
+            f64::MAX,
+            f64::MIN_POSITIVE,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+        ] {
+            let text = xsd_double_lexical(v);
+            let back: f64 = text
+                .parse()
+                .unwrap_or_else(|e| panic!("{text:?} does not parse back: {e}"));
+            assert_eq!(back.to_bits(), v.to_bits(), "{text:?}");
+        }
+        assert!(
+            xsd_double_lexical(f64::NAN)
+                .parse::<f64>()
+                .is_ok_and(f64::is_nan)
+        );
     }
 }
 

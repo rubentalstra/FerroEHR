@@ -121,6 +121,14 @@ enum Command {
         /// resolution.
         #[arg(long)]
         specs: Option<PathBuf>,
+        /// Also refresh `docs/conformance/coverage-report.md` from `--specs`.
+        ///
+        /// OFF by default: `validate` is a check verb, and a check that
+        /// mutates the working tree is a trap for read-only and fenced
+        /// invocations. The pipeline scripts that publish the report pass
+        /// this explicitly.
+        #[arg(long)]
+        write_report: bool,
     },
     /// Execute the performance schedule's open-loop measured run(s) against
     /// a live SUT and merge the §8.10 measurement records into an existing
@@ -337,7 +345,11 @@ fn main() -> ExitCode {
             filter.as_deref(),
             statement.as_deref(),
         ),
-        Command::Validate { root, specs } => validate_command(&root, specs.as_deref()),
+        Command::Validate {
+            root,
+            specs,
+            write_report,
+        } => validate_command(&root, specs.as_deref(), write_report),
         Command::Perf {
             root,
             ixit,
@@ -419,7 +431,11 @@ fn emit_schemas_command(out: &std::path::Path) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn validate_command(root: &std::path::Path, specs: Option<&std::path::Path>) -> ExitCode {
+fn validate_command(
+    root: &std::path::Path,
+    specs: Option<&std::path::Path>,
+    write_report: bool,
+) -> ExitCode {
     let loaded = match load_root(root) {
         Ok(loaded) => loaded,
         Err(e) => {
@@ -435,12 +451,15 @@ fn validate_command(root: &std::path::Path, specs: Option<&std::path::Path>) -> 
     for finding in &findings {
         println!("{finding}");
     }
-    // Refresh the deterministic wire-surface coverage report when the vendored
-    // spec tree is supplied (it feeds the Axis-1 SM-operation enumeration). The
-    // report lives beside the committed conformance artifacts
-    // (docs/conformance/), derived from the `--specs` path; a write failure is
-    // a warning, never a gate failure.
-    if let Some(specs) = specs
+    // Refresh the deterministic wire-surface coverage report ONLY when asked
+    // (`--write-report`) and the vendored spec tree is supplied (it feeds the
+    // Axis-1 SM-operation enumeration). The report lives beside the committed
+    // conformance artifacts (docs/conformance/), derived from the `--specs`
+    // path; a write failure is a warning, never a gate failure. Default-off:
+    // a `validate` verb that rewrites a committed file on every run surprises
+    // read-only and fenced invocations.
+    if write_report
+        && let Some(specs) = specs
         && let Some(docs) = specs.parent().and_then(std::path::Path::parent)
     {
         let report_path = docs.join("conformance/coverage-report.md");

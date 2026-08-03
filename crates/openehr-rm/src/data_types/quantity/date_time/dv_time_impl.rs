@@ -7,7 +7,8 @@
 use crate::data_types::quantity::date_time::dv_time::DvTime;
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
-use crate::validate::{InvariantViolation, Validate, is_valid_iso_time};
+use crate::validate::is_valid_iso_time;
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for DvTime {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

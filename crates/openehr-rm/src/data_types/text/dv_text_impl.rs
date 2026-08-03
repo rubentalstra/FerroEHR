@@ -12,7 +12,7 @@
 //! (code sets) live in the validator's terminology pass.
 
 use crate::data_types::text::dv_text::DvText;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for DvText {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

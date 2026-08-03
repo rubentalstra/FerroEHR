@@ -11,7 +11,7 @@
 //!   [`crate::validate::terminology`] against the `openehr-term` bundle.
 
 use crate::common::generic::audit_details::AuditDetailsData;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for AuditDetailsData {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

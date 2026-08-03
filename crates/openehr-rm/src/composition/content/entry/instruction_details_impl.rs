@@ -4,7 +4,7 @@
 //! `activity_id` must be non-empty.
 
 use crate::composition::content::entry::instruction_details::InstructionDetails;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for InstructionDetails {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

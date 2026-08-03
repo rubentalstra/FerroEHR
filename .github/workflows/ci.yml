@@ -8,7 +8,12 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs, NEVER a develop run. The change filter below
+  # compares only THIS push's delta, so a develop run cancelled mid-flight is
+  # never re-evaluated by the next push if that push touches no code — a
+  # defect can then land permanently with every job reported green-or-skipped.
+  # (https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Least privilege for every job; the two jobs that need more (coverage pushes
 # the badge branch) elevate themselves (job-level permissions override
@@ -223,7 +228,13 @@ jobs:
   doc:
     name: rustdoc
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    # Path-filtered on PRs (a PR touching no Rust cannot introduce a doc
+    # defect), but ALWAYS run on a develop push: the filter is a per-push
+    # DELTA, so a code commit whose run was cancelled or whose successor push
+    # is docs-only would otherwise never have its docs evaluated at all. This
+    # job is ~1/10 the length of the test job, so re-evaluating the whole tree
+    # on every develop push is cheap insurance.
+    if: needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:

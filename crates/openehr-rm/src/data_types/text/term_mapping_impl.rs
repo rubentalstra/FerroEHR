@@ -10,7 +10,7 @@
 //! structural guarantee here (`purpose: Option<DvCodedText>`).
 
 use crate::data_types::text::term_mapping::TermMapping;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl TermMapping {
     /// RM `TERM_MAPPING.is_valid_match_code(c)`: `c` is one of `> = < ?`.

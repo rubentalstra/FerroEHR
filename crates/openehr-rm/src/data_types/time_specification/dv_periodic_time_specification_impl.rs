@@ -6,7 +6,7 @@
 //! value.formalism.is_equal("HL7:EIVL")`.
 
 use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for DvPeriodicTimeSpecification {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

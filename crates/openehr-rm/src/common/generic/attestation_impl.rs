@@ -20,7 +20,7 @@
 //!   attestation-completion path (a `422`).
 
 use crate::common::generic::attestation::Attestation;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Attestation {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

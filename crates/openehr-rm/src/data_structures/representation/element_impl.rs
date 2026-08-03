@@ -11,7 +11,7 @@
 //! composition validator + `openehr-term`.
 
 use crate::data_structures::representation::element::Element;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 /// The ELEMENT invariant core over the projected presence flags — one source
 /// for the typed impl and the value-level fast path (`validate::fast`).
