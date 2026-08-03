@@ -25,7 +25,9 @@ use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::health::{HealthIndicator, HealthRegistry};
 use ferroehr::versioning::signature::signer::Signer;
 use ferroehr_rest::config::AppConfig;
-use ferroehr_rest::extensions::access::authz::AuthzHandle;
+use ferroehr_rest::extensions::access::authz::{
+    AuthzHandle, AuthzResolvers, ResolveError, build_engine,
+};
 use ferroehr_rest::extensions::management::Observability;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -340,12 +342,26 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         None
     };
 
-    // The RBAC gate — only wired when authentication is enabled.
+    // Authorization — only wired when authentication is enabled: the RBAC gate
+    // plus the ABAC engine + DB-backed attribute resolvers. A misconfigured
+    // ABAC block (enabled but unbuildable) aborts BOOT — configuration that
+    // promises fine-grained authorization must never degrade to authz-off.
     let authz = if config.auth.enabled {
-        AuthzHandle::from_config(&config.authz, &config.server.base_path).map(Arc::new)
+        build_authz(
+            &config.authz,
+            &config.server.base_path,
+            authz_resolvers(pool.clone(), Arc::clone(&service)),
+        )?
     } else {
         None
     };
+    if let Some(handle) = &authz {
+        tracing::info!(
+            rbac = handle.rbac_active(),
+            abac = handle.abac_active(),
+            "authorization enabled"
+        );
+    }
 
     // Assemble the REST adapter's runtime config view from the tree.
     let app_config = AppConfig {
@@ -402,6 +418,63 @@ async fn start_audit(
             tracing::error!("ATNA audit failed to start ({e}); continuing without auditing");
             (None, None)
         }
+    }
+}
+
+/// Build the full authorization handle the binary serves with: the RBAC gate
+/// (when `rbac.enabled`) plus the ABAC gate over the boot-built policy engine
+/// (when `abac.enabled`). `None` when neither layer is active (auth-only
+/// behaviour). Fine-grained authorization is our own extension — no openEHR
+/// spec governs it (ITS-REST places authorization out of band).
+///
+/// # Errors
+/// An ABAC block that is enabled but unbuildable (missing/invalid Cedar
+/// policies, an unbuildable remote-PDP client) — startup must abort rather
+/// than silently run without the promised gate.
+pub fn build_authz(
+    config: &ferroehr::config::authz::AuthzConfig,
+    base_path: &str,
+    resolvers: AuthzResolvers,
+) -> anyhow::Result<Option<Arc<AuthzHandle>>> {
+    let engine = build_engine(&config.abac).context("building the ABAC policy engine")?;
+    Ok(AuthzHandle::build(config, base_path, engine, resolvers).map(Arc::new))
+}
+
+/// The DB-backed ABAC attribute resolvers
+/// (`ferroehr_rest::extensions::access::authz::AuthzResolvers`): the EHR
+/// subject external-ref id (the promoted `ehr.subject_id` column — the same
+/// query the audit [`SubjectResolver`] runs) and the committed template of a
+/// COMPOSITION version (`vo_version.template_id` via the service read-back).
+/// Failures are typed [`ResolveError`]s — the PEP fails closed on them, never
+/// silently permits.
+#[must_use]
+pub fn authz_resolvers(pool: PgPool, service: Arc<FerroEhrService>) -> AuthzResolvers {
+    AuthzResolvers {
+        subject: Arc::new(move |ehr_id: String| {
+            let pool = pool.clone();
+            Box::pin(async move {
+                let id = Uuid::parse_str(&ehr_id)
+                    .map_err(|e| ResolveError(format!("ehr id {ehr_id}: {e}")))?;
+                sqlx::query_scalar::<_, Option<String>>("SELECT subject_id FROM ehr WHERE id = $1")
+                    .bind(id)
+                    .fetch_optional(&pool)
+                    .await
+                    .map(Option::flatten)
+                    .map_err(|e| ResolveError(format!("ehr subject lookup: {e}")))
+            })
+        }),
+        template_of_version: Arc::new(move |vo: String, version: Option<String>| {
+            let service = Arc::clone(&service);
+            Box::pin(async move {
+                let vo_id = vo
+                    .parse::<ferroehr::ids::VoId>()
+                    .map_err(|e| ResolveError(format!("vo id {vo}: {e}")))?;
+                service
+                    .template_of_version(vo_id, version.as_deref())
+                    .await
+                    .map_err(|e| ResolveError(format!("template lookup: {e}")))
+            })
+        }),
     }
 }
 
