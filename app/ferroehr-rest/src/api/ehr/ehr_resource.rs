@@ -60,7 +60,7 @@ pub(super) async fn run(
             // The service returns the created EHR's own resource metadata
             // (ehr_id + creation instant) — the write path never rebuilds a
             // metadata-less envelope, so `Last-Modified` survives to the wire.
-            let committal = create_committal(h);
+            let committal = create_committal(h)?;
             let (ehr_id, meta) = state
                 .backend()
                 .create_ehr_meta(status, committal.as_ref())
@@ -71,7 +71,7 @@ pub(super) async fn run(
             let p = params::build::<EhrCreateWithIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let status = negotiate::optional_rm_value::<EhrStatus>(h, &parts.body)?;
-            let committal = create_committal(h);
+            let committal = create_committal(h)?;
             let meta = state
                 .backend()
                 .create_ehr_with_id_meta(ehr_id, status, committal.as_ref())
@@ -116,9 +116,13 @@ pub(super) async fn run(
 /// The merge starts from the authenticated principal as the committer, so an
 /// unsupplied `committer` keeps the server default instead of being
 /// overwritten.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a committal header carries a malformed
+/// identifier.
 fn create_committal(
     headers: &http::HeaderMap,
-) -> Option<ferroehr::service::version_update::Committal> {
+) -> Result<Option<ferroehr::service::version_update::Committal>, ApiError> {
     crate::overview::committal::committal_commit(headers, super::committer_proxy())
 }
 

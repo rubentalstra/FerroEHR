@@ -16,13 +16,14 @@
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use serde_json::{Value, json};
+use openehr_rm::prelude::{DvIdentifier, PartyIdentified, PartyIdentifiedData, PartyProxy};
+use serde_json::Value;
 
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
-use crate::versioning::audit::{AuditInput, description_fragment};
-use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::audit::AuditInput;
+use crate::versioning::object_version_id::{TreeId, VersionIdError, object_version_id, version_id};
 use crate::versioning::read::VersionRead;
 
 /// The `DV_IDENTIFIER.issuer` stamped on a committer whose credential this
@@ -131,28 +132,33 @@ impl FerroEhrService {
         vo_id: VoId,
         creating_system_id: &str,
         version: TreeId,
-    ) -> Value {
+    ) -> Result<Value, VersionIdError> {
         if let Value::Object(map) = &mut canonical {
             map.insert(
                 "uid".to_owned(),
-                json!({
-                    "_type": "OBJECT_VERSION_ID",
-                    "value": object_version_id(vo_id, creating_system_id, version)
-                }),
+                openehr_its::json::to_canonical_value(&version_id(
+                    vo_id,
+                    creating_system_id,
+                    version,
+                )?),
             );
         }
-        canonical
+        Ok(canonical)
     }
 
     /// A [`ServiceResponse`] for a loaded versioned object: its canonical body
     /// with the `uid` injected, plus the resource metadata for the wire
     /// headers.
+    ///
+    /// # Errors
+    /// [`VersionIdError`] when the stored `creating_system_id` does not compose
+    /// into a well-formed `OBJECT_VERSION_ID` (see [`Self::with_uid`]).
     pub(in crate::service) fn version_response(
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
         read: VersionRead,
-    ) -> ServiceResponse {
+    ) -> Result<ServiceResponse, VersionIdError> {
         let meta = self.version_meta(
             ehr_id,
             vo_id,
@@ -160,10 +166,10 @@ impl FerroEhrService {
             read.tree,
             read.time_committed,
         );
-        ServiceResponse::new(
-            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
+        Ok(ServiceResponse::new(
+            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree)?,
             meta,
-        )
+        ))
     }
 
     /// The current version metadata of an EHR-owned object of `kind` (the
@@ -236,7 +242,7 @@ impl FerroEhrService {
         AuditInput {
             system_id: self.effective_system_id(),
             change_type: change_type.to_owned(),
-            description: Some(description_fragment(description)),
+            description: Some(crate::versioning::audit::dv_text(description)),
             committer: committer(),
             attestation: None,
         }
@@ -248,14 +254,12 @@ impl FerroEhrService {
 /// [`crate::service::committer`] context). A write with no authenticated
 /// principal (auth disabled, or an internal/system write) is attributed to the
 /// system identity (RM common master04 `AUDIT_DETAILS.committer` 1..1).
-pub(in crate::service) fn committer() -> Value {
-    match crate::service::committer::current_committer() {
-        Some(identity) => json!({
-            "_type": "PARTY_IDENTIFIED",
-            "name": identity.subject.clone(),
-            "identifiers": [{
-                "_type": "DV_IDENTIFIER",
-                "id": identity.subject,
+pub(in crate::service) fn committer() -> PartyProxy {
+    let party = match crate::service::committer::current_committer() {
+        Some(identity) => PartyIdentifiedData {
+            external_ref: None,
+            name: Some(identity.subject.clone()),
+            identifiers: Some(vec![DvIdentifier {
                 // DV_IDENTIFIER.issuer is the "authority which issues the kind
                 // of id used in the id field of this object" (RM data_types
                 // UML/classes/org.openehr.rm.data_types.dv_identifier.adoc
@@ -269,15 +273,19 @@ pub(in crate::service) fn committer() -> Value {
                 // an AUDIT_DETAILS committer's identifying information may be
                 // "in the form of a system login identifier" (RM common
                 // master04-generic_package.adoc §Audit Details).
-                "issuer": identity.issuer.unwrap_or_else(|| LOCAL_ISSUER.to_owned()),
-                "type": identity.id_type
-            }]
-        }),
-        None => json!({
-            "_type": "PARTY_IDENTIFIED",
-            "name": crate::service::SYSTEM_COMMITTER_NAME
-        }),
-    }
+                issuer: Some(identity.issuer.unwrap_or_else(|| LOCAL_ISSUER.to_owned())),
+                assigner: None,
+                id: identity.subject,
+                r#type: Some(identity.id_type.to_owned()),
+            }]),
+        },
+        None => PartyIdentifiedData {
+            external_ref: None,
+            name: Some(crate::service::SYSTEM_COMMITTER_NAME.to_owned()),
+            identifiers: openehr_base::containers::present(Vec::new()),
+        },
+    };
+    PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(party))
 }
 
 // ── ITS-REST version-metadata adapter (adapter-support extension) ─────────────

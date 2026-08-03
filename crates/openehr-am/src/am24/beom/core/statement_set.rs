@@ -10,7 +10,7 @@ use crate::am24::beom::core::statement::Statement;
 #[derive(Debug, Clone, PartialEq)]
 pub struct StatementSet {
     /// The member statements of this statement set.
-    pub statement: Vec<Statement>,
+    pub statement: Option<Vec<Statement>>,
     /// Optional name of this rule set.
     pub name: Option<String>,
 }

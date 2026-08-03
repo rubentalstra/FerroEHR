@@ -13,5 +13,5 @@ pub struct ExprFunctionCall {
     /// The reference item from which the value of this node can be computed.
     pub item: Option<serde_json::Value>,
     /// Arguments of this function, which can be from 0 to any number. Functions with no arguments are typically used to represent real world varying values like 'current time' and so on.
-    pub arguments: Vec<Expression>,
+    pub arguments: Option<Vec<Expression>>,
 }

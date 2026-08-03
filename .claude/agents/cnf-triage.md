@@ -138,3 +138,14 @@ defect > runner machinery defect > register candidate). Each finding:
 Group identical root causes; state per case id. Close with an honest list
 of rows you did NOT fully adjudicate and why. Cite ONLY the vendored specs
 or official external docs — never an internal markdown file.
+
+## En-route findings are NEVER dropped (owner hard rule, 2026-08-02)
+
+Anything you notice that is wrong, misplaced, or suspicious OUTSIDE your
+assigned scope — code living in the wrong crate, a duplicated definition, a
+stale claim, a missing test, a dependency smell — goes in your final report
+under an explicit "En-route findings" heading, each with file:line and one
+sentence of evidence, so the orchestrator files a tracker issue for it.
+"It was already there" or "not in my task list" is never a reason to stay
+silent: unreported observations are lost work. Do not fix out-of-scope
+findings yourself; report them.

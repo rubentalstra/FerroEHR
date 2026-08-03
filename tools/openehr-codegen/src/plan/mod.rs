@@ -6,14 +6,17 @@
 //! emit-xml BMM-only allowlist — lives as declarative const tables in
 //! [`overrides`], each entry carrying its spec citation; the crate → schema
 //! merge table lives in [`composition`]. This stage makes decisions only — the
-//! text is produced in [`crate::render`].
+//! text is produced in [`crate::render`]. The construction-door decisions (which
+//! classes hide their fields behind a validating constructor) live in
+//! [`construction`], on the same declarative, spec-cited pattern.
 
 pub(crate) mod composition;
+pub(crate) mod construction;
 pub(crate) mod overrides;
 
 use crate::analyze::Model;
 use crate::load::bmm::{BmmClass, BmmEnumeration, BmmPropKind, BmmSchema, BmmType};
-use crate::plan::overrides::{back_reference, field_default, primitive};
+use crate::plan::overrides::{back_reference, cardinality_contradicted, field_default, primitive};
 use crate::render::naming;
 use std::collections::BTreeSet;
 
@@ -126,8 +129,14 @@ pub(crate) fn decide<'a>(
 pub(crate) struct XmlField {
     pub wire_name: String,
     pub rust_name: String,
+    /// The Rust field is wrapped in `Option<…>`. Orthogonal to
+    /// [`XmlField::multiple`]: an optional container is `Option<Vec<T>>`, so
+    /// both flags are set.
     pub optional: bool,
     pub multiple: bool,
+    /// The container is `NonEmptyVec<T>` (a `1..*` bound): the reader builds it
+    /// through the type's fallible constructor.
+    pub nonempty: bool,
     pub target: String,
     /// For a `Hash<String, V>` field (`target == "Hash"`), the value type's spec
     /// name (`V`); `None` otherwise. `Some("String")` is serialized inline as the
@@ -212,8 +221,18 @@ pub(crate) struct JsonField {
 pub(crate) enum JsonFieldKind {
     /// `Option<T>` — omitted when `None`.
     Optional,
-    /// `Vec<T>` — omitted when empty.
+    /// `Vec<T>` (a mandatory container) — omitted when empty.
     Container,
+    /// `NonEmptyVec<T>` (a mandatory `1..*` container) — always present, and
+    /// read through the type's own fallible constructor, so an absent or empty
+    /// array is refused at parse rather than validated later.
+    NonEmptyContainer,
+    /// `Option<Vec<T>>` (an optional container) — omitted when `None` **and**
+    /// when `Some` but empty, per
+    /// `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+    /// §JSON Format; read back as `None` when absent and `Some(vec![])` when
+    /// present-but-empty.
+    OptionalContainer,
     /// Anything else (including a mandatory `Box<T>`, a `BTreeMap`, or a
     /// `#[openehr(default)]` flag) — always emitted.
     Plain,
@@ -293,8 +312,16 @@ impl Model {
                 let octet = matches!(&p.kind,
                     BmmPropKind::Container { item, .. } if item.root_name() == "Octet");
                 let multiple = matches!(&p.kind, BmmPropKind::Container { .. }) && !octet;
+                let lower_bound_one = matches!(&p.kind,
+                    BmmPropKind::Container { cardinality, .. }
+                        if cardinality.as_ref().is_some_and(|c| c.lower >= 1))
+                    && !cardinality_contradicted(&rp.owner, &p.name);
                 let kind = if multiple {
-                    JsonFieldKind::Container
+                    match (p.is_mandatory, lower_bound_one) {
+                        (true, true) => JsonFieldKind::NonEmptyContainer,
+                        (true, false) => JsonFieldKind::Container,
+                        (false, _) => JsonFieldKind::OptionalContainer,
+                    }
                 } else if p.is_mandatory {
                     JsonFieldKind::Plain
                 } else {
@@ -450,8 +477,14 @@ impl Model {
                 XmlField {
                     wire_name: p.name.clone(),
                     rust_name: naming::field_ident(&p.name),
-                    optional: !p.is_mandatory && !multiple,
+                    optional: !p.is_mandatory,
                     multiple,
+                    nonempty: multiple
+                        && p.is_mandatory
+                        && matches!(&p.kind,
+                            BmmPropKind::Container { cardinality, .. }
+                                if cardinality.as_ref().is_some_and(|c| c.lower >= 1))
+                        && !cardinality_contradicted(&rp.owner, &p.name),
                     target,
                     map_value,
                     default: field_default(&rp.owner, &p.name).map(str::to_string),

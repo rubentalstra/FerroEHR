@@ -124,6 +124,7 @@ use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
 use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData;
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
+use openehr_base::containers::present;
 
 /// The default feature-group name every feature is placed in: "Name of this
 /// feature group; defaults to 'feature'"
@@ -186,7 +187,7 @@ pub fn create_bmm3_model(schema: &PBmmSchema) -> Result<BmmModel, PBmmReadError>
         // this schema before the transform runs
         // (`LANG/docs/bmm_persistence/master02-overview.adoc` §Conceptual
         // Approach), so a materialised schema uses no separate model.
-        used_models: Vec::new(),
+        used_models: present(Vec::new()),
         // `BMM_MODEL.modules` — "All classes in this model, keyed by type name"
         // (same §Attributes): the same population as `class_definitions`, viewed
         // under the module meta-type every v3 class is one of
@@ -214,10 +215,13 @@ enum Depth {
     /// ([`crate::bmm3::core::entity::bmm_class::BmmClass::all_ancestors`],
     /// `has_ancestor_class`, `flat_features`) see the whole lineage.
     Full,
-    /// A name-bearing stub: no features, no generic parameters, ancestors as
-    /// stubs. Used for the base class of a TYPE, which is where full embedding
-    /// would stop terminating (a property's type resolves to a class whose own
-    /// properties have types …).
+    /// A name-bearing stub: no features, ancestors as stubs. Used for the base
+    /// class of a TYPE, which is where full embedding would stop terminating
+    /// (a property's type resolves to a class whose own properties have
+    /// types …). Formal generic parameters ARE declared even on a stub — a
+    /// `BMM_GENERIC_CLASS` without them is not a valid instance and could not
+    /// generate its fully open type (`BMM_CLASS.type`); their constraint
+    /// chains are cycle-cut in [`build_parameter_type`].
     Stub,
 }
 
@@ -284,7 +288,7 @@ fn default_group() -> BmmFeatureGroup {
     BmmFeatureGroup {
         name: DEFAULT_FEATURE_GROUP_NAME.to_owned(),
         properties: BTreeMap::new(),
-        features: Vec::new(),
+        features: present(Vec::new()),
         visibility: None,
     }
 }
@@ -329,8 +333,8 @@ fn build_class(
             name: core.name,
             documentation: core.documentation,
             extensions: None,
-            feature_groups: core.feature_groups,
-            features: core.features,
+            feature_groups: present(core.feature_groups),
+            features: present(core.features),
             ancestors: core.ancestors,
             package: core.package,
             properties: core.properties,
@@ -339,7 +343,7 @@ fn build_class(
             // (`…bmm3.bmm_class.adoc` §Attributes) — a downward reference the
             // emitter cannot own without making the type non-constructible, so
             // the inverted graph stays a model-level query.
-            immediate_descendants: Vec::new(),
+            immediate_descendants: present(Vec::new()),
             is_override: core.is_override,
             static_properties: core.static_properties,
             functions: core.functions,
@@ -347,13 +351,13 @@ fn build_class(
             is_primitive: core.is_primitive,
             is_abstract: core.is_abstract,
             // See the module docs' invariants TODO.
-            invariants: Vec::new(),
+            invariants: present(Vec::new()),
             // `creators`/`converters` are subsets of `procedures` a schema
             // designates (`…bmm3.bmm_class.adoc` §Attributes); P_BMM has no
             // attribute designating them, so no subset can be computed.
             creators: None,
             converters: None,
-            generic_parameters: build_generic_parameters(builder, persisted, depth, visiting)?,
+            generic_parameters: build_generic_parameters(builder, persisted, visiting)?,
         }));
     }
     Ok(BmmClass::BmmSimpleClass(BmmSimpleClass::BmmSimpleClass(
@@ -361,20 +365,20 @@ fn build_class(
             name: core.name,
             documentation: core.documentation,
             extensions: None,
-            feature_groups: core.feature_groups,
-            features: core.features,
+            feature_groups: present(core.feature_groups),
+            features: present(core.features),
             ancestors: core.ancestors,
             package: core.package,
             properties: core.properties,
             source_schema_id: core.source_schema_id,
-            immediate_descendants: Vec::new(),
+            immediate_descendants: present(Vec::new()),
             is_override: core.is_override,
             static_properties: core.static_properties,
             functions: core.functions,
             procedures: core.procedures,
             is_primitive: core.is_primitive,
             is_abstract: core.is_abstract,
-            invariants: Vec::new(),
+            invariants: present(Vec::new()),
             creators: None,
             converters: None,
         },
@@ -418,7 +422,7 @@ fn build_core(
             vec![BmmFeatureGroup {
                 name: DEFAULT_FEATURE_GROUP_NAME.to_owned(),
                 properties: BTreeMap::new(),
-                features: features.clone(),
+                features: present(features.clone()),
                 visibility: None,
             }]
         },
@@ -454,7 +458,7 @@ fn package_of(builder: &Builder<'_>, name: &str) -> Result<BmmPackage, PBmmReadE
         documentation: None,
         extensions: None,
         packages: None,
-        members: Vec::new(),
+        members: present(Vec::new()),
     })
 }
 
@@ -563,12 +567,15 @@ fn class_as_type(class: BmmClass) -> BmmModelType {
 fn build_generic_parameters(
     builder: &Builder<'_>,
     persisted: &PBmmClass,
-    depth: Depth,
     visiting: &mut BTreeSet<String>,
 ) -> Result<BTreeMap<String, BmmParameterType>, PBmmReadError> {
-    if depth == Depth::Stub {
-        return Ok(BTreeMap::new());
-    }
+    // Built at BOTH depths (no `Depth` parameter): a `BMM_GENERIC_CLASS`
+    // without its formal parameters is not a valid instance of the model (the
+    // parameters are what make it generic,
+    // `org.openehr.lang.bmm3.bmm_generic_class.adoc` §Attributes), and
+    // `class_as_type` must generate the fully open type of a stub. The
+    // parameter NAMES recurse nowhere; the constraint chain is what
+    // [`build_parameter_type`] cycle-cuts.
     let mut out = BTreeMap::new();
     for (key, parameter) in persisted.generic_parameter_defs().into_iter().flatten() {
         out.insert(
@@ -599,18 +606,34 @@ fn build_parameter_type(
     let type_constraint = match constraint {
         None => None,
         Some(constrainer) => {
-            let context = format!("class `{owner}` generic parameter `{name}`");
-            let stub = build_class(
-                builder,
-                builder.entry(&context, constrainer)?,
-                Depth::Stub,
-                visiting,
-            )?;
-            Some(Box::new(
-                crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::from(
-                    class_as_type(stub),
-                ),
-            ))
+            // Constraint chains recurse: the constrainer builds as a stub
+            // whose own formal parameters may be constrained back onto a
+            // class already being built (the model states acyclicity for
+            // inheritance only, `master13-model_semantics.adoc` §Simple
+            // Inheritance — nothing forbids `A<T: B>` with `B<U: A>`).
+            // Re-entering the same owner/parameter edge would not terminate,
+            // so the repeated edge is cut by omitting the OPTIONAL constraint
+            // ("Optional conformance constraint",
+            // `…bmm3.bmm_parameter_type.adoc` §Attributes) — a namespaced key
+            // so the ancestors guard on bare class names is untouched.
+            let edge = format!("parameter-constraint {owner}::{name}");
+            if visiting.insert(edge.clone()) {
+                let context = format!("class `{owner}` generic parameter `{name}`");
+                let stub = build_class(
+                    builder,
+                    builder.entry(&context, constrainer)?,
+                    Depth::Stub,
+                    visiting,
+                )?;
+                visiting.remove(&edge);
+                Some(Box::new(
+                    crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::from(
+                        class_as_type(stub),
+                    ),
+                ))
+            } else {
+                None
+            }
         }
     };
     Ok(BmmParameterType {
@@ -751,7 +774,7 @@ fn build_property(
                     r#type,
                     is_nullable: is_nullable(container.is_mandatory),
                     is_synthesised_generic: None,
-                    feature_extensions: Vec::new(),
+                    feature_extensions: present(Vec::new()),
                     group: default_group(),
                     is_im_runtime: container.is_im_runtime,
                     is_im_infrastructure: container.is_im_infrastructure,
@@ -782,7 +805,7 @@ fn build_property(
                     r#type,
                     is_nullable: is_nullable(indexed.is_mandatory),
                     is_synthesised_generic: None,
-                    feature_extensions: Vec::new(),
+                    feature_extensions: present(Vec::new()),
                     group: default_group(),
                     is_im_runtime: indexed.is_im_runtime,
                     is_im_infrastructure: indexed.is_im_infrastructure,
@@ -820,7 +843,7 @@ fn unitary_property(
         r#type,
         is_nullable: is_nullable(is_mandatory),
         is_synthesised_generic: None,
-        feature_extensions: Vec::new(),
+        feature_extensions: present(Vec::new()),
         group: default_group(),
         is_im_runtime,
         is_im_infrastructure,
@@ -988,7 +1011,7 @@ fn build_generic_type(
         });
     };
     let mut generic_parameters: Vec<BmmUnitaryType> = Vec::new();
-    for name in &generic.generic_parameters {
+    for name in generic.generic_parameters.iter().flatten() {
         generic_parameters.push(build_named_unitary_type(
             builder, context, name, owner, visiting,
         )?);
@@ -1001,7 +1024,14 @@ fn build_generic_type(
     Ok(BmmGenericType {
         value_constraint: value_set_spec(generic.value_constraint.as_deref()),
         base_class,
-        generic_parameters,
+        // `BMM_GENERIC_TYPE.generic_parameters` is `1..*`
+        // (`docs/specs/openehr/LANG/docs/UML/classes/org.openehr.lang.bmm3.bmm_generic_type.adoc`
+        // §Attributes); a source type specifier that supplied none is refused
+        // here rather than carried as an empty list.
+        generic_parameters: openehr_base::containers::NonEmptyVec::new(generic_parameters)
+            .map_err(|empty| PBmmReadError::TypeDefinitionMissing {
+                context: format!("generic type `{}`: {empty}", generic.root_type),
+            })?,
     })
 }
 
@@ -1212,11 +1242,11 @@ fn build_function(
         r#type: result_type.clone(),
         is_nullable: function.is_nullable,
         is_synthesised_generic: None,
-        feature_extensions: Vec::new(),
+        feature_extensions: present(Vec::new()),
         group: default_group(),
-        parameters: build_parameters(builder, owner, function, visiting)?,
-        pre_conditions: Vec::new(),
-        post_conditions: Vec::new(),
+        parameters: present(build_parameters(builder, owner, function, visiting)?),
+        pre_conditions: present(Vec::new()),
+        post_conditions: present(Vec::new()),
         // `BMM_ROUTINE.definition` is the routine BODY
         // (`org.openehr.lang.bmm3.bmm_routine.adoc` §Attributes); P_BMM persists
         // no bodies, only signatures.
@@ -1257,11 +1287,11 @@ fn build_procedure(
         r#type: crate::bmm3::core::entity::bmm_status_type::BmmStatusType {},
         is_nullable: function.is_nullable,
         is_synthesised_generic: None,
-        feature_extensions: Vec::new(),
+        feature_extensions: present(Vec::new()),
         group: default_group(),
-        parameters: build_parameters(builder, owner, function, visiting)?,
-        pre_conditions: Vec::new(),
-        post_conditions: Vec::new(),
+        parameters: present(build_parameters(builder, owner, function, visiting)?),
+        pre_conditions: present(Vec::new()),
+        post_conditions: present(Vec::new()),
         definition: None,
     })
 }
@@ -1417,7 +1447,7 @@ fn build_constant(
         r#type: BmmType::from(unitary),
         is_nullable: Some(false),
         is_synthesised_generic: None,
-        feature_extensions: Vec::new(),
+        feature_extensions: present(Vec::new()),
         group: default_group(),
         generator: BmmLiteralValue::BmmPrimitiveValue(BmmPrimitiveValue::BmmPrimitiveValue(
             BmmPrimitiveValueData {
@@ -1474,38 +1504,40 @@ fn build_enumeration(
                 name: core.name,
                 documentation: core.documentation,
                 extensions: None,
-                feature_groups: core.feature_groups,
-                features: core.features,
+                feature_groups: present(core.feature_groups),
+                features: present(core.features),
                 ancestors: core.ancestors,
                 package: core.package,
                 properties: core.properties,
                 source_schema_id: core.source_schema_id,
-                immediate_descendants: Vec::new(),
+                immediate_descendants: present(Vec::new()),
                 is_override: core.is_override,
                 static_properties: core.static_properties,
                 functions: core.functions,
                 procedures: core.procedures,
                 is_primitive: core.is_primitive,
                 is_abstract: core.is_abstract,
-                invariants: Vec::new(),
+                invariants: present(Vec::new()),
                 creators: None,
                 converters: None,
-                item_names,
-                item_values: persisted
-                    .item_values()
-                    .iter()
-                    .map(|value| {
-                        crate::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue {
-                            value_literal: literal_form(value),
-                            value: value
-                                .as_i64()
-                                .and_then(|v| i32::try_from(v).ok())
-                                .unwrap_or_default(),
-                            syntax: None,
-                            r#type: underlying.clone(),
-                        }
-                    })
-                    .collect(),
+                item_names: present(item_names),
+                item_values: present(
+                    persisted
+                        .item_values()
+                        .iter()
+                        .map(|value| {
+                            crate::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue {
+                                value_literal: literal_form(value),
+                                value: value
+                                    .as_i64()
+                                    .and_then(|v| i32::try_from(v).ok())
+                                    .unwrap_or_default(),
+                                syntax: None,
+                                r#type: underlying.clone(),
+                            }
+                        })
+                        .collect(),
+                ),
             },
         )),
         PBmmEnumeration::PBmmEnumerationString(_) => {
@@ -1513,37 +1545,39 @@ fn build_enumeration(
                 name: core.name,
                 documentation: core.documentation,
                 extensions: None,
-                feature_groups: core.feature_groups,
-                features: core.features,
+                feature_groups: present(core.feature_groups),
+                features: present(core.features),
                 ancestors: core.ancestors,
                 package: core.package,
                 properties: core.properties,
                 source_schema_id: core.source_schema_id,
-                immediate_descendants: Vec::new(),
+                immediate_descendants: present(Vec::new()),
                 is_override: core.is_override,
                 static_properties: core.static_properties,
                 functions: core.functions,
                 procedures: core.procedures,
                 is_primitive: core.is_primitive,
                 is_abstract: core.is_abstract,
-                invariants: Vec::new(),
+                invariants: present(Vec::new()),
                 creators: None,
                 converters: None,
-                item_names,
-                item_values: persisted
-                    .item_values()
-                    .iter()
-                    .map(|value| {
-                        crate::bmm3::core::literal_value::bmm_string_value::BmmStringValue {
-                            value_literal: literal_form(value),
-                            value: value
-                                .as_str()
-                                .map_or_else(|| literal_form(value), str::to_owned),
-                            syntax: None,
-                            r#type: underlying.clone(),
-                        }
-                    })
-                    .collect(),
+                item_names: present(item_names),
+                item_values: present(
+                    persisted
+                        .item_values()
+                        .iter()
+                        .map(|value| {
+                            crate::bmm3::core::literal_value::bmm_string_value::BmmStringValue {
+                                value_literal: literal_form(value),
+                                value: value
+                                    .as_str()
+                                    .map_or_else(|| literal_form(value), str::to_owned),
+                                syntax: None,
+                                r#type: underlying.clone(),
+                            }
+                        })
+                        .collect(),
+                ),
             }))
         }
         PBmmEnumeration::PBmmEnumeration(_) => {
@@ -1551,35 +1585,37 @@ fn build_enumeration(
                 name: core.name,
                 documentation: core.documentation,
                 extensions: None,
-                feature_groups: core.feature_groups,
-                features: core.features,
+                feature_groups: present(core.feature_groups),
+                features: present(core.features),
                 ancestors: core.ancestors,
                 package: core.package,
                 properties: core.properties,
                 source_schema_id: core.source_schema_id,
-                immediate_descendants: Vec::new(),
+                immediate_descendants: present(Vec::new()),
                 is_override: core.is_override,
                 static_properties: core.static_properties,
                 functions: core.functions,
                 procedures: core.procedures,
                 is_primitive: core.is_primitive,
                 is_abstract: core.is_abstract,
-                invariants: Vec::new(),
+                invariants: present(Vec::new()),
                 creators: None,
                 converters: None,
-                item_names,
-                item_values: persisted
-                    .item_values()
-                    .iter()
-                    .map(|value| {
-                        BmmPrimitiveValue::BmmPrimitiveValue(BmmPrimitiveValueData {
-                            value_literal: literal_form(value),
-                            value: Some(value.clone()),
-                            syntax: None,
-                            r#type: underlying.clone(),
+                item_names: present(item_names),
+                item_values: present(
+                    persisted
+                        .item_values()
+                        .iter()
+                        .map(|value| {
+                            BmmPrimitiveValue::BmmPrimitiveValue(BmmPrimitiveValueData {
+                                value_literal: literal_form(value),
+                                value: Some(value.clone()),
+                                syntax: None,
+                                r#type: underlying.clone(),
+                            })
                         })
-                    })
-                    .collect(),
+                        .collect(),
+                ),
             }))
         }
     }
@@ -1611,7 +1647,7 @@ fn build_packages(
     for package in packages.values() {
         let path = qualify(prefix, &package.name);
         let mut members: Vec<BmmModule> = Vec::new();
-        for class in &package.classes {
+        for class in package.classes.iter().flatten() {
             let entry = builder.classes.get(&class.to_uppercase()).ok_or_else(|| {
                 PBmmReadError::ClassNotDefined {
                     package: package.name.clone(),
@@ -1633,7 +1669,7 @@ fn build_packages(
                 documentation: None,
                 extensions: None,
                 packages: (!children.is_empty()).then_some(children),
-                members,
+                members: present(members),
             },
         );
     }

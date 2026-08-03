@@ -1048,7 +1048,7 @@ pub(super) async fn run(
                     crate::overview::committal::committal_audit(
                         h,
                         crate::api::ehr::committer_proxy(),
-                    ),
+                    )?,
                 )
                 .await?;
             Ok(write_relationship(
@@ -1086,7 +1086,7 @@ pub(super) async fn run(
                     crate::overview::committal::committal_audit(
                         h,
                         crate::api::ehr::committer_proxy(),
-                    ),
+                    )?,
                 )
                 .await
             {
@@ -1124,7 +1124,7 @@ pub(super) async fn run(
                     crate::overview::committal::committal_audit(
                         h,
                         crate::api::ehr::committer_proxy(),
-                    ),
+                    )?,
                 )
                 .await
             {

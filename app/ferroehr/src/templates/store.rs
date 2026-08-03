@@ -28,7 +28,7 @@ use sqlx::Row;
 
 use super::ingest;
 use crate::service::FerroEhrService;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 
 impl FerroEhrService {
     /// Store an OPT 1.4 operational template from its canonical XML, returning
@@ -91,14 +91,14 @@ impl FerroEhrService {
         let template_id = opt.template_id.value;
         if template_id.trim().is_empty() {
             return Err(ServiceError::Unprocessable(
-                "operational template has no template_id".to_owned(),
+                Violation::new("is missing from the operational template").with_path("template_id"),
             ));
         }
         // `concept` is a mandatory `OPERATIONAL_TEMPLATE` attribute; an empty one
         // is a malformed OPT (CNF `removed_mandatory_elements/…removed_concept_value`).
         if opt.concept.trim().is_empty() {
             return Err(ServiceError::Unprocessable(
-                "operational template has an empty concept".to_owned(),
+                Violation::new("of the operational template is empty").with_path("concept"),
             ));
         }
         let concept = Some(opt.concept);

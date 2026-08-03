@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use quick_xml::Reader;
 use quick_xml::events::Event;
 
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 
 /// The legal direct children of the root `<template>` element (the serialized
 /// `OPERATIONAL_TEMPLATE` attributes).
@@ -56,17 +56,21 @@ pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
     let mut check = |raw: &[u8]| -> Result<(), ServiceError> {
         let name = String::from_utf8_lossy(raw).into_owned();
         if !OPT_TOP_LEVEL.contains(&name.as_str()) {
-            return Err(ServiceError::Unprocessable(format!(
-                "operational template has an unexpected top-level element <{name}> \
-                 (not an OPERATIONAL_TEMPLATE attribute)"
-            )));
+            return Err(ServiceError::Unprocessable(
+                Violation::new(
+                    "is an unexpected top-level element of an operational template \
+                     (not an OPERATIONAL_TEMPLATE attribute)",
+                )
+                .with_path(format!("<{name}>")),
+            ));
         }
         let count = seen.entry(name.clone()).or_insert(0);
         *count += 1;
         if *count > 1 && !OPT_TOP_LEVEL_MULTIPLE.contains(&name.as_str()) {
-            return Err(ServiceError::Unprocessable(format!(
-                "operational template has a duplicate single-valued <{name}> element"
-            )));
+            return Err(ServiceError::Unprocessable(
+                Violation::new("is a duplicate single-valued element of an operational template")
+                    .with_path(format!("<{name}>")),
+            ));
         }
         Ok(())
     };
@@ -89,9 +93,9 @@ pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
             Ok(Event::End(_)) => depth -= 1,
             Ok(Event::Eof) => break,
             Err(e) => {
-                return Err(ServiceError::Unprocessable(format!(
+                return Err(ServiceError::Unprocessable(Violation::new(format!(
                     "operational template XML is malformed: {e}"
-                )));
+                ))));
             }
             _ => {}
         }

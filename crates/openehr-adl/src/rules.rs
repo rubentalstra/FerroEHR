@@ -93,12 +93,12 @@ fn unresolved_ref_target() -> ArchetypeConstraint {
             rm_type_name: String::new(),
             occurrences: None,
             node_id: String::new(),
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
-            attributes: Vec::new(),
-            attribute_tuples: Vec::new(),
+            attributes: openehr_base::containers::present(Vec::new()),
+            attribute_tuples: openehr_base::containers::present(Vec::new()),
         },
     )))
 }
@@ -151,7 +151,7 @@ impl BelBuilder for AmBuilder {
     fn function_call(&mut self, name: &str, args: Vec<Expression>) -> Expression {
         Expression::ExprFunctionCall(ExprFunctionCall {
             item: Some(serde_json::Value::String(name.to_owned())),
-            arguments: args,
+            arguments: openehr_base::containers::present(args),
         })
     }
 
@@ -346,7 +346,7 @@ pub fn parse_rules_body(body: &str) -> Result<StatementSet, Vec<SyntaxError>> {
     let mut builder = AmBuilder::new(ConstraintMode::Rule);
     match parse_statements_with(body, &mut builder) {
         Ok(statements) if builder.errors.is_empty() => Ok(StatementSet {
-            statement: statements,
+            statement: openehr_base::containers::present(statements),
             name: None,
         }),
         Ok(_) => Err(builder.errors),
@@ -448,7 +448,7 @@ pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxErr
 /// not resolve within the archetype keeps the placeholder (the unresolved path
 /// is a VRRLP finding in validation, not an assembly error).
 pub fn resolve_archetype_refs(rules: &mut StatementSet, definition: &CComplexObject) {
-    for stmt in &mut rules.statement {
+    for stmt in rules.statement.iter_mut().flatten() {
         match stmt {
             Statement::Assertion(a) => resolve_in_expr(&mut a.expression, definition),
             Statement::Assignment(a) => resolve_in_expr_value(&mut a.source, definition),
@@ -470,7 +470,7 @@ fn resolve_in_expr(expr: &mut Expression, definition: &CComplexObject) {
             resolve_in_value_ref(&mut f.operand, definition);
         }
         Expression::ExprFunctionCall(fc) => {
-            for arg in &mut fc.arguments {
+            for arg in fc.arguments.iter_mut().flatten() {
                 resolve_in_expr(arg, definition);
             }
         }
@@ -494,7 +494,7 @@ fn resolve_in_expr_value(value: &mut ExprValue, definition: &CComplexObject) {
             resolve_in_value_ref(&mut f.operand, definition);
         }
         ExprValue::ExprFunctionCall(fc) => {
-            for arg in &mut fc.arguments {
+            for arg in fc.arguments.iter_mut().flatten() {
                 resolve_in_expr(arg, definition);
             }
         }

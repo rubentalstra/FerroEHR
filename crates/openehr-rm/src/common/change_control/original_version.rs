@@ -26,11 +26,11 @@ pub struct OriginalVersion<T> {
     /// Stored version of inheritance precursor.
     pub preceding_version_uid: Option<ObjectVersionId>,
     /// Identifiers of other versions whose content was merged into this version, if any.
-    pub other_input_version_uids: Vec<ObjectVersionId>,
+    pub other_input_version_uids: Option<Vec<ObjectVersionId>>,
     /// Lifecycle state of the content item in this version; coded by openEHR vocabulary `version lifecycle state`.
     pub lifecycle_state: DvCodedText,
     /// Set of attestations relating to this version.
-    pub attestations: Vec<Attestation>,
+    pub attestations: Option<Vec<Attestation>>,
     /// Data content of this Version.
     pub data: Option<T>,
 }

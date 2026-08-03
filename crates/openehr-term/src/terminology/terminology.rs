@@ -16,9 +16,9 @@ pub struct Terminology {
     /// Language of this terminology, as an ISO:639 2-letter code.
     pub language: String,
     /// Code sets in this Terminology.
-    pub code_sets: Vec<CodeSet>,
+    pub code_sets: Option<Vec<CodeSet>>,
     /// Vocabularies of coded terms in this terminology.
-    pub vocabularies: Vec<TerminologyGroup>,
+    pub vocabularies: Option<Vec<TerminologyGroup>>,
     /// Version of this instance of the terminology.
     pub version: Option<String>,
     /// Date of issue of this version of the terminology.

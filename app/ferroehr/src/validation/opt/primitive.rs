@@ -14,21 +14,21 @@
 use openehr_base::prelude::CodePhrase;
 use openehr_its::opt14::{CDvOrdinal, CDvQuantity, CPrimitive};
 
-use super::Violation;
+use super::RuleViolation;
 use super::interval::{int_in_range, real_in_range};
 
 /// The `C_PRIMITIVE`-level checks: `C_BOOLEAN` satisfiability, `C_DEFINED_OBJECT`
 /// `Assumed_value_valid` for list/range-constrained primitives, and the
 /// `C_DATE`/`C_TIME`/`C_DATE_TIME` `Pattern_validity` + `C_DURATION` pattern
 /// syntax.
-pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), RuleViolation> {
     match p {
         CPrimitive::CBoolean(b) => {
             // C_BOOLEAN (AOM1.4 c_boolean class file, Description): true_valid
             // and false_valid cannot both be False — the constraint would be
             // unsatisfiable.
             if !b.true_valid && !b.false_valid {
-                return Err(Violation::new(
+                return Err(RuleViolation::new(
                     "C_BOOLEAN_validity",
                     format!(
                         "node '{node_id}': true_valid and false_valid are both false — the \
@@ -39,7 +39,7 @@ pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Viola
             if let Some(assumed) = b.assumed_value {
                 let ok = if assumed { b.true_valid } else { b.false_valid };
                 if !ok {
-                    return Err(Violation::new(
+                    return Err(RuleViolation::new(
                         "Assumed_value_valid",
                         format!(
                             "node '{node_id}': the assumed boolean value {assumed} is not \
@@ -58,7 +58,7 @@ pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Viola
                 && s.list_open != Some(true)
                 && !s.list.contains(assumed)
             {
-                return Err(Violation::new(
+                return Err(RuleViolation::new(
                     "Assumed_value_valid",
                     format!(
                         "node '{node_id}': the assumed string '{assumed}' is not in the closed \
@@ -72,7 +72,7 @@ pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Viola
                 let list_ok = c.list.is_empty() || c.list.contains(&assumed);
                 let range_ok = c.range.as_ref().is_none_or(|r| int_in_range(assumed, r));
                 if !list_ok || !range_ok {
-                    return Err(Violation::new(
+                    return Err(RuleViolation::new(
                         "Assumed_value_valid",
                         format!(
                             "node '{node_id}': the assumed integer {assumed} is outside the \
@@ -87,7 +87,7 @@ pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Viola
                 let list_ok = c.list.is_empty() || c.list.contains(&assumed);
                 let range_ok = c.range.as_ref().is_none_or(|r| real_in_range(assumed, r));
                 if !list_ok || !range_ok {
-                    return Err(Violation::new(
+                    return Err(RuleViolation::new(
                         "Assumed_value_valid",
                         format!(
                             "node '{node_id}': the assumed real {assumed} is outside the \
@@ -139,8 +139,8 @@ pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Viola
     Ok(())
 }
 
-fn pattern_violation(node_id: &str, pattern: &str, kind: &str) -> Violation {
-    Violation::new(
+fn pattern_violation(node_id: &str, pattern: &str, kind: &str) -> RuleViolation {
+    RuleViolation::new(
         "Pattern_validity",
         format!("node '{node_id}': '{pattern}' is not a valid {kind} constraint pattern"),
     )
@@ -155,12 +155,12 @@ pub(super) fn check_assumed_code(
     assumed: Option<&CodePhrase>,
     code_list: &[String],
     node_id: &str,
-) -> Result<(), Violation> {
+) -> Result<(), RuleViolation> {
     if let Some(assumed) = assumed
         && !code_list.is_empty()
         && !code_list.contains(&assumed.code_string)
     {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "Assumed_value_valid",
             format!(
                 "node '{node_id}': the assumed code '{}' is not in the constrained code list",
@@ -173,12 +173,12 @@ pub(super) fn check_assumed_code(
 
 /// `C_DV_ORDINAL` `Assumed_value_valid` (AOM1.4 `c_defined_object` class file):
 /// the assumed ordinal must be one of the constrained (symbol, value) pairs.
-pub(super) fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), RuleViolation> {
     if let Some(assumed) = &c.assumed_value
         && !c.list.is_empty()
         && !c.list.iter().any(|o| o.value == assumed.value)
     {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "Assumed_value_valid",
             format!(
                 "node '{node_id}': the assumed DV_ORDINAL value {} is not one of the constrained \
@@ -193,7 +193,7 @@ pub(super) fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), Viol
 /// `C_DV_QUANTITY` `Property_valid` + `Assumed_value_valid` (UML `c_quantity`;
 /// RM support master05 §"Terms and Codes in the openEHR Reference Model",
 /// `Group_id_property`).
-pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), RuleViolation> {
     // The measurement property must be a member of the openEHR `property`
     // terminology group — checked when the constraint codes it from the openEHR
     // terminology.
@@ -207,7 +207,7 @@ pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Vi
         && property.code_string != "0"
         && !openehr_term::bundle::openehr().is_valid_property(&property.code_string)
     {
-        return Err(Violation::new(
+        return Err(RuleViolation::new(
             "Property_valid",
             format!(
                 "node '{node_id}': DV_QUANTITY property code '{}' is not in the openEHR \
@@ -223,7 +223,7 @@ pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Vi
         && !c.list.is_empty()
     {
         let Some(item) = c.list.iter().find(|i| i.units == assumed.units) else {
-            return Err(Violation::new(
+            return Err(RuleViolation::new(
                 "Assumed_value_valid",
                 format!(
                     "node '{node_id}': the assumed DV_QUANTITY units '{}' are not among the \
@@ -235,7 +235,7 @@ pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Vi
         if let Some(range) = &item.magnitude
             && !real_in_range(assumed.magnitude, range)
         {
-            return Err(Violation::new(
+            return Err(RuleViolation::new(
                 "Assumed_value_valid",
                 format!(
                     "node '{node_id}': the assumed DV_QUANTITY magnitude {} is outside the \

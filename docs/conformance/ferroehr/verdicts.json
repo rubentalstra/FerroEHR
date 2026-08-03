@@ -250,7 +250,7 @@
     [
       "CompositionOps",
       {
-        "passed": 48,
+        "passed": 50,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 914,
-    "driven": 877,
-    "passed": 877,
+    "selected": 916,
+    "driven": 879,
+    "passed": 879,
     "failed": 0,
     "inconclusive": 0
   }

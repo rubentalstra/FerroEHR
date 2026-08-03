@@ -12,7 +12,7 @@
 //! the current state from the preceding version and rejecting a transition the
 //! spec does not sanction (previously any target state was accepted).
 
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, Violation};
 use openehr_term::bundle::openehr;
 
 /// The `version_lifecycle_state` openEHR terminology group id.
@@ -69,10 +69,13 @@ pub(crate) fn lifecycle_rubric(code: &str) -> String {
 pub(crate) fn resolve_lifecycle(token: Option<String>) -> Result<String, ServiceError> {
     match token {
         Some(token) => lifecycle_state_code(&token).ok_or_else(|| {
-            ServiceError::Unprocessable(format!(
-                "lifecycle_state {token:?} is not a code in the openEHR \
-                 version_lifecycle_state group (ORIGINAL_VERSION.Lifecycle_state_valid)"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new(format!(
+                    "{token:?} is not a code in the openEHR version_lifecycle_state group"
+                ))
+                .with_path("lifecycle_state")
+                .with_invariant("ORIGINAL_VERSION.Lifecycle_state_valid"),
+            )
         }),
         None => Ok(state::COMPLETE.to_owned()),
     }
@@ -124,16 +127,49 @@ pub(crate) fn validate_transition(from: Option<&str>, to: &str) -> Result<(), Se
         Some(c) => (c, lifecycle_rubric(c)),
         None => ("(new)", "new".to_owned()),
     };
-    Err(ServiceError::Unprocessable(format!(
-        "illegal version lifecycle transition {from_code}|{from_rubric}| -> {to}|{}| \
-         (RM common master06 §Version Lifecycle state machine)",
-        lifecycle_rubric(to),
-    )))
+    Err(ServiceError::Unprocessable(
+        Violation::new(format!(
+            "illegal version lifecycle transition {from_code}|{from_rubric}| -> {to}|{}|",
+            lifecycle_rubric(to),
+        ))
+        .with_invariant("RM common master06 §Version Lifecycle state machine"),
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every named constant is a real group member, and the constants cover the
+    /// COMPLETE `version_lifecycle_state` group — a code added to the TERM
+    /// bundle without a constant here fails this test. (The same guard the
+    /// `audit_change_type` and `composition_category` constant sets carry;
+    /// master06 §Version Lifecycle names exactly these five values.)
+    #[test]
+    fn lifecycle_constants_are_the_complete_group() {
+        let all = [
+            state::COMPLETE,
+            state::INCOMPLETE,
+            state::DELETED,
+            state::INACTIVE,
+            state::ABANDONED,
+        ];
+        let t = openehr();
+        for code in all {
+            assert!(t.is_valid_version_lifecycle_state(code), "code {code}");
+            // `code_string` must be numeric (the group's wire form).
+            assert!(code.chars().all(|c| c.is_ascii_digit()), "code {code}");
+        }
+        let mut group: Vec<String> = t
+            .concepts_in_group(VERSION_LIFECYCLE_STATE)
+            .iter()
+            .map(|c| c.id.clone())
+            .collect();
+        group.sort();
+        let mut named: Vec<String> = all.iter().map(|c| (*c).to_owned()).collect();
+        named.sort();
+        assert_eq!(group, named, "constants must mirror the full TERM group");
+    }
 
     #[test]
     fn lifecycle_state_code_accepts_code_or_rubric_and_rejects_non_members() {
@@ -162,7 +198,19 @@ mod tests {
             resolve_lifecycle(Some("incomplete".into())).unwrap(),
             state::INCOMPLETE
         );
-        assert!(resolve_lifecycle(Some("nonsense".into())).is_err());
+        // The refusal is asserted as DATA: the path and the named invariant,
+        // not a substring of the rendered sentence.
+        match resolve_lifecycle(Some("nonsense".into())) {
+            Err(ServiceError::Unprocessable(v)) => {
+                assert_eq!(v.path(), Some("lifecycle_state"));
+                assert_eq!(
+                    v.invariant(),
+                    Some("ORIGINAL_VERSION.Lifecycle_state_valid")
+                );
+                assert!(v.detail().contains("\"nonsense\""), "{v}");
+            }
+            other => panic!("an out-of-group lifecycle token must be 422, got {other:?}"),
+        }
     }
 
     /// the master06 §Version Lifecycle state machine — legal transitions
@@ -191,7 +239,15 @@ mod tests {
         // Ordinary same-state re-commit (a new version, unchanged state).
         assert!(validate_transition(Some(COMPLETE), COMPLETE).is_ok());
 
-        // Illegal transitions.
+        // Illegal transitions. The first is asserted as DATA — the refusal
+        // names the state machine it enforces, readable off the value.
+        match validate_transition(Some(COMPLETE), ABANDONED) {
+            Err(ServiceError::Unprocessable(v)) => assert_eq!(
+                v.invariant(),
+                Some("RM common master06 §Version Lifecycle state machine")
+            ),
+            other => panic!("complete -> abandoned must be refused, got {other:?}"),
+        }
         assert!(validate_transition(Some(COMPLETE), ABANDONED).is_err());
         assert!(validate_transition(Some(COMPLETE), INCOMPLETE).is_err());
         assert!(validate_transition(Some(ABANDONED), COMPLETE).is_err());

@@ -25,7 +25,8 @@ use sqlx::PgConnection;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
-use crate::service::error::ServiceError;
+use crate::service::ehr::category::code;
+use crate::service::error::{ServiceError, Violation};
 use crate::versioning::read::read_current;
 use crate::versioning::{Kind, lifecycle};
 
@@ -95,8 +96,11 @@ impl FerroEhrService {
     /// stay at full strictness ("data may be missing, but it may not be
     /// wrong").
     ///
-    /// The template lookup goes through `web_template_for` and the passes
-    /// through `openehr_its::flat::validation::validate_*`.
+    /// The template lookup goes through `web_template_for`; the
+    /// template-independent passes run through
+    /// `openehr_its::rm_instance::validate_rm_and_terminology` and the
+    /// archetype-conformance pass through
+    /// `openehr_its::flat::validation::validate_archetype_conformance*`.
     ///
     /// # Errors
     /// [`ServiceError::ValidationFailed`] carrying every RM/terminology/
@@ -112,7 +116,7 @@ impl FerroEhrService {
         composition: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError> {
-        let mut messages = openehr_its::flat::validation::validate_rm_and_terminology(composition);
+        let mut messages = openehr_its::rm_instance::validate_rm_and_terminology(composition);
         let rm_terminology_failures = messages.len();
         let mut template_failures = 0;
         let mut binding_failures = 0;
@@ -253,7 +257,7 @@ pub(in crate::service) fn validate_rm_invariants_for_commit(
     data: &Value,
     declared: &str,
 ) -> Result<(), ServiceError> {
-    let messages = openehr_its::flat::validation::validate_rm_and_terminology_as(data, declared);
+    let messages = openehr_its::rm_instance::validate_rm_and_terminology_as(data, declared);
     if messages.is_empty() {
         return Ok(());
     }
@@ -301,7 +305,6 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
     vo_id: VoId,
     canonical: &Value,
 ) -> Result<(), ServiceError> {
-    const PERSISTENT: &str = "431";
     let Some(first) = crate::storage::node_repo::first_version_root(tx, vo_id).await? else {
         // No stored content version (e.g. every prior version deleted) — no
         // first-version root to compare against.
@@ -319,23 +322,28 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
     if let (Some(stored), Some(incoming)) = (first_ani.as_deref(), incoming_ani)
         && stored != incoming
     {
-        return Err(ServiceError::Unprocessable(format!(
-            "COMPOSITION archetype_node_id {incoming:?} differs from the versioned \
-             object's first version {stored:?} \
-             (VERSIONED_COMPOSITION.Archetype_node_id_valid)"
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "{incoming:?} differs from the versioned object's first version {stored:?}"
+            ))
+            .with_path("COMPOSITION.archetype_node_id")
+            .with_invariant("VERSIONED_COMPOSITION.Archetype_node_id_valid"),
+        ));
     }
     let incoming_category = canonical
         .pointer("/category/defining_code/code_string")
         .and_then(Value::as_str);
     if let (Some(stored), Some(incoming)) = (first_category.as_deref(), incoming_category)
-        && (stored == PERSISTENT) != (incoming == PERSISTENT)
+        && (stored == code::PERSISTENT) != (incoming == code::PERSISTENT)
     {
-        return Err(ServiceError::Unprocessable(format!(
-            "COMPOSITION category {incoming} changes the persistence of the versioned \
-             object (first version: {stored}) — is_persistent is fixed across versions \
-             (VERSIONED_COMPOSITION.Persistent_validity)"
-        )));
+        return Err(ServiceError::Unprocessable(
+            Violation::new(format!(
+                "{incoming} changes the persistence of the versioned object \
+                 (first version: {stored}) — is_persistent is fixed across versions"
+            ))
+            .with_path("COMPOSITION.category")
+            .with_invariant("VERSIONED_COMPOSITION.Persistent_validity"),
+        ));
     }
     Ok(())
 }
@@ -358,100 +366,86 @@ fn is_persistent(composition: &Value) -> bool {
     composition
         .pointer("/category/defining_code/code_string")
         .and_then(Value::as_str)
-        == Some("431")
+        == Some(code::PERSISTENT)
 }
 
-/// Structurally validate an `EHR_STATUS` before it is committed (on EHR
-/// create, `EHR_STATUS` update, or a CONTRIBUTION). Rejects every malformed
-/// data set the CNF `master06 §Test Data Sets` (INVALID class 2) enumerates
-/// with a `422`.
-///
-/// Rules — RM ehr §`EHR_STATUS` + inherited `LOCATABLE`:
-/// - `_type` present and equal to `EHR_STATUS`;
-/// - `name` present (`LOCATABLE.name` 1..1);
-/// - `archetype_node_id` present and non-empty (`Archetype_node_id_valid`);
-/// - `is_queryable` / `is_modifiable` present booleans (both 1..1);
-/// - `subject` present and a `PARTY_SELF` (`EHR_STATUS.subject` 1..1
-///   `PARTY_SELF`; monomorphic, so a foreign concrete `_type` is invalid —
-///   enforced via the generated `PartySelf`'s `_type` check). An empty `{}`
-///   subject is a valid **anonymous** subject (RM ehr master04 §EHR Status:
-///   `PARTY_SELF` "enabling it to be made completely anonymous");
-/// - a present `subject.external_ref` is a valid `PARTY_REF` (non-empty
-///   `id.value` — `Id_exists`; non-empty `namespace` — `Namespace_valid`); a
-///   NULL `external_ref` is permitted;
-/// - a present `other_details` is a concrete `ITEM_STRUCTURE` (RM ehr
-///   `ehr_status.adoc` `other_details`; RM `data_structures` master04).
-///
-/// The root rules above are then followed by the whole-instance RM
-/// class-invariant + terminology pass
-/// ([`validate_rm_invariants_for_commit`]), which reaches every node BELOW the
-/// root — `archetype_details`, `links`, `feeder_audit`, and any
-/// `other_details` structure.
-///
-/// # Errors
-/// [`ServiceError::Unprocessable`] naming the first violated rule, or
-/// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
-/// found below the root (both → 422).
-/// The root-LOCATABLE invariants shared by the always-root EHR kinds
-/// (`EHR_STATUS`, `EHR_ACCESS` — RM ehr `ehr_status.adoc` /
+/// The ROOT-ONLY half of `LOCATABLE.Archetyped_valid` for the always-root EHR
+/// kinds (`EHR_STATUS`, `EHR_ACCESS` — RM ehr `ehr_status.adoc` /
 /// `ehr_access.adoc`, each with an unconditional `Is_archetype_root`):
+/// `is_archetype_root xor archetype_details = Void` (RM common
+/// `locatable.adoc` §Invariants) means such a root MUST carry the `ARCHETYPED`
+/// block, with its mandatory `archetype_id`.
 ///
-/// - `Archetyped_valid` (RM common `locatable.adoc`: `is_archetype_root xor
-///   archetype_details = Void`) — a root MUST carry the `ARCHETYPED` block;
-/// - at a root, `archetype_node_id` "is always the stringified form of the
-///   `archetype_id` found in the `archetype_details` object"
-///   (`locatable.adoc` §`archetype_node_id`);
-/// - `Links_valid` (`links /= Void implies not links.is_empty`) — an
-///   explicit empty list is RM-invalid (absent is the way to say none).
+/// That direction is the one a per-node pass cannot express: only this chapter
+/// knows that an `EHR_STATUS` or `EHR_ACCESS` *is* a root. The other direction
+/// (a term-coded node must NOT carry `archetype_details`) and the root-identity
+/// rule (`archetype_node_id` equals the stringified
+/// `archetype_details.archetype_id`) are the whole-instance pass's
+/// (`openehr_rm::validate::check_archetyped_valid`), as is
+/// `LOCATABLE.Links_valid`, which it applies to every node carrying `links`.
 pub(in crate::service) fn validate_root_locatable(
     obj: &serde_json::Map<String, Value>,
     kind: &str,
 ) -> Result<(), ServiceError> {
-    let unproc = ServiceError::Unprocessable;
     let details = obj
         .get("archetype_details")
         .filter(|v| v.is_object())
         .ok_or_else(|| {
-            unproc(format!(
-                "{kind}.archetype_details is mandatory: {kind} is an archetype \
-                 root (Is_archetype_root) and a root without ARCHETYPED \
-                 violates LOCATABLE.Archetyped_valid"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new(format!(
+                    "is mandatory: {kind} is an archetype root (Is_archetype_root), \
+                     and a root without ARCHETYPED is invalid"
+                ))
+                .with_path(format!("{kind}.archetype_details"))
+                .with_invariant("LOCATABLE.Archetyped_valid"),
+            )
         })?;
-    let declared_id = details
+    details
         .get("archetype_id")
         .and_then(|a| a.get("value"))
         .and_then(Value::as_str)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| {
-            unproc(format!(
-                "{kind}.archetype_details.archetype_id.value is mandatory \
-                 (ARCHETYPED.archetype_id 1..1)"
-            ))
+            ServiceError::Unprocessable(
+                Violation::new("is mandatory")
+                    .with_path(format!("{kind}.archetype_details.archetype_id.value"))
+                    .with_invariant("ARCHETYPED.archetype_id 1..1"),
+            )
         })?;
-    let node_id = obj
-        .get("archetype_node_id")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
-    if declared_id != node_id {
-        return Err(unproc(format!(
-            "{kind}.archetype_node_id {node_id:?} must equal \
-             archetype_details.archetype_id.value {declared_id:?} at an \
-             archetype root (LOCATABLE archetype_node_id)"
-        )));
-    }
-    if let Some(links) = obj.get("links")
-        && links.as_array().is_some_and(Vec::is_empty)
-    {
-        return Err(unproc(format!(
-            "{kind}.links must be absent or non-empty (LOCATABLE.Links_valid)"
-        )));
-    }
     Ok(())
 }
 
+/// Validate an `EHR_STATUS` before it is committed (on EHR create,
+/// `EHR_STATUS` update, or a CONTRIBUTION). Rejects every malformed data set
+/// the CNF `master06 §Test Data Sets` (INVALID class 2) enumerates with a
+/// `422`.
+///
+/// Only the two rules that are properties of the SLOT rather than of the
+/// instance live here:
+///
+/// - the container holds an `EHR_STATUS`, so a foreign or absent `_type` is
+///   invalid (nothing inside the instance can know which resource it was
+///   posted to);
+/// - the ROOT half of `LOCATABLE.Archetyped_valid`
+///   ([`validate_root_locatable`]).
+///
+/// Everything else RM ehr `ehr_status.adoc` and the inherited `LOCATABLE`
+/// demand is enforced by the whole-instance pass
+/// ([`validate_rm_invariants_for_commit`]) from the generated model, not
+/// restated here: `name` / `is_queryable` / `is_modifiable` / `subject`
+/// mandatoriness and typing (`EHR_STATUS.subject` is monomorphic `PARTY_SELF`,
+/// and an empty `{}` still decodes to the valid **anonymous** subject of RM ehr
+/// master04 §EHR Status), the `ITEM_STRUCTURE` typing of `other_details`, the
+/// `OBJECT_REF.Id_exists` / `Namespace_valid` rules on a present
+/// `subject.external_ref`, `Archetype_node_id_valid`, `Links_valid`, and every
+/// invariant below the root.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] for the two slot rules above, or
+/// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
+/// (both → 422).
 pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
-    let unproc = |m: String| ServiceError::Unprocessable(m);
+    let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
     let obj = status
         .as_object()
         .ok_or_else(|| unproc("EHR_STATUS must be a JSON object".to_owned()))?;
@@ -470,101 +464,7 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
         }
     }
 
-    if !obj.contains_key("name") {
-        return Err(unproc(
-            "EHR_STATUS.name is mandatory (LOCATABLE.name 1..1)".to_owned(),
-        ));
-    }
-    match obj.get("archetype_node_id").and_then(Value::as_str) {
-        Some(s) if !s.is_empty() => {}
-        _ => {
-            return Err(unproc(
-                "EHR_STATUS.archetype_node_id is mandatory and non-empty \
-                 (LOCATABLE.Archetype_node_id_valid)"
-                    .to_owned(),
-            ));
-        }
-    }
     validate_root_locatable(obj, "EHR_STATUS")?;
-    if !obj.get("is_queryable").is_some_and(Value::is_boolean) {
-        return Err(unproc(
-            "EHR_STATUS.is_queryable is mandatory (1..1 Boolean)".to_owned(),
-        ));
-    }
-    if !obj.get("is_modifiable").is_some_and(Value::is_boolean) {
-        return Err(unproc(
-            "EHR_STATUS.is_modifiable is mandatory (1..1 Boolean)".to_owned(),
-        ));
-    }
-
-    let subject = obj
-        .get("subject")
-        .filter(|v| v.is_object())
-        .ok_or_else(|| unproc("EHR_STATUS.subject is mandatory (1..1 PARTY_SELF)".to_owned()))?;
-
-    // `EHR_STATUS.subject` is typed `PARTY_SELF` (RM ehr master04 §EHR Status).
-    // PARTY_SELF is monomorphic, so a foreign concrete `_type` (e.g.
-    // PARTY_IDENTIFIED) is invalid; enforce via the generated type's
-    // `#[derive(OpenEhrType)]` `_type` check. An absent `_type` / empty `{}`
-    // deserialises to an anonymous PARTY_SELF (external_ref None), which is
-    // accepted. Scoped to the subject slot to keep the RM-1.2.0-vs-corpus skew
-    // off the whole-object guard.
-    openehr_its::json::from_canonical_value::<openehr_rm::prelude::PartySelf>(subject).map_err(
-        |e| {
-            unproc(format!(
-                "EHR_STATUS.subject must be a PARTY_SELF (RM ehr master04 §EHR Status): {e}"
-            ))
-        },
-    )?;
-
-    let external_ref = subject
-        .as_object()
-        .and_then(|s| s.get("external_ref"))
-        .filter(|v| !v.is_null());
-    if let Some(external_ref) = external_ref {
-        let ext = external_ref.as_object().ok_or_else(|| {
-            unproc("EHR_STATUS.subject.external_ref must be a PARTY_REF object".to_owned())
-        })?;
-        match ext.get("id").and_then(Value::as_object) {
-            Some(id)
-                if id
-                    .get("value")
-                    .and_then(Value::as_str)
-                    .is_some_and(|v| !v.is_empty()) => {}
-            _ => {
-                return Err(unproc(
-                    "EHR_STATUS.subject.external_ref.id.value is mandatory and non-empty \
-                     (OBJECT_REF.Id_exists)"
-                        .to_owned(),
-                ));
-            }
-        }
-        match ext.get("namespace").and_then(Value::as_str) {
-            Some(ns) if !ns.is_empty() => {}
-            _ => {
-                return Err(unproc(
-                    "EHR_STATUS.subject.external_ref.namespace is mandatory and non-empty \
-                     (OBJECT_REF.Namespace_valid)"
-                        .to_owned(),
-                ));
-            }
-        }
-    }
-
-    // `EHR_STATUS.other_details` (0..1) is typed `ITEM_STRUCTURE` — an abstract
-    // slot whose concrete subtypes are ITEM_TREE / ITEM_LIST / ITEM_SINGLE /
-    // ITEM_TABLE (RM data_structures master04). A foreign `_type` is invalid.
-    if let Some(other) = obj.get("other_details").filter(|v| !v.is_null()) {
-        match other.get("_type").and_then(Value::as_str) {
-            Some("ITEM_TREE" | "ITEM_LIST" | "ITEM_SINGLE" | "ITEM_TABLE") => {}
-            other_ty => {
-                return Err(unproc(format!(
-                    "EHR_STATUS.other_details must be an ITEM_STRUCTURE \
-                     (ITEM_TREE/ITEM_LIST/ITEM_SINGLE/ITEM_TABLE), got _type {other_ty:?}"
-                )));
-            }
-        }
-    }
     validate_rm_invariants_for_commit(status, "EHR_STATUS")
 }
 
@@ -572,10 +472,8 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
 /// CONTRIBUTION — there is no direct ITS-REST `EHR_ACCESS` write). RM ehr
 /// `ehr_access.adoc`:
 ///
-/// - a LOCATABLE: `name` (1..1) and a non-empty `archetype_node_id`
-///   (`Archetype_node_id_valid`);
 /// - a foreign `_type` in this slot is invalid (the container holds
-///   `EHR_ACCESS` only);
+///   `EHR_ACCESS` only) — a slot rule, not an instance one;
 /// - `settings` (0..1) is a subtype of the ABSTRACT `ACCESS_CONTROL_SETTINGS`
 ///   — the RM defines no concrete scheme, so a present `settings` must carry a
 ///   non-empty concrete `_type`, which `scheme()` names (`Scheme_valid`).
@@ -589,7 +487,7 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
 /// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
 /// found below the root (both → 422).
 pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
-    let unproc = |m: String| ServiceError::Unprocessable(m);
+    let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
     let obj = access
         .as_object()
         .ok_or_else(|| unproc("EHR_ACCESS must be a JSON object".to_owned()))?;
@@ -600,22 +498,6 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
                 "expected an EHR_ACCESS, got _type {other:?}"
             )));
         }
-    }
-    if obj.get("name").is_none_or(Value::is_null) {
-        return Err(unproc(
-            "EHR_ACCESS.name is mandatory (LOCATABLE.name 1..1)".to_owned(),
-        ));
-    }
-    if obj
-        .get("archetype_node_id")
-        .and_then(Value::as_str)
-        .is_none_or(str::is_empty)
-    {
-        return Err(unproc(
-            "EHR_ACCESS.archetype_node_id is mandatory and non-empty \
-             (LOCATABLE.Archetype_node_id_valid)"
-                .to_owned(),
-        ));
     }
     // EHR_ACCESS carries the same unconditional Is_archetype_root as
     // EHR_STATUS (RM ehr `ehr_access.adoc`), so the root-LOCATABLE
@@ -658,30 +540,22 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 /// create/update and the CONTRIBUTION FOLDER path). RM common `folder.adoc` +
 /// RM ehr master04 §Folders:
 ///
-/// - each node is a `FOLDER` (foreign `_type` rejected) with `name` (1..1) and
-///   a non-empty `archetype_node_id` (`Archetype_node_id_valid`);
+/// - each node is a `FOLDER` (a foreign `_type` is rejected: a FOLDER tree
+///   carries only FOLDERs, which the containment shape alone cannot say);
 /// - `items` members are `OBJECT_REF`s — "Folder structures do not contain
 ///   Compositions, only references to them" (master04 §Folders): a member must
 ///   carry `id` + `namespace` + `type`, and a LOCATABLE-by-value payload is
 ///   rejected;
-/// - `links`, when present, is non-empty (`LOCATABLE.Links_valid`:
-///   `links /= Void implies not links.is_empty`, RM common
-///   `org.openehr.rm.common.locatable.adoc` §Invariants);
-/// - a node carrying `archetype_details` is an archetype root, so its
-///   `archetype_node_id` is the stringified `archetype_details.archetype_id`
-///   (RM common `org.openehr.rm.common.locatable.adoc` §Attributes: "At an
-///   archetype root point, the value of this attribute is always the
-///   stringified form of the `archetype_id` found in the `archetype_details`
-///   object"; RM common `master03-archetyped_package.adoc` §The LOCATABLE
-///   Class). `archetype_details` itself stays OPTIONAL on a FOLDER — the RM
-///   types it 0..1 and FOLDER carries no `Is_archetype_root` invariant;
 /// - `folders` members recurse.
 ///
-/// The per-node rules above are then followed by the whole-instance RM
-/// class-invariant + terminology pass
-/// ([`validate_rm_invariants_for_commit`]), which reaches the parts of a
-/// FOLDER tree the walk above does not inspect — `archetype_details`, each
-/// `LINK` in `links`, and `feeder_audit`.
+/// The `LOCATABLE` rules a FOLDER node inherits are NOT restated here: `name`
+/// mandatoriness, `Archetype_node_id_valid`, `Links_valid`, and the
+/// archetype-root identity rule (`archetype_node_id` is the stringified
+/// `archetype_details.archetype_id`) all come from the whole-instance RM
+/// class-invariant + terminology pass ([`validate_rm_invariants_for_commit`]),
+/// which also reaches `archetype_details`, each `LINK` in `links`, and
+/// `feeder_audit`. `archetype_details` itself stays OPTIONAL on a FOLDER — the
+/// RM types it 0..1 and FOLDER carries no `Is_archetype_root` invariant.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] naming the first violated rule and the
@@ -689,7 +563,7 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 /// RM-invariant violations found anywhere in the tree (both → 422).
 pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
     fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
-        let unproc = |m: String| ServiceError::Unprocessable(m);
+        let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
         let obj = node
             .as_object()
             .ok_or_else(|| unproc(format!("{path}: FOLDER must be a JSON object")))?;
@@ -700,42 +574,6 @@ pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceE
                     "{path}: expected a FOLDER, got _type {other:?}"
                 )));
             }
-        }
-        if obj.get("name").is_none_or(Value::is_null) {
-            return Err(unproc(format!(
-                "{path}: FOLDER.name is mandatory (LOCATABLE.name 1..1)"
-            )));
-        }
-        let node_id = obj.get("archetype_node_id").and_then(Value::as_str);
-        let Some(node_id) = node_id.filter(|s| !s.is_empty()) else {
-            return Err(unproc(format!(
-                "{path}: FOLDER.archetype_node_id is mandatory and non-empty \
-                 (LOCATABLE.Archetype_node_id_valid)"
-            )));
-        };
-        if obj
-            .get("links")
-            .and_then(Value::as_array)
-            .is_some_and(Vec::is_empty)
-        {
-            return Err(unproc(format!(
-                "{path}: FOLDER.links is present but empty — a present list must be \
-                 non-empty (LOCATABLE.Links_valid)"
-            )));
-        }
-        if let Some(archetype_id) = obj
-            .get("archetype_details")
-            .and_then(|d| d.get("archetype_id"))
-            .and_then(|a| a.get("value"))
-            .and_then(Value::as_str)
-            && archetype_id != node_id
-        {
-            return Err(unproc(format!(
-                "{path}: archetype root archetype_node_id {node_id:?} is not the \
-                 stringified archetype_details.archetype_id {archetype_id:?} — at an \
-                 archetype root the two are always the same value \
-                 (LOCATABLE.archetype_node_id)"
-            )));
         }
         if let Some(items) = obj.get("items").and_then(Value::as_array) {
             for (i, item) in items.iter().enumerate() {
@@ -824,7 +662,7 @@ mod tests {
         ] {
             let err = validate_ehr_status(&with_other(bad))
                 .expect_err("non-ITEM_STRUCTURE other_details must be rejected");
-            assert!(err.to_string().contains("ITEM_STRUCTURE"), "got {err}");
+            assert!(format!("{err:?}").contains("ITEM_STRUCTURE"), "got {err:?}");
         }
     }
 
@@ -886,7 +724,7 @@ mod tests {
             "is_modifiable": true
         });
         let err = validate_ehr_status(&bad).expect_err("PARTY_IDENTIFIED subject must be rejected");
-        let msg = err.to_string();
+        let msg = format!("{err:?}");
         assert!(
             msg.contains("PARTY_SELF") && msg.contains("PARTY_IDENTIFIED"),
             "rejection should name the type mismatch, got: {msg}"
@@ -963,7 +801,7 @@ mod tests {
         validate_ehr_access(&default_ehr_access()).expect("the default EHR_ACCESS is valid");
         let err = validate_ehr_access(&json!({ "_type": "EHR_STATUS" }))
             .expect_err("foreign _type rejected");
-        assert!(err.to_string().contains("EHR_ACCESS"), "got {err}");
+        assert!(format!("{err:?}").contains("EHR_ACCESS"), "got {err:?}");
         let err = validate_ehr_access(&json!({
                    "_type": "EHR_ACCESS", "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
         "archetype_details": {
@@ -974,7 +812,7 @@ mod tests {
         },
                }))
         .expect_err("missing name rejected");
-        assert!(err.to_string().contains("name"), "got {err}");
+        assert!(format!("{err:?}").contains("name"), "got {err:?}");
         let err = validate_ehr_access(&json!({
             "_type": "EHR_ACCESS",
             "name": { "_type": "DV_TEXT", "value": "EHR Access" },
@@ -988,7 +826,7 @@ mod tests {
             "settings": { "scheme": "acme" }
         }))
         .expect_err("settings without a concrete _type rejected (Scheme_valid)");
-        assert!(err.to_string().contains("Scheme_valid"), "got {err}");
+        assert!(format!("{err:?}").contains("Scheme_valid"), "got {err:?}");
     }
 
     /// FOLDER trees hold `OBJECT_REF` items only — never content by value
@@ -1019,13 +857,13 @@ mod tests {
             "name": { "_type": "DV_TEXT", "value": "inline!" }
         });
         let err = validate_folder(&bad).expect_err("content by value must be rejected");
-        assert!(err.to_string().contains("OBJECT_REF"), "got {err}");
+        assert!(format!("{err:?}").contains("OBJECT_REF"), "got {err:?}");
 
         // A sub-folder without a name violates LOCATABLE.name 1..1.
         let mut bad = good;
         bad["folders"][0].as_object_mut().unwrap().remove("name");
         let err = validate_folder(&bad).expect_err("nameless sub-folder rejected");
-        assert!(err.to_string().contains("name"), "got {err}");
+        assert!(format!("{err:?}").contains("name"), "got {err:?}");
     }
 
     /// A minimal valid FOLDER tree the LOCATABLE-rule tests below perturb.
@@ -1062,7 +900,7 @@ mod tests {
             .unwrap()
             .insert("links".into(), json!([]));
         let err = validate_folder(&bad).expect_err("an empty links list must be rejected");
-        assert!(err.to_string().contains("Links_valid"), "got {err}");
+        assert!(format!("{err:?}").contains("Links_valid"), "got {err:?}");
 
         let mut good = folder_fixture();
         good["folders"][0].as_object_mut().unwrap().insert(
@@ -1087,8 +925,8 @@ mod tests {
         bad["archetype_details"]["archetype_id"]["value"] = json!("openEHR-EHR-FOLDER.other.v1");
         let err = validate_folder(&bad).expect_err("a contradicting root identity is rejected");
         assert!(
-            err.to_string().contains("LOCATABLE.archetype_node_id"),
-            "got {err}"
+            format!("{err:?}").contains("LOCATABLE.archetype_node_id"),
+            "got {err:?}"
         );
 
         let mut without = folder_fixture();

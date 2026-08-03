@@ -58,12 +58,12 @@
 
 use http::HeaderMap;
 use indexmap::IndexMap;
-use serde_json::json;
 
 use super::params::key_value_pairs;
 
-use openehr_base::prelude::TerminologyCode;
-use openehr_rm::prelude::PartyProxy;
+use openehr_base::prelude::{HierObjectId, ObjectId, PartyRef, TerminologyCode};
+use openehr_its::rest::runtime::ApiError;
+use openehr_rm::prelude::{PartyIdentified, PartyIdentifiedData, PartyProxy};
 
 use ferroehr::service::version_update::UpdateVersion;
 
@@ -108,14 +108,24 @@ fn openehr_code(code: &str) -> TerminologyCode {
 /// synthesized [`UpdateVersion`] commit envelope, overriding the server defaults
 /// set by the caller. Absent headers leave the defaults intact; the new form
 /// wins over the deprecated form on conflict.
-pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMap) {
-    apply_attrs(uv, &collect_attrs(headers));
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a header carries a malformed identifier (see
+/// [`build_committer`]).
+pub(crate) fn merge_committal_headers(
+    uv: &mut UpdateVersion,
+    headers: &HeaderMap,
+) -> Result<(), ApiError> {
+    apply_attrs(uv, &collect_attrs(headers))
 }
 
 /// Overlay already-collected committal attributes onto a commit envelope —
 /// the merge itself, split from the header collection so a caller that needs
 /// to know whether ANY attribute was supplied parses the headers exactly once.
-fn apply_attrs(uv: &mut UpdateVersion, attrs: &IndexMap<String, Vec<(String, String)>>) {
+fn apply_attrs(
+    uv: &mut UpdateVersion,
+    attrs: &IndexMap<String, Vec<(String, String)>>,
+) -> Result<(), ApiError> {
     if let Some(code) = attrs.get(T_LIFECYCLE).and_then(|p| pair(p, "code_string")) {
         uv.lifecycle_state = openehr_code(&code);
     }
@@ -129,13 +139,14 @@ fn apply_attrs(uv: &mut UpdateVersion, attrs: &IndexMap<String, Vec<(String, Str
         uv.audit.description = Some(desc);
     }
     if let Some(pairs) = attrs.get(T_COMMITTER)
-        && let Some(committer) = build_committer(pairs)
+        && let Some(committer) = build_committer(pairs)?
     {
         uv.audit.committer = committer;
     }
     if let Some(system_id) = attrs.get(T_SYSTEM_ID).and_then(|p| scalar(p)) {
         uv.audit.system_id = Some(system_id);
     }
+    Ok(())
 }
 
 /// The audit attributes of the committal headers, when the request carried
@@ -151,11 +162,14 @@ fn apply_attrs(uv: &mut UpdateVersion, attrs: &IndexMap<String, Vec<(String, Str
 /// "whatever is provided" (overview §"openehr-version and
 /// openehr-audit-details"); the `UpdateVersion::direct` system placeholder
 /// is never a default the client chose.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a header carries a malformed identifier.
 pub(crate) fn committal_audit(
     headers: &HeaderMap,
     committer: PartyProxy,
-) -> Option<ferroehr::service::version_update::UpdateAudit> {
-    merged_committal(headers, Some(committer)).map(|c| c.audit)
+) -> Result<Option<ferroehr::service::version_update::UpdateAudit>, ApiError> {
+    Ok(merged_committal(headers, Some(committer))?.map(|c| c.audit))
 }
 
 /// The full committal metadata — merged `UPDATE_AUDIT` **and** the VERSION
@@ -172,10 +186,13 @@ pub(crate) fn committal_audit(
 /// authenticated principal — so an unsupplied `committer` keeps it rather than
 /// being clobbered. `None` when the request carried no committal header at
 /// all, leaving the service on its own default attribution path.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a header carries a malformed identifier.
 pub(crate) fn committal_commit(
     headers: &HeaderMap,
     committer: PartyProxy,
-) -> Option<ferroehr::service::version_update::Committal> {
+) -> Result<Option<ferroehr::service::version_update::Committal>, ApiError> {
     merged_committal(headers, Some(committer))
 }
 
@@ -185,10 +202,10 @@ pub(crate) fn committal_commit(
 fn merged_committal(
     headers: &HeaderMap,
     committer: Option<PartyProxy>,
-) -> Option<ferroehr::service::version_update::Committal> {
+) -> Result<Option<ferroehr::service::version_update::Committal>, ApiError> {
     let attrs = collect_attrs(headers);
     if attrs.is_empty() {
-        return None;
+        return Ok(None);
     }
     let mut uv = UpdateVersion::direct(serde_json::Value::Null);
     if let Some(committer) = committer {
@@ -204,12 +221,12 @@ fn merged_committal(
     // MUST be merged").
     uv.audit.change_type.code_string = String::new();
     uv.lifecycle_state.code_string = String::new();
-    apply_attrs(&mut uv, &attrs);
+    apply_attrs(&mut uv, &attrs)?;
     let lifecycle_state = Some(uv.lifecycle_state.code_string).filter(|c| !c.is_empty());
-    Some(ferroehr::service::version_update::Committal {
+    Ok(Some(ferroehr::service::version_update::Committal {
         audit: uv.audit,
         lifecycle_state,
-    })
+    }))
 }
 
 /// Collect all committal-header attributes into `target → [(subkey, value)]`,
@@ -290,29 +307,42 @@ fn header_values(headers: &HeaderMap, name: &str) -> Vec<String> {
 
 /// Build a `PARTY_IDENTIFIED` committer from the parsed `committer` header pairs,
 /// or `None` when the value carries nothing usable (→ keep the server default).
-fn build_committer(pairs: &[(String, String)]) -> Option<PartyProxy> {
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when `external_ref.id` is not a well-formed
+/// `HIER_OBJECT_ID` (BASE `master05-identification_package.adoc` §Syntaxes).
+fn build_committer(pairs: &[(String, String)]) -> Result<Option<PartyProxy>, ApiError> {
     let name = pair(pairs, "name");
     let ext_id = pair(pairs, "external_ref.id");
     if name.is_none() && ext_id.is_none() {
-        return None;
+        return Ok(None);
     }
-    let mut party = serde_json::Map::new();
-    party.insert("_type".to_owned(), json!("PARTY_IDENTIFIED"));
-    if let Some(name) = name {
-        party.insert("name".to_owned(), json!(name));
-    }
-    if let Some(id) = ext_id {
-        party.insert(
-            "external_ref".to_owned(),
-            json!({
-                "_type": "PARTY_REF",
-                "namespace": pair(pairs, "external_ref.namespace").unwrap_or_else(|| "demographic".to_owned()),
-                "type": pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
-                "id": { "_type": "HIER_OBJECT_ID", "value": id },
-            }),
-        );
-    }
-    openehr_its::json::from_canonical_value(&serde_json::Value::Object(party)).ok()
+    // `external_ref.id` is client-supplied text, and `PARTY_REF.id` is an
+    // `OBJECT_ID` — here a `HIER_OBJECT_ID`, whose lexical form BASE
+    // `base_types/master05-identification_package.adoc` §Syntaxes defines. It
+    // goes through the validating construction door, so a malformed value is
+    // refused at the header rather than stamped into an AUDIT_DETAILS.
+    let external_ref = match ext_id {
+        Some(id) => Some(PartyRef {
+            namespace: pair(pairs, "external_ref.namespace")
+                .unwrap_or_else(|| "demographic".to_owned()),
+            r#type: pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
+            id: ObjectId::HierObjectId(HierObjectId::new(&id).map_err(|e| {
+                ApiError::BadRequest(format!(
+                    "openehr-audit-details committer external_ref.id {id:?} is not a \
+                     well-formed HIER_OBJECT_ID: {e}"
+                ))
+            })?),
+        }),
+        None => None,
+    };
+    Ok(Some(PartyProxy::PartyIdentified(
+        PartyIdentified::PartyIdentified(PartyIdentifiedData {
+            external_ref,
+            name,
+            identifiers: openehr_base::containers::present(Vec::new()),
+        }),
+    )))
 }
 
 /// The value of the first `key` in a parsed pair list.
@@ -396,7 +426,7 @@ mod tests {
             H_DEP_AUDIT_DETAILS_BARE,
             "change_type.code_string=\"250\",description.value=\"legacy client\"",
         )]);
-        merge_committal_headers(&mut uv, &h);
+        merge_committal_headers(&mut uv, &h).expect("well-formed committal headers");
         assert_eq!(uv.audit.change_type.code_string, "250");
         assert_eq!(uv.audit.description.as_deref(), Some("legacy client"));
     }
@@ -410,7 +440,7 @@ mod tests {
             (H_DEP_AUDIT_DETAILS_BARE, "description.value=\"old\""),
             (H_AUDIT_DETAILS, "description.value=\"new\""),
         ]);
-        merge_committal_headers(&mut uv, &h);
+        merge_committal_headers(&mut uv, &h).expect("well-formed committal headers");
         assert_eq!(uv.audit.description.as_deref(), Some("new"));
 
         let mut uv = base_uv();
@@ -418,7 +448,7 @@ mod tests {
             (H_DEP_CHANGE_TYPE, "value=\"252\""),
             (H_DEP_AUDIT_DETAILS_BARE, "change_type.code_string=\"250\""),
         ]);
-        merge_committal_headers(&mut uv, &h);
+        merge_committal_headers(&mut uv, &h).expect("well-formed committal headers");
         assert_eq!(
             uv.audit.change_type.code_string, "250",
             "bare deprecated wins over the dotted 1.0.3 form"
@@ -439,6 +469,7 @@ mod tests {
             )
             .expect("committer"),
         )
+        .expect("well-formed committal headers")
         .expect("headers present");
         assert_eq!(audit.change_type.code_string, "");
         assert_eq!(audit.description.as_deref(), Some("why"));
@@ -451,6 +482,7 @@ mod tests {
             )
             .expect("committer"),
         )
+        .expect("well-formed committal headers")
         .expect("headers present");
         assert_eq!(audit.change_type.code_string, "250");
 
@@ -462,6 +494,7 @@ mod tests {
                 )
                 .expect("committer")
             )
+            .expect("well-formed committal headers")
             .is_none()
         );
     }
@@ -484,7 +517,7 @@ mod tests {
             ),
             (H_AUDIT_DETAILS, "system_id=\"example.openehr.systemid\""),
         ]);
-        merge_committal_headers(&mut uv, &h);
+        merge_committal_headers(&mut uv, &h).expect("well-formed committal headers");
         assert_eq!(uv.lifecycle_state.code_string, "523");
         assert_eq!(uv.audit.change_type.code_string, "251");
         assert_eq!(
@@ -513,7 +546,7 @@ mod tests {
             H_AUDIT_DETAILS,
             "committer.name=\"Jane\",committer.external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\"",
         )]);
-        merge_committal_headers(&mut uv, &h);
+        merge_committal_headers(&mut uv, &h).expect("well-formed committal headers");
         assert!(
             matches!(uv.audit.committer, PartyProxy::PartyIdentified(_)),
             "expected PARTY_IDENTIFIED, got {:?}",
@@ -532,7 +565,7 @@ mod tests {
             (H_DEP_DESCRIPTION, "value=\"An updated composition\""),
             (H_DEP_SYSTEM_ID, "value=\"legacy.systemid\""),
         ]);
-        merge_committal_headers(&mut uv, &h);
+        merge_committal_headers(&mut uv, &h).expect("well-formed committal headers");
         assert_eq!(uv.lifecycle_state.code_string, "523");
         assert_eq!(uv.audit.change_type.code_string, "251");
         assert_eq!(
@@ -550,7 +583,7 @@ mod tests {
             (H_DEP_CHANGE_TYPE, "code_string=\"249\""),
             (H_AUDIT_DETAILS, "change_type.code_string=\"251\""),
         ]);
-        merge_committal_headers(&mut uv, &h);
+        merge_committal_headers(&mut uv, &h).expect("well-formed committal headers");
         assert_eq!(uv.audit.change_type.code_string, "251");
     }
 
@@ -564,7 +597,9 @@ mod tests {
         }))
         .expect("committer");
         let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
-        let audit = committal_audit(&h, seed).expect("headers present");
+        let audit = committal_audit(&h, seed)
+            .expect("well-formed committal headers")
+            .expect("headers present");
         let committer = openehr_its::json::to_canonical_value(&audit.committer);
         assert_eq!(
             committer["name"], "dr-alice",
@@ -577,7 +612,9 @@ mod tests {
         }))
         .expect("committer");
         let h = headers(&[(H_AUDIT_DETAILS, "committer.name=\"Locum\"")]);
-        let audit = committal_audit(&h, seed).expect("headers present");
+        let audit = committal_audit(&h, seed)
+            .expect("well-formed committal headers")
+            .expect("headers present");
         let committer = openehr_its::json::to_canonical_value(&audit.committer);
         assert_eq!(committer["name"], "Locum");
     }
@@ -592,7 +629,9 @@ mod tests {
             (H_VERSION, "lifecycle_state.code_string=\"553\""),
             (H_AUDIT_DETAILS, "description.value=\"why\""),
         ]);
-        let committal = committal_commit(&h, party("principal")).expect("headers present");
+        let committal = committal_commit(&h, party("principal"))
+            .expect("well-formed committal headers")
+            .expect("headers present");
         assert_eq!(committal.lifecycle_state.as_deref(), Some("553"));
         assert_eq!(committal.audit.description.as_deref(), Some("why"));
         // No client `change_type` ⇒ empty, so the service applies the
@@ -608,18 +647,26 @@ mod tests {
     #[test]
     fn committal_commit_keeps_unsupplied_defaults() {
         let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
-        let committal = committal_commit(&h, party("principal")).expect("headers present");
+        let committal = committal_commit(&h, party("principal"))
+            .expect("well-formed committal headers")
+            .expect("headers present");
         assert_eq!(committal.lifecycle_state, None);
         let committer = openehr_its::json::to_canonical_value(&committal.audit.committer);
         assert_eq!(committer["name"], "principal");
 
         // A supplied committer overrides the seed.
         let h = headers(&[(H_AUDIT_DETAILS, "committer.name=\"Dr Chart\"")]);
-        let committal = committal_commit(&h, party("principal")).expect("headers present");
+        let committal = committal_commit(&h, party("principal"))
+            .expect("well-formed committal headers")
+            .expect("headers present");
         let committer = openehr_its::json::to_canonical_value(&committal.audit.committer);
         assert_eq!(committer["name"], "Dr Chart");
 
-        assert!(committal_commit(&HeaderMap::new(), party("principal")).is_none());
+        assert!(
+            committal_commit(&HeaderMap::new(), party("principal"))
+                .expect("well-formed committal headers")
+                .is_none()
+        );
     }
 
     fn party(name: &str) -> PartyProxy {
@@ -632,7 +679,8 @@ mod tests {
     #[test]
     fn absent_headers_leave_defaults() {
         let mut uv = base_uv();
-        merge_committal_headers(&mut uv, &HeaderMap::new());
+        merge_committal_headers(&mut uv, &HeaderMap::new())
+            .expect("an empty header map is well-formed");
         assert_eq!(uv.lifecycle_state.code_string, "532");
         assert_eq!(uv.audit.change_type.code_string, "249");
         assert_eq!(uv.audit.description.as_deref(), Some("default"));

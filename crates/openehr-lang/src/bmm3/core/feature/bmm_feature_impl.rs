@@ -141,7 +141,7 @@ impl BmmFunction {
     /// (`org.openehr.lang.bmm3.bmm_routine.adoc` §Functions).
     #[must_use]
     pub fn arity(&self) -> i32 {
-        i32::try_from(self.parameters.len()).unwrap_or(i32::MAX)
+        i32::try_from(self.parameters.as_ref().map_or(0, Vec::len)).unwrap_or(i32::MAX)
     }
 
     /// `BMM_FORMAL_ELEMENT.signature` as effected for a function: the
@@ -158,7 +158,7 @@ impl BmmFunction {
     pub fn signature(&self) -> BmmFunctionType {
         BmmFunctionType {
             result_type: self.r#type.clone(),
-            argument_types: argument_types(&self.parameters),
+            argument_types: argument_types(self.parameters.as_deref().unwrap_or_default()),
         }
     }
 
@@ -175,7 +175,7 @@ impl BmmProcedure {
     /// (`org.openehr.lang.bmm3.bmm_routine.adoc` §Functions).
     #[must_use]
     pub fn arity(&self) -> i32 {
-        i32::try_from(self.parameters.len()).unwrap_or(i32::MAX)
+        i32::try_from(self.parameters.as_ref().map_or(0, Vec::len)).unwrap_or(i32::MAX)
     }
 
     /// `BMM_PROCEDURE.signature` (effected): the `BMM_PROCEDURE_TYPE` whose
@@ -188,7 +188,7 @@ impl BmmProcedure {
     pub fn signature(&self) -> BmmProcedureType {
         BmmProcedureType {
             result_type: Some(self.r#type.clone()),
-            argument_types: argument_types(&self.parameters),
+            argument_types: argument_types(self.parameters.as_deref().unwrap_or_default()),
         }
     }
 

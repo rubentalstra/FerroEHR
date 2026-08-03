@@ -303,7 +303,14 @@ impl Parser<'_> {
             )?;
             let symbol = self.parse_adl14_ordinal_symbol()?;
             tuples.push(CPrimitiveTuple {
-                members: vec![value, symbol],
+                // A `value|symbol` ordinal row always has exactly two members,
+                // so the `1..*` bound of `C_PRIMITIVE_TUPLE.members` holds by
+                // construction here.
+                members: {
+                    let mut row = openehr_base::containers::NonEmptyVec::of(value);
+                    row.push(symbol);
+                    row
+                },
             });
             if !self.eat(|t| matches!(t, Token::SymComma)) {
                 break;
@@ -317,8 +324,8 @@ impl Parser<'_> {
             String::new(),
             Vec::new(),
             vec![CAttributeTuple {
-                members: vec![cattr_empty("value"), cattr_empty("symbol")],
-                tuples,
+                members: Some(vec![cattr_empty("value"), cattr_empty("symbol")]),
+                tuples: openehr_base::containers::present(tuples),
             }],
             None,
         ))
@@ -584,10 +591,17 @@ fn ordinal_point_value(member: &CPrimitiveObject) -> Option<f64> {
     match member {
         CPrimitiveObject::CInteger(c) => c
             .constraint
-            .first()
+            .iter()
+            .flatten()
+            .next()
             .and_then(point_value_i32)
             .map(f64::from),
-        CPrimitiveObject::CReal(c) => c.constraint.first().and_then(point_value_f64),
+        CPrimitiveObject::CReal(c) => c
+            .constraint
+            .iter()
+            .flatten()
+            .next()
+            .and_then(point_value_f64),
         _ => None,
     }
 }
@@ -601,7 +615,7 @@ fn adl14_terminology_code(constraint: String) -> CObject {
         rm_type_name: "Terminology_code".to_owned(),
         occurrences: None,
         node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,

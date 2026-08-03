@@ -8,6 +8,7 @@
 ///
 /// Lexical form: `name [  '(' version  ')' ]`.
 #[doc(alias = "TERMINOLOGY_ID")]
+// NOTE: the fields stay public deliberately: this class HAS a released lexical form, but it is enforced at the `openehr_base::validate::Validate` tier rather than at construction — moving it to the door would turn a validation verdict into a parse refusal, which needs its own adjudication — docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc §Syntaxes gives `terminology_id = name-str, [ '(', name-str, ')' ]` with `name-str = letter, { letter | digit | '_' | '-' | '/' | '+' }`, which the same chapter's own examples contradict (§“Terminology Identifiers”: `"ICD10AM(3rd_ed)"` — the version part starts with a digit, which `name-str` forbids). A parse-time refusal would reject the release's own examples, so the grammar stays at the `Validate` tier pending adjudication.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TerminologyId {
     // inherited: OBJECT_ID

@@ -19,6 +19,7 @@ pub struct TemplateMetadata {
     /// The `template_id` property of `TemplateMetadata`.
     pub template_id: String,
     /// The `version` property of `TemplateMetadata`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     /// The `concept` property of `TemplateMetadata`.
     pub concept: String,
@@ -30,7 +31,7 @@ pub struct TemplateMetadata {
 
 /// The `TemplateList` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type TemplateList = Vec<serde_json::Value>;
+pub type TemplateList = Vec<TemplateMetadata>;
 
 /// The `OperationalTemplate` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
@@ -67,6 +68,7 @@ pub struct LocalizedNames2 {
     /// The `sl` property of `LocalizedNames2`.
     pub sl: String,
     /// The `en` property of `LocalizedNames2`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub en: Option<String>,
 }
 
@@ -75,8 +77,10 @@ pub struct LocalizedNames2 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Annotations {
     /// The `comment` property of `Annotations`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
     /// The `default` property of `Annotations`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
 }
 
@@ -107,8 +111,10 @@ pub struct Range {
     pub min: i64,
     /// The `maxOp` property of `Range`.
     #[serde(rename = "maxOp")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_op: Option<String>,
     /// The `max` property of `Range`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<i64>,
 }
 
@@ -117,8 +123,10 @@ pub struct Range {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Validation {
     /// The `precision` property of `Validation`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<Precision>,
     /// The `range` property of `Validation`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub range: Option<Range>,
 }
 
@@ -139,12 +147,15 @@ pub struct List {
     /// The `label` property of `List`.
     pub label: String,
     /// The `validation` property of `List`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub validation: Option<Validation>,
     /// The `localizedLabels` property of `List`.
     #[serde(rename = "localizedLabels")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_labels: Option<LocalizedLabels>,
     /// The `localizedDescriptions` property of `List`.
     #[serde(rename = "localizedDescriptions")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_descriptions: Option<LocalizedDescriptions>,
 }
 
@@ -155,6 +166,7 @@ pub struct Validation1 {
     /// The `range` property of `Validation1`.
     pub range: Range,
     /// The `precision` property of `Validation1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<Precision>,
 }
 
@@ -165,13 +177,17 @@ pub struct Input {
     /// The `type` property of `Input`.
     pub r#type: String,
     /// The `suffix` property of `Input`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
     /// The `list` property of `Input`.
-    pub list: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub list: Option<Vec<List>>,
     /// The `defaultValue` property of `Input`.
     #[serde(rename = "defaultValue")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
     /// The `validation` property of `Input`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub validation: Option<Validation1>,
 }
 
@@ -202,6 +218,7 @@ pub struct Input1 {
     /// The `type` property of `Input1`.
     pub r#type: String,
     /// The `suffix` property of `Input1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
 }
 
@@ -234,8 +251,9 @@ pub struct Child3 {
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
     /// The `inputs` property of `Child3`.
-    pub inputs: Vec<serde_json::Value>,
+    pub inputs: Vec<Input1>,
     /// The `name` property of `Child3`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 
@@ -267,23 +285,28 @@ pub struct Child2 {
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: LocalizedDescriptions,
     /// The `annotations` property of `Child2`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<Annotations>,
     /// The `aqlPath` property of `Child2`.
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
     /// The `inputs` property of `Child2`.
-    pub inputs: Vec<serde_json::Value>,
+    pub inputs: Vec<Input>,
     /// The `dependsOn` property of `Child2`.
     #[serde(rename = "dependsOn")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub depends_on: Option<Vec<String>>,
     /// The `inContext` property of `Child2`.
     #[serde(rename = "inContext")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub in_context: Option<bool>,
     /// The `termBindings` property of `Child2`.
     #[serde(rename = "termBindings")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub term_bindings: Option<TermBindings>,
     /// The `children` property of `Child2`.
-    pub children: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<Child3>>,
 }
 
 /// The `List1` transport DTO of this API group (an ITS-REST OAS
@@ -309,9 +332,11 @@ pub struct Input2 {
     /// The `type` property of `Input2`.
     pub r#type: String,
     /// The `suffix` property of `Input2`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
     /// The `list` property of `Input2`.
-    pub list: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub list: Option<Vec<List1>>,
 }
 
 /// The `Annotations1` transport DTO of this API group (an ITS-REST OAS
@@ -319,9 +344,11 @@ pub struct Input2 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Annotations1 {
     /// The `comment` property of `Annotations1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
     /// The `view:pass_through` property of `Annotations1`.
     #[serde(rename = "view:pass_through")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub view_pass_through: Option<String>,
 }
 
@@ -335,12 +362,14 @@ pub struct Child1 {
     pub name: String,
     /// The `localizedName` property of `Child1`.
     #[serde(rename = "localizedName")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_name: Option<String>,
     /// The `rmType` property of `Child1`.
     #[serde(rename = "rmType")]
     pub rm_type: String,
     /// The `nodeId` property of `Child1`.
     #[serde(rename = "nodeId")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
     /// The `min` property of `Child1`.
     pub min: i64,
@@ -348,30 +377,39 @@ pub struct Child1 {
     pub max: i64,
     /// The `localizedNames` property of `Child1`.
     #[serde(rename = "localizedNames")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_names: Option<LocalizedNames1>,
     /// The `localizedDescriptions` property of `Child1`.
     #[serde(rename = "localizedDescriptions")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_descriptions: Option<LocalizedDescriptions>,
     /// The `aqlPath` property of `Child1`.
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
     /// The `children` property of `Child1`.
-    pub children: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<Child2>>,
     /// The `inputs` property of `Child1`.
-    pub inputs: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inputs: Option<Vec<Input2>>,
     /// The `inContext` property of `Child1`.
     #[serde(rename = "inContext")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub in_context: Option<bool>,
     /// The `dependsOn` property of `Child1`.
     #[serde(rename = "dependsOn")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub depends_on: Option<Vec<String>>,
     /// The `annotations` property of `Child1`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<Annotations1>,
     /// The `termBindings` property of `Child1`.
     #[serde(rename = "termBindings")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub term_bindings: Option<TermBindings>,
     /// The `proportionTypes` property of `Child1`.
     #[serde(rename = "proportionTypes")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub proportion_types: Option<Vec<String>>,
 }
 
@@ -397,8 +435,10 @@ pub struct Input3 {
     /// The `type` property of `Input3`.
     pub r#type: String,
     /// The `list` property of `Input3`.
-    pub list: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub list: Option<Vec<List2>>,
     /// The `terminology` property of `Input3`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub terminology: Option<String>,
 }
 
@@ -413,6 +453,7 @@ pub struct Child {
     pub rm_type: String,
     /// The `nodeId` property of `Child`.
     #[serde(rename = "nodeId")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
     /// The `min` property of `Child`.
     pub min: i64,
@@ -422,25 +463,33 @@ pub struct Child {
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
     /// The `children` property of `Child`.
-    pub children: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<Child1>>,
     /// The `name` property of `Child`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     /// The `localizedName` property of `Child`.
     #[serde(rename = "localizedName")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_name: Option<String>,
     /// The `localizedNames` property of `Child`.
     #[serde(rename = "localizedNames")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_names: Option<LocalizedNames1>,
     /// The `localizedDescriptions` property of `Child`.
     #[serde(rename = "localizedDescriptions")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub localized_descriptions: Option<LocalizedDescriptions>,
     /// The `termBindings` property of `Child`.
     #[serde(rename = "termBindings")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub term_bindings: Option<TermBindings>,
     /// The `inputs` property of `Child`.
-    pub inputs: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inputs: Option<Vec<Input3>>,
     /// The `inContext` property of `Child`.
     #[serde(rename = "inContext")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub in_context: Option<bool>,
 }
 
@@ -475,7 +524,7 @@ pub struct Tree {
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
     /// The `children` property of `Tree`.
-    pub children: Vec<serde_json::Value>,
+    pub children: Vec<Child>,
 }
 
 /// The `WebTemplate` transport DTO of this API group (an ITS-REST OAS
@@ -520,6 +569,7 @@ pub struct Error {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Clstr {
     /// The `_type` property of `Clstr`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `items` property of `Clstr`.
     pub items: Vec<serde_json::Value>,
@@ -534,10 +584,13 @@ pub type Versionable = std::collections::BTreeMap<String, serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDateTime {
     /// The `_type` property of `DvIntervalOfDateTime`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `lower` property of `DvIntervalOfDateTime`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lower: Option<serde_json::Value>,
     /// The `upper` property of `DvIntervalOfDateTime`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub upper: Option<serde_json::Value>,
 }
 
@@ -550,12 +603,15 @@ pub struct AbstractEntry {
     /// The `encoding` property of `AbstractEntry`.
     pub encoding: serde_json::Value,
     /// The `other_participations` property of `AbstractEntry`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub other_participations: Option<Vec<serde_json::Value>>,
     /// The `workflow_id` property of `AbstractEntry`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow_id: Option<serde_json::Value>,
     /// The `subject` property of `AbstractEntry`.
     pub subject: serde_json::Value,
     /// The `provider` property of `AbstractEntry`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<serde_json::Value>,
 }
 
@@ -568,10 +624,13 @@ pub type ListOfPartyIdentity = Vec<serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDate {
     /// The `_type` property of `DvIntervalOfDate`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `lower` property of `DvIntervalOfDate`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lower: Option<serde_json::Value>,
     /// The `upper` property of `DvIntervalOfDate`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub upper: Option<serde_json::Value>,
 }
 
@@ -625,22 +684,28 @@ pub struct StoredQuery {
 
 /// The `QueryList` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type QueryList = Vec<serde_json::Value>;
+pub type QueryList = Vec<StoredQuery>;
 
 /// Parameters for `definition_template_adl1.4_list` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionTemplateAdl14ListParams {
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `template_id` (query)
     pub template_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `concept` (query)
     pub concept: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version` (query)
     pub version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `offset` (query)
     pub offset: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `fetch` (query)
     pub fetch: Option<i64>,
 }
@@ -649,12 +714,15 @@ pub struct DefinitionTemplateAdl14ListParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionTemplateAdl14UploadParams {
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -665,6 +733,7 @@ pub struct DefinitionTemplateAdl14GetParams {
     /// `template_id` (path)
     pub template_id: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -674,11 +743,14 @@ pub struct DefinitionTemplateAdl14GetParams {
 pub struct DefinitionTemplateAdl14ExampleGetParams {
     /// `template_id` (path)
     pub template_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `type` (query)
     pub r#type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `detail_level` (query)
     pub detail_level: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -687,16 +759,22 @@ pub struct DefinitionTemplateAdl14ExampleGetParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionTemplateAdl2ListParams {
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `template_id` (query)
     pub template_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `concept` (query)
     pub concept: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version` (query)
     pub version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `offset` (query)
     pub offset: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `fetch` (query)
     pub fetch: Option<i64>,
 }
@@ -704,15 +782,19 @@ pub struct DefinitionTemplateAdl2ListParams {
 /// Parameters for `definition_template_adl2_upload` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefinitionTemplateAdl2UploadParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version` (query)
     pub version: Option<String>,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -723,6 +805,7 @@ pub struct DefinitionTemplateAdl2GetParams {
     /// `template_id` (path)
     pub template_id: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -732,11 +815,14 @@ pub struct DefinitionTemplateAdl2GetParams {
 pub struct DefinitionTemplateAdl2ExampleGetParams {
     /// `template_id` (path)
     pub template_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `type` (query)
     pub r#type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `detail_level` (query)
     pub detail_level: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -749,6 +835,7 @@ pub struct DefinitionTemplateAdl2VersionGetParams {
     /// `version` (path)
     pub version: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -759,6 +846,7 @@ pub struct DefinitionQueryListParams {
     /// `qualified_query_name` (path)
     pub qualified_query_name: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -768,12 +856,15 @@ pub struct DefinitionQueryListParams {
 pub struct DefinitionQueryStoreYamlParams {
     /// `qualified_query_name` (path)
     pub qualified_query_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_type` (query)
     pub query_type: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -786,6 +877,7 @@ pub struct DefinitionQueryVersionGetParams {
     /// `version` (path)
     pub version: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -797,9 +889,11 @@ pub struct DefinitionQueryVersionStoreYamlParams {
     pub qualified_query_name: String,
     /// `version` (path)
     pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_type` (query)
     pub query_type: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -814,7 +908,7 @@ pub trait DefinitionApi {
     async fn definition_template_adl1_4_list(
         &self,
         params: DefinitionTemplateAdl14ListParams,
-    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError> {
+    ) -> Result<Vec<TemplateMetadata>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /definition/template/adl1.4`
@@ -843,7 +937,7 @@ pub trait DefinitionApi {
     async fn definition_template_adl2_list(
         &self,
         params: DefinitionTemplateAdl2ListParams,
-    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError> {
+    ) -> Result<Vec<TemplateMetadata>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /definition/template/adl2`
@@ -881,7 +975,7 @@ pub trait DefinitionApi {
     async fn definition_query_list(
         &self,
         params: DefinitionQueryListParams,
-    ) -> Result<Vec<serde_json::Value>, crate::rest::runtime::ApiError> {
+    ) -> Result<Vec<StoredQuery>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /definition/query/{qualified_query_name}`

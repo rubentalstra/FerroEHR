@@ -162,7 +162,7 @@ impl FerroEhrService {
         let sel = version_selection(&extract_spec)?;
         validate_extract_type(&extract_spec)?;
         let link_depth = extract_spec.link_depth;
-        let criteria_present = !extract_spec.criteria.is_empty();
+        let criteria_present = !extract_spec.criteria.as_ref().is_none_or(Vec::is_empty);
         let spec_value = openehr_its::json::to_canonical_value(&extract_spec);
 
         let mut out = Vec::with_capacity(extract_spec.manifest.entities.len());
@@ -174,50 +174,52 @@ impl FerroEhrService {
                     .await?;
 
             // The primary set: an explicit item_list, else every VO of the EHR.
-            // NOTE (`master04-common_package.adoc` `EXTRACT_SPEC.criteria`,
-            // an AQL primary-set query): AQL criteria selection lands with the
-            // `$ehr`-bound AQL export wave. Until then it is a typed reject,
-            // never a silent over-export.
-            let vo_kinds: Vec<(VoId, String)> = if entity.item_list.is_empty() {
-                if criteria_present {
-                    return Err(SmError::precondition(
-                        "EXTRACT_SPEC.criteria (AQL selection) is not supported in this stage; \
+            // TODO(#1736): `EXTRACT_SPEC.criteria` (`master04-common_package.adoc`,
+            // an AQL primary-set query) is a typed reject until the
+            // `$ehr`-bound AQL criteria selection lands — never a silent
+            // over-export.
+            let vo_kinds: Vec<(VoId, String)> =
+                if entity.item_list.as_ref().is_none_or(Vec::is_empty) {
+                    if criteria_present {
+                        return Err(SmError::precondition(
+                            "EXTRACT_SPEC.criteria (AQL selection) is not supported in this stage; \
                          provide EXTRACT_ENTITY_MANIFEST.item_list instead",
-                    ));
-                }
-                self.ehr_versioned_objects(ehr_id).await?
-            } else {
-                let mut resolved = Vec::with_capacity(entity.item_list.len());
-                for obj_ref in &entity.item_list {
-                    let value = openehr_its::json::to_canonical_value(obj_ref);
-                    let raw = value
-                        .pointer("/id/value")
-                        .and_then(Value::as_str)
-                        .ok_or_else(|| {
-                            SmError::precondition("item_list OBJECT_REF has no id.value")
-                        })?;
-                    #[expect(
-                        clippy::map_err_ignore,
-                        reason = "the mapped error already echoes the rejected \
+                        ));
+                    }
+                    self.ehr_versioned_objects(ehr_id).await?
+                } else {
+                    let mut resolved =
+                        Vec::with_capacity(entity.item_list.as_ref().map_or(0, Vec::len));
+                    for obj_ref in entity.item_list.iter().flatten() {
+                        let value = openehr_its::json::to_canonical_value(obj_ref);
+                        let raw = value
+                            .pointer("/id/value")
+                            .and_then(Value::as_str)
+                            .ok_or_else(|| {
+                                SmError::precondition("item_list OBJECT_REF has no id.value")
+                            })?;
+                        #[expect(
+                            clippy::map_err_ignore,
+                            reason = "the mapped error already echoes the rejected \
                                   token; the discarded `uuid::Error` adds only \
                                   its own wording, which is not part of the wire \
                                   contract"
-                    )]
-                    let vo_id: VoId = raw.parse().map_err(|_| {
-                        SmError::precondition(format!(
-                            "item_list id {raw:?} is not a version-container UUID"
-                        ))
-                    })?;
-                    let kind = self.ehr_vo_kind(ehr_id, vo_id).await?.ok_or_else(|| {
-                        SmError::new(
-                            CallStatusType::VersionedObjectDoesNotExist,
-                            format!("version container {vo_id} not found in EHR {ehr_id}"),
-                        )
-                    })?;
-                    resolved.push((vo_id, kind));
-                }
-                resolved
-            };
+                        )]
+                        let vo_id: VoId = raw.parse().map_err(|_| {
+                            SmError::precondition(format!(
+                                "item_list id {raw:?} is not a version-container UUID"
+                            ))
+                        })?;
+                        let kind = self.ehr_vo_kind(ehr_id, vo_id).await?.ok_or_else(|| {
+                            SmError::new(
+                                CallStatusType::VersionedObjectDoesNotExist,
+                                format!("version container {vo_id} not found in EHR {ehr_id}"),
+                            )
+                        })?;
+                        resolved.push((vo_id, kind));
+                    }
+                    resolved
+                };
 
             let mut included: Vec<VoId> = vo_kinds.iter().map(|(vo, _)| *vo).collect();
             let mut items = Vec::with_capacity(vo_kinds.len());
@@ -389,6 +391,17 @@ impl FerroEhrService {
         // the shared read builder so they match the /versioned_* surface.
         let (vo, _) = versioned_object(&self.pool, vo_id, ehr_id, versioned_rm_type(kind)).await?;
         let field = |name: &str| vo.get(name).cloned().unwrap_or(Value::Null);
+        // TODO(#1695): build the EXTRACT tree from the generated
+        // `openehr_rm::ehr_extract` types (`Extract`, `ExtractChapter`,
+        // `XVersionedObject`, `OpenehrContentItem`) instead of these JSON
+        // literals. Blocked on the composition shape, not on a missing type:
+        // every branch here splices ALREADY-CANONICAL opaque fragments — the
+        // `versioned_object` body reused field-by-field above, the
+        // `original_version` envelopes in `versions`, and the
+        // `revision_history` document — so a typed build would first have to
+        // decode each of them back into RM values. Doing that is a real change
+        // to the export path (and to what the signed version envelopes carry),
+        // not a mechanical substitution.
         let mut x = json!({
             "_type": x_versioned_type(kind),
             "uid": field("uid"),
@@ -701,7 +714,7 @@ fn rewrite_object_refs_local(value: &mut Value) {
 }
 
 /// Apply [`rewrite_object_refs_local`] to the version bodies of a chapter's
-/// content items (`OPENEHR_CONTENT_ITEM.item.versions[].data`) — the "copied /
+/// content items (`OPENEHR_CONTENT_ITEM.item.versions.as_deref().unwrap_or_default()[].data`) — the "copied /
 /// serialised" content the Creation-Semantics algorithm rewrites. The
 /// `X_VERSIONED_*` wrapper metadata (`uid` / `owner_id` / `contribution`) is
 /// left as built.

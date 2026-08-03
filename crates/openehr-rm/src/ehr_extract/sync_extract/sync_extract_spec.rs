@@ -13,7 +13,7 @@ pub struct SyncExtractSpec {
     /// True if the Versions from the Contribution are included; False if just the Contribution and its Audit are included.
     pub includes_versions: bool,
     /// List of Contributions to include / that are included in the Extract.
-    pub contribution_list: Vec<HierObjectId>,
+    pub contribution_list: Option<Vec<HierObjectId>>,
     /// Specify Contributions included in Extract by threshold date.
     pub contributions_since: Option<DvDateTime>,
     /// True if all Contributions in the record are included.

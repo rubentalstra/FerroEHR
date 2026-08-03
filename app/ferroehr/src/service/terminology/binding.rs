@@ -53,8 +53,9 @@
 //! aligns them with the terminology-server configuration, not with a hidden
 //! alias table here.
 
-use openehr_its::flat::validation::{ConstraintBindingCheck, ValidationKind, ValidationMessage};
+use openehr_its::flat::validation::ConstraintBindingCheck;
 use openehr_its::flat::webtemplate::WebTemplate;
+use openehr_its::rm_instance::{ValidationKind, ValidationMessage};
 use serde_json::Value;
 
 use crate::service::FerroEhrService;

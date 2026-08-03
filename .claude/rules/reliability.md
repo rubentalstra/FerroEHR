@@ -109,8 +109,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   `disallowed-methods`/`disallowed-types`, owner rulings 2026-07-30):
   `std::time::SystemTime::now` (wall-clock comes from jiff; `Instant` stays
   fine for latency), `std::env::var`/`var_os` (config flows through the
-  config tree), `uuid::Uuid::new_v4` (DB keys are uuidv7), and the
-  `chrono::*` types (jiff is the one time library). A legitimate exception
+  config tree), `uuid::Uuid::new_v4` (DB keys are uuidv7), the
+  `chrono::*` types (jiff is the one time library), and
+  `Option::as_slice`/`as_mut_slice` (on an `Option<Vec<T>>` receiver they
+  yield `&[Vec<T>]` — a slice of 0-or-1 *vectors*, not `&[T]` — and keep
+  compiling after a field's shape flips between `Vec<T>` and
+  `Option<Vec<T>>`; spell it `.as_deref().unwrap_or_default()` or match on
+  the `Option` — added 2026-08-02, issue #1718; `Vec::as_slice` stays
+  fine). A legitimate exception
   site carries a scoped `#[expect(clippy::disallowed_methods, reason)]`.
 - **Errors are types, not strings, at every boundary that branches**
   (C-GOOD-ERR): a caller that needs to distinguish outcomes gets an enum
@@ -186,10 +192,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 
-- **C-SERDE — waived by design**: the openEHR spec types carry no serde;
-  canonical JSON is the emitted native `ToJson`/`FromJson` codec
-  (root `CLAUDE.md` §Code generation). The wire contract is pinned by the
-  canonical-output gates instead.
+- **C-SERDE — satisfied via emitted MANUAL impls (waiver retired by the
+  foundation-phase rewrite, #1702)**: the spec types implement
+  `serde::Serialize`/`Deserialize` through explicit generated code
+  (per-crate `json_serde.rs` from `emit-json`), never derives and never
+  serde attributes — the manual form is what lets the strict reader,
+  `_type` dispatch, and validated-constructor parsing live in auditable
+  code (root `CLAUDE.md` §Code generation). The wire contract stays pinned
+  by the canonical-output gates.
 - **C-PERMISSIVE — MIT for the project's own code** (owner decision
   2026-07-31, superseding the earlier Apache-2.0-only ruling): the project
   relicensed to MIT with the rename; vendored openEHR machine-readable

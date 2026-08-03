@@ -10,7 +10,7 @@ expression: map
   "ctx/setting": "229",
   "ctx/territory": "UY",
   "ctx/time": "2019-01-28T21:22:19,501+00:00",
-  "minimal/_uid": "__THIS_SHOULD_BE_MODIFIED_BY_THE_TEST_::ehrbase.org::1",
+  "minimal/_uid": "90c7684b-53f4-2c3e-2549-49c02b255617::ehrbase.org::1",
   "minimal/category|code": "433",
   "minimal/category|terminology": "openehr",
   "minimal/category|value": "event",

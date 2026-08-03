@@ -23,5 +23,5 @@ pub struct COrdinal {
     /// Value to be assumed if none sent in data.
     pub assumed_value: Option<serde_json::Value>,
     /// Value set of allowed Ordinals in the constraint.
-    pub list: Vec<Ordinal>,
+    pub list: Option<Vec<Ordinal>>,
 }

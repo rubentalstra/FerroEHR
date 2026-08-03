@@ -12,7 +12,7 @@ pub struct BmmOperator {
     /// Position of operator in syntactic representation.
     pub position: BmmOperatorPosition,
     /// Set of `String` symbols that may be used to represent this operator in a textual representation of a BMM model.
-    pub symbols: Vec<String>,
+    pub symbols: openehr_base::containers::NonEmptyVec<String>,
     /// Formal name of the operator, e.g. 'minus' etc.
     pub name: String,
 }

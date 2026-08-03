@@ -77,8 +77,10 @@ fn element_default(archetype: &Archetype) -> serde_json::Value {
     };
     let element = root
         .attributes
-        .first()
-        .and_then(|a| a.children.first())
+        .iter()
+        .flatten()
+        .next()
+        .and_then(|a| a.children.iter().flatten().next())
         .expect("the ELEMENT child must be present");
     let CObject::CComplexObject(CComplexObject::CComplexObject(element)) = element else {
         panic!("expected the ELEMENT complex object")

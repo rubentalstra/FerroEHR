@@ -76,7 +76,7 @@ pub(super) async fn run(
                 super::CHANGE_MODIFICATION,
                 "DIRECTORY update",
                 Some(require_if_match(&p.if_match)?),
-            );
+            )?;
             // 204_directory_updated (default) / 200_directory_updated
             // (representation); ETag + Location on both. 412 → latest version_uid.
             match state.backend().update_directory(ehr_id, uv).await {
@@ -134,7 +134,7 @@ pub(super) async fn run(
                 super::CHANGE_CREATION,
                 "DIRECTORY creation",
                 None,
-            );
+            )?;
             let meta = state.backend().create_directory(ehr_id, uv).await?;
             // apply item-tag write-wrapper headers to the committed FOLDER.
             let stored_tags =
@@ -171,7 +171,7 @@ pub(super) async fn run(
             // §"openehr-version and openehr-audit-details": PUT, POST and
             // DELETE).
             let update_audit =
-                crate::overview::committal::committal_audit(h, super::committer_proxy());
+                crate::overview::committal::committal_audit(h, super::committer_proxy())?;
             match state
                 .backend()
                 .delete_directory(

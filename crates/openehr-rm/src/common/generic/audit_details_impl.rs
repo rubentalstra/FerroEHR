@@ -6,9 +6,9 @@
 //! - `System_id_valid`: `not system_id.is_empty` — realized here.
 //! - `Change_type_valid`: `terminology (Terminology_id_openehr)
 //!   .has_code_for_group_id (Group_id_audit_change_type,
-//!   change_type.defining_code)` — terminology-bound, so it needs a lookup this
-//!   pure-RM crate cannot perform; realized at the wire-boundary dispatcher
-//!   (`openehr-its` `rm_terminology`) against the `openehr-term` bundle.
+//!   change_type.defining_code)` — terminology-bound, so it needs a bundle
+//!   lookup rather than a typed-node property; realized by the binding table in
+//!   [`crate::validate::terminology`] against the `openehr-term` bundle.
 
 use crate::common::generic::audit_details::AuditDetailsData;
 use crate::validate::{InvariantViolation, Validate};
@@ -38,7 +38,7 @@ mod tests {
             value: "creation".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -57,7 +57,7 @@ mod tests {
             time_committed: DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: Vec::new(),
+                other_reference_ranges: openehr_base::containers::present(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: "2021-01-01T00:00:00".to_owned(),

@@ -41,7 +41,7 @@ impl<T> Validate for History<T> {
         // core; Period_consistency stays typed-only (needs the event-offset
         // arithmetic below, which the fast path declines to reproduce).
         crate::validate::generated::history_basic_core(
-            self.events.is_empty(),
+            self.events.as_ref().is_none_or(Vec::is_empty),
             self.summary.is_some(),
             &self.archetype_node_id,
             out,
@@ -52,7 +52,7 @@ impl<T> Validate for History<T> {
             && let Some(period_secs) = period.magnitude()
             && period_secs > 0.0
         {
-            let violated = self.events.iter().any(|e| {
+            let violated = self.events.iter().flatten().any(|e| {
                 offset_seconds(e.time(), &self.origin).is_some_and(|offset| {
                     let rem = offset.rem_euclid(period_secs);
                     rem.min(period_secs - rem) > PERIOD_EPSILON
@@ -80,7 +80,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -90,7 +90,7 @@ mod tests {
         DvDateTime {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: Vec::new(),
+            other_reference_ranges: openehr_base::containers::present(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             value: "2021-01-01T00:00:00".to_owned(),
@@ -102,14 +102,14 @@ mod tests {
             name: text("history"),
             archetype_node_id: "at0001".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             origin: origin(),
             period: None,
             duration: None,
             summary: None,
-            events,
+            events: openehr_base::containers::present(events),
         }
     }
 
@@ -119,7 +119,7 @@ mod tests {
             name: text("event"),
             archetype_node_id: "at0002".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             time: origin(),
@@ -143,13 +143,13 @@ mod tests {
             name: text("event"),
             archetype_node_id: "at0002".to_owned(),
             uid: None,
-            links: Vec::new(),
+            links: openehr_base::containers::present(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             time: DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: Vec::new(),
+                other_reference_ranges: openehr_base::containers::present(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: time.to_owned(),
@@ -165,7 +165,7 @@ mod tests {
         h.period = Some(DvDuration {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: Vec::new(),
+            other_reference_ranges: openehr_base::containers::present(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             accuracy_is_percent: None,

@@ -167,7 +167,7 @@ fn overlay_root(
         if let Some(diff) = child_attr.differential_path.as_deref() {
             let target = resolve_object_mut(flat_def, diff)
                 .ok_or_else(|| FlattenError::UnresolvedDifferentialPath(diff.to_owned()))?;
-            overlay_attribute(&mut target.attributes, child_attr, level);
+            overlay_attribute(target.attributes.get_or_insert_default(), child_attr, level);
         } else {
             let attrs = complex_attributes_mut(flat_def);
             overlay_attribute(attrs, child_attr, level);
@@ -191,7 +191,7 @@ fn overlay_attribute(base_attrs: &mut Vec<CAttribute>, child_attr: &CAttribute, 
         // ADD: a brand-new attribute — its children are new nodes.
         let mut added = child_attr.clone();
         added.differential_path = None;
-        for c in &mut added.children {
+        for c in added.children.iter_mut().flatten() {
             strip_sibling_order(c);
         }
         base_attrs.push(added);
@@ -212,7 +212,7 @@ fn overlay_attribute(base_attrs: &mut Vec<CAttribute>, child_attr: &CAttribute, 
         .as_ref()
         .is_some_and(MultiplicityInterval::is_prohibited)
     {
-        base_attrs[pos].children.clear();
+        base_attrs[pos].children = None;
         return;
     }
     overlay_children(&mut base_attrs[pos], child_attr, level);
@@ -250,17 +250,19 @@ fn overlay_children(base_attr: &mut CAttribute, child_attr: &CAttribute, _level:
     // node until the next marker, so the run range is everything from the first
     // explicitly-marked node onward.
     let mut classified: Vec<(Overlaid, Option<SiblingOrder>)> = Vec::new();
-    for child in &child_attr.children {
+    for child in child_attr.children.iter().flatten() {
         let marker = sibling_order(child).cloned();
-        let overlaid =
-            if let Some(base_idx) = find_congruent_idx(&base_nodes, object_node_id(child)) {
-                let node = overlay_node(&base_nodes[base_idx], child);
-                Overlaid::Redef { base_idx, node }
-            } else {
-                let mut node = child.clone();
-                strip_sibling_order(&mut node);
-                Overlaid::New { node }
-            };
+        let overlaid = if let Some(base_idx) = find_congruent_idx(
+            base_nodes.as_deref().unwrap_or_default(),
+            object_node_id(child),
+        ) {
+            let node = overlay_node(&base_nodes.as_deref().unwrap_or_default()[base_idx], child);
+            Overlaid::Redef { base_idx, node }
+        } else {
+            let mut node = child.clone();
+            strip_sibling_order(&mut node);
+            Overlaid::New { node }
+        };
         classified.push((overlaid, marker));
     }
     let split = classified
@@ -274,7 +276,7 @@ fn overlay_children(base_attr: &mut CAttribute, child_attr: &CAttribute, _level:
     // redefs are positioned by their run in phase 2; a base node whose only
     // redefinition is in the run range is dropped here for the run to place.
     let mut work: Vec<CObject> = Vec::new();
-    for (base_idx, base_node) in base_nodes.iter().enumerate() {
+    for (base_idx, base_node) in base_nodes.iter().flatten().enumerate() {
         let all_redefs = redef_nodes_for(&classified, base_idx);
         if all_redefs.is_empty() {
             work.push(base_node.clone());
@@ -325,7 +327,7 @@ fn overlay_children(base_attr: &mut CAttribute, child_attr: &CAttribute, _level:
         insert_run(&mut work, InsertAt::Index(end), run.nodes);
     }
 
-    base_attr.children = work;
+    base_attr.children = openehr_base::containers::present(work);
 }
 
 /// One anchored run of marked sibling nodes.
@@ -490,14 +492,14 @@ fn overlay_node(base: &CObject, child: &CObject) -> CObject {
             .as_ref()
             .is_some_and(MultiplicityInterval::is_prohibited)
         {
-            out.attributes.clear();
-            out.attribute_tuples.clear();
+            out.attributes = None;
+            out.attribute_tuples = None;
             return CObject::CComplexObject(CComplexObject::CComplexObject(out));
         }
-        for ca in &cp.attributes {
-            overlay_attribute(&mut out.attributes, ca, 0);
+        for ca in cp.attributes.iter().flatten() {
+            overlay_attribute(out.attributes.get_or_insert_default(), ca, 0);
         }
-        if !cp.attribute_tuples.is_empty() {
+        if !cp.attribute_tuples.as_ref().is_none_or(Vec::is_empty) {
             out.attribute_tuples.clone_from(&cp.attribute_tuples);
         }
         return CObject::CComplexObject(CComplexObject::CComplexObject(out));
@@ -541,20 +543,21 @@ fn resolve_object_mut<'a>(
         let attr_pos = current
             .attributes
             .iter()
+            .flatten()
             .position(|a| a.rm_attribute_name == seg.attribute)?;
-        let child_pos = pick_child_pos(&current.attributes[attr_pos], seg)?;
+        let attributes = current.attributes.as_mut()?;
+        let child_pos = pick_child_pos(&attributes[attr_pos], seg)?;
         // Proxy expansion: if the picked child is a proxy, replace it inline
         // with a copy of its target structure resolved in the snapshot.
-        if let CObject::CComplexObjectProxy(proxy) =
-            &current.attributes[attr_pos].children[child_pos]
-        {
+        let children = attributes[attr_pos].children.as_mut()?;
+        if let CObject::CComplexObjectProxy(proxy) = &children[child_pos] {
             if let Some(expanded) = expand_proxy(&snapshot, proxy) {
-                current.attributes[attr_pos].children[child_pos] = expanded;
+                children[child_pos] = expanded;
             } else {
                 return None;
             }
         }
-        current = match &mut current.attributes[attr_pos].children[child_pos] {
+        current = match &mut children[child_pos] {
             CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d,
             _ => return None,
         };
@@ -589,6 +592,7 @@ fn resolve_object_ref<'a>(root: &'a CComplexObject, path: &str) -> Option<&'a CC
         let attr = current
             .attributes
             .iter()
+            .flatten()
             .find(|a| a.rm_attribute_name == seg.attribute)?;
         let child = pick_child_ref(attr, seg)?;
         current = match child {
@@ -604,14 +608,15 @@ fn pick_child_pos(attr: &CAttribute, seg: &PathSegment) -> Option<usize> {
         Some(nid) => attr
             .children
             .iter()
+            .flatten()
             .position(|c| object_node_id(c) == nid || anchor_matches(object_node_id(c), nid)),
-        None if attr.children.len() == 1 => Some(0),
+        None if attr.children.as_ref().map_or(0, Vec::len) == 1 => Some(0),
         None => None,
     }
 }
 
 fn pick_child_ref<'a>(attr: &'a CAttribute, seg: &PathSegment) -> Option<&'a CObject> {
-    pick_child_pos(attr, seg).and_then(|i| attr.children.get(i))
+    pick_child_pos(attr, seg).and_then(|i| attr.children.as_ref()?.get(i))
 }
 
 // ── terminology merge ──────────────────────────────────────────────────────
@@ -718,10 +723,16 @@ fn mark_flat(archetype: &Archetype) -> Archetype {
 
 // ── small helpers ──────────────────────────────────────────────────────────
 
+/// The mutable attribute list of a `C_COMPLEX_OBJECT`, materialised.
+///
+/// `C_COMPLEX_OBJECT.attributes` is `0..1`, so it emits as `Option<Vec<…>>`;
+/// every caller here is about to overlay an attribute INTO the list, so the
+/// absent state is materialised on the way in and the returned list is never
+/// left empty.
 fn complex_attributes_mut(cco: &mut CComplexObject) -> &mut Vec<CAttribute> {
     match cco {
-        CComplexObject::CComplexObject(d) => &mut d.attributes,
-        CComplexObject::CArchetypeRoot(r) => &mut r.attributes,
+        CComplexObject::CComplexObject(d) => d.attributes.get_or_insert_default(),
+        CComplexObject::CArchetypeRoot(r) => r.attributes.get_or_insert_default(),
     }
 }
 

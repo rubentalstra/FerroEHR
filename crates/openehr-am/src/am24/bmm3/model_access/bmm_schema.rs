@@ -38,5 +38,5 @@ pub struct BmmSchema {
     /// Description of schema.
     pub schema_description: String,
     /// Contributing authors of schema.
-    pub schema_contributors: Vec<String>,
+    pub schema_contributors: Option<Vec<String>>,
 }

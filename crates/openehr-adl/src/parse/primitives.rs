@@ -179,13 +179,13 @@ impl Parser<'_> {
             rm_type_name: "Boolean".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
         }))
     }
 
@@ -244,13 +244,13 @@ impl Parser<'_> {
             rm_type_name: "Character".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
         }))
     }
 
@@ -289,13 +289,13 @@ impl Parser<'_> {
             rm_type_name: "String".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
         }))
     }
 
@@ -377,7 +377,7 @@ impl Parser<'_> {
             rm_type_name: "Terminology_code".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
@@ -401,13 +401,13 @@ impl Parser<'_> {
             rm_type_name: "Integer".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
         }))
     }
 
@@ -424,13 +424,13 @@ impl Parser<'_> {
             rm_type_name: "Real".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
         }))
     }
 
@@ -466,13 +466,13 @@ impl Parser<'_> {
             rm_type_name: "Iso8601_date".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
             pattern_constraint,
         }))
     }
@@ -509,13 +509,13 @@ impl Parser<'_> {
             rm_type_name: "Iso8601_time".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
             pattern_constraint,
         }))
     }
@@ -552,13 +552,13 @@ impl Parser<'_> {
             rm_type_name: "Iso8601_date_time".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
             pattern_constraint,
         }))
     }
@@ -601,13 +601,13 @@ impl Parser<'_> {
             rm_type_name: "Iso8601_duration".to_owned(),
             occurrences: None,
             node_id,
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value,
             is_enumerated_type_constraint: None,
-            constraint,
+            constraint: openehr_base::containers::present(constraint),
             pattern_constraint,
         }))
     }
@@ -671,13 +671,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
             }),
             "String" => CObject::CString(CString {
                 parent: None,
@@ -685,13 +685,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
             }),
             "Integer" => CObject::CInteger(CInteger {
                 parent: None,
@@ -699,13 +699,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
             }),
             "Real" => CObject::CReal(CReal {
                 parent: None,
@@ -713,13 +713,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
             }),
             "Iso8601_date" => CObject::CDate(CDate {
                 parent: None,
@@ -727,13 +727,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
                 pattern_constraint: None,
             }),
             "Iso8601_time" => CObject::CTime(CTime {
@@ -742,13 +742,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
                 pattern_constraint: None,
             }),
             "Iso8601_date_time" => CObject::CDateTime(CDateTime {
@@ -757,13 +757,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
                 pattern_constraint: None,
             }),
             "Iso8601_duration" => CObject::CDuration(CDuration {
@@ -772,13 +772,13 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: None,
                 is_enumerated_type_constraint: None,
-                constraint: Vec::new(),
+                constraint: openehr_base::containers::present(Vec::new()),
                 pattern_constraint: None,
             }),
             "Terminology_code" => CObject::CTerminologyCode(CTerminologyCode {
@@ -787,7 +787,7 @@ impl Parser<'_> {
                 rm_type_name: rm_type.to_owned(),
                 occurrences: None,
                 node_id: nid,
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
@@ -857,21 +857,33 @@ mod tests {
         );
         let d = data(&cco);
         // a: point 55
-        match &d.attributes[0].children[0] {
-            CObject::CInteger(ci) => match &ci.constraint[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
                 Interval::PointInterval(p) => assert_eq!(p.lower, Some(55)),
                 Interval::ProperInterval(_) => panic!("expected point"),
             },
             _ => panic!("expected CInteger"),
         }
         // b: three points
-        match &d.attributes[1].children[0] {
-            CObject::CInteger(ci) => assert_eq!(ci.constraint.len(), 3),
+        match &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CInteger(ci) => assert_eq!(ci.constraint.as_ref().map_or(0, Vec::len), 3),
             _ => panic!("expected CInteger"),
         }
         // c: |0..100|
-        match &d.attributes[2].children[0] {
-            CObject::CInteger(ci) => match &ci.constraint[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[2]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
                 Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
                     assert_eq!(pi.lower, Some(0));
                     assert_eq!(pi.upper, Some(100));
@@ -882,8 +894,12 @@ mod tests {
             _ => panic!("expected CInteger"),
         }
         // d: |>0..<100| exclusive both
-        match &d.attributes[3].children[0] {
-            CObject::CInteger(ci) => match &ci.constraint[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[3]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
                 Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
                     assert!(!pi.lower_included && !pi.upper_included);
                 }
@@ -892,8 +908,12 @@ mod tests {
             _ => panic!("expected CInteger"),
         }
         // e: |>=10| lower bounded, upper unbounded
-        match &d.attributes[4].children[0] {
-            CObject::CInteger(ci) => match &ci.constraint[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[4]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
                 Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
                     assert_eq!(pi.lower, Some(10));
                     assert!(pi.lower_included);
@@ -904,8 +924,12 @@ mod tests {
             _ => panic!("expected CInteger"),
         }
         // f: |-10..-5| negative endpoints
-        match &d.attributes[5].children[0] {
-            CObject::CInteger(ci) => match &ci.constraint[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[5]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CInteger(ci) => match &ci.constraint.as_deref().unwrap_or_default()[0] {
                 Interval::ProperInterval(ProperInterval::ProperInterval(pi)) => {
                     assert_eq!(pi.lower, Some(-10));
                     assert_eq!(pi.upper, Some(-5));
@@ -928,24 +952,44 @@ mod tests {
              }",
         );
         let d = data(&cco);
-        match &d.attributes[0].children[0] {
-            CObject::CString(cs) => assert_eq!(cs.constraint, vec!["something".to_owned()]),
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CString(cs) => assert_eq!(cs.constraint, Some(vec!["something".to_owned()])),
             _ => panic!("expected CString"),
         }
-        match &d.attributes[1].children[0] {
-            CObject::CString(cs) => assert_eq!(cs.constraint, vec!["/cardio.*/".to_owned()]),
+        match &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CString(cs) => assert_eq!(cs.constraint, Some(vec!["/cardio.*/".to_owned()])),
             _ => panic!("expected CString regex"),
         }
-        match &d.attributes[2].children[0] {
-            CObject::CString(cs) => assert_eq!(cs.constraint.len(), 2),
+        match &d.attributes.as_deref().unwrap_or_default()[2]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CString(cs) => assert_eq!(cs.constraint.as_ref().map_or(0, Vec::len), 2),
             _ => panic!("expected CString list"),
         }
-        match &d.attributes[3].children[0] {
-            CObject::CBoolean(cb) => assert_eq!(cb.constraint, vec![true]),
+        match &d.attributes.as_deref().unwrap_or_default()[3]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CBoolean(cb) => assert_eq!(cb.constraint, Some(vec![true])),
             _ => panic!("expected CBoolean"),
         }
-        match &d.attributes[4].children[0] {
-            CObject::CBoolean(cb) => assert_eq!(cb.constraint, vec![true, false]),
+        match &d.attributes.as_deref().unwrap_or_default()[4]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CBoolean(cb) => assert_eq!(cb.constraint, Some(vec![true, false])),
             _ => panic!("expected CBoolean list"),
         }
     }
@@ -963,34 +1007,58 @@ mod tests {
              }",
         );
         let d = data(&cco);
-        match &d.attributes[0].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CDate(c) => assert_eq!(c.pattern_constraint.as_deref(), Some("yyyy-mm-??")),
             _ => panic!("expected CDate pattern"),
         }
-        match &d.attributes[1].children[0] {
-            CObject::CDate(c) => assert_eq!(c.constraint.len(), 1),
+        match &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CDate(c) => assert_eq!(c.constraint.as_ref().map_or(0, Vec::len), 1),
             _ => panic!("expected CDate interval"),
         }
-        match &d.attributes[2].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[2]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CTime(c) => assert_eq!(c.pattern_constraint.as_deref(), Some("hh:mm:ss")),
             _ => panic!("expected CTime pattern"),
         }
-        match &d.attributes[3].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[3]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CDuration(c) => {
                 assert_eq!(c.pattern_constraint.as_deref(), Some("PWD"));
-                assert!(c.constraint.is_empty());
+                assert!(c.constraint.as_ref().is_none_or(Vec::is_empty));
             }
             _ => panic!("expected CDuration pattern"),
         }
-        match &d.attributes[4].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[4]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CDuration(c) => {
                 assert_eq!(c.pattern_constraint.as_deref(), Some("PWD"));
-                assert_eq!(c.constraint.len(), 1);
+                assert_eq!(c.constraint.as_ref().map_or(0, Vec::len), 1);
             }
             _ => panic!("expected CDuration pattern+interval"),
         }
-        match &d.attributes[5].children[0] {
-            CObject::CDuration(c) => assert_eq!(c.constraint.len(), 1),
+        match &d.attributes.as_deref().unwrap_or_default()[5]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CDuration(c) => assert_eq!(c.constraint.as_ref().map_or(0, Vec::len), 1),
             _ => panic!("expected CDuration interval"),
         }
     }
@@ -1007,11 +1075,19 @@ mod tests {
              }",
         );
         let d = data(&cco);
-        match &d.attributes[0].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CTerminologyCode(t) => assert_eq!(t.constraint, "ac1"),
             _ => panic!("expected CTerminologyCode"),
         }
-        match &d.attributes[2].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[2]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CTerminologyCode(t) => {
                 assert_eq!(t.constraint, "ac2");
                 assert_eq!(
@@ -1021,13 +1097,21 @@ mod tests {
             }
             _ => panic!("expected CTerminologyCode with assumed"),
         }
-        match &d.attributes[3].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[3]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CTerminologyCode(t) => {
                 assert_eq!(t.constraint_status, Some(ConstraintStatus::Preferred));
             }
             _ => panic!("expected CTerminologyCode with strength"),
         }
-        match &d.attributes[4].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[4]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CTerminologyCode(t) => assert_eq!(t.constraint, "ac1@snomed_ct"),
             _ => panic!("expected CTerminologyCode with binding"),
         }
@@ -1037,11 +1121,15 @@ mod tests {
     fn regular_primitive_type_object() {
         let cco = parse("WHOLE[id1] matches {\n a matches {\n String [id2]\n }\n}");
         let d = data(&cco);
-        match &d.attributes[0].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CString(cs) => {
                 assert_eq!(cs.node_id, "id2");
                 assert_eq!(cs.rm_type_name, "String");
-                assert!(cs.constraint.is_empty());
+                assert!(cs.constraint.as_ref().is_none_or(Vec::is_empty));
             }
             _ => panic!("expected regular primitive CString"),
         }
@@ -1052,11 +1140,19 @@ mod tests {
         let cco =
             parse("WHOLE[id1] matches {\n a matches {|0..10|; 5}\n s matches {\"x\"; \"y\"}\n}");
         let d = data(&cco);
-        match &d.attributes[0].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CInteger(ci) => assert_eq!(ci.assumed_value, Some(5.0)),
             _ => panic!("expected CInteger with assumed"),
         }
-        match &d.attributes[1].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CString(cs) => assert_eq!(cs.assumed_value.as_deref(), Some("y")),
             _ => panic!("expected CString with assumed"),
         }
@@ -1070,8 +1166,12 @@ mod tests {
     #[test]
     fn caret_regex_normalises_losslessly() {
         let cco = parse("WHOLE[id1] matches {\n u matches {^km/h|mi/h^}\n}");
-        let printed = match &data(&cco).attributes[0].children[0] {
-            CObject::CString(cs) => cs.constraint[0].clone(),
+        let printed = match &data(&cco).attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CString(cs) => cs.constraint.as_deref().unwrap_or_default()[0].clone(),
             other => panic!("expected CString regex, got {other:?}"),
         };
         assert_eq!(printed, r"/km\/h|mi\/h/");
@@ -1081,16 +1181,28 @@ mod tests {
                 .replace("\\n", "\n")
                 .as_str(),
         );
-        match &data(&slash).attributes[0].children[0] {
-            CObject::CString(cs) => assert_eq!(cs.constraint[0], printed),
+        match &data(&slash).attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CString(cs) => {
+                assert_eq!(cs.constraint.as_deref().unwrap_or_default()[0], printed);
+            }
             other => panic!("expected CString regex, got {other:?}"),
         }
         // …and re-parsing the printed form reproduces it unchanged.
         let again = parse(&format!(
             "WHOLE[id1] matches {{\n u matches {{{printed}}}\n}}"
         ));
-        match &data(&again).attributes[0].children[0] {
-            CObject::CString(cs) => assert_eq!(cs.constraint[0], printed),
+        match &data(&again).attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CString(cs) => {
+                assert_eq!(cs.constraint.as_deref().unwrap_or_default()[0], printed);
+            }
             other => panic!("expected CString regex, got {other:?}"),
         }
     }
@@ -1109,18 +1221,30 @@ mod tests {
              }",
         );
         let d = data(&cco);
-        match &d.attributes[0].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[0]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CString(cs) => {
                 assert_eq!(cs.rm_type_name, "Character");
-                assert_eq!(cs.constraint, vec!["r".to_owned()]);
+                assert_eq!(cs.constraint, Some(vec!["r".to_owned()]));
             }
             other => panic!("expected CString, got {other:?}"),
         }
-        match &d.attributes[1].children[0] {
-            CObject::CString(cs) => assert_eq!(cs.constraint.len(), 3),
+        match &d.attributes.as_deref().unwrap_or_default()[1]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
+            CObject::CString(cs) => assert_eq!(cs.constraint.as_ref().map_or(0, Vec::len), 3),
             other => panic!("expected CString, got {other:?}"),
         }
-        match &d.attributes[2].children[0] {
+        match &d.attributes.as_deref().unwrap_or_default()[2]
+            .children
+            .as_deref()
+            .unwrap_or_default()[0]
+        {
             CObject::CString(cs) => assert_eq!(cs.assumed_value.as_deref(), Some("r")),
             other => panic!("expected CString, got {other:?}"),
         }

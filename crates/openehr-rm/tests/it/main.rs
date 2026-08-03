@@ -5,5 +5,6 @@
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
+mod enforcement_reach;
 mod rm_model;
 mod type_dispatch;

@@ -9,6 +9,7 @@
 //! relationship ids parse through the shared BASE decoder in
 //! [`crate::versioning`] (`object_version_id.rs`).
 
+use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -18,13 +19,13 @@ use crate::service::datetime::parse_at_time;
 use crate::service::demographic::party::CurrentParty;
 use crate::service::demographic::relationship::CurrentRelationship;
 use crate::service::demographic::types::PartyKind;
+use crate::service::ehr::tags::tag_target_tail;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::{UpdateAudit, UpdateVersion};
 use crate::versioning::object_version_id::{
-    components, eq_composite_id, expected_from_if_match, if_match_token, parse_uid_based_id,
-    parse_version_uid,
+    components, expected_from_if_match, if_match_token, parse_uid_based_id, parse_version_uid,
 };
 
 /// Wrap a JSON array of item-tag objects as a plain (header-free) response.
@@ -97,7 +98,7 @@ fn ensure_full_ovid_if_match(
         return Ok(());
     }
     match current {
-        Some(meta) if eq_composite_id(&meta.uid, token) => Ok(()),
+        Some(meta) if composite_ids_equal(&meta.uid, token) => Ok(()),
         Some(meta) => Err(SmError::version_mismatch(format!(
             "If-Match {token:?} does not match the current latest version {:?}",
             meta.uid
@@ -379,7 +380,8 @@ impl FerroEhrService {
         uid_based_id: String,
         version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, version) = parse_uid_based_id(&uid_based_id)?;
+        let decoded = parse_uid_based_id(&uid_based_id)?;
+        let (vo_id, version) = (decoded.vo_id, decoded.tree());
         let at = version_at_time.as_deref().map(parse_at_time).transpose()?;
         let mut resp = self.read_party(kind, vo_id, version, at).await?;
         // Attach the party's stored ITEM_TAGs for the item-tag response headers
@@ -412,7 +414,7 @@ impl FerroEhrService {
         body: Value,
         update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         // Resolve the current version ONCE (lean, kind-checked): the same handle
         // serves the `If-Match` `ETag` compare here and the service write gate —
         // the dispatcher never resolves and the service again.
@@ -455,7 +457,8 @@ impl FerroEhrService {
         if_match: Option<String>,
         update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
+        let decoded = parse_uid_based_id(&uid_based_id)?;
+        let (vo_id, path_version) = (decoded.vo_id, decoded.tree());
         // One lean resolve shared by the `If-Match` compare and the delete gate.
         let current = self.party_current(kind, vo_id).await?;
         let meta = current.as_ref().map(CurrentParty::resource_meta);
@@ -490,7 +493,7 @@ impl FerroEhrService {
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         let body = self.versioned_party(vo_id).await?;
         // The container response carries `Last-Modified` from the newest
         // version's commit instant — ITS-REST overview §"ETag and
@@ -524,7 +527,7 @@ impl FerroEhrService {
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         Ok(ServiceResponse::plain(
             self.party_revision_history(vo_id).await?,
         ))
@@ -544,7 +547,7 @@ impl FerroEhrService {
         versioned_object_uid: String,
         version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         let at = version_at_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self.party_version_at_time(vo_id, at).await?)
     }
@@ -561,7 +564,7 @@ impl FerroEhrService {
         versioned_object_uid: String,
         version_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         let (_, version) = parse_version_uid(&version_uid)?;
         Ok(ServiceResponse::plain(
             self.party_version(vo_id, version).await?,
@@ -645,12 +648,16 @@ impl FerroEhrService {
         kind: PartyKind,
         uid_based_id: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, tail) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
+        let (vo_id, version) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
         // The released 404 trigger ("when the `uid_based_id` does not exist")
         // plus the kind-checked-routes law: the guard runs on the GET too; an
         // existing target with no tags stays an empty 200 list.
-        self.ensure_party_tag_target(kind, vo_id, tail).await?;
-        Ok(tags_response(self.party_tags(vo_id, tail).await?))
+        self.ensure_party_tag_target(kind, vo_id, version.as_ref())
+            .await?;
+        Ok(tags_response(
+            self.party_tags(vo_id, tag_target_tail(version.as_ref()))
+                .await?,
+        ))
     }
 
     /// Replace the whole `ITEM_TAG` collection of a party (PUT full-collection
@@ -668,9 +675,10 @@ impl FerroEhrService {
         uid_based_id: String,
         body: Vec<Value>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, tail) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
+        let (vo_id, version) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
         Ok(tags_response(
-            self.replace_party_tags(kind, vo_id, tail, body).await?,
+            self.replace_party_tags(kind, vo_id, version.as_ref(), body)
+                .await?,
         ))
     }
 
@@ -686,8 +694,9 @@ impl FerroEhrService {
         uid_based_id: String,
         key: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, tail) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
-        self.delete_party_tag(kind, vo_id, tail, &key).await?;
+        let (vo_id, version) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
+        self.delete_party_tag(kind, vo_id, version.as_ref(), &key)
+            .await?;
         Ok(ServiceResponse::plain(Value::Null))
     }
 
@@ -703,7 +712,7 @@ impl FerroEhrService {
         kind: PartyKind,
         uid_based_id: String,
     ) -> Result<Option<ResourceMeta>, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         Ok(self.party_current_meta(kind, vo_id).await?)
     }
 }
@@ -911,7 +920,8 @@ impl FerroEhrService {
         uid_based_id: String,
         version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, version) = parse_uid_based_id(&uid_based_id)?;
+        let decoded = parse_uid_based_id(&uid_based_id)?;
+        let (vo_id, version) = (decoded.vo_id, decoded.tree());
         let at = version_at_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self.read_relationship(vo_id, version, at).await?)
     }
@@ -937,7 +947,7 @@ impl FerroEhrService {
         body: Value,
         update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         let current = self.relationship_current(vo_id).await?;
         let meta = current.as_ref().map(CurrentRelationship::resource_meta);
         ensure_full_ovid_if_match(Some(&if_match), meta.as_ref())?;
@@ -975,7 +985,8 @@ impl FerroEhrService {
         if_match: Option<String>,
         update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
+        let decoded = parse_uid_based_id(&uid_based_id)?;
+        let (vo_id, path_version) = (decoded.vo_id, decoded.tree());
         // One lean resolve shared by the `If-Match` compare and the delete gate.
         let current = self.relationship_current(vo_id).await?;
         let meta = current.as_ref().map(CurrentRelationship::resource_meta);
@@ -1008,7 +1019,7 @@ impl FerroEhrService {
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         Ok(ServiceResponse::plain(
             self.versioned_relationship(vo_id).await?,
         ))
@@ -1025,7 +1036,7 @@ impl FerroEhrService {
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         Ok(ServiceResponse::plain(
             self.relationship_revision_history(vo_id).await?,
         ))
@@ -1045,7 +1056,7 @@ impl FerroEhrService {
         versioned_object_uid: String,
         version_at_time: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         let at = version_at_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self.relationship_version_at_time(vo_id, at).await?)
     }
@@ -1062,7 +1073,7 @@ impl FerroEhrService {
         versioned_object_uid: String,
         version_uid: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
+        let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         let (_, version) = parse_version_uid(&version_uid)?;
         Ok(ServiceResponse::plain(
             self.relationship_version(vo_id, version).await?,
@@ -1080,7 +1091,7 @@ impl FerroEhrService {
         &self,
         uid_based_id: String,
     ) -> Result<Option<ResourceMeta>, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         Ok(self.relationship_current_meta(vo_id).await?)
     }
 }

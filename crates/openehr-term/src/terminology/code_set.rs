@@ -24,7 +24,7 @@ pub struct CodeSet {
     /// Name of the issuing organisation.
     pub issuer: String,
     /// Codes in this code set.
-    pub codes: Vec<Code>,
+    pub codes: Option<Vec<Code>>,
     /// An optional identifier assumed by openEHR to be the identifier of this code set, based on its published name, with spaces replaced by underscores.
     ///
     /// Valid values take the form of an xs:NCName value, i.e. cannot contain:

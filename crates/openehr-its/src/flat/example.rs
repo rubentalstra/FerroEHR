@@ -204,6 +204,17 @@ fn walk(
     };
 
     for child in &groups {
+        // A template may constrain an attribute the RM does not declare — the
+        // deployed OPT 1.4 corpus carries `ELEMENT.null_flavor` (the US
+        // archetype-tooling spelling of RM `null_flavour`,
+        // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`
+        // §Attributes) and other RM-1.0.x leftovers. Such a constraint is
+        // tolerated when VALIDATING a template, but materializing it here would
+        // author an example that is not a conformant RM instance, so the
+        // example generator skips it. The generated RM model is the oracle.
+        if !rm_declares(&child.aql_path) {
+            continue;
+        }
         let child_opt = opt_depth + usize::from(is_optional(child));
         let include = match level {
             DetailLevel::Required => child_opt == 0,
@@ -316,6 +327,26 @@ fn is_repeating(node: &WebTemplateNode) -> bool {
 /// max > 1`), else the bare `id` — matching
 /// [`composition_to_flat`](crate::flat::convert::composition_to_flat) so the example
 /// round-trips.
+/// Does the generated RM model declare the attribute `aql_path` ends in?
+///
+/// The tail of an AQL path is the RM attribute the node sits under (predicates
+/// stripped). An attribute name no RM class declares cannot be materialized
+/// into a conformant instance — see the call site for the `null_flavor` case.
+/// The check is name-only, deliberately: FLAT level removal means a Web
+/// Template child may sit several RM levels below its Web Template parent, so
+/// the parent's class is not the right scope to resolve against.
+fn rm_declares(aql_path: &str) -> bool {
+    static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&'static str>> =
+        std::sync::LazyLock::new(|| {
+            openehr_rm::model::classes()
+                .flat_map(|c| c.attributes.iter().map(|a| a.name))
+                .collect()
+        });
+    let tail = aql_path.rsplit('/').next().unwrap_or(aql_path);
+    let attr = tail.split('[').next().unwrap_or(tail);
+    attr.is_empty() || DECLARED.contains(attr)
+}
+
 fn seg_for(node: &WebTemplateNode) -> String {
     if is_repeating(node) {
         format!("{}:0", node.id)

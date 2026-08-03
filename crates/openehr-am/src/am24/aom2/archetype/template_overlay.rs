@@ -25,7 +25,7 @@ pub struct TemplateOverlay {
     /// The terminology of the archetype.
     pub terminology: Box<ArchetypeTerminology>,
     /// Rules relating to this archetype. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub rules: Vec<StatementSet>,
+    pub rules: Option<Vec<StatementSet>>,
     /// The `rm_overlay` attribute of openEHR `ARCHETYPE` (the vendored BMM carries no documentation for it).
     pub rm_overlay: Option<RmOverlay>,
 }

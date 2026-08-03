@@ -27,6 +27,7 @@ use serde::Serialize;
 
 use ferroehr::service::error::ServiceError;
 use ferroehr::service::status::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
+use ferroehr::versioning::object_version_id::VersionIdError;
 use openehr_its::rest::generated::ehr::Error as ValidationErrorBody;
 use openehr_its::rest::runtime::ApiError;
 
@@ -37,6 +38,17 @@ pub struct RestError(pub ApiError);
 impl From<ApiError> for RestError {
     fn from(e: ApiError) -> Self {
         Self(e)
+    }
+}
+
+impl From<VersionIdError> for RestError {
+    /// A malformed `uid_based_id` / `version_uid` wire value is a `400`: the
+    /// platform decoder ([`ferroehr::versioning::object_version_id`]) already
+    /// classifies *why* the identifier was rejected, and its own
+    /// [`ApiError`] mapping fixes the status — the adapter only lifts it into
+    /// the response wrapper.
+    fn from(e: VersionIdError) -> Self {
+        Self(ApiError::from(e))
     }
 }
 

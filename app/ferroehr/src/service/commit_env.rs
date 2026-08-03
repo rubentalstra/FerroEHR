@@ -27,7 +27,7 @@ impl CommitEnv for FerroEhrService {
         FerroEhrService::effective_system_id(self)
     }
 
-    fn default_committer(&self) -> Value {
+    fn default_committer(&self) -> openehr_rm::prelude::PartyProxy {
         ehr::meta::committer()
     }
 

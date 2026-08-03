@@ -161,7 +161,7 @@ fn minimal_description(conversion_details: BTreeMap<String, String>) -> Resource
         original_author: BTreeMap::new(),
         original_namespace: None,
         original_publisher: None,
-        other_contributors: Vec::new(),
+        other_contributors: openehr_base::containers::present(Vec::new()),
         lifecycle_state: "unmanaged".to_owned(),
         custodian_namespace: None,
         custodian_organisation: None,
@@ -210,7 +210,7 @@ pub(crate) fn convert_opt_to_archetypes(
             is_differential: false,
             definition: unit.definition,
             terminology: Box::new(unit.terminology),
-            rules: Vec::new(),
+            rules: openehr_base::containers::present(Vec::new()),
             rm_overlay: None,
             uid: None,
             original_language: term_code("ISO_639-1", &dx.language),
@@ -226,9 +226,7 @@ pub(crate) fn convert_opt_to_archetypes(
             annotations: None,
             translations: None,
             adl_version: Some("1.4".to_owned()),
-            build_uid: Uuid {
-                value: uuid::Uuid::nil(),
-            },
+            build_uid: Uuid::new(uuid::Uuid::nil()),
             rm_release: String::new(),
             is_generated: true,
             other_meta_data: BTreeMap::new(),
@@ -337,12 +335,12 @@ impl Decomposer<'_> {
             // A source-archetype root declares no occurrences of its own.
             occurrences: None,
             node_id: root.node_id.clone(),
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
-            attributes,
-            attribute_tuples: Vec::new(),
+            attributes: openehr_base::containers::present(attributes),
+            attribute_tuples: openehr_base::containers::present(Vec::new()),
         });
         let terminology = self.build_terminology(&archetype_id, root, is_top, &mut cx);
         self.units.push(RawUnit {
@@ -417,7 +415,7 @@ impl Decomposer<'_> {
             soc_parent: None,
             rm_attribute_name,
             existence: Some(map_mult(existence)),
-            children: mapped_children,
+            children: openehr_base::containers::present(mapped_children),
             differential_path: None,
             cardinality,
             is_multiple,
@@ -457,11 +455,11 @@ impl Decomposer<'_> {
                     rm_type_name: child.rm_type_name.clone(),
                     occurrences: Some(map_mult(&child.occurrences)),
                     node_id: slot_node_id,
-                    alternative_ids: Vec::new(),
+                    alternative_ids: openehr_base::containers::present(Vec::new()),
                     is_deprecated: None,
                     sibling_order: None,
-                    includes,
-                    excludes: Vec::new(),
+                    includes: openehr_base::containers::present(includes),
+                    excludes: openehr_base::containers::present(Vec::new()),
                     is_closed: false,
                 });
                 self.process_root(child, path, false);
@@ -497,7 +495,7 @@ impl Decomposer<'_> {
                     rm_type_name: r.rm_type_name.clone(),
                     occurrences: Some(map_mult(&r.occurrences)),
                     node_id: r.node_id.clone(),
-                    alternative_ids: Vec::new(),
+                    alternative_ids: openehr_base::containers::present(Vec::new()),
                     is_deprecated: None,
                     sibling_order: None,
                     target_path: r.target_path.clone(),
@@ -519,11 +517,11 @@ impl Decomposer<'_> {
                     rm_type_name: s.rm_type_name.clone(),
                     occurrences: Some(map_mult(&s.occurrences)),
                     node_id: s.node_id.clone(),
-                    alternative_ids: Vec::new(),
+                    alternative_ids: openehr_base::containers::present(Vec::new()),
                     is_deprecated: None,
                     sibling_order: None,
-                    includes,
-                    excludes,
+                    includes: openehr_base::containers::present(includes),
+                    excludes: openehr_base::containers::present(excludes),
                     is_closed: false,
                 })
             }
@@ -754,14 +752,21 @@ fn max_at_num_obj(obj: &opt14::CObject) -> i64 {
 
 /// The numeric value of an `atNNNN` node id's first segment (0 for a non-at
 /// code, e.g. an empty id or an already-id code).
+///
+/// The code grammar is not restated here: the string goes through the AOM2 code
+/// parser ([`openehr_adl::codes::parse_code`], the
+/// `org.openehr.am.aom2.adl_code_definitions` leader + `.`-separated numeric
+/// segments), so an at-code is recognised exactly as the rest of the ADL layer
+/// recognises one.
 fn at_num(node_id: &str) -> i64 {
-    let Some(rest) = node_id.strip_prefix("at") else {
-        return 0;
-    };
-    rest.split('.')
-        .next()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0)
+    match openehr_adl::codes::parse_code(node_id) {
+        Some(code) if code.prefix == openehr_adl::codes::CodePrefix::At => code
+            .segments
+            .first()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+        _ => 0,
+    }
 }
 
 // ── object constructors (the 1.4-shaped `am24` common fields) ────────────────
@@ -778,12 +783,12 @@ fn complex(
         rm_type_name: rm_type_name.to_owned(),
         occurrences: Some(map_mult(occurrences)),
         node_id: node_id.to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
-        attributes,
-        attribute_tuples: Vec::new(),
+        attributes: openehr_base::containers::present(attributes),
+        attribute_tuples: openehr_base::containers::present(Vec::new()),
     }))
 }
 
@@ -799,7 +804,7 @@ fn terminology_code(
         rm_type_name: rm_type_name.to_owned(),
         occurrences: Some(map_mult(occurrences)),
         node_id: node_id.to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
@@ -841,13 +846,13 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                 rm_type_name: rm.to_owned(),
                 occurrences: Some(map_mult(occ)),
                 node_id: node_id.to_owned(),
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
                 assumed_value: p.assumed_value,
                 is_enumerated_type_constraint: None,
-                constraint,
+                constraint: openehr_base::containers::present(constraint),
             })
         }
         opt14::CPrimitive::CString(p) => {
@@ -861,14 +866,16 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             c_string(rm, node_id, occ, constraint, p.assumed_value.clone())
         }
         opt14::CPrimitive::CInteger(p) => {
-            let constraint = p.range.as_ref().map(int_interval).into_iter().collect();
+            let constraint = openehr_base::containers::present(
+                p.range.as_ref().map(int_interval).into_iter().collect(),
+            );
             CObject::CInteger(CInteger {
                 parent: None,
                 soc_parent: None,
                 rm_type_name: rm.to_owned(),
                 occurrences: Some(map_mult(occ)),
                 node_id: node_id.to_owned(),
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
@@ -878,14 +885,16 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             })
         }
         opt14::CPrimitive::CReal(p) => {
-            let constraint = p.range.as_ref().map(real_interval).into_iter().collect();
+            let constraint = openehr_base::containers::present(
+                p.range.as_ref().map(real_interval).into_iter().collect(),
+            );
             CObject::CReal(CReal {
                 parent: None,
                 soc_parent: None,
                 rm_type_name: rm.to_owned(),
                 occurrences: Some(map_mult(occ)),
                 node_id: node_id.to_owned(),
-                alternative_ids: Vec::new(),
+                alternative_ids: openehr_base::containers::present(Vec::new()),
                 is_deprecated: None,
                 sibling_order: None,
                 default_value: None,
@@ -907,13 +916,13 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             rm_type_name: rm.to_owned(),
             occurrences: Some(map_mult(occ)),
             node_id: node_id.to_owned(),
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value: p.assumed_value.clone().map(|value| Iso8601Date { value }),
             is_enumerated_type_constraint: None,
-            constraint: temporal_interval(
+            constraint: openehr_base::containers::present(temporal_interval(
                 p.range.as_ref().map(|r| {
                     (
                         r.lower.clone(),
@@ -925,7 +934,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                     )
                 }),
                 |value| Iso8601Date { value },
-            ),
+            )),
             pattern_constraint: date_time_pattern(
                 p.pattern.clone(),
                 p.range.is_some(),
@@ -940,7 +949,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             rm_type_name: rm.to_owned(),
             occurrences: Some(map_mult(occ)),
             node_id: node_id.to_owned(),
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
@@ -949,7 +958,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                 .clone()
                 .map(|value| Iso8601DateTime { value }),
             is_enumerated_type_constraint: None,
-            constraint: temporal_interval(
+            constraint: openehr_base::containers::present(temporal_interval(
                 p.range.as_ref().map(|r| {
                     (
                         r.lower.clone(),
@@ -961,7 +970,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                     )
                 }),
                 |value| Iso8601DateTime { value },
-            ),
+            )),
             pattern_constraint: date_time_pattern(
                 p.pattern.clone(),
                 p.range.is_some(),
@@ -976,7 +985,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             rm_type_name: rm.to_owned(),
             occurrences: Some(map_mult(occ)),
             node_id: node_id.to_owned(),
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
@@ -985,7 +994,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                 .clone()
                 .map(|value| Iso8601Duration { value }),
             is_enumerated_type_constraint: None,
-            constraint: temporal_interval(
+            constraint: openehr_base::containers::present(temporal_interval(
                 p.range.as_ref().map(|r| {
                     (
                         r.lower.clone(),
@@ -997,7 +1006,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                     )
                 }),
                 |value| Iso8601Duration { value },
-            ),
+            )),
             pattern_constraint: p.pattern.clone(),
         }),
         opt14::CPrimitive::CTime(p) => CObject::CTime(CTime {
@@ -1006,13 +1015,13 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             rm_type_name: rm.to_owned(),
             occurrences: Some(map_mult(occ)),
             node_id: node_id.to_owned(),
-            alternative_ids: Vec::new(),
+            alternative_ids: openehr_base::containers::present(Vec::new()),
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
             assumed_value: p.assumed_value.clone().map(|value| Iso8601Time { value }),
             is_enumerated_type_constraint: None,
-            constraint: temporal_interval(
+            constraint: openehr_base::containers::present(temporal_interval(
                 p.range.as_ref().map(|r| {
                     (
                         r.lower.clone(),
@@ -1024,7 +1033,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                     )
                 }),
                 |value| Iso8601Time { value },
-            ),
+            )),
             pattern_constraint: date_time_pattern(
                 p.pattern.clone(),
                 p.range.is_some(),
@@ -1124,13 +1133,13 @@ fn c_string(
         rm_type_name: rm_type_name.to_owned(),
         occurrences: Some(map_mult(occurrences)),
         node_id: node_id.to_owned(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value,
         is_enumerated_type_constraint: None,
-        constraint,
+        constraint: openehr_base::containers::present(constraint),
     })
 }
 
@@ -1320,7 +1329,7 @@ fn tuple_member(rm_attribute_name: &str) -> CAttribute {
         soc_parent: None,
         rm_attribute_name: rm_attribute_name.to_owned(),
         existence: None,
-        children: Vec::new(),
+        children: openehr_base::containers::present(Vec::new()),
         differential_path: None,
         cardinality: None,
         is_multiple: false,
@@ -1335,26 +1344,28 @@ fn tuple_integer(value: Option<i32>, range: Option<Interval<i32>>) -> CPrimitive
         rm_type_name: "Integer".to_owned(),
         occurrences: None,
         node_id: String::new(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value: None,
         is_enumerated_type_constraint: None,
-        constraint: value
-            .map(|v| {
-                Interval::PointInterval(PointInterval {
-                    lower: Some(v),
-                    upper: Some(v),
-                    lower_unbounded: false,
-                    upper_unbounded: false,
-                    lower_included: true,
-                    upper_included: true,
+        constraint: openehr_base::containers::present(
+            value
+                .map(|v| {
+                    Interval::PointInterval(PointInterval {
+                        lower: Some(v),
+                        upper: Some(v),
+                        lower_unbounded: false,
+                        upper_unbounded: false,
+                        lower_included: true,
+                        upper_included: true,
+                    })
                 })
-            })
-            .into_iter()
-            .chain(range)
-            .collect(),
+                .into_iter()
+                .chain(range)
+                .collect::<Vec<_>>(),
+        ),
     })
 }
 
@@ -1366,13 +1377,13 @@ fn tuple_real(range: Option<Interval<f64>>) -> CPrimitiveObject {
         rm_type_name: "Real".to_owned(),
         occurrences: None,
         node_id: String::new(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value: None,
         is_enumerated_type_constraint: None,
-        constraint: range.into_iter().collect(),
+        constraint: openehr_base::containers::present(range.into_iter().collect()),
     })
 }
 
@@ -1384,13 +1395,13 @@ fn tuple_string(value: &str) -> CPrimitiveObject {
         rm_type_name: "String".to_owned(),
         occurrences: None,
         node_id: String::new(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
         assumed_value: None,
         is_enumerated_type_constraint: None,
-        constraint: vec![value.to_owned()],
+        constraint: Some(vec![value.to_owned()]),
     })
 }
 
@@ -1404,7 +1415,7 @@ fn tuple_code(terminology: Option<&str>, code: &str) -> CPrimitiveObject {
         rm_type_name: "CODE_PHRASE".to_owned(),
         occurrences: None,
         node_id: String::new(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
@@ -1480,21 +1491,25 @@ fn ordinal_tuple(c: &opt14::CDvOrdinal, cx: &mut RootCx) -> CObject {
         .list
         .iter()
         .map(|o| CPrimitiveTuple {
-            members: vec![
-                tuple_integer(Some(o.value), None),
-                tuple_code(
+            // A `[value, symbol]` ordinal row always has two members, so the
+            // `1..*` bound of `C_PRIMITIVE_TUPLE.members` holds by construction.
+            members: {
+                let mut row =
+                    openehr_base::containers::NonEmptyVec::of(tuple_integer(Some(o.value), None));
+                row.push(tuple_code(
                     Some(o.symbol.defining_code.terminology_id.value.as_str()),
                     &o.symbol.defining_code.code_string,
-                ),
-            ],
+                ));
+                row
+            },
         })
         .collect::<Vec<_>>();
     let attribute_tuples = if tuples.is_empty() {
         Vec::new()
     } else {
         vec![CAttributeTuple {
-            members: vec![tuple_member("value"), tuple_member("symbol")],
-            tuples,
+            members: Some(vec![tuple_member("value"), tuple_member("symbol")]),
+            tuples: openehr_base::containers::present(tuples),
         }]
     };
     CObject::CComplexObject(CComplexObject::CComplexObject(CComplexObjectData {
@@ -1503,12 +1518,12 @@ fn ordinal_tuple(c: &opt14::CDvOrdinal, cx: &mut RootCx) -> CObject {
         rm_type_name: c.rm_type_name.clone(),
         occurrences: Some(map_mult(&c.occurrences)),
         node_id: c.node_id.clone(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
-        attributes: Vec::new(),
-        attribute_tuples,
+        attributes: openehr_base::containers::present(Vec::new()),
+        attribute_tuples: openehr_base::containers::present(attribute_tuples),
     }))
 }
 
@@ -1535,7 +1550,7 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
             soc_parent: None,
             rm_attribute_name: "property".to_owned(),
             existence: None,
-            children: vec![terminology_code(
+            children: Some(vec![terminology_code(
                 "CODE_PHRASE",
                 "",
                 &unbounded_occurrences(),
@@ -1544,7 +1559,7 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
                     std::slice::from_ref(&p.code_string),
                     None,
                 ),
-            )],
+            )]),
             differential_path: None,
             cardinality: None,
             is_multiple: false,
@@ -1581,10 +1596,12 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
             .list
             .iter()
             .map(|item| {
-                let mut members = vec![
-                    tuple_string(&item.units),
-                    tuple_real(item.magnitude.as_ref().map(real_interval)),
-                ];
+                // A `[units, magnitude]` (optionally `+ precision`) row always
+                // has at least two members, so the `1..*` bound of
+                // `C_PRIMITIVE_TUPLE.members` holds by construction.
+                let mut members =
+                    openehr_base::containers::NonEmptyVec::of(tuple_string(&item.units));
+                members.push(tuple_real(item.magnitude.as_ref().map(real_interval)));
                 if all_precision {
                     members.push(tuple_integer(
                         None,
@@ -1598,7 +1615,10 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
         if all_precision {
             members.push(tuple_member("precision"));
         }
-        attribute_tuples.push(CAttributeTuple { members, tuples });
+        attribute_tuples.push(CAttributeTuple {
+            members: openehr_base::containers::present(members),
+            tuples: openehr_base::containers::present(tuples),
+        });
     } else if !c.list.is_empty() {
         attributes.push(widened_units_attribute(c, some_dropped, cx));
     }
@@ -1608,12 +1628,12 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
         rm_type_name: c.rm_type_name.clone(),
         occurrences: Some(map_mult(&c.occurrences)),
         node_id: c.node_id.clone(),
-        alternative_ids: Vec::new(),
+        alternative_ids: openehr_base::containers::present(Vec::new()),
         is_deprecated: None,
         sibling_order: None,
         default_value: None,
-        attributes,
-        attribute_tuples,
+        attributes: openehr_base::containers::present(attributes),
+        attribute_tuples: openehr_base::containers::present(attribute_tuples),
     }))
 }
 
@@ -1641,13 +1661,13 @@ fn widened_units_attribute(
         soc_parent: None,
         rm_attribute_name: "units".to_owned(),
         existence: None,
-        children: vec![c_string(
+        children: Some(vec![c_string(
             "String",
             "",
             &unbounded_occurrences(),
             c.list.iter().map(|i| i.units.clone()).collect(),
             None,
-        )],
+        )]),
         differential_path: None,
         cardinality: None,
         is_multiple: false,
@@ -2064,9 +2084,17 @@ mod tests {
         let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = &constrained else {
             panic!("expected a complex object");
         };
-        assert_eq!(d.attribute_tuples.len(), 1, "one [units, magnitude] tuple");
         assert_eq!(
-            d.attribute_tuples.first().map(|t| t.tuples.len()),
+            d.attribute_tuples.as_ref().map_or(0, Vec::len),
+            1,
+            "one [units, magnitude] tuple"
+        );
+        assert_eq!(
+            d.attribute_tuples
+                .iter()
+                .flatten()
+                .next()
+                .map(|t| t.tuples.as_ref().map_or(0, Vec::len)),
             Some(2),
             "one row per unit"
         );
@@ -2075,9 +2103,15 @@ mod tests {
         let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = &widened else {
             panic!("expected a complex object");
         };
-        assert!(d.attribute_tuples.is_empty(), "no tuple without magnitudes");
         assert!(
-            d.attributes.iter().any(|a| a.rm_attribute_name == "units"),
+            d.attribute_tuples.as_ref().is_none_or(Vec::is_empty),
+            "no tuple without magnitudes"
+        );
+        assert!(
+            d.attributes
+                .iter()
+                .flatten()
+                .any(|a| a.rm_attribute_name == "units"),
             "a plain units attribute instead"
         );
     }
@@ -2181,7 +2215,11 @@ mod tests {
             panic!("expected a C_DURATION");
         };
         assert_eq!(d.pattern_constraint.as_deref(), Some("PTH"));
-        assert_eq!(d.constraint.len(), 1, "the range must be carried");
+        assert_eq!(
+            d.constraint.as_ref().map_or(0, Vec::len),
+            1,
+            "the range must be carried"
+        );
         assert_eq!(d.assumed_value.map(|a| a.value), Some("PT1H".to_owned()));
         assert!(cx.notes.is_empty(), "durations carry both without a report");
     }
@@ -2215,7 +2253,11 @@ mod tests {
             panic!("expected a C_DATE");
         };
         assert!(d.pattern_constraint.is_none(), "the pattern must drop");
-        assert_eq!(d.constraint.len(), 1, "the range must be kept");
+        assert_eq!(
+            d.constraint.as_ref().map_or(0, Vec::len),
+            1,
+            "the range must be kept"
+        );
         assert!(
             cx.notes.keys().any(|k| k.starts_with("temporal_pattern.")),
             "the dropped pattern must be reported: {:?}",

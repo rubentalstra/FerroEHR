@@ -30,7 +30,7 @@ pub struct BmmEnumerationData {
     /// Reference to original source schema defining this class. Useful for UI tools to determine which original schema file to open for a given class for manual editing.
     pub source_schema_id: String,
     /// List of immediate inheritance descendants.
-    pub immediate_descendants: Vec<String>,
+    pub immediate_descendants: Option<Vec<String>>,
     /// True if this class is abstract in its model.
     pub is_abstract: bool,
     /// True if this class is designated a primitive type within the overall type system of the schema.
@@ -38,9 +38,9 @@ pub struct BmmEnumerationData {
     /// True if this definition overrides a class of the same name in an included schema.
     pub is_override: bool,
     /// The list of names of the enumeration. If no values are supplied, the integer values 0, 1, 2, ... are assumed.
-    pub item_names: Vec<String>,
+    pub item_names: Option<Vec<String>>,
     /// Optional list of specific values. Must be 1:1 with \`item_names' list.
-    pub item_values: Vec<serde_json::Value>,
+    pub item_values: Option<Vec<serde_json::Value>>,
     /// Name of type any concrete BMM_ENUMERATION_* sub-type is based on, i.e. the name of type bound to 'T' in a declared use of this type.
     pub underlying_type_name: String,
 }

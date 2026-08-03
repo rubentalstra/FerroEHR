@@ -188,17 +188,35 @@ fn monomorphic_struct_slot_accepts_matching_and_absent_type() {
     );
 }
 
-// ── unknown wire keys are tolerated (documented superset) ─────────────────────
+// ── undeclared wire keys are refused (strict reader) ──────────────────────────
 
 #[test]
-fn unknown_keys_are_tolerated_on_deserialize() {
-    // Deliberate tolerance (NOTE in openehr-derive): unknown keys are
-    // ignored, a documented superset of the schema's `additionalProperties:
-    // false`. The strict contract lives in `validate_canonical`.
-    let dv: DataValue = openehr_its::json::from_canonical_json(
+fn unknown_keys_are_refused_on_deserialize() {
+    // The strict reader is closed over the generated RM model: a key the
+    // class does not declare is refused, naming the key (ITS-REST
+    // Resources.md L87 — canonical JSON "SHOULD validate against" the
+    // ITS-JSON schemas, which close their objects by design; the former
+    // tolerant read was retired in the foundation phase). Dispatch through
+    // the untagged DataValue enum must surface the refusal, not fall through
+    // to "no variant matched".
+    let err = openehr_its::json::from_canonical_json::<DataValue>(
         r#"{"_type":"DV_COUNT","magnitude":3,"an_unknown_extension_key":true}"#,
     )
-    .expect("unknown keys must be tolerated, not rejected");
+    .expect_err("an undeclared key must be refused, not ignored");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("unknown field `an_unknown_extension_key`"),
+        "the refusal names the offending key, got: {msg}"
+    );
+    assert!(
+        !msg.contains("did not match any variant"),
+        "must not be the opaque untagged-enum error, got: {msg}"
+    );
+    // The same document without the undeclared key stays accepted (the valid
+    // twin of this refusal).
+    let dv: DataValue =
+        openehr_its::json::from_canonical_json(r#"{"_type":"DV_COUNT","magnitude":3}"#)
+            .expect("the declared-keys-only twin parses");
     assert!(matches!(dv, DataValue::DvCount(_)));
 }
 

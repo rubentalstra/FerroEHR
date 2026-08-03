@@ -21,27 +21,46 @@ reference material. The SM `serial_data_formats` + `simplified_im_b` docs are
 DEVELOPMENT-state model documents (their terse string encodings conflict with
 the STABLE suffix encoding — never implement them); the SDT spec is retired.
 
-## The `_type` mechanism (generated native codec — do not improvise)
+## The `_type` mechanism (generated manual serde impls — do not improvise)
 
-Canonical-JSON `_type` self-tagging is the **native `ToJson`/`FromJson`
-codec** emitted into `openehr-its` by `openehr-codegen -- emit-json` (over the
-hand-written `json_codec/runtime.rs`). The spec types carry NO serde derive —
-there is no `#[derive(OpenEhrType)]` (that proc-macro is deleted). The contract
-(know it; never hand-write it):
+Canonical-JSON `_type` self-tagging is **emitted MANUAL
+`serde::Serialize`/`Deserialize` impls** — `openehr-codegen -- emit-json`
+writes explicit generated code into each defining crate's `src/json_serde.rs`
+(`openehr-base`/`-rm`/`-am`/`-term`/`-lang`), over the small shared
+hand-written runtime `openehr_base::serde_support` (tag-anywhere enum
+buffering, the class-naming `unknown_field` helper, slot-tag verification).
+The spec types carry NO serde derives and NO serde attributes — per-class
+field-identifier enums + visitors, the serde.rs manual long form, so every
+wire decision is auditable generated code (the foundation-phase rewrite,
+#1702; the former `ToJson`/`FromJson` traits and `json_codec/runtime.rs` are
+deleted). Entry points are `openehr_its::json::{to_canonical_json,
+from_canonical_json, from_canonical_value}`; refusal diagnostics carry the
+full JSON path via `serde_path_to_error` (error path only — the happy path
+reads untracked). The contract (know it; never hand-write it):
 
-- **Serialize** (`ToJson`) emits `"_type": "<CLASS>"` first, then fields in BMM
-  declaration order; `Option` fields are omitted when `None`, `Vec` fields when
-  empty — no `null`s. Integer-typed RM fields print as JSON integers; Real-typed
-  fields carry a decimal point.
-- **Deserialize** (`FromJson`) accepts input with or without `_type`;
-  present-but-wrong `_type` on a concrete type is an error; an abstract
-  polymorphic slot requires `_type` and dispatches on it; unknown keys are
-  ignored (a deliberate superset of the schema — RM-version skew).
-- Closed subtype-set enums are plain Rust enums whose `FromJson` dispatches on
-  each payload's `_type` (deep descendants routed to their direct variant).
+- **Serialize** emits `"_type": "<CLASS>"` first, then fields in BMM
+  declaration order; `Option` fields are omitted when `None` — no `null`s
+  (container emptiness-vs-absence follows the leg-6 container adjudication).
+  Integer-typed RM fields print as JSON integers; Real-typed fields carry a
+  decimal point (exponent lexeme is signed, `1e+21` — no openEHR spec governs
+  the REAL lexeme; RFC 8259 §6 admits both).
+- **Deserialize is the STRICT reader** (parse = the 400-class shape check):
+  input accepted with or without `_type` on a concretely-typed slot;
+  present-but-wrong `_type` is an error; an abstract polymorphic slot
+  requires `_type` and dispatches on it (tag anywhere in the object — keys
+  before the tag are buffered and replayed); **undeclared keys are REFUSED**
+  (named, with the class and the legal field set — the former ignore-unknown
+  tolerance is retired); **repeated members are REFUSED** (`duplicate_field`);
+  absent mandatories are `missing_field`; identifier-typed fields construct
+  through the validated master05-grammar doors, so a malformed uid refuses at
+  parse, path-named. Semantic invariants + terminology stay AFTER parse in
+  `openehr_rm::validate` (the 422 class) — never folded into `Deserialize`.
+- Closed subtype-set enums are plain Rust enums whose emitted `Deserialize`
+  dispatches on each payload's `_type` (deep descendants routed to their
+  direct variant).
 
 Wrong `_type`/serialization behaviour → fix the **emitter** (`emit.rs` /
-`emit_json.rs`) or the hand-written `json_codec/runtime.rs`, and regenerate
+`emit_json.rs`) or `openehr_base::serde_support`, and regenerate
 (`/regen-codegen`); never hand-edit `// @generated`.
 
 ## Canonical JSON (ITS-JSON)

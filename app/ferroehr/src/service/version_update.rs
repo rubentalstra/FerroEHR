@@ -16,6 +16,9 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::common::generic::party_identified::{PartyIdentified, PartyIdentifiedData};
 use openehr_rm::prelude::{DvEhrUri, DvMultimedia, DvText, PartyProxy};
 
+use crate::versioning::audit::{OPENEHR, change_type};
+use crate::versioning::lifecycle;
+
 /// `UPDATE_AUDIT` — "The set of attributes required to document the committal
 /// of an information item to a repository. Used by the server to create an
 /// `AUDIT_DETAILS` object" (`update_audit.adoc`).
@@ -37,7 +40,8 @@ use openehr_rm::prelude::{DvEhrUri, DvMultimedia, DvText, PartyProxy};
 /// `openehr-audit-details` header, whose grammar carries the attribute
 /// pre-flattened as the `description.value` subkey — i.e. the `DV_TEXT.value`
 /// string both `UDvText` branches share — which
-/// [`crate::versioning::audit::AuditInput::from_update`] re-wraps as a plain
+/// `AuditInput::from_update` (crate-private, `crate::versioning::audit`)
+/// re-wraps as a plain
 /// `DV_TEXT` fragment. A header therefore cannot express a coded description at
 /// all: `DV_CODED_TEXT.defining_code` has no subkey to travel in. Where a coded
 /// description IS expressible — the native CONTRIBUTION body — the commit does
@@ -46,14 +50,12 @@ use openehr_rm::prelude::{DvEhrUri, DvMultimedia, DvText, PartyProxy};
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateAudit {
     /// Type of change; coded from the openEHR *audit change type* group.
-    #[serde(with = "crate::codec_serde::spec")]
     pub change_type: TerminologyCode,
     /// Reason for committal.
     #[serde(default)]
     pub description: Option<String>,
     /// Identity (and optional identity-management reference) of the
     /// committing user.
-    #[serde(with = "crate::codec_serde::spec")]
     pub committer: PartyProxy,
     /// System that committed the change. A client MAY supply this through the
     /// `openehr-audit-details` request header's `system_id` value (ITS-REST
@@ -82,25 +84,22 @@ pub struct UpdateAudit {
 pub struct UpdateAttestation {
     /// Type of change; coded from the openEHR *audit change type* group
     /// (`666|attestation|` for attestations).
-    #[serde(with = "crate::codec_serde::spec")]
     pub change_type: TerminologyCode,
     /// Reason for committal (inherited from the `UpdateAudit` base).
     #[serde(default)]
     pub description: Option<String>,
     /// The attesting party.
-    #[serde(with = "crate::codec_serde::spec")]
     pub committer: PartyProxy,
     /// Optional visual representation of what was attested.
-    #[serde(default, with = "crate::codec_serde::spec_opt")]
+    #[serde(default)]
     pub attested_view: Option<DvMultimedia>,
     /// Proof of attestation.
     #[serde(default)]
     pub proof: Option<String>,
     /// Items attested, as EHR URIs.
-    #[serde(default, with = "crate::codec_serde::spec_opt")]
+    #[serde(default)]
     pub items: Option<Vec<DvEhrUri>>,
     /// Reason of this attestation.
-    #[serde(with = "crate::codec_serde::spec")]
     pub reason: DvText,
     /// True if this attestation is outstanding.
     pub is_pending: bool,
@@ -132,10 +131,9 @@ pub struct UpdateAttestation {
 pub struct UpdateVersion<T = Value> {
     /// Current version in the service for which this version is an update.
     /// `None` only for a first version.
-    #[serde(default, with = "crate::codec_serde::spec_opt")]
+    #[serde(default)]
     pub preceding_version_uid: Option<ObjectVersionId>,
     /// Lifecycle state of the content item in this version.
-    #[serde(with = "crate::codec_serde::spec")]
     pub lifecycle_state: TerminologyCode,
     /// Attestations relating to this version (wire-partial form; see
     /// [`UpdateAttestation`]).
@@ -168,7 +166,7 @@ impl UpdateVersion {
         Self {
             preceding_version_uid: None,
             // 532|complete| (RM common master06 §Version Lifecycle).
-            lifecycle_state: code("openehr", "532"),
+            lifecycle_state: code(OPENEHR, lifecycle::state::COMPLETE),
             attestations: None,
             data,
             audit: UpdateAudit {
@@ -179,7 +177,7 @@ impl UpdateVersion {
                 // header-derived envelopes blank this first so only a
                 // header-carried value reads as supplied
                 // (`overview::committal::committal_audit`).
-                change_type: code("openehr", "249"),
+                change_type: code(OPENEHR, change_type::CREATION),
                 description: None,
                 // Built with the generated constructor rather than decoded
                 // from a JSON literal: the value is a compile-time constant of
@@ -188,7 +186,7 @@ impl UpdateVersion {
                     PartyIdentifiedData {
                         external_ref: None,
                         name: Some(crate::service::SYSTEM_COMMITTER_NAME.to_owned()),
-                        identifiers: Vec::new(),
+                        identifiers: openehr_base::containers::present(Vec::new()),
                     },
                 )),
                 system_id: None,

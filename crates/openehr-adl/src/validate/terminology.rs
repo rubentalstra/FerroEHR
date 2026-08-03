@@ -348,7 +348,7 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
         CObject::CComplexObject(cco) => {
             for attr in complex_attributes(cco) {
                 let apath = format!("{path}/{}", attr.rm_attribute_name);
-                for child in &attr.children {
+                for child in attr.children.iter().flatten() {
                     let cpath = child_path(&apath, object_node_id(child));
                     collect_usage_at(child, &cpath, usage);
                 }
@@ -357,7 +357,7 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
             // outside the normal attribute tree (master04.4); collect their
             // terminology-code values too.
             for tuple in complex_attribute_tuples(cco) {
-                for prim_tuple in &tuple.tuples {
+                for prim_tuple in tuple.tuples.iter().flatten() {
                     for member in &prim_tuple.members {
                         if let CPrimitiveObject::CTerminologyCode(tc) = member {
                             usage.value_codes.extend(constraint_codes(&tc.constraint));

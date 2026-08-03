@@ -43,6 +43,7 @@ use crate::beom::core::statement::Statement;
 use crate::beom::core::variable_declaration::VariableDeclaration;
 use crate::beom::types::expr_type_def::ExprTypeDef;
 use crate::beom::types::type_def_object_ref::TypeDefObjectRef;
+use openehr_base::containers::present;
 
 /// A BEL parse/lex error, located by byte offset in the source.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -322,7 +323,7 @@ impl BelBuilder for BeomBuilder {
         // name here), `arguments` the operands.
         Expression::ExprFunctionCall(crate::beom::core::expr_function_call::ExprFunctionCall {
             item: Some(serde_json::Value::String(name.to_owned())),
-            arguments: args,
+            arguments: present(args),
         })
     }
 

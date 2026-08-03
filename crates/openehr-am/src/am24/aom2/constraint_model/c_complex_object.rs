@@ -33,7 +33,7 @@ pub struct CComplexObjectData {
     ///
     pub node_id: String,
     /// Additional identifiers of this node. openEHR archetypes can carry original ALD2 id-codes in this attribute and it can also carry human readable codes for future use. Alternative ids must be unique within the archetype.
-    pub alternative_ids: Vec<String>,
+    pub alternative_ids: Option<Vec<String>>,
     /// True if this node and by implication all sub-nodes are deprecated for use.
     pub is_deprecated: Option<bool>,
     /// Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
@@ -43,9 +43,9 @@ pub struct CComplexObjectData {
     /// Default value set in a template, and present in an operational template. Generally limited to leaf and near-leaf nodes.
     pub default_value: Option<serde_json::Value>,
     /// List of constraints on attributes of the reference model type represented by this object.
-    pub attributes: Vec<CAttribute>,
+    pub attributes: Option<Vec<CAttribute>>,
     /// List of attribute tuple constraints under this object constraint, if any.
-    pub attribute_tuples: Vec<CAttributeTuple>,
+    pub attribute_tuples: Option<Vec<CAttributeTuple>>,
 }
 
 /// Polymorphic slot of `C_COMPLEX_OBJECT`, dispatched on each payload's `_type`.

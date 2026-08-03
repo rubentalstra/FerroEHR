@@ -14,7 +14,7 @@ pub struct ResourceDescriptionItem {
     /// Purpose of the resource.
     pub purpose: String,
     /// Keywords which characterise this resource, used e.g. for indexing and searching.
-    pub keywords: Vec<String>,
+    pub keywords: Option<Vec<String>>,
     /// Description of the uses of the resource, i.e. contexts in which it could be used.
     pub use_: Option<String>,
     /// Description of any misuses of the resource, i.e. contexts in which it should not be used.

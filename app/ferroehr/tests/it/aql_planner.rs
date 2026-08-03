@@ -23,8 +23,8 @@ use openehr_query::parser::parse_str;
 
 use ferroehr::aql::error::{AnalysisError, AqlError, AqlFeatureError};
 use ferroehr::aql::ir::{
-    AggFunc, Coercion, ContainsTree, EhrField, Expr, LeafPath, Link, Operand, PathTarget, QueryIr,
-    ScalarFn, SelectValue, Source, TypedLit, VersionField, VersionScope,
+    AggFunc, ArchetypeConstraint, Coercion, ContainsTree, EhrField, Expr, LeafPath, Link, Operand,
+    PathTarget, QueryIr, ScalarFn, SelectValue, Source, TypedLit, VersionField, VersionScope,
 };
 use ferroehr::aql::ir::{ParamValue, Params};
 use ferroehr::aql::lineage::ArchetypeLineage;
@@ -526,6 +526,54 @@ fn matches_uri_rejected() {
         err,
         AqlError::Feature(AqlFeatureError::MatchesUri)
     ));
+}
+
+/// The QUERY spec makes the bracket predicate `[archetype_node_id='…']` the
+/// standard-predicate form of the archetype and node shortcut predicates
+/// (`QUERY/docs/AQL/master03-syntax.adoc` §"Archetype predicate": "These
+/// predicates could also be written as standard predicates"; §"Node
+/// predicate"), so its operand set is exactly {archetype identifier, archetype
+/// node code} — the two shapes the RM lets `LOCATABLE.archetype_node_id` hold.
+/// Both twins are asserted: the two legal forms plan into their respective
+/// constraints, a third shape is a typed reject rather than an archetype
+/// constraint that can never match.
+#[test]
+fn archetype_node_id_predicate_admits_only_archetype_ids_and_node_codes() {
+    let constraint = |q: &str| {
+        let ir = plan_ok(q);
+        ir.sources
+            .iter()
+            .find_map(|s| match s {
+                Source::Rm(r) => r.archetype.clone(),
+                Source::Ehr(_) | Source::Version(_) => None,
+            })
+            .unwrap_or_else(|| panic!("no archetype constraint planned for {q:?}"))
+    };
+    assert!(matches!(
+        constraint(
+            "SELECT c/uid/value FROM EHR e CONTAINS \
+             COMPOSITION c[archetype_node_id='openEHR-EHR-COMPOSITION.encounter.v1']"
+        ),
+        ArchetypeConstraint::Archetype(a) if a == "openEHR-EHR-COMPOSITION.encounter.v1"
+    ));
+    assert!(matches!(
+        constraint(
+            "SELECT o/uid/value FROM EHR e CONTAINS OBSERVATION o[archetype_node_id='at0001']"
+        ),
+        ArchetypeConstraint::NodeCode(c) if c == "at0001"
+    ));
+
+    let err = plan_err(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c[archetype_node_id='openEHR-garbage']",
+    );
+    assert!(
+        matches!(
+            &err,
+            AqlError::Analysis(AnalysisError::MalformedArchetypeNodeId(v))
+                if v == "openEHR-garbage"
+        ),
+        "got {err:?}"
+    );
 }
 
 #[test]

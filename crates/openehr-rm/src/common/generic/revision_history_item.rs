@@ -13,5 +13,5 @@ pub struct RevisionHistoryItem {
     /// Version identifier for this revision.
     pub version_id: ObjectVersionId,
     /// The audits for this revision; there will always be at least one commit audit (which may itself be an `ATTESTATION`), there may also be further attestations.
-    pub audits: Vec<AuditDetails>,
+    pub audits: openehr_base::containers::NonEmptyVec<AuditDetails>,
 }

@@ -11,7 +11,7 @@ use crate::am24::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor;
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmModelAccess {
     /// List of directories where all the schemas loaded here are found.
-    pub schema_directories: Vec<String>,
+    pub schema_directories: Option<Vec<String>>,
     /// All schemas found and loaded from `_schema_directory_`. Keyed by `_schema_id_`.
     pub all_schemas: Option<std::collections::BTreeMap<String, BmmSchemaDescriptor>>,
     /// Top-level (root) models in use, keyed by `_model_id_`.

@@ -8,9 +8,129 @@
 //! status codes, realized by [`ApiError`]). The tables here keep the three in
 //! lock-step; consistency is test-enforced below.
 
+use openehr_base::validate::InvariantViolation;
+use openehr_its::json::JsonParseError;
 use openehr_its::rest::runtime::ApiError;
 
 use super::status::{CallStatusType, SmError};
+
+/// One violated spec rule, carried as DATA rather than as a pre-formatted
+/// sentence.
+///
+/// A refusal has up to four independently useful facts — the RM attribute
+/// PATH it is about, the named INVARIANT it breaks, what is wrong (`detail`),
+/// and the machine-produced CAUSES a nested pass reported
+/// ([`InvariantViolation`], the RM validation data type). Formatting them into
+/// one string at the throw site destroys all four; this type keeps them and
+/// renders them exactly once, at the protocol edge
+/// (`From<ServiceError> for ApiError` / `for SmError`).
+///
+/// The rendering is `[<path> ]<detail>[: <cause>; …][ (<invariant>)]`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Violation {
+    /// The RM attribute path the violation is about (`ATTESTATION.items`).
+    path: Option<String>,
+    /// The named RM/spec invariant broken (`ATTESTATION.Items_valid`).
+    invariant: Option<String>,
+    /// What is wrong, WITHOUT the path/invariant/cause decoration.
+    detail: String,
+    /// Violations a nested machine pass reported (an RM class-invariant run, a
+    /// canonical-JSON decode failure with its JSON path).
+    causes: Vec<InvariantViolation>,
+}
+
+impl Violation {
+    /// A violation stating `detail`, with no path, invariant or causes — the
+    /// shape for a refusal whose only fact IS the sentence (a third-party
+    /// parser's message, a shape rule with no named invariant).
+    #[must_use]
+    pub fn new(detail: impl Into<String>) -> Self {
+        Self {
+            path: None,
+            invariant: None,
+            detail: detail.into(),
+            causes: Vec::new(),
+        }
+    }
+
+    /// Attach the RM attribute path the violation is about.
+    #[must_use]
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = Some(path.into());
+        self
+    }
+
+    /// Attach the name of the RM/spec invariant this violation breaks.
+    #[must_use]
+    pub fn with_invariant(mut self, invariant: impl Into<String>) -> Self {
+        self.invariant = Some(invariant.into());
+        self
+    }
+
+    /// Attach the violations a nested machine pass reported.
+    #[must_use]
+    pub fn with_causes(mut self, causes: Vec<InvariantViolation>) -> Self {
+        self.causes = causes;
+        self
+    }
+
+    /// Attach a canonical-JSON decode failure as the single cause, keeping its
+    /// JSON path queryable ([`JsonParseError::path`]).
+    #[must_use]
+    pub fn with_decode_failure(mut self, error: &JsonParseError) -> Self {
+        self.causes = vec![InvariantViolation::at(
+            error.path().concat(),
+            error.to_string(),
+        )];
+        self
+    }
+
+    /// The RM attribute path this violation is about, when it names one.
+    #[must_use]
+    pub fn path(&self) -> Option<&str> {
+        self.path.as_deref()
+    }
+
+    /// The named RM/spec invariant this violation breaks, when it names one.
+    #[must_use]
+    pub fn invariant(&self) -> Option<&str> {
+        self.invariant.as_deref()
+    }
+
+    /// What is wrong, without the path/invariant/cause decoration.
+    #[must_use]
+    pub fn detail(&self) -> &str {
+        &self.detail
+    }
+
+    /// The violations a nested machine pass reported.
+    #[must_use]
+    pub fn causes(&self) -> &[InvariantViolation] {
+        &self.causes
+    }
+}
+
+impl std::fmt::Display for Violation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(path) = &self.path {
+            write!(f, "{path} ")?;
+        }
+        f.write_str(&self.detail)?;
+        if !self.causes.is_empty() {
+            let joined = self
+                .causes
+                .iter()
+                .map(|c| c.message.as_str())
+                .collect::<Vec<_>>()
+                .join("; ");
+            write!(f, ": {joined}")?;
+        }
+        if let Some(invariant) = &self.invariant {
+            write!(f, " ({invariant})")?;
+        }
+        Ok(())
+    }
+}
 
 /// Service-layer error, mapped to the ITS-REST [`ApiError`] at the protocol
 /// boundary so the REST layer stays free of persistence concerns.
@@ -36,9 +156,11 @@ pub enum ServiceError {
     /// Optimistic-concurrency precondition (`If-Match`) failed.
     #[error("version conflict: {0}")]
     VersionConflict(String),
-    /// The submitted payload is malformed or fails a structural rule.
+    /// The submitted payload is malformed or fails a structural rule —
+    /// carrying the violated rule as DATA ([`Violation`]: path, invariant,
+    /// causes), rendered into prose only at the protocol edge.
     #[error("unprocessable: {0}")]
-    Unprocessable(String),
+    Unprocessable(Violation),
     /// A well-formed payload that fails semantic (template/RM/terminology)
     /// validation — carries the per-path violations for the ITS-REST 422 body.
     #[error("{} validation error(s)", .0.len())]
@@ -113,7 +235,9 @@ impl ServiceError {
             | S::InvalidArtefact
             | S::InvalidQuery
             | S::DefinitionUnknown
-            | S::ContentInvalid => ServiceError::Unprocessable(m),
+            // An SM status arrives with a message and no separable facts, so
+            // the violation it becomes carries only its detail.
+            | S::ContentInvalid => ServiceError::Unprocessable(Violation::new(m)),
             // No service-side `ServiceError::NotImplemented`; a not-implemented
             // status surfaces as a server fault (the service implements every
             // catalog call, so this row is unreachable in practice).
@@ -170,7 +294,9 @@ impl From<ServiceError> for SmError {
             ServiceError::NotFound(e) => e,
             ServiceError::VersionConflict(m) => SmError::new(S::VersionMismatch, m),
             ServiceError::Conflict(m) => SmError::new(S::CompositionAlreadyExists, m),
-            ServiceError::Unprocessable(m) => SmError::new(S::ContentInvalid, m),
+            // The ONE rendering point of a `Violation` on the SM bridge: the
+            // facts travel as data all the way from the throw site to here.
+            ServiceError::Unprocessable(v) => SmError::new(S::ContentInvalid, v.to_string()),
             ServiceError::ValidationFailed(v) => {
                 let joined = v
                     .into_iter()
@@ -201,7 +327,8 @@ impl From<ServiceError> for ApiError {
             ServiceError::BadRequest(m) => ApiError::BadRequest(m),
             ServiceError::Conflict(m) => ApiError::Conflict(m),
             ServiceError::VersionConflict(m) => ApiError::PreconditionFailed(m),
-            ServiceError::Unprocessable(m) => ApiError::Unprocessable(m),
+            // The ONE rendering point of a `Violation` on the wire bridge.
+            ServiceError::Unprocessable(v) => ApiError::Unprocessable(v.to_string()),
             ServiceError::ValidationFailed(v) => ApiError::ValidationFailed(v),
             // Storage/DB failures carry SQLSTATE/constraint detail: classify
             // them (integrity/serialization conflict → 409, pool exhaustion →
@@ -242,8 +369,47 @@ fn sqlx_conflict_api_error(sm: SmError) -> ApiError {
 mod tests {
     use openehr_its::rest::runtime::ApiError;
 
-    use super::ServiceError;
+    use openehr_base::validate::InvariantViolation;
+
+    use super::{ServiceError, Violation};
     use crate::service::status::CallStatusType as S;
+
+    /// A [`Violation`] renders `[<path> ]<detail>[: <cause>; …][ (<invariant>)]`
+    /// — the ONE place the facts become prose. Each fact is independently
+    /// readable back off the value, which is what the refusal tests assert.
+    #[test]
+    fn violation_renders_its_facts_and_keeps_them_queryable() {
+        let plain = Violation::new("contribution must contain versions");
+        assert_eq!(plain.to_string(), "contribution must contain versions");
+        assert_eq!(plain.path(), None);
+        assert_eq!(plain.invariant(), None);
+        assert!(plain.causes().is_empty());
+
+        let rule = Violation::new("must be a non-empty list when present")
+            .with_path("ATTESTATION.items")
+            .with_invariant("ATTESTATION.Items_valid");
+        assert_eq!(
+            rule.to_string(),
+            "ATTESTATION.items must be a non-empty list when present \
+             (ATTESTATION.Items_valid)"
+        );
+        assert_eq!(rule.path(), Some("ATTESTATION.items"));
+        assert_eq!(rule.invariant(), Some("ATTESTATION.Items_valid"));
+
+        let nested = Violation::new("is not a valid PARTY_PROXY")
+            .with_path("AUDIT_DETAILS.committer")
+            .with_causes(vec![
+                InvariantViolation::here("Invariant Basic_validity failed"),
+                InvariantViolation::at("name", "Invariant Name_valid failed"),
+            ]);
+        assert_eq!(
+            nested.to_string(),
+            "AUDIT_DETAILS.committer is not a valid PARTY_PROXY: \
+             Invariant Basic_validity failed; Invariant Name_valid failed"
+        );
+        assert_eq!(nested.causes().len(), 2);
+        assert_eq!(nested.causes()[1].path, "name");
+    }
 
     /// `ServiceError::sm(status)` routed to the ITS-REST [`ApiError`] must land
     /// on the HTTP status the SM row prescribes. The SM → `ApiError` half of

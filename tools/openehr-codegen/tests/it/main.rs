@@ -4,3 +4,4 @@
 //! is a module; nextest still runs every test in its own process.
 
 mod emitter_invariants;
+mod model_query;

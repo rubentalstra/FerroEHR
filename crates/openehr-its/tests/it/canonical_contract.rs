@@ -29,7 +29,7 @@
 //! 3. **`_type`-first member order** — spec-silent; our own design, pinned
 //!    here so it can only change deliberately.
 
-use crate::common::{corpus_files, excluded};
+use crate::common::{corpus_files, corpus_rel, excluded};
 use openehr_its::json::{from_canonical_json, to_canonical_json};
 use openehr_rm::prelude::{
     Composition, Contribution, DvCount, DvOrdinal, DvQuantity, EhrStatus, Folder, ItemTree,
@@ -37,7 +37,6 @@ use openehr_rm::prelude::{
 use sha2::Digest;
 use std::fmt::Write;
 use std::fs;
-use std::path::Path;
 
 /// Typed-parse the corpus doc by its top-level `_type` and re-serialize it
 /// through the canonical entry point; `None` = not a dispatchable
@@ -67,7 +66,6 @@ fn serialize_typed(ty: &str, json: &str) -> Option<Result<String, String>> {
 ///    output changed — that must be a reviewed contract change, never drift.
 #[test]
 fn typed_canonical_output_is_deterministic_over_the_corpus() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor");
     let mut manifest = String::new();
     let mut serialized = 0usize;
     for path in corpus_files() {
@@ -80,12 +78,7 @@ fn typed_canonical_output_is_deterministic_over_the_corpus() {
         let Some(ty) = value.get("_type").and_then(|t| t.as_str()) else {
             continue; // fragments without a root _type: not canonical roots
         };
-        let rel = path
-            .strip_prefix(&root)
-            .unwrap_or(&path)
-            .display()
-            .to_string()
-            .replace('\\', "/");
+        let rel = corpus_rel(&path);
         if let Some(reason) = excluded(&rel) {
             println!("excluded {rel}: {reason}");
             continue; // the shared documented exclusion list (common::excluded)

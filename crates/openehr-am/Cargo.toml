@@ -16,9 +16,11 @@ publish = false
 [dependencies]
 openehr-base = { path = "../openehr-base" }
 openehr-lang = { path = "../openehr-lang" }
-# No serde derive on the spec types (the native codec in `openehr-its` owns the
-# wire). `serde_json` is kept for the untyped `Value` fields the generator emits
-# for cross-schema-`Any` slots.
+# Canonical-JSON (de)serialization is EMITTED manual `serde` impls on the spec
+# types (`openehr-codegen -- emit-json`, into `src/json_serde.rs`) — never a
+# derive. `serde_json` also carries the untyped `Value` fields the generator
+# emits for cross-schema-`Any` slots.
+serde.workspace = true
 serde_json.workspace = true
 
 [lints]

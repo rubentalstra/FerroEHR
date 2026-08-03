@@ -16,5 +16,5 @@ use crate::data_types::text::dv_text::DvText;
 #[derive(Debug, Clone, PartialEq)]
 pub struct DvParagraph {
     /// Items making up the paragraph, each of which is a text item (which may have its own formatting, and/or have hyperlinks).
-    pub items: Vec<DvText>,
+    pub items: openehr_base::containers::NonEmptyVec<DvText>,
 }

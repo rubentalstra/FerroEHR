@@ -28,3 +28,22 @@ the #1465 pattern (re-derived citations + flipped gate + accepting twin).
 Inventing prohibitions the spec lacks is equally forbidden — strict in both
 directions. Extends [[cnf-spec-oracle-attribution]] and
 [[valid-invalid-twins-rule]].
+
+**Extension (owner 2026-08-02, the strict-reader ruling):** the canonical
+reader REFUSES unknown keys — enforcement derives from the BMM-generated
+model (the generated types ARE the closed schema), implemented at the
+emitter with named-key refusals + twins. The old tolerant-reader
+("RM-version skew superset") rationale is retired: future-RM attributes
+arrive via the spec watcher + pin bump, never via silent tolerance. A lax
+upstream computable artifact (ITS-JSON open objects) is an upstream defect
+to report, never a reason to accept more than the model. Parse-don't-
+validate follows: typed carriers everywhere internal; construction =
+validation; downstream re-checks deleted with refusals retargeted at the
+constructor (#1694).
+**Scope (owner 2026-08-02): the strict-typing mandate covers the openehr-*
+crates themselves.** The emitter's conventions are re-adjudicated under it
+(#1695): Option<Vec> for 0..1 lists (kills the JSON-level non-empty check
+class), non-empty containers for 1..*, validated construction (new() ->
+Result running cores + terminology) on every generated type, strong types
+wherever the spec closes a set. Canonical WIRE bytes stay proven-unchanged
+(the contract gates); everything internal breaks freely.

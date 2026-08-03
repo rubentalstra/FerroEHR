@@ -16,7 +16,7 @@ use crate::plan::{Emission, decide};
 use crate::render::emit::{
     CrateGeneration, GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate,
 };
-use crate::render::{emit_rm_model, emit_validate, naming};
+use crate::render::{emit_rm_model, emit_validate, model_query, naming};
 use std::collections::{BTreeMap, BTreeSet};
 
 type Error = Box<dyn std::error::Error>;
@@ -943,4 +943,50 @@ pub fn field_exists(class: &str, field: &str) -> Result<bool, Error> {
         }
     }
     Ok(false)
+}
+
+// ── model-query report ──────────────────────────────────────────────────────
+
+/// Render the `model-query` report over the real vendored BMM inputs — the same
+/// projection the CLI subcommand prints (BMM-declared facts beside the current
+/// field-shape decision), so a golden test pins the CLI's actual output.
+///
+/// `component`/`class`/`attribute` are the optional filters; `format` is one of
+/// `table`, `tsv`, `json`.
+///
+/// # Errors
+/// Returns an error if a vendored BMM file cannot be loaded, if `format` is not
+/// a valid format, or if a filter names a component/class/attribute the loaded
+/// model does not have.
+pub fn model_query(
+    component: Option<&str>,
+    class: Option<&str>,
+    attribute: Option<&str>,
+    format: &str,
+) -> Result<String, Error> {
+    model_query_view(component, class, attribute, format, false)
+}
+
+/// [`model_query`] with the view selectable: `flattened` reports one row per
+/// class × CARRIED attribute (inherited ones included, each with its declaring
+/// class) instead of one row per class × declared attribute.
+///
+/// # Errors
+/// Same as [`model_query`].
+pub fn model_query_view(
+    component: Option<&str>,
+    class: Option<&str>,
+    attribute: Option<&str>,
+    format: &str,
+    flattened: bool,
+) -> Result<String, Error> {
+    model_query::render(
+        &model_query::Query {
+            component,
+            class,
+            attribute,
+            flattened,
+        },
+        model_query::Format::parse(format)?,
+    )
 }

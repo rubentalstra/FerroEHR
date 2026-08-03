@@ -6116,7 +6116,6 @@
           },
           "ism_transition": {
             "_type": "ISM_TRANSITION",
-            "archetype_node_id": "at0152",
             "careflow_step": {
               "_type": "DV_CODED_TEXT",
               "defining_code": {
@@ -6140,10 +6139,6 @@
                 }
               },
               "value": "completed"
-            },
-            "name": {
-              "_type": "DV_TEXT",
-              "value": "Prescription fulfilled"
             }
           },
           "language": {

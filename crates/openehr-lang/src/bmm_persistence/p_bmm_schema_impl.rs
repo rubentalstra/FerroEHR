@@ -56,15 +56,15 @@ mod tests {
             schema_lifecycle_state: String::new(),
             schema_author: String::new(),
             schema_description: String::new(),
-            schema_contributors: Vec::new(),
+            schema_contributors: openehr_base::containers::present(Vec::new()),
             archetype_parent_class: None,
             archetype_data_value_parent_class: None,
-            archetype_rm_closure_packages: Vec::new(),
+            archetype_rm_closure_packages: openehr_base::containers::present(Vec::new()),
             archetype_visualise_descendants_of: None,
             bmm_version: "2.4".to_owned(),
             includes: None,
-            primitive_types: Vec::new(),
-            class_definitions: Vec::new(),
+            primitive_types: openehr_base::containers::present(Vec::new()),
+            class_definitions: openehr_base::containers::present(Vec::new()),
         }
     }
 

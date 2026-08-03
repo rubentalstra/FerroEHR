@@ -137,7 +137,7 @@ pub fn create_opt(
         is_differential: false,
         definition: opt_def,
         terminology: parts.terminology,
-        rules: parts.rules,
+        rules: openehr_base::containers::present(parts.rules),
         rm_overlay: parts.rm_overlay,
         uid: None,
         original_language: parts.original_language,
@@ -171,12 +171,24 @@ fn opt_complex(
     match def {
         CComplexObject::CComplexObject(mut d) => {
             d.sibling_order = None;
-            d.attributes = opt_attributes(d.attributes, &proxy_root, work, components, root_id)?;
+            d.attributes = openehr_base::containers::present(opt_attributes(
+                d.attributes.unwrap_or_default(),
+                &proxy_root,
+                work,
+                components,
+                root_id,
+            )?);
             Ok(CComplexObject::CComplexObject(d))
         }
         CComplexObject::CArchetypeRoot(mut r) => {
             r.sibling_order = None;
-            r.attributes = opt_attributes(r.attributes, &proxy_root, work, components, root_id)?;
+            r.attributes = openehr_base::containers::present(opt_attributes(
+                r.attributes.unwrap_or_default(),
+                &proxy_root,
+                work,
+                components,
+                root_id,
+            )?);
             Ok(CComplexObject::CArchetypeRoot(r))
         }
     }
@@ -205,12 +217,12 @@ fn opt_attributes(
             continue;
         }
         let mut kept = Vec::new();
-        for child in std::mem::take(&mut attr.children) {
+        for child in std::mem::take(&mut attr.children).into_iter().flatten() {
             if let Some(node) = opt_object(child, proxy_root, work, components, root_id)? {
                 kept.push(node);
             }
         }
-        attr.children = kept;
+        attr.children = openehr_base::containers::present(kept);
         // Differential paths do not survive into a flat/OPT form.
         attr.differential_path = None;
         out.push(attr);
@@ -257,7 +269,13 @@ fn opt_object(
         }
         CObject::CComplexObject(CComplexObject::CComplexObject(mut d)) => {
             d.sibling_order = None;
-            d.attributes = opt_attributes(d.attributes, proxy_root, work, components, root_id)?;
+            d.attributes = openehr_base::containers::present(opt_attributes(
+                d.attributes.unwrap_or_default(),
+                proxy_root,
+                work,
+                components,
+                root_id,
+            )?);
             Ok(Some(CObject::CComplexObject(
                 CComplexObject::CComplexObject(d),
             )))
@@ -361,8 +379,14 @@ fn find_object(root: &CComplexObject, path: &str) -> Option<CObject> {
             .iter()
             .find(|a| a.rm_attribute_name == seg.attribute)?;
         let child = match &seg.node_id {
-            Some(nid) => attr.children.iter().find(|c| object_node_id(c) == nid)?,
-            None if attr.children.len() == 1 => attr.children.first()?,
+            Some(nid) => attr
+                .children
+                .iter()
+                .flatten()
+                .find(|c| object_node_id(c) == nid)?,
+            None if attr.children.as_ref().map_or(0, Vec::len) == 1 => {
+                attr.children.iter().flatten().next()?
+            }
             None => return None,
         };
         if idx + 1 == segments.len() {
@@ -516,7 +540,7 @@ fn root_overlays(
 ) -> Vec<openehr_am::am24::aom2::archetype::template_overlay::TemplateOverlay> {
     match root {
         Archetype::AuthoredArchetype(a) => match a.as_ref() {
-            AuthoredArchetype::Template(t) => t.overlays.clone(),
+            AuthoredArchetype::Template(t) => t.overlays.clone().unwrap_or_default(),
             AuthoredArchetype::AuthoredArchetype(_) | AuthoredArchetype::OperationalTemplate(_) => {
                 Vec::new()
             }
@@ -565,11 +589,11 @@ impl RootParts {
 fn rules_of(archetype: &Archetype) -> Vec<StatementSet> {
     match archetype {
         Archetype::AuthoredArchetype(a) => match a.as_ref() {
-            AuthoredArchetype::AuthoredArchetype(d) => d.rules.clone(),
-            AuthoredArchetype::Template(t) => t.rules.clone(),
-            AuthoredArchetype::OperationalTemplate(o) => o.rules.clone(),
+            AuthoredArchetype::AuthoredArchetype(d) => d.rules.clone().unwrap_or_default(),
+            AuthoredArchetype::Template(t) => t.rules.clone().unwrap_or_default(),
+            AuthoredArchetype::OperationalTemplate(o) => o.rules.clone().unwrap_or_default(),
         },
-        Archetype::TemplateOverlay(t) => t.rules.clone(),
+        Archetype::TemplateOverlay(t) => t.rules.clone().unwrap_or_default(),
     }
 }
 

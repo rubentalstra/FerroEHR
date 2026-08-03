@@ -83,7 +83,7 @@ fn value_sets(t: &ArchetypeTerminology) -> BTreeMap<String, Vec<String>> {
         .clone()
         .unwrap_or_default()
         .into_iter()
-        .map(|(k, v)| (k, v.members))
+        .map(|(k, v)| (k, v.members.into_vec()))
         .collect()
 }
 
@@ -527,13 +527,15 @@ ontology
         .clone();
 
     // at0001 stated nothing in 1.4 ⇒ explicit {1..1} in the ADL2 output.
-    let first = occurrences_of(&items.children[0]).expect("materialised occurrences");
+    let first = occurrences_of(&items.children.as_deref().unwrap_or_default()[0])
+        .expect("materialised occurrences");
     assert_eq!((first.lower, first.upper), (Some(1), Some(1)));
     // at0002 stated {0..2} ⇒ carried through unchanged.
-    let second = occurrences_of(&items.children[1]).expect("stated occurrences");
+    let second = occurrences_of(&items.children.as_deref().unwrap_or_default()[1])
+        .expect("stated occurrences");
     assert_eq!((second.lower, second.upper), (Some(0), Some(2)));
     // The use_node keeps no occurrences of its own (master05 L515).
-    assert!(occurrences_of(&items.children[2]).is_none());
+    assert!(occurrences_of(&items.children.as_deref().unwrap_or_default()[2]).is_none());
 }
 
 /// The `occurrences` of a converted child object, if it carries one.
@@ -662,7 +664,7 @@ fn app_b_standardised_items_convert_to_their_aom2_homes() {
 
     // `build_uid` is a GUID string → the archetype's typed `build_uid`.
     assert_eq!(
-        archetype.build_uid.value,
+        *archetype.build_uid.value(),
         uuid::Uuid::parse_str("3076af96-e1dd-4f9b-abf2-23913fcf52b1").expect("a valid GUID")
     );
 
@@ -803,7 +805,7 @@ fn malformed_build_uid_stays_in_other_details() {
     let converted = convert_source(&src);
     let archetype = authored(&converted);
     assert!(
-        archetype.build_uid.value.is_nil(),
+        archetype.build_uid.value().is_nil(),
         "a non-GUID build_uid is not converted"
     );
     let other = archetype

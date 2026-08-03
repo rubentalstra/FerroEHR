@@ -10,10 +10,9 @@
 //!   `party_identified_impl`).
 //! - `Relationship_valid`: `terminology (Terminology_id_openehr)
 //!   .has_code_for_group_id (Group_id_subject_relationship,
-//!   relationship.defining_code)` — terminology-bound, so it needs a lookup
-//!   this pure-RM crate cannot perform; realized at the wire-boundary
-//!   dispatcher (`openehr-its` `rm_terminology`) against the `openehr-term`
-//!   bundle.
+//!   relationship.defining_code)` — terminology-bound, so it needs a bundle
+//!   lookup rather than a typed-node property; realized by the binding table in
+//!   [`crate::validate::terminology`] against the `openehr-term` bundle.
 
 use crate::common::generic::party_related::PartyRelated;
 use crate::validate::{InvariantViolation, Validate};
@@ -23,7 +22,7 @@ impl Validate for PartyRelated {
         crate::validate::generated::party_identified_core(
             "PARTY_RELATED",
             self.name.as_deref(),
-            !self.identifiers.is_empty(),
+            self.identifiers.is_some(),
             self.external_ref.is_some(),
             out,
         );
@@ -42,7 +41,7 @@ mod tests {
             value: "mother".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: Vec::new(),
+            mappings: openehr_base::containers::present(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -59,7 +58,7 @@ mod tests {
         PartyRelated {
             external_ref: None,
             name: name.map(str::to_owned),
-            identifiers: Vec::new(),
+            identifiers: openehr_base::containers::present(Vec::new()),
             relationship: relationship(),
         }
     }

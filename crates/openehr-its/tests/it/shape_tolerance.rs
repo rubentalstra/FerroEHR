@@ -27,7 +27,7 @@
 //!    change no verdict (this drives the fast path and the typed path over
 //!    both spellings).
 
-use openehr_its::flat::validation::validate_rm_and_terminology;
+use openehr_its::rm_instance::validate_rm_and_terminology;
 use serde_json::{Number, Value};
 
 use crate::common::corpus_files;

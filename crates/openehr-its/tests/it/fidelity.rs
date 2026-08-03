@@ -19,13 +19,12 @@
 //! gate proves *readability*; a stricter lossless re-serialize round-trip is a
 //! follow-up once the 1.1↔1.2 field drift is characterized.
 
-use crate::common::{corpus_files, excluded};
+use crate::common::{corpus_files, corpus_rel, excluded};
 use openehr_its::json::{
     from_canonical_json, to_canonical_json, to_canonical_value, validate_canonical,
 };
 use openehr_rm::prelude::{Composition, Contribution, EhrStatus, Folder, ItemTree};
 use std::fs;
-use std::path::Path;
 
 /// Deserialize `json` into the generated type named by `ty`, then re-serialize
 /// (proving the value is well-formed on the way back out too).
@@ -160,11 +159,7 @@ fn generated_rm_reads_the_openehr_sdk_corpus() {
 
     for path in corpus_files() {
         let txt = fs::read_to_string(&path).unwrap();
-        let name = path
-            .strip_prefix(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor"))
-            .unwrap_or(&path)
-            .display()
-            .to_string();
+        let name = corpus_rel(&path);
         if let Some(reason) = excluded(&name) {
             println!("excluded {name}: {reason}");
             excluded_count += 1;
@@ -232,11 +227,7 @@ fn generated_rm_round_trips_the_openehr_sdk_corpus() {
 
     for path in corpus_files() {
         let txt = fs::read_to_string(&path).unwrap();
-        let name = path
-            .strip_prefix(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor"))
-            .unwrap_or(&path)
-            .display()
-            .to_string();
+        let name = corpus_rel(&path);
         if excluded(&name).is_some() || roundtrip_only_excluded(&name).is_some() {
             excluded_count += 1;
             continue;
@@ -288,11 +279,7 @@ fn generated_rm_output_validates_against_its_json_schema() {
 
     for path in corpus_files() {
         let txt = fs::read_to_string(&path).unwrap();
-        let name = path
-            .strip_prefix(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor"))
-            .unwrap_or(&path)
-            .display()
-            .to_string();
+        let name = corpus_rel(&path);
         if excluded(&name).is_some() || roundtrip_only_excluded(&name).is_some() {
             excluded_count += 1;
             continue;

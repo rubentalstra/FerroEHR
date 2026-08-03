@@ -18,7 +18,7 @@ pub struct ExtractEntityManifest {
     /// Subject (i.e. patient or similar) identifier for the entity at the target system.
     pub subject_id: Option<String>,
     /// Other identifiers that may be used to find the entity at the target system, keyed by type. May include medicare numbers, drivers license number, tax number etc.
-    pub other_ids: Vec<String>,
+    pub other_ids: Option<Vec<String>>,
     /// List of Uids of items to be included in the Extract, in cases where individual items are being requested by id. More typically, this attribute is not used, and the `EXTRACT_SPEC._criteria query_` defines the Extract contents. If set, for openEHR data, these are Uids identifying the version containers.
-    pub item_list: Vec<ObjectRef>,
+    pub item_list: Option<Vec<ObjectRef>>,
 }

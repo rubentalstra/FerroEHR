@@ -207,7 +207,7 @@ impl FerroEhrService {
         tx.commit().await?;
         support::record_commit();
 
-        Ok(support::committed_response(canonical, &committed))
+        Ok(support::committed_response(canonical, &committed)?)
     }
 
     /// `get_party_relationship` / `get_party_relationship_at_time`
@@ -225,7 +225,7 @@ impl FerroEhrService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(support::version_response(vo_id, read))
+        Ok(support::version_response(vo_id, read)?)
     }
 
     /// `update_party_relationship` (`i_party_relationship.adoc`): commit a new
@@ -294,7 +294,7 @@ impl FerroEhrService {
         support::record_commit();
 
         // Metadata + in-hand body — no post-write reassembly read-back.
-        Ok(support::committed_response(canonical, &committed))
+        Ok(support::committed_response(canonical, &committed)?)
     }
 
     /// Commit the logical delete of an already-resolved relationship

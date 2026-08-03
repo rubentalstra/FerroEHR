@@ -17,10 +17,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VersionOfParty {
     /// The `_type` property of `VersionOfParty`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `contribution` property of `VersionOfParty`.
     pub contribution: ObjectRefOfHierObjectId,
     /// The `signature` property of `VersionOfParty`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `commit_audit` property of `VersionOfParty`.
     pub commit_audit: serde_json::Value,
@@ -30,13 +32,19 @@ pub struct VersionOfParty {
 
 /// The `UpdateItemTag` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
+///
+/// The OAS declares this schema `additionalProperties: false`, so an
+/// undeclared member is refused rather than silently ignored.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UpdateItemTag {
     /// The `key` property of `UpdateItemTag`.
     pub key: String,
     /// The `value` property of `UpdateItemTag`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     /// The `target_path` property of `UpdateItemTag`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub target_path: Option<String>,
 }
 
@@ -45,6 +53,7 @@ pub struct UpdateItemTag {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Clstr {
     /// The `_type` property of `Clstr`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `items` property of `Clstr`.
     pub items: Vec<serde_json::Value>,
@@ -63,10 +72,13 @@ pub type ListOfPartyIdentity = Vec<serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDate {
     /// The `_type` property of `DvIntervalOfDate`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `lower` property of `DvIntervalOfDate`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lower: Option<serde_json::Value>,
     /// The `upper` property of `DvIntervalOfDate`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub upper: Option<serde_json::Value>,
 }
 
@@ -106,6 +118,7 @@ pub type ListOfCapability = Vec<serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectRefOfHierObjectId {
     /// The `id` property of `ObjectRefOfHierObjectId`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<serde_json::Value>,
 }
 
@@ -114,12 +127,15 @@ pub struct ObjectRefOfHierObjectId {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateAudit {
     /// The `_type` property of `UpdateAudit`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `system_id` property of `UpdateAudit`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub system_id: Option<String>,
     /// The `change_type` property of `UpdateAudit`.
     pub change_type: serde_json::Value,
     /// The `description` property of `UpdateAudit`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<serde_json::Value>,
     /// The `committer` property of `UpdateAudit`.
     pub committer: serde_json::Value,
@@ -130,12 +146,16 @@ pub struct UpdateAudit {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateAttestation {
     /// The `_type` property of `UpdateAttestation`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `attested_view` property of `UpdateAttestation`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub attested_view: Option<serde_json::Value>,
     /// The `proof` property of `UpdateAttestation`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
     /// The `items` property of `UpdateAttestation`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<serde_json::Value>>,
     /// The `reason` property of `UpdateAttestation`.
     pub reason: serde_json::Value,
@@ -148,13 +168,16 @@ pub struct UpdateAttestation {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateVersion {
     /// The `preceding_version_uid` property of `UpdateVersion`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preceding_version_uid: Option<serde_json::Value>,
     /// The `signature` property of `UpdateVersion`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `lifecycle_state` property of `UpdateVersion`.
     pub lifecycle_state: serde_json::Value,
     /// The `attestations` property of `UpdateVersion`.
-    pub attestations: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attestations: Option<Vec<UpdateAttestation>>,
     /// The `data` property of `UpdateVersion`.
     pub data: Versionable,
     /// The `commit_audit` property of `UpdateVersion`.
@@ -166,9 +189,10 @@ pub struct UpdateVersion {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewContribution {
     /// The `uid` property of `NewContribution`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uid: Option<serde_json::Value>,
     /// The `versions` property of `NewContribution`.
-    pub versions: Vec<serde_json::Value>,
+    pub versions: Vec<UpdateVersion>,
     /// The `audit` property of `NewContribution`.
     pub audit: UpdateAudit,
 }
@@ -178,6 +202,7 @@ pub struct NewContribution {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectRefOfObjectVersionId {
     /// The `id` property of `ObjectRefOfObjectVersionId`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<serde_json::Value>,
 }
 
@@ -205,20 +230,25 @@ pub type ItemTagOfRole = std::collections::BTreeMap<String, serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentCreateParams {
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-item-tag` (header)
-    pub openehr_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_item_tag: Option<Vec<String>>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `agent_get` (path/query/header).
@@ -226,9 +256,11 @@ pub struct AgentCreateParams {
 pub struct AgentGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version_at_time` (query)
     pub version_at_time: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -242,17 +274,21 @@ pub struct AgentUpdateParams {
     /// `If-Match` (header)
     pub if_match: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `agent_delete` (path/query/header).
@@ -266,20 +302,25 @@ pub struct AgentDeleteParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupCreateParams {
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-item-tag` (header)
-    pub openehr_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_item_tag: Option<Vec<String>>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `group_get` (path/query/header).
@@ -287,9 +328,11 @@ pub struct GroupCreateParams {
 pub struct GroupGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version_at_time` (query)
     pub version_at_time: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -303,17 +346,21 @@ pub struct GroupUpdateParams {
     /// `If-Match` (header)
     pub if_match: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `group_delete` (path/query/header).
@@ -327,20 +374,25 @@ pub struct GroupDeleteParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrganisationCreateParams {
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-item-tag` (header)
-    pub openehr_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_item_tag: Option<Vec<String>>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `organisation_get` (path/query/header).
@@ -348,9 +400,11 @@ pub struct OrganisationCreateParams {
 pub struct OrganisationGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version_at_time` (query)
     pub version_at_time: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -364,17 +418,21 @@ pub struct OrganisationUpdateParams {
     /// `If-Match` (header)
     pub if_match: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `organisation_delete` (path/query/header).
@@ -388,20 +446,25 @@ pub struct OrganisationDeleteParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PersonCreateParams {
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-item-tag` (header)
-    pub openehr_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_item_tag: Option<Vec<String>>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `person_get` (path/query/header).
@@ -409,9 +472,11 @@ pub struct PersonCreateParams {
 pub struct PersonGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version_at_time` (query)
     pub version_at_time: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -425,17 +490,21 @@ pub struct PersonUpdateParams {
     /// `If-Match` (header)
     pub if_match: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `person_delete` (path/query/header).
@@ -449,20 +518,25 @@ pub struct PersonDeleteParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleCreateParams {
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-item-tag` (header)
-    pub openehr_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_item_tag: Option<Vec<String>>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `role_get` (path/query/header).
@@ -470,9 +544,11 @@ pub struct RoleCreateParams {
 pub struct RoleGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version_at_time` (query)
     pub version_at_time: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -486,17 +562,21 @@ pub struct RoleUpdateParams {
     /// `If-Match` (header)
     pub if_match: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
     #[serde(rename = "openehr-version-item-tag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
-    pub openehr_version_item_tag: Option<Vec<serde_json::Value>>,
+    pub openehr_version_item_tag: Option<Vec<String>>,
 }
 
 /// Parameters for `role_delete` (path/query/header).
@@ -512,9 +592,11 @@ pub struct VersionedPartyGetParams {
     /// `versioned_object_uid` (path)
     pub versioned_object_uid: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -525,9 +607,11 @@ pub struct VersionedPartyRevisionHistoryParams {
     /// `versioned_object_uid` (path)
     pub versioned_object_uid: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -537,12 +621,15 @@ pub struct VersionedPartyRevisionHistoryParams {
 pub struct VersionedPartyVersionGetAtTimeParams {
     /// `versioned_object_uid` (path)
     pub versioned_object_uid: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `version_at_time` (query)
     pub version_at_time: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -555,9 +642,11 @@ pub struct VersionedPartyVersionGetByIdParams {
     /// `version_uid` (path)
     pub version_uid: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -566,12 +655,15 @@ pub struct VersionedPartyVersionGetByIdParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContributionCreateParams {
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -582,6 +674,7 @@ pub struct ContributionGetParams {
     /// `contribution_uid` (path)
     pub contribution_uid: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -589,13 +682,17 @@ pub struct ContributionGetParams {
 /// Parameters for `demographic_tags_get` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DemographicTagsGetParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `tag_key` (query)
     pub tag_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `tag_value` (query)
     pub tag_value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `tag_target_path` (query)
     pub tag_target_path: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -606,6 +703,7 @@ pub struct AgentTagsGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -616,12 +714,15 @@ pub struct AgentTagsUpdateParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -641,6 +742,7 @@ pub struct GroupTagsGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -651,12 +753,15 @@ pub struct GroupTagsUpdateParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -676,6 +781,7 @@ pub struct OrganisationTagsGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -686,12 +792,15 @@ pub struct OrganisationTagsUpdateParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -711,6 +820,7 @@ pub struct PersonTagsGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -721,12 +831,15 @@ pub struct PersonTagsUpdateParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -746,6 +859,7 @@ pub struct RoleTagsGetParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
 }
@@ -756,12 +870,15 @@ pub struct RoleTagsUpdateParams {
     /// `uid_based_id` (path)
     pub uid_based_id: String,
     #[serde(rename = "Prefer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Prefer` (header)
     pub prefer: Option<String>,
     #[serde(rename = "Accept")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
     pub accept: Option<String>,
     #[serde(rename = "Content-Type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
 }
@@ -978,31 +1095,22 @@ pub trait DemographicApi {
     async fn demographic_tags_get(
         &self,
         params: DemographicTagsGetParams,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+    ) -> Result<Vec<ItemTagOfPerson>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/agent/{uid_based_id}/tags`
     async fn agent_tags_get(
         &self,
         params: AgentTagsGetParams,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+    ) -> Result<Vec<ItemTagOfAgent>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/agent/{uid_based_id}/tags`
     async fn agent_tags_update(
         &self,
         params: AgentTagsUpdateParams,
-        body: Vec<serde_json::Value>,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+        body: Vec<UpdateItemTag>,
+    ) -> Result<Vec<ItemTagOfAgent>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `DELETE /demographic/agent/{uid_based_id}/tags/{key}`
@@ -1016,21 +1124,15 @@ pub trait DemographicApi {
     async fn group_tags_get(
         &self,
         params: GroupTagsGetParams,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+    ) -> Result<Vec<ItemTagOfGroup>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/group/{uid_based_id}/tags`
     async fn group_tags_update(
         &self,
         params: GroupTagsUpdateParams,
-        body: Vec<serde_json::Value>,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+        body: Vec<UpdateItemTag>,
+    ) -> Result<Vec<ItemTagOfGroup>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `DELETE /demographic/group/{uid_based_id}/tags/{key}`
@@ -1044,21 +1146,15 @@ pub trait DemographicApi {
     async fn organisation_tags_get(
         &self,
         params: OrganisationTagsGetParams,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+    ) -> Result<Vec<ItemTagOfOrganisation>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/organisation/{uid_based_id}/tags`
     async fn organisation_tags_update(
         &self,
         params: OrganisationTagsUpdateParams,
-        body: Vec<serde_json::Value>,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+        body: Vec<UpdateItemTag>,
+    ) -> Result<Vec<ItemTagOfOrganisation>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `DELETE /demographic/organisation/{uid_based_id}/tags/{key}`
@@ -1072,21 +1168,15 @@ pub trait DemographicApi {
     async fn person_tags_get(
         &self,
         params: PersonTagsGetParams,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+    ) -> Result<Vec<ItemTagOfPerson>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/person/{uid_based_id}/tags`
     async fn person_tags_update(
         &self,
         params: PersonTagsUpdateParams,
-        body: Vec<serde_json::Value>,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+        body: Vec<UpdateItemTag>,
+    ) -> Result<Vec<ItemTagOfPerson>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `DELETE /demographic/person/{uid_based_id}/tags/{key}`
@@ -1100,21 +1190,15 @@ pub trait DemographicApi {
     async fn role_tags_get(
         &self,
         params: RoleTagsGetParams,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+    ) -> Result<Vec<ItemTagOfRole>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/role/{uid_based_id}/tags`
     async fn role_tags_update(
         &self,
         params: RoleTagsUpdateParams,
-        body: Vec<serde_json::Value>,
-    ) -> Result<
-        Vec<std::collections::BTreeMap<String, serde_json::Value>>,
-        crate::rest::runtime::ApiError,
-    > {
+        body: Vec<UpdateItemTag>,
+    ) -> Result<Vec<ItemTagOfRole>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `DELETE /demographic/role/{uid_based_id}/tags/{key}`

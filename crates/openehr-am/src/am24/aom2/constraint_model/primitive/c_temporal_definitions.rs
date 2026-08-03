@@ -17,7 +17,7 @@ pub struct CTemporalDefinitions {
     /// "YYYY-??-XX"    -- day prohibited
     /// "YYYY-XX-XX"    -- only prohibited
     /// ```
-    pub valid_date_constraint_patterns: Vec<String>,
+    pub valid_date_constraint_patterns: openehr_base::containers::NonEmptyVec<String>,
     /// List of allowed date constraint replacements e.g. in specialised archetype. Contains the values:
     ///
     /// ----
@@ -57,7 +57,7 @@ pub struct CTemporalDefinitions {
     /// "HH:??:??"    -- minutes and seconds optional
     /// "HH:??:XX"    -- minutes optional, seconds prohibited
     /// ```
-    pub valid_time_constraint_patterns: Vec<String>,
+    pub valid_time_constraint_patterns: openehr_base::containers::NonEmptyVec<String>,
     /// List of allowed time constraint replacements e.g. in specialised archetype. Contains the values:
     ///
     /// ----
@@ -92,7 +92,7 @@ pub struct CTemporalDefinitions {
     /// "YYYY-MM-DDTHH:??:XX"    -- minutes optional, seconds prohibited
     /// "YYYY-??-??T??:??:??"    -- any date/time ok
     /// ```
-    pub valid_date_time_constraint_patterns: Vec<String>,
+    pub valid_date_time_constraint_patterns: openehr_base::containers::NonEmptyVec<String>,
     /// List of allowed date/time constraint replacements e.g. in specialised archetype. Contains the values:
     ///
     /// ----

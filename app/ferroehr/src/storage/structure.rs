@@ -23,6 +23,10 @@ use openehr_base::prelude::ArchetypeId;
 /// attributes (`identities`, `contacts`, `relationships`, `capabilities`) and
 /// stay inline verbatim in the party's fragment (see the codec's
 /// `prune_children`), which is lossless and needs no per-container row.
+/// (The delta is pinned against [`crate::versioning::Kind`] by
+/// [`tests::demographic_party_roots_mirror_the_versioning_kinds`] — the
+/// versioned-object domain is the owner of "which RM types are party roots";
+/// this list only records which of them the node codec also splits into rows.)
 const DEMOGRAPHIC_PARTY_ROOTS: [&str; 5] = ["PERSON", "ORGANISATION", "GROUP", "AGENT", "ROLE"];
 
 /// Whether an RM `_type` gets its own `node` row: the BMM-generated
@@ -41,7 +45,7 @@ pub fn is_structure_type(rm_type: &str) -> bool {
 /// two predicates gives both behaviours from one codec.
 #[must_use]
 pub fn is_versioned_root_type(rm_type: &str) -> bool {
-    is_structure_type(rm_type) || rm_type == "PARTY_RELATIONSHIP"
+    is_structure_type(rm_type) || rm_type == crate::versioning::Kind::PartyRelationship.as_str()
 }
 
 /// Parse an `archetype_node_id` that is a full archetype HRID into its
@@ -64,6 +68,22 @@ pub fn archetype_parts(node_id: &str) -> Option<(String, String, i32)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The party-root delta is exactly the party kinds of the versioned-object
+    /// domain — a kind added to [`crate::versioning::Kind`] without a row here
+    /// fails this test.
+    #[test]
+    fn demographic_party_roots_mirror_the_versioning_kinds() {
+        let mut from_kinds: Vec<&str> = crate::versioning::Kind::ALL
+            .iter()
+            .filter(|k| k.is_party())
+            .map(|k| k.as_str())
+            .collect();
+        from_kinds.sort_unstable();
+        let mut listed: Vec<&str> = DEMOGRAPHIC_PARTY_ROOTS.to_vec();
+        listed.sort_unstable();
+        assert_eq!(from_kinds, listed, "party roots must mirror `Kind`");
+    }
 
     #[test]
     fn party_roots_are_structure_roots() {

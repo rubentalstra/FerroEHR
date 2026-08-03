@@ -42,7 +42,7 @@ pub struct BmmModel {
     /// All classes in this model, keyed by type name.
     pub class_definitions: Option<std::collections::BTreeMap<String, BmmClass>>,
     /// List of other models 'used' (i.e. 'imported' by this model). Classes in the current model may refer to classes in a used model by specifying the other class's `_scope_` meta-attribute.
-    pub used_models: Vec<BmmModel>,
+    pub used_models: Option<Vec<BmmModel>>,
     /// All classes in this model, keyed by type name.
     pub modules: Option<std::collections::BTreeMap<String, BmmModule>>,
 }

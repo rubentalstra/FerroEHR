@@ -59,7 +59,7 @@ impl FerroEhrService {
                 format!("EHR_STATUS for EHR {ehr_id}"),
             )
         })?;
-        Ok(self.version_response(ehr_id, vo_id, read))
+        Ok(self.version_response(ehr_id, vo_id, read)?)
     }
 
     /// The **bare** `EHR_STATUS` at a specific version (not the
@@ -84,7 +84,7 @@ impl FerroEhrService {
                     format!("EHR_STATUS {vo_id} v{version}"),
                 )
             })?;
-        Ok(self.version_response(ehr_id, vo_id, read))
+        Ok(self.version_response(ehr_id, vo_id, read)?)
     }
 
     /// The one `EHR_STATUS` commit core (`replace_ehr_status` and the discrete
@@ -181,7 +181,7 @@ impl FerroEhrService {
                 format!("EHR_STATUS for EHR {ehr_id}"),
             )
         })?;
-        let current = self.version_response(ehr_id, vo_id, read);
+        let current = self.version_response(ehr_id, vo_id, read)?;
         let preceding = current
             .meta
             .as_ref()
@@ -902,7 +902,7 @@ impl FerroEhrService {
         let if_match = a_status
             .preceding_version_uid
             .as_ref()
-            .map(|o| o.value.clone())
+            .map(|o| o.value().to_owned())
             .unwrap_or_default();
         let committed = self
             .commit_status(an_ehr_id, vo_id, a_status, &if_match)

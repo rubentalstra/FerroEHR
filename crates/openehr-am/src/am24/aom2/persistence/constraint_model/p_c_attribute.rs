@@ -14,7 +14,7 @@ pub struct PCAttribute {
     /// Constraint on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).
     pub existence: Option<String>,
     /// Child C_OBJECT nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes.
-    pub children: Vec<PCObject>,
+    pub children: Option<Vec<PCObject>>,
     /// Within a differential specialised archetype, may be set to represent a deep path within the structure to which this constraint and its child constraints apply.
     pub differential_path: Option<String>,
     /// Cardinality constraint of attribute, if a container attribute.

@@ -11,7 +11,7 @@ use crate::render::emit::{
     GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate, type_module_path,
 };
 use crate::render::{
-    emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, naming,
+    emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, model_query, naming,
 };
 use std::path::{Path, PathBuf};
 /// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
@@ -56,9 +56,10 @@ pub(crate) fn run() -> std::process::ExitCode {
         "emit-aom2" => cmd_emit_aom2(),
         "emit-rm-model" => cmd_emit_rm_model(),
         "emit-validate" => cmd_emit_validate(),
+        "model-query" => cmd_model_query(args.get(1..).unwrap_or_default()),
         other => {
             eprintln!(
-                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-aom2`, `emit-rm-model`, or `emit-validate`"
+                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-aom2`, `emit-rm-model`, `emit-validate`, or `model-query`"
             );
             return std::process::ExitCode::from(EXIT_USAGE);
         }
@@ -91,6 +92,77 @@ fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
     Ok(())
+}
+
+/// Report what the vendored BMM states about every class attribute of the
+/// loaded components, beside the Rust field shape the emitter currently emits
+/// for it — a read-only query over the same LOAD → ANALYZE → PLAN → RENDER
+/// decisions `emit` drives (see [`model_query`] for the BMM column definitions
+/// and their `LANG` citations).
+///
+/// Usage: `model-query [--class NAME] [--attribute NAME] [--component KEY]
+/// [--flattened] [--format table|tsv|json]`; no filter reports the whole loaded
+/// model.
+///
+/// `--flattened` switches from one row per class × DECLARED attribute to one
+/// row per class × **carried** attribute (inherited ones included), adding the
+/// declaring class in the `declared_on` column — the inheritance dimension a
+/// declared-only view cannot express.
+fn cmd_model_query(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let (query, format) = parse_model_query_args(args)?;
+    print!("{}", model_query::render(&query, format)?);
+    Ok(())
+}
+
+/// Parse `model-query`'s options (`--flag value` and `--flag=value` both work).
+///
+/// # Errors
+/// Returns an error naming the valid options if an option is unknown, and an
+/// error naming the valid values if `--format` is not one of them.
+fn parse_model_query_args(
+    args: &[String],
+) -> Result<(model_query::Query<'_>, model_query::Format), Box<dyn std::error::Error>> {
+    let mut query = model_query::Query::default();
+    let mut format = model_query::Format::Table;
+    let mut i = 0;
+    while let Some(arg) = args.get(i) {
+        let (flag, inline) = match arg.split_once('=') {
+            Some((f, v)) => (f, Some(v)),
+            None => (arg.as_str(), None),
+        };
+        // A valueless switch must not swallow the next argument.
+        if flag == "--flattened" {
+            query.flattened = true;
+            i += 1;
+            continue;
+        }
+        let value = if let Some(v) = inline {
+            i += 1;
+            Some(v)
+        } else {
+            let v = args.get(i + 1).map(String::as_str);
+            i += 2;
+            v
+        };
+        let required = || -> Result<&str, Box<dyn std::error::Error>> {
+            value.ok_or_else(|| format!("option {flag} needs a value").into())
+        };
+        match flag {
+            "--class" => query.class = Some(required()?),
+            "--attribute" => query.attribute = Some(required()?),
+            "--component" => query.component = Some(required()?),
+            "--format" => format = model_query::Format::parse(required()?)?,
+            other => {
+                return Err(format!(
+                    "unknown model-query option {other:?}; valid options: --class NAME, \
+                     --attribute NAME, --component KEY, --flattened, --format {}",
+                    model_query::Format::VALID
+                )
+                .into());
+            }
+        }
+    }
+    Ok((query, format))
 }
 
 /// Emit the ITS-REST contract (DTOs, param structs, server trait, route table)
@@ -207,12 +279,15 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Emit canonical-JSON `ToJson` impls for every generated spec type (BASE / RM /
-/// LANG / AM 1.4 + 2.4 / TERM) into `openehr-its/src/json_codec/generated/`. The
-/// Serialize-side native codec, byte-identical to the `#[derive(OpenEhrType)]`
-/// serde path it shadows (proven by the openehr-its parity gate). Covers the
-/// exact type set the derive covers today — the same crate composition `emit`
-/// consumes, including AM 2.4's cross-schema re-emission closure.
+/// Emit the canonical-JSON `serde::Serialize`/`serde::Deserialize` impls for
+/// every generated spec type (BASE / RM / LANG / AM 1.4 + 2.4 / TERM).
+///
+/// The impls land in each spec crate's own `src/json_serde.rs` — both traits and
+/// the spec types are foreign to `openehr-its`, so an impl there would violate
+/// the orphan rule — and the `_type`-keyed structural dispatch stays in
+/// `openehr-its/src/json_codec/generated/`, where it can name every crate.
+/// Covers the same crate composition `emit` consumes, including AM 2.4's
+/// cross-schema re-emission closure.
 fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     let base = compose("base")?;
     let rm = compose("rm")?;
@@ -306,16 +381,12 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
         },
     ];
 
-    let mut schemas = vec![base_schema, rm_schema];
-    schemas.extend(lang_schemas.iter().copied());
-    schemas.extend(meta_schemas);
-
     // The structural dispatch is keyed by the bare canonical-JSON `_type`
     // string, so a class name several components' BMMs declare (110 of them —
     // `RESOURCE_DESCRIPTION`, `AUTHORED_RESOURCE`, the `BMM_*` family) resolves
     // by SCHEMA PRIORITY, and this is the priority order: RM first, then BASE,
     // then the archetype/meta components. Rationale: the dispatch's caller is
-    // the RM wire-boundary validator (`openehr_its::rm_validate`), and the
+    // the RM wire-boundary validator (`openehr_its::wire_validate`), and the
     // same-named twins differ materially (RM's `RESOURCE_DESCRIPTION_ITEM.language`
     // is a `CODE_PHRASE`, BASE's a `Terminology_code`), so decoding an RM wire
     // node with another component's shape would be wrong. No openEHR spec
@@ -324,27 +395,75 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     structural_schemas.extend(lang_schemas.iter().copied());
     structural_schemas.extend(meta_schemas);
 
+    // One emitted file per SPEC CRATE: the impls must live where the types are
+    // defined (orphan rule), and being in-crate is also what lets them read the
+    // `pub(crate)` fields of a validated class and construct through its
+    // hand-written door (`plan::construction`).
+    let per_crate: [(&str, &str, Vec<emit_json::JsonSchema<'_>>); 5] = [
+        ("openehr-base", "openehr_base", vec![base_schema]),
+        ("openehr-rm", "openehr_rm", vec![rm_schema]),
+        ("openehr-lang", "openehr_lang", lang_schemas.clone()),
+        (
+            "openehr-am",
+            "openehr_am",
+            vec![meta_schemas[0], meta_schemas[1]],
+        ),
+        ("openehr-term", "openehr_term", vec![meta_schemas[2]]),
+    ];
+    let mut written = Vec::new();
+    for (dir, krate, schemas) in &per_crate {
+        let src = crates_root().join(dir).join("src");
+        std::fs::create_dir_all(&src)?;
+        let path = src.join("json_serde.rs");
+        std::fs::write(&path, emit_json::emit_file(schemas, krate))?;
+        declare_json_serde_module(&src.join("lib.rs"), &mut written)?;
+        written.push(path);
+    }
+
     let gen_dir = Path::new(ITS_ROOT).join("src/json_codec/generated");
     std::fs::create_dir_all(&gen_dir)?;
-
-    let body = emit_json::emit_file(&schemas);
-    let impls_path = gen_dir.join("impls.rs");
-    std::fs::write(&impls_path, &body)?;
 
     let structural = emit_json::emit_structural_file(&structural_schemas);
     let structural_path = gen_dir.join("structural.rs");
     std::fs::write(&structural_path, &structural)?;
+    written.push(structural_path);
 
     let mod_rs = "// @generated by openehr-codegen (emit-json) — DO NOT EDIT.\n\
-        //! Canonical-JSON `ToJson` impls for the RM/BASE/AM/TERM/LANG spec types.\n\n\
-        mod impls;\n\
+        //! The canonical-JSON `_type` dispatch (the per-type `serde` impls live in\n\
+        //! each spec crate's own `json_serde` module).\n\n\
         pub mod structural;\n";
     let mod_path = gen_dir.join("mod.rs");
     std::fs::write(&mod_path, mod_rs)?;
+    written.push(mod_path);
 
-    let written = vec![impls_path, structural_path, mod_path];
     rustfmt(&written)?;
-    println!("emitted {} files into {}", written.len(), gen_dir.display());
+    println!("emitted {} files", written.len());
+    Ok(())
+}
+
+/// Declare the emitted `json_serde` module in a spec crate's generated
+/// `lib.rs`.
+///
+/// `emit` regenerates `lib.rs` (and deletes every `@generated` file, this one
+/// included), so the declaration is (re)appended by the target that owns the
+/// file. Both intermediate states are self-consistent: after `emit` neither the
+/// module nor its declaration exists, after `emit-json` both do.
+fn declare_json_serde_module(
+    lib: &Path,
+    written: &mut Vec<PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    const DECL: &str = "mod json_serde;";
+    let mut body = std::fs::read_to_string(lib)?;
+    if body.contains(DECL) {
+        return Ok(());
+    }
+    body.push_str(
+        "\n// canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:\n",
+    );
+    body.push_str(DECL);
+    body.push('\n');
+    std::fs::write(lib, &body)?;
+    written.push(lib.to_path_buf());
     Ok(())
 }
 

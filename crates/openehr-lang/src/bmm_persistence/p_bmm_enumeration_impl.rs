@@ -46,7 +46,9 @@ impl PBmmEnumeration {
     /// (`org.openehr.lang.bmm.bmm_enumeration.adoc` §Attributes).
     #[must_use]
     pub fn item_names(&self) -> &[String] {
-        enumeration_field!(self, item_names).as_slice()
+        enumeration_field!(self, item_names)
+            .as_deref()
+            .unwrap_or_default()
     }
 
     /// `P_BMM_ENUMERATION.item_values` — "Optional list of specific values.
@@ -54,7 +56,9 @@ impl PBmmEnumeration {
     /// (`org.openehr.lang.bmm.bmm_enumeration.adoc` §Attributes).
     #[must_use]
     pub fn item_values(&self) -> &[serde_json::Value] {
-        enumeration_field!(self, item_values).as_slice()
+        enumeration_field!(self, item_values)
+            .as_deref()
+            .unwrap_or_default()
     }
 
     /// The inheritance ancestors this persisted enumeration states
@@ -67,7 +71,9 @@ impl PBmmEnumeration {
     /// [`PBmmEnumeration::underlying_type_name`].
     #[must_use]
     pub fn ancestors(&self) -> &[String] {
-        enumeration_field!(self, ancestors).as_slice()
+        enumeration_field!(self, ancestors)
+            .as_deref()
+            .unwrap_or_default()
     }
 
     /// `P_BMM_ENUMERATION.item_documentations`: "Optional documentation strings
@@ -75,7 +81,9 @@ impl PBmmEnumeration {
     /// doc §Attributes).
     #[must_use]
     pub fn item_documentations(&self) -> &[String] {
-        enumeration_field!(self, item_documentations).as_slice()
+        enumeration_field!(self, item_documentations)
+            .as_deref()
+            .unwrap_or_default()
     }
 
     /// The `BMM_ENUMERATION.underlying_type_name` this persisted enumeration
@@ -99,6 +107,8 @@ impl PBmmEnumeration {
             Self::PBmmEnumerationString(_) => STRING_UNDERLYING_TYPE_NAME,
             Self::PBmmEnumeration(leaf) => leaf
                 .ancestors
+                .as_deref()
+                .unwrap_or_default()
                 .first()
                 .map_or(DEFAULT_UNDERLYING_TYPE_NAME, String::as_str),
         }
@@ -116,7 +126,7 @@ mod tests {
         PBmmEnumeration::PBmmEnumerationInteger(PBmmEnumerationInteger {
             documentation: None,
             name: "PROPORTION_KIND_2".to_owned(),
-            ancestors: vec!["Integer".to_owned()],
+            ancestors: Some(vec!["Integer".to_owned()]),
             constants: None,
             properties: None,
             functions: None,
@@ -127,13 +137,13 @@ mod tests {
             source_schema_id: "openehr_test_1.0.0".to_owned(),
             bmm_class: None,
             uid: 1,
-            ancestor_defs: Vec::new(),
-            item_names: vec!["pk_ratio".to_owned(), "pk_unitary".to_owned()],
-            item_values: vec![
+            ancestor_defs: openehr_base::containers::present(Vec::new()),
+            item_names: Some(vec!["pk_ratio".to_owned(), "pk_unitary".to_owned()]),
+            item_values: Some(vec![
                 serde_json::Value::from(0),
                 serde_json::Value::from(1001_i64),
-            ],
-            item_documentations: Vec::new(),
+            ]),
+            item_documentations: openehr_base::containers::present(Vec::new()),
         })
     }
 
@@ -151,7 +161,7 @@ mod tests {
         let mut data = PBmmEnumerationData {
             documentation: None,
             name: "MAGNITUDE_STATUS".to_owned(),
-            ancestors: vec!["String".to_owned()],
+            ancestors: Some(vec!["String".to_owned()]),
             constants: None,
             properties: None,
             functions: None,
@@ -162,16 +172,16 @@ mod tests {
             source_schema_id: "openehr_test_1.0.0".to_owned(),
             bmm_class: None,
             uid: 1,
-            ancestor_defs: Vec::new(),
-            item_names: Vec::new(),
-            item_values: Vec::new(),
-            item_documentations: Vec::new(),
+            ancestor_defs: openehr_base::containers::present(Vec::new()),
+            item_names: openehr_base::containers::present(Vec::new()),
+            item_values: openehr_base::containers::present(Vec::new()),
+            item_documentations: openehr_base::containers::present(Vec::new()),
         };
         assert_eq!(
             PBmmEnumeration::PBmmEnumeration(data.clone()).underlying_type_name(),
             "String"
         );
-        data.ancestors.clear();
+        data.ancestors = None;
         assert_eq!(
             PBmmEnumeration::PBmmEnumeration(data).underlying_type_name(),
             "Integer"

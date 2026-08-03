@@ -8,6 +8,7 @@
 ///
 /// Lexical form: `rm_originator  '-' rm_name  '-' rm_entity  '.' concept_name {  '-' specialisation }*  '.v' version_id`.
 #[doc(alias = "ARCHETYPE_ID")]
+// NOTE: the fields stay public deliberately: this class HAS a released lexical form, but it is enforced at the `openehr_base::validate::Validate` tier rather than at construction — moving it to the door would turn a validation verdict into a parse refusal, which needs its own adjudication — docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc §Syntaxes gives `archetype_id = qualified_rm_entity, '.', domain_concept, '.v', version_id`, but §“Archetype Identifiers” carries a WARNING that “some archetype authoring tools have historically allowed a nonconforming version part … of the form `.v1draft` or similar” — i.e. the release itself states that nonconforming instances are in circulation. Refusing them at PARSE rather than at validation is an accept/reject boundary change requiring its own adjudication; the grammar is enforced today by `impl Validate for ArchetypeId`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeId {
     // inherited: OBJECT_ID

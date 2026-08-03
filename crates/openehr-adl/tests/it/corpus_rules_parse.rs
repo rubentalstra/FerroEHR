@@ -57,9 +57,9 @@ fn every_corpus_rules_section_parses() {
         match parse_artefact_rules(&artefact, &src) {
             Ok(Some(set)) => {
                 with_rules += 1;
-                statements += set.statement.len();
+                statements += set.statement.as_ref().map_or(0, Vec::len);
                 assert!(
-                    !set.statement.is_empty(),
+                    !set.statement.as_ref().is_none_or(Vec::is_empty),
                     "{}: rules section parsed to zero statements",
                     path.display()
                 );

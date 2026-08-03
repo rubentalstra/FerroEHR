@@ -207,7 +207,7 @@ impl StructureScan<'_> {
             // so this sibling-scoped pass is 1.4-only.
             if self.dialect == Dialect::Adl14 {
                 let mut sibling_ids: BTreeSet<&str> = BTreeSet::new();
-                for child in &attr.children {
+                for child in attr.children.iter().flatten() {
                     let cid = object_node_id(child);
                     if !cid.is_empty()
                         && (is_id_code(cid) || is_at_code(cid))
@@ -280,7 +280,7 @@ impl StructureScan<'_> {
             Dialect::Adl2 => true,
             Dialect::Adl14 => attr.is_multiple,
         };
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let cpath = child_path(&attr_path, object_node_id(child));
             self.walk_object(&cpath, child, require_child_node_id);
         }
@@ -296,7 +296,7 @@ impl StructureScan<'_> {
             return; // open cardinality upper — nothing to bound
         };
         let mut sum_lower = 0i64;
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let Some(occ) = child_occurrences(child) else {
                 continue;
             };
@@ -361,7 +361,7 @@ impl StructureScan<'_> {
         let Some(card) = attr.cardinality.as_ref() else {
             return; // no cardinality ⇒ not a container ⇒ VCOC does not apply.
         };
-        if attr.children.is_empty() {
+        if attr.children.as_ref().is_none_or(Vec::is_empty) {
             return;
         }
         let card_lower = occurrences_lower(&card.interval);
@@ -370,7 +370,7 @@ impl StructureScan<'_> {
         // Σ of the children's effective occurrences maxima; `None` = unbounded
         // (any child with an open upper makes the sum open).
         let mut sum_upper: Option<i64> = Some(0);
-        for child in &attr.children {
+        for child in attr.children.iter().flatten() {
             let occ = effective_occurrences_adl14(self.v.definition, child);
             match (sum_upper, occ.upper) {
                 (Some(sum), Some(u)) => sum_upper = Some(sum + i64::from(u)),
@@ -423,10 +423,10 @@ impl StructureScan<'_> {
         // ("includes empty") makes the condition false. So on a real slot (which
         // always has an `include`) every inconsistency reports as VDSEV; VDSIV
         // is defined by the spec but structurally unreachable through this table.
-        let inc_empty = slot.includes.is_empty();
-        let exc_empty = slot.excludes.is_empty();
-        let inc_any = !inc_empty && slot.includes.iter().all(is_any_assertion);
-        let exc_any = !exc_empty && slot.excludes.iter().all(is_any_assertion);
+        let inc_empty = slot.includes.as_ref().is_none_or(Vec::is_empty);
+        let exc_empty = slot.excludes.as_ref().is_none_or(Vec::is_empty);
+        let inc_any = !inc_empty && slot.includes.iter().flatten().all(is_any_assertion);
+        let exc_any = !exc_empty && slot.excludes.iter().flatten().all(is_any_assertion);
 
         // A real slot always carries an `include`, so only the include-side
         // branches of the spec table are reachable (see the NOTE above): a
@@ -450,7 +450,12 @@ impl StructureScan<'_> {
 
         // VDFAI: archetype ids in slot assertions must be valid (master04.5
         // §`ARCHETYPE_SLOT`).
-        for a in slot.includes.iter().chain(slot.excludes.iter()) {
+        for a in slot
+            .includes
+            .iter()
+            .flatten()
+            .chain(slot.excludes.iter().flatten())
+        {
             for id in assertion_archetype_ids(a) {
                 if !is_archetype_id(&id) {
                     push_issue(
@@ -501,8 +506,8 @@ impl StructureScan<'_> {
         match obj {
             CObject::CBoolean(b) => {
                 if let Some(av) = b.assumed_value
-                    && !b.constraint.is_empty()
-                    && !b.constraint.contains(&av)
+                    && !b.constraint.as_ref().is_none_or(Vec::is_empty)
+                    && !b.constraint.as_ref().is_some_and(|c| c.contains(&av))
                 {
                     self.vobav("boolean assumed value is not in the constraint", path);
                 }
@@ -512,15 +517,15 @@ impl StructureScan<'_> {
                 // a valid integer assumed value is a whole number lying in some
                 // constraint interval.
                 if let Some(av) = i.assumed_value
-                    && !i.constraint.is_empty()
+                    && !i.constraint.as_ref().is_none_or(Vec::is_empty)
                 {
                     #[expect(
                         clippy::as_conversions,
                         clippy::cast_possible_truncation,
                         reason = "guarded by fract()"
                     )]
-                    let inside =
-                        av.fract() == 0.0 && i.constraint.iter().any(|iv| iv.has(&(av as i32)));
+                    let inside = av.fract() == 0.0
+                        && i.constraint.iter().flatten().any(|iv| iv.has(&(av as i32)));
                     if !inside {
                         self.vobav(
                             "integer assumed value is not within any constraint interval",
@@ -531,8 +536,8 @@ impl StructureScan<'_> {
             }
             CObject::CReal(r) => {
                 if let Some(av) = r.assumed_value
-                    && !r.constraint.is_empty()
-                    && !r.constraint.iter().any(|iv| iv.has(&av))
+                    && !r.constraint.as_ref().is_none_or(Vec::is_empty)
+                    && !r.constraint.iter().flatten().any(|iv| iv.has(&av))
                 {
                     self.vobav(
                         "real assumed value is not within any constraint interval",
@@ -550,7 +555,7 @@ impl StructureScan<'_> {
             // unknown and never raises.
             CObject::CDate(d) => {
                 if let Some(av) = &d.assumed_value
-                    && temporal_assumed_violates(&d.constraint, av)
+                    && temporal_assumed_violates(d.constraint.as_deref().unwrap_or_default(), av)
                 {
                     self.vobav(
                         "date assumed value is not within any constraint interval",
@@ -560,7 +565,7 @@ impl StructureScan<'_> {
             }
             CObject::CTime(t) => {
                 if let Some(av) = &t.assumed_value
-                    && temporal_assumed_violates(&t.constraint, av)
+                    && temporal_assumed_violates(t.constraint.as_deref().unwrap_or_default(), av)
                 {
                     self.vobav(
                         "time assumed value is not within any constraint interval",
@@ -570,7 +575,7 @@ impl StructureScan<'_> {
             }
             CObject::CDateTime(dt) => {
                 if let Some(av) = &dt.assumed_value
-                    && temporal_assumed_violates(&dt.constraint, av)
+                    && temporal_assumed_violates(dt.constraint.as_deref().unwrap_or_default(), av)
                 {
                     self.vobav(
                         "date/time assumed value is not within any constraint interval",
@@ -580,7 +585,7 @@ impl StructureScan<'_> {
             }
             CObject::CDuration(du) => {
                 if let Some(av) = &du.assumed_value
-                    && temporal_assumed_violates(&du.constraint, av)
+                    && temporal_assumed_violates(du.constraint.as_deref().unwrap_or_default(), av)
                 {
                     self.vobav(
                         "duration assumed value is not within any constraint interval",
@@ -590,8 +595,8 @@ impl StructureScan<'_> {
             }
             CObject::CString(s) => {
                 if let Some(av) = &s.assumed_value
-                    && !s.constraint.is_empty()
-                    && !s.constraint.iter().any(|c| c == av)
+                    && !s.constraint.as_ref().is_none_or(Vec::is_empty)
+                    && !s.constraint.iter().flatten().any(|c| c == av)
                 {
                     self.vobav("string assumed value is not in the constraint list", path);
                 }
@@ -694,8 +699,8 @@ fn assertion_archetype_ids(a: &Assertion) -> Vec<String> {
 /// The second-order attribute tuples of a [`CComplexObject`] (either subtype).
 pub(super) fn complex_attribute_tuples(cco: &CComplexObject) -> &[CAttributeTuple] {
     match cco {
-        CComplexObject::CComplexObject(d) => &d.attribute_tuples,
-        CComplexObject::CArchetypeRoot(r) => &r.attribute_tuples,
+        CComplexObject::CComplexObject(d) => d.attribute_tuples.as_deref().unwrap_or_default(),
+        CComplexObject::CArchetypeRoot(r) => r.attribute_tuples.as_deref().unwrap_or_default(),
     }
 }
 

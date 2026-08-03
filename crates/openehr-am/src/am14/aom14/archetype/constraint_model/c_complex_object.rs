@@ -23,5 +23,5 @@ pub struct CComplexObject {
     /// Value to be assumed if none sent in data.
     pub assumed_value: Option<serde_json::Value>,
     /// List of constraints on attributes of the reference model type represented by this object.
-    pub attributes: Vec<CAttribute>,
+    pub attributes: Option<Vec<CAttribute>>,
 }

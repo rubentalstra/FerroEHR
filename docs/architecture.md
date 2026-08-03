@@ -37,9 +37,12 @@ chapter, concrete methods).
   1.3.0), `openehr-rm` (RM 1.2.0 — the domain model everything consumes),
   `openehr-am` (AM 1.4 + 2.4, as `am14`/`am24`), `openehr-term` (TERM data
   classes + hand-written bundle/assets), `openehr-lang` (BMM/P_BMM model).
-- **Canonical JSON** — the native `ToJson`/`FromJson` codec (`emit-json`) puts `_type`
-  self-tagging on every type; `openehr-its::json` is the entry points +
-  ITS-JSON schema validation.
+- **Canonical JSON** — emitted **manual serde impls** (`emit-json` → each
+  defining crate's `src/json_serde.rs`; no derives, no serde attributes on
+  spec types) put `_type` self-tagging on every type, over the small shared
+  `openehr_base::serde_support` runtime; `openehr-its::json` is the entry
+  points (`to_canonical_json`/`from_canonical_json`/`from_canonical_value`,
+  refusal paths via `serde_path_to_error`) + ITS-JSON schema validation.
 - **Canonical XML** (`emit-xml`) — generated `ToXml`/`FromXml` over a
   hand-written `quick-xml` runtime, from the vendored XSDs + BMM field model
   (`openehr-its`).
@@ -64,10 +67,12 @@ decisions + the declarative, spec-cited decision maps) → render (the only
 text-producing stage). Emitter invariants (completeness — nothing a loaded
 schema declares is silently dropped —, constructibility, byte-determinism,
 source-package mirroring, closure correctness) are themselves a test suite.
-**The spec types carry no serde**: canonical JSON is the emitted native
-codec over a small hand-written runtime (the same shape as the XML codec);
-the wire contract (`_type`-first, BMM field order, RM number typing,
-tolerant reads) is pinned by the canonical-output contract gate.
+**The spec types carry no serde derives or attributes**: canonical JSON is
+emitted MANUAL `serde::Serialize`/`Deserialize` impls (explicit generated
+code in each defining crate's `json_serde.rs`, over the small shared
+`openehr_base::serde_support` runtime); the wire contract (`_type`-first,
+BMM field order, RM number typing, the STRICT reader — undeclared and
+duplicate keys refused) is pinned by the canonical-output contract gate.
 
 Fidelity is proven by gates (`openehr-its/tests/`); a `codegen-drift` CI job
 regenerates everything and fails on any diff.

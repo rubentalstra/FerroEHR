@@ -28,9 +28,9 @@ pub struct PCArchetypeRoot {
 
     // inherited: P_C_COMPLEX_OBJECT
     /// List of constraints on attributes of the reference model type represented by this object.
-    pub attributes: Vec<PCAttribute>,
+    pub attributes: Option<Vec<PCAttribute>>,
     /// List of attribute tuple constraints under this object constraint, if any.
-    pub attribute_tuples: Vec<PCAttributeTuple>,
+    pub attribute_tuples: Option<Vec<PCAttributeTuple>>,
     /// The `archetype_ref` attribute of openEHR `P_C_ARCHETYPE_ROOT` (the vendored BMM carries no documentation for it).
     pub archetype_ref: String,
 }

@@ -31,12 +31,11 @@ use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::create_opt;
 use openehr_adl::parse::Dialect;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
-use openehr_its::flat::validation::{
-    ValidationKind, validate_archetype_conformance, validate_rm_and_terminology,
-};
+use openehr_its::flat::validation::validate_archetype_conformance;
 use openehr_its::flat::webtemplate::{
     WebTemplate, WebTemplateCardinality, WebTemplateNode, build_web_template_am24,
 };
+use openehr_its::rm_instance::{ValidationKind, validate_rm_and_terminology};
 
 const OBS_UPGRADE: &str =
     "upgrade/upgrade_from_14/openEHR-EHR-OBSERVATION.upgrade_add_use_nodes.v1.0.0.adls";

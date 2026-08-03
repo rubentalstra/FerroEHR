@@ -103,7 +103,7 @@ pub(super) async fn run(
                 super::CHANGE_MODIFICATION,
                 "EHR_STATUS update",
                 Some(require_if_match(&p.if_match)?),
-            );
+            )?;
             // 204_EHR_STATUS (default minimal) / 200_EHR_STATUS_updated
             // (representation); ETag + Last-Modified + Location on all.
             // The commit result's instant is the Last-Modified value

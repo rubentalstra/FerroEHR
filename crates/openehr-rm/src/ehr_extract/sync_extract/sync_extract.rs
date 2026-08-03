@@ -13,5 +13,5 @@ pub struct SyncExtract {
     /// Details of specification of this Extract.
     pub specification: SyncExtractSpec,
     /// Content, in the form of a serialised Contributions.
-    pub items: Vec<XContribution>,
+    pub items: Option<Vec<XContribution>>,
 }

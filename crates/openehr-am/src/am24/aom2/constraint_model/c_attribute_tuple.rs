@@ -11,7 +11,7 @@ use crate::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
 #[derive(Debug, Clone, PartialEq)]
 pub struct CAttributeTuple {
     /// List of `C_ATTRIBUTEs` forming the definition of the tuple.
-    pub members: Vec<CAttribute>,
+    pub members: Option<Vec<CAttribute>>,
     /// Tuple definitions.
-    pub tuples: Vec<CPrimitiveTuple>,
+    pub tuples: Option<Vec<CPrimitiveTuple>>,
 }

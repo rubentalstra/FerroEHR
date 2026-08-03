@@ -102,7 +102,7 @@ fn compositions() -> Vec<(String, String, Value)> {
         if path.extension().is_none_or(|e| e != "json") {
             continue;
         }
-        let Ok(text) = std::fs::read_to_string(&path) else {
+        let Ok(text) = std::fs::read_to_string(crate::common::twinned(&path)) else {
             continue;
         };
         let Ok(value) = serde_json::from_str::<Value>(&text) else {
@@ -314,7 +314,7 @@ fn golden_structured(comp_file: &str, template_id: &str, snap: &str) {
     let wt = wts
         .get(template_id)
         .unwrap_or_else(|| panic!("no web template for {template_id:?}"));
-    let text = std::fs::read_to_string(composition_dir().join(comp_file))
+    let text = std::fs::read_to_string(crate::common::twinned(&composition_dir().join(comp_file)))
         .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     let comp: Value =
         serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"));

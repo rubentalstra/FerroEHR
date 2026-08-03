@@ -15,5 +15,5 @@ pub struct ExternalQuery {
     pub query_id: String,
     /// Optional arguments to query.
     /// Not yet standardised.
-    pub query_args: Vec<String>,
+    pub query_args: Option<Vec<String>>,
 }
