@@ -29,7 +29,7 @@ use ferroehr::system_log::fhir;
 use ferroehr::system_log::message::AuditContext;
 use ferroehr::system_log::store::AuditStore;
 use ferroehr_rest::config::AppConfig;
-use ferroehr_rest::extensions::access::authz::AuthzHandle;
+use ferroehr_rest::extensions::access::authz::{AuthzHandle, AuthzResolvers, ResolveError};
 use http::{Request, StatusCode};
 use jiff::Timestamp;
 use serde_json::Value;
@@ -71,7 +71,12 @@ fn rest_config() -> AppConfig {
 fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
     let mut cfg = AuthzConfig::default();
     cfg.rbac.enabled = enabled;
-    AuthzHandle::from_config(&cfg, &rest_config().server.base_path).map(Arc::new)
+    // RBAC-only: no engine, inert resolvers (nothing here consults ABAC).
+    let resolvers = AuthzResolvers {
+        subject: Arc::new(|_| Box::pin(async { Ok::<_, ResolveError>(None) })),
+        template_of_version: Arc::new(|_, _| Box::pin(async { Ok::<_, ResolveError>(None) })),
+    };
+    AuthzHandle::build(&cfg, &rest_config().server.base_path, None, resolvers).map(Arc::new)
 }
 
 fn basic(name: &str) -> String {

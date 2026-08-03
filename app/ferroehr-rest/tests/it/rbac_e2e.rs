@@ -36,7 +36,7 @@ use ferroehr::service::FerroEhrService;
 use ferroehr::system_log::config::{AuditConfig, FailMode, StoreConfig, SyslogConfig, Transport};
 use ferroehr::system_log::sender::{AuditSender, start};
 use ferroehr_rest::config::AppConfig;
-use ferroehr_rest::extensions::access::authz::AuthzHandle;
+use ferroehr_rest::extensions::access::authz::{AuthzHandle, AuthzResolvers, ResolveError};
 
 use crate::common;
 use http::{Request, StatusCode};
@@ -107,7 +107,12 @@ fn rest_config() -> AppConfig {
 fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
     let mut cfg = AuthzConfig::default();
     cfg.rbac.enabled = enabled;
-    AuthzHandle::from_config(&cfg, &rest_config().server.base_path).map(Arc::new)
+    // RBAC-only: no engine, inert resolvers (nothing here consults ABAC).
+    let resolvers = AuthzResolvers {
+        subject: Arc::new(|_| Box::pin(async { Ok::<_, ResolveError>(None) })),
+        template_of_version: Arc::new(|_, _| Box::pin(async { Ok::<_, ResolveError>(None) })),
+    };
+    AuthzHandle::build(&cfg, &rest_config().server.base_path, None, resolvers).map(Arc::new)
 }
 
 /// A real service over a fresh DB, optionally wired with an ATNA audit sender.

@@ -170,7 +170,11 @@ dev compose stack ships one such account (`ferroehr-readonly`, password
 
 For attribute-level decisions — "may this user touch this patient's data,
 under this organisation, for this template?" — enable ABAC. A policy decision
-point is consulted per clinical operation with resolved attributes.
+point is consulted per clinical operation with resolved attributes. An
+enabled ABAC block that cannot be built — a missing or invalid policy
+directory, an unreachable-by-construction PDP client — aborts server startup:
+a configuration that promises fine-grained authorization never silently runs
+without it.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
