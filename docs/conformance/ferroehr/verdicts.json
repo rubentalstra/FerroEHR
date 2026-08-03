@@ -484,7 +484,7 @@
     [
       "ItemTags",
       {
-        "passed": 32,
+        "passed": 63,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 942,
-    "driven": 905,
-    "passed": 905,
+    "selected": 973,
+    "driven": 936,
+    "passed": 936,
     "failed": 0,
     "inconclusive": 0
   }

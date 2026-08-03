@@ -3480,7 +3480,84 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-key_scoped",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-unknown_key",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_get-unknown_container",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-non_array_body",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-unknown_container",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.demographic_tags_get-space_wide_listing",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-key_scoped",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-unknown_key",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_get-unknown_container",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-non_array_body",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-unknown_container",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_delete-key_scoped",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
@@ -3495,6 +3572,13 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_get-wrong_kind_uid",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_update-non_array_body",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
@@ -3550,6 +3634,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-empty_target_path_absent",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity",
       "format": "canonical-json",
       "status": "passed",
@@ -3572,6 +3663,41 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-version_container_disjoint",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-key_scoped",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-unknown_key",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_get-unknown_container",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-non_array_body",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-unknown_container",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
@@ -3656,6 +3782,20 @@
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-invalid_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-invalid_item_tag_header",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-item_tag_wrapper_header",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4574,6 +4714,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-second_delete_not_found",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-unknown_key",
       "format": "canonical-json",
       "status": "passed",
@@ -4602,7 +4749,41 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-supersession_does_not_move_tags",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-version_target_shape",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-xml_not_acceptable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-duplicate_identity_last_wins",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_target_path_absent",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_value_invariant",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
@@ -4616,7 +4797,21 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-no_reversioning",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-non_array_body",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-prefer_identifier",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
@@ -4631,6 +4826,20 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-version_container_disjoint",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-wrong_media",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-key_scoped",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
@@ -4652,6 +4861,13 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-key_target_path_identity",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-non_array_body",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
