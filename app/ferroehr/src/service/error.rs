@@ -171,19 +171,63 @@ pub enum ServiceError {
     /// A database failure.
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
-    /// A JSON (de)serialization failure.
-    #[error("json: {0}")]
-    Json(#[from] serde_json::Error),
+    /// A JSON payload the server was asked to READ is malformed — a
+    /// client-caused refusal (`400`) whose wire message NAMES the defect
+    /// (offset, expected token), because that is the only thing the caller can
+    /// act on. Constructed explicitly at a read site; never by `?`.
+    #[error("malformed json: {0}")]
+    JsonRead(serde_json::Error),
+    /// The server failed to serialize its OWN data — a server-side fault
+    /// (`500`). This is the `From<serde_json::Error>` default (a bare `?` on a
+    /// `serde_json` failure lands here), because the safe classification of an
+    /// unattributed codec failure is "our fault, say nothing": a serde
+    /// diagnostic names Rust type and field names, which is server-internal
+    /// detail no client can act on. The full diagnostic goes to `tracing`
+    /// instead, and the wire body carries `INTERNAL_MESSAGE`.
+    #[error("json serialization failed: {0}")]
+    JsonWrite(#[from] serde_json::Error),
     /// A version-signing or read-time integrity failure (RM common master06
     /// §Digital Signature) — either signing at commit failed, or
     /// `verify_on_read = strict` found a stored signature that does not match
     /// the served version.
+    ///
+    /// The carried text is a LOG detail, not a wire message: both bridges
+    /// below trace it and answer with `INTERNAL_MESSAGE`.
     #[error("signing: {0}")]
     Signing(String),
     /// A server-side fault with no more specific variant (SM
     /// `CALL_STATUS_TYPE.exception` / `file_not_writable` — → HTTP 500).
+    ///
+    /// The carried text is a LOG detail, not a wire message. Sites construct
+    /// it with whatever diagnoses the fault (a codec error, an unexpected
+    /// stored shape, a failed conversion); both bridges below put that on the
+    /// trace record and answer with `INTERNAL_MESSAGE`, because a `500` is
+    /// by definition something the client cannot act on.
     #[error("internal: {0}")]
     Internal(String),
+}
+
+/// The client-visible message of a server-side fault (`500`). Deliberately
+/// opaque: a serde/codec/driver diagnostic names Rust types, RM attribute
+/// names, SQL aliases and schema objects — server-internal detail the client
+/// can neither act on nor be trusted with. The diagnosis belongs in the
+/// server's own logs, so every 500-class body carries this sentence and the
+/// detail rides one structured `tracing` record instead. (No openEHR spec
+/// governs error-body wording beyond the `{ error, message }` shape —
+/// ITS-REST overview §HTTP status codes; the opacity is our own design.)
+pub(crate) const INTERNAL_MESSAGE: &str = "the server encountered an internal error";
+
+/// Record a server-side fault on the trace record and return the curated
+/// opaque `exception` [`SmError`] its 500-class body carries.
+///
+/// `context` names the operation that failed (a static call-site label);
+/// `detail` is the raw diagnostic — a serde error, a codec failure, a driver
+/// string — which is written to `tracing` and NEVER to the wire. Use this at
+/// every site that would otherwise render a foreign error's `Display` into a
+/// 500 body.
+pub(crate) fn internal_fault(context: &'static str, detail: &dyn std::fmt::Display) -> SmError {
+    tracing::error!(context, error = %detail, "internal server fault → 500");
+    SmError::new(CallStatusType::Exception, INTERNAL_MESSAGE.to_owned())
 }
 
 impl ServiceError {
@@ -270,7 +314,8 @@ impl From<ServiceError> for SmError {
     /// | `ValidationFailed`        | `ContentInvalid`             | 422  |
     /// | `BadRequest`              | `PreconditionViolation`      | 400  |
     /// | `Storage`/`Database`      | classified: 409/503/500      |      |
-    /// | `Json`/`Signing`/`Internal` | `Exception`                | 500  |
+    /// | `JsonRead`                | `PreconditionViolation`      | 400  |
+    /// | `JsonWrite`/`Signing`/`Internal` | `Exception`           | 500  |
     ///
     /// `NotFound` carries the granular does-not-exist [`SmError`] it was
     /// constructed with ([`ServiceError::sm`]), so the round-trip restores the
@@ -326,8 +371,13 @@ impl From<ServiceError> for SmError {
             // instead of collapsing every database error to a blanket 500.
             // The classifier emits the structured trace.
             ServiceError::Database(e) => crate::storage::error::classify_sqlx(&e),
-            ServiceError::Json(e) => SmError::new(S::Exception, e.to_string()),
-            ServiceError::Signing(m) | ServiceError::Internal(m) => SmError::new(S::Exception, m),
+            // A malformed payload the server was asked to read names its own
+            // defect (`400`); a failure to serialize the server's own data is
+            // a server fault whose diagnostic stays in the log (`500`).
+            ServiceError::JsonRead(e) => SmError::new(S::PreconditionViolation, e.to_string()),
+            ServiceError::JsonWrite(e) => internal_fault("serialize a JSON payload", &e),
+            ServiceError::Signing(m) => internal_fault("sign or verify a version", &m),
+            ServiceError::Internal(m) => internal_fault("complete the request", &m),
         }
     }
 }
@@ -353,12 +403,24 @@ impl From<ServiceError> for ApiError {
             ServiceError::Database(e) => {
                 sqlx_conflict_api_error(crate::storage::error::classify_sqlx(&e))
             }
-            // A JSON (de)serialization failure at the service boundary is a
-            // malformed client payload → 400.
-            ServiceError::Json(e) => ApiError::BadRequest(e.to_string()),
+            // A malformed payload the server was asked to read is a client
+            // defect → `400`, and the body names it (that IS the strict
+            // reader's contract). A failure to serialize the server's own data
+            // is a server fault → `500` with the curated opaque message; the
+            // serde diagnostic rides the trace record only.
+            ServiceError::JsonRead(e) => ApiError::BadRequest(e.to_string()),
+            ServiceError::JsonWrite(e) => {
+                ApiError::Internal(internal_fault("serialize a JSON payload", &e).message)
+            }
             // Signing/integrity failures and generic faults are server-side
-            // (5xx).
-            ServiceError::Signing(m) | ServiceError::Internal(m) => ApiError::Internal(m),
+            // (`500`): the carried text is the log detail, the body is the
+            // curated message.
+            ServiceError::Signing(m) => {
+                ApiError::Internal(internal_fault("sign or verify a version", &m).message)
+            }
+            ServiceError::Internal(m) => {
+                ApiError::Internal(internal_fault("complete the request", &m).message)
+            }
         }
     }
 }
@@ -524,6 +586,94 @@ mod tests {
         for (status, expected) in rows {
             let got = ApiError::from(ServiceError::sm(status, "m")).status();
             assert_eq!(got, expected, "row {} diverged", status.sm_name());
+        }
+    }
+
+    /// The JSON twins: a payload the server was asked to READ names its own
+    /// defect on a `400` (the strict reader's contract — the client can only
+    /// fix what it is told), while a failure to serialize the server's OWN
+    /// data is a `500` whose body says nothing about serde's diagnosis. Both
+    /// bridges (`SmError` and `ApiError`) must agree, on both twins.
+    #[test]
+    fn json_read_names_its_defect_and_json_write_stays_opaque() {
+        use http::StatusCode as C;
+
+        // A serde diagnostic names Rust field/type names and the byte offset —
+        // the "internal markers" that must not reach a 500-class body.
+        let markers = ["invalid type", "line", "column"];
+        let parse_failure = || {
+            let failure: Result<std::collections::BTreeMap<String, i32>, _> =
+                serde_json::from_str("{\"committer\":\"not an integer\"}");
+            failure.expect_err("the fixture should fail to deserialize")
+        };
+        let rendered = parse_failure().to_string();
+        assert!(
+            markers.iter().any(|m| rendered.contains(m)),
+            "the fixture must actually produce a serde diagnostic, got {rendered:?}"
+        );
+
+        // READ → 400 on both bridges, naming the defect.
+        let read = ServiceError::JsonRead(parse_failure());
+        assert_eq!(
+            crate::service::status::SmError::from(ServiceError::JsonRead(parse_failure())).status,
+            S::PreconditionViolation
+        );
+        let api = ApiError::from(read);
+        assert_eq!(api.status(), C::BAD_REQUEST);
+        assert!(
+            markers.iter().any(|m| api.to_string().contains(m)),
+            "a parse refusal must name its defect, got {:?}",
+            api.to_string()
+        );
+
+        // WRITE → 500 on both bridges, carrying nothing of the diagnostic.
+        let sm = crate::service::status::SmError::from(ServiceError::JsonWrite(parse_failure()));
+        assert_eq!(sm.status, S::Exception);
+        let api = ApiError::from(ServiceError::JsonWrite(parse_failure()));
+        assert_eq!(api.status(), C::INTERNAL_SERVER_ERROR);
+        for leaked in markers {
+            assert!(
+                !sm.message.contains(leaked),
+                "the SM 500 message leaked {leaked:?}: {:?}",
+                sm.message
+            );
+            assert!(
+                !api.to_string().contains(leaked),
+                "the wire 500 body leaked {leaked:?}: {:?}",
+                api.to_string()
+            );
+        }
+    }
+
+    /// A `500`-class `ServiceError` carries its diagnosis to the LOG, never to
+    /// the client: whatever the fault site wrote into `Internal`/`Signing`
+    /// (a codec message, an unexpected stored shape, a failed conversion) stays
+    /// out of the body on BOTH bridges.
+    #[test]
+    fn internal_faults_never_render_their_diagnosis_on_the_wire() {
+        use http::StatusCode as C;
+
+        let detail = "typing the ORIGINAL_VERSION: unknown field `_kind` at line 3 column 12";
+        let markers = ["ORIGINAL_VERSION", "unknown field", "_kind", "line 3"];
+        let variants: [fn(String) -> ServiceError; 2] =
+            [ServiceError::Internal, ServiceError::Signing];
+        for make in variants {
+            let sm = crate::service::status::SmError::from(make(detail.to_owned()));
+            assert_eq!(sm.status, S::Exception);
+            let api = ApiError::from(make(detail.to_owned()));
+            assert_eq!(api.status(), C::INTERNAL_SERVER_ERROR);
+            for leaked in markers {
+                assert!(
+                    !sm.message.contains(leaked),
+                    "the SM 500 message leaked {leaked:?}: {:?}",
+                    sm.message
+                );
+                assert!(
+                    !api.to_string().contains(leaked),
+                    "the wire 500 body leaked {leaked:?}: {:?}",
+                    api.to_string()
+                );
+            }
         }
     }
 

@@ -99,11 +99,17 @@ impl From<StorageError> for crate::service::status::SmError {
                 SmError::new(CallStatusType::EhrForSubjectAlreadyExists, e.to_string())
             }
             // Codec faults (a non-structure root, a mixed array, malformed node
-            // rows) are our own bugs, not client errors → `500`.
+            // rows) are our own bugs, not client errors → `500`. Their text
+            // names RM attributes and the internal node-row shape, so the wire
+            // body carries the curated message and the detail is traced.
             StorageError::NotAStructureRoot(_)
             | StorageError::MixedArray { .. }
             | StorageError::InvalidRows(_) => {
-                SmError::new(CallStatusType::Exception, e.to_string())
+                tracing::error!(
+                    error = %e,
+                    "storage bridge: node-codec invariant violated → 500"
+                );
+                SmError::new(CallStatusType::Exception, CODEC_MESSAGE.to_owned())
             }
         }
     }
@@ -126,6 +132,14 @@ const RETRYABLE_CONFLICT_MESSAGE: &str =
 /// the client cannot act on it, and the diagnosis belongs in the server's own
 /// logs.
 const INTERNAL_MESSAGE: &str = "the server encountered an internal database error";
+
+/// The client-visible message of a node-codec fault — a versioned-object tree
+/// the decomposer could not take apart, or stored node rows that do not
+/// reassemble into one tree. Opaque for the same reason the driver string is:
+/// the error text names RM attribute names and the internal nested-set row
+/// shape, which is server-internal detail with no client action attached. The
+/// full detail goes to `tracing` at the bridge below.
+const CODEC_MESSAGE: &str = "the server encountered an internal storage-codec error";
 
 /// Classify a raw [`sqlx::Error`] at the storage boundary into the SM call
 /// status it should surface, emitting **one** structured trace record so the
@@ -252,9 +266,9 @@ mod tests {
 
     use sqlx::error::{DatabaseError, ErrorKind};
 
-    use crate::service::status::CallStatusType;
+    use crate::service::status::{CallStatusType, SmError};
 
-    use super::classify_sqlx;
+    use super::{StorageError, classify_sqlx};
 
     /// A driver-error double carrying one SQLSTATE plus the schema names a real
     /// PostgreSQL error would carry, so the classification and the
@@ -368,6 +382,36 @@ mod tests {
                 CallStatusType::Exception,
                 "SQLSTATE {sqlstate} is a server-side invariant failure, not a 409"
             );
+        }
+    }
+
+    #[test]
+    fn no_codec_internal_shape_reaches_the_client_message() {
+        // A node-codec fault is a violated SERVER-side invariant: the client
+        // gets the curated `500` message, never the RM attribute name or the
+        // internal node-row shape the error text carries.
+        let faults = [
+            StorageError::NotAStructureRoot(Some("DV_TEXT".to_owned())),
+            StorageError::MixedArray {
+                attribute: "content".to_owned(),
+            },
+            StorageError::InvalidRows("row num 7 has no parent at num 3".to_owned()),
+        ];
+        for fault in faults {
+            let rendered = fault.to_string();
+            let sm = SmError::from(fault);
+            assert_eq!(
+                sm.status,
+                CallStatusType::Exception,
+                "a codec fault is a server fault, not a client error"
+            );
+            for leaked in ["DV_TEXT", "content", "num", "structure", "array", "rows"] {
+                assert!(
+                    !sm.message.contains(leaked),
+                    "codec fault {rendered:?} leaked {leaked:?} into the client message {:?}",
+                    sm.message
+                );
+            }
         }
     }
 

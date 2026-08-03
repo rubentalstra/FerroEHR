@@ -20,7 +20,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::FerroEhrService;
-use crate::service::error::ServiceError;
+use crate::service::error::{ServiceError, internal_fault};
 use crate::versioning::contribution::{
     commit_version_set, count_contributions, get_contribution, list_contributions,
 };
@@ -162,10 +162,10 @@ impl FerroEhrService {
         // `update_audit.adoc`), not a `DV_CODED_TEXT` (see the NOTEs in
         // `versioning/contribution.rs` `coded_value`/`classify`). A native
         // typed path skipping the JSON round-trip is a future cleanup.
-        let versions_json =
-            serde_json::to_value(&versions).map_err(|e| SmError::exception(e.to_string()))?;
-        let audit_json =
-            serde_json::to_value(&an_audit).map_err(|e| SmError::exception(e.to_string()))?;
+        let versions_json = serde_json::to_value(&versions)
+            .map_err(|e| internal_fault("serialize the CONTRIBUTION version set", &e))?;
+        let audit_json = serde_json::to_value(&an_audit)
+            .map_err(|e| internal_fault("serialize the CONTRIBUTION audit", &e))?;
         let body = json!({ "versions": versions_json, "audit": audit_json });
         let committed = commit_version_set(self, Some(an_ehr_id), &body, false).await?;
         Ok(committed.id.to_string())
