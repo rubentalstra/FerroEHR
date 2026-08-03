@@ -61,8 +61,12 @@ pub(super) async fn run(
                     params::build::<RoleTagsGetParams>(&parts.path, q, h)?.uid_based_id
                 }
             };
-            let resp = state.backend().party_tags_get(kind, uid_based_id).await?;
-            Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
+            let tags = state.backend().party_tags_get(kind, uid_based_id).await?;
+            Ok(negotiate::respond(
+                h,
+                StatusCode::OK,
+                &openehr_its::json::to_canonical_value(&tags),
+            ))
         }
         "tags_update" => {
             let uid_based_id = match kind {
@@ -87,7 +91,7 @@ pub(super) async fn run(
             // member or a non-string `value`/`target_path` is a 400 naming the
             // member, never a silent drop.
             let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
-            let resp = state
+            let tags = state
                 .backend()
                 .party_tags_update(kind, uid_based_id, body)
                 .await?;
@@ -99,7 +103,7 @@ pub(super) async fn run(
                 h,
                 StatusCode::NO_CONTENT,
                 StatusCode::OK,
-                &resp.body,
+                &openehr_its::json::to_canonical_value(&tags),
             ))
         }
         "tags_delete" => {
@@ -145,9 +149,13 @@ pub(super) async fn run_collection(
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p = params::build::<DemographicTagsGetParams>(&parts.path, parts.query.as_deref(), h)?;
-    let resp = state
+    let tags = state
         .backend()
         .demographic_tags_get(p.tag_key, p.tag_value, p.tag_target_path)
         .await?;
-    Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
+    Ok(negotiate::respond(
+        h,
+        StatusCode::OK,
+        &openehr_its::json::to_canonical_value(&tags),
+    ))
 }

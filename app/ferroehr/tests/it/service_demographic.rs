@@ -584,23 +584,22 @@ async fn party_tags_crud() {
         )
         .await
         .expect("put tags");
-    let arr = tags.body.as_array().expect("tags array");
-    assert_eq!(arr.len(), 1);
-    assert_eq!(arr[0]["key"], "priority");
+    assert_eq!(tags.len(), 1);
+    assert_eq!(tags[0].key, "priority");
 
     // GET tags on the party
     let got = svc
         .party_tags_get(PartyKind::Person, vo.clone())
         .await
         .expect("get tags");
-    assert_eq!(got.body.as_array().expect("arr").len(), 1);
+    assert_eq!(got.len(), 1);
 
     // demographic tags (ehr-less scope) sees it
     let all = svc
         .demographic_tags_get(None, None, None)
         .await
         .expect("all demographic tags");
-    assert_eq!(all.body.as_array().expect("arr").len(), 1);
+    assert_eq!(all.len(), 1);
 
     // DELETE the tag
     svc.party_tags_delete(PartyKind::Person, vo.clone(), "priority".to_owned())
@@ -610,7 +609,7 @@ async fn party_tags_crud() {
         .party_tags_get(PartyKind::Person, vo)
         .await
         .expect("get tags after delete");
-    assert!(empty.body.as_array().expect("arr").is_empty());
+    assert!(empty.is_empty());
 }
 
 /// The `If-Match` precondition compares the FULL `OBJECT_VERSION_ID`

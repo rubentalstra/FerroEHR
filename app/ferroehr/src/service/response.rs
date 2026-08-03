@@ -8,6 +8,7 @@
 //! that carries what the headers need.
 
 use jiff::Timestamp;
+use openehr_rm::prelude::ItemTag;
 use serde_json::Value;
 
 /// Typed metadata about a versioned resource a write/read produced, from
@@ -28,8 +29,7 @@ pub struct ResourceMeta {
     /// `VERSION`/`VERSIONED_OBJECT` responses.
     pub last_modified: Option<Timestamp>,
     /// The `ITEM_TAGs` (RM `common.item_tag`) currently associated with this
-    /// resource, as their canonical-JSON list (`Value::Array` of `ITEM_TAG`
-    /// objects), or `None` when the operation carries no tags. The ITS-REST
+    /// resource, or `None` when the operation carries no tags. The ITS-REST
     /// adapter renders this into the `openehr-item-tag` /
     /// `openehr-version-item-tag` response headers
     /// (`headers/openehr-item-tag.yaml`,
@@ -37,13 +37,13 @@ pub struct ResourceMeta {
     ///
     /// No openEHR spec governs this envelope field — our own design: the SM
     /// returns plain values, and this seam carries what the mandated headers
-    /// need. The tag *content* is the RM `common.item_tag.ITEM_TAG` type.
-    pub item_tags: Option<Value>,
+    /// need. The tags are the RM `common.item_tag.ITEM_TAG` type itself.
+    pub item_tags: Option<Vec<ItemTag>>,
     /// The served/committed VERSION's own `ITEM_TAG` collection, when it is
     /// distinct from the container's (`openehr-version-item-tag` — overview
     /// §"openehr-item-tag and openehr-version-item-tag": the two headers
     /// address a `VERSIONED_OBJECT` and a specific VERSION within it).
-    pub version_item_tags: Option<Value>,
+    pub version_item_tags: Option<Vec<ItemTag>>,
 }
 
 impl ResourceMeta {
@@ -67,11 +67,10 @@ impl ResourceMeta {
         self
     }
 
-    /// Attach the resource's `ITEM_TAG` list (canonical-JSON `Value::Array` of
-    /// `ITEM_TAG` objects) for the `openehr-item-tag` /
+    /// Attach the resource's `ITEM_TAG` list for the `openehr-item-tag` /
     /// `openehr-version-item-tag` response headers.
     #[must_use]
-    pub fn with_item_tags(mut self, tags: Value) -> Self {
+    pub fn with_item_tags(mut self, tags: Vec<ItemTag>) -> Self {
         self.item_tags = Some(tags);
         self
     }

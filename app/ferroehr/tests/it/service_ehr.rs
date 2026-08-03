@@ -22,7 +22,7 @@
 use serde_json::{Value, json};
 
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
-use openehr_rm::prelude::PartyProxy;
+use openehr_rm::prelude::{ItemTag, PartyProxy};
 
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::error::ServiceError;
@@ -68,9 +68,8 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
     }
 }
 
-fn has_key(tags: &[Value], k: &str) -> bool {
-    tags.iter()
-        .any(|t| t.get("key").and_then(Value::as_str) == Some(k))
+fn has_key(tags: &[ItemTag], k: &str) -> bool {
+    tags.iter().any(|t| t.key == k)
 }
 
 /// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
@@ -1326,7 +1325,10 @@ async fn item_tag_wire_shape_is_the_rm_item_tag() {
         )
         .await
         .expect("tag put");
-    let tag = &put[0];
+    // The service now carries the typed RM `ITEM_TAG`; the WIRE shape this test
+    // pins is its canonical-JSON encoding, produced here exactly as the
+    // protocol edge produces it.
+    let tag = openehr_its::json::to_canonical_value(&put[0]);
     assert_eq!(tag["_type"], "ITEM_TAG");
     assert_eq!(tag["key"], "priority");
     assert_eq!(tag["value"], "high");
@@ -1389,14 +1391,17 @@ async fn item_tag_identity_is_the_key_and_target_path_pair() {
     let by_path = |path: &str| {
         stored
             .iter()
-            .find(|t| t["target_path"] == path)
+            .find(|t| t.target_path.as_deref() == Some(path))
             .unwrap_or_else(|| panic!("tag at {path}"))
             .clone()
     };
-    assert_eq!(by_path("/context/start_time/value")["value"], "a");
     assert_eq!(
-        by_path("/content[0]/name/value")["value"],
-        "b2",
+        by_path("/context/start_time/value").value.as_deref(),
+        Some("a")
+    );
+    assert_eq!(
+        by_path("/content[0]/name/value").value.as_deref(),
+        Some("b2"),
         "same (key, path) pair: last wins"
     );
 
@@ -1452,24 +1457,26 @@ async fn item_tag_version_and_container_targets_are_distinct() {
     // Each collection holds ONLY its own tag (the container PUT did not wipe
     // the version's), and each target carries the RM UID_BASED_ID shape.
     assert_eq!(on_version.len(), 1);
-    assert_eq!(on_version[0]["target"]["_type"], "OBJECT_VERSION_ID");
-    assert_eq!(on_version[0]["target"]["value"], version_uid);
+    let version_target = openehr_its::json::to_canonical_value(&on_version[0].target);
+    assert_eq!(version_target["_type"], "OBJECT_VERSION_ID");
+    assert_eq!(version_target["value"], version_uid);
     assert_eq!(on_container.len(), 1);
-    assert_eq!(on_container[0]["target"]["_type"], "HIER_OBJECT_ID");
-    assert_eq!(on_container[0]["target"]["value"], vo_id);
+    let container_target = openehr_its::json::to_canonical_value(&on_container[0].target);
+    assert_eq!(container_target["_type"], "HIER_OBJECT_ID");
+    assert_eq!(container_target["value"], vo_id);
 
     let version_list = svc
         .target_tags_get(ehr_uuid, version_uid.clone(), "COMPOSITION")
         .await
         .expect("version list");
     assert_eq!(version_list.len(), 1);
-    assert_eq!(version_list[0]["key"], "reviewed");
+    assert_eq!(version_list[0].key, "reviewed");
     let container_list = svc
         .target_tags_get(ehr_uuid, vo_id.clone(), "COMPOSITION")
         .await
         .expect("container list");
     assert_eq!(container_list.len(), 1);
-    assert_eq!(container_list[0]["key"], "workflow");
+    assert_eq!(container_list[0].key, "workflow");
 
     // A tag addressed to a NONEXISTENT version is refused.
     let ghost = format!("{vo_id}::ghost.system::9");
@@ -1682,7 +1689,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
         .expect("the valid twins are stored");
     assert_eq!(accepted.len(), 2);
     assert!(
-        accepted.iter().all(|t| t.get("target_path").is_none()),
+        accepted.iter().all(|t| t.target_path.is_none()),
         "an empty target_path normalizes to absent, got {accepted:?}"
     );
 }

@@ -168,7 +168,11 @@ pub(super) async fn run(
                 .backend()
                 .target_tags_get(ehr_id, p.uid_based_id, "EHR_STATUS")
                 .await?;
-            Ok(negotiate::respond(h, ok, &Value::Array(tags)))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &openehr_its::json::to_canonical_value(&tags),
+            ))
         }
         "ehr_status_tags_update" => {
             let p = params::build::<EhrStatusTagsUpdateParams>(&parts.path, q, h)?;
@@ -190,7 +194,7 @@ pub(super) async fn run(
                 h,
                 no_content,
                 ok,
-                &Value::Array(tags),
+                &openehr_its::json::to_canonical_value(&tags),
             ))
         }
         "ehr_status_tags_delete" => {

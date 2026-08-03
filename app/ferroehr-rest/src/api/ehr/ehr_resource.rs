@@ -91,7 +91,11 @@ pub(super) async fn run(
                 .backend()
                 .ehr_tags_get(ehr_id, p.tag_key, p.tag_value, p.tag_target_path)
                 .await?;
-            Ok(negotiate::respond(h, ok, &Value::Array(tags)))
+            Ok(negotiate::respond(
+                h,
+                ok,
+                &openehr_its::json::to_canonical_value(&tags),
+            ))
         }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted ehr operation: {other}"

@@ -262,12 +262,12 @@ fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
             meta.version_item_tags.as_ref(),
         ),
     ] {
-        let Some(serde_json::Value::Array(tags)) = tags else {
+        let Some(tags) = tags else {
             continue;
         };
         let entries: Vec<ItemTagHeaderEntry> = tags
             .iter()
-            .filter_map(crate::overview::params::item_tag_to_header_entry)
+            .map(crate::overview::params::item_tag_to_header_entry)
             .collect();
         if entries.is_empty() {
             continue;

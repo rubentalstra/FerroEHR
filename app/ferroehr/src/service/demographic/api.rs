@@ -10,6 +10,7 @@
 //! [`crate::versioning`] (`object_version_id.rs`).
 
 use openehr_base::base_types::identification::lexical::composite_ids_equal;
+use openehr_rm::prelude::ItemTag;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -27,11 +28,6 @@ use crate::service::version_update::{Committal, UpdateAudit, UpdateVersion};
 use crate::versioning::object_version_id::{
     components, expected_from_if_match, if_match_token, parse_uid_based_id, parse_version_uid,
 };
-
-/// Wrap a JSON array of item-tag objects as a plain (header-free) response.
-fn tags_response(tags: Vec<Value>) -> ServiceResponse {
-    ServiceResponse::plain(Value::Array(tags))
-}
 
 /// The `version_uid` a write produced (the new/deleted `OBJECT_VERSION_ID`),
 /// pulled from the response metadata.
@@ -155,8 +151,8 @@ impl FerroEhrService {
             None => None,
         };
         if let Some(meta) = resp.meta.as_mut() {
-            meta.item_tags = Some(Value::Array(container));
-            meta.version_item_tags = version.map(Value::Array);
+            meta.item_tags = Some(container);
+            meta.version_item_tags = version;
         }
         Ok(())
     }
@@ -644,15 +640,14 @@ impl FerroEhrService {
         tag_key: Option<String>,
         tag_value: Option<String>,
         tag_target_path: Option<String>,
-    ) -> Result<ServiceResponse, SmError> {
-        let tags = self
+    ) -> Result<Vec<ItemTag>, SmError> {
+        Ok(self
             .demographic_tags(
                 tag_key.as_deref(),
                 tag_value.as_deref(),
                 tag_target_path.as_deref(),
             )
-            .await?;
-        Ok(tags_response(tags))
+            .await?)
     }
 
     /// The `ITEM_TAG`s on one party.
@@ -664,17 +659,16 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         uid_based_id: String,
-    ) -> Result<ServiceResponse, SmError> {
+    ) -> Result<Vec<ItemTag>, SmError> {
         let (vo_id, version) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
         // The released 404 trigger ("when the `uid_based_id` does not exist")
         // plus the kind-checked-routes law: the guard runs on the GET too; an
         // existing target with no tags stays an empty 200 list.
         self.ensure_party_tag_target(kind, vo_id, version.as_ref())
             .await?;
-        Ok(tags_response(
-            self.party_tags(vo_id, tag_target_tail(version.as_ref()))
-                .await?,
-        ))
+        Ok(self
+            .party_tags(vo_id, tag_target_tail(version.as_ref()))
+            .await?)
     }
 
     /// Replace the whole `ITEM_TAG` collection of a party (PUT full-collection
@@ -691,12 +685,11 @@ impl FerroEhrService {
         kind: PartyKind,
         uid_based_id: String,
         body: Vec<openehr_its::rest::generated::demographic::UpdateItemTag>,
-    ) -> Result<ServiceResponse, SmError> {
+    ) -> Result<Vec<ItemTag>, SmError> {
         let (vo_id, version) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
-        Ok(tags_response(
-            self.replace_party_tags(kind, vo_id, version.as_ref(), &body)
-                .await?,
-        ))
+        Ok(self
+            .replace_party_tags(kind, vo_id, version.as_ref(), &body)
+            .await?)
     }
 
     /// Delete one `ITEM_TAG` by key from a party.

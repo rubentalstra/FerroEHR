@@ -202,7 +202,7 @@ async fn persist_request_tags(
             .party_tags_update(kind, container_uid, tags)
             .await?;
         if let Some(meta) = resp.meta.as_mut() {
-            meta.item_tags = Some(stored.body);
+            meta.item_tags = Some(stored);
         }
     }
     if let Some(tags) = version_entries {
@@ -211,7 +211,7 @@ async fn persist_request_tags(
             .party_tags_update(kind, version_uid, tags)
             .await?;
         if let Some(meta) = resp.meta.as_mut() {
-            meta.version_item_tags = Some(stored.body);
+            meta.version_item_tags = Some(stored);
         }
     }
     Ok(())
