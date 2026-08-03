@@ -1754,6 +1754,51 @@ async fn foreign_version_identity_is_refused_on_the_commit_wire() {
     .expect("a member self-tagged as the class this wire commits is accepted");
 }
 
+/// THE CLOSED MEMBER READ (#1753): an undeclared key on a CONTRIBUTION
+/// version member is refused with the member index in the path — the released
+/// commit wire declares exactly six member properties (ITS-REST
+/// `UpdateVersion.yaml`) plus the adjudicated `_type` self-tag, and the strict
+/// reader discipline (post-#1702) admits nothing else silently. The valid
+/// twin is every accepted member in this suite.
+#[tokio::test]
+async fn an_undeclared_contribution_member_key_is_refused_with_its_path() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+
+    let mut member = json!({
+        "commit_audit": {
+            "change_type": change_type("249", "creation"),
+            "committer": committer("author")
+        },
+        "lifecycle_state": change_type("532", "complete"),
+        "data": composition("closed member read")
+    });
+    member
+        .as_object_mut()
+        .expect("member object")
+        .insert("contribution".to_owned(), json!({"id": "x"}));
+
+    let err = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [member],
+                "audit": {
+                    "change_type": change_type("249", "creation"),
+                    "committer": committer("author")
+                }
+            }),
+        )
+        .await
+        .expect_err("an undeclared member key must be refused");
+    assert!(
+        err.message.contains("versions[0]/contribution"),
+        "the refusal names the key at its member path, got {err:?}"
+    );
+}
+
 /// The CONTRIBUTION's own `audit.change_type` is REQUIRED and never derived.
 ///
 /// RM common `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes

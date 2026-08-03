@@ -79,6 +79,12 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
         | "directory_get_by_version_id" => Clinical,
 
         // ── CONTRIBUTION (op ids shared by the ehr + demographic groups) ─────
+        // ADJUDICATED SHARED IDS (#1707): the released OAS reuses these ids in
+        // the ehr AND demographic bundles; Clinical is deliberately correct
+        // for both families (RM change control governs demographic content
+        // identically), and the RBAC route map is (method, path)-keyed, so
+        // the two families never collide behaviourally. The system_log
+        // classifier's `adjudicated_shared_ids` gate pins collision-freedom.
         "contribution_create" | "contribution_get" => Clinical,
 
         // ── Item tags (clinical-resource metadata) ───────────────────────────
