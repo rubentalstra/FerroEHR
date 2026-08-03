@@ -11,7 +11,7 @@ use serde_json::Value;
 
 use openehr_its::rest::generated::ehr::{
     EhrStatusGetAtTimeParams, EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams,
-    EhrStatusTagsGetParams, EhrStatusTagsUpdateParams, EhrStatusUpdateParams,
+    EhrStatusTagsGetParams, EhrStatusTagsUpdateParams, EhrStatusUpdateParams, UpdateItemTag,
 };
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::EhrStatus;
@@ -110,14 +110,22 @@ pub(super) async fn run(
             // (§"ETag and Last-Modified"), carried in the service metadata so
             // the write path never re-reads the row it just wrote.
             // 412 → latest version_uid.
+            // Judge the wrapper-header tags before the commit (see
+            // `crate::api::ehr::pending_item_tags`); the write stays after it.
+            let pending_tags = super::pending_item_tags(h)?;
             match state.backend().replace_ehr_status_meta(ehr_id, uv).await {
                 Ok(meta) => {
                     // apply the openehr-item-tag / openehr-version-item-tag
                     // write-wrapper headers to the committed target
                     // (Requests_and_responses.md §…§Usage in Requests).
-                    let stored_tags =
-                        super::apply_item_tag_headers(&state, ehr_id, "EHR_STATUS", &meta.uid, h)
-                            .await?;
+                    let stored_tags = super::apply_item_tag_headers(
+                        &state,
+                        ehr_id,
+                        "EHR_STATUS",
+                        &meta.uid,
+                        pending_tags,
+                    )
+                    .await?;
                     let repr = if negotiate::prefers_representation(h) {
                         state.backend().get_ehr_status(ehr_id).await?
                     } else {
@@ -165,7 +173,11 @@ pub(super) async fn run(
         "ehr_status_tags_update" => {
             let p = params::build::<EhrStatusTagsUpdateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            let body = negotiate::json_vec(h, &parts.body)?;
+            // Strict against `schemas/common/UpdateItemTag.yaml`
+            // (`additionalProperties: false`, `key` required): an undeclared
+            // member or a non-string `value`/`target_path` is a 400 naming the
+            // member, never a silent drop.
+            let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
             let tags = state
                 .backend()
                 .target_tags_replace(ehr_id, p.uid_based_id, "EHR_STATUS", body)

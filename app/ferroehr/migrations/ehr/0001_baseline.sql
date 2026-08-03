@@ -725,11 +725,31 @@ CREATE TABLE item_tag (
     -- target_version / target_path participates in the identity.
     CONSTRAINT uq_item_tag_identity UNIQUE NULLS NOT DISTINCT
         (ehr_id, target_vo_id, target_version, key, target_path),
+    -- The change-controlled resource types a tag may target. FOLDER is one of
+    -- them by name: the ITS-REST wrapper headers are defined "for associating
+    -- tags with change-controlled resources (e.g. COMPOSITION, EHR_STATUS,
+    -- FOLDER, etc.)" (specifications/docs/overview/Requests_and_responses.md
+    -- §openehr-item-tag and openehr-version-item-tag), and the DIRECTORY write
+    -- routes carry those headers. The release defines no dedicated
+    -- /directory/.../tags operations, so FOLDER tags are reachable through the
+    -- wrapper headers and the EHR-wide listing (ehr_tags_get) only.
     CONSTRAINT ck_item_tag_target_type CHECK (target_type IN (
-        'COMPOSITION', 'EHR_STATUS', 'AGENT', 'GROUP', 'ORGANISATION', 'PERSON', 'ROLE'
+        'COMPOSITION', 'EHR_STATUS', 'FOLDER',
+        'AGENT', 'GROUP', 'ORGANISATION', 'PERSON', 'ROLE'
     )),
     CONSTRAINT fk_item_tag_ehr FOREIGN KEY (ehr_id) REFERENCES ehr (id) ON DELETE CASCADE
 );
+-- NOTE: no dedicated index on `key` alone. RM ehr master04-ehr_package.adoc
+-- §Tags states the indexing OBLIGATION ("in a typical implementation, tags
+-- would be indexed") but names no index and no access path, so the choice is
+-- ours. uq_item_tag_identity is a btree over
+-- (ehr_id, target_vo_id, target_version, key, target_path) and already serves
+-- every addressed read the released wire defines — all of them name a target,
+-- so the leading columns are bound. The one key-leading access is the EHR-wide
+-- listing's optional `tag_key` filter (ehr_tags_get), which is already scoped
+-- to one EHR by the same index's leading column; PG 18 B-tree skip scan covers
+-- the remainder. A key-leading index is a measured-need addition, not a
+-- speculative one.
 
 COMMENT ON TABLE item_tag IS 'Item tags (RM common master07-tags.adoc ITEM_TAG; identity per ITS-REST Requests_and_responses.md: key + target_path within one target). Mutable, EHR-scoped, outside the version chain.';
 COMMENT ON COLUMN item_tag.target_vo_id IS 'NOTE: intentionally FK-less (RM common master07: ITEM_TAG.target may reference a container OR a specific VERSION), so it is deliberately outside the version chain.';

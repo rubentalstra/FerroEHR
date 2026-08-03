@@ -1,5 +1,9 @@
-//! `ITEM_TAG` CRUD — an ITS-REST **experimental** extension (the tags API is
-//! development-branch only), on the `item_tag` table.
+//! `ITEM_TAG` CRUD on the `item_tag` table — a RELEASED ITS-REST 1.1.0 surface
+//! (23 dedicated operations plus the two wrapper headers, added by SPECITS-77;
+//! ITS-REST overview `Amendment_record.md` §Release-1.1.0). Server support for
+//! it is optional — "If the server does not support `ITEM_TAGs`, these headers
+//! will also be unsupported" (overview `Requests_and_responses.md` §item-tag
+//! headers) — and this server supports it.
 //!
 //! Spec: RM `ITEM_TAG`
 //! (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`
@@ -16,6 +20,8 @@
 use openehr_base::prelude::{
     HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, UidBasedId,
 };
+use openehr_base::validate::Validate;
+use openehr_its::rest::generated::ehr::UpdateItemTag;
 use openehr_rm::prelude::ItemTag;
 use serde_json::Value;
 
@@ -61,6 +67,22 @@ impl FerroEhrService {
     /// an already-verified target (an existing target with no tags is an
     /// empty list, never an error).
     ///
+    /// NOTE (supersession): a CONTAINER-addressed tag survives every new
+    /// version of its target, and a VERSION-addressed tag stays pinned to the
+    /// version it names — it neither follows the latest version nor disappears
+    /// when superseded. No openEHR spec governs this; it is our own design,
+    /// forced by what the RM does say. `ITEM_TAG.target` is a `UID_BASED_ID`
+    /// that "may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`" (RM common
+    /// `UML/classes/org.openehr.rm.common.item_tag.adoc` §Attributes), and the
+    /// two arities are the whole point of the attribute: a container tag names
+    /// the thing that outlives its versions, a version tag names one immutable
+    /// snapshot. Migrating either on a commit would collapse that distinction —
+    /// and RM ehr `master04-ehr_package.adoc` §Tags forbids the commit from
+    /// touching tags at all ("they do not cause re-versioning of the content";
+    /// "tags … have no direct association with the objects they annotate"). The
+    /// released wire is silent on supersession, so nothing there decides it
+    /// either.
+    ///
     /// # Errors
     /// [`ServiceError::Database`] if the tag listing fails.
     pub(in crate::service) async fn target_tags(
@@ -100,7 +122,7 @@ impl FerroEhrService {
         target_vo_id: VoId,
         target_version: Option<&ObjectVersionId>,
         target_type: &str,
-        tags: Vec<Value>,
+        tags: &[UpdateItemTag],
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
         self.ensure_tag_target(ehr_id, target_vo_id, target_version, target_type)
@@ -108,47 +130,33 @@ impl FerroEhrService {
         // Validate every tag before writing; the storage replace dedupes the
         // posted set on the ITEM_TAG identity — the (key, target_path) PAIR
         // (ITS-REST Requests_and_responses.md §item-tag headers), last-wins.
+        //
+        // The judgement is the RM's own: each posted UPDATE_ITEM_TAG is turned
+        // into the ITEM_TAG the write would store — with the `target` and
+        // `owner_id` the server assigns, which is exactly why the write schema
+        // omits them — and run through `ItemTag`'s single `Validate` impl. The
+        // demographic seam does the same with its own owner, so there is ONE
+        // invariant implementation behind both families.
+        let target = match target_version {
+            Some(version) => UidBasedId::ObjectVersionId(version.clone()),
+            None => UidBasedId::HierObjectId(HierObjectId::from(target_vo_id.0)),
+        };
+        let owner_id = ehr_owner_ref(ehr_id);
         let mut new_tags: Vec<crate::storage::tag_repo::NewTag<'_>> =
             Vec::with_capacity(tags.len());
-        for tag in &tags {
-            let key = tag.get("key").and_then(Value::as_str).ok_or_else(|| {
-                ServiceError::Unprocessable(
-                    Violation::new("is required on an item tag").with_path("ITEM_TAG.key"),
-                )
-            })?;
-            // RM ITEM_TAG Inv_key_valid: "not key.is_empty and key.is_justified"
-            // (no leading/trailing whitespace).
-            if key.is_empty() || key.trim() != key {
-                return Err(ServiceError::Unprocessable(
-                    Violation::new(format!(
-                        "{key:?} must be non-empty without leading/trailing whitespace"
-                    ))
-                    .with_path("ITEM_TAG.key")
-                    .with_invariant("ITEM_TAG.Inv_key_valid"),
-                ));
-            }
-            let value = tag.get("value").and_then(Value::as_str);
-            // RM ITEM_TAG Inv_value_valid: "value /= Void implies not value.is_empty".
-            if value == Some("") {
-                return Err(ServiceError::Unprocessable(
-                    Violation::new(format!("of item tag {key:?}, if set, may not be empty"))
-                        .with_path("ITEM_TAG.value")
-                        .with_invariant("ITEM_TAG.Inv_value_valid"),
-                ));
-            }
-            // `target_path: ""` normalizes to ABSENT: RM models target_path
-            // 0..1 (absent = no path) with no non-empty invariant, while the
-            // released EHR_STATUS example writes "" — one identity, not two
-            // (the (key, target_path) pair IS the ITEM_TAG identity;
-            // register-documented).
-            let target_path = tag
-                .get("target_path")
-                .and_then(Value::as_str)
-                .filter(|p| !p.is_empty());
+        for tag in tags {
+            let target_path = normalized_target_path(tag.target_path.as_deref());
+            validate_item_tag(
+                &tag.key,
+                tag.value.as_deref(),
+                target_path,
+                target.clone(),
+                owner_id.clone(),
+            )?;
             new_tags.push(crate::storage::tag_repo::NewTag {
                 target_type,
-                key,
-                value,
+                key: &tag.key,
+                value: tag.value.as_deref(),
                 target_path,
             });
         }
@@ -265,11 +273,20 @@ impl FerroEhrService {
     /// VERSION target ("may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") —
     /// and `owner_id` as the RM's `OBJECT_REF` to the owning EHR.
     ///
-    /// NOTE: `_type` is emitted on the tag itself for canonical-JSON
-    /// consistency (ITS-REST `Resources.md` §JSON Format neither requires nor
-    /// forbids it on a concrete standalone type); the released OAS `ItemTag`
-    /// schema disagrees with the RM on `target`'s shape — the RM is the
-    /// RELEASED component and wins (owner ruling 2026-07-24).
+    /// NOTE: two shape decisions, both register-adjudicated rather than
+    /// settled by any single released sentence.
+    /// `_type: "ITEM_TAG"` IS emitted (register AMB-201): the released
+    /// `ItemTag.yaml` is `additionalProperties: false` without declaring
+    /// `_type`, while the same group's `discriminator.propertyName` names that
+    /// member — an OAS-internal self-contradiction, reported upstream, whose
+    /// two readings we resolve in favour of the discriminator, since an
+    /// `ITEM_TAG` carries no `uid` and no archetype id and `_type` is its only
+    /// self-description.
+    /// `target` is a BARE `UID_BASED_ID`, the RM's shape, not the OAS's
+    /// `OBJECT_REF` wrapper (register AMB-202): the OAS is the wire projection
+    /// of a model and the RM is the released definition of the model being
+    /// projected, so where the projection disagrees with its subject about what
+    /// an attribute IS, the subject decides.
     fn tag_json(
         ehr_id: EhrId,
         row: &crate::storage::tag_repo::TagRow,
@@ -279,11 +296,7 @@ impl FerroEhrService {
             value: row.value.clone(),
             target: tag_target(row)?,
             target_path: row.target_path.clone(),
-            owner_id: ObjectRef::ObjectRef(ObjectRefData {
-                namespace: "local".to_owned(),
-                r#type: "EHR".to_owned(),
-                id: ObjectId::HierObjectId(HierObjectId::from(ehr_id.0)),
-            }),
+            owner_id: ehr_owner_ref(ehr_id),
         };
         Ok(openehr_its::json::to_canonical_value(&tag))
     }
@@ -318,6 +331,73 @@ pub(in crate::service) fn tag_target(
         // (BASE §Syntaxes: `uid = iso_oid | uuid | internet_id`).
         None => UidBasedId::HierObjectId(HierObjectId::from(target_vo_id.0)),
     })
+}
+
+/// The `ITEM_TAG.owner_id` of an EHR-scoped tag: the RM's `OBJECT_REF` to the
+/// owning EHR ("Identifier of owner object, such as EHR", RM common
+/// `UML/classes/org.openehr.rm.common.item_tag.adoc` §Attributes; RM ehr
+/// `ehr.adoc` `EHR.tags` scopes tag targets to that same EHR). One function so
+/// the shape a tag is VALIDATED under and the shape it is SERVED under can
+/// never drift apart.
+fn ehr_owner_ref(ehr_id: EhrId) -> ObjectRef {
+    ObjectRef::ObjectRef(ObjectRefData {
+        namespace: "local".to_owned(),
+        r#type: "EHR".to_owned(),
+        id: ObjectId::HierObjectId(HierObjectId::from(ehr_id.0)),
+    })
+}
+
+/// `target_path: ""` normalizes to ABSENT — one identity, not two.
+///
+/// RM models `target_path` 0..1 (absent = no path) with no non-empty
+/// invariant, while six of the seven released `ItemTagOf<T>` examples write
+/// `target_path: ""`; under the (`key`, `target_path`) identity those would be
+/// two distinct tags. Register AMB-96 fixes the handling, and this is the ONE
+/// function that applies it — the EHR and demographic families both call it, so
+/// the register's "applied identically on the EHR and demographic families"
+/// is a structural fact rather than a claim.
+pub(in crate::service) fn normalized_target_path(raw: Option<&str>) -> Option<&str> {
+    raw.filter(|p| !p.is_empty())
+}
+
+/// Judge one incoming `UPDATE_ITEM_TAG` by building the `ITEM_TAG` the write
+/// would store and running the RM's own invariants over it.
+///
+/// This is the single seam both tag families go through: the RM invariants
+/// (`Inv_key_valid`, `Inv_value_valid` —
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`)
+/// are implemented exactly once, in `openehr_rm`'s `Validate` impl for
+/// `ItemTag`, and reached from here rather than restated per family. `target`
+/// and `owner_id` are the values the SERVER assigns from the route — which is
+/// why `schemas/common/UpdateItemTag.yaml` omits them from the write schema —
+/// so the instance validated is the instance stored.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] carrying the RM invariant violations as
+/// causes (the `422` family).
+pub(in crate::service) fn validate_item_tag(
+    key: &str,
+    value: Option<&str>,
+    target_path: Option<&str>,
+    target: UidBasedId,
+    owner_id: ObjectRef,
+) -> Result<(), ServiceError> {
+    let candidate = ItemTag {
+        key: key.to_owned(),
+        value: value.map(str::to_owned),
+        target,
+        target_path: target_path.map(str::to_owned),
+        owner_id,
+    };
+    let violations = candidate.invariants();
+    if violations.is_empty() {
+        return Ok(());
+    }
+    Err(ServiceError::Unprocessable(
+        Violation::new(format!("item tag {key:?} violates its RM invariants"))
+            .with_path("ITEM_TAG")
+            .with_causes(violations),
+    ))
 }
 
 // ── The ITS-REST tags call surface ────────────────────────────────────────────
@@ -379,11 +459,11 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         uid_based_id: String,
         target_type: &str,
-        tags: Vec<Value>,
+        tags: Vec<UpdateItemTag>,
     ) -> Result<Vec<Value>, SmError> {
         let (vo_id, version) = parse_tag_target(&uid_based_id)?;
         Ok(self
-            .replace_tags(an_ehr_id, vo_id, version.as_ref(), target_type, tags)
+            .replace_tags(an_ehr_id, vo_id, version.as_ref(), target_type, &tags)
             .await?)
     }
 

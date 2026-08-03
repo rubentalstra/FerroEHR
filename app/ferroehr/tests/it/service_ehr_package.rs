@@ -190,33 +190,120 @@ async fn tag_targets_must_be_within_the_same_ehr() {
         .version_uid();
     let vo_a: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
-    let tag = json!([{ "key": "clin-proj-27a" }]);
+    let tag = vec![crate::item_tag_fixture::ehr_tag(
+        "clin-proj-27a",
+        None,
+        None,
+    )];
     // Tagging A's composition from A: accepted. The route family must match
     // the stored kind (the fixture previously said EHR_STATUS for a
     // COMPOSITION target, which the kind guard now rejects).
-    svc.target_tags_replace(
-        ehr_a,
-        vo_a.to_string(),
-        "COMPOSITION",
-        tag.as_array().unwrap().clone(),
-    )
-    .await
-    .expect("own-EHR tag accepted");
+    svc.target_tags_replace(ehr_a, vo_a.to_string(), "COMPOSITION", tag.clone())
+        .await
+        .expect("own-EHR tag accepted");
 
     // Tagging A's composition from B: rejected — cross-EHR target (the type
     // matches, so the refusal is the same-EHR duty, not the kind guard).
     let err = svc
-        .target_tags_replace(
-            ehr_b,
-            vo_a.to_string(),
-            "COMPOSITION",
-            tag.as_array().unwrap().clone(),
-        )
+        .target_tags_replace(ehr_b, vo_a.to_string(), "COMPOSITION", tag.clone())
         .await
         .expect_err("cross-EHR tag target must be rejected");
     assert!(
         err.message.contains("same EHR"),
         "should cite the same-EHR duty, got: {}",
         err.message
+    );
+}
+
+/// RM ehr `master04-ehr_package.adoc` §Tags, the chapter's one hard MUST:
+/// tags "have no direct association with the objects they annotate. This has
+/// the following consequences: ... they do not constitute part of the content
+/// they annotate; accordingly, where they annotate versioned content, **they
+/// do not cause re-versioning of the content**".
+///
+/// The wire-level twin is the CNF case
+/// `I_ITS_REST_ITEM_TAGS.composition_tags_update-no_reversioning`, which can
+/// only see the revision history and the VERSION's own `contribution`
+/// reference — the released ITS-REST surfaces no contribution-listing
+/// operation. This service-level test is where the stronger statement is
+/// asserted: the EHR's CONTRIBUTION COUNT is unchanged by a tag write, a tag
+/// replace, and a tag delete alike, so no change set was opened at all.
+#[tokio::test]
+async fn tagging_does_not_re_version_or_contribute() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr = svc.create_ehr(None).await.expect("ehr");
+    let v1 = svc
+        .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
+        .await
+        .expect("v1")
+        .version_uid();
+    let vo: ferroehr::ids::VoId = v1.split("::").next().unwrap().parse().unwrap();
+
+    // The state a tag write must not disturb: the contribution set of the whole
+    // EHR and the versioned object's revision history.
+    let contributions_before = svc
+        .contribution_count(ehr, None)
+        .await
+        .expect("contribution count before");
+    let history_before = svc
+        .composition_revision_history(ehr, vo)
+        .await
+        .expect("revision history before");
+    assert_eq!(
+        history_before["items"].as_array().map(Vec::len),
+        Some(1),
+        "one commit, one REVISION_HISTORY_ITEM"
+    );
+
+    // Write, replace and delete tags on both addressable collections — the
+    // container's and the version's (RM `item_tag.adoc`: `target` "may be a
+    // VERSIONED_OBJECT<T> or a VERSION<T>").
+    for target in [vo.to_string(), v1.clone()] {
+        svc.target_tags_replace(
+            ehr,
+            target.clone(),
+            "COMPOSITION",
+            vec![crate::item_tag_fixture::ehr_tag(
+                "clin-proj-27a",
+                Some("first"),
+                None,
+            )],
+        )
+        .await
+        .expect("tag write");
+        svc.target_tags_replace(
+            ehr,
+            target.clone(),
+            "COMPOSITION",
+            vec![crate::item_tag_fixture::ehr_tag(
+                "clin-proj-27a",
+                Some("second"),
+                None,
+            )],
+        )
+        .await
+        .expect("tag replace");
+        svc.target_tag_delete(ehr, target, "COMPOSITION", "clin-proj-27a".to_owned())
+            .await
+            .expect("tag delete");
+    }
+
+    // No new VERSION …
+    let history_after = svc
+        .composition_revision_history(ehr, vo)
+        .await
+        .expect("revision history after");
+    assert_eq!(
+        history_after, history_before,
+        "tagging must not add, remove or alter a revision"
+    );
+    // … and no new CONTRIBUTION anywhere in the EHR.
+    assert_eq!(
+        svc.contribution_count(ehr, None)
+            .await
+            .expect("contribution count after"),
+        contributions_before,
+        "tagging must open no change set"
     );
 }

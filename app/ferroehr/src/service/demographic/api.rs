@@ -673,11 +673,11 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         uid_based_id: String,
-        body: Vec<Value>,
+        body: Vec<openehr_its::rest::generated::demographic::UpdateItemTag>,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, version) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
         Ok(tags_response(
-            self.replace_party_tags(kind, vo_id, version.as_ref(), body)
+            self.replace_party_tags(kind, vo_id, version.as_ref(), &body)
                 .await?,
         ))
     }

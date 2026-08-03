@@ -241,7 +241,8 @@ pub enum StoredQuery {
     CreatedAt,
 }
 
-/// `item_tag` — the experimental tags API.
+/// `item_tag` — the store behind the RELEASED ITS-REST 1.1.0 tags API
+/// (SPECITS-77) and the two `openehr-item-tag` wrapper headers.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
 pub enum ItemTag {
     /// The `item_tag` table itself.

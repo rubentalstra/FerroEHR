@@ -687,176 +687,20 @@ branches:
   # expects that section's 415 on `party-xml-unsupported`, as does its
   # create-side sibling.
 
-  # ── ITEM_TAG (#288): the per-binding residue of the 23 released tag
-  # operations. The five cross-cutting ITEM_TAG LAWS are exercised (see the
-  # `item-tag-*` elements below); what remains here is per-FAMILY repetition of
-  # a law already driven on the same service seam. Coverage ratchets up: each
-  # row is a NEW-CASE candidate and goes when its case lands.
-  - binding: I_ITS_REST_ITEM_TAGS.ehr_status_tags_update
-    outcome: bad_request
-    reason: coverage_gap
-    source: "ITS-REST ehr_status_tags_update.yaml, responses/400.yaml (\"returned when the request could not be parsed or is invalid (e.g. ... syntactically invalid header, parameter or content)\"); the body-defect family split is register AMB-93"
-    note: "the non-array-body 400 is driven on the EHR-side seam by I_ITS_REST_ITEM_TAGS.composition_tags_update-non_array_body; the EHR_STATUS PUT shares that seam and has no isolated case of its own yet"
-  - binding: I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete
-    outcome: deleted
-    reason: coverage_gap
-    source: "ITS-REST ehr_status_tags_delete.yaml, responses/204_deleted.yaml (\"`204 No Content` is returned when the resource identified by the request parameters has been (logically) deleted\")"
-    note: "the key-scoped delete is driven on the EHR-side seam by I_ITS_REST_ITEM_TAGS.composition_tags_delete-key_scoped; the EHR_STATUS DELETE's 404 arm IS driven (I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-wrong_kind_uid), the success arm has no isolated case of its own yet"
-  - binding: I_ITS_REST_ITEM_TAGS.organisation_tags_get
-    outcome: ok
-    reason: coverage_gap
-    source: "ITS-REST organisation_tags_get.yaml, responses/200_ORGANISATION_ItemTagList_retrieved.yaml (\"`200 OK` is returned when the requested ITEM_TAG list is successfully retrieved\")"
-    note: "the ORGANISATION family's 404 arm IS driven (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid); its success arms repeat the PERSON cases on the same demographic seam and have no isolated case of their own yet"
-  - binding: I_ITS_REST_ITEM_TAGS.organisation_tags_update
-    outcome: updated
-    reason: coverage_gap
-    source: "ITS-REST organisation_tags_update.yaml, responses/200_ORGANISATION_ItemTagList_updated.yaml, with the 200-vs-204 selection fixed by responses/204_updated.yaml (\"returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`\") and overview Requests_and_responses.md §\"Prefer minimal, identifier or full representation response\""
-    note: "the ORGANISATION family's 404 arm IS driven (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid); its success arms repeat the PERSON cases on the same demographic seam and have no isolated case of their own yet"
-  - binding: I_ITS_REST_ITEM_TAGS.organisation_tags_update
-    outcome: bad_request
-    reason: coverage_gap
-    source: "ITS-REST organisation_tags_update.yaml, responses/400.yaml (\"returned when the request could not be parsed or is invalid (e.g. ... syntactically invalid header, parameter or content)\"); the body-defect family split is register AMB-93"
-    note: "the ORGANISATION family's 404 arm IS driven (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid); its success arms repeat the PERSON cases on the same demographic seam and have no isolated case of their own yet"
-  - binding: I_ITS_REST_ITEM_TAGS.organisation_tags_delete
-    outcome: deleted
-    reason: coverage_gap
-    source: "ITS-REST organisation_tags_delete.yaml, responses/204_deleted.yaml (\"`204 No Content` is returned when the resource identified by the request parameters has been (logically) deleted\")"
-    note: "the ORGANISATION family's 404 arm IS driven (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid); its success arms repeat the PERSON cases on the same demographic seam and have no isolated case of their own yet"
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_get
-    outcome: ok
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_get.yaml, responses/200_AGENT_ItemTagList_retrieved.yaml (\"`200 OK` is returned when the requested ITEM_TAG list is successfully retrieved\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_get
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_get.yaml, responses/404_unknown_uid_based_id.yaml (\"`404 Not Found` is returned when the `uid_based_id` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_get
-    format: canonical-json
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_get.yaml parameters/header/Accept_canonical.yaml — the canonical-JSON representation is the only one the tag surface has (no ITEM_TAG type exists in ITS-XML; register AMB-97)"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_update
-    outcome: updated
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_update.yaml, responses/200_AGENT_ItemTagList_updated.yaml, with the 200-vs-204 selection fixed by responses/204_updated.yaml (\"returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`\") and overview Requests_and_responses.md §\"Prefer minimal, identifier or full representation response\""
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_update
-    outcome: bad_request
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_update.yaml, responses/400.yaml (\"returned when the request could not be parsed or is invalid (e.g. ... syntactically invalid header, parameter or content)\"); the body-defect family split is register AMB-93"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_update
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_update.yaml, responses/404_unknown_uid_based_id.yaml (\"`404 Not Found` is returned when the `uid_based_id` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_update
-    format: canonical-json
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_update.yaml parameters/header/Accept_canonical.yaml — the canonical-JSON representation is the only one the tag surface has (no ITEM_TAG type exists in ITS-XML; register AMB-97)"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_delete
-    outcome: deleted
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_delete.yaml, responses/204_deleted.yaml (\"`204 No Content` is returned when the resource identified by the request parameters has been (logically) deleted\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.agent_tags_delete
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST agent_tags_delete.yaml, responses/404_unknown_uid_based_id_or_key.yaml (\"returned when the `uid_based_id` does not exist, or when the ITEM_TAG identified by the `key` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_get
-    outcome: ok
-    reason: coverage_gap
-    source: "ITS-REST group_tags_get.yaml, responses/200_GROUP_ItemTagList_retrieved.yaml (\"`200 OK` is returned when the requested ITEM_TAG list is successfully retrieved\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_get
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST group_tags_get.yaml, responses/404_unknown_uid_based_id.yaml (\"`404 Not Found` is returned when the `uid_based_id` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_get
-    format: canonical-json
-    reason: coverage_gap
-    source: "ITS-REST group_tags_get.yaml parameters/header/Accept_canonical.yaml — the canonical-JSON representation is the only one the tag surface has (no ITEM_TAG type exists in ITS-XML; register AMB-97)"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_update
-    outcome: updated
-    reason: coverage_gap
-    source: "ITS-REST group_tags_update.yaml, responses/200_GROUP_ItemTagList_updated.yaml, with the 200-vs-204 selection fixed by responses/204_updated.yaml (\"returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`\") and overview Requests_and_responses.md §\"Prefer minimal, identifier or full representation response\""
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_update
-    outcome: bad_request
-    reason: coverage_gap
-    source: "ITS-REST group_tags_update.yaml, responses/400.yaml (\"returned when the request could not be parsed or is invalid (e.g. ... syntactically invalid header, parameter or content)\"); the body-defect family split is register AMB-93"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_update
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST group_tags_update.yaml, responses/404_unknown_uid_based_id.yaml (\"`404 Not Found` is returned when the `uid_based_id` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_update
-    format: canonical-json
-    reason: coverage_gap
-    source: "ITS-REST group_tags_update.yaml parameters/header/Accept_canonical.yaml — the canonical-JSON representation is the only one the tag surface has (no ITEM_TAG type exists in ITS-XML; register AMB-97)"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_delete
-    outcome: deleted
-    reason: coverage_gap
-    source: "ITS-REST group_tags_delete.yaml, responses/204_deleted.yaml (\"`204 No Content` is returned when the resource identified by the request parameters has been (logically) deleted\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.group_tags_delete
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST group_tags_delete.yaml, responses/404_unknown_uid_based_id_or_key.yaml (\"returned when the `uid_based_id` does not exist, or when the ITEM_TAG identified by the `key` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_get
-    outcome: ok
-    reason: coverage_gap
-    source: "ITS-REST role_tags_get.yaml, responses/200_ROLE_ItemTagList_retrieved.yaml (\"`200 OK` is returned when the requested ITEM_TAG list is successfully retrieved\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_get
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST role_tags_get.yaml, responses/404_unknown_uid_based_id.yaml (\"`404 Not Found` is returned when the `uid_based_id` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_get
-    format: canonical-json
-    reason: coverage_gap
-    source: "ITS-REST role_tags_get.yaml parameters/header/Accept_canonical.yaml — the canonical-JSON representation is the only one the tag surface has (no ITEM_TAG type exists in ITS-XML; register AMB-97)"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_update
-    outcome: updated
-    reason: coverage_gap
-    source: "ITS-REST role_tags_update.yaml, responses/200_ROLE_ItemTagList_updated.yaml, with the 200-vs-204 selection fixed by responses/204_updated.yaml (\"returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`\") and overview Requests_and_responses.md §\"Prefer minimal, identifier or full representation response\""
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_update
-    outcome: bad_request
-    reason: coverage_gap
-    source: "ITS-REST role_tags_update.yaml, responses/400.yaml (\"returned when the request could not be parsed or is invalid (e.g. ... syntactically invalid header, parameter or content)\"); the body-defect family split is register AMB-93"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_update
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST role_tags_update.yaml, responses/404_unknown_uid_based_id.yaml (\"`404 Not Found` is returned when the `uid_based_id` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_update
-    format: canonical-json
-    reason: coverage_gap
-    source: "ITS-REST role_tags_update.yaml parameters/header/Accept_canonical.yaml — the canonical-JSON representation is the only one the tag surface has (no ITEM_TAG type exists in ITS-XML; register AMB-97)"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_delete
-    outcome: deleted
-    reason: coverage_gap
-    source: "ITS-REST role_tags_delete.yaml, responses/204_deleted.yaml (\"`204 No Content` is returned when the resource identified by the request parameters has been (logically) deleted\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
-  - binding: I_ITS_REST_ITEM_TAGS.role_tags_delete
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST role_tags_delete.yaml, responses/404_unknown_uid_based_id_or_key.yaml (\"returned when the `uid_based_id` does not exist, or when the ITEM_TAG identified by the `key` does not exist\")"
-    note: "the five demographic party tag families are byte-identical operations modulo the type name (register AMB-91 and AMB-97 both record that), and they are served by ONE seam: the case set drives that seam on PERSON (I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity, -version_container_disjoint, -non_array_body, -unknown_container, I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape, -version_target_shape, -cross_space_composition_uid, I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped, -unknown_key) and its kind discipline on ORGANISATION (I_ITS_REST_ITEM_TAGS.organisation_tags_{get,update,delete}-wrong_kind_uid). This row is the remaining per-family gap — a NEW-CASE candidate, not a boundary; it closes when the family gets its own isolated case."
+  # ── ITEM_TAG (#288, RETIRED 2026-08-03): the per-binding residue of the 23
+  # released tag operations is GONE. Every branch that stood here — the
+  # EHR_STATUS PUT's 400 and DELETE's 204, the ORGANISATION success arms, and
+  # the whole AGENT / GROUP / ROLE outcome+format set — is now driven by its
+  # own isolated case (I_ITS_REST_ITEM_TAGS.{agent,group,role}_tags_delete-
+  # key_scoped / -unknown_key, .{agent,group,role}_tags_update-non_array_body /
+  # -unknown_container, .{agent,group,role}_tags_get-unknown_container,
+  # .organisation_tags_delete-key_scoped, .organisation_tags_update-
+  # non_array_body, .ehr_status_tags_delete-key_scoped,
+  # .ehr_status_tags_update-non_array_body). The five party families are five
+  # SEPARATE released operations over five separate routes, so the earlier
+  # "one seam, driven on PERSON" note was a coverage boundary, not a proof —
+  # and coverage only ratchets up, so the rows are retired rather than
+  # reworded.
 
 # Axis 3 — cross-cutting wire-surface behaviours (populated below).
 elements:

@@ -1,22 +1,29 @@
-//! The demographic `ITEM_TAG` surface — the RM `common.item_tag` extension
-//! applied to parties (ehr-less: `ehr_id IS NULL`). Our own extension: ITS-REST
-//! 1.0.3 defines no demographic wire contract. The tag store is
-//! backed by the `item_tag` table via `crate::storage::tag_repo` (storage owns
-//! the SQL — no openEHR spec governs the storage, our own design); the RM
-//! `ITEM_TAG` invariant checks (`Inv_key_valid`/`Inv_value_valid`) and the wire
-//! shape stay in the domain here (RM `common.item_tag` governs both).
+//! The demographic `ITEM_TAG` surface — the RM `common.item_tag` class applied
+//! to parties (ehr-less: `ehr_id IS NULL`). The wire contract is RELEASED:
+//! ITS-REST 1.1.0 publishes `demographic_tags_get` plus per-kind
+//! `{person,agent,group,organisation,role}_tags_{get,update,delete}`
+//! (SPECITS-77; the Demographic API's own lifecycle within the release is
+//! DEVELOPMENT). The tag store is backed by the `item_tag` table via
+//! `crate::storage::tag_repo` (storage owns the SQL — no openEHR spec governs
+//! the storage, our own design); the RM `ITEM_TAG` invariants
+//! (`Inv_key_valid`/`Inv_value_valid`) are judged through the one shared seam
+//! `crate::service::ehr::tags::validate_item_tag`, so this family and the EHR
+//! family cannot drift apart.
 
 use std::collections::BTreeMap;
 
-use openehr_base::prelude::{ObjectId, ObjectRef, ObjectRefData, ObjectVersionId};
+use openehr_base::prelude::{
+    HierObjectId, ObjectId, ObjectRef, ObjectRefData, ObjectVersionId, UidBasedId,
+};
+use openehr_its::rest::generated::demographic::UpdateItemTag;
 use openehr_rm::prelude::ItemTag;
 use serde_json::Value;
 
 use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::demographic::types::PartyKind;
-use crate::service::ehr::tags::tag_target_tail;
-use crate::service::error::{ServiceError, Violation};
+use crate::service::ehr::tags::{normalized_target_path, tag_target_tail, validate_item_tag};
+use crate::service::error::ServiceError;
 use crate::service::status::CallStatusType;
 use crate::storage::tag_repo;
 use crate::versioning::object_version_id::{VersionIdError, hier_object_id};
@@ -119,7 +126,7 @@ impl FerroEhrService {
         kind: PartyKind,
         vo_id: VoId,
         target_version: Option<&ObjectVersionId>,
-        tags: Vec<Value>,
+        tags: &[UpdateItemTag],
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_party_tag_target(kind, vo_id, target_version)
             .await?;
@@ -129,36 +136,33 @@ impl FerroEhrService {
         // key collapsed them — the run-2 triage defect, 2026-07-28, mirroring
         // the EHR-side #369 identity fix). BTreeMap ordering matches the
         // `ORDER BY key` read-back order on the leading component.
+        //
+        // The invariants and the `target_path: ""` normalization are the EHR
+        // family's, called rather than restated: one implementation of each,
+        // so the two families cannot diverge (register AMB-96 says the
+        // normalization is "applied identically on the EHR and demographic
+        // families" — this is what makes that structurally true).
+        let target = match target_version {
+            Some(version) => UidBasedId::ObjectVersionId(version.clone()),
+            // A bare container key is a UUID by type, so the conversion is
+            // total (BASE `master05-identification_package.adoc` §Syntaxes:
+            // `uid = iso_oid | uuid | internet_id`).
+            None => UidBasedId::HierObjectId(HierObjectId::from(vo_id.0)),
+        };
+        let owner_id = party_owner_ref(&self.effective_system_id())?;
         let mut deduped: BTreeMap<(String, Option<String>), Option<String>> = BTreeMap::new();
-        for tag in &tags {
-            let key = tag.get("key").and_then(Value::as_str).ok_or_else(|| {
-                ServiceError::Unprocessable(
-                    Violation::new("is required on an item tag").with_path("ITEM_TAG.key"),
-                )
-            })?;
-            // RM ITEM_TAG Inv_key_valid: non-empty, no leading/trailing whitespace.
-            if key.is_empty() || key.trim() != key {
-                return Err(ServiceError::Unprocessable(
-                    Violation::new(format!(
-                        "{key:?} must be non-empty without leading/trailing whitespace"
-                    ))
-                    .with_path("ITEM_TAG.key")
-                    .with_invariant("ITEM_TAG.Inv_key_valid"),
-                ));
-            }
-            let value = tag.get("value").and_then(Value::as_str);
-            // RM ITEM_TAG Inv_value_valid: `value /= Void implies not value.is_empty`.
-            if value == Some("") {
-                return Err(ServiceError::Unprocessable(
-                    Violation::new(format!("of item tag {key:?}, if set, may not be empty"))
-                        .with_path("ITEM_TAG.value")
-                        .with_invariant("ITEM_TAG.Inv_value_valid"),
-                ));
-            }
-            let target_path = tag.get("target_path").and_then(Value::as_str);
+        for tag in tags {
+            let target_path = normalized_target_path(tag.target_path.as_deref());
+            validate_item_tag(
+                &tag.key,
+                tag.value.as_deref(),
+                target_path,
+                target.clone(),
+                owner_id.clone(),
+            )?;
             deduped.insert(
-                (key.to_owned(), target_path.map(str::to_owned)),
-                value.map(str::to_owned),
+                (tag.key.clone(), target_path.map(str::to_owned)),
+                tag.value.clone(),
             );
         }
 
@@ -243,11 +247,24 @@ fn party_tag_json(system_id: &str, row: &tag_repo::TagRow) -> Result<Value, Vers
         value: row.value.clone(),
         target: crate::service::ehr::tags::tag_target(row)?,
         target_path: row.target_path.clone(),
-        owner_id: ObjectRef::ObjectRef(ObjectRefData {
-            namespace: "local".to_owned(),
-            r#type: "SYSTEM".to_owned(),
-            id: ObjectId::HierObjectId(hier_object_id(system_id)?),
-        }),
+        owner_id: party_owner_ref(system_id)?,
     };
     Ok(openehr_its::json::to_canonical_value(&tag))
+}
+
+/// The `ITEM_TAG.owner_id` of a demographic (ehr-less) tag — the `OBJECT_REF`
+/// `{namespace: local, type: SYSTEM}` of every released
+/// `schemas/demographic/ItemTagOf<T>.yaml` example, whose `id` carries the
+/// server's configured system identifier (register AMB-137). One function so
+/// the shape a tag is VALIDATED under is the shape it is SERVED under.
+///
+/// # Errors
+/// [`VersionIdError`] when the configured `system_id` is not a well-formed
+/// BASE identifier.
+fn party_owner_ref(system_id: &str) -> Result<ObjectRef, VersionIdError> {
+    Ok(ObjectRef::ObjectRef(ObjectRefData {
+        namespace: "local".to_owned(),
+        r#type: "SYSTEM".to_owned(),
+        id: ObjectId::HierObjectId(hier_object_id(system_id)?),
+    }))
 }

@@ -6766,11 +6766,16 @@ pub(crate) async fn agent_tags_get(
                                 member. `target` and `owner_id` are NOT client \
                                 input — the server assigns them from the route \
                                 — which is why the write schema omits them; a \
-                                body that nonetheless carries them is accepted \
-                                and those members ignored, per our canonical \
-                                tolerant-read posture (no released sentence \
-                                governs the extra-member case — our own \
-                                design). This is a FULL COLLECTION REPLACE: \
+                                body that nonetheless carries them — or any \
+                                other undeclared member — is REFUSED `400` \
+                                naming the member, because \
+                                `additionalProperties: false` is a released \
+                                constraint and the ITS-REST docs text is silent \
+                                on the write body's member set, so the OAS \
+                                grounds it under the documented oracle order. A \
+                                member of the wrong JSON type (a numeric \
+                                `value`, say) is the same `400` — never a \
+                                silently-absent attribute. This is a FULL COLLECTION REPLACE: \
                                 tags omitted from the body are removed, and \
                                 \"Providing an empty list will effectively \
                                 remove all ITEM_TAG associated with the given \
@@ -7423,11 +7428,16 @@ pub(crate) async fn group_tags_get(
                                 member. `target` and `owner_id` are NOT client \
                                 input — the server assigns them from the route \
                                 — which is why the write schema omits them; a \
-                                body that nonetheless carries them is accepted \
-                                and those members ignored, per our canonical \
-                                tolerant-read posture (no released sentence \
-                                governs the extra-member case — our own \
-                                design). This is a FULL COLLECTION REPLACE: \
+                                body that nonetheless carries them — or any \
+                                other undeclared member — is REFUSED `400` \
+                                naming the member, because \
+                                `additionalProperties: false` is a released \
+                                constraint and the ITS-REST docs text is silent \
+                                on the write body's member set, so the OAS \
+                                grounds it under the documented oracle order. A \
+                                member of the wrong JSON type (a numeric \
+                                `value`, say) is the same `400` — never a \
+                                silently-absent attribute. This is a FULL COLLECTION REPLACE: \
                                 tags omitted from the body are removed, and \
                                 \"Providing an empty list will effectively \
                                 remove all ITEM_TAG associated with the given \
@@ -8085,11 +8095,16 @@ pub(crate) async fn organisation_tags_get(
                                 member. `target` and `owner_id` are NOT client \
                                 input — the server assigns them from the route \
                                 — which is why the write schema omits them; a \
-                                body that nonetheless carries them is accepted \
-                                and those members ignored, per our canonical \
-                                tolerant-read posture (no released sentence \
-                                governs the extra-member case — our own \
-                                design). This is a FULL COLLECTION REPLACE: \
+                                body that nonetheless carries them — or any \
+                                other undeclared member — is REFUSED `400` \
+                                naming the member, because \
+                                `additionalProperties: false` is a released \
+                                constraint and the ITS-REST docs text is silent \
+                                on the write body's member set, so the OAS \
+                                grounds it under the documented oracle order. A \
+                                member of the wrong JSON type (a numeric \
+                                `value`, say) is the same `400` — never a \
+                                silently-absent attribute. This is a FULL COLLECTION REPLACE: \
                                 tags omitted from the body are removed, and \
                                 \"Providing an empty list will effectively \
                                 remove all ITEM_TAG associated with the given \
@@ -8755,11 +8770,16 @@ pub(crate) async fn person_tags_get(
                                 member. `target` and `owner_id` are NOT client \
                                 input — the server assigns them from the route \
                                 — which is why the write schema omits them; a \
-                                body that nonetheless carries them is accepted \
-                                and those members ignored, per our canonical \
-                                tolerant-read posture (no released sentence \
-                                governs the extra-member case — our own \
-                                design). This is a FULL COLLECTION REPLACE: \
+                                body that nonetheless carries them — or any \
+                                other undeclared member — is REFUSED `400` \
+                                naming the member, because \
+                                `additionalProperties: false` is a released \
+                                constraint and the ITS-REST docs text is silent \
+                                on the write body's member set, so the OAS \
+                                grounds it under the documented oracle order. A \
+                                member of the wrong JSON type (a numeric \
+                                `value`, say) is the same `400` — never a \
+                                silently-absent attribute. This is a FULL COLLECTION REPLACE: \
                                 tags omitted from the body are removed, and \
                                 \"Providing an empty list will effectively \
                                 remove all ITEM_TAG associated with the given \
@@ -9424,11 +9444,16 @@ pub(crate) async fn role_tags_get(
                                 member. `target` and `owner_id` are NOT client \
                                 input — the server assigns them from the route \
                                 — which is why the write schema omits them; a \
-                                body that nonetheless carries them is accepted \
-                                and those members ignored, per our canonical \
-                                tolerant-read posture (no released sentence \
-                                governs the extra-member case — our own \
-                                design). This is a FULL COLLECTION REPLACE: \
+                                body that nonetheless carries them — or any \
+                                other undeclared member — is REFUSED `400` \
+                                naming the member, because \
+                                `additionalProperties: false` is a released \
+                                constraint and the ITS-REST docs text is silent \
+                                on the write body's member set, so the OAS \
+                                grounds it under the documented oracle order. A \
+                                member of the wrong JSON type (a numeric \
+                                `value`, say) is the same `400` — never a \
+                                silently-absent attribute. This is a FULL COLLECTION REPLACE: \
                                 tags omitted from the body are removed, and \
                                 \"Providing an empty list will effectively \
                                 remove all ITEM_TAG associated with the given \
