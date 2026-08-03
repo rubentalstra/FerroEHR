@@ -19,7 +19,7 @@
 
 use http::{HeaderMap, HeaderValue};
 use indexmap::IndexMap;
-use serde::de::value::Error as ValueError;
+use serde::de::value::Error;
 use serde::de::{self, DeserializeOwned, Deserializer, IntoDeserializer, MapAccess, Visitor};
 
 use openehr_its::rest::runtime::ApiError;
@@ -473,7 +473,7 @@ struct RequestValuesDeserializer {
 }
 
 impl<'de> Deserializer<'de> for RequestValuesDeserializer {
-    type Error = ValueError;
+    type Error = Error;
 
     fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         visitor.visit_map(RequestMapAccess {
@@ -498,7 +498,7 @@ struct RequestMapAccess {
 }
 
 impl<'de> MapAccess<'de> for RequestMapAccess {
-    type Error = ValueError;
+    type Error = Error;
 
     fn next_key_seed<K: de::DeserializeSeed<'de>>(
         &mut self,
@@ -531,7 +531,7 @@ struct ScalarDeserializer {
 }
 
 impl ScalarDeserializer {
-    fn first(&self) -> Result<&str, ValueError> {
+    fn first(&self) -> Result<&str, Error> {
         self.values
             .first()
             .map(String::as_str)
@@ -552,7 +552,7 @@ macro_rules! deserialize_parsed {
 }
 
 impl<'de> Deserializer<'de> for ScalarDeserializer {
-    type Error = ValueError;
+    type Error = Error;
 
     fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         // Untyped targets (e.g. `serde_json::Value`) receive the raw string.
@@ -614,7 +614,7 @@ impl<'de> Deserializer<'de> for ScalarDeserializer {
     }
 }
 
-impl IntoDeserializer<'_, ValueError> for ScalarDeserializer {
+impl IntoDeserializer<'_, Error> for ScalarDeserializer {
     type Deserializer = Self;
     fn into_deserializer(self) -> Self {
         self
