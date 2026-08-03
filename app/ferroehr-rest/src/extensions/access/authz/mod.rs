@@ -236,16 +236,46 @@ pub(crate) struct RbacGate {
     routes: HashMap<(Method, String), (OperationClass, &'static str)>,
 }
 
+/// Extension routes whose HTTP verb MUTATES NOTHING — the read-only gate's
+/// counterpart to [`is_write`]'s `query_execute_*` arm, for the surfaces
+/// outside the generated ITS-REST tables.
+///
+/// Matched by method + path SUFFIX so the deployment's configured base path is
+/// irrelevant. Each entry is a read whose selector is a whole structure and so
+/// travels as a request body, exactly as the released ad-hoc AQL read does:
+///
+/// - `POST /message/export` — SM `I_EHR_EXTRACT_SERVICE.export_ehr_extracts`
+///   (`SM/docs/UML/classes/i_ehr_extract_service.adoc`), a query over held
+///   versions whose selector is an `EXTRACT_SPEC` (RM `ehr_extract`
+///   `extract_spec.adoc`). It commits nothing: the import operations are the
+///   mutating half of that interface.
+///
+/// No openEHR spec governs role semantics — our own design/extension.
+const EXTENSION_READ_ROUTES: &[(&str, &str)] = &[("POST", "/message/export")];
+
+/// Whether an EXTENSION route (one outside the generated ITS-REST tables) is a
+/// write for the read-only gate: the mutating verbs are, except for the pinned
+/// [`EXTENSION_READ_ROUTES`] reads. Fail-safe by construction — an unlisted
+/// mutating verb stays a write.
+fn extension_is_write(method: &Method, matched: &str) -> bool {
+    if EXTENSION_READ_ROUTES
+        .iter()
+        .any(|(verb, suffix)| method.as_str() == *verb && matched.ends_with(suffix))
+    {
+        return false;
+    }
+    !matches!(*method, Method::GET | Method::HEAD)
+}
+
 impl RbacGate {
     fn new(rules: RbacConfig, base_path: &str) -> Self {
-        use openehr_its::rest::generated as g;
         let mut routes = HashMap::new();
         for table in [
-            g::ehr::ROUTES,
-            g::definition::ROUTES,
-            g::demographic::ROUTES,
-            g::query::ROUTES,
-            g::admin::ROUTES,
+            openehr_its::rest::generated::ehr::ROUTES,
+            openehr_its::rest::generated::definition::ROUTES,
+            openehr_its::rest::generated::demographic::ROUTES,
+            openehr_its::rest::generated::query::ROUTES,
+            openehr_its::rest::generated::admin::ROUTES,
         ] {
             for (method, path, op) in table {
                 let (Ok(method), Some(class)) = (method.parse::<Method>(), class_of(op)) else {
@@ -298,7 +328,7 @@ impl RbacGate {
                 .routes
                 .get(&(method.clone(), mp.to_owned()))
                 .map_or_else(
-                    || !matches!(*method, Method::GET | Method::HEAD),
+                    || extension_is_write(method, mp),
                     |(_class, op)| is_write(op),
                 ),
         }
@@ -328,6 +358,31 @@ mod tests {
 
     fn gate() -> RbacGate {
         RbacGate::new(RbacConfig::default(), BASE)
+    }
+
+    /// The read-only gate classifies an EXTENSION route by what the operation
+    /// DOES, not by its HTTP verb: `POST /message/export` realizes SM
+    /// `I_EHR_EXTRACT_SERVICE.export_ehr_extracts`, a query over held versions,
+    /// while the import routes of the same interface commit and stay writes.
+    #[test]
+    fn message_export_is_a_read_for_the_readonly_gate() {
+        let g = gate();
+        assert!(
+            !g.is_write_for(&Method::POST, Some(&format!("{BASE}/message/export"))),
+            "export_ehr_extracts selects held content and commits nothing"
+        );
+        assert!(
+            g.is_write_for(&Method::POST, Some(&format!("{BASE}/message/import"))),
+            "the imports are the mutating half of the same interface"
+        );
+        assert!(
+            g.is_write_for(&Method::POST, Some(&format!("{BASE}/message/tdd"))),
+            "an unlisted extension POST stays a write (fail-safe)"
+        );
+        assert!(
+            !g.is_write_for(&Method::GET, Some(&format!("{BASE}/message/export"))),
+            "a GET is a read on every surface"
+        );
     }
 
     #[test]

@@ -159,8 +159,8 @@ pub(super) fn path_segment(parts: &RequestParts, key: &str) -> Result<String, Re
 /// `200_Query.yaml` declares an `ETag` response header — "an identifier of the
 /// `RESULT_SET`" — in the weak form (`headers/ETag_RESULT_SET.yaml`:
 /// `W/"…"`). The vendored `ResultSet` schema carries no `id` field, so the tag
-/// is derived deterministically from the assembled document (a stable content
-/// digest rendered as a weak ETag): identical result sets get identical tags,
+/// is a stable digest of the document's result-determining content, rendered as
+/// a weak `ETag` ([`result_set_etag`]): identical result sets get identical tags,
 /// which is exactly the `ETag` contract. The body itself is negotiated by
 /// [`negotiate::respond`] (JSON only — the QUERY operations declare no
 /// canonical-XML representation, so an XML `Accept` yields `406`, and the `ETag`
@@ -177,12 +177,32 @@ pub(super) fn respond_result_set(headers: &HeaderMap, result_set: &serde_json::V
     resp
 }
 
-/// A weak `ETag` for a `RESULT_SET`: a deterministic 128-bit content digest of
-/// the assembled document rendered as `W/"{uuid}"` (the shape
-/// `headers/ETag_RESULT_SET.yaml` exemplifies). Deterministic so that
-/// re-executing the same query over the same data yields the same tag.
+/// A weak `ETag` for a `RESULT_SET`: a deterministic 128-bit digest of the
+/// document's RESULT-DETERMINING content, rendered as `W/"{uuid}"` (the shape
+/// `headers/ETag_RESULT_SET.yaml` exemplifies).
+///
+/// The digest deliberately covers `name`, `q`, `meta._executed_aql`, `columns`
+/// and `rows`, and NOT the response-stamped metadata (`meta._created`, and any
+/// `_href`/`_generator` a response may carry): the overview requires an `ETag`
+/// to identify the resource and to change only with it — "acts as a unique
+/// identifier for a specific version of a resource. It helps clients determine
+/// whether a resource has changed between requests, supporting efficient
+/// caching" and "It changes as soon as the resource changes"
+/// (`Requests_and_responses.md` §`ETag` and Last-Modified) — while `Request.md`
+/// §Common Headers and Query Parameters names this one "A unique identifier of
+/// the resultSet". A digest over `_created` (stamped per response) would mint a
+/// fresh tag for an unchanged result set, which is the opposite of both
+/// sentences; the executed AQL is included because two different queries may
+/// coincidentally return the same rows and are not the same result set.
 fn result_set_etag(result_set: &serde_json::Value) -> String {
-    let bytes = serde_json::to_vec(result_set).unwrap_or_default();
+    let identity = serde_json::json!({
+        "name": result_set.get("name"),
+        "q": result_set.get("q"),
+        "executed_aql": result_set.pointer("/meta/_executed_aql"),
+        "columns": result_set.get("columns"),
+        "rows": result_set.get("rows"),
+    });
+    let bytes = serde_json::to_vec(&identity).unwrap_or_default();
     format!("W/\"{}\"", stable_uuid(&bytes))
 }
 
@@ -302,6 +322,51 @@ mod tests {
         // Stable for an identical RESULT_SET; different for a different one.
         assert_eq!(tag, result_set_etag(&rs));
         assert_ne!(tag, result_set_etag(&serde_json::json!({"rows": []})));
+    }
+
+    /// The tag identifies the RESULT SET, not the response instance: two
+    /// executions of the same query over the same data differ only in the
+    /// per-response `meta._created` stamp and MUST carry the same `ETag`
+    /// ("It changes as soon as the resource changes",
+    /// `Requests_and_responses.md` §`ETag` and Last-Modified) — while a genuine
+    /// change in the executed AQL, the columns or the rows MUST change it
+    /// ("A unique identifier of the resultSet", `Request.md` §Common Headers
+    /// and Query Parameters).
+    #[test]
+    fn result_set_etag_ignores_the_per_response_created_stamp() {
+        let execution = |created: &str, rows: serde_json::Value| {
+            serde_json::json!({
+                "meta": {
+                    "_type": "RESULTSET",
+                    "_schema_version": "1.0.0",
+                    "_created": created,
+                    "_executed_aql": "SELECT c/uid/value FROM COMPOSITION c",
+                },
+                "q": "SELECT c/uid/value FROM COMPOSITION c",
+                "columns": [{ "name": "#0", "path": "/uid/value" }],
+                "rows": rows,
+            })
+        };
+        let rows = serde_json::json!([["8849182c-82ad-4088-a07f-48ead4180515::s::1"]]);
+        assert_eq!(
+            result_set_etag(&execution("2026-08-03T09:00:00Z", rows.clone())),
+            result_set_etag(&execution("2026-08-03T11:30:42.117Z", rows.clone())),
+            "re-executing the same query over the same data must yield the same tag"
+        );
+        assert_ne!(
+            result_set_etag(&execution("2026-08-03T09:00:00Z", rows)),
+            result_set_etag(&execution("2026-08-03T09:00:00Z", serde_json::json!([]))),
+            "a different result set must yield a different tag"
+        );
+        // The executed AQL is part of the identity: identical rows from a
+        // different query are not the same result set.
+        let mut other_query = execution("2026-08-03T09:00:00Z", serde_json::json!([]));
+        other_query["meta"]["_executed_aql"] =
+            serde_json::json!("SELECT e/ehr_id/value FROM EHR e");
+        assert_ne!(
+            result_set_etag(&other_query),
+            result_set_etag(&execution("2026-08-03T09:00:00Z", serde_json::json!([]))),
+        );
     }
 
     #[test]

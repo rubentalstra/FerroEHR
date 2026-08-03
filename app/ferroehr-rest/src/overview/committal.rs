@@ -149,30 +149,7 @@ fn apply_attrs(
     Ok(())
 }
 
-/// The audit attributes of the committal headers, when the request carried
-/// any — the demographic AND the EHR-group delete wires thread these into
-/// their commits (the ITS-REST overview merge requirement applies to every
-/// commit surface: §"openehr-version and openehr-audit-details" requires the
-/// headers accepted on `PUT`, `POST` **and** `DELETE`). `None` when no
-/// committal header is present, so a plain request keeps the server-default
-/// attribution path.
-/// Seeded with the request's authenticated committer (the same seed
-/// `committal_commit` takes), so a header set that supplies only
-/// `description` keeps the PRINCIPAL as committer — the merge only replaces
-/// "whatever is provided" (overview §"openehr-version and
-/// openehr-audit-details"); the `UpdateVersion::direct` system placeholder
-/// is never a default the client chose.
-///
-/// # Errors
-/// [`ApiError::BadRequest`] when a header carries a malformed identifier.
-pub(crate) fn committal_audit(
-    headers: &HeaderMap,
-    committer: PartyProxy,
-) -> Result<Option<ferroehr::service::version_update::UpdateAudit>, ApiError> {
-    Ok(merged_committal(headers, Some(committer))?.map(|c| c.audit))
-}
-
-/// [`committal_audit`] for a **DELETE** wire, which additionally REFUSES a
+/// [`committal_commit`]'s audit half for a **DELETE** wire, which additionally REFUSES a
 /// committal header that names a lifecycle state other than `523|deleted|`.
 ///
 /// A `DELETE` on a change-controlled resource is the logical-deletion
@@ -431,6 +408,15 @@ mod tests {
         }
     }
 
+    /// The audit half of the one merge ([`committal_commit`]) — the shape the
+    /// audit-only assertions below are about.
+    fn committal_audit_half(
+        headers: &HeaderMap,
+        committer: PartyProxy,
+    ) -> Result<Option<UpdateAudit>, ApiError> {
+        Ok(committal_commit(headers, committer)?.map(|c| c.audit))
+    }
+
     fn headers(pairs: &[(&str, &str)]) -> HeaderMap {
         let mut h = HeaderMap::new();
         for (k, v) in pairs {
@@ -504,14 +490,14 @@ mod tests {
         );
     }
 
-    /// `committal_audit` must not leak the `direct()` placeholder change type
+    /// The merged audit must not leak the `direct()` placeholder change type
     /// (`249|creation|`) as a client-supplied value: a header set without a
     /// `change_type` yields an EMPTY code, which the service resolves to the
     /// operation's default (`versioning::audit::merged_change_type`).
     #[test]
-    fn committal_audit_blanks_the_placeholder_change_type() {
+    fn merged_audit_blanks_the_placeholder_change_type() {
         let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
-        let audit = committal_audit(
+        let audit = committal_audit_half(
             &h,
             openehr_its::json::from_canonical_value(
                 &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "principal" }),
@@ -524,7 +510,7 @@ mod tests {
         assert_eq!(audit.description.as_deref(), Some("why"));
 
         let h = headers(&[(H_AUDIT_DETAILS, "change_type.code_string=\"250\"")]);
-        let audit = committal_audit(
+        let audit = committal_audit_half(
             &h,
             openehr_its::json::from_canonical_value(
                 &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "principal" }),
@@ -536,7 +522,7 @@ mod tests {
         assert_eq!(audit.change_type.code_string, "250");
 
         assert!(
-            committal_audit(
+            committal_audit_half(
                 &HeaderMap::new(),
                 openehr_its::json::from_canonical_value(
                     &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "principal" })
@@ -640,13 +626,13 @@ mod tests {
     /// as committer — the merge replaces "whatever is provided", never the
     /// default (overview §"openehr-version and openehr-audit-details").
     #[test]
-    fn committal_audit_keeps_the_seeded_principal_committer() {
+    fn merged_audit_keeps_the_seeded_principal_committer() {
         let seed = openehr_its::json::from_canonical_value(&serde_json::json!({
             "_type": "PARTY_IDENTIFIED", "name": "dr-alice"
         }))
         .expect("committer");
         let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
-        let audit = committal_audit(&h, seed)
+        let audit = committal_audit_half(&h, seed)
             .expect("well-formed committal headers")
             .expect("headers present");
         let committer = openehr_its::json::to_canonical_value(&audit.committer);
@@ -661,7 +647,7 @@ mod tests {
         }))
         .expect("committer");
         let h = headers(&[(H_AUDIT_DETAILS, "committer.name=\"Locum\"")]);
-        let audit = committal_audit(&h, seed)
+        let audit = committal_audit_half(&h, seed)
             .expect("well-formed committal headers")
             .expect("headers present");
         let committer = openehr_its::json::to_canonical_value(&audit.committer);

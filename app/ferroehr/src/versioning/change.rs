@@ -418,16 +418,6 @@ struct ResolvedWrite {
     lifecycle: String,
     /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
     preceding_uid: Option<String>,
-    /// `ORIGINAL_VERSION.other_input_version_uids` — merge provenance
-    /// (master06 §Version Merging). Always EMPTY on this path: the released
-    /// commit wire declares no merge shape at all
-    /// (ITS-REST `schemas/ehr/UpdateVersion.yaml` has no such property, and
-    /// `NewContribution.versions` items are `UpdateVersion`), so a locally
-    /// committed version is never a merge. Merge provenance reaches storage
-    /// only through the routes that carry a FOREIGN `ORIGINAL_VERSION`
-    /// verbatim — the EHR-Extract import and the archive load — which write
-    /// their own rows (`storage::version_repo::import`).
-    other_input_version_uids: Vec<String>,
     template_id: Option<String>,
     /// The lineage tip storage ordinal to supersede at `now()` — `None` for a
     /// first version or a FORK (master06 §The 'Virtual Version Tree').
@@ -506,27 +496,53 @@ fn stamp_version_uid(canonical: &mut Value, version_uid: &str) -> Result<(), Ver
     Ok(())
 }
 
+/// Everything that is fixed for the enclosing commit act, as one value:
+/// [`apply_change`] varies only in the [`Change`] it applies, so the rest —
+/// the EHR scope, the enclosing CONTRIBUTION, the audits, the signing context
+/// and the shared transaction timestamp — travels together.
+///
+/// A single-object write builds one of these per call
+/// ([`ContributionCtx::New`], no `known_now`); a CONTRIBUTION commit builds it
+/// once and applies every change of the set under it, which is what makes the
+/// whole set share one contribution id and one commit instant (RM common
+/// `master06-change_control_package.adoc` §Committal and Audits).
+struct CommitScope<'a> {
+    /// The owning EHR, or `None` for an ehr-less object (a demographic party).
+    ehr_id: Option<EhrId>,
+    /// How the enclosing CONTRIBUTION is supplied.
+    contribution: ContributionCtx,
+    /// This version's own `commit_audit`.
+    audit: &'a AuditInput,
+    /// System id, signer, multimedia engine and outbox switch for the write.
+    ctx: &'a SigningCtx<'a>,
+    /// The committer a version item that omits its own inherits — the
+    /// CONTRIBUTION audit's committer on the set path, the version's own
+    /// committer on a single-object write (master06 §Committal, m4).
+    committer_fallback: &'a openehr_rm::prelude::PartyProxy,
+    /// The transaction timestamp already read by the caller (the CONTRIBUTION
+    /// path reads `now()` once for the whole set); `None` makes this change
+    /// read its own.
+    known_now: Option<jiff::Timestamp>,
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "the three change arms build one resolved write; splitting them \
               would hide that they are alternatives on the same transaction"
 )]
-// TODO(#1447): group the commit-scope parameters into one struct — the parameter list
-// is the whole commit scope threaded through a single private helper.
-#[expect(
-    clippy::too_many_arguments,
-    reason = "the parameter list is the whole commit scope, not yet grouped"
-)]
 async fn apply_change(
     tx: &mut PgConnection,
-    ehr_id: Option<EhrId>,
-    contribution: ContributionCtx,
-    audit: &AuditInput,
-    ctx: &SigningCtx<'_>,
-    committer_fallback: &openehr_rm::prelude::PartyProxy,
-    known_now: Option<jiff::Timestamp>,
+    scope: CommitScope<'_>,
     change: Change,
 ) -> Result<(Committed, Uuid), ServiceError> {
+    let CommitScope {
+        ehr_id,
+        contribution,
+        audit,
+        ctx,
+        committer_fallback,
+        known_now,
+    } = scope;
     let resolved = match change {
         Change::Create {
             kind,
@@ -569,7 +585,6 @@ async fn apply_change(
                 tree: TreeId::trunk(1),
                 lifecycle,
                 preceding_uid: None,
-                other_input_version_uids: Vec::new(),
                 template_id,
                 close_ordinal: None,
                 client_signature: signature,
@@ -618,7 +633,6 @@ async fn apply_change(
                 tree: next.tree,
                 lifecycle,
                 preceding_uid: Some(next.preceding_uid),
-                other_input_version_uids: Vec::new(),
                 template_id,
                 close_ordinal: next.close_ordinal,
                 client_signature: signature,
@@ -647,7 +661,6 @@ async fn apply_change(
                 tree: next.tree,
                 lifecycle: lifecycle::state::DELETED.to_owned(),
                 preceding_uid: Some(next.preceding_uid),
-                other_input_version_uids: Vec::new(),
                 template_id: None,
                 close_ordinal: next.close_ordinal,
                 client_signature: signature,
@@ -747,7 +760,6 @@ async fn commit_resolved(
         lifecycle_state: &r.lifecycle,
         creating_system_id: &ctx.system_id,
         preceding_version_uid: r.preceding_uid.as_deref(),
-        other_input_version_uids: &r.other_input_version_uids,
         template_id: r.template_id.as_deref(),
         signature: signature.as_deref(),
         signature_client_supplied,
@@ -848,7 +860,6 @@ fn version_signature(
         r.vo_id,
         r.tree,
         r.preceding_uid.as_deref(),
-        &r.other_input_version_uids,
         contribution_id,
         &r.lifecycle,
         &served,
@@ -904,12 +915,14 @@ pub(crate) async fn create(
 ) -> Result<Committed, ServiceError> {
     let (committed, contribution_id) = apply_change(
         tx,
-        ehr_id,
-        ContributionCtx::New,
-        audit,
-        ctx,
-        &audit.committer,
-        None,
+        CommitScope {
+            ehr_id,
+            contribution: ContributionCtx::New,
+            audit,
+            ctx,
+            committer_fallback: &audit.committer,
+            known_now: None,
+        },
         Change::Create {
             kind,
             canonical,
@@ -950,12 +963,14 @@ pub(crate) async fn update(
 ) -> Result<Committed, ServiceError> {
     let (committed, contribution_id) = apply_change(
         tx,
-        ehr_id,
-        ContributionCtx::New,
-        audit,
-        ctx,
-        &audit.committer,
-        None,
+        CommitScope {
+            ehr_id,
+            contribution: ContributionCtx::New,
+            audit,
+            ctx,
+            committer_fallback: &audit.committer,
+            known_now: None,
+        },
         Change::Modify {
             vo_id,
             kind,
@@ -996,12 +1011,14 @@ pub(crate) async fn delete(
 ) -> Result<Committed, ServiceError> {
     let (committed, contribution_id) = apply_change(
         tx,
-        ehr_id,
-        ContributionCtx::New,
-        audit,
-        ctx,
-        &audit.committer,
-        None,
+        CommitScope {
+            ehr_id,
+            contribution: ContributionCtx::New,
+            audit,
+            ctx,
+            committer_fallback: &audit.committer,
+            known_now: None,
+        },
         Change::Delete {
             vo_id,
             kind,
@@ -1058,12 +1075,14 @@ pub(crate) async fn commit_contribution(
         // for the whole set), so the signature is computable up front.
         let (change_committed, _cid) = apply_change(
             tx,
-            ehr_id,
-            ContributionCtx::Existing(contribution_id),
-            &version_audit,
-            ctx,
-            committer_fallback,
-            Some(contribution_time),
+            CommitScope {
+                ehr_id,
+                contribution: ContributionCtx::Existing(contribution_id),
+                audit: &version_audit,
+                ctx,
+                committer_fallback,
+                known_now: Some(contribution_time),
+            },
             change,
         )
         .await?;

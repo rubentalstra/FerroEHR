@@ -59,7 +59,6 @@ pub(crate) fn sign_version(
     vo_id: VoId,
     tree: TreeId,
     preceding_uid: Option<&str>,
-    other_input_version_uids: &[String],
     contribution_id: Uuid,
     lifecycle_state: &str,
     data: &Value,
@@ -73,7 +72,16 @@ pub(crate) fn sign_version(
         vo_id,
         tree,
         preceding_version_uid: preceding_uid,
-        other_input_version_uids,
+        // NOTE: a locally committed version is never a MERGE, so the merge
+        // provenance of RM common master06 §Version Merging is always absent
+        // here: the released commit wire declares no merge shape at all
+        // (ITS-REST `schemas/ehr/UpdateVersion.yaml` has no such property, and
+        // `NewContribution.versions` items are `UpdateVersion`). Merge
+        // provenance reaches storage only through the routes that carry a
+        // FOREIGN `ORIGINAL_VERSION` verbatim — the EHR-Extract import and the
+        // archive load — which build and sign their own rows
+        // (`versioning::import`, `storage::version_repo::import`).
+        other_input_version_uids: &[],
         contribution: &contribution_ref(contribution_id),
         commit_audit: &audit.canonical(&time_committed),
         lifecycle_state,

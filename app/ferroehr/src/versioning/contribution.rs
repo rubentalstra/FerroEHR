@@ -223,6 +223,23 @@ struct PlannedVersion {
 /// The `_type` self-tags a CONTRIBUTION version member may carry: the class
 /// the released commit wire titles (`UPDATE_VERSION`) and the RM class that
 /// member becomes when committed (`ORIGINAL_VERSION`).
+///
+/// Both names denote the SAME wire shape — the commit-wire PARTIAL of six
+/// properties (`preceding_version_uid`, `signature`, `lifecycle_state`,
+/// `attestations`, `data`, `commit_audit`; ITS-REST
+/// `schemas/ehr/UpdateVersion.yaml`, the only member schema
+/// `schemas/ehr/NewContribution.yaml` types `versions` items as). Admitting
+/// `ORIGINAL_VERSION` says which class the member BECOMES — the `_type` rule of
+/// `specifications/docs/overview/Resources.md` §Resource representation is about
+/// naming the RM type "whenever polymorphism is involved" — NOT that a complete
+/// RM `ORIGINAL_VERSION` instance may be posted: the server supplies every
+/// attribute the partial omits, `uid` (1..1 on that class,
+/// `RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc`
+/// §Attributes) included, and the completed instance is what the READ serves.
+/// That is why [`reject_foreign_version_identity`] refuses a member-borne `uid`
+/// under EITHER tag without contradicting the class's own mandatory
+/// cardinality: the mandatory attribute is satisfied by the repository's
+/// allocation, at the only moment a version identity can exist.
 const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION"];
 
 /// Refuse a CONTRIBUTION version member that declares a version identity this
@@ -276,11 +293,15 @@ fn reject_foreign_version_identity(version: &Value) -> Result<(), ServiceError> 
     }
     if version.get("uid").is_some() {
         return Err(ServiceError::BadRequest(
-            "uid is not a member of UPDATE_VERSION — the version identifier of a \
-             locally committed version is allocated by this repository (ITS-REST \
-             UpdateVersion.yaml declares no uid; RM common master06 §Copying takes the \
-             identity of an IMPORTED_VERSION from the wrapped ORIGINAL_VERSION through \
-             commit_imported_version, which the release gives no wire shape)"
+            "uid is not carried on a CONTRIBUTION version member — the member is the \
+             commit-wire PARTIAL of the version it becomes (ITS-REST \
+             UpdateVersion.yaml declares six properties and no uid), and the version \
+             identifier of a locally committed version is allocated by this repository, \
+             which then serves the completed ORIGINAL_VERSION with its mandatory uid \
+             filled in. This holds whichever of UPDATE_VERSION / ORIGINAL_VERSION the \
+             member self-tags as. A version whose identity comes from elsewhere is an \
+             IMPORTED_VERSION, which RM common master06 §Copying commits through \
+             commit_imported_version — an operation the release gives no wire shape"
                 .to_owned(),
         ));
     }

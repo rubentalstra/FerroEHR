@@ -8,13 +8,13 @@
 # control that makes the row a statement about the write rather than about the
 # principal.
 #
-# WHY import_ehr_extract carries the write probe rather than the export: the
-# coarse read-only gate classifies an unmapped route by HTTP method, so
-# `POST /message/export` — a READ whose selector is a whole EXTRACT_SPEC
-# structure — is currently refused to a read-only principal too. That is a
-# defect of the gate, not a contract this row should pin, so the probe drives
-# an operation whose write status is not in question. (The served route
-# declares the branch and carries the TODO for the refinement.)
+# WHY import_ehr_extract carries the write probe: it is the unambiguous WRITE
+# of `SM/docs/UML/classes/i_ehr_extract_service.adoc` — the interface's exports
+# select held content and commit nothing, its imports commit. The read half of
+# the same boundary is the sibling
+# -readonly_allowed case (`export_ehr_extracts` served to the same principal),
+# so between them the pair says the gate separates the interface by what an
+# operation DOES rather than by its HTTP verb.
 #
 # EXTENSION ROUTES (register AMB-34): the outcome mapping is UNIVERSAL
 # (vocab/selectors.yaml universal_outcomes: forbidden -> 403, route-table-wide);

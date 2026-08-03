@@ -17,6 +17,7 @@
 //!   container).
 
 use openehr_base::base_types::identification::lexical::composite_ids_equal;
+use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
 use openehr_base::prelude::PartyRef;
 use openehr_base::validate::Validate;
 use serde_json::Value;
@@ -154,17 +155,34 @@ fn party_check(rm_type: &str, data: &Value, incomplete: bool) -> Result<(), Serv
     // relationship's `source` must reference THIS party. The party's identity
     // is its `uid` (copied from the version container); when the body carries
     // one, an inline relationship pointing at another source is invalid.
+    //
+    // The comparison is against the party's CONTAINER id, not the version id:
+    // RM demographic `docs/demographic/master02-demographic_package.adoc`
+    // §Party Relationships (L44) requires the refs to be "`OBJECT_REFs`
+    // containing `HIER_OBJECT_IDs` to denote the Version container of a Party,
+    // rather than `OBJECT_VERSION_IDs`, which would denote particular
+    // versions" — while a served party's `uid` is the three-part
+    // `OBJECT_VERSION_ID` of the version it was read from. So the body's uid is
+    // reduced to its `object_id` (BASE `master05-identification_package.adoc`
+    // §Syntaxes: `object_version_id = object_id, '::', creating_system_id,
+    // '::', version_tree_id`, the object_id being the version container's id),
+    // which leaves a body carrying a bare container id compared verbatim.
     if let (Some(uid), Some(relationships)) = (
         data.pointer("/uid/value").and_then(Value::as_str),
         data.get("relationships").and_then(Value::as_array),
     ) {
+        let container_id = ObjectVersionId::new(uid).map_or_else(
+            |_| uid.to_owned(),
+            |version_id| version_id.object_id().value().into_owned(),
+        );
         for (i, rel) in relationships.iter().enumerate() {
             let source = rel.pointer("/source/id/value").and_then(Value::as_str);
-            if source.is_some_and(|s| !composite_ids_equal(s, uid)) {
+            if source.is_some_and(|s| !composite_ids_equal(s, &container_id)) {
                 return Err(ServiceError::Unprocessable(
                     Violation::new(format!(
-                        "must reference this party (uid {uid}) — relationships are \
-                         stored under their source"
+                        "must reference this party's version container \
+                         ({container_id}) — relationships are stored under their \
+                         source"
                     ))
                     .with_path(format!("{rm_type}.relationships[{i}].source"))
                     .with_invariant("PARTY.Relationships_validity"),
