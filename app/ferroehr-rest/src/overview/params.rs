@@ -390,26 +390,16 @@ pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> Option<Hea
     HeaderValue::from_str(&rendered).ok()
 }
 
-/// Convert one canonical `ITEM_TAG` JSON object (RM `common.item_tag`) into an
-/// [`ItemTagHeaderEntry`] for [`emit_item_tag_header`]. `None` when the object
-/// carries no `key` (an `ITEM_TAG` without a key is not a valid tag, RM
-/// `ITEM_TAG.Inv_key_valid`).
-pub(crate) fn item_tag_to_header_entry(tag: &serde_json::Value) -> Option<ItemTagHeaderEntry> {
-    let key = tag
-        .get("key")
-        .and_then(serde_json::Value::as_str)?
-        .to_owned();
-    Some(ItemTagHeaderEntry {
-        key,
-        value: tag
-            .get("value")
-            .and_then(serde_json::Value::as_str)
-            .map(str::to_owned),
-        target_path: tag
-            .get("target_path")
-            .and_then(serde_json::Value::as_str)
-            .map(str::to_owned),
-    })
+/// Project one RM [`ItemTag`] (`common.item_tag`) onto the
+/// [`ItemTagHeaderEntry`] [`emit_item_tag_header`] renders — the three members
+/// the header grammar carries (`key`, `value`, `target_path`), read straight off
+/// the typed instance.
+pub(crate) fn item_tag_to_header_entry(tag: &ItemTag) -> ItemTagHeaderEntry {
+    ItemTagHeaderEntry {
+        key: tag.key.clone(),
+        value: tag.value.clone(),
+        target_path: tag.target_path.clone(),
+    }
 }
 
 /// The value of a parsed `key` in a tag-pair segment.

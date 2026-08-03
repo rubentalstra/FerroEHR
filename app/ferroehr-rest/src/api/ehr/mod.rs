@@ -50,7 +50,9 @@ use uuid::Uuid;
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_its::rest::generated::ehr::UpdateItemTag;
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{DvIdentifier, PartyIdentified, PartyIdentifiedData, PartyProxy};
+use openehr_rm::prelude::{
+    DvIdentifier, ItemTag, PartyIdentified, PartyIdentifiedData, PartyProxy,
+};
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::response::{ResourceMeta, ServiceResponse};
@@ -273,8 +275,8 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// stays after the commit because the tags target the version the commit
 /// mints, and a tag must not re-version the content it annotates. The
 /// entries are folded onto the existing vo-keyed
-/// [`ItemTagAdapter`](ferroehr::service::ItemTagAdapter) `target_tags_replace` seam
-/// (the same seam the dedicated `*_tags_*` operations use).
+/// `FerroEhrService::target_tags_replace` seam (the same seam the dedicated
+/// `*_tags_*` operations use).
 ///
 /// Returns the stored list **per header**, because the two headers address
 /// distinct targets ([`StoredItemTags`]); a header the request did not carry
@@ -425,9 +427,9 @@ fn validated_entries(
 #[derive(Debug, Default)]
 pub(super) struct StoredItemTags {
     /// The `VERSIONED_OBJECT` container's stored tags (`openehr-item-tag`).
-    object: Option<Vec<Value>>,
+    object: Option<Vec<ItemTag>>,
     /// The committed VERSION's own stored tags (`openehr-version-item-tag`).
-    version: Option<Vec<Value>>,
+    version: Option<Vec<ItemTag>>,
 }
 
 /// Echo the stored `ITEM_TAG` lists onto a create/update response — MAY-level
@@ -461,8 +463,7 @@ pub(super) fn echo_item_tags(resp: &mut Response, stored: &StoredItemTags) {
         let Some(tags) = tags else {
             continue;
         };
-        let entries: Vec<ItemTagHeaderEntry> =
-            tags.iter().filter_map(item_tag_to_header_entry).collect();
+        let entries: Vec<ItemTagHeaderEntry> = tags.iter().map(item_tag_to_header_entry).collect();
         if let Some(value) = emit_item_tag_header(&entries) {
             resp.headers_mut()
                 .insert(HeaderName::from_static(name), value);

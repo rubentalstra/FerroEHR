@@ -17,7 +17,6 @@ use openehr_base::prelude::{
 };
 use openehr_its::rest::generated::demographic::UpdateItemTag;
 use openehr_rm::prelude::ItemTag;
-use serde_json::Value;
 
 use crate::ids::VoId;
 use crate::service::FerroEhrService;
@@ -35,11 +34,11 @@ impl FerroEhrService {
         key: Option<&str>,
         value: Option<&str>,
         target_path: Option<&str>,
-    ) -> Result<Vec<Value>, ServiceError> {
+    ) -> Result<Vec<ItemTag>, ServiceError> {
         let rows = tag_repo::list_tags(&self.pool, None, None, key, value, target_path).await?;
         let sid = self.effective_system_id();
         rows.iter()
-            .map(|r| party_tag_json(&sid, r))
+            .map(|r| party_item_tag(&sid, r))
             .collect::<Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
@@ -54,7 +53,7 @@ impl FerroEhrService {
         &self,
         vo_id: VoId,
         target_version: Option<&str>,
-    ) -> Result<Vec<Value>, ServiceError> {
+    ) -> Result<Vec<ItemTag>, ServiceError> {
         let rows = tag_repo::list_tags(
             &self.pool,
             None,
@@ -66,7 +65,7 @@ impl FerroEhrService {
         .await?;
         let sid = self.effective_system_id();
         rows.iter()
-            .map(|r| party_tag_json(&sid, r))
+            .map(|r| party_item_tag(&sid, r))
             .collect::<Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
@@ -127,7 +126,7 @@ impl FerroEhrService {
         vo_id: VoId,
         target_version: Option<&ObjectVersionId>,
         tags: &[UpdateItemTag],
-    ) -> Result<Vec<Value>, ServiceError> {
+    ) -> Result<Vec<ItemTag>, ServiceError> {
         self.ensure_party_tag_target(kind, vo_id, target_version)
             .await?;
         // Validate + dedup (last wins) before touching the DB, keyed on the
@@ -224,12 +223,13 @@ impl FerroEhrService {
     }
 }
 
-/// One demographic `ITEM_TAG` in its RM wire shape (`item_tag.adoc`): `key`,
-/// optional `value`/`target_path`, `target` as a bare `UID_BASED_ID` — a
-/// `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
-/// VERSION target ("may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") —
-/// exactly the EHR sibling's shape (the settled RM-target law; the released
-/// OAS `ItemTag` schema's `OBJECT_REF` wrapper loses the conflict to the RM).
+/// One stored demographic tag row as the RM `ITEM_TAG` it is
+/// (`item_tag.adoc`): `key`, optional `value`/`target_path`, `target` as a bare
+/// `UID_BASED_ID` — a `HIER_OBJECT_ID` for a container target, an
+/// `OBJECT_VERSION_ID` for a VERSION target ("may be a `VERSIONED_OBJECT<T>` or
+/// a `VERSION<T>`") — exactly the EHR sibling's shape (the settled RM-target
+/// law; the released OAS `ItemTag` schema's `OBJECT_REF` wrapper loses the
+/// conflict to the RM).
 ///
 /// NOTE: `owner_id` follows the released examples' shape — an `OBJECT_REF`
 /// `{namespace: local, type: SYSTEM}` whose `id` carries the server's
@@ -241,15 +241,14 @@ impl FerroEhrService {
 /// # Errors
 /// [`VersionIdError`] when the configured `system_id` or the stored tag target
 /// is not a well-formed BASE identifier.
-fn party_tag_json(system_id: &str, row: &tag_repo::TagRow) -> Result<Value, VersionIdError> {
-    let tag = ItemTag {
+fn party_item_tag(system_id: &str, row: &tag_repo::TagRow) -> Result<ItemTag, VersionIdError> {
+    Ok(ItemTag {
         key: row.key.clone(),
         value: row.value.clone(),
         target: crate::service::ehr::tags::tag_target(row)?,
         target_path: row.target_path.clone(),
         owner_id: party_owner_ref(system_id)?,
-    };
-    Ok(openehr_its::json::to_canonical_value(&tag))
+    })
 }
 
 /// The `ITEM_TAG.owner_id` of a demographic (ehr-less) tag — the `OBJECT_REF`

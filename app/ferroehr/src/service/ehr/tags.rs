@@ -23,7 +23,6 @@ use openehr_base::prelude::{
 use openehr_base::validate::Validate;
 use openehr_its::rest::generated::ehr::UpdateItemTag;
 use openehr_rm::prelude::ItemTag;
-use serde_json::Value;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
@@ -42,7 +41,7 @@ impl FerroEhrService {
         key: Option<&str>,
         value: Option<&str>,
         target_path: Option<&str>,
-    ) -> Result<Vec<Value>, ServiceError> {
+    ) -> Result<Vec<ItemTag>, ServiceError> {
         // The released 404 trigger ("when an EHR with `ehr_id` does not
         // exist", 404_unknown_ehr_id) — an unknown EHR is 404, never an
         // empty 200 list; an EXISTING EHR with no matching tags is [].
@@ -57,7 +56,7 @@ impl FerroEhrService {
         )
         .await?;
         rows.iter()
-            .map(|r| Self::tag_json(ehr_id, r))
+            .map(|r| Self::stored_item_tag(ehr_id, r))
             .collect::<Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
@@ -90,7 +89,7 @@ impl FerroEhrService {
         ehr_id: EhrId,
         target_vo_id: VoId,
         target_version: Option<&str>,
-    ) -> Result<Vec<Value>, ServiceError> {
+    ) -> Result<Vec<ItemTag>, ServiceError> {
         let rows = crate::storage::tag_repo::list_tags(
             &self.pool,
             Some(ehr_id),
@@ -101,7 +100,7 @@ impl FerroEhrService {
         )
         .await?;
         rows.iter()
-            .map(|r| Self::tag_json(ehr_id, r))
+            .map(|r| Self::stored_item_tag(ehr_id, r))
             .collect::<Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
@@ -123,7 +122,7 @@ impl FerroEhrService {
         target_version: Option<&ObjectVersionId>,
         target_type: &str,
         tags: &[UpdateItemTag],
-    ) -> Result<Vec<Value>, ServiceError> {
+    ) -> Result<Vec<ItemTag>, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
         self.ensure_tag_target(ehr_id, target_vo_id, target_version, target_type)
             .await?;
@@ -267,15 +266,17 @@ impl FerroEhrService {
         Ok(())
     }
 
-    /// One `ITEM_TAG` in its RM wire shape (`item_tag.adoc`): `key`, optional
-    /// `value`/`target_path`, `target` as a bare `UID_BASED_ID` — a
+    /// One stored tag row as the RM `ITEM_TAG` it is (`item_tag.adoc`): `key`,
+    /// optional `value`/`target_path`, `target` as a bare `UID_BASED_ID` — a
     /// `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
     /// VERSION target ("may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") —
-    /// and `owner_id` as the RM's `OBJECT_REF` to the owning EHR.
+    /// and `owner_id` as the RM's `OBJECT_REF` to the owning EHR. The served
+    /// bytes are then the generated canonical-JSON encoding of this instance,
+    /// produced at the protocol edge.
     ///
     /// NOTE: two shape decisions, both register-adjudicated rather than
     /// settled by any single released sentence.
-    /// `_type: "ITEM_TAG"` IS emitted (register AMB-201): the released
+    /// `_type: "ITEM_TAG"` IS on the wire (register AMB-201): the released
     /// `ItemTag.yaml` is `additionalProperties: false` without declaring
     /// `_type`, while the same group's `discriminator.propertyName` names that
     /// member — an OAS-internal self-contradiction, reported upstream, whose
@@ -287,18 +288,17 @@ impl FerroEhrService {
     /// of a model and the RM is the released definition of the model being
     /// projected, so where the projection disagrees with its subject about what
     /// an attribute IS, the subject decides.
-    fn tag_json(
+    fn stored_item_tag(
         ehr_id: EhrId,
         row: &crate::storage::tag_repo::TagRow,
-    ) -> Result<Value, VersionIdError> {
-        let tag = ItemTag {
+    ) -> Result<ItemTag, VersionIdError> {
+        Ok(ItemTag {
             key: row.key.clone(),
             value: row.value.clone(),
             target: tag_target(row)?,
             target_path: row.target_path.clone(),
             owner_id: ehr_owner_ref(ehr_id),
-        };
-        Ok(openehr_its::json::to_canonical_value(&tag))
+        })
     }
 }
 
@@ -413,7 +413,7 @@ impl FerroEhrService {
         key: Option<String>,
         value: Option<String>,
         target_path: Option<String>,
-    ) -> Result<Vec<Value>, SmError> {
+    ) -> Result<Vec<ItemTag>, SmError> {
         Ok(self
             .ehr_tags(
                 an_ehr_id,
@@ -434,7 +434,7 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         uid_based_id: String,
         target_type: &str,
-    ) -> Result<Vec<Value>, SmError> {
+    ) -> Result<Vec<ItemTag>, SmError> {
         let (vo_id, version) = parse_tag_target(&uid_based_id)?;
         // The released 404 trigger — "when the `uid_based_id` does not
         // exist" — plus the EHR scope and the route-kind discipline
@@ -460,7 +460,7 @@ impl FerroEhrService {
         uid_based_id: String,
         target_type: &str,
         tags: Vec<UpdateItemTag>,
-    ) -> Result<Vec<Value>, SmError> {
+    ) -> Result<Vec<ItemTag>, SmError> {
         let (vo_id, version) = parse_tag_target(&uid_based_id)?;
         Ok(self
             .replace_tags(an_ehr_id, vo_id, version.as_ref(), target_type, &tags)
