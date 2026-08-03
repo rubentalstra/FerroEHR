@@ -174,10 +174,10 @@ impl FerroEhrService {
                     .await?;
 
             // The primary set: an explicit item_list, else every VO of the EHR.
-            // NOTE (`master04-common_package.adoc` `EXTRACT_SPEC.criteria`,
-            // an AQL primary-set query): AQL criteria selection lands with the
-            // `$ehr`-bound AQL export wave. Until then it is a typed reject,
-            // never a silent over-export.
+            // TODO(#1736): `EXTRACT_SPEC.criteria` (`master04-common_package.adoc`,
+            // an AQL primary-set query) is a typed reject until the
+            // `$ehr`-bound AQL criteria selection lands — never a silent
+            // over-export.
             let vo_kinds: Vec<(VoId, String)> =
                 if entity.item_list.as_ref().is_none_or(Vec::is_empty) {
                     if criteria_present {

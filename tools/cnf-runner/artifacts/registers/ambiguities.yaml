@@ -8303,3 +8303,33 @@ AMB-192:
     `PUT /ehr/{ehr_id}`: a server-minted id is a UUID either way.
   disposition: fixed_handling
   upstream_issue: 1711
+AMB-193:
+  ambiguity: >-
+    MODEL-vs-PROSE TENSION on an entity-less (criteria-only) extract
+    request. The RM ehr_extract prose says the request "may not specify any
+    entities (it may rely on query criteria)", but the class model makes
+    that request unrepresentable: EXTRACT_SPEC.manifest is 1..1 and
+    EXTRACT_MANIFEST.entities carries item-cardinality 1..* in every
+    published BMM generation, so no EXTRACT_SPEC can exist without naming
+    at least one entity.
+  source: >-
+    RM ehr_extract master04-common_package.adoc §Content Specification
+    ("whereas the request may not specify any entities (it may rely on
+    query criteria)") contrasted with
+    UML/classes/org.openehr.rm.ehr_extract.extract_spec.adoc §Attributes
+    (manifest 1..1) + org.openehr.rm.ehr_extract.extract_manifest.adoc
+    §Attributes (entities 1..1 List<EXTRACT_ENTITY_MANIFEST>) + the RM BMMs
+    (1.0.4 / released 1.1.0 / 1.2.0), EXTRACT_MANIFEST.entities cardinality
+    {lower: 1, upper_unbounded: true} — item count per LANG
+    bmm_container_property.adoc §Attributes. All read first-hand.
+  handling: >-
+    The MODEL governs: a manifest names at least one entity, realized
+    structurally in the generated types (an empty mandatory list is
+    unrepresentable and refused at parse), and a criteria-only selection
+    has no representable form until openEHR relaxes the cardinality or
+    restates the prose. The catalogue carries the refusal twin
+    (I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_manifest) beside its
+    one-entity acceptance sibling (-by_spec); the contradiction is
+    reported upstream rather than silently resolved.
+  disposition: report_only
+  upstream_issue: 1735

@@ -1952,8 +1952,11 @@ cnf.messaging.extract_spec.empty_manifest:
   source: fixtures/messaging/extract_spec.empty_manifest.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-29 (#659), replacing the documentary cnf.messaging.extract_spec.v1 whose single manifest entity named neither ehr_id nor subject_id (an entity the receiver cannot locate — RM ehr_extract extract_entity_manifest.adoc). This one carries a VALID, EMPTY entity list, which is the shape that makes an export fulfilled-with-no-content: the operation yields one EXTRACT per EXTRACT_ENTITY_MANIFEST (extract_manifest.adoc). The by-spec case builds its own populated spec inline, because a manifest entity must name the EHR the runner minted and a corpus entry carries no reference substitution"
+  validity:
+    verdict: invalid
+    defect: "manifest.entities present and empty — EXTRACT_MANIFEST.entities is 1..*"
+    spec_ref: "RM ehr_extract UML/classes/org.openehr.rm.ehr_extract.extract_manifest.adoc §Attributes (entities 1..1 List<EXTRACT_ENTITY_MANIFEST>) + RM 1.2.0/1.1.0/1.0.4 BMM EXTRACT_MANIFEST.entities cardinality {lower: 1, upper_unbounded}"
+  provenance: "authored 2026-07-29 (#659), replacing the documentary cnf.messaging.extract_spec.v1 whose single manifest entity named neither ehr_id nor subject_id (an entity the receiver cannot locate — RM ehr_extract extract_entity_manifest.adoc). RE-ADJUDICATED 2026-08-03 (phase-close triage): the 2026-07-29 claim that an empty entity list is 'the shape that makes an export fulfilled-with-no-content' read only the attribute prose and never the multiplicity — the BMM declares EXTRACT_MANIFEST.entities with item-cardinality lower bound 1 in every published generation, so this shape is an RM-invalid EXTRACT_SPEC and its case is the refusal twin (the -by_spec sibling, one entity, is the acceptance twin). The by-spec case builds its own populated spec inline, because a manifest entity must name the EHR the runner minted and a corpus entry carries no reference substitution"
 cnf.messaging.tdd.v1:
   source: fixtures/messaging/tdd.v1.xml
   format: canonical-xml

@@ -50,12 +50,6 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated
-  # A manifest naming NO entity is fulfilled and yields no EXTRACT: the
-  # operation builds one EXTRACT per EXTRACT_ENTITY_MANIFEST
-  # (extract_manifest.adoc: "List of entity manifests ... included in the
-  # Extract"), so an empty list is an empty result, not a failure.
-  ok_empty:
-    status: 200
   # SM `precondition_violation` — an entity naming neither `ehr_id` nor
   # `subject_id` cannot be located ("Various identifiers may be provided for
   # the entity; these are to be used by the receiver system to locate the
