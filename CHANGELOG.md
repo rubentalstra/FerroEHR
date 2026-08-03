@@ -17,6 +17,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **FOLDER (DIRECTORY) resources can now carry ITEM_TAGs.** ITS-REST overview
+  `Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
+  names FOLDER among the change-controlled resources the wrapper headers
+  associate tags with, and the DIRECTORY write routes have always carried those
+  headers — but the tag store rejected the FOLDER target type, so a tagged
+  directory commit answered `409` with a raw PostgreSQL constraint string
+  AFTER the directory version had already been created. FOLDER tags now store,
+  echo and appear in the EHR-wide tag listing (`GET /ehr/{ehr_id}/tags`). No
+  dedicated `/directory/…/tags` routes appear: the release defines none, and a
+  FOLDER tag is reached through the wrapper headers and that listing.
+- **Tag mutations emit IHE ATNA audit records.** Creating, replacing or
+  deleting ITEM_TAGs now leaves an audit trail under the tagged resource's own
+  DICOM class. openEHR is silent here — tags are outside change control, so
+  they correctly produce no CONTRIBUTION and no AUDIT_DETAILS, and no released
+  text substitutes anything — so this is our own design for a clinical
+  repository.
+
 - **A `553|incomplete|` commit may now omit mandatory data for every
   committable kind.** RM common `master06` §Incomplete Content states that in
   the `incomplete` state "mandatory attributes may be absent … single-valued
@@ -39,6 +56,58 @@ workflow refuses a tag that has no matching section here.
   missing, but it may not be wrong").
 
 ### Fixed
+
+- **A tag PUT body is now validated against the released write schema.**
+  `schemas/common/UpdateItemTag.yaml` declares exactly `key` (required),
+  `value` and `target_path`, with `additionalProperties: false`. Previously the
+  body was read untyped: an undeclared member (`target`, `owner_id`, `_type`,
+  anything) was silently dropped, and — worse — a `value` or `target_path` of
+  the wrong JSON type was silently stored as ABSENT, losing a clinical
+  annotation outright or changing the tag's identity so a later delete
+  addressed nothing. All three are now refused `400`, naming the offending
+  member by its JSON path, on the COMPOSITION, EHR_STATUS and all five
+  demographic tag PUTs alike. An empty `target_path` still normalizes to
+  absent, identically on both families.
+- **A defective tag on a write no longer leaves the content committed.** The
+  `openehr-item-tag` / `openehr-version-item-tag` headers are now parsed and
+  invariant-checked BEFORE the content commit, so a request carrying an invalid
+  tag is refused with nothing created. Previously the refusal arrived after the
+  COMPOSITION / EHR_STATUS / DIRECTORY / party version was already durable, on
+  a response with no `ETag` and no `Location` — leaving the client no way to
+  learn what it had just created, and no recovery but a re-POST that duplicated
+  the content. The tag write itself still happens after the commit, so tagging
+  continues to cause no re-versioning of content.
+- **The tag response header can no longer instruct a client to wipe its
+  tags.** A valueless tag echoed as `value=""` (a shape the reference model
+  forbids), and a tag list that could not be rendered as an HTTP header value
+  — a control character in a tag key, which nothing in the reference model
+  bars — fell back to an EMPTY header, which is exactly
+  the byte sequence the spec defines as "remove all ITEM_TAGs". A client
+  mirroring that echo back on its next write would have cleared the
+  collection. A valueless tag now echoes without a `value`, and an unrenderable
+  list omits the header entirely.
+- **The tag wrapper-header parser is quote-aware and no longer silently drops
+  entries.** A `target_path` containing a `;` inside quotes (an AQL predicate,
+  say) shattered into fragments that then parsed as garbage; quoted runs are
+  now opaque at the entry separator. An entry carrying no `key` was skipped
+  past, silently discarding a tag the client believed it had set; it is now
+  refused `400`.
+- **Database integrity errors no longer leak schema names into client
+  responses, and are no longer all reported as conflicts.** Every SQLSTATE
+  class-23 violation mapped to `409 Conflict` carrying the raw PostgreSQL
+  error text, so constraint, table and column names reached client bodies —
+  and a CHECK or NOT NULL violation, which is a server-side invariant failure
+  rather than anything a client can resolve, was presented as an
+  optimistic-lock conflict to retry. Unique, foreign-key, restrict and
+  exclusion violations keep their `409`; CHECK and NOT NULL now answer `500`.
+  No branch returns a driver string: every client message is a fixed,
+  actionable sentence, with the SQLSTATE, constraint and table recorded on the
+  server's own trace record.
+- **A tag that survives a whole-list replace keeps its creation instant.** The
+  `PUT` is a full-collection replace, but re-asserting an existing tag
+  identity is not the same as creating a new tag; previously every surviving
+  tag's stored creation time was reset on any edit to a sibling, which the
+  admin export then reported. Visible through `POST /rest/admin/…` EHR export.
 
 - **A CONTRIBUTION version that declares a foreign version identity is now
   refused** (`400`, naming the offending key). The released commit wire

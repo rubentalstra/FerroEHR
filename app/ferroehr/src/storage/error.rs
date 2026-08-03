@@ -109,18 +109,57 @@ impl From<StorageError> for crate::service::status::SmError {
     }
 }
 
+/// The client-visible message of a database-integrity conflict. Deliberately
+/// opaque: a driver string names the constraint, table and column that failed,
+/// which is server-internal schema detail with no client action attached to it.
+/// The full detail goes to `tracing` instead (one structured record per
+/// classification).
+const CONFLICT_MESSAGE: &str = "the request conflicts with data already stored by this server";
+
+/// The client-visible message of a serialization/deadlock failure — the one
+/// database conflict a client can genuinely act on, by retrying.
+const RETRYABLE_CONFLICT_MESSAGE: &str =
+    "a concurrent transaction conflicted with this request; retry it";
+
+/// The client-visible message of an internal database failure (a violated
+/// server-side invariant, or an unclassified driver error). Opaque by design:
+/// the client cannot act on it, and the diagnosis belongs in the server's own
+/// logs.
+const INTERNAL_MESSAGE: &str = "the server encountered an internal database error";
+
 /// Classify a raw [`sqlx::Error`] at the storage boundary into the SM call
 /// status it should surface, emitting **one** structured trace record so the
-/// SQLSTATE code + constraint name are never lost (they were previously
-/// stringified into a blanket `exception`). No openEHR spec governs the
+/// SQLSTATE code + constraint name are never lost. No openEHR spec governs the
 /// persistence mechanism or server-overload behaviour — this is our own design;
 /// the resulting HTTP status codes are the ITS-REST-governed ones (overview
 /// §HTTP status codes: `409 Conflict`; RFC 9110 §15.6.4: `503 Service
 /// Unavailable`).
 ///
-/// - **SQLSTATE class 23** (`integrity_constraint_violation` — unique, foreign
-///   key, check, not-null, exclusion) → [`CallStatusType::Conflict`] (`409`).
-/// - **40001** (`serialization_failure`) / **40P01** (`deadlock_detected`) →
+/// **No driver string ever reaches a client body.** Every branch returns one of
+/// the three curated constants above; the SQLSTATE, constraint, table and the
+/// driver's own text are recorded on the trace record only. A PostgreSQL error
+/// message names schema objects (`ck_item_tag_target_type`, `item_tag`, …) — an
+/// internal detail the client can neither use nor be trusted with.
+///
+/// The SQLSTATE split follows the PostgreSQL error-code table
+/// (<https://www.postgresql.org/docs/18/errcodes-appendix.html>), and the
+/// question it answers is *whose* invariant broke:
+///
+/// - **`23505`** `unique_violation`, **`23503`** `foreign_key_violation`,
+///   **`23001`** `restrict_violation`, **`23P01`** `exclusion_violation` →
+///   [`CallStatusType::Conflict`] (`409`). These are collisions with data the
+///   repository already holds — a genuinely client-caused conflict, and exactly
+///   what `409` means ("the request could not be processed because it might
+///   generate a duplicate or a conflict", ITS-REST overview §HTTP status codes).
+/// - **`23514`** `check_violation`, **`23502`** `not_null_violation`, the
+///   generic **`23000`**, and any other class-23 code →
+///   [`CallStatusType::Exception`] (`500`). A CHECK or NOT NULL that reaches
+///   the driver is a violated *server-side* invariant: either the service layer
+///   failed to refuse a value it should have refused with a typed error, or the
+///   schema and the code have drifted. Neither is a conflict the client can
+///   resolve, and presenting it as `409` invites an endless retry loop against
+///   an optimistic-lock failure that never happened.
+/// - **`40001`** `serialization_failure` / **`40P01`** `deadlock_detected` →
 ///   [`CallStatusType::Conflict`] (`409`, retryable).
 /// - **[`sqlx::Error::PoolTimedOut`]** (pool exhausted under load) →
 ///   [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the
@@ -143,30 +182,56 @@ pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError 
             let sqlstate = db.code();
             let sqlstate = sqlstate.as_deref().unwrap_or("");
             let constraint = db.constraint();
-            if sqlstate.starts_with("23") {
-                tracing::warn!(
-                    sqlstate,
-                    constraint = ?constraint,
-                    error = %e,
-                    "storage bridge: integrity-constraint violation → 409 conflict"
-                );
-                SmError::new(CallStatusType::Conflict, e.to_string())
-            } else if sqlstate == "40001" || sqlstate == "40P01" {
-                tracing::warn!(
-                    sqlstate,
-                    constraint = ?constraint,
-                    error = %e,
-                    "storage bridge: serialization/deadlock failure → 409 conflict (retryable)"
-                );
-                SmError::new(CallStatusType::Conflict, e.to_string())
-            } else {
-                tracing::error!(
-                    sqlstate,
-                    constraint = ?constraint,
-                    error = %e,
-                    "storage bridge: unclassified database error → 500"
-                );
-                SmError::new(CallStatusType::Exception, e.to_string())
+            let table = db.table();
+            match sqlstate {
+                // Collisions with stored data — client-caused, retryable only
+                // by changing the request.
+                "23505" | "23503" | "23001" | "23P01" => {
+                    tracing::warn!(
+                        sqlstate,
+                        constraint = ?constraint,
+                        table = ?table,
+                        error = %e,
+                        "storage bridge: integrity-constraint violation → 409 conflict"
+                    );
+                    SmError::new(CallStatusType::Conflict, CONFLICT_MESSAGE.to_owned())
+                }
+                "40001" | "40P01" => {
+                    tracing::warn!(
+                        sqlstate,
+                        constraint = ?constraint,
+                        table = ?table,
+                        error = %e,
+                        "storage bridge: serialization/deadlock failure → 409 conflict (retryable)"
+                    );
+                    SmError::new(
+                        CallStatusType::Conflict,
+                        RETRYABLE_CONFLICT_MESSAGE.to_owned(),
+                    )
+                }
+                // A CHECK / NOT NULL / generic integrity violation reaching the
+                // driver is OUR broken invariant, not the client's conflict.
+                other if other.starts_with("23") => {
+                    tracing::error!(
+                        sqlstate,
+                        constraint = ?constraint,
+                        table = ?table,
+                        error = %e,
+                        "storage bridge: server-side integrity invariant violated \
+                         (CHECK/NOT NULL reached the driver) → 500"
+                    );
+                    SmError::new(CallStatusType::Exception, INTERNAL_MESSAGE.to_owned())
+                }
+                _ => {
+                    tracing::error!(
+                        sqlstate,
+                        constraint = ?constraint,
+                        table = ?table,
+                        error = %e,
+                        "storage bridge: unclassified database error → 500"
+                    );
+                    SmError::new(CallStatusType::Exception, INTERNAL_MESSAGE.to_owned())
+                }
             }
         }
         other => {
@@ -174,16 +239,81 @@ pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError 
                 error = %other,
                 "storage bridge: non-database sqlx error → 500"
             );
-            SmError::new(CallStatusType::Exception, other.to_string())
+            SmError::new(CallStatusType::Exception, INTERNAL_MESSAGE.to_owned())
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
+    use std::error::Error as StdError;
+    use std::fmt;
+
+    use sqlx::error::{DatabaseError, ErrorKind};
+
     use crate::service::status::CallStatusType;
 
     use super::classify_sqlx;
+
+    /// A driver-error double carrying one SQLSTATE plus the schema names a real
+    /// PostgreSQL error would carry, so the classification and the
+    /// no-leak assertions can be exercised without a live server.
+    #[derive(Debug)]
+    struct PgErrorDouble {
+        sqlstate: &'static str,
+    }
+
+    /// The verbatim shape of a PostgreSQL integrity message: it names the
+    /// constraint and the table, which is exactly what must not reach a client.
+    const DRIVER_TEXT: &str =
+        "new row for relation \"item_tag\" violates check constraint \"ck_item_tag_target_type\"";
+
+    impl fmt::Display for PgErrorDouble {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str(DRIVER_TEXT)
+        }
+    }
+
+    impl StdError for PgErrorDouble {}
+
+    impl DatabaseError for PgErrorDouble {
+        fn message(&self) -> &str {
+            DRIVER_TEXT
+        }
+
+        fn code(&self) -> Option<Cow<'_, str>> {
+            Some(Cow::Borrowed(self.sqlstate))
+        }
+
+        fn as_error(&self) -> &(dyn StdError + Send + Sync + 'static) {
+            self
+        }
+
+        fn as_error_mut(&mut self) -> &mut (dyn StdError + Send + Sync + 'static) {
+            self
+        }
+
+        fn into_error(self: Box<Self>) -> Box<dyn StdError + Send + Sync + 'static> {
+            self
+        }
+
+        fn constraint(&self) -> Option<&str> {
+            Some("ck_item_tag_target_type")
+        }
+
+        fn table(&self) -> Option<&str> {
+            Some("item_tag")
+        }
+
+        fn kind(&self) -> ErrorKind {
+            ErrorKind::Other
+        }
+    }
+
+    fn db_error(sqlstate: &'static str) -> sqlx::Error {
+        sqlx::Error::Database(Box::new(PgErrorDouble { sqlstate }))
+    }
 
     #[test]
     fn pool_timeout_is_service_overloaded() {
@@ -198,5 +328,70 @@ mod tests {
         // A row-not-found or other non-database sqlx error is a genuine fault.
         let sm = classify_sqlx(&sqlx::Error::RowNotFound);
         assert_eq!(sm.status, CallStatusType::Exception);
+    }
+
+    #[test]
+    fn collisions_with_stored_data_stay_conflicts() {
+        // unique / foreign-key / restrict / exclusion are genuinely
+        // client-caused collisions with data the repository already holds.
+        for sqlstate in ["23505", "23503", "23001", "23P01"] {
+            let sm = classify_sqlx(&db_error(sqlstate));
+            assert_eq!(
+                sm.status,
+                CallStatusType::Conflict,
+                "SQLSTATE {sqlstate} should stay a conflict"
+            );
+        }
+    }
+
+    #[test]
+    fn serialization_and_deadlock_stay_retryable_conflicts() {
+        for sqlstate in ["40001", "40P01"] {
+            let sm = classify_sqlx(&db_error(sqlstate));
+            assert_eq!(sm.status, CallStatusType::Conflict);
+            assert!(
+                sm.message.contains("retry"),
+                "the retryable conflict should tell the client to retry, got {:?}",
+                sm.message
+            );
+        }
+    }
+
+    #[test]
+    fn check_and_not_null_violations_are_internal_faults() {
+        // A CHECK or NOT NULL reaching the driver is a violated SERVER-side
+        // invariant — never an optimistic-lock conflict the client can resolve.
+        for sqlstate in ["23514", "23502", "23000"] {
+            let sm = classify_sqlx(&db_error(sqlstate));
+            assert_eq!(
+                sm.status,
+                CallStatusType::Exception,
+                "SQLSTATE {sqlstate} is a server-side invariant failure, not a 409"
+            );
+        }
+    }
+
+    #[test]
+    fn no_driver_string_reaches_the_client_message() {
+        // The message a client sees never names a constraint, a table, or any
+        // other schema object, on ANY classification branch.
+        for sqlstate in [
+            "23505", "23503", "23001", "23P01", "23514", "23502", "23000", "40001", "40P01",
+            "42P01", "08006",
+        ] {
+            let sm = classify_sqlx(&db_error(sqlstate));
+            for leaked in [
+                "ck_item_tag_target_type",
+                "item_tag",
+                "violates",
+                "relation",
+            ] {
+                assert!(
+                    !sm.message.contains(leaked),
+                    "SQLSTATE {sqlstate} leaked {leaked:?} into the client message {:?}",
+                    sm.message
+                );
+            }
+        }
     }
 }

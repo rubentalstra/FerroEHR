@@ -29,6 +29,8 @@ use ferroehr::service::error::ServiceError;
 use ferroehr::service::status::{CallStatusType, SmError};
 use ferroehr::versioning::change::Committed;
 
+use crate::item_tag_fixture::ehr_tag;
+
 use ferroehr::service::version_update::{Committal, UpdateAudit, UpdateVersion};
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
@@ -1260,7 +1262,7 @@ async fn item_tag_crud() {
             ehr_uuid,
             vo_id.clone(),
             "COMPOSITION",
-            vec![json!({ "key": "priority", "value": "high" })],
+            vec![ehr_tag("priority", Some("high"), None)],
         )
         .await
         .expect("tag update");
@@ -1315,7 +1317,7 @@ async fn item_tag_wire_shape_is_the_rm_item_tag() {
             ehr_uuid,
             vo_id.clone(),
             "COMPOSITION",
-            vec![json!({ "key": "priority", "value": "high", "target_path": "/context" })],
+            vec![ehr_tag("priority", Some("high"), Some("/context"))],
         )
         .await
         .expect("tag put");
@@ -1371,9 +1373,9 @@ async fn item_tag_identity_is_the_key_and_target_path_pair() {
             vo_id.clone(),
             "COMPOSITION",
             vec![
-                json!({ "key": "flag", "value": "a", "target_path": "/context/start_time/value" }),
-                json!({ "key": "flag", "value": "b", "target_path": "/content[0]/name/value" }),
-                json!({ "key": "flag", "value": "b2", "target_path": "/content[0]/name/value" }),
+                ehr_tag("flag", Some("a"), Some("/context/start_time/value")),
+                ehr_tag("flag", Some("b"), Some("/content[0]/name/value")),
+                ehr_tag("flag", Some("b2"), Some("/content[0]/name/value")),
             ],
         )
         .await
@@ -1428,7 +1430,7 @@ async fn item_tag_version_and_container_targets_are_distinct() {
             ehr_uuid,
             version_uid.clone(),
             "COMPOSITION",
-            vec![json!({ "key": "reviewed", "value": "v1" })],
+            vec![ehr_tag("reviewed", Some("v1"), None)],
         )
         .await
         .expect("tag the version");
@@ -1437,7 +1439,7 @@ async fn item_tag_version_and_container_targets_are_distinct() {
             ehr_uuid,
             vo_id.clone(),
             "COMPOSITION",
-            vec![json!({ "key": "workflow", "value": "open" })],
+            vec![ehr_tag("workflow", Some("open"), None)],
         )
         .await
         .expect("tag the container");
@@ -1471,7 +1473,7 @@ async fn item_tag_version_and_container_targets_are_distinct() {
             ehr_uuid,
             ghost,
             "COMPOSITION",
-            vec![json!({ "key": "nope" })],
+            vec![ehr_tag("nope", None, None)],
         )
         .await
         .expect_err("a nonexistent version cannot be tagged");
@@ -1484,7 +1486,7 @@ async fn item_tag_version_and_container_targets_are_distinct() {
             ehr_uuid,
             vo_id,
             "EHR_STATUS",
-            vec![json!({ "key": "nope" })],
+            vec![ehr_tag("nope", None, None)],
         )
         .await
         .expect_err("kind mismatch must be refused");
@@ -1492,6 +1494,96 @@ async fn item_tag_version_and_container_targets_are_distinct() {
         kind_err.message.contains("same EHR"),
         "got: {}",
         kind_err.message
+    );
+}
+
+#[tokio::test]
+async fn a_surviving_tag_keeps_its_creation_instant_across_a_replace() {
+    // NOTE: no openEHR spec governs this — our own design. RM common
+    // master07-tags.adoc models ITEM_TAG with no timestamp, and no released
+    // ITS-REST text assigns a tag a creation instant, so `created_at` is a
+    // storage column of ours. It is nevertheless OBSERVABLE — the admin
+    // dump/export round-trips it — and a whole-collection replace that reset
+    // every surviving tag's instant would destroy when each was first
+    // attached. An ITEM_TAG identity present in both the stored and the posted
+    // set is the SAME tag re-asserted, so it keeps its own instant; a new
+    // identity gets the current one.
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+    let comp = svc
+        .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
+        .await
+        .expect("composition")
+        .version_uid();
+    let vo_id = comp.split("::").next().unwrap().to_owned();
+
+    svc.target_tags_replace(
+        ehr_uuid,
+        vo_id.clone(),
+        "COMPOSITION",
+        vec![ehr_tag("survivor", Some("v1"), None)],
+    )
+    .await
+    .expect("first put");
+
+    let created_at = |key: &'static str| {
+        let pool = db.pool();
+        async move {
+            sqlx::query_scalar::<_, jiff_sqlx::Timestamp>(
+                "SELECT created_at FROM item_tag WHERE key = $1",
+            )
+            .bind(key)
+            .fetch_one(&pool)
+            .await
+            .expect("the stored tag row")
+            .to_jiff()
+        }
+    };
+    let first = created_at("survivor").await;
+
+    // A second replace that re-asserts the surviving identity (with a NEW
+    // value) and adds a second tag.
+    svc.target_tags_replace(
+        ehr_uuid,
+        vo_id.clone(),
+        "COMPOSITION",
+        vec![
+            ehr_tag("survivor", Some("v2"), None),
+            ehr_tag("newcomer", None, None),
+        ],
+    )
+    .await
+    .expect("second put");
+
+    assert_eq!(
+        created_at("survivor").await,
+        first,
+        "a re-asserted (key, target_path) identity keeps its original creation instant"
+    );
+    assert!(
+        created_at("newcomer").await >= first,
+        "a genuinely new identity is created now"
+    );
+
+    // …and a tag REMOVED and later re-added is genuinely new: it did not
+    // survive, so nothing of it is carried forward.
+    svc.target_tags_replace(ehr_uuid, vo_id.clone(), "COMPOSITION", vec![])
+        .await
+        .expect("clear");
+    svc.target_tags_replace(
+        ehr_uuid,
+        vo_id.clone(),
+        "COMPOSITION",
+        vec![ehr_tag("survivor", Some("v3"), None)],
+    )
+    .await
+    .expect("re-add");
+    assert!(
+        created_at("survivor").await > first,
+        "a tag that did NOT survive the replace is created afresh when re-added"
     );
 }
 
@@ -1518,8 +1610,8 @@ async fn item_tag_put_replaces_the_whole_collection() {
             vo_id.clone(),
             "COMPOSITION",
             vec![
-                json!({ "key": "priority", "value": "high" }),
-                json!({ "key": "status", "value": "draft" }),
+                ehr_tag("priority", Some("high"), None),
+                ehr_tag("status", Some("draft"), None),
             ],
         )
         .await
@@ -1532,7 +1624,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
             ehr_uuid,
             vo_id.clone(),
             "COMPOSITION",
-            vec![json!({ "key": "status", "value": "final" })],
+            vec![ehr_tag("status", Some("final"), None)],
         )
         .await
         .expect("replace with one tag");
@@ -1550,9 +1642,9 @@ async fn item_tag_put_replaces_the_whole_collection() {
     // RM ITEM_TAG invariants: Inv_key_valid (non-empty, justified) and
     // Inv_value_valid (a set value may not be empty).
     for bad in [
-        json!({ "key": " padded " }),
-        json!({ "key": "" }),
-        json!({ "key": "ok", "value": "" }),
+        ehr_tag(" padded ", None, None),
+        ehr_tag("", None, None),
+        ehr_tag("ok", Some(""), None),
     ] {
         let res = svc
             .target_tags_replace(ehr_uuid, vo_id.clone(), "COMPOSITION", vec![bad.clone()])
@@ -1565,9 +1657,29 @@ async fn item_tag_put_replaces_the_whole_collection() {
                     ..
                 })
             ),
-            "tag {bad} must be rejected, got {res:?}"
+            "tag {bad:?} must be rejected, got {res:?}"
         );
     }
+    // …and the ACCEPTING twins: a bare key, a key with a real value, and an
+    // empty `target_path` (register AMB-96: `""` normalizes to ABSENT, so it is
+    // the same identity as no path at all — never a second tag).
+    let accepted = svc
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id.clone(),
+            "COMPOSITION",
+            vec![
+                ehr_tag("bare", None, None),
+                ehr_tag("valued", Some("v"), Some("")),
+            ],
+        )
+        .await
+        .expect("the valid twins are stored");
+    assert_eq!(accepted.len(), 2);
+    assert!(
+        accepted.iter().all(|t| t.get("target_path").is_none()),
+        "an empty target_path normalizes to absent, got {accepted:?}"
+    );
 }
 
 #[tokio::test]

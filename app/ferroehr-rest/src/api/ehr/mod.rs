@@ -44,10 +44,11 @@ pub mod versioned_ehr_status;
 
 use axum::response::Response;
 use http::{HeaderMap, HeaderName};
-use serde_json::{Value, json};
+use serde_json::Value;
 use uuid::Uuid;
 
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
+use openehr_its::rest::generated::ehr::UpdateItemTag;
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{DvIdentifier, PartyIdentified, PartyIdentifiedData, PartyProxy};
 
@@ -58,7 +59,8 @@ use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
 use crate::extensions::access::authn::AuthMethod;
 use crate::overview::error::RestError;
 use crate::overview::params::{
-    H_ITEM_TAG, H_VERSION_ITEM_TAG, ItemTagHeaderEntry, emit_item_tag_header, parse_item_tag_header,
+    H_ITEM_TAG, H_VERSION_ITEM_TAG, ItemTagHeaderEntry, emit_item_tag_header,
+    item_tag_to_header_entry, parse_item_tag_header, validate_item_tag_entries,
 };
 use crate::state::AppState;
 
@@ -263,8 +265,13 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// (`Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag
 /// §Usage in Requests`): the provided tag list **replaces** the target's
 /// `ITEM_TAG` list, and "providing an empty value for this header will
-/// effectively remove all `ITEM_TAGs` associated with the given target". The
-/// header parse is [`crate::overview::params::parse_item_tag_header`]; the
+/// effectively remove all `ITEM_TAGs` associated with the given target".
+///
+/// This is the WRITE half only: the headers were already parsed and
+/// invariant-checked by [`pending_item_tags`], BEFORE the content commit, so
+/// by the time this runs the only failure left is a storage one. The write
+/// stays after the commit because the tags target the version the commit
+/// mints, and a tag must not re-version the content it annotates. The
 /// entries are folded onto the existing vo-keyed
 /// [`ItemTagAdapter`](ferroehr::service::ItemTagAdapter) `target_tags_replace` seam
 /// (the same seam the dedicated `*_tags_*` operations use).
@@ -279,12 +286,12 @@ pub(super) async fn apply_item_tag_headers(
     ehr_id: EhrId,
     target_type: &str,
     version_uid: &str,
-    headers: &HeaderMap,
+    pending: PendingItemTags,
 ) -> Result<StoredItemTags, RestError> {
-    // `None` = header absent (leave tags intact); `Some(empty)` = empty header
-    // value (clear all tags) — the parse helper draws the distinction.
-    let object_tags = parse_item_tag_header(headers, H_ITEM_TAG);
-    let version_tags = parse_item_tag_header(headers, H_VERSION_ITEM_TAG);
+    let PendingItemTags {
+        object: object_tags,
+        version: version_tags,
+    } = pending;
     // The two wrappers address DISTINCT collections (Requests_and_responses.md
     // §"openehr-item-tag and openehr-version-item-tag": "`openehr-item-tag`
     // applies to *VERSIONED_OBJECT* targets" while "`openehr-version-item-tag`
@@ -315,8 +322,7 @@ pub(super) async fn apply_item_tag_headers(
         .value()
         .into_owned();
     let mut stored = StoredItemTags::default();
-    if let Some(entries) = object_tags {
-        let tags = entries.iter().map(entry_to_value).collect();
+    if let Some(tags) = object_tags {
         stored.object = Some(
             state
                 .backend()
@@ -324,8 +330,7 @@ pub(super) async fn apply_item_tag_headers(
                 .await?,
         );
     }
-    if let Some(entries) = version_tags {
-        let tags = entries.iter().map(entry_to_value).collect();
+    if let Some(tags) = version_tags {
         stored.version = Some(
             state
                 .backend()
@@ -334,6 +339,80 @@ pub(super) async fn apply_item_tag_headers(
         );
     }
     Ok(stored)
+}
+
+/// The `ITEM_TAG` lists a request's wrapper headers ask for, parsed and
+/// invariant-checked **before** any content is committed.
+///
+/// `None` per field = the request carried no such header, so that collection is
+/// left untouched; `Some(list)` = the list to write (empty = the release's
+/// clear-all form).
+#[derive(Debug, Default)]
+pub(super) struct PendingItemTags {
+    /// What `openehr-item-tag` asks to store on the `VERSIONED_OBJECT`.
+    object: Option<Vec<UpdateItemTag>>,
+    /// What `openehr-version-item-tag` asks to store on the committed VERSION.
+    version: Option<Vec<UpdateItemTag>>,
+}
+
+/// Parse and validate both wrapper headers BEFORE the content write.
+///
+/// The release gives the wrapper headers no atomicity semantics at all
+/// (`Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
+/// says what the header MEANS and nothing about what happens when it cannot be
+/// honoured), so the ordering is ours (register AMB-204). We refuse first: a
+/// header defect the server can detect without touching storage — a keyless
+/// entry, a key with surrounding whitespace, a set-but-empty value — rejects
+/// the whole request while NOTHING has been committed. Applying the tags after
+/// the commit and failing there would answer 4xx for a request whose VERSION is
+/// already durable and whose response carries no `ETag`/`Location`, so the
+/// client's only recovery is to re-POST and duplicate clinical content.
+///
+/// The tag WRITE itself stays after the commit, and must: the tags target the
+/// version the commit mints, and RM common `master07-tags.adoc` (via RM ehr
+/// `master04-ehr_package.adoc` §Tags) forbids the tag from participating in the
+/// content's change control — "they do not cause re-versioning of the content".
+/// So this splits the JUDGEMENT (before) from the WRITE (after), which is the
+/// only split that keeps both properties.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] for a malformed header entry;
+/// [`ApiError::Unprocessable`] for an entry that breaks an RM `ITEM_TAG`
+/// invariant.
+pub(super) fn pending_item_tags(headers: &HeaderMap) -> Result<PendingItemTags, RestError> {
+    // `None` = header absent (leave tags intact); `Some(empty)` = empty header
+    // value (clear all tags) — the parse helper draws the distinction.
+    Ok(PendingItemTags {
+        object: validated_entries(parse_item_tag_header(headers, H_ITEM_TAG)?, H_ITEM_TAG)?,
+        version: validated_entries(
+            parse_item_tag_header(headers, H_VERSION_ITEM_TAG)?,
+            H_VERSION_ITEM_TAG,
+        )?,
+    })
+}
+
+/// Turn one header's parsed entries into the EHR group's write DTOs, refusing
+/// any entry the RM `ITEM_TAG` invariants reject
+/// ([`crate::overview::params::validate_item_tag_entries`] — the one judgement
+/// both tag families share).
+fn validated_entries(
+    entries: Option<Vec<ItemTagHeaderEntry>>,
+    name: &str,
+) -> Result<Option<Vec<UpdateItemTag>>, RestError> {
+    let Some(entries) = entries else {
+        return Ok(None);
+    };
+    validate_item_tag_entries(&entries, name)?;
+    Ok(Some(
+        entries
+            .into_iter()
+            .map(|entry| UpdateItemTag {
+                key: entry.key,
+                value: entry.value,
+                target_path: entry.target_path,
+            })
+            .collect(),
+    ))
 }
 
 /// The `ITEM_TAG` collections an item-tag write-wrapper request stored, kept
@@ -351,22 +430,6 @@ pub(super) struct StoredItemTags {
     version: Option<Vec<Value>>,
 }
 
-/// One parsed `ITEM_TAG` header entry → the `ITEM_TAG` JSON the storage seam takes.
-/// An empty header value carries no `value` (RM `ITEM_TAG` `Inv_value_valid`:
-/// "value /= Void implies not `value.is_empty`" — value is optional but, if set,
-/// non-empty).
-fn entry_to_value(entry: &ItemTagHeaderEntry) -> Value {
-    let mut t = serde_json::Map::new();
-    t.insert("key".to_owned(), json!(entry.key));
-    if !entry.value.is_empty() {
-        t.insert("value".to_owned(), json!(entry.value));
-    }
-    if let Some(path) = &entry.target_path {
-        t.insert("target_path".to_owned(), json!(path));
-    }
-    Value::Object(t)
-}
-
 /// Echo the stored `ITEM_TAG` lists onto a create/update response — MAY-level
 /// confirmation (`Requests_and_responses.md §…§Usage in Responses`: "Servers
 /// MAY include the `openehr-item-tag` or `openehr-version-item-tag` header in
@@ -382,6 +445,14 @@ fn entry_to_value(entry: &ItemTagHeaderEntry) -> Value {
 /// echoed at all. Rendered via
 /// [`crate::overview::params::emit_item_tag_header`]; an empty list confirms a
 /// clear.
+///
+/// A list that cannot be rendered as an HTTP field value (a tag carrying a
+/// control character, which nothing in the RM bars from a key) omits the
+/// header ENTIRELY rather than emitting an empty
+/// one — an empty `openehr-item-tag` is the release's "remove all `ITEM_TAGs`"
+/// instruction (§Usage in Requests), so echoing one would tell a mirroring
+/// client to wipe the collection this response just confirmed. The echo is a
+/// MAY, so declining to echo is always available; lying is not.
 pub(super) fn echo_item_tags(resp: &mut Response, stored: &StoredItemTags) {
     for (name, tags) in [
         (H_ITEM_TAG, stored.object.as_deref()),
@@ -390,27 +461,11 @@ pub(super) fn echo_item_tags(resp: &mut Response, stored: &StoredItemTags) {
         let Some(tags) = tags else {
             continue;
         };
-        let entries: Vec<ItemTagHeaderEntry> = tags.iter().filter_map(value_to_entry).collect();
-        resp.headers_mut().insert(
-            HeaderName::from_static(name),
-            emit_item_tag_header(&entries),
-        );
+        let entries: Vec<ItemTagHeaderEntry> =
+            tags.iter().filter_map(item_tag_to_header_entry).collect();
+        if let Some(value) = emit_item_tag_header(&entries) {
+            resp.headers_mut()
+                .insert(HeaderName::from_static(name), value);
+        }
     }
-}
-
-/// A stored `ITEM_TAG` JSON value → a header entry (for the response echo).
-fn value_to_entry(v: &Value) -> Option<ItemTagHeaderEntry> {
-    let key = v.get("key").and_then(Value::as_str)?.to_owned();
-    Some(ItemTagHeaderEntry {
-        key,
-        value: v
-            .get("value")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_owned(),
-        target_path: v
-            .get("target_path")
-            .and_then(Value::as_str)
-            .map(str::to_owned),
-    })
 }

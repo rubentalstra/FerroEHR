@@ -115,7 +115,11 @@ async fn seed_full_ehr(svc: &FerroEhrService) -> EhrId {
         ehr_uuid,
         status_vo,
         "EHR_STATUS",
-        vec![json!({ "key": "priority", "value": "high" })],
+        vec![crate::item_tag_fixture::ehr_tag(
+            "priority",
+            Some("high"),
+            None,
+        )],
     )
     .await
     .expect("tag");
@@ -625,7 +629,11 @@ async fn seed_mixed_kind_ehr(svc: &FerroEhrService) -> (EhrId, Vec<String>) {
         ehr,
         status_vo,
         "EHR_STATUS",
-        vec![json!({ "key": "priority", "value": "high" })],
+        vec![crate::item_tag_fixture::ehr_tag(
+            "priority",
+            Some("high"),
+            None,
+        )],
     )
     .await
     .expect("tag");

@@ -8633,3 +8633,228 @@ AMB-200:
     message-tdd extension surface (register AMB-34), so no released-wire
     conformance claim rests on the choice.
   disposition: fixed_handling
+
+AMB-201:
+  ambiguity: >-
+    Whether a served ITEM_TAG may carry `_type` is decided by the released OAS
+    against itself. `schemas/common/ItemTag.yaml` is `additionalProperties:
+    false` and its `properties` block enumerates key/value/target_path/target/
+    owner_id — no `_type`. The same released group nevertheless declares
+    `discriminator.propertyName: _type` for the ITEM_TAG family, and a
+    discriminator's whole function is to be READ off the instance
+    (OpenAPI 3.0 §Discriminator Object). So the schema forbids the exact member
+    it simultaneously nominates as the type discriminator: a schema-valid
+    instance cannot carry the discriminator the schema declares, and an
+    instance that carries it is schema-invalid. The ITS-REST docs text is
+    silent — `Resources.md` §JSON Format neither requires nor forbids `_type`
+    on a concrete standalone type — so nothing above the OAS breaks the tie,
+    and the OAS is self-contradictory rather than merely silent.
+  source: >-
+    ITS-REST specifications/schemas/common/ItemTag.yaml (properties +
+    additionalProperties: false) contrasted with the ITEM_TAG group's
+    discriminator.propertyName: _type, and with
+    specifications/docs/overview/Resources.md §JSON Format; RM common
+    UML/classes/org.openehr.rm.common.item_tag.adoc (the class the payload
+    realizes). All read first-hand.
+  handling: >-
+    Fixed handling: served ITEM_TAGs CARRY `_type: "ITEM_TAG"`, on both the EHR
+    and the demographic families. Of the two readings the OAS supports, this is
+    the one the rest of the release corroborates: `_type` is the canonical-JSON
+    self-tagging every other concrete RM payload this server emits carries, the
+    discriminator the OAS itself declares names it, and a client that reads the
+    discriminator per the OpenAPI specification finds it. The alternative
+    honours `additionalProperties: false` literally and breaks the
+    discriminator, which no client can then use for anything. The asymmetry
+    matters for a payload that has no other type marker: an ITEM_TAG carries no
+    `uid` and no archetype id, so `_type` is its only self-description.
+    ACCEPTED CONSEQUENCE, stated rather than hidden: a strict validator run
+    against the released ItemTag schema will reject our served tags on the
+    `additionalProperties` clause. That is a property of the contradiction, not
+    of the choice — the other branch fails the discriminator clause of the same
+    document. Reported upstream (#1799 item 5): remove
+    `additionalProperties: false`, or declare `_type`, or drop the
+    discriminator.
+  disposition: fixed_handling
+  upstream_issue: 1799
+
+AMB-202:
+  ambiguity: >-
+    ITEM_TAG.target is typed two incompatible ways by two RELEASED artifacts,
+    and the documented oracle order does not reach the conflict. RM common
+    UML/classes/org.openehr.rm.common.item_tag.adoc types `target:
+    UID_BASED_ID 1..1` — a BARE identifier ("Identifier of target, which may be
+    a `VERSIONED_OBJECT<T>` or a `VERSION<T>`"). The released OAS types the
+    same attribute as an OBJECT_REF WRAPPER
+    (`schemas/base_types/UObjectRefOfUidBasedId.yaml`: an object with
+    {id, namespace, type}). The two are not reconcilable by reading — one is a
+    scalar identifier, the other a three-member object — and the ITS-REST DOCS
+    TEXT never mentions `target` at all, so the docs-text-wins rule has nothing
+    to say and the docs-text-silent-so-the-OAS-grounds-it rule would hand the
+    conflict to the OAS by default. That default is wrong here, and the
+    register owns the reason rather than leaving it to a rule that was written
+    for a different question.
+  source: >-
+    RM common UML/classes/org.openehr.rm.common.item_tag.adoc §Attributes
+    (`target: UID_BASED_ID 1..1`) contrasted with ITS-REST
+    specifications/schemas/common/ItemTag.yaml (`target: $ref
+    ../base_types/UObjectRefOfUidBasedId.yaml`) and
+    specifications/schemas/base_types/UObjectRefOfUidBasedId.yaml; the ITS-REST
+    docs text (specifications/docs/**) contains no occurrence of the attribute.
+    All read first-hand.
+  handling: >-
+    Fixed handling: the RM shape wins — `target` is served as a BARE
+    UID_BASED_ID (a HIER_OBJECT_ID for a container target, an
+    OBJECT_VERSION_ID for a VERSION target), on both tag families. The reason
+    is a distinction the oracle order's docs-text-vs-OAS rule does not draw:
+    the OAS is the wire PROJECTION of a model, and RM is the released
+    definition of the model being projected. Where a projection disagrees with
+    its own subject about what an attribute IS — not about how it is
+    transported — the subject decides, or the wire stops describing the RM at
+    all. The concrete stakes are the two-arity targeting the RM sentence exists
+    to state: an OBJECT_REF wrapper's `type` member would have to say
+    VERSIONED_COMPOSITION or ORIGINAL_VERSION redundantly with what the id's
+    own syntax already says (BASE master05 §Syntaxes — an OBJECT_VERSION_ID is
+    recognisable by its `::` structure), and a client would then have two
+    disagreeing places to read the arity from. The same ordering was applied to
+    ITEM_TAG.owner_id's VALUES in register AMB-137, which took the released
+    examples as informative for a field the RM leaves open; this entry is the
+    complement — the SHAPE, where the RM is not open at all. Reported upstream
+    (#1799): state which artifact governs an RM class's attribute types when
+    the OAS projection diverges.
+  disposition: fixed_handling
+  upstream_issue: 1799
+
+AMB-203:
+  ambiguity: >-
+    The openehr-item-tag / openehr-version-item-tag header grammar is defined
+    by ONE worked example and nothing else. ITS-REST overview
+    Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag
+    says only that "Tag values are provided as a list of key-value pairs,
+    separated by semicolons" and shows `key="reviewed",value="true";
+    key="flag",value="follow-up",target_path="/composition/start_time/value"`.
+    There is no ABNF, no statement of which characters may appear unquoted, no
+    escaping rule, and no statement of what a quoted run means. That leaves two
+    concrete questions undecided: (a) whether a `;` INSIDE a quoted value ends
+    the entry — which is not hypothetical, because the same section's own
+    `target_path` token is a path and RM common
+    UML/classes/org.openehr.rm.common.item_tag.adoc admits an AQL path there,
+    whose predicates may carry `;` inside quoted strings; and (b) what a server
+    does with a syntactically parseable entry that carries no `key`.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §openehr-
+    item-tag and openehr-version-item-tag (the whole section — the example is
+    the only grammar given); ITS-REST specifications/headers/openehr-item-tag.yaml
+    and openehr-version-item-tag.yaml (a `schema: type: string` with the same
+    example, no `pattern`); ITS-REST specifications/schemas/common/UpdateItemTag.yaml
+    (`required: [key]`); RM common UML/classes/org.openehr.rm.common.item_tag.adoc
+    (target_path: "archetype (i.e. AQL) or RM path"). All read first-hand.
+  handling: >-
+    Fixed handling, in two parts. (a) A DOUBLE-QUOTED RUN IS OPAQUE at the
+    entry separator: the `;` split skips any `;` between quotes, the same way
+    the pair scanner already treats a quoted value as opaque at the `,` level.
+    This is the only reading under which the section's own `target_path`
+    example generalizes to the paths the RM says may appear there; the
+    alternative shatters such an entry into fragments that then parse as
+    garbage, silently. (b) A NON-BLANK ENTRY WITH NO `key` IS REFUSED 400. The
+    header is declared "a convenient wrapper around the dedicated ITEM_TAG
+    operations", and `key` is the one REQUIRED member of the operation's own
+    UPDATE_ITEM_TAG schema — a wrapper cannot admit what the operation it wraps
+    refuses, and skipping the entry would silently drop a tag the client
+    believes it set (the never-lax rule). A BLANK segment — a trailing `;`, or
+    an empty repeat of the header — carries no entry at all and is NOT an
+    error, because the release gives an empty header value its own meaning
+    ("Providing an empty value for this header will effectively remove all
+    ITEM_TAGs"). Reported upstream (#1800): publish an ABNF for the header
+    value, including quoting and escaping.
+  disposition: fixed_handling
+  upstream_issue: 1800
+
+AMB-204:
+  ambiguity: >-
+    The release assigns the ITEM_TAG wrapper headers no atomicity semantics.
+    ITS-REST overview Requests_and_responses.md §openehr-item-tag and
+    openehr-version-item-tag §Usage in Requests says what the header MEANS on a
+    PUT/POST ("the header instructs the system which ITEM_TAG list should be
+    associated with the target VERSION or VERSIONED_OBJECT resource") and
+    nothing whatever about what happens when the tag list cannot be honoured
+    while the content can. Every operation carrying the header declares its
+    ordinary content statuses (201/200/204 plus the content error branches) and
+    none declares a tag-specific failure branch, so the wire itself does not
+    say whether such a request is a success with the tags dropped, a failure
+    with the content committed, or a failure with nothing committed. The
+    question is forced, not academic: a tag list can fail the RM ITEM_TAG
+    invariants (a key with surrounding whitespace, a set-but-empty value) that
+    the content passes.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §openehr-
+    item-tag and openehr-version-item-tag (both usage sub-sections, read in
+    full); the operation files that carry the request headers
+    (composition_create/composition_update/ehr_status_update/directory_create/
+    directory_update and the five demographic create/update ops — none declares
+    a tag-failure branch); RM ehr master04-ehr_package.adoc §Tags ("they do not
+    cause re-versioning of the content"); RM common
+    UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants. All read
+    first-hand.
+  handling: >-
+    Fixed handling: VALIDATE FIRST, WRITE AFTER. The wrapper headers are parsed
+    and invariant-checked BEFORE the content commit, so a defective tag list
+    refuses the whole request with nothing durable; the tag WRITE itself stays
+    after the commit, because the tags target the version the commit mints and
+    RM ehr master04 §Tags forbids the tag from causing re-versioning of that
+    content. The split is what makes both properties hold at once. The rejected
+    alternative — apply the tags after the commit and fail there — answers 4xx
+    for a request whose VERSION is already durable and whose response therefore
+    carries no ETag and no Location, leaving the client no way to learn what it
+    just created: its only recovery is to re-POST, duplicating clinical
+    content. Nothing in the release prefers that outcome, and the RM's own
+    separation of tags from content ("tags … have no direct association with
+    the objects they annotate") is easier to honour when the tag judgement
+    happens before the content is touched at all. Reported upstream (#1800):
+    state the failure semantics of the wrapper headers.
+  disposition: fixed_handling
+  upstream_issue: 1800
+
+AMB-205:
+  ambiguity: >-
+    The released UpdateItemTag schema is strict — `additionalProperties: false`
+    over exactly key/value/target_path, with `key` required — but NOTHING
+    released says what a server does when a body violates that strictness. The
+    ITS-REST docs text never discusses the tag write body's member set at all,
+    so the schema itself is the only source (which the oracle order accepts for
+    a docs-text-silent behaviour); but the schema is a shape, not a wire
+    outcome, and the seven tag PUTs' response sets declare only 200/204/400/404
+    with the 400 described as "the request could not be parsed or is invalid".
+    Two shapes fall in the gap: a member the schema does not declare (`target`,
+    `owner_id`, `_type`, anything), and a declared member of the wrong JSON
+    type (`"value": 42`). Neither is malformed JSON, so neither is obviously
+    the declared 400; and neither is an RM-invariant failure, so AMB-93's 422
+    branch does not reach them either.
+  source: >-
+    ITS-REST specifications/schemas/common/UpdateItemTag.yaml (required: [key];
+    properties key/value/target_path; additionalProperties: false);
+    specifications/operations/{composition,ehr_status,person,agent,group,
+    organisation,role}_tags_update.yaml (responses 200/204/400/404);
+    specifications/responses/400.yaml ("returned when the request could not be
+    parsed or is invalid"); specifications/docs/** (no occurrence of the write
+    body's member set). All read first-hand.
+  handling: >-
+    Fixed handling: BOTH shapes are refused 400, naming the offending member by
+    its JSON path. The strictness itself is the release's, not ours — the
+    schema states it, and under the oracle order a docs-text-silent behaviour
+    is grounded by the released OAS — so the only question this entry decides
+    is the STATUS, and 400 is the one branch the operations declare that can
+    carry it: a body that violates the declared request schema is content that
+    "is invalid" in the words of the declared 400, whereas 422 is reserved by
+    AMB-93 for a body that satisfies the schema and then fails an RM invariant.
+    The refusal is total (nothing is stored) and both shapes carry asserted
+    negative tests beside their accepting twins. What this rules OUT is the
+    tolerant read: silently ignoring an undeclared member, or reading a
+    non-string `value` as ABSENT. The second is the reason this entry is
+    fixed_handling rather than a shrug — a numeric `value` read as absent
+    stores a tag with no value at all, which is a silent loss of clinical
+    annotation, and a non-string `target_path` read as absent silently changes
+    the tag's IDENTITY (the (key, target_path) pair) so the client's later
+    delete addresses nothing. Reported upstream (#1800): assign a status to a
+    request-schema violation on the tag PUTs.
+  disposition: fixed_handling
+  upstream_issue: 1800

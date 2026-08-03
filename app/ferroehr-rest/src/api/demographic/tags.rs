@@ -3,11 +3,23 @@
 //! `agent_*`/`group_*`/`organisation_*`/`role_*`), plus the kind-agnostic
 //! collection filter `demographic_tags_get.yaml`. Tags use the **canonical**
 //! content negotiation (`Accept_canonical`/`ContentType_canonical`).
+//!
+//! **Each kind decodes through its OWN generated params type.** The five
+//! families' parameter sets are field-identical in Release-1.1.0, so one type
+//! would decode all five today — but that is a property of the current release,
+//! not a contract. Routing every kind through `Agent*Params` would mean a
+//! future release that adds a parameter to (say) `person_tags_get` alone would
+//! be silently mis-decoded on four other families, with no compile error. The
+//! per-kind match below makes any such divergence a build failure instead.
 
 use axum::response::Response;
 
 use openehr_its::rest::generated::demographic::{
     AgentTagsDeleteParams, AgentTagsGetParams, AgentTagsUpdateParams, DemographicTagsGetParams,
+    GroupTagsDeleteParams, GroupTagsGetParams, GroupTagsUpdateParams, OrganisationTagsDeleteParams,
+    OrganisationTagsGetParams, OrganisationTagsUpdateParams, PersonTagsDeleteParams,
+    PersonTagsGetParams, PersonTagsUpdateParams, RoleTagsDeleteParams, RoleTagsGetParams,
+    RoleTagsUpdateParams, UpdateItemTag,
 };
 use openehr_its::rest::runtime::ApiError;
 
@@ -31,16 +43,53 @@ pub(super) async fn run(
 
     match action {
         "tags_get" => {
-            let p = params::build::<AgentTagsGetParams>(&parts.path, q, h)?;
-            let resp = state.backend().party_tags_get(kind, p.uid_based_id).await?;
+            // Each kind's own generated params type (see the module doc).
+            let uid_based_id = match kind {
+                PartyKind::Agent => {
+                    params::build::<AgentTagsGetParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Group => {
+                    params::build::<GroupTagsGetParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Organisation => {
+                    params::build::<OrganisationTagsGetParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Person => {
+                    params::build::<PersonTagsGetParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Role => {
+                    params::build::<RoleTagsGetParams>(&parts.path, q, h)?.uid_based_id
+                }
+            };
+            let resp = state.backend().party_tags_get(kind, uid_based_id).await?;
             Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
         }
         "tags_update" => {
-            let p = params::build::<AgentTagsUpdateParams>(&parts.path, q, h)?;
-            let body = negotiate::json_vec(h, &parts.body)?;
+            let uid_based_id = match kind {
+                PartyKind::Agent => {
+                    params::build::<AgentTagsUpdateParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Group => {
+                    params::build::<GroupTagsUpdateParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Organisation => {
+                    params::build::<OrganisationTagsUpdateParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Person => {
+                    params::build::<PersonTagsUpdateParams>(&parts.path, q, h)?.uid_based_id
+                }
+                PartyKind::Role => {
+                    params::build::<RoleTagsUpdateParams>(&parts.path, q, h)?.uid_based_id
+                }
+            };
+            // Strict against `schemas/common/UpdateItemTag.yaml`
+            // (`additionalProperties: false`, `key` required): an undeclared
+            // member or a non-string `value`/`target_path` is a 400 naming the
+            // member, never a silent drop.
+            let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
             let resp = state
                 .backend()
-                .party_tags_update(kind, p.uid_based_id, body)
+                .party_tags_update(kind, uid_based_id, body)
                 .await?;
             // person_tags_update.yaml — 200 (200_PERSON_ItemTagList_updated)
             // with the tag list on `Prefer: return=representation`; 204
@@ -54,10 +103,31 @@ pub(super) async fn run(
             ))
         }
         "tags_delete" => {
-            let p = params::build::<AgentTagsDeleteParams>(&parts.path, q, h)?;
+            let (uid_based_id, key) = match kind {
+                PartyKind::Agent => {
+                    let p = params::build::<AgentTagsDeleteParams>(&parts.path, q, h)?;
+                    (p.uid_based_id, p.key)
+                }
+                PartyKind::Group => {
+                    let p = params::build::<GroupTagsDeleteParams>(&parts.path, q, h)?;
+                    (p.uid_based_id, p.key)
+                }
+                PartyKind::Organisation => {
+                    let p = params::build::<OrganisationTagsDeleteParams>(&parts.path, q, h)?;
+                    (p.uid_based_id, p.key)
+                }
+                PartyKind::Person => {
+                    let p = params::build::<PersonTagsDeleteParams>(&parts.path, q, h)?;
+                    (p.uid_based_id, p.key)
+                }
+                PartyKind::Role => {
+                    let p = params::build::<RoleTagsDeleteParams>(&parts.path, q, h)?;
+                    (p.uid_based_id, p.key)
+                }
+            };
             state
                 .backend()
-                .party_tags_delete(kind, p.uid_based_id, p.key)
+                .party_tags_delete(kind, uid_based_id, key)
                 .await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }

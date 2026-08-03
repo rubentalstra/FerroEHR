@@ -33,7 +33,9 @@
 --
 -- NOTE: the pre-existing service-wide UNIQUE
 -- constraints (uq_ehr_subject, uq_template_store_template_id,
--- pk_stored_query, uq_event_subscription_name, uq_sp_data_frame_frame_id)
+-- pk_stored_query, uq_event_subscription_name, uq_sp_data_frame_frame_id,
+-- and uq_item_tag_identity — practically unreachable cross-tenant since a
+-- target_vo_id belongs to one tenant, listed for completeness)
 -- remain GLOBAL, not tenant-scoped, in this pass. RLS isolates row visibility
 -- (engine-enforced isolation); making those keys
 -- per-tenant so two tenants may independently reuse a name is a separate,

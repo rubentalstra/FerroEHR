@@ -10,7 +10,26 @@ metadata:
 ## RM (the class authority)
 - `RM/docs/common/master07-tags.adoc` — the `common.tags` package chapter
   (Overview + Semantics + include of the class). Package is a SIBLING of
-  `change_control` (master06), NOT inside it.
+  `change_control` (master06), NOT inside it. **Filename has NO `_package`
+  suffix** (unlike every other Common chapter). The chapter is TINY: 19
+  lines, 3 sections, ~2 paragraphs of own prose.
+- **THE REAL TAG SEMANTICS ARE NOT IN CH.7.** They live in
+  `RM/docs/ehr/master04-ehr_package.adoc` §Tags (L133-153): the four
+  consequence bullets (added any time / not part of content / **no
+  re-versioning** / distinct instance per use), the 13-instance example,
+  "one logical list, no grouping", the AQL claim. Ch.7 §7.2 defers nothing
+  and master04 defers TO ch.7 — a mutual-deferral loop where master04 is
+  the only carrier.
+- `RM/docs/ehr/diagrams/tags_example.svg` — draw.io export; labels are in
+  `<foreignObject>` HTML, NOT `<text>` (the `<text>` nodes are truncated
+  "COMPOSITION..." stubs + "Viewer does not support full SVG 1.1"). Extract
+  foreignObject to read the 5 ITEM_TAG instances (all show `value = ""`,
+  `owner_id` = the bare ehr_id).
+- Ch.7's own UML diagram `RM-common.tags.svg` is `{uml_diagrams_uri}` =
+  REMOTE — not vendored, unreadable.
+- `RM/docs/common/master02-overview.adoc` enumerates archetyped/generic/
+  directory/change_control/resource — **`tags` is missing** (SPECRM-87
+  never updated it).
 - `RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc` — the ONLY class
   table: key/value/target/target_path/owner_id + `Inv_key_valid`,
   `Inv_value_valid`.
@@ -71,6 +90,31 @@ metadata:
   demographic.*.adoc` = zero tag hits. RM `ITEM_TAG.target` is a plain
   `UID_BASED_ID` (OAS wraps it in `UObjectRefOfUidBasedId` — RM wins),
   target types unrestricted, `owner_id` "such as EHR" (open list).
+
+## Ch.7-audit facts worth not re-deriving
+- **`EHR.tags` is `List<OBJECT_REF>`, NOT `List<ITEM_TAG>`** (class table
+  L53-55 + BMM `P_BMM_CONTAINER_PROPERTY` type `OBJECT_REF`), yet the
+  master04 diagram draws ITEM_TAG *instances* inline, and EHR has a
+  `<X>_valid` type invariant for EVERY other ref-typed attribute except
+  `tags`. Containment is genuinely unresolved in the released model.
+- `is_justified` (Inv_key_valid) is defined in NO vendored file — grep over
+  BASE + RM returns only the two use sites (class table L36 + BMM L1982).
+- **Uniqueness is a WIRE-ONLY rule**: `(key, target_path)` per target comes
+  from ITS-REST `Requests_and_responses.md` L114 + 10 op descriptions. RM
+  has zero uniqueness invariant.
+- **QUERY/AQL is 100% silent on tags** (grep of the whole QUERY component =
+  zero hits) although RM ch.7 §7.2 and ehr master04 L153 both claim direct
+  AQL support.
+- `ehr_tags_get` (EHR-wide list) declares the **COMPOSITION-specific**
+  response schema; `demographic_tags_get` declares the PERSON one and says
+  "within given EHR". Both are released-text defects.
+- FOLDER: docs text L100 names FOLDER as a taggable resource, but there is
+  NO folder/directory tags endpoint and NO directory op carries a tag
+  header.
+- Header asymmetry: the 5 demographic `*_update` ops declare ONLY
+  `openehr-version-item-tag` while their `*_create` twins and
+  composition/ehr_status update declare BOTH — though every prose block
+  names both.
 
 ## Total silences (verified by grep across the whole vendored tree)
 - **SM**: zero ITEM_TAG / tag-operation anchor anywhere in `SM/docs/`

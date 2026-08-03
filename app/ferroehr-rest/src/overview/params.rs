@@ -23,6 +23,7 @@ use serde::de::value::Error as ValueError;
 use serde::de::{self, DeserializeOwned, Deserializer, IntoDeserializer, MapAccess, Visitor};
 
 use openehr_its::rest::runtime::ApiError;
+use openehr_rm::prelude::ItemTag;
 
 /// Build the generated params struct `P` for an operation from its request
 /// sources.
@@ -159,17 +160,21 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
 // header sets the tag list for the target (an empty value removes all tags); on
 // `GET`/write responses the server MAY echo the stored tags.
 //
-// This module owns only the header parse/emit; the dispatch call sites live
-// outside `overview/`. The EHR group consumes them: on a change-controlled
-// `PUT`/`POST` `crate::api::ehr::apply_item_tag_headers` calls
-// `parse_item_tag_header` for both header names and forwards each header's
-// entries to the ITEM_TAG service for the target that header applies to —
-// `openehr-item-tag` → the VERSIONED_OBJECT, `openehr-version-item-tag` → the
-// committed VERSION (empty value ⇒ delete all) — and
-// `crate::api::ehr::echo_item_tags` optionally echoes each target's stored
-// list under its own header name with `emit_item_tag_header`. The demographic
-// group emits both headers from one set on reads/creates
-// (`crate::api::demographic`), because demographic tags are stored against the
+// This module owns only the header parse/validate/emit; the dispatch call
+// sites live outside `overview/`. The EHR group consumes them in two steps, and
+// the split is load-bearing: on a change-controlled `PUT`/`POST`,
+// `crate::api::ehr::pending_item_tags` calls `parse_item_tag_header` +
+// `validate_item_tag_entries` for both header names BEFORE the content commit
+// (so a defective tag refuses the request with nothing durable), then
+// `crate::api::ehr::apply_item_tag_headers` writes each header's entries to the
+// ITEM_TAG service AFTER it — `openehr-item-tag` → the VERSIONED_OBJECT,
+// `openehr-version-item-tag` → the committed VERSION (empty value ⇒ delete
+// all), the write staying post-commit because a tag must not re-version the
+// content it annotates. `crate::api::ehr::echo_item_tags` then optionally
+// echoes each target's stored list under its own header name with
+// `emit_item_tag_header`. The demographic group mirrors the same two steps
+// (`crate::api::demographic::party`) and emits both headers from one set on
+// reads/creates, because demographic tags are stored against the
 // VERSIONED_OBJECT only, so the two targets' lists coincide there.
 
 /// The canonical HTTP header names for the two `ITEM_TAG` wrapper headers.
@@ -177,69 +182,183 @@ pub(crate) const H_ITEM_TAG: &str = "openehr-item-tag";
 pub(crate) const H_VERSION_ITEM_TAG: &str = "openehr-version-item-tag";
 
 /// A single `openehr-item-tag` / `openehr-version-item-tag` entry: a `key`, its
-/// `value`, and an optional `target_path`. Multiple `ITEM_TAGs` may target one
-/// resource, uniquely identified by their `key`+`target_path` pair (overview
-/// §"openehr-item-tag and openehr-version-item-tag").
+/// optional `value`, and an optional `target_path`. Multiple `ITEM_TAGs` may
+/// target one resource, uniquely identified by their `key`+`target_path` pair
+/// (overview §"openehr-item-tag and openehr-version-item-tag").
+///
+/// `value` is `Option` because `ITEM_TAG.value` is `0..1` and
+/// `Inv_value_valid` forbids a SET-but-empty one — so a valueless tag has no
+/// `value` at all, on the wire in either direction. A header entry spelling
+/// `value=""` normalizes to absent on the way in (the same reading
+/// [`item_tags_from_header_entries`] has always applied), and the echo renders
+/// no `value` token at all on the way out.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ItemTagHeaderEntry {
     /// The tag key.
     pub(crate) key: String,
-    /// The tag value (empty is permitted).
-    pub(crate) value: String,
+    /// The tag value, absent for a bare marker tag.
+    pub(crate) value: Option<String>,
     /// Optional RM path the tag is anchored to within the target.
     pub(crate) target_path: Option<String>,
+}
+
+/// Split a wrapper-header value into its `;`-separated ENTRIES, quote-aware.
+///
+/// A `target_path` is a quoted token that may legitimately contain a `;` (an
+/// AQL path predicate such as `[at0001, 'a;b']`), so splitting the raw string
+/// on `;` shatters such an entry into fragments that then parse as garbage.
+/// This scanner only breaks on a `;` that is OUTSIDE a double-quoted run,
+/// exactly as [`key_value_pairs`] already treats a quoted value as opaque at
+/// the `,` level.
+///
+/// NOTE: the release gives this header no ABNF — the whole grammar is one
+/// worked example (`Requests_and_responses.md` §openehr-item-tag and
+/// openehr-version-item-tag), which shows quoted values and both separators
+/// but defines no escaping and no quoting rules. Treating a quoted run as
+/// opaque is OUR reading of that example (register AMB-203), and it is the only
+/// reading under which the section's own `target_path="/composition/start_time/value"`
+/// token has a defined meaning when a path contains a separator.
+fn split_item_tag_entries(input: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut in_quotes = false;
+    let mut start = 0usize;
+    for (idx, ch) in input.char_indices() {
+        match ch {
+            '"' => in_quotes = !in_quotes,
+            ';' if !in_quotes => {
+                if let Some(segment) = input.get(start..idx) {
+                    out.push(segment);
+                }
+                start = idx + 1;
+            }
+            _ => {}
+        }
+    }
+    if let Some(tail) = input.get(start..) {
+        out.push(tail);
+    }
+    out
 }
 
 /// Parse an `ITEM_TAG` wrapper header (`name` = [`H_ITEM_TAG`] or
 /// [`H_VERSION_ITEM_TAG`]) into its entries, merging across repeated
 /// occurrences. Returns `None` when the header is absent; `Some(empty)` when the
 /// header is present but empty — the spec's "remove all `ITEM_TAGs`" signal.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] when a non-blank entry carries no `key`. The
+/// released schema makes `key` the one REQUIRED member of an
+/// `UPDATE_ITEM_TAG` (`schemas/common/UpdateItemTag.yaml`), and the header is
+/// declared a "convenient wrapper around the dedicated `ITEM_TAG` operations", so
+/// the wrapper cannot admit what the operation refuses. Silently skipping such
+/// an entry would drop a tag the client believes it set. A blank segment (a
+/// trailing `;`, or an empty repeat of the header) carries no entry at all and
+/// is not an error — the release's empty-value form is itself meaningful.
 pub(crate) fn parse_item_tag_header(
     headers: &HeaderMap,
     name: &str,
-) -> Option<Vec<ItemTagHeaderEntry>> {
+) -> Result<Option<Vec<ItemTagHeaderEntry>>, ApiError> {
     let raws: Vec<String> = headers
         .get_all(name)
         .iter()
         .filter_map(|v| v.to_str().ok().map(str::to_owned))
         .collect();
     if raws.is_empty() {
-        return None;
+        return Ok(None);
     }
     let joined = raws.join(";");
     // An empty value "will effectively remove all ITEM_TAGs" for the target.
     if joined.trim().is_empty() {
-        return Some(Vec::new());
+        return Ok(Some(Vec::new()));
     }
     let mut out = Vec::new();
-    for segment in joined.split(';') {
+    for segment in split_item_tag_entries(&joined) {
         if segment.trim().is_empty() {
             continue;
         }
         let pairs = key_value_pairs(segment);
         let Some(key) = tag_value(&pairs, "key") else {
-            continue;
+            return Err(ApiError::BadRequest(format!(
+                "the {name} header entry {segment:?} carries no `key`; every ITEM_TAG \
+                 entry must name one"
+            )));
         };
         out.push(ItemTagHeaderEntry {
             key,
-            value: tag_value(&pairs, "value").unwrap_or_default(),
+            // `value=""` is the absent value, never a stored empty string (RM
+            // `ITEM_TAG.Inv_value_valid`: a set value may not be empty).
+            value: tag_value(&pairs, "value").filter(|v| !v.is_empty()),
             target_path: tag_value(&pairs, "target_path"),
         });
     }
-    Some(out)
+    Ok(Some(out))
 }
 
-/// Render `ITEM_TAG` entries as a wrapper-header value (`key="…",value="…"
+/// Judge parsed wrapper-header entries against the RM `ITEM_TAG` invariants,
+/// **before** the request's content is committed.
+///
+/// The invariants are evaluated through `openehr_rm`'s own predicates
+/// ([`ItemTag::key_valid`] / [`ItemTag::value_valid`] — the two functions the
+/// `Validate` impl for `ItemTag` is written in terms of), so this pre-commit
+/// check and the service seam that finally writes the tags cannot disagree.
+/// They are reached as predicates rather than through the `Validate` trait
+/// because at this point in the request the server has not yet minted the
+/// version the tag's `target` names, so no `ITEM_TAG` instance exists yet.
+///
+/// # Errors
+/// [`ApiError::Unprocessable`] naming the offending entry and the invariant it
+/// breaks (`Inv_key_valid` / `Inv_value_valid`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`).
+pub(crate) fn validate_item_tag_entries(
+    entries: &[ItemTagHeaderEntry],
+    name: &str,
+) -> Result<(), ApiError> {
+    for entry in entries {
+        if !ItemTag::key_valid(&entry.key) {
+            return Err(ApiError::Unprocessable(format!(
+                "the {name} header entry key {:?} breaks ITEM_TAG.Inv_key_valid \
+                 (a key may not be empty or carry leading or trailing whitespace)",
+                entry.key
+            )));
+        }
+        if !ItemTag::value_valid(entry.value.as_deref()) {
+            return Err(ApiError::Unprocessable(format!(
+                "the {name} header entry {:?} breaks ITEM_TAG.Inv_value_valid \
+                 (a value, if set, may not be empty)",
+                entry.key
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Render `ITEM_TAG` entries as a wrapper-header value (`key="…"[,value="…"]
 /// [,target_path="…"]` pairs, `;`-separated), for echoing stored tags on a
 /// response (overview §"Usage in Responses", a MAY).
-pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> HeaderValue {
+///
+/// Returns `None` when the list cannot be rendered as a header value at all —
+/// a tag key or value carrying a byte HTTP forbids in a field value, in
+/// practice a control character (RFC 9110 §5.5; nothing in the RM bars one
+/// from an `ITEM_TAG.key`, so a client can store one through the tag `PUT`).
+/// **The caller must then omit the header entirely.**
+/// It must never fall back to an empty header: an empty value is not "nothing
+/// to say", it is the release's own instruction that "providing an empty value
+/// for this header will effectively remove all `ITEM_TAGs` associated with the
+/// given target" (§Usage in Requests). A client that mirrors an echoed empty
+/// header back on its next write would wipe the collection this response was
+/// supposed to be confirming.
+///
+/// A valueless tag renders WITHOUT a `value` token, for the same reason: a
+/// `value=""` echo describes a tag that violates `Inv_value_valid` and that
+/// this server never stored.
+pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> Option<HeaderValue> {
     let rendered = entries
         .iter()
         .map(|e| {
-            let mut parts = vec![
-                format!("key=\"{}\"", e.key),
-                format!("value=\"{}\"", e.value),
-            ];
+            let mut parts = vec![format!("key=\"{}\"", e.key)];
+            if let Some(value) = &e.value {
+                parts.push(format!("value=\"{value}\""));
+            }
             if let Some(tp) = &e.target_path {
                 parts.push(format!("target_path=\"{tp}\""));
             }
@@ -247,7 +366,7 @@ pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> HeaderValu
         })
         .collect::<Vec<_>>()
         .join("; ");
-    HeaderValue::from_str(&rendered).unwrap_or_else(|_| HeaderValue::from_static(""))
+    HeaderValue::from_str(&rendered).ok()
 }
 
 /// Convert one canonical `ITEM_TAG` JSON object (RM `common.item_tag`) into an
@@ -264,41 +383,12 @@ pub(crate) fn item_tag_to_header_entry(tag: &serde_json::Value) -> Option<ItemTa
         value: tag
             .get("value")
             .and_then(serde_json::Value::as_str)
-            .unwrap_or_default()
-            .to_owned(),
+            .map(str::to_owned),
         target_path: tag
             .get("target_path")
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned),
     })
-}
-
-/// Convert parsed request-header entries (from [`parse_item_tag_header`]) into
-/// the canonical `ITEM_TAG` JSON list a tag service persists (RM
-/// `common.item_tag.ITEM_TAG`). An entry with an empty `value` omits the field
-/// (RM `ITEM_TAG.Inv_value_valid`: a set value may not be empty), so the tag
-/// stores an absent value rather than a rejected empty one.
-pub(crate) fn item_tags_from_header_entries(
-    entries: &[ItemTagHeaderEntry],
-) -> Vec<serde_json::Value> {
-    entries
-        .iter()
-        .map(|e| {
-            let mut obj = serde_json::Map::new();
-            obj.insert("_type".to_owned(), serde_json::Value::from("ITEM_TAG"));
-            obj.insert("key".to_owned(), serde_json::Value::from(e.key.clone()));
-            if !e.value.is_empty() {
-                obj.insert("value".to_owned(), serde_json::Value::from(e.value.clone()));
-            }
-            if let Some(tp) = &e.target_path {
-                obj.insert(
-                    "target_path".to_owned(),
-                    serde_json::Value::from(tp.clone()),
-                );
-            }
-            serde_json::Value::Object(obj)
-        })
-        .collect()
 }
 
 /// The value of a parsed `key` in a tag-pair segment.
@@ -689,9 +779,21 @@ mod tests {
 
     // ── openehr-item-tag / openehr-version-item-tag ─────────────────────────
 
+    fn parsed(h: &HeaderMap, name: &str) -> Option<Vec<ItemTagHeaderEntry>> {
+        parse_item_tag_header(h, name).expect("a well-formed item-tag header")
+    }
+
+    fn entry(key: &str, value: Option<&str>, target_path: Option<&str>) -> ItemTagHeaderEntry {
+        ItemTagHeaderEntry {
+            key: key.to_owned(),
+            value: value.map(str::to_owned),
+            target_path: target_path.map(str::to_owned),
+        }
+    }
+
     #[test]
     fn item_tag_header_absent_is_none() {
-        assert_eq!(parse_item_tag_header(&HeaderMap::new(), H_ITEM_TAG), None);
+        assert_eq!(parsed(&HeaderMap::new(), H_ITEM_TAG), None);
     }
 
     #[test]
@@ -699,7 +801,7 @@ mod tests {
         let mut h = HeaderMap::new();
         h.insert(H_ITEM_TAG, HeaderValue::from_static(""));
         // Present-but-empty ⇒ "remove all ITEM_TAGs".
-        assert_eq!(parse_item_tag_header(&h, H_ITEM_TAG), Some(Vec::new()));
+        assert_eq!(parsed(&h, H_ITEM_TAG), Some(Vec::new()));
     }
 
     #[test]
@@ -710,12 +812,8 @@ mod tests {
             HeaderValue::from_static("key=\"category\",value=\"final\""),
         );
         assert_eq!(
-            parse_item_tag_header(&h, H_ITEM_TAG),
-            Some(vec![ItemTagHeaderEntry {
-                key: "category".to_owned(),
-                value: "final".to_owned(),
-                target_path: None,
-            }])
+            parsed(&h, H_ITEM_TAG),
+            Some(vec![entry("category", Some("final"), None)])
         );
     }
 
@@ -729,16 +827,17 @@ mod tests {
                 "key=\"reviewed\",value=\"true\"; key=\"flag\",value=\"follow-up\",target_path=\"/composition/start_time/value\"",
             ),
         );
-        let entries = parse_item_tag_header(&h, H_VERSION_ITEM_TAG).expect("entries");
-        assert_eq!(entries.len(), 2);
-        assert_eq!(entries[0].key, "reviewed");
-        assert_eq!(entries[0].value, "true");
-        assert_eq!(entries[0].target_path, None);
-        assert_eq!(entries[1].key, "flag");
-        assert_eq!(entries[1].value, "follow-up");
+        let entries = parsed(&h, H_VERSION_ITEM_TAG).expect("entries");
         assert_eq!(
-            entries[1].target_path.as_deref(),
-            Some("/composition/start_time/value")
+            entries,
+            vec![
+                entry("reviewed", Some("true"), None),
+                entry(
+                    "flag",
+                    Some("follow-up"),
+                    Some("/composition/start_time/value")
+                ),
+            ]
         );
     }
 
@@ -753,7 +852,7 @@ mod tests {
             H_ITEM_TAG,
             HeaderValue::from_static("key=\"b\",value=\"2\""),
         );
-        let entries = parse_item_tag_header(&h, H_ITEM_TAG).expect("entries");
+        let entries = parsed(&h, H_ITEM_TAG).expect("entries");
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0].key, "a");
         assert_eq!(entries[1].key, "b");
@@ -762,20 +861,128 @@ mod tests {
     #[test]
     fn item_tag_emit_round_trips() {
         let entries = vec![
-            ItemTagHeaderEntry {
-                key: "reviewed".to_owned(),
-                value: "true".to_owned(),
-                target_path: None,
-            },
-            ItemTagHeaderEntry {
-                key: "flag".to_owned(),
-                value: "follow-up".to_owned(),
-                target_path: Some("/composition/start_time/value".to_owned()),
-            },
+            entry("reviewed", Some("true"), None),
+            entry(
+                "flag",
+                Some("follow-up"),
+                Some("/composition/start_time/value"),
+            ),
         ];
-        let hv = emit_item_tag_header(&entries);
+        let hv = emit_item_tag_header(&entries).expect("an encodable list");
         let mut h = HeaderMap::new();
         h.insert(H_VERSION_ITEM_TAG, hv);
-        assert_eq!(parse_item_tag_header(&h, H_VERSION_ITEM_TAG), Some(entries));
+        assert_eq!(parsed(&h, H_VERSION_ITEM_TAG), Some(entries));
+    }
+
+    #[test]
+    fn a_valueless_tag_echoes_without_a_value_token() {
+        // RM `ITEM_TAG.value` is 0..1 and `Inv_value_valid` forbids a
+        // set-but-empty one, so `value=""` would describe a tag this server
+        // never stored — and a client mirroring it back would post an invalid
+        // tag. The token is omitted instead.
+        let hv = emit_item_tag_header(&[entry("marker", None, None)]).expect("an encodable list");
+        assert_eq!(hv.to_str().expect("ascii"), r#"key="marker""#);
+        // …and it round-trips to the same valueless entry.
+        let mut h = HeaderMap::new();
+        h.insert(H_ITEM_TAG, hv);
+        assert_eq!(
+            parsed(&h, H_ITEM_TAG),
+            Some(vec![entry("marker", None, None)])
+        );
+    }
+
+    #[test]
+    fn an_unencodable_list_yields_no_header_rather_than_an_empty_one() {
+        // An EMPTY `openehr-item-tag` is the release's "remove all ITEM_TAGs"
+        // instruction (overview §Usage in Requests), so it must never be the
+        // fallback for a list that cannot be rendered: the caller omits the
+        // header entirely.
+        //
+        // A control character in the key is the reachable case: nothing in the
+        // RM forbids one (`Inv_key_valid` bars only an empty or
+        // whitespace-padded key, and "a\nb" is neither), while RFC 9110
+        // §5.5 bars it from a field value.
+        assert_eq!(emit_item_tag_header(&[entry("a\nb", None, None)]), None);
+        // Non-ASCII text is NOT the unencodable case — obs-text is legal in a
+        // field value — so such a list still echoes.
+        assert!(emit_item_tag_header(&[entry("café", Some("naïve"), None)]).is_some());
+    }
+
+    #[test]
+    fn a_request_value_of_empty_string_is_the_absent_value() {
+        let mut h = HeaderMap::new();
+        h.insert(H_ITEM_TAG, HeaderValue::from_static("key=\"k\",value=\"\""));
+        assert_eq!(parsed(&h, H_ITEM_TAG), Some(vec![entry("k", None, None)]));
+    }
+
+    #[test]
+    fn a_quoted_semicolon_does_not_split_the_entry() {
+        // A `target_path` is an AQL or RM path (RM `item_tag.adoc`
+        // `target_path`), and an AQL predicate may carry a `;` inside a quoted
+        // string. Splitting on the raw `;` shattered such an entry into
+        // fragments that then parsed as garbage.
+        let mut h = HeaderMap::new();
+        h.insert(
+            H_ITEM_TAG,
+            HeaderValue::from_static(
+                "key=\"flag\",target_path=\"/items[at0001, 'a;b']/value\"; key=\"other\"",
+            ),
+        );
+        assert_eq!(
+            parsed(&h, H_ITEM_TAG),
+            Some(vec![
+                entry("flag", None, Some("/items[at0001, 'a;b']/value")),
+                entry("other", None, None),
+            ])
+        );
+    }
+
+    #[test]
+    fn a_keyless_entry_is_refused_not_skipped() {
+        // `key` is the one REQUIRED member of an UPDATE_ITEM_TAG
+        // (`schemas/common/UpdateItemTag.yaml`), and the header is a wrapper
+        // around that operation — so the wrapper cannot admit what the
+        // operation refuses. Skipping the entry would silently drop a tag the
+        // client believes it set.
+        let mut h = HeaderMap::new();
+        h.insert(
+            H_ITEM_TAG,
+            HeaderValue::from_static("key=\"a\"; value=\"orphan\""),
+        );
+        let refused = parse_item_tag_header(&h, H_ITEM_TAG);
+        assert!(
+            matches!(refused, Err(ApiError::BadRequest(_))),
+            "a keyless entry must be a 400, got {refused:?}"
+        );
+    }
+
+    #[test]
+    fn a_blank_segment_carries_no_entry_and_is_not_an_error() {
+        // A trailing `;`, or an empty repeat of the header, carries no entry at
+        // all — the release's own empty-value form is meaningful, so a blank
+        // segment is not a defect.
+        let mut h = HeaderMap::new();
+        h.append(H_ITEM_TAG, HeaderValue::from_static("key=\"a\";"));
+        h.append(H_ITEM_TAG, HeaderValue::from_static(""));
+        assert_eq!(parsed(&h, H_ITEM_TAG), Some(vec![entry("a", None, None)]));
+    }
+
+    #[test]
+    fn the_entry_validator_enforces_the_rm_invariants() {
+        // Both refusals, and the accepting twin.
+        assert!(validate_item_tag_entries(&[entry("ok", Some("v"), None)], H_ITEM_TAG).is_ok());
+        assert!(validate_item_tag_entries(&[entry("ok", None, None)], H_ITEM_TAG).is_ok());
+        for bad in [entry(" padded ", None, None), entry("", None, None)] {
+            let refused = validate_item_tag_entries(std::slice::from_ref(&bad), H_ITEM_TAG);
+            assert!(
+                matches!(refused, Err(ApiError::Unprocessable(_))),
+                "{bad:?} breaks Inv_key_valid and must be refused, got {refused:?}"
+            );
+        }
+        let refused = validate_item_tag_entries(&[entry("k", Some(""), None)], H_ITEM_TAG);
+        assert!(
+            matches!(refused, Err(ApiError::Unprocessable(_))),
+            "a set-but-empty value breaks Inv_value_valid, got {refused:?}"
+        );
     }
 }

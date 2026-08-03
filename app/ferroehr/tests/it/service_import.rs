@@ -1184,7 +1184,7 @@ async fn attesting_an_imported_version_is_refused() {
     // #1729); the status class and both violation facts must survive.
     assert_eq!(
         err.status,
-        ferroehr::service::status::CallStatusType::ContentInvalid,
+        CallStatusType::ContentInvalid,
         "the refusal is the semantic 422 class, got {err:?}"
     );
     assert!(

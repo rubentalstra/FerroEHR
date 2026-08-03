@@ -40,6 +40,7 @@ mod fixture_smoke;
 mod flat_http;
 mod headers;
 mod http;
+mod item_tag_http;
 mod management;
 mod message_extension_http;
 mod overload_http;

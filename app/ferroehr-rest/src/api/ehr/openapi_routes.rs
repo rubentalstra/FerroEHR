@@ -5828,10 +5828,17 @@ pub(crate) async fn composition_tags_get(
                                 (`target` = the addressed `uid_based_id`, \
                                 `owner_id` = the addressed EHR), which is why \
                                 the write schema omits them; a body that \
-                                nonetheless carries them is accepted and those \
-                                members ignored, per our canonical tolerant-read \
-                                posture (no released sentence governs the \
-                                extra-member case — our own design). `[]` is \
+                                nonetheless carries them — or any other \
+                                undeclared member — is REFUSED `400` naming \
+                                the member. The schema declares \
+                                `additionalProperties: false`, and the ITS-REST \
+                                docs text says nothing about the write body's \
+                                member set, so the released OAS grounds the \
+                                expectation under the documented oracle order; \
+                                the refusal is the released constraint, not our \
+                                own strictness. A member of the wrong JSON type \
+                                (a numeric `value`, say) is the same `400` — \
+                                never a silently-absent attribute. `[]` is \
                                 the clear-all form, never an error: \"Providing \
                                 an empty list will effectively remove all \
                                 ITEM_TAG associated with the given target\" \
@@ -6349,10 +6356,17 @@ pub(crate) async fn ehr_status_tags_get(
                                 (`target` = the addressed `uid_based_id`, \
                                 `owner_id` = the addressed EHR), which is why \
                                 the write schema omits them; a body that \
-                                nonetheless carries them is accepted and those \
-                                members ignored, per our canonical tolerant-read \
-                                posture (no released sentence governs the \
-                                extra-member case — our own design). `[]` is \
+                                nonetheless carries them — or any other \
+                                undeclared member — is REFUSED `400` naming \
+                                the member. The schema declares \
+                                `additionalProperties: false`, and the ITS-REST \
+                                docs text says nothing about the write body's \
+                                member set, so the released OAS grounds the \
+                                expectation under the documented oracle order; \
+                                the refusal is the released constraint, not our \
+                                own strictness. A member of the wrong JSON type \
+                                (a numeric `value`, say) is the same `400` — \
+                                never a silently-absent attribute. `[]` is \
                                 the clear-all form, never an error: \"Providing \
                                 an empty list will effectively remove all \
                                 ITEM_TAG associated with the given target\" \
