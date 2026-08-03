@@ -236,14 +236,18 @@ impl Ctx<'_> {
     fn rust_type(&self, schema: &Value) -> String {
         // A `$ref` (possibly to a name we resolve without following it).
         if let Some(name) = Oas::ref_name(schema) {
-            // RM/BASE spec types are opaque canonical-JSON payloads at the REST
-            // boundary: the application exchanges `serde_json::Value` bodies and
-            // validates them via the native codec + `openehr_its::wire_validate`.
-            // The spec types carry no serde derive (the codec owns the wire), so
-            // the contract DTOs carry any RM/BASE payload as an untyped `Value`
-            // rather than the typed spec struct.
-            if self.names.rm.contains(&name) || self.names.base.contains(&name) {
-                return "serde_json::Value".to_string();
+            // RM/BASE spec types resolve to the TYPED spec structs: since the
+            // foundation rewrite (#1702) every spec type carries emitted manual
+            // `serde::Serialize`/`Deserialize` impls (its crate's
+            // `json_serde.rs`), and those impls ARE the strict canonical-JSON
+            // reader — so a typed field is strict by construction where an
+            // untyped `Value` silently accepted anything (issue #1712; the
+            // former "no serde derive" rationale this branch carried is gone).
+            if self.names.rm.contains(&name) {
+                return format!("openehr_rm::prelude::{name}");
+            }
+            if self.names.base.contains(&name) {
+                return format!("openehr_base::prelude::{name}");
             }
             if self.dtos.contains(&name) {
                 return dto_type(&name);
@@ -349,6 +353,20 @@ impl Ctx<'_> {
 
 fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
     let schema = ctx.oas.resolve(schema);
+    // A `discriminator.mapping` schema is OAS polymorphism over the canonical
+    // `_type` (every released mapping uses `propertyName: _type`): it emits a
+    // real enum over the mapping's targets, dispatched by the same strict
+    // tag-anywhere machinery the spec crates' own emitted impls use — never an
+    // untyped alias (issue #1712; `Versionable` was `pub type … =
+    // serde_json::Value`).
+    if let Some(mapping) = schema
+        .get("discriminator")
+        .and_then(|d| d.get("mapping"))
+        .and_then(Value::as_object)
+    {
+        emit_discriminator_enum(b, name, mapping, ctx);
+        return;
+    }
     // object with named properties → struct; everything else → an alias.
     if schema.get("type").and_then(Value::as_str) == Some("object")
         && let Some(props) = schema.get("properties").and_then(Value::as_object)
@@ -430,6 +448,115 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
             ctx.rust_type(schema)
         );
     }
+}
+
+/// Emit an OAS `discriminator.mapping` schema as a `_type`-dispatched enum.
+///
+/// One variant per mapping entry, in document order; each carries the mapped
+/// target's Rust type (an RM/BASE spec type or a local DTO, through
+/// [`Ctx::rust_type`]). Serialization delegates to the inner value (whose
+/// emitted impl writes its own `_type`); deserialization dispatches on the
+/// mapping keys with the shared strict tag-anywhere runtime
+/// (`openehr_base::serde_support`) — an unknown or missing `_type` is refused
+/// naming the legal set, exactly like the spec crates' own closed-set enums.
+fn emit_discriminator_enum(
+    b: &mut String,
+    name: &str,
+    mapping: &serde_json::Map<String, Value>,
+    ctx: &Ctx,
+) {
+    let ty_name = dto_type(name);
+    let variants: Vec<(String, String, String)> = mapping
+        .iter()
+        .filter_map(|(tag, target)| {
+            let target = target.as_str()?;
+            let ref_name = target.rsplit('/').next()?.to_string();
+            let rust_ty = ctx.rust_type(&serde_json::json!({ "$ref": target }));
+            Some((tag.clone(), ref_name, rust_ty))
+        })
+        .collect();
+    let tag_list = variants
+        .iter()
+        .map(|(t, _, _)| t.as_str())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let _ = write!(
+        b,
+        "/// The `{name}` ITS-REST OAS component schema: `_type`-discriminated\n\
+         /// polymorphism over its OAS `discriminator.mapping` targets.\n\
+         #[derive(Debug, Clone)]\npub enum {ty_name} {{\n"
+    );
+    for (tag, ref_name, rust_ty) in &variants {
+        let _ = writeln!(b, "    /// `_type: \"{tag}\"`\n    {ref_name}({rust_ty}),");
+    }
+    b.push_str("}\n\n");
+    // Serialize: delegate to the inner value (its impl writes `_type`).
+    let _ = write!(
+        b,
+        "impl ::serde::Serialize for {ty_name} {{\n    \
+         fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) \
+         -> ::core::result::Result<__S::Ok, __S::Error> {{\n        match self {{\n"
+    );
+    for (_, ref_name, _) in &variants {
+        let _ = writeln!(
+            b,
+            "            Self::{ref_name}(__x) => ::serde::Serialize::serialize(__x, __serializer),"
+        );
+    }
+    b.push_str("        }\n    }\n}\n\n");
+    // Deserialize: strict tag-anywhere dispatch on the mapping keys.
+    let _ = write!(
+        b,
+        "impl<'de> ::serde::Deserialize<'de> for {ty_name} {{\n    \
+         fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) \
+         -> ::core::result::Result<Self, __D::Error> {{\n        \
+         const __TAGS: &[&str] = &[{tags}];\n        \
+         struct __Visitor;\n        \
+         impl<'de> ::serde::de::Visitor<'de> for __Visitor {{\n            \
+         type Value = {ty_name};\n            \
+         fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{\n                \
+         __f.write_str(\"an ITS-REST `{name}` object\")\n            \
+         }}\n            \
+         fn visit_map<__A: ::serde::de::MapAccess<'de>>(\n                \
+         self,\n                mut __map: __A,\n            \
+         ) -> ::core::result::Result<Self::Value, __A::Error> {{\n                \
+         let (__tag, __buffered) =\n                    \
+         ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;\n                \
+         match __tag {{\n                    \
+         Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {{\n                        \
+         let __rest = ::openehr_base::serde_support::TaggedRest::new(\n                            \
+         Some(__t),\n                            __buffered,\n                            __map,\n                        \
+         );\n                        match __t {{\n",
+        tags = variants
+            .iter()
+            .map(|(t, _, _)| format!("\"{t}\""))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    for (tag, ref_name, _) in &variants {
+        let _ = write!(
+            b,
+            "                            \"{tag}\" => ::core::result::Result::Ok({ty_name}::{ref_name}(\n                                \
+             ::serde::Deserialize::deserialize(__rest)?,\n                            )),\n"
+        );
+    }
+    let _ = write!(
+        b,
+        "                            __other => ::core::result::Result::Err(\n                                \
+         ::openehr_base::serde_support::unexpected_type(\n                                    \
+         \"{name}\",\n                                    __other,\n                                    \
+         \"{tag_list}\",\n                                ),\n                            ),\n                        \
+         }}\n                    }}\n                    \
+         Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {{\n                        \
+         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(\n                            \
+         \"{name}\",\n                            &__other,\n                            \"{tag_list}\",\n                        \
+         ))\n                    }}\n                    \
+         None => {{\n                        \
+         ::core::result::Result::Err(::openehr_base::serde_support::missing_type(\n                            \
+         \"{name}\",\n                            \"{tag_list}\",\n                        ))\n                    \
+         }}\n                }}\n            }}\n        }}\n        \
+         ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)\n    }}\n}}\n\n"
+    );
 }
 
 fn param_struct_name(op: &Operation) -> String {

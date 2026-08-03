@@ -148,9 +148,10 @@ impl Oas {
                 name: name.to_string(),
                 location: location.to_string(),
                 required: p.get("required").and_then(Value::as_bool).unwrap_or(false),
-                schema: p
-                    .get("schema")
-                    .map_or(Value::Null, |s| self.resolve(s).clone()),
+                // Kept VERBATIM (a `$ref` keeps its name — issue #1712); the
+                // emitter's parameter mapper resolves structurally only where
+                // the name binds to nothing.
+                schema: p.get("schema").cloned().unwrap_or(Value::Null),
             });
         }
         out
@@ -159,7 +160,7 @@ impl Oas {
     fn parse_request_body(&self, op: &Value) -> Option<(Value, bool)> {
         let rb = self.resolve(op.get("requestBody")?);
         let required = rb.get("required").and_then(Value::as_bool).unwrap_or(false);
-        let schema = self.first_json_schema(rb)?;
+        let schema = Self::first_json_schema(rb)?;
         Some((schema, required))
     }
 
@@ -170,7 +171,7 @@ impl Oas {
         codes.sort();
         for code in codes {
             let resp = self.resolve(&responses[code]);
-            if let Some(schema) = self.first_json_schema(resp) {
+            if let Some(schema) = Self::first_json_schema(resp) {
                 return Some(schema);
             }
         }
@@ -178,13 +179,19 @@ impl Oas {
     }
 
     /// The `application/json` (or first) content schema of a requestBody/response.
-    fn first_json_schema(&self, container: &Value) -> Option<Value> {
+    ///
+    /// The schema is returned VERBATIM — a `$ref` keeps its name, so the
+    /// emitter's type mapper can bind it to the named DTO or spec type instead
+    /// of degrading a pre-resolved anonymous shape to `serde_json::Value`
+    /// (issue #1712; the same discipline `rust_type` applies to array items).
+    /// Container-level refs (the response/requestBody objects themselves) are
+    /// still resolved by the callers before reaching here.
+    fn first_json_schema(container: &Value) -> Option<Value> {
         let content = container.get("content")?.as_object()?;
         let media = content
             .get("application/json")
             .or_else(|| content.values().next())?;
-        let schema = media.get("schema")?;
-        Some(self.resolve(schema).clone())
+        Some(media.get("schema")?.clone())
     }
 }
 

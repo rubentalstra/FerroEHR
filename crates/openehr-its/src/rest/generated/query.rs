@@ -137,7 +137,7 @@ pub struct Query {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteAdhocQueryParams {
     /// `q` (query)
-    pub q: String,
+    pub q: Aql,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
@@ -149,7 +149,7 @@ pub struct QueryExecuteAdhocQueryParams {
     pub fetch: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_parameters` (query)
-    pub query_parameters: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    pub query_parameters: Option<QueryParameters>,
     #[serde(rename = "Accept")]
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
@@ -173,7 +173,7 @@ pub struct QueryExecuteAdhocQueryBodyParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
@@ -185,7 +185,7 @@ pub struct QueryExecuteStoredQueryParams {
     pub fetch: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_parameters` (query)
-    pub query_parameters: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    pub query_parameters: Option<QueryParameters>,
     #[serde(rename = "Accept")]
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
@@ -196,7 +196,7 @@ pub struct QueryExecuteStoredQueryParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryBodyParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     #[serde(rename = "Accept")]
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
@@ -211,7 +211,7 @@ pub struct QueryExecuteStoredQueryBodyParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryVersionParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     /// `version` (path)
     pub version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -225,7 +225,7 @@ pub struct QueryExecuteStoredQueryVersionParams {
     pub fetch: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `query_parameters` (query)
-    pub query_parameters: Option<std::collections::BTreeMap<String, serde_json::Value>>,
+    pub query_parameters: Option<QueryParameters>,
     #[serde(rename = "Accept")]
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
@@ -236,7 +236,7 @@ pub struct QueryExecuteStoredQueryVersionParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryVersionBodyParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: String,
+    pub qualified_query_name: QueryName,
     /// `version` (path)
     pub version: String,
     #[serde(rename = "Accept")]
@@ -259,45 +259,45 @@ pub trait QueryApi {
     async fn query_execute_adhoc_query(
         &self,
         params: QueryExecuteAdhocQueryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<ResultSet, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /query/aql`
     async fn query_execute_adhoc_query_body(
         &self,
         params: QueryExecuteAdhocQueryBodyParams,
-        body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        body: AdhocQueryExecute,
+    ) -> Result<ResultSet, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /query/{qualified_query_name}`
     async fn query_execute_stored_query(
         &self,
         params: QueryExecuteStoredQueryParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<ResultSet, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /query/{qualified_query_name}`
     async fn query_execute_stored_query_body(
         &self,
         params: QueryExecuteStoredQueryBodyParams,
-        body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        body: Query,
+    ) -> Result<ResultSet, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /query/{qualified_query_name}/{version}`
     async fn query_execute_stored_query_version(
         &self,
         params: QueryExecuteStoredQueryVersionParams,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+    ) -> Result<ResultSet, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /query/{qualified_query_name}/{version}`
     async fn query_execute_stored_query_version_body(
         &self,
         params: QueryExecuteStoredQueryVersionBodyParams,
-        body: serde_json::Value,
-    ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
+        body: Query,
+    ) -> Result<ResultSet, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
 }
