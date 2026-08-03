@@ -121,6 +121,21 @@ const DEFECTS: &[(&str, &str, &str)] = &[
         "schedule/zz-defect.yaml",
         "corpus-integrity",
     ),
+    // The EXTRACT a `requires.import` replays resolves like any other corpus
+    // reference, so a dangling fixture name is caught before a SUT is composed.
+    (
+        "case-import-missing-corpus-key.yaml",
+        "schedule/zz-defect.yaml",
+        "corpus-integrity",
+    ),
+    // The closed token vocabularies a bundled CONTRIBUTION member may spell
+    // (change_type / _type / lifecycle_state) — an out-of-group state would
+    // otherwise commit a version the case never asked for.
+    (
+        "case-bad-member-lifecycle-token.yaml",
+        "schedule/zz-defect.yaml",
+        "literal-grammar",
+    ),
     (
         "case-unresolved-ambiguity.yaml",
         "schedule/zz-defect.yaml",

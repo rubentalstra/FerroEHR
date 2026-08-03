@@ -28,11 +28,26 @@
 //!   `wire` modules: current / by-`VERSION_TREE_ID` / by-ordinal / as-of-instant
 //!   reads, the `VERSIONED_OBJECT` container body, and the `REVISION_HISTORY`
 //!   assembly) over `ferroehr::storage::version_repo`;
-//! - the four committal functions by `ferroehr::versioning::change` (the shared
-//!   commit engine behind the direct writes and the CONTRIBUTION route),
-//!   `ferroehr::versioning::import` (`commit_imported_version` — the wrapping
-//!   of a received `ORIGINAL_VERSION` in an `IMPORTED_VERSION`) and
-//!   `ferroehr::versioning::attestation` (`commit_attestation`).
+//! - three of the four committal functions: `commit_original_version` by
+//!   `ferroehr::versioning::change` (the shared commit engine behind the direct
+//!   writes and the CONTRIBUTION route), `commit_imported_version` by
+//!   `ferroehr::versioning::import` (the wrapping of a received
+//!   `ORIGINAL_VERSION` in an `IMPORTED_VERSION`), and `commit_attestation` by
+//!   `ferroehr::versioning::attestation`.
+//!
+//! NOTE: the fourth, `commit_original_merged_version`, has NO realization —
+//! deliberately. It is the merge commit whose `an_other_input_uids:
+//! List<OBJECT_VERSION_ID>[1]` becomes
+//! `ORIGINAL_VERSION.other_input_version_uids` (§Functions;
+//! `master06-change_control_package.adoc` §Version Merging), and the released
+//! REST wire declares no shape for it at all: `UpdateVersion.yaml` has no such
+//! property and `NewContribution.versions` items are `UpdateVersion` with no
+//! discriminator, so no client can ask for a merge commit. Merge provenance is
+//! PRODUCE-only — `OriginalVersion.yaml` declares it on reads, and it reaches
+//! storage only through the routes that reproduce a FOREIGN `ORIGINAL_VERSION`
+//! verbatim (§Copying: "the `ORIGINAL_VERSION` instance is never modified"),
+//! which is `commit_imported_version`'s path, not this one. The absence is the
+//! conformant behaviour, not a gap.
 //!
 //! This module exists so that fact is written down beside the class it belongs
 //! to, rather than left as an unexplained absence next to the sibling

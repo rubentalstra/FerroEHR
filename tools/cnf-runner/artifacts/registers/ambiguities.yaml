@@ -2570,11 +2570,28 @@ AMB-89:
     SM UML/classes/i_ehr_contribution.adoc — confirmed first-hand.
   handling: >-
     Fixed handling: this server does not accept IMPORTED_VERSION members
-    on the contribution route (nothing released defines the shape); the
+    on the contribution route (nothing released defines the shape), and
+    the refusal is ENFORCED rather than merely declared — a member
+    carrying any of the three identity-bearing keys the released
+    UpdateVersion schema does not declare is refused as the shape failure
+    400_CONTRIBUTION.yaml describes ("syntactically invalid … content"),
+    naming the key: `item` (the sole own attribute of IMPORTED_VERSION),
+    `uid` (a locally committed version's identifier is allocated by this
+    repository), and a `_type` naming any class other than
+    UPDATE_VERSION / ORIGINAL_VERSION. A `_type` of one of those two IS
+    accepted: the overview docs text makes `_type` a general metadata
+    attribute whose value "MUST be the uppercase class name from the RM
+    specification" (specifications/docs/overview/Resources.md §Resource
+    representation), and the docs text outranks the OAS. Accepting the
+    keys instead would commit a declared FOREIGN version as a locally
+    created ORIGINAL_VERSION under a freshly minted local uid, silently
+    discarding the identity and provenance the client declared. The
     distributed-import capability is realized by our own EHR-Extract
     import extension (import_ehr — flagged our-own-design), which
-    preserves foreign version identities. Reported upstream (#1535):
-    define the import commit shape.
+    preserves foreign version identities. The catalogue carries the
+    refusal beside its accepting twin
+    (-imported_version_member). Reported upstream (#1535): define the
+    import commit shape.
   disposition: fixed_handling
   upstream_issue: 1535
 
@@ -8479,3 +8496,140 @@ AMB-197:
     gates on the invariant pair.
   disposition: report_only
   upstream_issue: 1749
+
+AMB-198:
+  ambiguity: >-
+    CROSS-COMPONENT CONFLICT on the served shape of an IMPORTED_VERSION: the
+    RM makes `data` an effected FUNCTION over the wrapper's `item` while the
+    released OAS makes it a REQUIRED serialized property. RM
+    `IMPORTED_VERSION` declares exactly one own attribute, `item:
+    ORIGINAL_VERSION 1..1`, and lists `uid`, `preceding_version_uid`,
+    `lifecycle_state` and `data` under §Functions as `(effected)` computations
+    — `data` "derived as item.data" — so none of the four is a serialized
+    attribute. ITS-XML agrees structurally: its abstract `VERSION` carries only
+    `contribution`, `commit_audit` and an optional `signature`, `data` is
+    declared on `ORIGINAL_VERSION`, and `IMPORTED_VERSION` extends `VERSION`
+    with the single `item` element. The released OAS disagrees: its `Version`
+    schema lists `data` under `required` and `ImportedVersion` inherits that
+    base through `allOf`, so every
+    `UMImportedVersionOf{Composition,EhrStatus,Party}` read is schema-invalid
+    unless the whole payload is emitted TWICE — once at the top level and once
+    inside `item.data` — with no consistency rule stated anywhere for the two
+    copies. The ITS-REST docs text is silent on the shape, so the oracle order
+    would otherwise let the OAS ground it — against two other released
+    components.
+  source: >-
+    RM common UML/classes/org.openehr.rm.common.imported_version.adoc
+    (§Attributes: item only; §Functions: uid / preceding_version_uid /
+    lifecycle_state / data all `1..1 (effected)`, data "Original content of
+    this Version", derived from item) + RM common
+    master06-change_control_package.adoc §Copying ("the ORIGINAL_VERSION
+    instance is never modified"); ITS-XML
+    components/RM/Release-1.1.0/Common.xsd (VERSION: contribution /
+    commit_audit / signature only; IMPORTED_VERSION extends it with `item`);
+    ITS-REST OAS ehr-codegen.openapi.yaml schemas Version (required:
+    contribution, commit_audit, data) + ImportedVersion (allOf Version,
+    required: item); ITS-REST specifications/docs/ (no sentence on the
+    IMPORTED_VERSION payload). All read first-hand.
+  handling: >-
+    Fixed handling: the wire follows the MODEL, not the OAS defect. A served
+    IMPORTED_VERSION is `{_type, contribution, commit_audit, item}` plus the
+    optional `signature` — the four things the RM and ITS-XML agree are its
+    serialized state — and carries NO top-level `data`. Emitting one would
+    duplicate the entire clinical payload with no rule saying which copy wins
+    when they differ, and would contradict both the RM's `(effected)` typing
+    and the ITS-XML content model; the `item` a consumer already receives is
+    the byte-faithful copy master06 §Copying requires, so nothing is lost. The
+    omission is DELIBERATE and pinned by an asserted test on the served shape,
+    never accidental. This is the third instance of the same released-OAS
+    defect family reported upstream as #1750 (`Version.yaml` treating `data` as
+    required state rather than as `ORIGINAL_VERSION.data 0..1`): the first two
+    are the deletion commit and the deleted-version read.
+  disposition: fixed_handling
+  upstream_issue: 1750
+
+AMB-199:
+  ambiguity: >-
+    GENUINE MODEL CONTRADICTION inside master06 §Semantics in Distributed
+    Systems: two rules fire on the identical observable state and impose
+    opposite obligations, with no marker, procedure or suspension clause
+    distinguishing them. §Copying §Subsequent Local Modifications requires a
+    system committing new content onto a version copied from elsewhere to
+    BRANCH — "When new versions are added locally to a copied object, the local
+    system id is recorded in the uid.creating_system_id() attribute, while
+    branching numbering is used in the uid.version_tree_id()", reinforced by
+    §Version Identification §Distributed Versioning ("to require branching
+    version identifiers to be used when local modifications are made to
+    versions copied from elsewhere"). §Moving Version Containers requires the
+    opposite for a moved container: "subsequent versions of the content created
+    in a moved version container will now have the uid.creating_system_id set
+    to the id of the new system … the uid.creating_system_id value can change
+    in the trunk line". The trigger both rules see is the same — the local
+    system commits onto a tip whose creating_system_id is not its own — and
+    §Moving Version Containers defines no procedure, no state marker and no
+    wire operation, so nothing at the data level tells a receiver which rule
+    applies.
+  source: >-
+    RM common master06-change_control_package.adoc §Semantics in Distributed
+    Systems (§Copying §The Copy Operation + §Subsequent Local Modifications;
+    §Moving Version Containers) and §Version Identification §Distributed
+    Versioning; contrasted with the released ITS-REST surface, which publishes
+    no container-move operation at all (0 of 97 operations). All read
+    first-hand.
+  handling: >-
+    Report only — the implementation follows §Copying, which is the rule with a
+    procedure, a worked figure and a realized wire behind it; §Moving Version
+    Containers has none of the three. The commit engine therefore forks a
+    branch whenever the tip's creating system is not the local one, which makes
+    §Moving's trunk continuation unrepresentable THROUGH THE COMMIT ENGINE. The
+    consequence is bounded and deliberate rather than hidden: storage and every
+    read path tolerate a trunk whose creating_system_id changes along the line,
+    so a container that ARRIVES already carrying such a lineage (an archive
+    load, an EHR-Extract import) is stored and served correctly — what no local
+    write can do is CREATE one. Trunk POSITIONS stay unique across creating
+    systems either way (both readings agree the trunk is one global sequence),
+    which the storage layer enforces. No catalogue case gates on the
+    contradiction: neither branch of it is reachable over the released wire.
+  disposition: report_only
+  upstream_issue: 1767
+
+AMB-200:
+  ambiguity: >-
+    Whether the SM `I_TDD_SERVICE.import_tdd` route IS the feeder-system
+    acquisition RM ehr master04 §Versioning Scenarios describes as Case 2 is
+    unstated. Case 2 says "information received from a feeder system, e.g. a
+    test result, which will be converted and used to create a new
+    IMPORTED_VERSION<COMPOSITION> and ORIGINAL_VERSION<COMPOSITION> pair", but
+    it names no operation, and the SM describes import_tdd only as "Import a
+    TDD" — binding it to no versioning scenario at all. A literal reading of
+    Case 2 applied to this route would have the receiver SYNTHESIZE the wrapped
+    ORIGINAL_VERSION, which the copy semantics elsewhere forbid.
+  source: >-
+    RM ehr master04-ehr_package.adoc §Versioning Scenarios (Case 2 + the
+    summary sentence that follows the case list) contrasted with SM
+    UML/classes/i_tdd_service.adoc §import_tdd ("Import a TDD"), RM common
+    UML/classes/org.openehr.rm.common.imported_version.adoc (item:
+    ORIGINAL_VERSION 1..1) and RM common master06-change_control_package.adoc
+    §Copying. All read first-hand.
+  handling: >-
+    Fixed handling: a TDD import commits a PLAIN LOCAL ORIGINAL_VERSION. The
+    Case-2 pair is unconstructible from a TDD — IMPORTED_VERSION.item is an
+    ORIGINAL_VERSION whose uid (an OBJECT_VERSION_ID naming a creating system
+    and a version-tree position), contribution and commit_audit are all
+    mandatory, and a Template Data Document carries none of them, so building
+    the pair would fabricate a foreign version identity for a version that
+    never existed anywhere. That contradicts the governing property of the
+    wrapper (master06 §Copying: "the ORIGINAL_VERSION instance is never
+    modified - it remains a faithful copy of its original"): there is no
+    original to be faithful to. The spec's own mechanism for feeder provenance
+    is content, not versioning, and master04 states it immediately after the
+    case list — "the AUDIT_DETAILS is always used to document the addition of
+    information locally, regardless of where it has come from. If there is a
+    need to record original audit details (via the COMPOSITION._feeder_audit_),
+    they become part of the content of the versioned object." A converted TDD
+    carrying COMPOSITION.feeder_audit therefore keeps its provenance through
+    this route, inside the committed content, while the commit's own
+    AUDIT_DETAILS documents the local addition. The route rides the
+    message-tdd extension surface (register AMB-34), so no released-wire
+    conformance claim rests on the choice.
+  disposition: fixed_handling

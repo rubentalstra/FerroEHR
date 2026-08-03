@@ -82,21 +82,41 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   must not drive a released one just to reach its precondition, or the
   realization it evidences stops being the one it is about. Provisioning
   therefore belongs in `requires` (`server`/`templates`/`ehr`/`directory`/
-  `party`/`party_relationship`/`commit` — `requires.party` mints `${party_id}`,
+  `party`/`party_relationship`/`import`/`commit` — `requires.party` mints
+  `${party_id}`,
   the VERSIONED_OBJECT uid the SM admin operations take, and
   `requires.party_relationship` mints `${party_relationship_id}` the same way,
   creating BOTH endpoint parties first and writing their container uids into the
   relationship's `source`/`target` PARTY_REFs, as RM demographic
   `master02-demographic_package.adoc` §Party Relationships requires:
   "OBJECT_REFs containing HIER_OBJECT_IDs to denote the Version container of a
-  Party"), never as a flow step. Provisioning may itself drive an EXTENSION
+  Party"; `requires.import` replays a received EHR-Extract so a RELEASED read
+  has an `IMPORTED_VERSION` to serve — `{ extract, container }`, the container
+  naming which `X_VERSIONED_*` content item the case is about — and mints
+  `${imported_versioned_object_uid}` + `${imported_version_uid}`
+  (+ `${imported_branch_version_uid}` when that container carries a branch)
+  from the extract's OWN identities, which RM common master06 §Copying
+  preserves, plus `${ehr_id}` when no `requires.ehr` makes it a whole-EHR clone
+  (§Copying Case 1 vs Cases 2/3)), never as a flow step. Provisioning may itself
+  drive an EXTENSION
   route where the release surfaces no wire for the precondition (the
-  relationship create — register AMB-32), so such a requirement is usable only
-  on a party that serves that family.
+  relationship create — register AMB-32; the extract import — register AMB-34),
+  so such a requirement is usable only
+  on a party that serves that family — enforced at SELECTION time in `run.rs`
+  against the capabilities THAT family's cases gate, never the requiring case's
+  own.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
-  dispositions, sentinels): illegal states unrepresentable. New vocabulary
-  values enter only by schedule release, never ad hoc. The one OPEN grammar
+  dispositions, sentinels, and every token a bundled CONTRIBUTION member may
+  spell — `change_type` is the openEHR `audit_change_type` group, `_type` the
+  RM VERSION classes the commit wire is addressed with, `lifecycle_state` the
+  `version_lifecycle_state` group): illegal states unrepresentable, and an
+  unknown token is a `literal-grammar` finding at validate time plus a loud
+  step error at drive time — never a silent fall-back to `creation` /
+  `complete` / `ORIGINAL_VERSION`. A member that must carry a shape the
+  vocabularies exclude (a deliberately out-of-group state) still authors the
+  whole `ORIGINAL_VERSION` verbatim, which is what that seam is for. New
+  vocabulary values enter only by schedule release, never ad hoc. The one OPEN grammar
   beside them is an `ignoring:`/`server_assigned` PATH, and it carries a
   `**` segment matching zero or more attribute steps (`**/uid`): recursive
   containment is an RM shape (`FOLDER.folders: List<FOLDER>`), so a

@@ -170,12 +170,45 @@ pub struct VerbatimVersionRow<'a> {
 /// dump/load round-trip. The node rows are re-decomposed and written by the
 /// caller.
 ///
+/// This is the ONE version writer that does not derive the version tree
+/// position itself: the two live write paths compute the next
+/// `VERSION_TREE_ID` from the container's own tip (a foreign tip forks a
+/// branch — RM common `master06-change_control_package.adoc` §Copying
+/// §Subsequent Local Modifications), so neither can produce a second TRUNK row
+/// at an occupied position. A record replayed from an archive can, since the
+/// file is arbitrary input, so the invariant is checked here before the insert
+/// and reported as [`StorageError::TrunkPositionInUse`] — the trunk line is one
+/// global sequence across creating systems (§Distributed Versioning's 3-part
+/// identifier makes BRANCH ids system-local, not trunk positions). The
+/// `uq_vo_version_trunk_position` partial unique index is the backstop; this
+/// check exists so the failure names the container, the position and the
+/// holder instead of surfacing as an opaque constraint violation.
+///
 /// # Errors
-/// Returns [`StorageError::Database`] on a driver/insert failure.
+/// Returns [`StorageError::TrunkPositionInUse`] when another creating system
+/// already holds this trunk position of the container, or
+/// [`StorageError::Database`] on a driver/insert failure.
 pub async fn insert_version_verbatim(
     tx: &mut PgConnection,
     row: &VerbatimVersionRow<'_>,
 ) -> Result<(), StorageError> {
+    if row.branch_number == 0 {
+        let held_by: Option<String> = sqlx::query_scalar(
+            "SELECT creating_system_id FROM vo_version \
+             WHERE vo_id = $1 AND trunk_version = $2 AND branch_number = 0",
+        )
+        .bind(row.vo_id)
+        .bind(row.trunk_version)
+        .fetch_optional(&mut *tx)
+        .await?;
+        if let Some(held_by) = held_by {
+            return Err(StorageError::TrunkPositionInUse {
+                vo_id: row.vo_id.0,
+                trunk_version: row.trunk_version,
+                held_by,
+            });
+        }
+    }
     sqlx::query(
         "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
          branch_version, preceding_version_uid, other_input_version_uids, sys_period, \

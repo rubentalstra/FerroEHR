@@ -522,6 +522,288 @@ pub enum ItsName {
     ItsRest,
 }
 
+/// The `_type` a CONTRIBUTION member may self-tag with in a case's bundled
+/// `versions:` construct.
+///
+/// ITS-REST `docs/overview/Resources.md` §Resource representation makes
+/// `_type` a general metadata attribute whose "value … MUST be the uppercase
+/// class name from the RM specification", so a member MAY carry one; the
+/// closed set here is the RM `VERSION` family the commit wire can be addressed
+/// with — the class the released member schema titles
+/// (`schemas/ehr/UpdateVersion.yaml`), the class such a member becomes when
+/// committed (RM common `master06-change_control_package.adoc` §Version and
+/// its Subtypes: `ORIGINAL_VERSION`), and the sibling subtype a copied version
+/// is wrapped in (`IMPORTED_VERSION`), which the commit wire declares no shape
+/// for (register AMB-89) and whose refusal is therefore a case.
+///
+/// A `_type` naming something OUTSIDE the RM `VERSION` family is not a
+/// schedule value at all: the case would be asserting a refusal of a token no
+/// openEHR class name matches, which the released text does not distinguish
+/// from any other malformed body.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MemberVersionType {
+    /// `UPDATE_VERSION` — the class the released commit-wire member schema
+    /// titles (ITS-REST `schemas/ehr/UpdateVersion.yaml`).
+    #[serde(rename = "UPDATE_VERSION")]
+    Update,
+    /// `ORIGINAL_VERSION` — the RM class a committed member becomes.
+    #[serde(rename = "ORIGINAL_VERSION")]
+    Original,
+    /// `IMPORTED_VERSION` — the wrapper of a version received from another
+    /// system (RM common master06 §Copying); the commit wire declares no
+    /// import shape (register AMB-89).
+    #[serde(rename = "IMPORTED_VERSION")]
+    Imported,
+}
+
+impl MemberVersionType {
+    /// Every member `_type` a case may author, in RM order.
+    pub const ALL: &'static [MemberVersionType] = &[
+        MemberVersionType::Update,
+        MemberVersionType::Original,
+        MemberVersionType::Imported,
+    ];
+
+    /// The RM class name the token puts on the wire.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Update => "UPDATE_VERSION",
+            Self::Original => "ORIGINAL_VERSION",
+            Self::Imported => "IMPORTED_VERSION",
+        }
+    }
+
+    /// Parse an authored token.
+    #[must_use]
+    pub fn from_token(token: &str) -> Option<Self> {
+        Self::ALL.iter().copied().find(|t| t.token() == token)
+    }
+}
+
+/// The `audit_change_type` a CONTRIBUTION member's commit audit reports.
+///
+/// The closed set is the openEHR `audit_change_type` terminology group
+/// verbatim (TERM `SupportTerminology`, group `audit_change_type`; the
+/// `AUDIT_DETAILS.Change_type_valid` invariant of RM common master04 binds
+/// `change_type.defining_code` to it), so a case cannot author a change kind
+/// the terminology does not carry — and, more importantly, a MISTYPED token
+/// can no longer fall through to `249|creation|` and commit an audit the case
+/// never asked for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MemberChangeType {
+    /// `249|creation|` — first version of a versioned object.
+    #[serde(rename = "creation")]
+    Creation,
+    /// `250|amendment|` — a correcting content change.
+    #[serde(rename = "amendment")]
+    Amendment,
+    /// `251|modification|` — a content change to an existing object.
+    #[serde(rename = "modification")]
+    Modification,
+    /// `252|synthesis|` — a version synthesized from other sources.
+    #[serde(rename = "synthesis")]
+    Synthesis,
+    /// `253|unknown|` — provenance of the change is unknown.
+    #[serde(rename = "unknown")]
+    Unknown,
+    /// `523|deleted|` — a logical deletion (the member carries no data).
+    #[serde(rename = "deleted")]
+    Deleted,
+    /// `666|attestation|` — an `ATTESTATION` attached to an existing version,
+    /// committing no new version (RM common master06 §Contributions).
+    #[serde(rename = "attestation")]
+    Attestation,
+    /// `816|restoration|` — earlier content restored as a new version.
+    #[serde(rename = "restoration")]
+    Restoration,
+    /// `817|format conversion|` — the same content re-encoded in another
+    /// format, committed as a new version.
+    #[serde(rename = "format conversion")]
+    FormatConversion,
+}
+
+impl MemberChangeType {
+    /// The whole `audit_change_type` group, in the terminology's own order.
+    pub const ALL: &'static [MemberChangeType] = &[
+        MemberChangeType::Creation,
+        MemberChangeType::Amendment,
+        MemberChangeType::Modification,
+        MemberChangeType::Synthesis,
+        MemberChangeType::Deleted,
+        MemberChangeType::Attestation,
+        MemberChangeType::Restoration,
+        MemberChangeType::FormatConversion,
+        MemberChangeType::Unknown,
+    ];
+
+    /// The authored token, which is also the group's English rubric.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Creation => "creation",
+            Self::Amendment => "amendment",
+            Self::Modification => "modification",
+            Self::Synthesis => "synthesis",
+            Self::Unknown => "unknown",
+            Self::Deleted => "deleted",
+            Self::Attestation => "attestation",
+            Self::Restoration => "restoration",
+            Self::FormatConversion => "format conversion",
+        }
+    }
+
+    /// The openEHR `audit_change_type` code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Creation => "249",
+            Self::Amendment => "250",
+            Self::Modification => "251",
+            Self::Synthesis => "252",
+            Self::Unknown => "253",
+            Self::Deleted => "523",
+            Self::Attestation => "666",
+            Self::Restoration => "816",
+            Self::FormatConversion => "817",
+        }
+    }
+
+    /// Parse an authored token.
+    #[must_use]
+    pub fn from_token(token: &str) -> Option<Self> {
+        Self::ALL.iter().copied().find(|c| c.token() == token)
+    }
+}
+
+/// The `version_lifecycle_state` a CONTRIBUTION member commits with.
+///
+/// RM common `master06-change_control_package.adoc` §Version Lifecycle fixes
+/// the group verbatim: "the possible values are `532|complete|`,
+/// `553|incomplete|`, `523|deleted|`, `800|inactive|` and `801|abandoned|`"
+/// (TERM `SupportTerminology` group `version_lifecycle_state`). The closed
+/// enum is that group, so a case cannot author a state the terminology does
+/// not carry — a member deliberately probing the out-of-group refusal
+/// (`ORIGINAL_VERSION.Lifecycle_state_valid`) authors the whole
+/// `ORIGINAL_VERSION` member verbatim instead, which is what that seam exists
+/// for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VersionLifecycleState {
+    /// `532|complete|` — a fully authored version.
+    Complete,
+    /// `553|incomplete|` — partial content committed with relaxed validation
+    /// (master06 §Incomplete Content).
+    Incomplete,
+    /// `523|deleted|` — a logically deleted version (master06 §Logical Deletion).
+    Deleted,
+    /// `800|inactive|` — content marked no longer valid for use (master06
+    /// §Abandoned and Inactive States).
+    Inactive,
+    /// `801|abandoned|` — incomplete content that lost relevance before
+    /// completion (master06 §Abandoned and Inactive States).
+    Abandoned,
+}
+
+impl VersionLifecycleState {
+    /// Every state of the `version_lifecycle_state` group, in master06 order.
+    pub const ALL: &'static [VersionLifecycleState] = &[
+        VersionLifecycleState::Complete,
+        VersionLifecycleState::Incomplete,
+        VersionLifecycleState::Deleted,
+        VersionLifecycleState::Inactive,
+        VersionLifecycleState::Abandoned,
+    ];
+
+    /// The authored token, which is also the group's English rubric.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Complete => "complete",
+            Self::Incomplete => "incomplete",
+            Self::Deleted => "deleted",
+            Self::Inactive => "inactive",
+            Self::Abandoned => "abandoned",
+        }
+    }
+
+    /// The openEHR `version_lifecycle_state` code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Complete => "532",
+            Self::Incomplete => "553",
+            Self::Deleted => "523",
+            Self::Inactive => "800",
+            Self::Abandoned => "801",
+        }
+    }
+
+    /// Parse an authored token.
+    #[must_use]
+    pub fn from_token(token: &str) -> Option<Self> {
+        Self::ALL.iter().copied().find(|s| s.token() == token)
+    }
+}
+
+/// The `X_VERSIONED_*` wrapper class of an EHR-Extract content item — the
+/// versioned object a `requires.import` precondition mints its handles from.
+///
+/// RM `ehr_extract` `master05` types `OPENEHR_CONTENT_ITEM.item` as the
+/// `X_VERSIONED_OBJECT` family, one concrete wrapper per versioned-object kind
+/// an extract can carry; an extract legitimately carries several at once (a
+/// whole-EHR clone carries its `X_VERSIONED_EHR_STATUS` beside its content),
+/// so the precondition names WHICH one the case is about rather than guessing
+/// from position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum XVersionedClass {
+    /// `X_VERSIONED_COMPOSITION` — a versioned COMPOSITION.
+    #[serde(rename = "X_VERSIONED_COMPOSITION")]
+    Composition,
+    /// `X_VERSIONED_EHR_STATUS` — the EHR's versioned `EHR_STATUS`.
+    #[serde(rename = "X_VERSIONED_EHR_STATUS")]
+    EhrStatus,
+    /// `X_VERSIONED_EHR_ACCESS` — the EHR's versioned `EHR_ACCESS`.
+    #[serde(rename = "X_VERSIONED_EHR_ACCESS")]
+    EhrAccess,
+    /// `X_VERSIONED_FOLDER` — a versioned directory hierarchy.
+    #[serde(rename = "X_VERSIONED_FOLDER")]
+    Folder,
+    /// `X_VERSIONED_PARTY` — a demographics-chapter party (RM `ehr_extract`
+    /// `master09-semantics.adoc` §Creation Semantics).
+    #[serde(rename = "X_VERSIONED_PARTY")]
+    Party,
+}
+
+impl XVersionedClass {
+    /// Every wrapper class, in the order the RM tables them.
+    pub const ALL: &'static [XVersionedClass] = &[
+        XVersionedClass::Composition,
+        XVersionedClass::EhrStatus,
+        XVersionedClass::EhrAccess,
+        XVersionedClass::Folder,
+        XVersionedClass::Party,
+    ];
+
+    /// The RM class name.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Composition => "X_VERSIONED_COMPOSITION",
+            Self::EhrStatus => "X_VERSIONED_EHR_STATUS",
+            Self::EhrAccess => "X_VERSIONED_EHR_ACCESS",
+            Self::Folder => "X_VERSIONED_FOLDER",
+            Self::Party => "X_VERSIONED_PARTY",
+        }
+    }
+
+    /// Parse an authored token.
+    #[must_use]
+    pub fn from_token(token: &str) -> Option<Self> {
+        Self::ALL.iter().copied().find(|c| c.token() == token)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

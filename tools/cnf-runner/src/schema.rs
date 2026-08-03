@@ -143,6 +143,17 @@ fn requires_def() -> Value {
                       "relationship": { "type": "string", "pattern": CORPUS_KEY_PATTERN }
                   } }
             ] },
+            "import": { "anyOf": [
+                { "const": "none" },
+                { "type": "object",
+                  "description": "An EHR-Extract received from another system before the flow, so a RELEASED read has an IMPORTED_VERSION to serve (RM common master06-change_control_package.adoc §Copying: \"An IMPORTED_VERSION instance is then created, its item set to the received ORIGINAL_VERSION\"). Mints `${imported_versioned_object_uid}` + `${imported_version_uid}` (+ `${imported_branch_version_uid}` when the named container carries a branch) from the extract's own identities, which the copy preserves; with no `requires.ehr` the import CLONES a whole EHR (§Copying Case 1) and mints `${ehr_id}` too, otherwise it lands in the provisioned one (Cases 2/3). The import itself has no released wire (register AMB-34, the `message-extract` served_extensions family), so the requirement is usable only on a party that serves it.",
+                  "additionalProperties": false,
+                  "required": ["extract", "container"],
+                  "properties": {
+                      "extract": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+                      "container": { "description": "Which X_VERSIONED_* content item of the extract the minted handles name — an extract carries several at once.", "enum": tokens(crate::vocab::XVersionedClass::ALL) }
+                  } }
+            ] },
             "commit": string_array(Some(CORPUS_KEY_PATTERN)),
             "terminology": {
                 "description": "The terminology deployment the case needs, matched against the addressed instance's ixit.terminology declaration at SELECTION time. Released ITS-REST 1.1.0 surfaces no terminology resource, so which terminology servers a deployment holds open, which namespaces they answer for, and what it does with a value set it cannot resolve are IXIT declarations; a case needing one the party does not declare is not-applicable with that citation.",

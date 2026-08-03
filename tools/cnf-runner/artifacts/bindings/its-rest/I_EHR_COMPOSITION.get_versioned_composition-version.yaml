@@ -51,3 +51,11 @@ captures:
   # signatures across versions (the distinct-per-version fact).
   signature:
     from: body "signature"
+  # The CONTRIBUTION this VERSION was committed under (`VERSION.contribution`
+  # 1..1 — RM common master06 §Contributions: "a CONTRIBUTION object will be
+  # created, listing the affected VERSION objects"). Capturable because a
+  # contribution allocated by the SERVER — an import's local contribution
+  # above all — is otherwise unaddressable: nothing else on the wire discloses
+  # its uid to a caller that did not commit it itself.
+  contribution_uid:
+    from: body "contribution.id.value"

@@ -41,27 +41,9 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - data:
-            _type: ORIGINAL_VERSION
-            lifecycle_state:
-              _type: DV_CODED_TEXT
-              value: "incomplete"
-              defining_code:
-                _type: CODE_PHRASE
-                terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
-                code_string: "553"
-            commit_audit:
-              _type: AUDIT_DETAILS
-              system_id: "cnf-runner"
-              committer: { _type: PARTY_IDENTIFIED, name: "cnf runner" }
-              change_type:
-                _type: DV_CODED_TEXT
-                value: "creation"
-                defining_code:
-                  _type: CODE_PHRASE
-                  terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
-                  code_string: "249"
-            data: "${ds:cnf.composition.minimal_event.v1}"
+        - data: "${ds:cnf.composition.minimal_event.v1}"
+          change_type: creation
+          lifecycle_state: incomplete
     expect: created
     capture:
       v1_uid: created.first_version_uid
@@ -70,28 +52,10 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - data:
-            _type: ORIGINAL_VERSION
-            preceding_version_uid: { _type: OBJECT_VERSION_ID, value: "${v1_uid}" }
-            lifecycle_state:
-              _type: DV_CODED_TEXT
-              value: "abandoned"
-              defining_code:
-                _type: CODE_PHRASE
-                terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
-                code_string: "801"
-            commit_audit:
-              _type: AUDIT_DETAILS
-              system_id: "cnf-runner"
-              committer: { _type: PARTY_IDENTIFIED, name: "cnf runner" }
-              change_type:
-                _type: DV_CODED_TEXT
-                value: "modification"
-                defining_code:
-                  _type: CODE_PHRASE
-                  terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
-                  code_string: "251"
-            data: "${ds:cnf.composition.minimal_event.v2}"
+        - data: "${ds:cnf.composition.minimal_event.v2}"
+          change_type: modification
+          lifecycle_state: abandoned
+          preceding_version_uid: "${v1_uid}"
     expect: created
     capture:
       v2_uid: created.first_version_uid
@@ -100,28 +64,10 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - data:
-            _type: ORIGINAL_VERSION
-            preceding_version_uid: { _type: OBJECT_VERSION_ID, value: "${v2_uid}" }
-            lifecycle_state:
-              _type: DV_CODED_TEXT
-              value: "incomplete"
-              defining_code:
-                _type: CODE_PHRASE
-                terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
-                code_string: "553"
-            commit_audit:
-              _type: AUDIT_DETAILS
-              system_id: "cnf-runner"
-              committer: { _type: PARTY_IDENTIFIED, name: "cnf runner" }
-              change_type:
-                _type: DV_CODED_TEXT
-                value: "modification"
-                defining_code:
-                  _type: CODE_PHRASE
-                  terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
-                  code_string: "251"
-            data: "${ds:cnf.composition.minimal_event.v1}"
+        - data: "${ds:cnf.composition.minimal_event.v1}"
+          change_type: modification
+          lifecycle_state: incomplete
+          preceding_version_uid: "${v2_uid}"
     expect: created
     capture:
       v3_uid: created.first_version_uid

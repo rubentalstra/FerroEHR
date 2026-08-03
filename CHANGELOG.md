@@ -40,6 +40,32 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A CONTRIBUTION version that declares a foreign version identity is now
+  refused** (`400`, naming the offending key). The released commit wire
+  declares six member properties (`preceding_version_uid`, `signature`,
+  `lifecycle_state`, `attestations`, `data`, `commit_audit`) and no import
+  shape at all — `master06` §Copying puts the import behind
+  `commit_imported_version`, whose "details of version id etc come from the
+  `ORIGINAL_VERSION`". Previously a member shaped like an `IMPORTED_VERSION`
+  (`_type: IMPORTED_VERSION`, an `item` wrapping a foreign `ORIGINAL_VERSION`,
+  or its own `uid`) was accepted and committed as a locally created
+  `ORIGINAL_VERSION` under a freshly minted local identifier, silently
+  discarding the identity and provenance the client had declared. All three
+  keys are now refused. A member self-tagged `_type: ORIGINAL_VERSION` or
+  `_type: UPDATE_VERSION` is unaffected — those name the class this wire
+  commits — and importing versions that keep their foreign identity remains
+  available through the EHR-Extract import route.
+- **A version-container trunk position is now unique across creating
+  systems.** `master06` §Copying has a second system BRANCH rather than extend
+  the trunk of a copied container, and §Moving Version Containers continues
+  the trunk increment under the new system's id, so a trunk line is one global
+  sequence however many systems contributed to it. The schema previously
+  admitted two versions of one container both claiming trunk position 2, one
+  per creating system; the archive-load path could write such a pair. It is
+  now refused with a message naming the container, the position and the system
+  already holding it. Branch identifiers still legitimately repeat across
+  systems, which is what the three-part version identifier disambiguates.
+
 - **A version that carries data can no longer claim the `523|deleted|`
   lifecycle state** (`422`). `master06` §Logical Deletion states deletion as one
   procedure — create a new version, delete its data, set the state to `deleted`,
@@ -53,6 +79,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **BREAKING (canonical XML): a version read now serves the `<version>`
+  document element the published XSDs declare, instead of
+  `<original_version>` / `<imported_version>`.** ITS-REST overview
+  `Resources.md` §"XML Format" requires that "both request payloads and
+  responses MUST conform to the [published XSDs]", and the ITS-XML schemas
+  declare exactly one document element for a VERSION —
+  `<xs:element name="version" type="VERSION"/>` — over an ABSTRACT `VERSION`
+  type; neither published lineage declares an element named after a concrete
+  subtype. The concrete class therefore rides on the root's `xsi:type`
+  (`ORIGINAL_VERSION` or `IMPORTED_VERSION`), as XML Schema requires of an
+  instance of an abstract type. Every `GET .../versioned_composition/{uid}/
+  version[/{version_uid}]` and `.../versioned_ehr_status/...` read requested
+  with `Accept: application/xml` is affected, in both the v1 and v2 lineages.
+  A schema-validating client rejected the old roots; a client that
+  pattern-matched on them must now read `<version>` plus `xsi:type`. Canonical
+  JSON is unchanged (the envelope keeps its `_type` self-tag), and no other
+  resource's root changes.
 - **`lifecycle_state` is now required on every CONTRIBUTION version**
   (`400`). SM `master03` §Version Update Semantics says "The `lifecycle_state`
   must be supplied in all cases", and the released `UpdateVersion` schema lists

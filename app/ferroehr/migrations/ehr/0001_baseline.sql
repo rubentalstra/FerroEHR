@@ -375,8 +375,12 @@ CREATE TABLE vo_version (
     -- in the SOURCE system, which this repository does not hold.
     wrapped_original jsonb,
     -- ORIGINAL_VERSION.other_input_version_uids: merge provenance (RM common
-    -- master06 §Version Merging), accepted on the wire and on import. NULL when
-    -- not a merge; is_merged is its derived boolean (Is_merged_validity).
+    -- master06 §Version Merging). PRODUCE-only on the released wire: the commit
+    -- wire declares no merge shape, so a CONTRIBUTION member carrying it is
+    -- refused, and the column is written only by the routes that reproduce a
+    -- FOREIGN ORIGINAL_VERSION verbatim (the EHR-Extract import and the archive
+    -- load). NULL when not a merge; is_merged is its derived boolean
+    -- (Is_merged_validity).
     other_input_version_uids jsonb,
     contribution_id uuid NOT NULL,
     audit_id        uuid NOT NULL,
@@ -438,6 +442,26 @@ CREATE UNIQUE INDEX uq_vo_version_current ON vo_version (vo_id)
 CREATE UNIQUE INDEX uq_vo_version_branch_current ON vo_version
     (vo_id, creating_system_id, trunk_version, branch_number)
     WHERE upper_inf(sys_period) AND branch_number > 0;
+-- A TRUNK POSITION is unique across creating systems, while a BRANCH id is
+-- not. RM common master06 §Distributed Versioning globally identifies a
+-- version by the tuple {object_id, creating_system_id, version_tree_id} —
+-- which is uq_vo_version_tree above — and that tuple alone would admit
+-- (vo, sysA, 2, 0, 0) AND (vo, sysB, 2, 0, 0): one container with two versions
+-- claiming trunk position 2. The model forbids exactly that. §Copying
+-- §Subsequent Local Modifications: "When new versions are added locally to a
+-- copied object, the local system id is recorded in the uid.creating_system_id()
+-- attribute, while branching numbering is used in the uid.version_tree_id()" —
+-- so a second system never extends the trunk of a copied container, it
+-- branches; and §Moving Version Containers has the trunk CONTINUE its
+-- increment under the new system's id, never restart. The trunk line is one
+-- global sequence whatever system minted each node. Branch ids legitimately
+-- collide across systems (each system allocates branch numbers locally,
+-- "Two places are indicated on the diagram where identification clashes could
+-- have occurred, but are prevented due to the use of the 3-part unique Version
+-- identifier scheme"), which is why creating_system_id stays in the tuple
+-- constraint and out of this one.
+CREATE UNIQUE INDEX uq_vo_version_trunk_position ON vo_version (vo_id, trunk_version)
+    WHERE branch_number = 0;
 CREATE INDEX idx_vo_version_ehr ON vo_version (ehr_id, kind);
 CREATE INDEX idx_vo_version_contribution ON vo_version (contribution_id);
 CREATE INDEX idx_vo_version_audit ON vo_version (audit_id);

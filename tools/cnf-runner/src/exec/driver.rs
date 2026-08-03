@@ -20,9 +20,9 @@ use crate::ids::{CaptureName, SmOperationRef};
 use crate::ixit::{AuthMode, Instance, Ixit};
 use crate::model::assertion::{Assertion, EquivalentTarget, RowsSpec};
 use crate::model::binding::{OperationBinding, RequestBody, StripRule, WireCapture, WireFrom};
-use crate::model::case::{CaseCore, EhrRequirement, FlowStep};
+use crate::model::case::{CaseCore, EhrRequirement, FlowStep, ImportRequirement};
 use crate::refgrammar::{CaptureField, Template, ValueRef};
-use crate::vocab::{FormatName, HttpMethod, OutcomeKind};
+use crate::vocab::{FormatName, HttpMethod, MemberChangeType, MemberVersionType, OutcomeKind};
 
 /// One captured HTTP exchange (also the transcript-recording seam).
 #[derive(Debug, Clone)]
@@ -814,9 +814,11 @@ impl<'a> HttpDriver<'a> {
                     columns.as_deref(),
                     vars,
                 ),
-                Assertion::XmlRoot { name, namespace } => {
-                    assertions::eval_xml_root(body, name, *namespace)
-                }
+                Assertion::XmlRoot {
+                    name,
+                    namespace,
+                    xsi_type,
+                } => assertions::eval_xml_root(body, name, *namespace, xsi_type.as_deref()),
                 Assertion::InstanceOf { rm_type, .. } => {
                     // Structural check: the body self-identifies as the type.
                     match body.get("_type").and_then(Value::as_str) {
@@ -1330,7 +1332,24 @@ impl HttpDriver<'_> {
     /// `ORIGINAL_VERSION` members carrying `data` + `commit_audit` +
     /// `lifecycle_state`; `change_type` tokens map to the openEHR audit
     /// change-type codes — RM common `§change_control`).
-    fn contribution_envelope(versions: &[Value]) -> Value {
+    ///
+    /// Two member keys OVERRIDE what the envelope would otherwise derive, each
+    /// a closed vocabulary so an unauthorable value cannot be spelled:
+    /// `_type` ([`crate::vocab::MemberVersionType`]) fixes the member's own
+    /// class self-tag, which ITS-REST `docs/overview/Resources.md` §Resource
+    /// representation permits and the AMB-89 refusal branch needs; and
+    /// `lifecycle_state` ([`crate::vocab::VersionLifecycleState`]) fixes the
+    /// committed version lifecycle independently of the change kind, which the
+    /// master06 §Version Lifecycle transitions need (`incomplete` →
+    /// `abandoned` is a `modification` whose STATE is the point). Both are
+    /// generated into the same member the envelope builds, so a lifecycle case
+    /// no longer has to author the whole `ORIGINAL_VERSION` verbatim.
+    ///
+    /// # Errors
+    /// A message naming the offending member when an override token is outside
+    /// its closed vocabulary — never a silent fallback to the derived value,
+    /// which would commit a version the case did not ask for.
+    fn contribution_envelope(versions: &[Value]) -> Result<Value, String> {
         // The envelope audit's aggregate change type. RM common
         // `master06-change_control_package.adoc` §Contributions fixes the
         // attestation-only value verbatim — "`666|attestation|`: used when the
@@ -1344,103 +1363,14 @@ impl HttpDriver<'_> {
             });
         let members: Vec<Value> = versions
             .iter()
-            .map(|member| {
-                // A pre-built ORIGINAL_VERSION member (e.g. the signed-version
-                // fixture carrying a client-supplied VERSION.signature — RM
-                // common §change_control) passes through verbatim: it already
-                // IS the wire shape.
-                if member
-                    .get("data")
-                    .and_then(|d| d.get("_type"))
-                    .and_then(Value::as_str)
-                    == Some("ORIGINAL_VERSION")
-                {
-                    return member.get("data").cloned().unwrap_or(Value::Null);
-                }
-                let change = member
-                    .get("change_type")
-                    .and_then(Value::as_str)
-                    .unwrap_or("creation");
-                if change == ATTESTATION_TOKEN {
-                    return Self::attestation_member(member);
-                }
-                let (code, label) = match change {
-                    "modification" => ("251", "modification"),
-                    "deletion" | "deleted" => ("523", "deleted"),
-                    "amendment" => ("250", "amendment"),
-                    _ => ("249", "creation"),
-                };
-                // a deleted member carries NO data and the `deleted`
-                // lifecycle (RM common §change_control: version lifecycle
-                // 523|deleted|); other members carry 532|complete|
-                let (life_code, life_label) = if change == "deleted" || change == "deletion" {
-                    ("523", "deleted")
-                } else {
-                    ("532", "complete")
-                };
-                let mut version = serde_json::json!({
-                    "_type": "ORIGINAL_VERSION",
-                    "lifecycle_state": {
-                        "_type": "DV_CODED_TEXT",
-                        "value": life_label,
-                        "defining_code": { "_type": "CODE_PHRASE",
-                            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                            "code_string": life_code }
-                    },
-                    "commit_audit": {
-                        "_type": "AUDIT_DETAILS",
-                        "system_id": "cnf-runner",
-                        "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
-                        "change_type": { "_type": "DV_CODED_TEXT", "value": label,
-                            "defining_code": { "_type": "CODE_PHRASE",
-                                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                                "code_string": code } }
-                    }
-                });
-                // A case-supplied `commit_audit:` merges OVER the generated
-                // one, attribute by attribute, so a case can state the commit
-                // audit's concrete class and any attribute of it while the
-                // runner still fills the parts every client always sends
-                // (`system_id`, `committer`, and the `change_type` the
-                // member's own token already fixed). The member's
-                // `change_type` token stays authoritative: it is what the case
-                // declares the change to BE.
-                if let Some(supplied) = member.get("commit_audit").and_then(Value::as_object)
-                    && let Some(audit) = version
-                        .get_mut("commit_audit")
-                        .and_then(Value::as_object_mut)
-                {
-                    for (key, value) in supplied {
-                        if key != "change_type" {
-                            audit.insert(key.clone(), value.clone());
-                        }
-                    }
-                }
-                if let Some(data) = member.get("data")
-                    && !data.is_null()
-                    && let Some(map) = version.as_object_mut()
-                {
-                    map.insert("data".to_owned(), data.clone());
-                }
-                if let Some(preceding) = Self::member_preceding(member)
-                    && let Some(map) = version.as_object_mut()
-                {
-                    map.insert(
-                        "preceding_version_uid".to_owned(),
-                        serde_json::json!({
-                            "_type": "OBJECT_VERSION_ID", "value": preceding
-                        }),
-                    );
-                }
-                version
-            })
-            .collect();
+            .map(Self::contribution_member)
+            .collect::<Result<Vec<Value>, String>>()?;
         let aggregate = if all_attestations {
             Self::openehr_coded_text(ATTESTATION_CODE, ATTESTATION_TOKEN)
         } else {
             Self::openehr_coded_text("249", "creation")
         };
-        serde_json::json!({
+        Ok(serde_json::json!({
             "_type": "CONTRIBUTION",
             "versions": members,
             "audit": {
@@ -1449,7 +1379,220 @@ impl HttpDriver<'_> {
                 "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
                 "change_type": aggregate
             }
-        })
+        }))
+    }
+
+    /// One CONTRIBUTION member of the bundled `versions:` construct, in its
+    /// wire shape.
+    ///
+    /// # Errors
+    /// A message when an override token is outside its closed vocabulary or
+    /// contradicts the member form (see [`Self::contribution_envelope`]).
+    fn contribution_member(member: &Value) -> Result<Value, String> {
+        let member_type = Self::member_type_override(member)?;
+        let member_lifecycle = Self::member_lifecycle_override(member)?;
+        // A pre-built ORIGINAL_VERSION member (e.g. the signed-version
+        // fixture carrying a client-supplied VERSION.signature — RM
+        // common §change_control) passes through verbatim: it already
+        // IS the wire shape.
+        if member
+            .get("data")
+            .and_then(|d| d.get("_type"))
+            .and_then(Value::as_str)
+            == Some("ORIGINAL_VERSION")
+        {
+            if member_type.is_some() || member_lifecycle.is_some() {
+                return Err(
+                    "a verbatim ORIGINAL_VERSION member already spells its own `_type` \
+                         and `lifecycle_state`; a member-level override beside it would \
+                         state the shape twice"
+                        .to_owned(),
+                );
+            }
+            return Ok(member.get("data").cloned().unwrap_or(Value::Null));
+        }
+        let change = Self::member_change_type(member)?;
+        if change == MemberChangeType::Attestation {
+            if member_lifecycle.is_some() {
+                // master06 §Contributions: an attestation member
+                // commits NO new version, so it carries no version
+                // lifecycle to state.
+                return Err(
+                    "an attestation member commits no new version (RM common master06 \
+                         §Contributions), so it carries no `lifecycle_state`"
+                        .to_owned(),
+                );
+            }
+            let mut version = Self::attestation_member(member);
+            Self::apply_member_type(&mut version, member_type);
+            return Ok(version);
+        }
+        let (code, label) = (change.code(), change.token());
+        // a deleted member carries NO data and the `deleted`
+        // lifecycle (RM common §change_control: version lifecycle
+        // 523|deleted|); other members carry 532|complete| — unless
+        // the case states the lifecycle itself, which is what the
+        // master06 §Version Lifecycle transition cases do.
+        let derived = if change == MemberChangeType::Deleted {
+            crate::vocab::VersionLifecycleState::Deleted
+        } else {
+            crate::vocab::VersionLifecycleState::Complete
+        };
+        let lifecycle = member_lifecycle.unwrap_or(derived);
+        let (life_code, life_label) = (lifecycle.code(), lifecycle.token());
+        let mut version = serde_json::json!({
+            "_type": "ORIGINAL_VERSION",
+            "lifecycle_state": {
+                "_type": "DV_CODED_TEXT",
+                "value": life_label,
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": life_code }
+            },
+            "commit_audit": {
+                "_type": "AUDIT_DETAILS",
+                "system_id": "cnf-runner",
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
+                "change_type": { "_type": "DV_CODED_TEXT", "value": label,
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": code } }
+            }
+        });
+        // A case-supplied `commit_audit:` merges OVER the generated
+        // one, attribute by attribute, so a case can state the commit
+        // audit's concrete class and any attribute of it while the
+        // runner still fills the parts every client always sends
+        // (`system_id`, `committer`, and the `change_type` the
+        // member's own token already fixed). The member's
+        // `change_type` token stays authoritative: it is what the case
+        // declares the change to BE.
+        if let Some(supplied) = member.get("commit_audit").and_then(Value::as_object)
+            && let Some(audit) = version
+                .get_mut("commit_audit")
+                .and_then(Value::as_object_mut)
+        {
+            for (key, value) in supplied {
+                if key != "change_type" {
+                    audit.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        if let Some(data) = member.get("data")
+            && !data.is_null()
+            && let Some(map) = version.as_object_mut()
+        {
+            map.insert("data".to_owned(), data.clone());
+        }
+        if let Some(preceding) = Self::member_preceding(member)
+            && let Some(map) = version.as_object_mut()
+        {
+            map.insert(
+                "preceding_version_uid".to_owned(),
+                serde_json::json!({
+                    "_type": "OBJECT_VERSION_ID", "value": preceding
+                }),
+            );
+        }
+        Self::apply_member_type(&mut version, member_type);
+        Ok(version)
+    }
+
+    /// The member's `change_type`, parsed against the closed
+    /// `audit_change_type` group; absent means `249|creation|`, the change a
+    /// first version records (RM common master06 §Contributions).
+    ///
+    /// # Errors
+    /// A message when the token is not a member of the group — never the
+    /// creation default, which would commit an audit the case never asked for.
+    fn member_change_type(member: &Value) -> Result<MemberChangeType, String> {
+        match member.get("change_type") {
+            None => Ok(MemberChangeType::Creation),
+            Some(Value::String(token)) => MemberChangeType::from_token(token).ok_or_else(|| {
+                format!(
+                    "CONTRIBUTION member `change_type: {token}` is not a member of the \
+                         openEHR audit_change_type group ({})",
+                    MemberChangeType::ALL
+                        .iter()
+                        .map(|c| c.token())
+                        .collect::<Vec<_>>()
+                        .join(" | ")
+                )
+            }),
+            Some(other) => Err(format!(
+                "CONTRIBUTION member `change_type` must be a change-type token, got {other}"
+            )),
+        }
+    }
+
+    /// The member's `_type` self-tag override, parsed against the closed
+    /// [`crate::vocab::MemberVersionType`] vocabulary.
+    ///
+    /// # Errors
+    /// A message when the value is not one of the RM `VERSION`-family class
+    /// names a member may carry.
+    fn member_type_override(member: &Value) -> Result<Option<MemberVersionType>, String> {
+        match member.get("_type") {
+            None => Ok(None),
+            Some(Value::String(token)) => MemberVersionType::from_token(token)
+                .map(Some)
+                .ok_or_else(|| {
+                    format!(
+                        "CONTRIBUTION member `_type: {token}` is outside the closed member class \
+                         vocabulary ({})",
+                        MemberVersionType::ALL
+                            .iter()
+                            .map(|t| t.token())
+                            .collect::<Vec<_>>()
+                            .join(" | ")
+                    )
+                }),
+            Some(other) => Err(format!(
+                "CONTRIBUTION member `_type` must be a class name string, got {other}"
+            )),
+        }
+    }
+
+    /// The member's `lifecycle_state` override, parsed against the closed
+    /// `version_lifecycle_state` group.
+    ///
+    /// # Errors
+    /// A message when the value is not one of the five states RM common
+    /// master06 §Version Lifecycle names.
+    fn member_lifecycle_override(
+        member: &Value,
+    ) -> Result<Option<crate::vocab::VersionLifecycleState>, String> {
+        match member.get("lifecycle_state") {
+            None => Ok(None),
+            Some(Value::String(token)) => crate::vocab::VersionLifecycleState::from_token(token)
+                .map(Some)
+                .ok_or_else(|| {
+                    format!(
+                        "CONTRIBUTION member `lifecycle_state: {token}` is not a state of the \
+                         openEHR version_lifecycle_state group ({})",
+                        crate::vocab::VersionLifecycleState::ALL
+                            .iter()
+                            .map(|s| s.token())
+                            .collect::<Vec<_>>()
+                            .join(" | ")
+                    )
+                }),
+            Some(other) => Err(format!(
+                "CONTRIBUTION member `lifecycle_state` must be a state token, got {other}"
+            )),
+        }
+    }
+
+    /// Stamp the member's class self-tag when the case declared one.
+    fn apply_member_type(version: &mut Value, member_type: Option<MemberVersionType>) {
+        if let Some(member_type) = member_type
+            && let Some(map) = version.as_object_mut()
+        {
+            map.insert(
+                "_type".to_owned(),
+                Value::String(member_type.token().to_owned()),
+            );
+        }
     }
 
     /// Body per the binding request contract.
@@ -1469,7 +1612,9 @@ impl HttpDriver<'_> {
                 if name == "contribution"
                     && let Some(versions) = with.get("versions").and_then(Value::as_array)
                 {
-                    return Ok(Some(Self::contribution_envelope(versions)));
+                    return Self::contribution_envelope(versions)
+                        .map(Some)
+                        .map_err(|e| format!("step {}: {e}", step.step));
                 }
                 let found = with
                     .get(name)
@@ -2186,6 +2331,210 @@ impl HttpDriver<'_> {
         Ok(())
     }
 
+    /// `import`: replay an EHR-Extract received from another system, then mint
+    /// the identities it carried — `${imported_versioned_object_uid}`,
+    /// `${imported_version_uid}` and, when the named container carries one,
+    /// `${imported_branch_version_uid}`.
+    ///
+    /// The identities come from the EXTRACT itself rather than from a read of
+    /// the SUT, because RM common `master06-change_control_package.adoc`
+    /// §Copying keeps them: "the `ORIGINAL_VERSION` instance is never
+    /// modified", and its `uid` is what the receiving system's
+    /// `IMPORTED_VERSION` is identified by. Reading the SUT to learn what to
+    /// address would make the server's own answer the reference for the
+    /// case's expectation, which is exactly what the attribution law forbids.
+    ///
+    /// Which operation lands it follows master06 §Copying's receiving
+    /// situations: an already-provisioned `${ehr_id}` takes `import_ehr_extract`
+    /// (Cases 2/3), and no EHR at all takes `import_ehr` (Case 1), whose
+    /// answer names the clone it created and mints `${ehr_id}`.
+    ///
+    /// NOTE: the import is driven over the SUT's own `message-extract`
+    /// extension routes — ITS-REST 1.1.0 publishes no MESSAGE / EHR-Extract
+    /// API at all (register AMB-34) — so this precondition is only available
+    /// on a party that serves that family, which `crate::run` enforces at
+    /// SELECTION time.
+    fn provision_import(
+        &mut self,
+        case: &CaseCore,
+        vars: &mut VarStore,
+    ) -> Result<Provisioned, String> {
+        let Some(ImportRequirement::Received { extract, container }) = case.requires.import.clone()
+        else {
+            return Ok(Provisioned::Ready);
+        };
+        let payload = self
+            .resolver
+            .data_set(&extract)
+            .map_err(|e| e.to_string())?;
+        let ehr_handle = CaptureName::parse("ehr_id").map_err(|e| e.to_string())?;
+        let into_existing = vars.scalar(&ehr_handle).map(str::to_owned);
+        let call = if into_existing.is_some() {
+            "I_EHR_EXTRACT_SERVICE.import_ehr_extract"
+        } else {
+            "I_EHR_EXTRACT_SERVICE.import_ehr"
+        };
+        let binding = self.binding_for(case, call)?;
+        let instance = self.provisioning_instance(case)?;
+        let request_spec = binding
+            .request
+            .as_ref()
+            .ok_or_else(|| format!("{call} unrealized"))?;
+        let headers = Self::compose_headers(
+            self.set,
+            self.ixit,
+            case,
+            None,
+            binding,
+            instance,
+            vars,
+            None,
+            self.spec_versions,
+        )?;
+        let base = instance.base_url.trim_end_matches('/');
+        // `import_ehr` takes its optional target id as a QUERY parameter and
+        // provisioning never supplies one (an absent id is the Case-1 clone
+        // that re-uses the source EHR id); `import_ehr_extract` takes it in
+        // the path.
+        let path = match &into_existing {
+            Some(ehr_id) => request_spec.path.raw().replace("{an_ehr_id}", ehr_id),
+            None => request_spec.path.raw().to_owned(),
+        };
+        let url = format!("{base}{path}");
+        let exchange = self.send(request_spec.method, &url, &headers, Some(&payload), true)?;
+        if let Some(reason) = Self::provisioning_refusal(call, &exchange, false) {
+            return Ok(Provisioned::RowErrored { reason });
+        }
+        if into_existing.is_none() {
+            let Some(minted) = binding
+                .captures
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .find(|(n, _)| n.as_str() == "ehr_id")
+                .and_then(|(_, spec)| Self::extract_capture(&exchange, binding, spec, vars))
+            else {
+                return Err(format!(
+                    "requires.import: {call} answered without naming the EHR it cloned, so the \
+                     case has no ${{ehr_id}} to read through"
+                ));
+            };
+            vars.set(ehr_handle, Captured::Scalar(minted));
+        }
+        for (name, value) in Self::imported_identities(&payload, container, &extract)? {
+            vars.set(
+                CaptureName::parse(name).map_err(|e| e.to_string())?,
+                Captured::Scalar(value),
+            );
+        }
+        Ok(Provisioned::Ready)
+    }
+
+    /// The identities the named `X_VERSIONED_*` content item of an EXTRACT
+    /// carries: the container uid, its latest TRUNK version uid, and — when
+    /// the extract carries one — its latest BRANCH version uid.
+    ///
+    /// The extract must carry exactly one content item of the named class: the
+    /// handles name ONE versioned object, and a fixture carrying two of a
+    /// class would leave which one silently positional.
+    ///
+    /// "Latest" is by `OBJECT_VERSION_ID.version_tree_id` order (RM common
+    /// master06 §Version Identification: the trunk number, then the branch
+    /// number and branch version), so the choice is a property of the fixture
+    /// rather than of document order.
+    fn imported_identities(
+        extract: &Value,
+        container: crate::vocab::XVersionedClass,
+        key: &crate::ids::CorpusKey,
+    ) -> Result<Vec<(&'static str, String)>, String> {
+        let empty: Vec<Value> = Vec::new();
+        let mut wrappers = Vec::new();
+        for chapter in extract
+            .get("chapters")
+            .and_then(Value::as_array)
+            .unwrap_or(&empty)
+        {
+            for item in chapter
+                .get("items")
+                .and_then(Value::as_array)
+                .unwrap_or(&empty)
+            {
+                if let Some(wrapper) = item.get("item")
+                    && wrapper.get("_type").and_then(Value::as_str) == Some(container.token())
+                {
+                    wrappers.push(wrapper);
+                }
+            }
+        }
+        let [wrapper] = wrappers.as_slice() else {
+            return Err(format!(
+                "requires.import: {key} carries {} content items of class {} — the precondition \
+                 names exactly one versioned object",
+                wrappers.len(),
+                container.token()
+            ));
+        };
+        let container_uid = wrapper
+            .pointer("/uid/value")
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                format!(
+                    "requires.import: the {} of {key} carries no uid.value",
+                    container.token()
+                )
+            })?
+            .to_owned();
+        let mut trunk: Option<(Vec<u64>, String)> = None;
+        let mut branch: Option<(Vec<u64>, String)> = None;
+        for version in wrapper
+            .get("versions")
+            .and_then(Value::as_array)
+            .unwrap_or(&empty)
+        {
+            let uid = version
+                .pointer("/uid/value")
+                .and_then(Value::as_str)
+                .ok_or_else(|| {
+                    format!(
+                        "requires.import: a version of the {} of {key} carries no uid.value",
+                        container.token()
+                    )
+                })?;
+            let tree = Self::version_tree_id(uid).ok_or_else(|| {
+                format!("requires.import: {uid} is not an OBJECT_VERSION_ID of {key}")
+            })?;
+            let slot = if tree.len() > 1 {
+                &mut branch
+            } else {
+                &mut trunk
+            };
+            if slot.as_ref().is_none_or(|(seen, _)| *seen < tree) {
+                *slot = Some((tree, uid.to_owned()));
+            }
+        }
+        let mut minted = vec![("imported_versioned_object_uid", container_uid)];
+        let (_, trunk_uid) = trunk.ok_or_else(|| {
+            format!(
+                "requires.import: the {} of {key} carries no trunk version",
+                container.token()
+            )
+        })?;
+        minted.push(("imported_version_uid", trunk_uid));
+        if let Some((_, branch_uid)) = branch {
+            minted.push(("imported_branch_version_uid", branch_uid));
+        }
+        Ok(minted)
+    }
+
+    /// The numeric segments of an `OBJECT_VERSION_ID`'s `version_tree_id`
+    /// (`object_id::creating_system_id::version_tree_id`, RM common master06
+    /// §Version Identification): `[n]` on the trunk, `[n, branch, version]` on
+    /// a branch.
+    fn version_tree_id(uid: &str) -> Option<Vec<u64>> {
+        let (_, tree) = uid.rsplit_once("::")?;
+        tree.split('.').map(|s| s.parse::<u64>().ok()).collect()
+    }
+
     /// Bind the step's captures from the exchange when the observation
     /// matched a mapped kind (the closed capture-source grammar).
     fn bind_step_captures(
@@ -2467,22 +2816,34 @@ impl HttpDriver<'_> {
         let url = format!("{base}{}", request_spec.path.raw());
         // 409 tolerated: a re-run row re-uploads the same deterministic OPT.
         let uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
-        if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded) {
+        if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded, true) {
             return Ok(Provisioned::RowErrored { reason });
         }
         Ok(Provisioned::Ready)
     }
 
-    /// Judge a PROVISIONING exchange: 2xx establishes the ground and 409
-    /// means it already exists (re-runs on a shared world) — anything else
-    /// is a REFUSAL, and the case's required ground does not exist. The
-    /// refusal is surfaced as an inconclusive row naming this exchange
-    /// (the triage law: an unestablished `requires` precondition is a
-    /// step-resolution failure, never a SUT failure of the behaviour under
-    /// test — the 2026-07-28 java run reported 197 swallowed template-upload
-    /// 406s as content-validation failures).
-    fn provisioning_refusal(what: &str, exchange: &Exchange) -> Option<String> {
-        if (200..300).contains(&exchange.status) || exchange.status == 409 {
+    /// Judge a PROVISIONING exchange: 2xx establishes the ground and,
+    /// where the caller says so, 409 means it already exists (idempotent
+    /// re-provisioning on a shared world — the deterministic OPT re-upload)
+    /// — anything else is a REFUSAL, and the case's required ground does
+    /// not exist. The refusal is surfaced as an inconclusive row naming
+    /// this exchange (the triage law: an unestablished `requires`
+    /// precondition is a step-resolution failure, never a SUT failure of
+    /// the behaviour under test — the 2026-07-28 java run reported 197
+    /// swallowed template-upload 406s as content-validation failures).
+    ///
+    /// `conflict_is_ground` is PER-CALL because 409's meaning inverts by
+    /// operation: on the OPT upload it says the ground already holds; on an
+    /// extract import it says the container exists IN ANOTHER EHR (RM
+    /// common master06 §Copying — one received `object_id`, one local
+    /// container), so the ground can never hold and the row is
+    /// inconclusive, not driven.
+    fn provisioning_refusal(
+        what: &str,
+        exchange: &Exchange,
+        conflict_is_ground: bool,
+    ) -> Option<String> {
+        if (200..300).contains(&exchange.status) || (conflict_is_ground && exchange.status == 409) {
             return None;
         }
         let body_head: String = exchange
@@ -2725,7 +3086,7 @@ impl StepDriver for HttpDriver<'_> {
             let url = format!("{base}{}", request_spec.path.raw());
             // 409 tolerated: already provisioned (the send records it).
             let uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
-            if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded) {
+            if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded, true) {
                 return Ok(Provisioned::RowErrored { reason });
             }
         }
@@ -2735,6 +3096,12 @@ impl StepDriver for HttpDriver<'_> {
             return Ok(Provisioned::RowNotApplicable { citation });
         }
         self.provision_ehr(case, vars)?;
+        // import: replay a received EHR-Extract (master06 §Copying Case 1 when
+        // no EHR was provisioned, Cases 2/3 into the one that was), so a
+        // released read of an IMPORTED_VERSION has its foreign version to read.
+        if let Provisioned::RowErrored { reason } = self.provision_import(case, vars)? {
+            return Ok(Provisioned::RowErrored { reason });
+        }
         // directory: provision the FOLDER tree via create_directory.
         if let Some(crate::model::case::DirectoryRequirement::Tree(key)) =
             case.requires.directory.clone()
@@ -3311,7 +3678,8 @@ mod tests {
                 "reason": { "_type": "DV_TEXT", "value": "witnessed" },
                 "is_pending": false
             }
-        })]);
+        })])
+        .expect("the attestation member builds");
         let member = &envelope["versions"][0];
         assert_eq!(member["_type"], serde_json::json!("ORIGINAL_VERSION"));
         assert!(member.get("data").is_none(), "no content: {member}");
@@ -3350,7 +3718,8 @@ mod tests {
             "change_type": "attestation",
             "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
             "attestation": { "_type": "UPDATE_ATTESTATION", "is_pending": false, "items": [] }
-        })]);
+        })])
+        .expect("the attestation member builds");
         let audit = &envelope["versions"][0]["commit_audit"];
         assert!(
             audit.get("reason").is_none(),
@@ -3369,10 +3738,160 @@ mod tests {
                 "preceding_version_uid": "8849182c-82ad-4088-a07f-48ead4180515::cnf::1",
                 "attestation": { "is_pending": true, "reason": { "value": "witnessed" } }
             }),
-        ]);
+        ])
+        .expect("the mixed change set builds");
         assert_eq!(
             envelope["audit"]["change_type"]["defining_code"]["code_string"],
             serde_json::json!("249")
+        );
+    }
+
+    /// The two member-level overrides, each closed: `_type` puts the class
+    /// self-tag ITS-REST `docs/overview/Resources.md` §Resource representation
+    /// permits on the member (the AMB-89 `IMPORTED_VERSION` refusal branch is
+    /// authorable only through it), and `lifecycle_state` fixes the committed
+    /// state independently of the change kind (RM common master06 §Version
+    /// Lifecycle transitions).
+    #[test]
+    fn member_overrides_are_closed_vocabularies() {
+        let envelope = HttpDriver::contribution_envelope(&[serde_json::json!({
+            "change_type": "modification",
+            "_type": "IMPORTED_VERSION",
+            "lifecycle_state": "abandoned",
+            "data": { "_type": "COMPOSITION" }
+        })])
+        .expect("the overridden member builds");
+        let member = &envelope["versions"][0];
+        assert_eq!(member["_type"], serde_json::json!("IMPORTED_VERSION"));
+        assert_eq!(
+            member["lifecycle_state"]["defining_code"]["code_string"],
+            serde_json::json!("801")
+        );
+        assert_eq!(
+            member["lifecycle_state"]["value"],
+            serde_json::json!("abandoned")
+        );
+        // the change kind still fixes the audit change type
+        assert_eq!(
+            member["commit_audit"]["change_type"]["defining_code"]["code_string"],
+            serde_json::json!("251")
+        );
+
+        // Absent overrides keep the derived shape.
+        let derived = HttpDriver::contribution_envelope(&[
+            serde_json::json!({ "change_type": "creation", "data": { "_type": "COMPOSITION" } }),
+        ])
+        .expect("the derived member builds");
+        assert_eq!(
+            derived["versions"][0]["_type"],
+            serde_json::json!("ORIGINAL_VERSION")
+        );
+        assert_eq!(
+            derived["versions"][0]["lifecycle_state"]["defining_code"]["code_string"],
+            serde_json::json!("532")
+        );
+
+        // Out-of-vocabulary tokens are refused, never silently defaulted.
+        for bad in [
+            serde_json::json!({ "change_type": "creation", "_type": "CONTRIBUTION" }),
+            serde_json::json!({ "change_type": "creation", "lifecycle_state": "finished" }),
+        ] {
+            assert!(
+                HttpDriver::contribution_envelope(std::slice::from_ref(&bad)).is_err(),
+                "{bad} must be refused"
+            );
+        }
+
+        // A verbatim member already spells its own shape — an override beside
+        // it would state it twice.
+        assert!(
+            HttpDriver::contribution_envelope(&[serde_json::json!({
+                "_type": "ORIGINAL_VERSION",
+                "data": { "_type": "ORIGINAL_VERSION" }
+            })])
+            .is_err()
+        );
+        // An attestation member commits no version, so it has no lifecycle.
+        assert!(
+            HttpDriver::contribution_envelope(&[serde_json::json!({
+                "change_type": "attestation",
+                "lifecycle_state": "complete",
+                "attestation": { "is_pending": false }
+            })])
+            .is_err()
+        );
+    }
+
+    /// The identities a `requires.import` mints come from the EXTRACT itself
+    /// — master06 §Copying keeps the received version container's identity —
+    /// and name ONE versioned object: the content item of the class the
+    /// precondition declares, with its latest trunk and latest branch
+    /// position.
+    #[test]
+    fn imported_identities_are_read_from_the_extract() {
+        let key = crate::ids::CorpusKey::parse("cnf.messaging.ehr_extract.v1").unwrap();
+        let version =
+            |uid: &str| serde_json::json!({ "_type": "ORIGINAL_VERSION", "uid": { "value": uid } });
+        let extract = serde_json::json!({
+            "chapters": [ { "items": [
+                { "item": { "_type": "X_VERSIONED_EHR_STATUS",
+                            "uid": { "value": "status-vo" },
+                            "versions": [version("status-vo::src::1")] } },
+                { "item": { "_type": "X_VERSIONED_COMPOSITION",
+                            "uid": { "value": "comp-vo" },
+                            "versions": [
+                                version("comp-vo::src::1"),
+                                version("comp-vo::src::2"),
+                                version("comp-vo::other::1.1.1")
+                            ] } }
+            ] } ]
+        });
+        let minted = HttpDriver::imported_identities(
+            &extract,
+            crate::vocab::XVersionedClass::Composition,
+            &key,
+        )
+        .expect("the composition container mints");
+        assert_eq!(
+            minted,
+            vec![
+                ("imported_versioned_object_uid", "comp-vo".to_owned()),
+                ("imported_version_uid", "comp-vo::src::2".to_owned()),
+                (
+                    "imported_branch_version_uid",
+                    "comp-vo::other::1.1.1".to_owned()
+                ),
+            ]
+        );
+
+        // The sibling container of the SAME extract is addressable by naming
+        // its class — position never decides.
+        let status = HttpDriver::imported_identities(
+            &extract,
+            crate::vocab::XVersionedClass::EhrStatus,
+            &key,
+        )
+        .expect("the status container mints");
+        assert_eq!(status[0].1, "status-vo");
+        assert_eq!(status.len(), 2, "trunk only, no branch: {status:?}");
+
+        // A class the extract does not carry — or carries twice — names no
+        // single versioned object, and that is a loud provisioning error.
+        assert!(
+            HttpDriver::imported_identities(&extract, crate::vocab::XVersionedClass::Folder, &key)
+                .is_err()
+        );
+        let doubled = serde_json::json!({
+            "chapters": [ { "items": [
+                { "item": { "_type": "X_VERSIONED_FOLDER", "uid": { "value": "a" },
+                            "versions": [version("a::src::1")] } },
+                { "item": { "_type": "X_VERSIONED_FOLDER", "uid": { "value": "b" },
+                            "versions": [version("b::src::1")] } }
+            ] } ]
+        });
+        assert!(
+            HttpDriver::imported_identities(&doubled, crate::vocab::XVersionedClass::Folder, &key)
+                .is_err()
         );
     }
 

@@ -220,6 +220,85 @@ struct PlannedVersion {
     accompanying: Vec<Value>,
 }
 
+/// The `_type` self-tags a CONTRIBUTION version member may carry: the class
+/// the released commit wire titles (`UPDATE_VERSION`) and the RM class that
+/// member becomes when committed (`ORIGINAL_VERSION`).
+const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION"];
+
+/// Refuse a CONTRIBUTION version member that declares a version identity this
+/// repository did not create — the three keys of an `IMPORTED_VERSION` shape.
+///
+/// The released commit wire declares exactly six member properties —
+/// `preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
+/// `data`, `commit_audit` (ITS-REST `schemas/ehr/UpdateVersion.yaml`) — and
+/// `schemas/ehr/NewContribution.yaml` types `versions` items as
+/// `UpdateVersion` with no `oneOf` and no discriminator. So no member can name
+/// its own `uid`, and none can carry the `item` an `IMPORTED_VERSION` wraps.
+/// RM common `master06-change_control_package.adoc` §Copying puts the import
+/// behind its own container operation — `VERSIONED_OBJECT.commit_imported_version`,
+/// whose description is "Details of version id etc come from the
+/// `ORIGINAL_VERSION`" (`UML/classes/org.openehr.rm.common.versioned_object.adoc`
+/// §Functions) — and the release defines no wire shape for it at all (register
+/// AMB-89). The distributed-import capability is realized by the EHR-Extract
+/// import route instead, which carries a foreign `ORIGINAL_VERSION` verbatim.
+///
+/// Accepting these keys silently is the failure this refusal exists to
+/// prevent: a member carrying `_type: IMPORTED_VERSION` + `item` + a foreign
+/// `uid` would otherwise commit as a LOCALLY created `ORIGINAL_VERSION` under a
+/// freshly minted local uid, discarding the declared foreign identity and its
+/// provenance without a diagnostic. Refused as the shape failure it is
+/// (`400_CONTRIBUTION`: "syntactically invalid header, parameter or content"),
+/// exactly as the sibling `other_input_version_uids` refusal is (AMB-196).
+///
+/// NOTE: `_type` is the one of the three that has a LEGAL value here. The
+/// overview docs text makes it a general metadata attribute — "the `_type`
+/// attribute, which should be used to specify the RM type whenever
+/// polymorphism is involved … The value of this attribute MUST be the
+/// uppercase class name from the RM specification" (ITS-REST
+/// `specifications/docs/overview/Resources.md` §Resource representation) — and
+/// the docs text outranks the OAS, so a member MAY self-tag. It may only
+/// self-tag as a class this wire commits, though:
+/// [`COMMITTABLE_MEMBER_TYPES`]. Any other class name declares a shape the
+/// release never defined.
+///
+/// # Errors
+/// [`ServiceError::BadRequest`] naming the offending key.
+fn reject_foreign_version_identity(version: &Value) -> Result<(), ServiceError> {
+    if version.get("item").is_some() {
+        return Err(ServiceError::BadRequest(
+            "item is not a member of UPDATE_VERSION — it is the sole own attribute of \
+             IMPORTED_VERSION, and the released commit wire declares no import shape \
+             (ITS-REST UpdateVersion.yaml / NewContribution.yaml). An imported \
+             ORIGINAL_VERSION is wrapped and committed by the EHR-Extract import route \
+             (RM common master06 §Copying), never by a CONTRIBUTION member"
+                .to_owned(),
+        ));
+    }
+    if version.get("uid").is_some() {
+        return Err(ServiceError::BadRequest(
+            "uid is not a member of UPDATE_VERSION — the version identifier of a \
+             locally committed version is allocated by this repository (ITS-REST \
+             UpdateVersion.yaml declares no uid; RM common master06 §Copying takes the \
+             identity of an IMPORTED_VERSION from the wrapped ORIGINAL_VERSION through \
+             commit_imported_version, which the release gives no wire shape)"
+                .to_owned(),
+        ));
+    }
+    match version.get("_type") {
+        None => Ok(()),
+        Some(Value::String(name)) if COMMITTABLE_MEMBER_TYPES.contains(&name.as_str()) => Ok(()),
+        Some(other) => Err(ServiceError::BadRequest(format!(
+            "_type {other} does not name a class the CONTRIBUTION commit wire commits \
+             — a member self-tags as UPDATE_VERSION or ORIGINAL_VERSION or not at all \
+             (ITS-REST Resources.md: the value \"MUST be the uppercase class name from \
+             the RM specification\"; UpdateVersion.yaml is the only member schema \
+             NewContribution declares). An IMPORTED_VERSION member has no released \
+             shape — the EHR-Extract import route carries foreign versions instead \
+             (RM common master06 §Copying)"
+        ))),
+    }
+}
+
 /// Commit a CONTRIBUTION's version set atomically under one contribution +
 /// audit, returning its id together with the commit instant its audit recorded.
 /// Shared by the EHR-scoped contribution path (`ehr_id = Some`, `party_only =
@@ -314,6 +393,7 @@ pub(crate) async fn commit_version_set(
     let mut plan: Vec<PlannedVersion> = Vec::with_capacity(versions.len());
     let mut version_codes: Vec<String> = Vec::with_capacity(versions.len());
     for version in versions {
+        reject_foreign_version_identity(version)?;
         let token = version
             .get("commit_audit")
             .and_then(|a| a.get("change_type"))
