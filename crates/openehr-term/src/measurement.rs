@@ -43,7 +43,7 @@ fn parse_term(b: &[u8], mut pos: usize) -> Option<usize> {
     Some(pos)
 }
 
-/// component = '(' term ')' [exponent] | annotation | annotatable [annotation]
+/// component = '(' term ')' \[exponent\] | annotation | annotatable \[annotation\]
 fn parse_component(b: &[u8], mut pos: usize) -> Option<usize> {
     let &opener = b.get(pos)?;
     if opener == b'(' {

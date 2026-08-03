@@ -123,7 +123,7 @@ pub fn lex_odin(src: &str) -> Result<Vec<Spanned>, LexError> {
 /// yet these three words stay TOKENS under the ODIN reading because they are
 /// genuine ODIN VALUES (`master07-leaf_data` §Boolean Data; the interval
 /// endpoints of `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive
-/// Types), so the per-token [`reclassify`] pass cannot demote them. Key
+/// Types), so the per-token `reclassify` pass cannot demote them. Key
 /// position is decidable with one token of lookahead instead: an attribute
 /// name is always followed by `=` (`odin.g4` `attr_val : odin_object_key '='
 /// object_block`), and no VALUE position ever is — so a value word
@@ -200,7 +200,7 @@ fn lex_with(language: Language, src: &str) -> Result<Vec<Spanned>, LexError> {
 /// The union DFA matched `limit`, which `language` refused. Its own DFA would
 /// have taken the longest prefix some production of ITS OWN admits — and every
 /// such production is in the union, so re-running the union over each shorter
-/// prefix and asking [`reclassify`] again finds exactly that prefix.
+/// prefix and asking `reclassify` again finds exactly that prefix.
 ///
 /// # Errors
 /// Returns a [`LexError`] spanning the first character when no prefix at all is
