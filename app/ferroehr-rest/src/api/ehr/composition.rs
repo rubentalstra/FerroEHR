@@ -12,12 +12,13 @@ use axum::response::Response;
 use http::StatusCode;
 use serde_json::Value;
 
-use openehr_base::prelude::ObjectVersionId;
+use openehr_base::prelude::UidBasedId;
 
+use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
     CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
-    CompositionUpdateParams, UpdateItemTag,
+    CompositionUpdateParams,
 };
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
@@ -57,23 +58,40 @@ async fn decode_composition_body(
     state: &AppState,
     h: &http::HeaderMap,
     body: &bytes::Bytes,
-) -> Result<Value, RestError> {
+) -> Result<Composition, RestError> {
     match negotiate::content_type_format(h) {
         Some(WireFormat::CanonicalJson | WireFormat::CanonicalXml) => {
             Ok(negotiate::rm_value::<Composition>(h, body)?)
         }
-        Some(WireFormat::Flat) => {
-            crate::formats::dispatch::composition_from_flat(state, h, body).await
-        }
-        Some(WireFormat::Structured) => {
-            crate::formats::dispatch::composition_from_structured(state, h, body).await
-        }
+        // The Simplified-Formats adapters build a canonical COMPOSITION
+        // fragment (their algorithms are defined over the wire form, not over
+        // the RM types — `simplified_formats/master04`), so the converted
+        // result re-enters the typed seam through the same strict reader every
+        // canonical-JSON body goes through: one decode, one refusal class.
+        Some(WireFormat::Flat) => typed_composition(
+            &crate::formats::dispatch::composition_from_flat(state, h, body).await?,
+        ),
+        Some(WireFormat::Structured) => typed_composition(
+            &crate::formats::dispatch::composition_from_structured(state, h, body).await?,
+        ),
         _ => Err(RestError(ApiError::UnsupportedMediaType(
             "a COMPOSITION is committed as application/json, application/xml, \
              application/openehr.wt.flat+json, or application/openehr.wt.structured+json"
                 .to_owned(),
         ))),
     }
+}
+
+/// Re-type a converted Simplified-Formats body as the RM `COMPOSITION` the
+/// commit seam takes. A conversion that produced something the canonical
+/// reader refuses is a `400` — the same parse class a canonical-JSON body of
+/// that shape would get.
+fn typed_composition(value: &Value) -> Result<Composition, RestError> {
+    openehr_its::json::from_canonical_value(value).map_err(|e| {
+        RestError(ApiError::BadRequest(format!(
+            "the simplified-format body did not convert to a valid COMPOSITION: {e}"
+        )))
+    })
 }
 
 #[expect(
@@ -228,27 +246,27 @@ pub(super) async fn run(
             // to be followed due to semantic errors",
             // Requests_and_responses.md §HTTP status codes) — our register-
             // documented handling.
-            if let Some(body_uid) = body
-                .get("uid")
-                .and_then(|u| u.get("value"))
-                .and_then(Value::as_str)
-            {
+            if let Some(body_uid) = body.uid.as_ref() {
                 // The versioned object a body `uid` names is its
                 // OBJECT_VERSION_ID `object_id`, read through the BASE
                 // accessor (`base_types` §Functions `object_id`;
                 // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`).
                 // Anything whose object_id is not this CDR's UUID key cannot
-                // name the addressed object, so it fails the comparison.
-                // A body `uid` that is not a well-formed OBJECT_VERSION_ID
-                // certainly does not identify the addressed object, so it takes
-                // the same refusal as one naming a different object.
-                let body_vo = ObjectVersionId::new(body_uid)
-                    .ok()
-                    .and_then(|ovid| object_id_uuid(&ovid));
+                // name the addressed object, so it fails the comparison — as
+                // does a `uid` of the other `UID_BASED_ID` subtype, which
+                // names no VERSION at all. (A `uid` that is not a well-formed
+                // identifier never reaches here: the identifier types
+                // construct through their validating doors, so a malformed one
+                // is refused at the parse, `400`.)
+                let body_vo = match body_uid {
+                    UidBasedId::ObjectVersionId(ovid) => object_id_uuid(ovid),
+                    UidBasedId::HierObjectId(_) => None,
+                };
                 if body_vo != Some(uid.vo_id.0) {
                     return Err(ApiError::Unprocessable(format!(
-                        "the body COMPOSITION.uid {body_uid:?} does not identify the \
+                        "the body COMPOSITION.uid {:?} does not identify the \
                          versioned object addressed by the request path ({})",
+                        body_uid.value(),
                         uid.vo_id
                     ))
                     .into());

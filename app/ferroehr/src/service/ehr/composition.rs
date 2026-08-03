@@ -19,13 +19,14 @@ use crate::service::datetime::parse_at_time;
 use crate::service::error::{ServiceError, Violation, internal_fault};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::UpdateVersion;
 use crate::versioning::Kind;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::{create, delete, update};
 use crate::versioning::object_version_id::{TreeId, components, parse_tree_id};
 use crate::versioning::read::{read_current, read_version, version_at};
 use crate::versioning::wire::{revision_history, version_envelope, versioned_object};
+use openehr_its::rest::generated::common::UpdateVersion;
+use openehr_rm::prelude::Composition;
 
 use super::resolve_envelope;
 use super::validation::composition_template_id;
@@ -50,19 +51,25 @@ impl FerroEhrService {
     pub async fn create_composition(
         &self,
         ehr_id: EhrId,
-        version: UpdateVersion,
+        version: UpdateVersion<Composition>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
-        let (audit, envelope) = resolve_envelope(
-            &version,
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction (`super::canonicalize`).
+        let version = super::canonicalize(version);
+        // 553|incomplete| relaxes validation strictness (master06 §Version
+        // Lifecycle).
+        let super::CommitParts {
+            audit,
+            envelope,
+            incomplete,
+            canonical: composition,
+        } = resolve_envelope(
+            version,
             change_type::CREATION,
             "COMPOSITION creation",
             &self.effective_system_id(),
         )?;
-        // 553|incomplete| relaxes validation strictness (master06 §Version
-        // Lifecycle).
-        let incomplete =
-            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
-        let composition = version.data;
         // The EHR-existence (404) and content-writability (409) gates in one
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
         // Creation / §EHR Active Status). Same errors, same order as the
@@ -80,7 +87,10 @@ impl FerroEhrService {
         let template_id = composition_template_id(&composition).map(str::to_owned);
 
         let mut tx = self.pool.begin().await?;
-        let committed = create(
+        // Boxed: the versioned-write future is by far the widest state this
+        // call holds, and inlining it puts the whole node-decomposition
+        // machinery on every caller's stack (clippy `large_futures`).
+        let committed = Box::pin(create(
             &mut tx,
             Some(ehr_id),
             Kind::Composition,
@@ -89,7 +99,7 @@ impl FerroEhrService {
             &audit,
             envelope,
             &self.signing_ctx(),
-        )
+        ))
         .await?;
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
@@ -293,8 +303,12 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
-        version: UpdateVersion,
+        version: UpdateVersion<Composition>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
+        // The ONE serialization boundary of this commit, taken before any
+        // await so the typed RM value does not ride the whole write
+        // transaction (`super::canonicalize`).
+        let version = super::canonicalize(version);
         let Some(current) =
             crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
                 .await?
@@ -325,15 +339,17 @@ impl FerroEhrService {
             .as_ref()
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
-        let (audit, envelope) = resolve_envelope(
-            &version,
+        let super::CommitParts {
+            audit,
+            envelope,
+            incomplete,
+            canonical: composition,
+        } = resolve_envelope(
+            version,
             change_type::MODIFICATION,
             "COMPOSITION update",
             &self.effective_system_id(),
         )?;
-        let incomplete =
-            version.lifecycle_state.code_string == crate::versioning::lifecycle::state::INCOMPLETE;
-        let composition = version.data;
         // The lifecycle (deleted → 404, RM common master06 §Logical Deletion)
         // and the content-write guard are checked from the threaded pre-read.
         if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
@@ -488,7 +504,7 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
         a_version_uid: &ObjectVersionId,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&openehr_its::rest::generated::common::UpdateAudit>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (vo_id, expected) = components(a_version_uid)?;
         // Lean delete pre-read: the pre-checks need only the owning EHR, the

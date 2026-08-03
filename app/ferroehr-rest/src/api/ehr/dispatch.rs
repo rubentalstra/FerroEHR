@@ -16,7 +16,7 @@ use crate::state::AppState;
 
 pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
-        run(state, op, parts)
+        Box::pin(run(state, op, parts))
             .await
             .unwrap_or_else(IntoResponse::into_response)
     })
@@ -33,14 +33,14 @@ async fn run(
     match op {
         // ── EHR (+ EHR-level item tags) ──────────────────────────────────────
         "ehr_get_by_subject" | "ehr_create" | "ehr_create_with_id" | "ehr_get_by_id"
-        | "ehr_tags_get" => super::ehr_resource::run(state, op, parts).await,
+        | "ehr_tags_get" => Box::pin(super::ehr_resource::run(state, op, parts)).await,
         // ── EHR_STATUS (+ its item tags) ─────────────────────────────────────
         "ehr_status_get_by_version_id"
         | "ehr_status_get_at_time"
         | "ehr_status_update"
         | "ehr_status_tags_get"
         | "ehr_status_tags_update"
-        | "ehr_status_tags_delete" => super::ehr_status::run(state, op, parts).await,
+        | "ehr_status_tags_delete" => Box::pin(super::ehr_status::run(state, op, parts)).await,
         // ── VERSIONED_EHR_STATUS ─────────────────────────────────────────────
         "versioned_ehr_status_get"
         | "versioned_ehr_status_revision_history"
@@ -55,7 +55,7 @@ async fn run(
         | "composition_delete"
         | "composition_tags_get"
         | "composition_tags_update"
-        | "composition_tags_delete" => super::composition::run(state, op, parts).await,
+        | "composition_tags_delete" => Box::pin(super::composition::run(state, op, parts)).await,
         // ── VERSIONED_COMPOSITION ────────────────────────────────────────────
         "versioned_composition_get"
         | "versioned_composition_revision_history"
@@ -68,7 +68,7 @@ async fn run(
         | "directory_update"
         | "directory_create"
         | "directory_delete"
-        | "directory_get_by_version_id" => super::directory::run(state, op, parts).await,
+        | "directory_get_by_version_id" => Box::pin(super::directory::run(state, op, parts)).await,
         // ── CONTRIBUTION (+ the paged-list extension) ────────────────────────
         "contribution_create" | "contribution_get" | "contribution_list" => {
             super::contribution::run(state, op, parts).await

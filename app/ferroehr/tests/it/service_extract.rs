@@ -28,37 +28,34 @@
 
 use serde_json::{Value, json};
 
-use openehr_base::prelude::TerminologyCode;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 use openehr_rm::prelude::PartyProxy;
 
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -80,7 +77,7 @@ async fn seed_ehr(svc: &FerroEhrService) -> (ferroehr::ids::EhrId, String) {
     svc.create_directory(
         ehr_uuid,
         uv(
-            json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            &json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
             "249",
             None,
         ),
@@ -89,7 +86,7 @@ async fn seed_ehr(svc: &FerroEhrService) -> (ferroehr::ids::EhrId, String) {
     .expect("directory");
 
     status["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(status, "251", Some(&status_ovid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&status, "251", Some(&status_ovid)))
         .await
         .expect("status update");
 

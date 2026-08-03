@@ -26,7 +26,8 @@ guards:
   - "authored from the released ITS-REST overview status-code table + the RM demographic class model; master10 (DEMOGRAPHIC) is a stalled schedule stub — a coverage guide only, not the authority"
 test_purpose: >-
   A body declaring a different concrete PARTY subtype than the addressed typed
-  route is refused as a semantic error; no party is created.
+  route cannot be converted to the addressed resource and is refused as
+  malformed content (the 400 parse class); no party is created.
 description: "Party create with a wrong-subtype body (ROLE on the PERSON route)"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
@@ -40,6 +41,6 @@ flow:
   - step: 1
     call: create_party                   # the variant-less binding: POST /demographic/person
     with: { party: "${ds:cnf.demographic.role.v1}" }
-    expect: validation_failed            # overview §HTTP status codes, the 422 row
+    expect: bad_request                  # overview Requests_and_responses §HTTP status codes, the 400 row — the parse class (typed construction refuses; owner ruling 2026-08-03 on the strict commit seam)
 # No postcondition: the refusal IS the whole behaviour, and the request carries
 # no identifier a follow-up read could address. One behaviour per case.

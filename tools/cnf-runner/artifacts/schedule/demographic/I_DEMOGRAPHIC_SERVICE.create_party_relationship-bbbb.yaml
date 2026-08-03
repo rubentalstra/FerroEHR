@@ -35,6 +35,6 @@ flow:
   - step: 1
     call: create_party_relationship
     with: { party_relationship: "${ds:cnf.demographic.party_relationship.invalid}" }
-    expect: validation_failed
+    expect: bad_request                  # the 400 parse class (overview Requests_and_responses §HTTP status codes 400 row; typed construction refuses — owner ruling 2026-08-03)
 postconditions:
   - { assert: version, count: 0 }

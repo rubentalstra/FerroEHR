@@ -10,8 +10,9 @@ sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  A FLAT commit omitting the mandatory ctx/territory context field is rejected:
-  COMPOSITION.territory cannot be populated.
+  A FLAT commit omitting the mandatory ctx/territory context field is refused
+  as a semantic error (the 422 class): the document is well-formed FLAT, and
+  the template-driven conversion cannot populate COMPOSITION.territory.
 description: "FLAT commit without mandatory ctx/territory is rejected"
 spec_refs:
   - "ITS-REST simplified_formats master04 §Validation"

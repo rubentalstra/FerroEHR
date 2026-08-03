@@ -14,6 +14,7 @@
 //! hardcoded rubric.
 
 use openehr_base::prelude::TerminologyId;
+use openehr_its::rest::generated::common::UpdateAudit;
 use openehr_rm::prelude::{
     Attestation, AuditDetails, AuditDetailsData, CodePhrase, DvCodedText, DvDateTime, DvText,
     DvTextData, PartyProxy,
@@ -217,38 +218,51 @@ impl AuditInput {
     /// operation (mirroring the CONTRIBUTION path's change-control mismatch,
     /// `versioning/contribution.rs`).
     pub(crate) fn from_update(
-        update: &crate::service::version_update::UpdateAudit,
+        update: &UpdateAudit,
         operation_change_type: &str,
         default_description: &str,
         fallback_system_id: &str,
     ) -> Result<Self, ServiceError> {
-        let change_type =
-            merged_change_type(&update.change_type.code_string, operation_change_type)?;
+        let base = crate::service::version_update::audit_base(update);
+        let change_type = merged_change_type(
+            &base.change_type.defining_code.code_string,
+            operation_change_type,
+        )?;
         Ok(Self {
-            system_id: update
+            system_id: base
                 .system_id
-                .clone()
                 .filter(|s| !s.is_empty())
-                .unwrap_or_else(|| fallback_system_id.to_owned()),
+                .map_or_else(|| fallback_system_id.to_owned(), str::to_owned),
             change_type,
-            description: Some(dv_text(
-                update
-                    .description
-                    .as_deref()
-                    .filter(|d| !d.is_empty())
-                    .unwrap_or(default_description),
-            )),
-            committer: update.committer.clone(),
-            // NOTE: an `UPDATE_AUDIT` cannot express an `ATTESTATION` commit
-            // audit, and the routes that build one need no such expression: on
-            // a direct `PUT`/`POST`/`DELETE` the committal metadata comes from
-            // the `openehr-audit-details` header, whose released attribute list
-            // is exactly `change_type`, `description`, `committer`, `system_id`
-            // (ITS-REST overview `Requests_and_responses.md` §"openehr-version
-            // and openehr-audit-details"). An `ATTESTATION` commit audit is a
-            // CONTRIBUTION-body shape, parsed at the native commit seam
-            // (`versioning::contribution`).
-            attestation: None,
+            // The wire types `description` as `DV_TEXT`
+            // (`schemas/common/UpdateAudit.yaml`), whose `DV_CODED_TEXT`
+            // subtype substitutes for it — so a client-supplied description
+            // is kept WHOLE: reducing it to its `value` would drop the
+            // `defining_code` of a coded description permanently (RM common
+            // `UML/classes/org.openehr.rm.common.audit_details.adoc`
+            // §Attributes types the attribute `DV_TEXT`).
+            description: Some(
+                base.description
+                    .filter(|d| !crate::service::version_update::text_value(d).is_empty())
+                    .cloned()
+                    .unwrap_or_else(|| dv_text(default_description)),
+            ),
+            committer: base.committer.clone(),
+            // `UPDATE_VERSION.commit_audit` is polymorphic on the released
+            // wire (`UpdateAudit.yaml` carries a `discriminator.mapping` to
+            // `UPDATE_ATTESTATION`), which is the RM's own pair: "the
+            // committing party … `AUDIT_DETAILS` … or its subtype
+            // `ATTESTATION`" (RM common master06 §Committal and Audits). The
+            // `ATTESTATION`-declared attributes are carried through when the
+            // caller committed that form; the shared
+            // [`crate::versioning::attestation::AttestationInput`] decoder is
+            // the one place the subtype's invariants are evaluated.
+            attestation: match update {
+                UpdateAudit::UpdateAudit(_) => None,
+                UpdateAudit::UpdateAttestation(att) => Some(Box::new(
+                    crate::versioning::attestation::AttestationInput::from_update(att)?.parts,
+                )),
+            },
         })
     }
 

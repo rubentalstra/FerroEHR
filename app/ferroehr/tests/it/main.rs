@@ -56,5 +56,6 @@ mod tenant_isolation;
 mod terminology_fhir;
 mod terminology_mtls;
 mod terminology_multi_provider;
+mod typed_body;
 mod validation_opt;
 mod value_carriers;

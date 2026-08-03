@@ -229,6 +229,40 @@ impl<A> TaggedRest<A> {
     }
 }
 
+/// The replayed `_type` value, as a [`Deserializer`].
+///
+/// [`serde::de::value::StrDeserializer`] forwards `deserialize_option` to
+/// `deserialize_any`, so a target field typed `Option<String>` — which is how
+/// a transport DTO declares an OPTIONAL discriminator property, e.g. the
+/// ITS-REST `UpdateAudit._type` (`default: UPDATE_AUDIT`, absent from
+/// `required`) — sees a bare string where it expects an option and refuses.
+/// This wrapper answers `deserialize_option` with `visit_some`, so the
+/// discriminator reads into `String`, `Option<String>` and a
+/// field-identifier alike; every other form still sees the plain string.
+#[derive(Debug)]
+struct TagDeserializer<E> {
+    tag: &'static str,
+    error: std::marker::PhantomData<E>,
+}
+
+impl<'de, E: serde::de::Error> Deserializer<'de> for TagDeserializer<E> {
+    type Error = E;
+
+    fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        visitor.visit_str(self.tag)
+    }
+
+    fn deserialize_option<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        visitor.visit_some(self)
+    }
+
+    serde::forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+        bytes byte_buf unit unit_struct newtype_struct seq tuple
+        tuple_struct map struct enum identifier ignored_any
+    }
+}
+
 impl<'de, A: MapAccess<'de>> MapAccess<'de> for TaggedRest<A> {
     type Error = A::Error;
 
@@ -260,7 +294,10 @@ impl<'de, A: MapAccess<'de>> MapAccess<'de> for TaggedRest<A> {
         seed: V,
     ) -> Result<V::Value, Self::Error> {
         if let Some(tag) = self.pending_tag.take() {
-            return seed.deserialize(serde::de::value::StrDeserializer::<Self::Error>::new(tag));
+            return seed.deserialize(TagDeserializer::<Self::Error> {
+                tag,
+                error: std::marker::PhantomData,
+            });
         }
         if let Some(value) = self.pending_value.take() {
             return seed

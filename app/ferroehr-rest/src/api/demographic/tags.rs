@@ -14,12 +14,13 @@
 
 use axum::response::Response;
 
+use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::demographic::{
     AgentTagsDeleteParams, AgentTagsGetParams, AgentTagsUpdateParams, DemographicTagsGetParams,
     GroupTagsDeleteParams, GroupTagsGetParams, GroupTagsUpdateParams, OrganisationTagsDeleteParams,
     OrganisationTagsGetParams, OrganisationTagsUpdateParams, PersonTagsDeleteParams,
     PersonTagsGetParams, PersonTagsUpdateParams, RoleTagsDeleteParams, RoleTagsGetParams,
-    RoleTagsUpdateParams, UpdateItemTag,
+    RoleTagsUpdateParams,
 };
 use openehr_its::rest::runtime::ApiError;
 

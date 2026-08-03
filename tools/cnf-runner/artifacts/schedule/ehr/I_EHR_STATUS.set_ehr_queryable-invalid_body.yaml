@@ -47,11 +47,13 @@ requires:
 parameters:
   iteration: reset_per_row
   fixture_set:
-    - { data_set: cnf.ehr_status.invalid.missing-is-queryable, expected: validation_failed, defect: "RM ehr EHR_STATUS: is_queryable is 1..1" }
-    - { data_set: cnf.ehr_status.invalid.missing-is-modifiable, expected: validation_failed, defect: "RM ehr EHR_STATUS: is_modifiable is 1..1" }
-    - { data_set: cnf.ehr_status.invalid.missing-subject, expected: validation_failed, defect: "RM ehr EHR_STATUS: subject is 1..1 PARTY_SELF" }
+    # missing-mandatory + missing-_type-on-abstract-slot rows are the 400 parse class (overview Requests_and_responses §HTTP status codes 400 row; typed construction refuses — owner ruling 2026-08-03);
+    # the Archetyped_valid row stays the 422 semantic class (details is 0..1 — construction accepts).
+    - { data_set: cnf.ehr_status.invalid.missing-is-queryable, expected: bad_request, defect: "RM ehr EHR_STATUS: is_queryable is 1..1" }
+    - { data_set: cnf.ehr_status.invalid.missing-is-modifiable, expected: bad_request, defect: "RM ehr EHR_STATUS: is_modifiable is 1..1" }
+    - { data_set: cnf.ehr_status.invalid.missing-subject, expected: bad_request, defect: "RM ehr EHR_STATUS: subject is 1..1 PARTY_SELF" }
     - { data_set: cnf.ehr_status.invalid.missing-archetype-details, expected: validation_failed, defect: "RM common locatable Archetyped_valid: an archetype root without archetype_details" }
-    - { data_set: cnf.ehr_status.invalid.invalid-other-details, expected: validation_failed, defect: "ITS-REST Resources §JSON Format: other_details carries no _type discriminator" }
+    - { data_set: cnf.ehr_status.invalid.invalid-other-details, expected: bad_request, defect: "ITS-REST Resources §JSON Format: other_details carries no _type discriminator" }
 flow:
   - step: 1
     call: get_ehr_status                 # the current version, for the If-Match precondition

@@ -12,10 +12,6 @@
 )]
 use serde::{Deserialize, Serialize};
 
-/// The `AQL` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type Aql = String;
-
 /// The `QueryParameters` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
 pub type QueryParameters = std::collections::BTreeMap<String, serde_json::Value>;
@@ -48,10 +44,6 @@ pub struct ResultSetMetadata {
     pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
 }
 
-/// The `QueryName` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type QueryName = String;
-
 /// The `ResultSetColumn` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,10 +68,10 @@ pub struct ResultSet {
     pub meta: Option<ResultSetMetadata>,
     /// The `name` property of `ResultSet`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<QueryName>,
+    pub name: Option<super::common::QueryName>,
     /// The `q` property of `ResultSet`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub q: Option<Aql>,
+    pub q: Option<super::common::Aql>,
     /// The `columns` property of `ResultSet`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub columns: Option<Vec<ResultSetColumn>>,
@@ -100,7 +92,7 @@ pub type Fetch = i64;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdhocQueryExecute {
     /// The `q` property of `AdhocQueryExecute`.
-    pub q: Aql,
+    pub q: super::common::Aql,
     /// The `offset` property of `AdhocQueryExecute`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<Offset>,
@@ -137,7 +129,7 @@ pub struct Query {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteAdhocQueryParams {
     /// `q` (query)
-    pub q: Aql,
+    pub q: super::common::Aql,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
@@ -173,7 +165,7 @@ pub struct QueryExecuteAdhocQueryBodyParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: QueryName,
+    pub qualified_query_name: super::common::QueryName,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `ehr_id` (query)
     pub ehr_id: Option<String>,
@@ -196,7 +188,7 @@ pub struct QueryExecuteStoredQueryParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryBodyParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: QueryName,
+    pub qualified_query_name: super::common::QueryName,
     #[serde(rename = "Accept")]
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Accept` (header)
@@ -211,7 +203,7 @@ pub struct QueryExecuteStoredQueryBodyParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryVersionParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: QueryName,
+    pub qualified_query_name: super::common::QueryName,
     /// `version` (path)
     pub version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -236,7 +228,7 @@ pub struct QueryExecuteStoredQueryVersionParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryExecuteStoredQueryVersionBodyParams {
     /// `qualified_query_name` (path)
-    pub qualified_query_name: QueryName,
+    pub qualified_query_name: super::common::QueryName,
     /// `version` (path)
     pub version: String,
     #[serde(rename = "Accept")]

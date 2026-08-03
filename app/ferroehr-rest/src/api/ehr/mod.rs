@@ -47,8 +47,10 @@ use http::{HeaderMap, HeaderName};
 use serde_json::Value;
 use uuid::Uuid;
 
-use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
-use openehr_its::rest::generated::ehr::UpdateItemTag;
+use openehr_base::prelude::ObjectVersionId;
+use openehr_its::rest::generated::common::{
+    UpdateAudit, UpdateAuditData, UpdateItemTag, UpdateVersion,
+};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{
     DvIdentifier, ItemTag, PartyIdentified, PartyIdentifiedData, PartyProxy,
@@ -56,7 +58,7 @@ use openehr_rm::prelude::{
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::response::{ResourceMeta, ServiceResponse};
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded, plain_text};
 
 use crate::extensions::access::authn::AuthMethod;
 use crate::overview::error::RestError;
@@ -145,16 +147,6 @@ pub(super) fn read_resp(ehr_id: &str, body: Value) -> ServiceResponse {
     }
 }
 
-/// An `openehr` terminology code (the audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 /// The committer `PARTY_PROXY` for a write, from the authenticated principal
 /// published by the auth middleware. With no authenticated principal the write
 /// is attributed to this CDR's own system identity
@@ -203,25 +195,26 @@ pub(crate) fn committer_proxy() -> PartyProxy {
 /// # Errors
 /// [`ApiError::BadRequest`] when a committal header carries a malformed
 /// identifier (`crate::overview::committal::build_committer`).
-pub(super) fn mk_update_version(
+pub(super) fn mk_update_version<T>(
     headers: &HeaderMap,
-    data: Value,
+    data: T,
     change_code: &str,
     description: &str,
     preceding: Option<ObjectVersionId>,
-) -> Result<UpdateVersion, ApiError> {
+) -> Result<UpdateVersion<T>, ApiError> {
     let mut uv = UpdateVersion {
         preceding_version_uid: preceding,
-        lifecycle_state: term(LIFECYCLE_COMPLETE),
+        signature: None,
+        lifecycle_state: lifecycle_state_coded(LIFECYCLE_COMPLETE),
         attestations: None,
         data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
-            description: Some(description.to_owned()),
-            committer: committer_proxy(),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
             system_id: None,
-        },
-        signature: None,
+            change_type: change_type_coded(change_code),
+            description: Some(plain_text(description)),
+            committer: committer_proxy(),
+        }),
     };
     crate::overview::committal::merge_committal_headers(&mut uv, headers)?;
     Ok(uv)

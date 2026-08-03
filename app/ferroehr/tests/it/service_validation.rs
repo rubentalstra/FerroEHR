@@ -30,41 +30,37 @@
 use serde_json::{Value, json};
 use sqlx::PgPool;
 
-use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::error::ServiceError;
 use ferroehr::service::status::{CallStatusType, SmError};
 
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
-
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -113,7 +109,10 @@ async fn composition_validation_gates_persistence() {
     // ── valid composition → committed and retrievable ────────────────────────
     // NOTE: `create_composition` returns the new version_uid.
     let ovid = svc
-        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .create_composition(
+            ehr_uuid,
+            uv(&composition("ips_canonical.json"), "249", None),
+        )
         .await
         .expect("valid composition accepted (201)")
         .version_uid();
@@ -135,7 +134,7 @@ async fn composition_validation_gates_persistence() {
 
     // ── invalid composition → 422 with per-path violations, NOT persisted ─────
     let err = svc
-        .create_composition(ehr_uuid, uv(composition("ips_invalid.json"), "249", None))
+        .create_composition(ehr_uuid, uv(&composition("ips_invalid.json"), "249", None))
         .await
         .expect_err("invalid composition rejected");
     // A well-formed body that fails RM/template validation is a 422 carrying the
@@ -161,7 +160,7 @@ async fn composition_validation_gates_persistence() {
     unknown["archetype_details"]["template_id"]["value"] =
         Value::String("no.such.template.v0".to_owned());
     let err = svc
-        .create_composition(ehr_uuid, uv(unknown, "249", None))
+        .create_composition(ehr_uuid, uv(&unknown, "249", None))
         .await
         .expect_err("unknown template rejected");
     // An unknown template is a 422 `ServiceError::Unprocessable`; the cause
@@ -194,7 +193,10 @@ async fn composition_update_is_validated() {
 
     // Seed a valid v1.
     let ovid_v1 = svc
-        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .create_composition(
+            ehr_uuid,
+            uv(&composition("ips_canonical.json"), "249", None),
+        )
         .await
         .expect("valid v1")
         .version_uid();
@@ -207,7 +209,7 @@ async fn composition_update_is_validated() {
         .update_composition(
             ehr_uuid,
             vo_uuid,
-            uv(composition("ips_invalid.json"), "251", Some(&ovid_v1)),
+            uv(&composition("ips_invalid.json"), "251", Some(&ovid_v1)),
         )
         .await
         .expect_err("invalid update rejected");
@@ -254,7 +256,10 @@ async fn direct_route_commits_stamp_the_template_id() {
 
     // ── create (direct route) ────────────────────────────────────────────────
     let ovid_v1 = svc
-        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .create_composition(
+            ehr_uuid,
+            uv(&composition("ips_canonical.json"), "249", None),
+        )
         .await
         .expect("valid v1")
         .version_uid();
@@ -279,7 +284,7 @@ async fn direct_route_commits_stamp_the_template_id() {
         .update_composition(
             ehr_uuid,
             vo_uuid,
-            uv(composition("ips_canonical.json"), "251", Some(&ovid_v1)),
+            uv(&composition("ips_canonical.json"), "251", Some(&ovid_v1)),
         )
         .await
         .expect("valid v2")
@@ -315,7 +320,7 @@ async fn direct_route_commits_stamp_the_template_id() {
 }
 
 /// A version-item `commit_audit.change_type` as a coded openEHR audit change type.
-fn change_type_coded(code: &str, value: &str) -> Value {
+fn coded_text_value(code: &str, value: &str) -> Value {
     json!({
         "_type": "DV_CODED_TEXT", "value": value,
         "defining_code": {
@@ -331,7 +336,7 @@ fn incomplete_creation_contribution(data: &Value) -> Value {
     json!({
         "audit": { "change_type": { "_type": "DV_CODED_TEXT", "value": "modification", "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" } }, "committer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" } }, "versions": [{
             "data": data,
-            "commit_audit": { "change_type": change_type_coded("249", "creation") },
+            "commit_audit": { "change_type": coded_text_value("249", "creation") },
             "lifecycle_state": {
                 "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
                 "code_string": "553"
@@ -368,7 +373,7 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
     // Committed as `532|complete|` (the direct create path is always complete),
     // the missing-section lower bound is enforced → 422.
     let strict = svc
-        .create_composition(ehr_uuid, uv(missing.clone(), "249", None))
+        .create_composition(ehr_uuid, uv(&missing.clone(), "249", None))
         .await;
     assert!(
         matches!(strict, Err(ServiceError::ValidationFailed(_))),
@@ -450,9 +455,12 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
     let ehr_uuid = svc.create_ehr(None).await.expect("create_ehr");
 
     // First commit warms the cache (web_template_for: miss → build → cache).
-    svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
-        .await
-        .expect("first valid composition warms the cache");
+    svc.create_composition(
+        ehr_uuid,
+        uv(&composition("ips_canonical.json"), "249", None),
+    )
+    .await
+    .expect("first valid composition warms the cache");
 
     // Poison the stored OPT content: any later *store read* on the commit path
     // would build a broken WebTemplate and fail.
@@ -468,9 +476,12 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
 
     // Second commit against the same warm template still succeeds — served from
     // the cached WebTemplate, never re-reading the poisoned store content.
-    svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
-        .await
-        .expect("second commit is served from the warm cache, not the poisoned store");
+    svc.create_composition(
+        ehr_uuid,
+        uv(&composition("ips_canonical.json"), "249", None),
+    )
+    .await
+    .expect("second commit is served from the warm cache, not the poisoned store");
 
     assert_eq!(
         composition_versions(&pool).await,
@@ -530,7 +541,10 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
     // evicted (otherwise the FK would fail with a database error instead).
     let ehr_uuid = svc.create_ehr(None).await.expect("create_ehr");
     let err = svc
-        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .create_composition(
+            ehr_uuid,
+            uv(&composition("ips_canonical.json"), "249", None),
+        )
         .await
         .expect_err("commit against a deleted template is rejected");
     let ServiceError::Unprocessable(violation) = &err else {
@@ -606,7 +620,7 @@ async fn element_without_value_or_null_flavour_is_rejected_at_commit() {
         .expect("the IPS composition carries a valued ELEMENT to empty");
 
     let err = svc
-        .create_composition(ehr_uuid, uv(broken, "249", None))
+        .create_composition(ehr_uuid, uv(&broken, "249", None))
         .await
         .expect_err("an ELEMENT with neither value nor null_flavour must be rejected");
     let ServiceError::ValidationFailed(violations) = &err else {
@@ -677,7 +691,7 @@ async fn direct_route_commit_against_an_adl2_template_stamps_and_guards() {
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let ovid = svc
-        .create_composition(ehr_uuid, uv(composition, "249", None))
+        .create_composition(ehr_uuid, uv(&composition, "249", None))
         .await
         .expect("a commit against an ADL2-registered template is accepted")
         .version_uid();

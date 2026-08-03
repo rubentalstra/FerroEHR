@@ -522,7 +522,7 @@ impl FerroEhrService {
     /// # Errors
     /// [`SmError`] when the status is structurally invalid (422-equivalent),
     /// the subject already owns an EHR (409-equivalent), or storage fails.
-    pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<EhrId, SmError> {
+    pub async fn create_ehr(&self, an_ehr_status: Option<EhrStatus>) -> Result<EhrId, SmError> {
         // NOTE (`i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
         // the SM precondition `an_ehr_status.subject = Void` is NOT enforced on
         // the id-only create paths. `POST /ehr` intentionally accepts a
@@ -532,7 +532,9 @@ impl FerroEhrService {
         // a 0..1 `PARTY_SELF` (RM ehr master04 §EHR Status), and the CDR treats
         // a supplied anonymous-or-identified subject as the EHR's subject
         // rather than rejecting it. Recorded, not silently guessed.
-        Ok(self.create_ehr_meta(an_ehr_status, None).await?.0)
+        // Boxed: the typed EHR_STATUS argument makes the bootstrap-commit
+        // future wide (clippy `large_futures`).
+        Ok(Box::pin(self.create_ehr_meta(an_ehr_status, None)).await?.0)
     }
 
     /// SM `I_EHR_SERVICE.create_ehr_with_id` — create an EHR under the
@@ -544,10 +546,10 @@ impl FerroEhrService {
     pub async fn create_ehr_with_id(
         &self,
         an_ehr_id: EhrId,
-        an_ehr_status: Option<Value>,
+        an_ehr_status: Option<EhrStatus>,
     ) -> Result<EhrId, SmError> {
-        self.create_ehr_with_id_meta(an_ehr_id, an_ehr_status, None)
-            .await?;
+        // Boxed, as in `create_ehr` (clippy `large_futures`).
+        Box::pin(self.create_ehr_with_id_meta(an_ehr_id, an_ehr_status, None)).await?;
         Ok(an_ehr_id)
     }
 
@@ -714,7 +716,7 @@ impl FerroEhrService {
     /// (409-equivalent), or storage fails.
     pub async fn create_ehr_meta(
         &self,
-        an_ehr_status: Option<Value>,
+        an_ehr_status: Option<EhrStatus>,
         committal: Option<&crate::service::version_update::Committal>,
     ) -> Result<(EhrId, ResourceMeta), SmError> {
         let ehr_id = EhrId::new();
@@ -738,11 +740,16 @@ impl FerroEhrService {
     pub async fn create_ehr_with_id_meta(
         &self,
         an_ehr_id: EhrId,
-        an_ehr_status: Option<Value>,
+        an_ehr_status: Option<EhrStatus>,
         committal: Option<&crate::service::version_update::Committal>,
     ) -> Result<ResourceMeta, SmError> {
         // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
-        let status = an_ehr_status.unwrap_or_else(default_ehr_status);
+        // The ONE serialization boundary of the bootstrap commit: the caller's
+        // typed EHR_STATUS (or the server default) becomes its canonical
+        // fragment once, here.
+        let status = an_ehr_status.map_or_else(default_ehr_status, |s| {
+            openehr_its::json::to_canonical_value(&s)
+        });
         let created = self.commit_new_ehr(an_ehr_id, status, committal).await?;
         created.meta.ok_or_else(|| {
             SmError::exception(format!(

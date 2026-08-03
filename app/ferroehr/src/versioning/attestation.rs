@@ -457,7 +457,7 @@ impl AttestationInput {
     /// present-but-empty `items` list (`ATTESTATION.Items_valid`) — RM common
     /// `UML/classes/org.openehr.rm.common.attestation.adoc` §Invariants.
     pub(crate) fn from_update(
-        update: &crate::service::version_update::UpdateAttestation,
+        update: &openehr_its::rest::generated::common::UpdateAttestation,
     ) -> Result<Self, ServiceError> {
         reason_valid(&update.reason)?;
         if update.items.as_ref().is_some_and(Vec::is_empty) {
@@ -472,10 +472,12 @@ impl AttestationInput {
                 is_pending: update.is_pending,
             },
             committer: Some(update.committer.clone()),
-            // The native type carries the SM `String [0..1]` spelling of the
-            // inherited attribute (see `crate::service::version_update`), which
-            // denotes a plain `DV_TEXT`.
-            description: update.description.as_deref().map(dv_text),
+            // The inherited `UPDATE_AUDIT.description`, kept WHOLE: the wire
+            // types it `DV_TEXT` (`schemas/common/UpdateAudit.yaml`), whose
+            // `DV_CODED_TEXT` subtype substitutes for it, and reducing it to a
+            // string would drop a coded description's `defining_code`
+            // permanently.
+            description: update.description.clone(),
         })
     }
 }
@@ -824,9 +826,24 @@ mod tests {
 
     /// The native `UPDATE_VERSION.attestations` partial, as the direct-write
     /// route supplies it.
-    fn update_attestation(body: &Value) -> crate::service::version_update::UpdateAttestation {
+    ///
+    /// The inherited `change_type` is a `DV_CODED_TEXT`: ITS-REST
+    /// `schemas/common/UpdateAudit.yaml` `$ref`s `DvCodedText` for it, and the
+    /// ITS-REST docs text is silent on the member's shape, so the released OAS
+    /// grounds it (`.claude/rules/spec-adherence.md` §the ITS-REST
+    /// wire-oracle order). The flat SM `Terminology_code` spelling this
+    /// fixture used to send is not that shape — see
+    /// [`flat_terminology_code_change_type_is_refused`] for the twin that
+    /// pins its refusal.
+    fn update_attestation(body: &Value) -> openehr_its::rest::generated::common::UpdateAttestation {
         let mut wire = json!({
-            "change_type": { "terminology_id": "openehr", "code_string": "666" },
+            "change_type": {
+                "value": "attestation",
+                "defining_code": {
+                    "terminology_id": { "value": "openehr" },
+                    "code_string": "666"
+                }
+            },
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }
         });
         for (k, v) in body.as_object().expect("the fixture is an object") {
@@ -834,7 +851,33 @@ mod tests {
                 .expect("built as an object above")
                 .insert(k.clone(), v.clone());
         }
-        serde_json::from_value(wire).expect("the fixture is a well-typed UPDATE_ATTESTATION")
+        openehr_its::json::from_canonical_value(&wire)
+            .expect("the fixture is a well-typed UPDATE_ATTESTATION")
+    }
+
+    /// The invalid twin of [`update_attestation`]'s `change_type`: the flat SM
+    /// `Terminology_code` spelling (`{terminology_id, code_string}`) is NOT
+    /// the released wire shape of `UPDATE_AUDIT.change_type`
+    /// (`schemas/common/UpdateAudit.yaml` → `DvCodedText`), so the strict
+    /// canonical reader refuses it — the PARSE class, answered `400` on the
+    /// wire. A reader that started accepting it would silently admit a member
+    /// with no `defining_code`, which is the attribute
+    /// `AUDIT_DETAILS.Change_type_valid` is stated over.
+    #[test]
+    fn flat_terminology_code_change_type_is_refused() {
+        let refused = openehr_its::json::from_canonical_value::<
+            openehr_its::rest::generated::common::UpdateAttestation,
+        >(&json!({
+            "change_type": { "terminology_id": "openehr", "code_string": "666" },
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" },
+            "reason": { "value": "signed" },
+            "is_pending": false
+        }));
+        let err = refused.expect_err("a flat TERMINOLOGY_CODE change_type must be refused");
+        assert!(
+            err.to_string().contains("terminology_id"),
+            "the refusal names the offending member: {err}"
+        );
     }
 
     /// The native route reaches the SAME invariants as the body route: a coded
@@ -892,10 +935,16 @@ mod tests {
     /// the SM `String` description denotes a plain `DV_TEXT`.
     #[test]
     fn native_partial_completes_into_an_attestation() {
+        // `description` is an OBJECT on the typed wire: ITS-REST
+        // `schemas/common/UpdateAudit.yaml` `$ref`s `DvText` (whose
+        // `DV_CODED_TEXT` subtype substitutes for it). The bare-string SM
+        // spelling (`UML/classes/update_audit.adoc`: `String [0..1]`) is
+        // accepted only on the raw-body CONTRIBUTION lane —
+        // [`string_description_becomes_plain_dv_text`] pins that twin.
         let update = update_attestation(&json!({
             "reason": { "_type": "DV_TEXT", "value": "witness" },
             "is_pending": false,
-            "description": "countersigned"
+            "description": { "_type": "DV_TEXT", "value": "countersigned" }
         }));
         let input =
             AttestationInput::from_update(&update).expect("a well-typed partial is accepted");

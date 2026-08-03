@@ -31,47 +31,44 @@ use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, PgPool};
 use uuid::Uuid;
 
-use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
 use ferroehr::service::FerroEhrService;
 
+use crate::typed_body::typed;
 use ferroehr::service::demographic::types::PartyKind;
 use ferroehr::service::platform_service::PlatformService;
 use ferroehr::service::status::{CallStatusType, SmError};
-use ferroehr::service::version_update::{UpdateAudit, UpdateVersion};
+use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
 }
 
-/// An `openehr` terminology code (audit change type / lifecycle state).
-fn term(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: "openehr".to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion {
+fn uv<T: serde::de::DeserializeOwned>(
+    data: &Value,
+    change_code: &str,
+    preceding: Option<&str>,
+) -> UpdateVersion<T> {
     UpdateVersion {
         preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: term("532"),
+        lifecycle_state: lifecycle_state_coded("532"),
         attestations: None,
-        data,
-        audit: UpdateAudit {
-            change_type: term(change_code),
+        data: openehr_its::json::from_canonical_value(data)
+            .expect("the fixture commit body decodes as its RM type"),
+        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
+            _type: None,
+            system_id: None,
+            change_type: change_type_coded(change_code),
             description: None,
             committer: openehr_its::json::from_canonical_value::<PartyProxy>(
                 &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
-            system_id: None,
-        },
+        }),
         signature: None,
     }
 }
@@ -181,7 +178,7 @@ async fn seed_full_ehr(svc: &FerroEhrService) -> ferroehr::ids::EhrId {
     svc.create_directory(
         ehr_uuid,
         uv(
-            json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            &json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
             "249",
             None,
         ),
@@ -195,7 +192,7 @@ async fn seed_full_ehr(svc: &FerroEhrService) -> ferroehr::ids::EhrId {
     // the cascade still deletes an EHR carrying a deactivated status, which is
     // this fixture's point.
     updated["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(updated, "251", Some(&status_ovid)))
+    svc.replace_ehr_status(ehr_uuid, uv(&updated, "251", Some(&status_ovid)))
         .await
         .expect("status update");
 
@@ -538,7 +535,11 @@ fn relationship(name: &str, source: &str, target: &str) -> Value {
 /// Create a PERSON and return its bare versioned-object UUID string.
 async fn make_person(svc: &FerroEhrService, name: &str) -> String {
     let created = svc
-        .party_create(PartyKind::Person, person(name), None)
+        .party_create(
+            PartyKind::Person,
+            openehr_its::json::from_canonical_value(&person(name)).expect("the PERSON decodes"),
+            None,
+        )
         .await
         .expect("create person");
     created.body["uid"]["value"]
@@ -710,7 +711,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     // R1: p1 → p2 (references p1 as source). R2: p2 → p1 (references p1 as
     // target). R3: p2 → p3 (does NOT reference p1).
     let r1 = svc
-        .party_relationship_create(relationship("r1", &p1, &p2), None)
+        .party_relationship_create(typed(&relationship("r1", &p1, &p2)), None)
         .await
         .expect("r1");
     let r1 = r1.body["uid"]["value"]
@@ -721,7 +722,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .unwrap()
         .to_owned();
     let r2 = svc
-        .party_relationship_create(relationship("r2", &p2, &p1), None)
+        .party_relationship_create(typed(&relationship("r2", &p2, &p1)), None)
         .await
         .expect("r2");
     let r2 = r2.body["uid"]["value"]
@@ -732,7 +733,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .unwrap()
         .to_owned();
     let r3 = svc
-        .party_relationship_create(relationship("r3", &p2, &p3), None)
+        .party_relationship_create(typed(&relationship("r3", &p2, &p3)), None)
         .await
         .expect("r3");
     let r3 = r3.body["uid"]["value"]

@@ -20,7 +20,7 @@ pub struct VersionOfParty {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub _type: Option<String>,
     /// The `contribution` property of `VersionOfParty`.
-    pub contribution: ObjectRefOfHierObjectId,
+    pub contribution: super::common::ObjectRefOfHierObjectId,
     /// The `signature` property of `VersionOfParty`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
@@ -28,35 +28,6 @@ pub struct VersionOfParty {
     pub commit_audit: openehr_rm::prelude::AuditDetails,
     /// The `data` property of `VersionOfParty`.
     pub data: openehr_rm::prelude::Party,
-}
-
-/// The `UpdateItemTag` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-///
-/// The OAS declares this schema `additionalProperties: false`, so an
-/// undeclared member is refused rather than silently ignored.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct UpdateItemTag {
-    /// The `key` property of `UpdateItemTag`.
-    pub key: String,
-    /// The `value` property of `UpdateItemTag`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    /// The `target_path` property of `UpdateItemTag`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub target_path: Option<String>,
-}
-
-/// The `Clstr` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Clstr {
-    /// The `_type` property of `Clstr`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `items` property of `Clstr`.
-    pub items: Vec<openehr_rm::prelude::Item>,
 }
 
 /// The `Versionable` ITS-REST OAS component schema: `_type`-discriminated
@@ -181,185 +152,9 @@ impl<'de> ::serde::Deserialize<'de> for Versionable {
     }
 }
 
-/// The `ListOfPartyIdentity` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type ListOfPartyIdentity = Vec<openehr_rm::prelude::PartyIdentity>;
-
-/// The `DvIntervalOfDate` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DvIntervalOfDate {
-    /// The `_type` property of `DvIntervalOfDate`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `lower` property of `DvIntervalOfDate`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub lower: Option<openehr_rm::prelude::DvDate>,
-    /// The `upper` property of `DvIntervalOfDate`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub upper: Option<openehr_rm::prelude::DvDate>,
-}
-
-/// The `ListOfContact` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type ListOfContact = Vec<openehr_rm::prelude::Contact>;
-
-/// The `ListOfPartyRelationship` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type ListOfPartyRelationship = Vec<openehr_rm::prelude::PartyRelationship>;
-
-/// The `Identifier` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Identifier {
-    /// The `uid` property of `Identifier`.
-    pub uid: String,
-}
-
-/// The `Error` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Error {
-    /// The `message` property of `Error`.
-    pub message: String,
-    /// The `validationErrors` property of `Error`.
-    #[serde(rename = "validationErrors")]
-    pub validation_errors: Vec<String>,
-}
-
-/// The `ListOfCapability` ITS-REST OAS component schema (a non-object shape, so
-/// it is an alias rather than a struct).
-pub type ListOfCapability = Vec<openehr_rm::prelude::Capability>;
-
-/// The `ObjectRefOfHierObjectId` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ObjectRefOfHierObjectId {
-    /// The `id` property of `ObjectRefOfHierObjectId`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<openehr_base::prelude::HierObjectId>,
-}
-
-/// The `UpdateAudit` ITS-REST OAS component schema: `_type`-discriminated
-/// polymorphism over its OAS `discriminator.mapping` targets.
-#[derive(Debug, Clone)]
-pub enum UpdateAudit {
-    /// `_type: "UPDATE_ATTESTATION"`
-    UpdateAttestation(UpdateAttestation),
-}
-
-impl ::serde::Serialize for UpdateAudit {
-    fn serialize<__S: ::serde::Serializer>(
-        &self,
-        __serializer: __S,
-    ) -> ::core::result::Result<__S::Ok, __S::Error> {
-        match self {
-            Self::UpdateAttestation(__x) => ::serde::Serialize::serialize(__x, __serializer),
-        }
-    }
-}
-
-impl<'de> ::serde::Deserialize<'de> for UpdateAudit {
-    fn deserialize<__D: ::serde::Deserializer<'de>>(
-        __deserializer: __D,
-    ) -> ::core::result::Result<Self, __D::Error> {
-        const __TAGS: &[&str] = &["UPDATE_ATTESTATION"];
-        struct __Visitor;
-        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = UpdateAudit;
-            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                __f.write_str("an ITS-REST `UpdateAudit` object")
-            }
-            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
-                self,
-                mut __map: __A,
-            ) -> ::core::result::Result<Self::Value, __A::Error> {
-                let (__tag, __buffered) =
-                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
-                match __tag {
-                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
-                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
-                            Some(__t),
-                            __buffered,
-                            __map,
-                        );
-                        match __t {
-                            "UPDATE_ATTESTATION" => {
-                                ::core::result::Result::Ok(UpdateAudit::UpdateAttestation(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "UpdateAudit",
-                                    __other,
-                                    "UPDATE_ATTESTATION",
-                                ),
-                            ),
-                        }
-                    }
-                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
-                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
-                            "UpdateAudit",
-                            &__other,
-                            "UPDATE_ATTESTATION",
-                        ))
-                    }
-                    None => {
-                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
-                            "UpdateAudit",
-                            "UPDATE_ATTESTATION",
-                        ))
-                    }
-                }
-            }
-        }
-        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
-    }
-}
-
-/// The `UpdateAttestation` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateAttestation {
-    /// The `_type` property of `UpdateAttestation`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub _type: Option<String>,
-    /// The `attested_view` property of `UpdateAttestation`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub attested_view: Option<openehr_rm::prelude::DvMultimedia>,
-    /// The `proof` property of `UpdateAttestation`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub proof: Option<String>,
-    /// The `items` property of `UpdateAttestation`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<openehr_rm::prelude::DvEhrUri>>,
-    /// The `reason` property of `UpdateAttestation`.
-    pub reason: openehr_rm::prelude::DvText,
-    /// The `is_pending` property of `UpdateAttestation`.
-    pub is_pending: bool,
-}
-
-/// The `UpdateVersion` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateVersion {
-    /// The `preceding_version_uid` property of `UpdateVersion`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub preceding_version_uid: Option<openehr_base::prelude::ObjectVersionId>,
-    /// The `signature` property of `UpdateVersion`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub signature: Option<String>,
-    /// The `lifecycle_state` property of `UpdateVersion`.
-    pub lifecycle_state: openehr_rm::prelude::DvCodedText,
-    /// The `attestations` property of `UpdateVersion`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub attestations: Option<Vec<UpdateAttestation>>,
-    /// The `data` property of `UpdateVersion`.
-    pub data: Versionable,
-    /// The `commit_audit` property of `UpdateVersion`.
-    pub commit_audit: UpdateAudit,
-}
+/// This group's instantiation of the shared generic `UpdateVersion` envelope
+/// (`super::common::UpdateVersion`), bound at this group's own content union.
+pub type UpdateVersion = super::common::UpdateVersion<Versionable>;
 
 /// The `NewContribution` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -371,16 +166,7 @@ pub struct NewContribution {
     /// The `versions` property of `NewContribution`.
     pub versions: Vec<UpdateVersion>,
     /// The `audit` property of `NewContribution`.
-    pub audit: UpdateAudit,
-}
-
-/// The `ObjectRefOfObjectVersionId` transport DTO of this API group (an ITS-REST OAS
-/// component schema).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ObjectRefOfObjectVersionId {
-    /// The `id` property of `ObjectRefOfObjectVersionId`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<openehr_base::prelude::ObjectVersionId>,
+    pub audit: super::common::UpdateAudit,
 }
 
 /// The `ItemTagOfPerson` ITS-REST OAS component schema (a non-object shape, so
@@ -1286,7 +1072,7 @@ pub trait DemographicApi {
     async fn agent_tags_update(
         &self,
         params: AgentTagsUpdateParams,
-        body: Vec<UpdateItemTag>,
+        body: Vec<super::common::UpdateItemTag>,
     ) -> Result<Vec<ItemTagOfAgent>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1308,7 +1094,7 @@ pub trait DemographicApi {
     async fn group_tags_update(
         &self,
         params: GroupTagsUpdateParams,
-        body: Vec<UpdateItemTag>,
+        body: Vec<super::common::UpdateItemTag>,
     ) -> Result<Vec<ItemTagOfGroup>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1330,7 +1116,7 @@ pub trait DemographicApi {
     async fn organisation_tags_update(
         &self,
         params: OrganisationTagsUpdateParams,
-        body: Vec<UpdateItemTag>,
+        body: Vec<super::common::UpdateItemTag>,
     ) -> Result<Vec<ItemTagOfOrganisation>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1352,7 +1138,7 @@ pub trait DemographicApi {
     async fn person_tags_update(
         &self,
         params: PersonTagsUpdateParams,
-        body: Vec<UpdateItemTag>,
+        body: Vec<super::common::UpdateItemTag>,
     ) -> Result<Vec<ItemTagOfPerson>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1374,7 +1160,7 @@ pub trait DemographicApi {
     async fn role_tags_update(
         &self,
         params: RoleTagsUpdateParams,
-        body: Vec<UpdateItemTag>,
+        body: Vec<super::common::UpdateItemTag>,
     ) -> Result<Vec<ItemTagOfRole>, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }

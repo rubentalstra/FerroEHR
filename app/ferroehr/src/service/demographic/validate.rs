@@ -22,9 +22,7 @@ use openehr_base::prelude::PartyRef;
 use openehr_base::validate::Validate;
 use serde_json::Value;
 
-use crate::service::demographic::types::PartyKind;
 use crate::service::error::{ServiceError, Violation};
-use crate::versioning::Kind;
 
 /// The RM `_type` a `PARTY_RELATIONSHIP` versioned object stores.
 const RELATIONSHIP_RM_TYPE: &str = "PARTY_RELATIONSHIP";
@@ -69,7 +67,22 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
 /// mismatch → `422`) and enforce the enforceable PARTY/ACTOR/ROLE invariants.
 /// `Uid_mandatory` is met by the server injecting the `uid` on read (mirroring
 /// the COMPOSITION service), so an incoming body need not carry one.
-fn party_check(rm_type: &str, data: &Value, incomplete: bool) -> Result<(), ServiceError> {
+///
+/// This is the RAW-BODY lane's gate — the CONTRIBUTION route, whose payload
+/// has never been through a typed door. The direct routes call
+/// [`party_invariants`] instead: they decoded the body as the ROUTED kind's
+/// concrete RM type before the commit, so re-deserializing the very same bytes
+/// into the very same type here would prove nothing already proven and cost a
+/// second full decode per write.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the body does not deserialize as
+/// `rm_type` or violates an enforceable PARTY/ACTOR/ROLE invariant.
+pub(crate) fn party_check(
+    rm_type: &str,
+    data: &Value,
+    incomplete: bool,
+) -> Result<(), ServiceError> {
     use openehr_rm::prelude::{Agent, Group, Organisation, Person, Role};
     let typed = match rm_type {
         "AGENT" => openehr_its::json::from_canonical_value::<Agent>(data).map(drop),
@@ -99,7 +112,25 @@ fn party_check(rm_type: &str, data: &Value, incomplete: bool) -> Result<(), Serv
             )
         })?;
     }
+    party_invariants(rm_type, data, incomplete)
+}
 
+/// The party invariants that are NOT facts of the typed decode — everything
+/// [`party_check`] does apart from constructing the RM value.
+///
+/// The direct routes enter here: their body is already a constructed value of
+/// this very class, so the decode half has nothing left to judge, while these
+/// rules remain live because they are stated over the RAW JSON (a root's
+/// `ARCHETYPED` presence, and the "present implies non-empty" list bounds that
+/// an absent and a present-empty list both deserialize into the same `Vec`).
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] naming the violated rule.
+pub(super) fn party_invariants(
+    rm_type: &str,
+    data: &Value,
+    incomplete: bool,
+) -> Result<(), ServiceError> {
     // PARTY is unconditionally an archetype root (`demographic.party.adoc`
     // §Invariants `Is_archetype_root: is_archetype_root` — no antecedent), so
     // the same root-only rule the EHR_STATUS/EHR_ACCESS commits enforce applies
@@ -115,9 +146,10 @@ fn party_check(rm_type: &str, data: &Value, incomplete: bool) -> Result<(), Serv
     // `demographic.party.adoc` §Invariants) needs NO check here. The generated
     // party types type `identities` as
     // `openehr_base::containers::NonEmptyVec<PARTY_IDENTITY>` (the 1..* bound
-    // made structural), so the decode above already refuses an absent or empty
-    // list — the Rust Book ch9.3 custom-validation-type pattern, where a value
-    // that exists is a value that satisfied the rule.
+    // made structural), so whichever typed door this body came through — the
+    // route's or [`party_check`]'s — already refused an absent or empty list:
+    // the Rust Book ch9.3 custom-validation-type pattern, where a value that
+    // exists is a value that satisfied the rule.
 
     // "Present implies non-empty" list invariants — only checkable on the raw
     // JSON (post-deserialize an absent and a present-empty list are the same
@@ -220,7 +252,7 @@ fn party_check(rm_type: &str, data: &Value, incomplete: bool) -> Result<(), Serv
 /// and `target` `PARTY_REF`s are present continuant refs, and enforce their
 /// `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
 /// injects it on read, mirroring the PARTY / COMPOSITION services.
-fn relationship_check(data: &Value, incomplete: bool) -> Result<(), ServiceError> {
+pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), ServiceError> {
     use openehr_base::prelude::ObjectId;
     use openehr_rm::prelude::PartyRelationship;
     // The decode is the validating ACT, and its result is the carrier the two
@@ -285,77 +317,6 @@ fn relationship_check(data: &Value, incomplete: bool) -> Result<(), ServiceError
         RELATIONSHIP_RM_TYPE,
         incomplete,
     )
-}
-
-/// Validate a party body for a create/update: its root `_type` must equal the
-/// routed [`PartyKind`]'s RM type (mismatch → `422` naming both), then the
-/// structural + invariant checks of [`party_check`].
-pub(super) fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), ServiceError> {
-    let declared = body.get("_type").and_then(Value::as_str);
-    if declared != Some(kind.rm_type()) {
-        return Err(ServiceError::Unprocessable(
-            Violation::new(format!(
-                "party _type mismatch: the {} endpoint requires _type {:?}, got {:?}",
-                kind.segment(),
-                kind.rm_type(),
-                declared.unwrap_or("<none>"),
-            ))
-            .with_path("_type"),
-        ));
-    }
-    party_check(kind.rm_type(), body, false)
-}
-
-/// Validate a relationship body for a direct create/update: its root `_type`
-/// must be `PARTY_RELATIONSHIP` (mismatch → `422`), then [`relationship_check`].
-pub(super) fn validate_relationship_body(body: &Value) -> Result<(), ServiceError> {
-    let declared = body.get("_type").and_then(Value::as_str);
-    if declared != Some(RELATIONSHIP_RM_TYPE) {
-        return Err(ServiceError::Unprocessable(
-            Violation::new(format!(
-                "party_relationship _type mismatch: requires {RELATIONSHIP_RM_TYPE:?}, got {:?}",
-                declared.unwrap_or("<none>"),
-            ))
-            .with_path("_type"),
-        ));
-    }
-    relationship_check(body, false)
-}
-
-/// Validate a party version reached through the CONTRIBUTION path, where the
-/// [`Kind`] was already derived from the payload `_type` (so only the structural +
-/// invariant checks remain). The `CommitEnv::validate_for_commit`
-/// implementation on [`FerroEhrService`](crate::service::FerroEhrService)
-/// (`service/ehr/composition_validate.rs`) dispatches a demographic-party
-/// [`Kind`] here.
-///
-/// # Errors
-/// [`ServiceError::Unprocessable`] when the body does not deserialize as the
-/// kind's RM type or violates an enforceable PARTY/ACTOR/ROLE invariant
-/// ([`party_check`]).
-pub(crate) fn validate_party_kind_for_commit(
-    kind: Kind,
-    data: &Value,
-    incomplete: bool,
-) -> Result<(), ServiceError> {
-    party_check(kind.as_str(), data, incomplete)
-}
-
-/// Validate a relationship version reached through the CONTRIBUTION path (the
-/// [`Kind`] was already derived from the payload `_type`, so only the structural
-/// check remains). `FerroEhrService::validate_for_commit` dispatches a
-/// [`Kind::PartyRelationship`] here.
-///
-/// # Errors
-/// [`ServiceError::Unprocessable`] when the body does not deserialize as
-/// `PARTY_RELATIONSHIP`, misses a `source`/`target` `PARTY_REF`, carries an
-/// `OBJECT_VERSION_ID` ref, or violates `PARTY_REF.Type_validity` /
-/// `OBJECT_REF.namespace` ([`relationship_check`]).
-pub(crate) fn validate_relationship_for_commit(
-    data: &Value,
-    incomplete: bool,
-) -> Result<(), ServiceError> {
-    relationship_check(data, incomplete)
 }
 
 #[cfg(test)]

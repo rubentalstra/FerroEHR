@@ -8,11 +8,12 @@ use axum::response::Response;
 use http::{HeaderMap, StatusCode};
 
 use openehr_base::prelude::ObjectVersionId;
+use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::demographic::{
-    AgentCreateParams, AgentDeleteParams, AgentGetParams, AgentUpdateParams, UpdateItemTag,
+    AgentCreateParams, AgentDeleteParams, AgentGetParams, AgentUpdateParams,
 };
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{Agent, Group, Organisation, Person, Role};
+use openehr_rm::prelude::{Agent, Group, Organisation, Party, Person, Role};
 
 use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};
@@ -341,20 +342,28 @@ async fn run_delete(
     }
 }
 
-/// Decode a party request body (canonical JSON or XML) into the canonical JSON
-/// `Value` the seam expects, re-typing XML through the concrete `openehr-rm`
-/// party type for the routed kind.
+/// Decode a party request body (canonical JSON or XML) into the concrete
+/// `openehr-rm` party type of the ROUTED kind, carried as the RM `PARTY` the
+/// service seam takes.
+///
+/// The routed kind picks the type, so a body whose `_type` names a different
+/// party class is refused by the strict reader itself — the parse class,
+/// `400` (ITS-REST overview `Requests_and_responses.md` §HTTP status codes:
+/// content that "could not be parsed or is invalid"). No later `_type`
+/// comparison is possible or needed: the value's class IS the route's.
 fn decode_party_body(
     kind: PartyKind,
     h: &HeaderMap,
     body: &bytes::Bytes,
-) -> Result<serde_json::Value, ApiError> {
+) -> Result<Party, ApiError> {
     match kind {
-        PartyKind::Agent => negotiate::rm_value::<Agent>(h, body),
-        PartyKind::Group => negotiate::rm_value::<Group>(h, body),
-        PartyKind::Organisation => negotiate::rm_value::<Organisation>(h, body),
-        PartyKind::Person => negotiate::rm_value::<Person>(h, body),
-        PartyKind::Role => negotiate::rm_value::<Role>(h, body),
+        PartyKind::Agent => negotiate::rm_value::<Agent>(h, body).map(Party::Agent),
+        PartyKind::Group => negotiate::rm_value::<Group>(h, body).map(Party::Group),
+        PartyKind::Organisation => {
+            negotiate::rm_value::<Organisation>(h, body).map(Party::Organisation)
+        }
+        PartyKind::Person => negotiate::rm_value::<Person>(h, body).map(Party::Person),
+        PartyKind::Role => negotiate::rm_value::<Role>(h, body).map(Party::Role),
     }
 }
 

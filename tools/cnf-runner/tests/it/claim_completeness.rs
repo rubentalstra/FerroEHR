@@ -510,7 +510,7 @@ fn an_extension_only_capability_marked_released_wire_fails_validate() {
     assert_gate(
         &world.findings(),
         "realization-scope",
-        "PartyRelationshipOperations: every one of its 17 verdict-bearing case(s) drives \
+        "PartyRelationshipOperations: every one of its 19 verdict-bearing case(s) drives \
          EXTENSION routes only",
     );
 }
@@ -523,9 +523,9 @@ fn a_stale_extension_realization_marker_fails_validate() {
     let world = World::new();
     world.edit(MATRIX, |text| {
         text.replace(
-            "PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 55,",
+            "PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 56,",
             "PartyOperations: { family: Platform, tier: OPTIONS, required: false, realization: \
-             extension, min_cases: 55,",
+             extension, min_cases: 56,",
         )
     });
     assert_gate(
