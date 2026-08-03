@@ -45,26 +45,51 @@ static LOCATABLE_META_ATTRS: LazyLock<BTreeSet<&'static str>> = LazyLock::new(||
 });
 
 /// Legacy `(class, attribute)` pairs tolerated for prior-art OPT compatibility
-/// (NOTE): `ELEMENT.null_flavor` is the archetype-tooling (US) spelling of
-/// RM `null_flavour` (`org.openehr.rm.data_structures` ELEMENT), and
-/// `ITEM_TABLE.rotated` is an RM 1.0.x attribute removed from later RM
-/// releases — both appear in widely-deployed OPT 1.4 artifacts (the vendored
-/// RIPPLE / `clinical_content` corpus templates).
+/// (NOTE) — **only the ones the generated RM model cannot answer**, each with
+/// the released text that says why it is absent from the model. Everything
+/// derivable is derived instead: an attribute the RM really declares under the
+/// British orthography is matched by [`is_us_orthography_of_rm_attribute`], so
+/// no spelling pair is hand-kept here.
+///
+/// - `EVENT.offset` / `POINT_EVENT.offset` / `INTERVAL_EVENT.offset` — a
+///   FUNCTION, not an attribute, in RM 1.2.0:
+///   `UML/classes/org.openehr.rm.data_structures.event.adoc` lists `offset ():
+///   DV_DURATION` under §Functions ("computed as time.diff(parent.origin)").
+/// - `DV_PROPORTION.is_integral` — likewise a §Functions member
+///   (`UML/classes/org.openehr.rm.data_types.dv_proportion.adoc`:
+///   `is_integral (): Boolean`).
+/// - `ITEM_TABLE.rotated` — declared by NO released RM class this pin carries
+///   (`UML/classes/org.openehr.rm.data_structures.item_table.adoc` §Attributes
+///   declares `rows` alone); an RM 1.0.x-era attribute that later releases
+///   dropped.
+///
+/// The generated RM model carries classes and ATTRIBUTES only, so none of these
+/// five can be resolved from it — they are not spellings of anything it knows.
+/// All appear in widely-deployed OPT 1.4 artifacts (the vendored RIPPLE /
+/// `clinical_content` / Better corpus templates), which the AOM2 VCARM rule
+/// would otherwise refuse wholesale.
 const LEGACY_RM_ATTRS: &[(&str, &str)] = &[
-    ("ELEMENT", "null_flavor"),
-    ("ITEM_TABLE", "rotated"),
-    // EVENT.offset is a *computed* function in current RM (Iso8601_duration,
-    // org.openehr.rm.data_structures event classes) — RM 1.0.x-era tooling
-    // emitted it as a constrainable stored attribute.
     ("EVENT", "offset"),
     ("POINT_EVENT", "offset"),
     ("INTERVAL_EVENT", "offset"),
-    // DV_PROPORTION.is_integral is a *computed* function in current RM
-    // (Boolean, org.openehr.rm.data_types dv_proportion) — RM 1.0.x-era
-    // tooling emitted it as a constrainable stored attribute (the vendored
-    // Better corpus templates).
     ("DV_PROPORTION", "is_integral"),
+    ("ITEM_TABLE", "rotated"),
 ];
+
+/// `true` when `attr_name` is the US orthography of an attribute `parent_rm`
+/// really declares — `ELEMENT.null_flavor` for the RM's `null_flavour`
+/// (`UML/classes/org.openehr.rm.data_structures.element.adoc` §Attributes),
+/// the spelling archetype tooling emits.
+///
+/// Derived from the BMM-generated static RM model rather than hand-listed, so
+/// the tolerance is exactly as wide as the model: if a pin bump renames or
+/// removes the British-spelled attribute, the US spelling stops being tolerated
+/// with it, and a new `-our` attribute is covered without an edit here.
+fn is_us_orthography_of_rm_attribute(parent_rm: &str, attr_name: &str) -> bool {
+    attr_name
+        .strip_suffix("or")
+        .is_some_and(|stem| model::attribute(parent_rm, &format!("{stem}our")).is_some())
+}
 
 // ─── VCORM (object constraint type existence) ───────────────────────────────────
 
@@ -119,6 +144,7 @@ pub(super) fn check_attribute(
         // constraints are tolerated (they bind to the serialized meta fields,
         // which canonical JSON carries).
         None if LOCATABLE_META_ATTRS.contains(attr_name)
+            || is_us_orthography_of_rm_attribute(parent_rm, attr_name)
             || LEGACY_RM_ATTRS.contains(&(parent_rm, attr_name)) =>
         {
             Ok(())
@@ -311,4 +337,55 @@ pub(super) fn check_cardinality_occurrences(
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The VCARM tolerance set, unchanged by the derivation: the LOCATABLE meta
+    /// attributes and the US orthography come from the generated RM model, the
+    /// five function/removed spellings from the adjudicated table, and nothing
+    /// else is tolerated.
+    #[test]
+    fn vcarm_tolerance_set_is_exactly_the_adjudicated_one() {
+        // Derived from the model: the US spelling of an attribute the RM class
+        // really declares (`ELEMENT.null_flavour`).
+        assert!(is_us_orthography_of_rm_attribute("ELEMENT", "null_flavor"));
+        assert!(model::attribute("ELEMENT", "null_flavour").is_some());
+        // …and only where the British-spelled attribute actually exists.
+        assert!(!is_us_orthography_of_rm_attribute("CLUSTER", "null_flavor"));
+        assert!(!is_us_orthography_of_rm_attribute("ELEMENT", "colour"));
+
+        // Derived from the model: LOCATABLE's own attributes, not PATHABLE's.
+        assert!(LOCATABLE_META_ATTRS.contains("archetype_node_id"));
+        assert!(LOCATABLE_META_ATTRS.contains("name"));
+        assert!(
+            !LOCATABLE_META_ATTRS.contains("parent"),
+            "PATHABLE's inherited member is excluded — the tolerance exists for \
+             PATHABLE-only classes"
+        );
+
+        // Adjudicated: the RM declares these as FUNCTIONS (or not at all), so
+        // the attribute model cannot answer for them.
+        for (class, attr) in LEGACY_RM_ATTRS {
+            assert!(
+                model::attribute(class, attr).is_none(),
+                "{class}.{attr} is in the model after all — derive it instead of \
+                 listing it"
+            );
+        }
+        assert_eq!(
+            LEGACY_RM_ATTRS,
+            [
+                ("EVENT", "offset"),
+                ("POINT_EVENT", "offset"),
+                ("INTERVAL_EVENT", "offset"),
+                ("DV_PROPORTION", "is_integral"),
+                ("ITEM_TABLE", "rotated"),
+            ],
+            "the hand-listed set only shrinks: an entry the generated model can \
+             answer must be derived, never listed"
+        );
+    }
 }

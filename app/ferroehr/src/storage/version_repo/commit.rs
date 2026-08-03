@@ -14,7 +14,6 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
-use crate::storage::version_repo::optional_json_array;
 
 /// The `AUDIT_DETAILS` fields to persist (master04 §Audit Details), as the
 /// `audit` row's own columns: `change_type` is the numeric `audit_change_type`
@@ -42,53 +41,6 @@ pub struct AuditRow<'a> {
     /// this commit audit is an `ATTESTATION` (master06 §Attestation), else
     /// `None`.
     pub attestation: Option<Value>,
-}
-
-/// One `vo_version` row's content columns for a local (non-import) write with
-/// validity `[now, ∞)`. The version tree is passed as its three column ints
-/// (`VERSION_TREE_ID` = `trunk[.branch_number.branch_version]`, master05
-/// §Syntaxes); `kind` is the `vo_version.kind` discriminator text.
-///
-/// The local commit paths all write through the folded CTEs
-/// ([`commit_new_version`] / [`commit_version_into`], taking
-/// [`FoldedVersion`]); this shape names the same column set for the
-/// versioning layer's documentation of what a stored version carries.
-#[derive(Debug)]
-pub struct VersionRow<'a> {
-    /// The versioned object's id.
-    pub vo_id: VoId,
-    /// The `vo_version.kind` discriminator text.
-    pub kind: &'a str,
-    /// The owning EHR, or `None` for a demographic versioned object.
-    pub ehr_id: Option<EhrId>,
-    /// The per-vo storage commit ordinal — NOT the wire version number.
-    pub sys_version: i32,
-    /// `VERSION_TREE_ID` first part.
-    pub trunk_version: i32,
-    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
-    pub branch_number: i32,
-    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
-    pub branch_version: i32,
-    /// The `version_lifecycle_state` numeric code (master06 §Version Lifecycle).
-    pub lifecycle_state: &'a str,
-    /// Immutable `creating_system_id` — the `OBJECT_VERSION_ID` middle part
-    /// (master06 §Distributed Versioning).
-    pub creating_system_id: &'a str,
-    /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
-    pub preceding_version_uid: Option<&'a str>,
-    /// `other_input_version_uids` (merge provenance; empty → stored NULL).
-    pub other_input_version_uids: &'a [String],
-    /// The CONTRIBUTION this version was committed in.
-    pub contribution_id: Uuid,
-    /// This version's own `AUDIT_DETAILS` row.
-    pub audit_id: Uuid,
-    /// The OPT `template_id` a COMPOSITION was committed against (else `None`).
-    pub template_id: Option<&'a str>,
-    /// `VERSION.signature` (master06 §Digital Signature; 0..1).
-    pub signature: Option<&'a str>,
-    /// Whether `signature` was client-supplied (foreign — never re-verified at
-    /// read; master06 §Digital Signature) vs server-generated.
-    pub signature_client_supplied: bool,
 }
 
 /// Take the per-vo transaction advisory lock that serializes concurrent writers
@@ -136,32 +88,6 @@ pub async fn insert_audit(
         .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
         .to_jiff();
     Ok((id, time_committed))
-}
-
-/// Insert an `audit` row with an **explicit** `time_committed` (RETURNING id
-/// only) — used to preserve an imported `ORIGINAL_VERSION`'s original committal
-/// time verbatim (the wrapped original is never modified, master06 §Copying).
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on a driver/insert failure.
-pub async fn insert_audit_at(
-    tx: &mut PgConnection,
-    audit: &AuditRow<'_>,
-    time_committed: jiff::Timestamp,
-) -> Result<Uuid, StorageError> {
-    Ok(sqlx::query_scalar(
-        "INSERT INTO audit \
-           (system_id, change_type, description, committer, attestation, time_committed) \
-         VALUES ($1, $2, $3, $4, $5, $6::timestamptz) RETURNING id",
-    )
-    .bind(audit.system_id)
-    .bind(audit.change_type)
-    .bind(&audit.description)
-    .bind(&audit.committer)
-    .bind(&audit.attestation)
-    .bind(time_committed.to_string())
-    .fetch_one(&mut *tx)
-    .await?)
 }
 
 /// Insert a `contribution` row referencing its audit, returning its
@@ -276,8 +202,8 @@ pub async fn close_ordinal_at_now(
     Ok(())
 }
 
-/// The `vo_version` columns for a **folded** commit — the [`VersionRow`] column
-/// set EXCEPT `contribution_id`/`audit_id`, which come from the same
+/// The `vo_version` columns for a **folded** commit — every content column of a
+/// stored version EXCEPT `contribution_id`/`audit_id`, which come from the same
 /// statement's `contribution`/`audit` CTEs. The versioning layer builds this
 /// only when the `VERSION.signature` is already known without the
 /// server-returned `time_committed` (signing disabled, or a client-supplied
@@ -313,8 +239,6 @@ pub struct FoldedVersion<'a> {
     pub creating_system_id: &'a str,
     /// `ORIGINAL_VERSION.preceding_version_uid`; `None` for a first version.
     pub preceding_version_uid: Option<&'a str>,
-    /// The merge provenance (`other_input_version_uids`).
-    pub other_input_version_uids: &'a [String],
     /// The OPT `template_id` a COMPOSITION was committed against (else `None`).
     pub template_id: Option<&'a str>,
     /// `VERSION.signature` (0..1), opaque radix-64.
@@ -353,7 +277,6 @@ pub async fn commit_new_version(
     supplied: Option<Uuid>,
     v: &FoldedVersion<'_>,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
-    let other_input = optional_json_array(v.other_input_version_uids);
     let row = sqlx::query(
         "WITH a AS ( \
              INSERT INTO audit (system_id, change_type, description, committer, attestation) \
@@ -367,10 +290,10 @@ pub async fn commit_new_version(
              INSERT INTO vo_version \
                (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-                other_input_version_uids, contribution_id, audit_id, template_id, signature, \
+                contribution_id, audit_id, template_id, signature, \
                 signature_client_supplied) \
              SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange(now(), NULL, '[)'), \
-                    $14, $15, $16, $17::jsonb, c.id, a.id, $18, $19, $20 \
+                    $14, $15, $16, c.id, a.id, $17, $18, $19 \
              FROM a, c \
              RETURNING 1 \
          ) \
@@ -393,7 +316,6 @@ pub async fn commit_new_version(
     .bind(v.lifecycle_state)
     .bind(v.creating_system_id)
     .bind(v.preceding_version_uid)
-    .bind(other_input)
     .bind(v.template_id)
     .bind(v.signature)
     .bind(v.signature_client_supplied)
@@ -427,7 +349,6 @@ pub async fn commit_version_into(
     contribution_id: Uuid,
     v: &FoldedVersion<'_>,
 ) -> Result<(Uuid, jiff::Timestamp), StorageError> {
-    let other_input = optional_json_array(v.other_input_version_uids);
     let row = sqlx::query(
         "WITH a AS ( \
              INSERT INTO audit (system_id, change_type, description, committer, attestation) \
@@ -436,10 +357,10 @@ pub async fn commit_version_into(
              INSERT INTO vo_version \
                (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                 sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-                other_input_version_uids, contribution_id, audit_id, template_id, signature, \
+                contribution_id, audit_id, template_id, signature, \
                 signature_client_supplied) \
              SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange(now(), NULL, '[)'), \
-                    $13, $14, $15, $16::jsonb, $17, a.id, $18, $19, $20 \
+                    $13, $14, $15, $16, a.id, $17, $18, $19 \
              FROM a \
              RETURNING 1 \
          ) \
@@ -460,7 +381,6 @@ pub async fn commit_version_into(
     .bind(v.lifecycle_state)
     .bind(v.creating_system_id)
     .bind(v.preceding_version_uid)
-    .bind(other_input)
     .bind(contribution_id)
     .bind(v.template_id)
     .bind(v.signature)

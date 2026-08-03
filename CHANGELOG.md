@@ -57,6 +57,47 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A round-tripped demographic party carrying inline relationships is no
+  longer refused.** `PARTY.Relationships_validity` requires every inline
+  `relationships[i].source` to reference the party itself, and RM demographic
+  `master02` §Party Relationships requires that reference to be a
+  `HIER_OBJECT_ID` denoting the party's VERSION CONTAINER "rather than
+  `OBJECT_VERSION_ID`s, which would denote particular versions" — but the check
+  compared it against the body's `uid`, which on a served party is the
+  three-part `OBJECT_VERSION_ID`. The two could never be equal, so a client that
+  read a party, added a relationship and wrote it back got `422`. The comparison
+  now uses the container id (the `object_id` of the version uid); a relationship
+  sourced at another party is still refused.
+- **The demographic create/update routes now honour the `openehr-version`
+  lifecycle state.** ITS-REST overview `Requests_and_responses.md`
+  §"openehr-version and openehr-audit-details" requires that "whatever is
+  provided it MUST be merged with the default VERSION and
+  `VERSION.audit_details` attributes on commit runtime"; the direct party and
+  party-relationship routes threaded only the audit half, so a
+  `553|incomplete|` demographic commit was reachable through a CONTRIBUTION
+  alone. Both halves now merge on those routes (and on the SM-envelope entry
+  points, which carry the same two attributes).
+- **A read-only principal can export EXTRACTs again.** `POST /message/export`
+  realizes SM `I_EHR_EXTRACT_SERVICE.export_ehr_extracts` — a query over held
+  versions whose selector is a whole `EXTRACT_SPEC` — but the read-only gate
+  classified the extension route by its HTTP verb and refused it `403`. It is
+  now classified as the read it is (as the released ad-hoc AQL `POST` already
+  was); the import routes stay writes.
+- **A query result-set `ETag` is now stable across executions.** The tag is
+  documented as identifying the `RESULT_SET` ("it changes as soon as the
+  resource changes", overview `Requests_and_responses.md` §`ETag` and
+  Last-Modified), but the digest covered `meta._created`, which is stamped per
+  response — so every execution minted a fresh tag and conditional-request
+  caching never hit. The digest now covers the result-determining content
+  (`q`, the executed AQL, `columns`, `rows`) only.
+- **A malformed `server.system_id` is now refused at boot.** The value occupies
+  the `creating_system_id` position of every `OBJECT_VERSION_ID` this CDR mints
+  (BASE `master05-identification_package.adoc` §Syntaxes:
+  `creating_system_id = uid`), but the boot check only rejected an empty value
+  and one containing `::` — so a configuration legal at startup could mint
+  version identifiers this server's own reader refuses. The configured value is
+  now validated against the openEHR `uid` grammar itself
+  (`iso_oid | uuid | internet_id`).
 - **A tag PUT body is now validated against the released write schema.**
   `schemas/common/UpdateItemTag.yaml` declares exactly `key` (required),
   `value` and `target_path`, with `additionalProperties: false`. Previously the

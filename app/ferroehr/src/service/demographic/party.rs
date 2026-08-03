@@ -17,7 +17,7 @@ use crate::service::demographic::validate::validate_party_body;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
-use crate::service::version_update::UpdateAudit;
+use crate::service::version_update::{Committal, UpdateAudit};
 use crate::versioning::CommitEnv;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::WriteEnvelope;
@@ -140,15 +140,24 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         body: Value,
-        update_audit: Option<&UpdateAudit>,
+        committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
         validate_party_body(kind, &body)?;
 
-        // The caller's UPDATE_VERSION audit attributes merge with the server
-        // rules (ITS-REST committal MUST); the wire party seam passes them
-        // when the request carried committal headers.
-        let audit =
-            self.demographic_audit(update_audit, change_type::CREATION, "PARTY creation")?;
+        // The caller's UPDATE_VERSION attributes merge with the server rules —
+        // BOTH halves the committal headers carry: the `UPDATE_AUDIT`
+        // attributes and the VERSION `lifecycle_state` ("whatever is provided
+        // it MUST be merged with the default VERSION and
+        // `VERSION.audit_details` attributes on commit runtime", ITS-REST
+        // overview `Requests_and_responses.md` §"openehr-version and
+        // openehr-audit-details" — the sentence names the VERSION attributes
+        // first). The wire party seam passes them when the request carried
+        // committal headers.
+        let audit = self.demographic_audit(
+            committal.map(|c| &c.audit),
+            change_type::CREATION,
+            "PARTY creation",
+        )?;
         let ctx = CommitEnv::signing_ctx(self);
         // Keep the served bytes for the in-memory representation, unless media
         // externalization is on (then the fresh read reflects the offloaded form).
@@ -161,7 +170,10 @@ impl FerroEhrService {
             body,
             None,
             &audit,
-            WriteEnvelope::default(),
+            WriteEnvelope {
+                lifecycle_state: committal.and_then(|c| c.lifecycle_state.clone()),
+                ..WriteEnvelope::default()
+            },
             &ctx,
         )
         .await?;
@@ -234,7 +246,7 @@ impl FerroEhrService {
         vo_id: VoId,
         body: Value,
         expected: Option<TreeId>,
-        update_audit: Option<&UpdateAudit>,
+        committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self.party_current(kind, vo_id).await?.ok_or_else(|| {
             ServiceError::sm(
@@ -242,7 +254,7 @@ impl FerroEhrService {
                 format!("{} {vo_id}", kind.rm_type()),
             )
         })?;
-        self.commit_party_update(current, body, expected, update_audit)
+        self.commit_party_update(current, body, expected, committal)
             .await
     }
 
@@ -256,7 +268,7 @@ impl FerroEhrService {
         current: CurrentParty,
         body: Value,
         expected: Option<TreeId>,
-        update_audit: Option<&UpdateAudit>,
+        committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
         let kind = current.kind;
         if current.deleted {
@@ -267,8 +279,11 @@ impl FerroEhrService {
         }
         validate_party_body(kind, &body)?;
 
-        let audit =
-            self.demographic_audit(update_audit, change_type::MODIFICATION, "PARTY update")?;
+        let audit = self.demographic_audit(
+            committal.map(|c| &c.audit),
+            change_type::MODIFICATION,
+            "PARTY update",
+        )?;
         let ctx = CommitEnv::signing_ctx(self);
         let repr_body = self.multimedia.is_none().then(|| body.clone());
         let mut tx = self.pool.begin().await?;
@@ -281,7 +296,10 @@ impl FerroEhrService {
             expected,
             None,
             &audit,
-            WriteEnvelope::default(),
+            WriteEnvelope {
+                lifecycle_state: committal.and_then(|c| c.lifecycle_state.clone()),
+                ..WriteEnvelope::default()
+            },
             &ctx,
         )
         .await?;

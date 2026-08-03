@@ -251,4 +251,82 @@ mod tests {
             "/definition/template/adl1.4"
         );
     }
+
+    /// The served router covers every route of the generated ITS-REST tables.
+    ///
+    /// `RbacGate` (`extensions::access::authz`) builds its `(Method, path) →
+    /// OperationClass` map from the five generated `ROUTES` tables and looks a
+    /// request up by axum's `MatchedPath`. That indirection is only sound while
+    /// the served templates and the generated ones are the SAME strings: a
+    /// hand-written `#[utoipa::path]` that spells a parameter differently
+    /// silently falls through to the gate's default class instead of failing a
+    /// build. This test makes the generated tables a proven oracle for the
+    /// served surface — the served paths are a superset (the extension groups
+    /// add own-design routes the tables do not carry).
+    ///
+    /// Scope: the five API groups `emit-rest` generates. The SYSTEM group's one
+    /// released operation (`OPTIONS` at the API base-path root,
+    /// `crates/openehr-its/vendor/rest-oas/system-codegen.openapi.yaml`
+    /// §`paths./.options`) has no generated `ROUTES` table and is mounted
+    /// outside [`api_openapi_router`] (on the base path itself), so it is
+    /// pinned by its own assertion below rather than by the table sweep.
+    #[test]
+    fn served_router_covers_every_generated_route() {
+        // A concrete base path: `api_doc` nests the group router, which requires
+        // a leading `/` (the served document always carries one).
+        const BASE: &str = "/base";
+        let doc = api_doc(BASE);
+        let served = |template: &str, method: &str| {
+            doc.paths
+                .paths
+                .get(template)
+                .is_some_and(|item| match method {
+                    "GET" => item.get.is_some(),
+                    "PUT" => item.put.is_some(),
+                    "POST" => item.post.is_some(),
+                    "DELETE" => item.delete.is_some(),
+                    "OPTIONS" => item.options.is_some(),
+                    "HEAD" => item.head.is_some(),
+                    "PATCH" => item.patch.is_some(),
+                    "TRACE" => item.trace.is_some(),
+                    _ => false,
+                })
+        };
+        let missing: Vec<String> = [
+            openehr_its::rest::generated::ehr::ROUTES,
+            openehr_its::rest::generated::definition::ROUTES,
+            openehr_its::rest::generated::demographic::ROUTES,
+            openehr_its::rest::generated::query::ROUTES,
+            openehr_its::rest::generated::admin::ROUTES,
+        ]
+        .into_iter()
+        .flatten()
+        .filter(|(method, path, _op)| !served(&format!("{BASE}{}", normalize_path(path)), method))
+        .map(|(method, path, op)| format!("{method} {} ({op})", normalize_path(path)))
+        .collect();
+        assert!(
+            missing.is_empty(),
+            "generated ITS-REST routes with no served counterpart: {missing:#?}"
+        );
+
+        // The SYSTEM group: served from `crate::api::system::options`, declared
+        // at whatever base path the deployment mounts.
+        let system = system::options::openapi(BASE);
+        assert!(
+            system
+                .paths
+                .paths
+                .get(BASE)
+                .is_some_and(|item| item.options.is_some()),
+            "the released SYSTEM `OPTIONS` operation is served at the API base path"
+        );
+
+        // The detector itself, so the sweep above cannot pass vacuously: a
+        // drifted template (here, a mis-spelled path parameter) is NOT served,
+        // which is exactly the drift the sweep would report.
+        assert!(
+            !served(&format!("{BASE}/ehr/{{ehr_id_drifted}}"), "GET"),
+            "a mis-spelled route template must not match a served path"
+        );
+    }
 }

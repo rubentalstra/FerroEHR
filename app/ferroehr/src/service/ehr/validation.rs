@@ -56,9 +56,22 @@ impl FerroEhrService {
         let Some(template_id) = composition_template_id(composition) else {
             return Ok(());
         };
-        // TODO(#1445, perf): scans the EHR's live COMPOSITIONs and reassembles each to
-        // read its category + template (template_id is not promoted onto
-        // vo_version). An EHR holds few persistent compositions.
+        // NOTE (settled shape, measured): the pre-check reads the EHR's live
+        // COMPOSITION ids in one SELECT and reassembles each to read its
+        // category + declared template — the two values it compares are root
+        // COMPOSITION attributes, and reassembly is the one read that answers
+        // for any stored composition regardless of how it was committed. Cost
+        // is therefore linear in the EHR's live COMPOSITION count: measured on
+        // the reference dev box (PG 18.4, local testkit clone, 200 live
+        // COMPOSITIONs of ~10 nodes each) at ~1.3-2.7 ms for the id SELECT and
+        // ~1.1-2.3 ms per reassembly, ~220-460 ms for the whole 200-composition
+        // scan. It is paid ONLY on a create whose body is persistent
+        // (`431|persistent|`) AND declares a template — every event-composition
+        // create returns at the two guards above without touching storage — and
+        // openEHR defines no such cardinality at all: the criterion is the CNF
+        // schedule's, still "under debate in the openEHR SEC … due to the lack
+        // of information in the openEHR specifications"
+        // (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
         let vo_ids = crate::storage::version_repo::meta::current_vo_ids(
             &self.pool,
             ehr_id,

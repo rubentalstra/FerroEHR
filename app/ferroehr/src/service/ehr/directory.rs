@@ -9,13 +9,19 @@
 //! [`crate::versioning`]; the FOLDER-tree commit validation lives in
 //! [`validation`](super::validation).
 //!
-//! NOTE: the read side is multi-hierarchy (the `ehr_summary`
-//! folder refs); the write side manages the single directory slot
-//! (= `folders[1]`) only. Additional hierarchies are committed via
-//! CONTRIBUTION — ITS-REST/SM bind only the directory (RM ehr master04
-//! §Folders).
-//
-// TODO(#1348): dedicated multi-hierarchy directory write management.
+//! NOTE (settled — owner adjudication 2026-08-03: raw-CONTRIBUTION-only): the
+//! read side is multi-hierarchy (the `ehr_summary` folder refs); the write
+//! side manages the single directory slot (= `folders[1]`) only, and that is
+//! the whole write surface. Additional `EHR.folders` hierarchies are
+//! committable through a CONTRIBUTION, which is the only committal path the
+//! release describes for them: ITS-REST and the SM bind a directory resource
+//! and nothing else (RM ehr `master04-ehr_package.adoc` §Folders declares
+//! `EHR.folders` `List<VERSIONED_FOLDER>` with `EHR.directory =
+//! folders.item(1)`, while `SM/docs/UML/classes/i_ehr_directory.adoc` keys
+//! every operation on the one directory). No openEHR spec governs a
+//! multi-hierarchy directory WRITE surface — there is no wire for one to
+//! implement, and this server does not invent an extension where no consumer
+//! needs one.
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::ResourceMeta;

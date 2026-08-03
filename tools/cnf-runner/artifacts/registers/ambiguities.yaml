@@ -2582,7 +2582,15 @@ AMB-89:
     accepted: the overview docs text makes `_type` a general metadata
     attribute whose value "MUST be the uppercase class name from the RM
     specification" (specifications/docs/overview/Resources.md §Resource
-    representation), and the docs text outranks the OAS. Accepting the
+    representation), and the docs text outranks the OAS. Both names denote
+    the SAME wire shape — the six-property commit-wire PARTIAL
+    UpdateVersion.yaml declares — so admitting ORIGINAL_VERSION names the
+    class the member BECOMES, never a licence to post a complete RM
+    instance: the mandatory `uid` of ORIGINAL_VERSION
+    (UML/classes/org.openehr.rm.common.original_version.adoc §Attributes,
+    1..1) is filled by this repository's allocation and appears on the
+    READ, which is why the member-borne `uid` refusal holds under either
+    tag without contradicting that cardinality. Accepting the
     keys instead would commit a declared FOREIGN version as a locally
     created ORIGINAL_VERSION under a freshly minted local uid, silently
     discarding the identity and provenance the client declared. The

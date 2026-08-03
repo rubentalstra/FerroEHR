@@ -831,9 +831,11 @@ COMMENT ON TABLE ehr_index IS 'SM-3 EHR Index (I_EHR_INDEX, master07): N:M subje
 -- storage" — SM openehr_platform master15-admin_service.adoc via
 -- UML/classes/i_admin_archive.adoc). The SM says only "move ... to archival
 -- storage" and defines no storage form; no openEHR spec governs one, so the
--- marker IS our archival storage — our own design. A marker keeps the archived
--- object readable and its version chain intact, which the SM neither requires
--- nor forbids.
+-- marker IS our archival storage — our own design, and the MARKER IS THE FINAL
+-- ARCHIVAL SEMANTICS (owner adjudication 2026-08-03): there is no second tier
+-- to move rows to and none is planned. A marker keeps the archived object
+-- readable and its version chain intact, which the SM neither requires nor
+-- forbids.
 -- Serving reads never join this table (zero wire drift). Plain marker keyed by
 -- vo_id (not a per-version key), so INTENTIONALLY FK-LESS to the
 -- composite-keyed vo_version.
@@ -844,7 +846,7 @@ CREATE TABLE vo_archive (
     CONSTRAINT pk_vo_archive PRIMARY KEY (vo_id)
 );
 
-COMMENT ON TABLE vo_archive IS 'Archive markers realizing SM I_ADMIN_ARCHIVE (SM openehr_platform master15-admin_service.adoc); the SM defines no storage form — our own design. Serving reads never join it (zero wire drift). Intentionally FK-less (vo_id is not a per-version key).';
+COMMENT ON TABLE vo_archive IS 'Archive markers realizing SM I_ADMIN_ARCHIVE (SM openehr_platform master15-admin_service.adoc); the SM defines no storage form — our own design, and the marker IS the final archival semantics (owner adjudication 2026-08-03), not a step toward a second storage tier. Serving reads never join it (zero wire drift). Intentionally FK-less (vo_id is not a per-version key).';
 
 -- ── Subject Proxy Service config stores (SM-6, I_SUBJECT_PROXY_SERVICE) ───────
 -- CONFIGURATION only (SM openehr_platform master10-subject_proxy_service.adoc

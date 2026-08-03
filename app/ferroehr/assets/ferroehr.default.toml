@@ -20,10 +20,12 @@ swagger_ui = true            # PROD: consider false
 cors_permissive = false      # PROD: keep false; configure explicit origins
 # This CDR's own openEHR system identifier: stamped into EHR.system_id, the
 # AUDIT_DETAILS.system_id server default, and every
-# OBJECT_VERSION_ID.creating_system_id. PROD: set a stable, deployment-unique
-# name (a DNS-style host name is the common convention). Changing it never
-# rewrites identifiers already committed. Distinct from [server.identity],
-# which is only the OPTIONS manifest's display identity.
+# OBJECT_VERSION_ID.creating_system_id. It MUST be a legal openEHR `uid` —
+# an internet id (a DNS-style host name, the common convention), an ISO OID or
+# a UUID — and the server refuses to boot otherwise. PROD: set a stable,
+# deployment-unique name. Changing it never rewrites identifiers already
+# committed. Distinct from [server.identity], which is only the OPTIONS
+# manifest's display identity.
 system_id = "ferroehr.local"
 
 # [server.tls] — native TLS + client-certificate (mutual-TLS) authentication

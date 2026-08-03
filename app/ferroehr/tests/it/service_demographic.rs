@@ -753,6 +753,91 @@ async fn inline_relationships_are_stored_and_served_verbatim() {
     );
 }
 
+/// `PARTY.Relationships_validity`'s source-identity arm compares against the
+/// party's VERSION CONTAINER id, so a round-tripped party (GET → edit → PUT)
+/// carrying an inline `relationships` list commits.
+///
+/// RM demographic `docs/demographic/master02-demographic_package.adoc` §Party
+/// Relationships (L44) requires the refs to be "`OBJECT_REFs` containing
+/// `HIER_OBJECT_IDs` to denote the Version container of a Party, rather than
+/// `OBJECT_VERSION_IDs`, which would denote particular versions" — while a
+/// served party's `uid` is the three-part `OBJECT_VERSION_ID` of the version it
+/// was read from (BASE `master05-identification_package.adoc` §Syntaxes:
+/// `object_version_id = object_id, '::', creating_system_id, '::',
+/// version_tree_id`). Comparing the container-scoped `source` against the whole
+/// version id can never hold, so the two shapes here are BOTH pinned: the
+/// container id accepts, a foreign container id still refuses.
+#[tokio::test]
+async fn inline_relationship_source_matches_the_version_container_not_the_version() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+
+    let created = svc
+        .party_create(PartyKind::Person, person("Jane Container"), None)
+        .await
+        .expect("create person");
+    let vo = vo_uuid(&created.body);
+
+    // The round trip: read the served body back — it carries the three-part
+    // `uid` — and edit it in place, exactly as a client does.
+    let served = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("read the party back");
+    let ovid_v1 = ovid(&served.body).to_owned();
+    assert!(
+        ovid_v1.split("::").count() == 3,
+        "the served uid is the three-part OBJECT_VERSION_ID, got {ovid_v1}"
+    );
+
+    let relationship = |source: &str| {
+        json!({
+            "_type": "PARTY_RELATIONSHIP",
+            "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+            "name": { "_type": "DV_TEXT", "value": "inline relationship" },
+            "source": { "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+                "id": { "_type": "HIER_OBJECT_ID", "value": source } },
+            "target": { "_type": "PARTY_REF", "namespace": "demographic", "type": "ORGANISATION",
+                "id": { "_type": "HIER_OBJECT_ID", "value": "22222222-2222-4222-8222-222222222222" } }
+        })
+    };
+
+    // ACCEPTED: `source` names this party's version container.
+    let mut body = served.body.clone();
+    body["relationships"] = json!([relationship(&vo)]);
+    let updated = svc
+        .party_update(PartyKind::Person, vo.clone(), ovid_v1.clone(), body, None)
+        .await
+        .expect(
+            "a round-tripped party whose inline relationship names its own version \
+             container must commit (RM demographic master02 §Party Relationships)",
+        );
+    let ovid_v2 = ovid(&updated.body).to_owned();
+    assert!(ovid_v2.ends_with("::2"), "second version, got {ovid_v2}");
+
+    // REFUSED (the arm is kept): `source` names another party's container.
+    let mut foreign = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("read v2 back")
+        .body;
+    foreign["relationships"] = json!([relationship("33333333-3333-4333-8333-333333333333")]);
+    let refused = svc
+        .party_update(PartyKind::Person, vo.clone(), ovid_v2, foreign, None)
+        .await;
+    assert!(
+        matches!(
+            refused,
+            Err(SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            })
+        ),
+        "an inline relationship sourced at another party is still invalid \
+         (PARTY.Relationships_validity), got {refused:?}"
+    );
+}
+
 /// The `owner_id` of an ehr-less demographic version container names the
 /// SERVING SYSTEM, in the shape the published `VersionedParty` example uses.
 ///
