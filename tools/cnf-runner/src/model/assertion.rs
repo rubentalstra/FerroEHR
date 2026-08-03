@@ -307,6 +307,25 @@ pub enum Assertion {
     /// tell the root element from a descendant, and it cannot resolve a prefix
     /// to its namespace URI, so a `<oe:composition xmlns:oe="…">` document and
     /// an unqualified `<composition>` document are indistinguishable to it.
+    ///
+    /// Where the published element's declared type is ABSTRACT, the same MUST
+    /// fixes a third fact: `xsi:type`. XML Schema Part 1 forbids an element
+    /// instance from using an abstract type directly — the instance must
+    /// select a non-abstract derived type with `xsi:type`
+    /// (<https://www.w3.org/TR/xmlschema-1/#xsi_type>, §2.6.1 + §3.4.6). Two
+    /// published document elements are declared that way, identically in both
+    /// vendored lineages: `<xs:element name="version" type="VERSION"/>` over
+    /// `<xs:complexType name="VERSION" abstract="true">`
+    /// (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/Version.xsd`,
+    /// `its-xml-2.0.0-nsv2/RM/latest/documents/Version.xsd` +
+    /// `RM/latest/Common.xsd`) and `<xs:element name="items"
+    /// type="LOCATABLE"/>` over the abstract `LOCATABLE` (`ALL/Structure.xsd`,
+    /// `RM/latest/documents/Structure.xsd` + `RM/latest/Common.xsd`). On such a
+    /// root the concrete class is the ONLY thing that distinguishes, say, an
+    /// `ORIGINAL_VERSION` response from an `IMPORTED_VERSION` one, so `xsi_type`
+    /// is how a row judges it. It is asserted only where the schemas declare
+    /// the type abstract — on a concretely-typed element the attribute is
+    /// decoration, not dispatch, and no released sentence requires it.
     XmlRoot {
         /// The expected root element's local name (a globally declared element
         /// of the published XSDs).
@@ -315,6 +334,17 @@ pub enum Assertion {
         /// row deliberately judges the name alone.
         #[serde(default)]
         namespace: Option<XmlNamespace>,
+        /// The LOCAL name of the concrete type the root must name with
+        /// `xsi:type` — asserted only on a published element whose declared
+        /// type is abstract (see the form's doc comment). The attribute value
+        /// is a `QName`, so the assertion resolves its prefix through the
+        /// document's in-scope bindings (an unprefixed `QName` resolves against
+        /// the DEFAULT namespace — the `QName`-in-content rule) and compares the
+        /// local part; when the row also asserts `namespace`, the type's own
+        /// namespace must satisfy the same expectation, because the ITS-XML
+        /// complexTypes are declared in each schema's `targetNamespace`.
+        #[serde(default)]
+        xsi_type: Option<String>,
     },
     /// Informative only — never a pass/fail criterion.
     MessageExemplar {
@@ -494,18 +524,11 @@ impl Assertion {
                     regex::Regex::new(re).map_err(|e| format!("returns omits regex: {e}"))?;
                 }
             }
-            Self::XmlRoot { name, .. } => {
-                if name.trim().is_empty() {
-                    return Err(
-                        "xml_root assertion needs the expected root element local name".to_owned(),
-                    );
-                }
-                if name.contains(':') {
-                    return Err(format!(
-                        "xml_root name {name:?} must be the LOCAL name — the prefix is a document's own choice and the namespace is asserted by `namespace:`"
-                    ));
-                }
-            }
+            Self::XmlRoot {
+                name,
+                xsi_type,
+                namespace: _,
+            } => check_xml_root_invariants(name, xsi_type.as_deref())?,
             Self::InstanceOf { .. }
             | Self::Equivalent { .. }
             | Self::MessageExemplar { .. }
@@ -521,6 +544,32 @@ impl Assertion {
     pub fn is_aggregate(&self) -> bool {
         matches!(self, Self::Unique { .. })
     }
+}
+
+/// The structural invariants of an `xml_root` assertion: both names it carries
+/// are LOCAL names, because a prefix is a document's own choice and the
+/// namespace both resolve against is asserted by `namespace:`.
+fn check_xml_root_invariants(name: &str, xsi_type: Option<&str>) -> Result<(), String> {
+    if name.trim().is_empty() {
+        return Err("xml_root assertion needs the expected root element local name".to_owned());
+    }
+    if name.contains(':') {
+        return Err(format!(
+            "xml_root name {name:?} must be the LOCAL name — the prefix is a document's own choice and the namespace is asserted by `namespace:`"
+        ));
+    }
+    let Some(rm_type) = xsi_type else {
+        return Ok(());
+    };
+    if rm_type.trim().is_empty() {
+        return Err("xml_root xsi_type must name the concrete type, or be omitted".to_owned());
+    }
+    if rm_type.contains(':') {
+        return Err(format!(
+            "xml_root xsi_type {rm_type:?} must be the LOCAL name — the QName's prefix is a document's own choice and its namespace rides on `namespace:`"
+        ));
+    }
+    Ok(())
 }
 
 /// Every `${…}` reference used by an assertion (for the closed-grammar and
@@ -683,6 +732,32 @@ mod tests {
             }))
             .is_err()
         );
+    }
+
+    /// The `xsi_type` half — for a published element declared over an ABSTRACT
+    /// type (`<xs:element name="version" type="VERSION"/>` over
+    /// `<xs:complexType name="VERSION" abstract="true">`, `ALL/Version.xsd`),
+    /// where XML Schema Part 1 §2.6.1 + §3.4.6 make naming the concrete type
+    /// part of conforming to the schema.
+    #[test]
+    fn xml_root_takes_the_concrete_type_of_an_abstract_root() {
+        let a = parse(serde_json::json!({
+            "assert": "xml_root", "name": "version",
+            "namespace": "openehr-published", "xsi_type": "ORIGINAL_VERSION"
+        }));
+        assert!(a.check_invariants().is_ok());
+        assert!(assertion_refs(&a).is_empty());
+
+        // The QName's prefix is the document's own choice, like the root's.
+        let a = parse(serde_json::json!({
+            "assert": "xml_root", "name": "version", "xsi_type": "oe:ORIGINAL_VERSION"
+        }));
+        assert!(a.check_invariants().is_err());
+
+        let a = parse(serde_json::json!({
+            "assert": "xml_root", "name": "version", "xsi_type": " "
+        }));
+        assert!(a.check_invariants().is_err());
     }
 
     #[test]

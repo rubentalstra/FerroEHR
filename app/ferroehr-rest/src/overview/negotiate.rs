@@ -656,10 +656,49 @@ pub(crate) fn respond<T: Serialize>(
     }
 }
 
+/// The XSD-declared type of a published ITS-XML document element whose
+/// declared type is **abstract** — the roots where a conforming instance MUST
+/// name its concrete class with `xsi:type`.
+///
+/// XML Schema Part 1 forbids an element instance from using an abstract type
+/// directly: the instance must select a non-abstract derived type with
+/// `xsi:type` (<https://www.w3.org/TR/xmlschema-1/#xsi_type>, §2.6.1 +
+/// §3.4.6). Both published ITS-XML lineages declare exactly two such document
+/// elements, spelled identically:
+/// `<xs:element name="version" type="VERSION"/>` over
+/// `<xs:complexType name="VERSION" abstract="true">`
+/// (`schemas/xml/its-xml-1.0.2-nsv1/ALL/Version.xsd`,
+/// `its-xml-2.0.0-nsv2/RM/latest/documents/Version.xsd` +
+/// `RM/latest/Common.xsd`), and
+/// `<xs:element name="items" type="LOCATABLE"/>` over
+/// `<xs:complexType name="LOCATABLE" abstract="true">`
+/// (`.../ALL/Structure.xsd`, `.../RM/latest/documents/Structure.xsd` +
+/// `RM/latest/Common.xsd`). Every other published document element is
+/// concretely typed and needs no attribute; a root name the schemas publish no
+/// element for is absent here by construction (the ITS-REST §XML Format MUST
+/// — "responses MUST conform to the [published XSDs]" — has nothing to bind
+/// to for those resources, per the AMB-167 adjudication in
+/// `tools/cnf-runner/artifacts/registers/ambiguities.yaml`).
+const ABSTRACT_ROOT_TYPES: &[(&str, &str)] = &[("items", "LOCATABLE"), ("version", "VERSION")];
+
+/// The abstract XSD type declared for a published document element, when the
+/// element's declared type is abstract and the instance must therefore carry
+/// `xsi:type` ([`ABSTRACT_ROOT_TYPES`]).
+fn declared_root_type(root_tag: &str) -> Option<&'static str> {
+    ABSTRACT_ROOT_TYPES
+        .iter()
+        .find(|(element, _)| *element == root_tag)
+        .map(|(_, declared)| *declared)
+}
+
 /// Render a canonical-JSON `Value` that IS a single spec-typed RM object,
 /// honouring `Accept` for canonical JSON or XML. `T` is the concrete
 /// `openehr-rm` type the value encodes; `root_tag` is the XML root element
 /// name. A JSON `null` value renders as a bodyless response.
+///
+/// A `root_tag` whose published XSD type is abstract ([`ABSTRACT_ROOT_TYPES`])
+/// is serialized through the declared-type entry point, so the root names its
+/// concrete class with `xsi:type` as the schema requires.
 pub(crate) fn respond_rm<T>(
     headers: &HeaderMap,
     status: StatusCode,
@@ -695,7 +734,13 @@ where
                     .into_response_body();
                 }
             };
-            match openehr_its::xml::to_canonical_xml_ns(&typed, root_tag, ns) {
+            let serialized = match declared_root_type(root_tag) {
+                Some(declared) => {
+                    openehr_its::xml::to_canonical_xml_declared(&typed, root_tag, declared, ns)
+                }
+                None => openehr_its::xml::to_canonical_xml_ns(&typed, root_tag, ns),
+            };
+            match serialized {
                 Ok(xml) => xml_body_ns(status, xml, ns),
                 Err(e) => ApiError::Internal(format!("XML serialization failed: {e}"))
                     .into_response_body(),
@@ -1707,12 +1752,11 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn respond_rm_renders_original_version_xml_with_signature() {
-        use http_body_util::BodyExt;
-        use openehr_rm::prelude::{DvText, OriginalVersion};
-
-        let value = serde_json::json!({
+    /// An `ORIGINAL_VERSION` canonical-JSON envelope, as the version reads
+    /// serve it (`data` is a `DV_TEXT` here — `ORIGINAL_VERSION.data` is
+    /// `xs:anyType` in the XSD, so the payload type is unconstrained).
+    fn original_version_envelope() -> serde_json::Value {
+        serde_json::json!({
             "_type": "ORIGINAL_VERSION",
             "contribution": {
                 "_type": "OBJECT_REF",
@@ -1741,22 +1785,147 @@ mod tests {
                     "code_string": "532" }
             },
             "data": { "_type": "DV_TEXT", "value": "hello" }
-        });
+        })
+    }
+
+    /// The published document element for a `VERSION` resource is
+    /// `<xs:element name="version" type="VERSION"/>` over the ABSTRACT
+    /// `<xs:complexType name="VERSION" abstract="true">`
+    /// (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/Version.xsd`;
+    /// the 2.0.0 lineage repeats it in `RM/latest/documents/Version.xsd` +
+    /// `RM/latest/Common.xsd`), so a served `ORIGINAL_VERSION` is that root
+    /// PLUS the `xsi:type` XML Schema Part 1 §2.6.1/§3.4.6 requires of an
+    /// instance of an abstract type
+    /// (<https://www.w3.org/TR/xmlschema-1/#xsi_type>). ITS-REST overview
+    /// `Resources.md` §"XML Format" is what binds the schemas to the wire:
+    /// "both request payloads and responses MUST conform to the [published
+    /// XSDs]". `original_version` is a document element NEITHER published
+    /// lineage declares.
+    #[tokio::test]
+    async fn respond_rm_renders_original_version_under_the_published_version_root() {
+        use http_body_util::BodyExt;
+        use openehr_rm::prelude::{DvText, Version};
+
         let h = headers(&[("accept", "application/xml")]);
-        let resp =
-            respond_rm::<OriginalVersion<DvText>>(&h, StatusCode::OK, &value, "original_version");
+        let resp = respond_rm::<Version<DvText>>(
+            &h,
+            StatusCode::OK,
+            &original_version_envelope(),
+            "version",
+        );
 
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(content_type(&resp).as_deref(), Some(APPLICATION_XML));
         let bytes = resp.into_body().collect().await.expect("body").to_bytes();
         let xml = String::from_utf8(bytes.to_vec()).expect("utf8");
-        assert!(xml.contains("<original_version"), "root element: {xml}");
+        assert!(
+            xml.starts_with("<version "),
+            "the published document element is the root: {xml}"
+        );
+        assert!(
+            xml.contains(r#"xsi:type="ORIGINAL_VERSION""#),
+            "an instance of the abstract VERSION type names its concrete class: {xml}"
+        );
+        assert!(
+            !xml.contains("<original_version"),
+            "no undeclared per-subtype root: {xml}"
+        );
         assert!(
             xml.contains("<signature"),
             "signature element present: {xml}"
         );
         assert!(xml.contains("DEADBEEF"), "signature value present: {xml}");
         assert!(!xml.contains("\"_type\""), "not a JSON blob: {xml}");
+    }
+
+    /// The `IMPORTED_VERSION` twin of the row above: the same published
+    /// `<version>` root, discriminated by `xsi:type="IMPORTED_VERSION"` —
+    /// `ALL/Version.xsd` derives BOTH concrete classes from the abstract
+    /// `VERSION` and declares no element for either, so the subtype reaches
+    /// the wire through the attribute (RM common master06 §Version and its
+    /// Subtypes).
+    #[tokio::test]
+    async fn respond_rm_renders_imported_version_under_the_published_version_root() {
+        use http_body_util::BodyExt;
+        use openehr_rm::prelude::{DvText, Version};
+
+        let value = serde_json::json!({
+            "_type": "IMPORTED_VERSION",
+            "contribution": {
+                "_type": "OBJECT_REF",
+                "namespace": "local",
+                "type": "CONTRIBUTION",
+                "id": { "_type": "HIER_OBJECT_ID", "value": "c2" }
+            },
+            "commit_audit": {
+                "_type": "AUDIT_DETAILS",
+                "system_id": "ferroehr",
+                "time_committed": { "_type": "DV_DATE_TIME", "value": "2024-02-02T00:00:00Z" },
+                "change_type": {
+                    "_type": "DV_CODED_TEXT", "value": "creation",
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "249" }
+                },
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "importer" }
+            },
+            "item": original_version_envelope()
+        });
+        let h = headers(&[("accept", "application/xml")]);
+        let resp = respond_rm::<Version<DvText>>(&h, StatusCode::OK, &value, "version");
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(content_type(&resp).as_deref(), Some(APPLICATION_XML));
+        let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+        let xml = String::from_utf8(bytes.to_vec()).expect("utf8");
+        assert!(
+            xml.starts_with("<version "),
+            "the published document element is the root: {xml}"
+        );
+        assert!(
+            xml.contains(r#"xsi:type="IMPORTED_VERSION""#),
+            "the wrapper names its own concrete class: {xml}"
+        );
+        assert!(
+            !xml.contains("<imported_version"),
+            "no undeclared per-subtype root: {xml}"
+        );
+        assert!(
+            xml.contains("<item"),
+            "IMPORTED_VERSION extends VERSION with `item` (ALL/Version.xsd): {xml}"
+        );
+    }
+
+    /// The abstract-root table IS the published-schema fact: the only two
+    /// document elements either ITS-XML lineage declares over an abstract type
+    /// are `version` (type `VERSION`) and `items` (type `LOCATABLE`) — both
+    /// `abstract="true"` in `ALL/Version.xsd` / `ALL/Structure.xsd` (nsv1) and
+    /// `RM/latest/Common.xsd` (nsv2). A concretely-typed element
+    /// (`composition`, `template`, …) takes no `xsi:type`, and a root name the
+    /// schemas publish no element for is absent by construction.
+    #[test]
+    fn declared_root_type_names_only_the_published_abstract_elements() {
+        assert_eq!(declared_root_type("version"), Some("VERSION"));
+        assert_eq!(declared_root_type("items"), Some("LOCATABLE"));
+        for concrete in ["composition", "template", "archetype", "versioned_object"] {
+            assert_eq!(
+                declared_root_type(concrete),
+                None,
+                "{concrete} is declared with a concrete type — no xsi:type at the root"
+            );
+        }
+        for undeclared in [
+            "original_version",
+            "imported_version",
+            "ehr_status",
+            "folder",
+        ] {
+            assert_eq!(
+                declared_root_type(undeclared),
+                None,
+                "{undeclared} is not a published document element at all"
+            );
+        }
     }
 
     #[tokio::test]

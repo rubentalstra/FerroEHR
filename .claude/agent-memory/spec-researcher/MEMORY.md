@@ -4,6 +4,7 @@
 - [RM class definitions location](rm-class-defs-location.md) — RM class attribute tables (existence) live in docs/UML/classes, included by master chapters
 - [Official spec only](feedback-official-spec-only.md) — answer only from docs/specs/openehr; never treat ADRs / docs/design as spec authority (owner, emphatic)
 - [RM §6.3 Versioning Semantics location](version-lifecycle-and-identification-location.md) — master06 sub-section map (merging is §6.4 not §6.3), the lifecycle SVG is path-text (rasterize to read `revert`/`create_draft`), is_first-vs-branch + data-required-on-commit defects
+- [RM §6.4 Distributed Semantics location](rm-distributed-version-semantics-location.md) — master06 L242-334 sub-headings (copy/import, merging, disjoint merging, moving), class + cross-component anchors, the total ITS-REST/SM/CNF silence, and the L290 IMPORTED_VERSION-vs-branch contradiction
 - [VERSION.signature location](version-signature-location.md) — signature 0..1/optional, canonical_form, server-vs-client signing; RM common master06 + UML version.adoc; SM/ITS-REST/CNF silent
 - [Persistent COMPOSITION uniqueness](persistent-composition-uniqueness.md) — one-persistent-per-template is NOT spec-mandated (SILENT/under-debate); RM ehr master04 + CNF master07 same_opt_twice (tagged future)
 - [FLAT/STRUCTURED format location](flat-structured-format-location.md) — the 6 simplified_formats chapters + 43 master05 tables, the 28-op carrying matrix (Accept/ContentType_LOCATABLE), the confirmed released-text defect list, SDT=RETIRED, and the flat-module/test/CNF/register map

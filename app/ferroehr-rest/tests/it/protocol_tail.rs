@@ -807,6 +807,20 @@ async fn composition_version_serves_xml_with_signature() {
     // `FerroEhrService` signer is enabled (SHA-256 digest), so the committed
     // version carries a genuine `sha256:` signature which the canonical XML
     // serializes into `<signature>`.
+    //
+    // The DOCUMENT the signature rides in is pinned here too. ITS-REST overview
+    // `Resources.md` §"XML Format": "both request payloads and responses MUST
+    // conform to the [published XSDs]", and the published document element for
+    // a VERSION is `<xs:element name="version" type="VERSION"/>` over the
+    // abstract `<xs:complexType name="VERSION" abstract="true">`
+    // (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/Version.xsd`; the
+    // 2.0.0 lineage repeats it in `RM/latest/documents/Version.xsd` +
+    // `RM/latest/Common.xsd`). An instance may not use an abstract type
+    // directly — it names a non-abstract derived type with `xsi:type` (XML
+    // Schema Part 1 §2.6.1 + §3.4.6,
+    // <https://www.w3.org/TR/xmlschema-1/#xsi_type>) — so the conforming
+    // response is `<version … xsi:type="ORIGINAL_VERSION">`, never the
+    // `<original_version>` root neither lineage declares.
     let (_pg, app) = app().await;
     let (ehr_id, v1) = commit_ips_composition(&app).await;
     let vo = vo_of(&v1);
@@ -826,7 +840,18 @@ async fn composition_version_serves_xml_with_signature() {
         h.get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok()),
         Some("application/xml")
     );
-    assert!(body.contains("<original_version"), "root: {body}");
+    assert!(
+        body.starts_with("<version "),
+        "the published document element is the root: {body}"
+    );
+    assert!(
+        body.contains(r#"xsi:type="ORIGINAL_VERSION""#),
+        "an instance of the abstract VERSION type names its concrete class: {body}"
+    );
+    assert!(
+        !body.contains("<original_version"),
+        "no undeclared per-subtype root: {body}"
+    );
     assert!(body.contains("<signature"), "signature element: {body}");
     assert!(body.contains("sha256:"), "digest signature value: {body}");
 }

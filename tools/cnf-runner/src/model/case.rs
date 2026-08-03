@@ -14,7 +14,7 @@ use crate::model::value::TemplatedValue;
 use crate::refgrammar::CaptureValueSource;
 use crate::vocab::{
     CaseKind, CaseStatus, Component, FormatName, Iteration, OutcomeKind, ServerState,
-    SpecComponent, Tier,
+    SpecComponent, Tier, XVersionedClass,
 };
 
 /// Spec-version applicability ranges (`applies:`); the range grammar is the
@@ -273,6 +273,74 @@ impl<'de> Deserialize<'de> for PartyRelationshipRequirement {
     }
 }
 
+/// The `requires.import` precondition — an EHR-Extract already received from
+/// another system.
+///
+/// A version this repository did not create is precondition STATE exactly as
+/// [`PartyRequirement`] and [`PartyRelationshipRequirement`] are: the released
+/// reads that serve an `IMPORTED_VERSION` (RM common
+/// `master06-change_control_package.adoc` §Copying: "An `IMPORTED_VERSION`
+/// instance is then created, its `item` set to the received
+/// `ORIGINAL_VERSION`") are the SUBJECT of such a case, and driving the import
+/// in the flow would make the realization it evidences the import route's
+/// rather than the read's (`validate::check_realization_markers`).
+///
+/// The import itself has NO released wire — ITS-REST 1.1.0 publishes no
+/// MESSAGE / EHR-Extract API at all (register AMB-34; the `message-extract`
+/// `served_extensions` family) — so, exactly like
+/// [`PartyRelationshipRequirement`], the requirement is only usable on a party
+/// that serves that family, and `crate::run` records the case
+/// not-applicable-with-citation on one that does not.
+///
+/// Which SM operation provisioning drives follows master06 §Copying's own
+/// receiving situations: with an EHR already provisioned
+/// (`requires.ehr`) the extract lands in it through `import_ehr_extract`
+/// (Cases 2/3 — "an EHR exists" / "previous copies have been made"); with
+/// none, `import_ehr` clones a whole EHR (Case 1) and the clone's id is minted
+/// as `${ehr_id}`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ImportRequirement {
+    /// Nothing is imported.
+    None,
+    /// An EHR-Extract has been received, and the case is about the versioned
+    /// object its named wrapper class carries.
+    Received {
+        /// The corpus `EXTRACT` payload that was imported.
+        extract: CorpusKey,
+        /// Which `X_VERSIONED_*` content item of that extract the minted
+        /// handles name — an extract carries several at once, so the case
+        /// states the one it is about.
+        container: XVersionedClass,
+    },
+}
+
+impl<'de> Deserialize<'de> for ImportRequirement {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Qualified {
+            extract: CorpusKey,
+            container: XVersionedClass,
+        }
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Raw {
+            Word(String),
+            Qualified(Qualified),
+        }
+        match Raw::deserialize(deserializer)? {
+            Raw::Word(w) if w == "none" => Ok(Self::None),
+            Raw::Word(w) => Err(D::Error::custom(format!(
+                "requires.import must be `none` or {{ extract, container }}, got {w:?}"
+            ))),
+            Raw::Qualified(q) => Ok(Self::Received {
+                extract: q.extract,
+                container: q.container,
+            }),
+        }
+    }
+}
+
 /// Typed prerequisites — the schedule's precondition vocabulary. Every
 /// provisioned object mints a named handle usable as a flow variable.
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -298,6 +366,12 @@ pub struct Requires {
     /// before the flow; `Exists` mints `${party_relationship_id}`.
     #[serde(default)]
     pub party_relationship: Option<PartyRelationshipRequirement>,
+    /// An EHR-Extract received from another system before the flow;
+    /// `Received` mints `${imported_versioned_object_uid}` +
+    /// `${imported_version_uid}` (+ `${imported_branch_version_uid}` when the
+    /// extract carries a branch, and `${ehr_id}` for a whole-EHR clone).
+    #[serde(default)]
+    pub import: Option<ImportRequirement>,
     /// Corpus set keys pre-committed into the EHR by the runner (bulk setup
     /// is precondition state, never an un-anchored flow call).
     #[serde(default)]
@@ -372,6 +446,32 @@ impl Requires {
         ) && let Ok(handle) = CaptureName::parse("party_relationship_id")
         {
             handles.push(handle);
+        }
+        // a received EHR-Extract publishes the identity of the versioned
+        // object it landed and of the versions inside it — all taken from the
+        // extract's own content, since master06 §Copying keeps the received
+        // version container's identity ("the `ORIGINAL_VERSION` instance is
+        // never modified"). The BRANCH handle binds only when the named
+        // container actually carries a branch version; a case referencing it
+        // against a trunk-only extract fails loudly at drive time rather than
+        // silently reading the trunk.
+        if matches!(self.import, Some(ImportRequirement::Received { .. })) {
+            for name in [
+                "imported_versioned_object_uid",
+                "imported_version_uid",
+                "imported_branch_version_uid",
+            ] {
+                if let Ok(handle) = CaptureName::parse(name) {
+                    handles.push(handle);
+                }
+            }
+            // Case 1 of master06 §Copying: with no EHR provisioned the import
+            // CREATES the EHR, so the clone's id is minted here.
+            if !matches!(self.ehr, Some(EhrRequirement::Exists { .. }))
+                && let Ok(handle) = CaptureName::parse("ehr_id")
+            {
+                handles.push(handle);
+            }
         }
         handles
     }
@@ -751,6 +851,77 @@ mod tests {
         assert!(
             serde_json::from_value::<Requires>(
                 serde_json::json!({ "party_relationship": "cnf.demographic.party_relationship.v1" })
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn a_received_extract_mints_the_identities_it_carries() {
+        // Cases 2/3 (an EHR is provisioned): the import lands in it, so only
+        // the container/version handles are minted.
+        let into_existing: Requires = serde_json::from_value(serde_json::json!({
+            "ehr": { "commits": "any" },
+            "import": {
+                "extract": "cnf.messaging.ehr_extract.v1",
+                "container": "X_VERSIONED_COMPOSITION"
+            }
+        }))
+        .unwrap();
+        assert_eq!(
+            into_existing
+                .minted_handles()
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+            vec![
+                "ehr_id".to_owned(),
+                "imported_versioned_object_uid".to_owned(),
+                "imported_version_uid".to_owned(),
+                "imported_branch_version_uid".to_owned(),
+            ]
+        );
+
+        // Case 1 (no EHR provisioned): the clone's id is minted by the import.
+        let clone: Requires = serde_json::from_value(serde_json::json!({
+            "import": {
+                "extract": "cnf.messaging.ehr_extract.v1",
+                "container": "X_VERSIONED_EHR_STATUS"
+            }
+        }))
+        .unwrap();
+        assert!(
+            clone
+                .minted_handles()
+                .iter()
+                .any(|h| h.to_string() == "ehr_id"),
+            "a whole-EHR clone mints the EHR it created"
+        );
+
+        let none: Requires =
+            serde_json::from_value(serde_json::json!({ "import": "none" })).unwrap();
+        assert_eq!(none.import, Some(ImportRequirement::None));
+        assert!(none.minted_handles().is_empty());
+
+        // Both keys are mandatory, and the container class is closed.
+        assert!(
+            serde_json::from_value::<Requires>(serde_json::json!({
+                "import": { "extract": "cnf.messaging.ehr_extract.v1" }
+            }))
+            .is_err()
+        );
+        assert!(
+            serde_json::from_value::<Requires>(serde_json::json!({
+                "import": {
+                    "extract": "cnf.messaging.ehr_extract.v1",
+                    "container": "X_VERSIONED_THING"
+                }
+            }))
+            .is_err()
+        );
+        assert!(
+            serde_json::from_value::<Requires>(
+                serde_json::json!({ "import": "cnf.messaging.ehr_extract.v1" })
             )
             .is_err()
         );

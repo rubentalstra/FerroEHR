@@ -43,6 +43,29 @@ pub enum StorageError {
     #[error("an EHR already exists for subject {0}@{1}")]
     SubjectInUse(String, String),
 
+    /// An archive record would take a TRUNK position of a version container
+    /// that another creating system already holds. RM common master06
+    /// §Distributed Versioning identifies a version globally by
+    /// `{object_id, creating_system_id, version_tree_id}`, but the trunk line
+    /// itself is one global sequence: §Copying §Subsequent Local Modifications
+    /// makes a second system BRANCH rather than extend the trunk, and §Moving
+    /// Version Containers continues the trunk increment under the new system's
+    /// id. Two trunk rows at one position are therefore not a schema detail but
+    /// a broken version tree — reported as a typed conflict rather than as the
+    /// bare unique-index violation the load would otherwise surface.
+    #[error(
+        "versioned object {vo_id} already holds trunk version {trunk_version} \
+         (created by {held_by:?}); a trunk position is unique across creating systems"
+    )]
+    TrunkPositionInUse {
+        /// The version container the archive record targets.
+        vo_id: Uuid,
+        /// The trunk position both rows claim.
+        trunk_version: i32,
+        /// The `creating_system_id` of the row already holding the position.
+        held_by: String,
+    },
+
     /// A driver/pool/query error from `sqlx`.
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
@@ -62,10 +85,12 @@ impl From<StorageError> for crate::service::status::SmError {
             // A raw driver/pool/query error carries SQLSTATE + constraint detail
             // — classify it instead of collapsing to a blanket 500.
             StorageError::Database(db) => classify_sqlx(&db),
-            // A client-supplied CONTRIBUTION uid already in use → `409`
+            // Two conflicts with content this repository already holds →
+            // `409`: a client-supplied CONTRIBUTION uid already in use
             // (normally intercepted at the versioning call site; this is the
-            // correct fallback should it propagate).
-            StorageError::ContributionUidInUse(_) => {
+            // correct fallback should it propagate), and an archive record
+            // claiming an occupied trunk position of a version container.
+            StorageError::ContributionUidInUse(_) | StorageError::TrunkPositionInUse { .. } => {
                 SmError::new(CallStatusType::Conflict, e.to_string())
             }
             // The one-EHR-per-subject index → `409` (normally intercepted in

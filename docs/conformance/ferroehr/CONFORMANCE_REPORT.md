@@ -7,12 +7,12 @@ Runner: cnf-runner 3.17.1 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 893 |
+| passed | 904 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 930 |
+| total | 941 |
 
 ## By chapter
 
@@ -20,12 +20,12 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 375 | 0 | 0 | 18 |
-| — EHR resource | 24 | 0 | 0 | 2 |
-| — EHR_STATUS | 43 | 0 | 0 | 5 |
-| — COMPOSITION | 121 | 0 | 0 | 0 |
+| **EHR** | 384 | 0 | 0 | 18 |
+| — EHR resource | 25 | 0 | 0 | 2 |
+| — EHR_STATUS | 44 | 0 | 0 | 5 |
+| — COMPOSITION | 125 | 0 | 0 | 0 |
 | — DIRECTORY | 69 | 0 | 0 | 6 |
-| — CONTRIBUTION | 82 | 0 | 0 | 5 |
+| — CONTRIBUTION | 85 | 0 | 0 | 5 |
 | — Item tags | 30 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 92 | 0 | 0 | 10 |
@@ -39,8 +39,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Parties | 46 | 0 | 0 | 3 |
 | — Party relationships | 17 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
-| **Messaging** | 39 | 0 | 0 | 0 |
-| — EHR Extract | 23 | 0 | 0 | 0 |
+| **Messaging** | 41 | 0 | 0 | 0 |
+| — EHR Extract | 25 | 0 | 0 | 0 |
 | — TDD | 16 | 0 | 0 | 0 |
 | **Admin** | 54 | 0 | 0 | 2 |
 | — Admin service | 24 | 0 | 0 | 2 |
@@ -82,12 +82,12 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Adl2OptProvisioning | pass | 27 | 0 | 0 | 2 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
-| EhrOperations | pass | 21 | 0 | 0 | 2 |
+| EhrOperations | pass | 22 | 0 | 0 | 2 |
 | EhrStatus | pass | 42 | 0 | 0 | 5 |
 | CompositionOps | pass | 50 | 0 | 0 | 0 |
 | DirectoryOps | pass | 69 | 0 | 0 | 8 |
-| ChangeSets | pass | 75 | 0 | 0 | 5 |
-| Versioning | pass | 64 | 0 | 0 | 0 |
+| ChangeSets | pass | 78 | 0 | 0 | 5 |
+| Versioning | pass | 69 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
 | PartyOperations | pass | 49 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 17 | 0 | 0 | 0 |
@@ -101,7 +101,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
 | EhrArchive | pass | 7 | 0 | 0 | 0 |
 | DemographicArchive | pass | 8 | 0 | 0 | 0 |
-| EhrExtract | pass | 23 | 0 | 0 | 0 |
+| EhrExtract | pass | 25 | 0 | 0 | 0 |
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 893 of 930 selected cases driven.
+Coverage: 904 of 941 selected cases driven.
 
 Not-executed verdicts (each cited):
 

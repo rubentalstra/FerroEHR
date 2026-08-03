@@ -203,6 +203,219 @@ async fn temporal_versioning_model_behaves() {
     assert_eq!(all, 2);
 }
 
+/// A TRUNK position is unique across creating systems; a BRANCH id is not.
+///
+/// RM common `master06-change_control_package.adoc` §Version Identification
+/// §Distributed Versioning identifies a version globally by the tuple
+/// `{object_id, creating_system_id, version_tree_id}` — but that tuple alone
+/// would admit two versions of ONE container both claiming trunk position 2,
+/// one per system. The model forbids it: §Copying §Subsequent Local
+/// Modifications makes a second system BRANCH rather than extend the trunk
+/// ("the local system id is recorded in the `uid.creating_system_id()`
+/// attribute, while branching numbering is used in the
+/// `uid.version_tree_id()`"), and §Moving Version Containers has the trunk
+/// CONTINUE its increment under the new system's id. Either way the trunk is
+/// one global sequence.
+///
+/// BRANCH ids, by contrast, legitimately collide across systems — each system
+/// allocates its branch numbers locally, which is precisely what the 3-part
+/// identifier exists to disambiguate ("Two places are indicated on the diagram
+/// where identification clashes could have occurred, but are prevented due to
+/// the use of the 3-part unique Version identifier scheme"). So the tuple
+/// constraint keeps `creating_system_id` and the trunk-position index does not.
+///
+/// The two live write paths derive the tree position from the container's own
+/// tip and cannot produce a duplicate; the archive load replays arbitrary file
+/// input, so it is guarded — and this pins both the typed refusal and the
+/// database backstop behind it.
+#[tokio::test]
+async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_not() {
+    use ferroehr::ids::{EhrId, VoId};
+    use ferroehr::storage::error::StorageError;
+    use ferroehr::storage::version_repo::import::{VerbatimVersionRow, insert_version_verbatim};
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let (vo, ehr_id) = seed_version(&pool).await;
+    // The seeded row is trunk 1 created by `ferroehr.test`.
+    let (contribution_id, audit_id): (Uuid, Uuid) =
+        sqlx::query_as("SELECT contribution_id, audit_id FROM vo_version WHERE vo_id = $1")
+            .bind(vo)
+            .fetch_one(&pool)
+            .await
+            .expect("seeded provenance");
+
+    let row = |trunk: i32, branch: i32, branch_version: i32, system: &'static str, ord: i32| {
+        VerbatimVersionRow {
+            vo_id: VoId(vo),
+            kind: "COMPOSITION",
+            ehr_id: EhrId(ehr_id),
+            sys_version: ord,
+            trunk_version: trunk,
+            branch_number: branch,
+            branch_version,
+            preceding_version_uid: None,
+            other_input_version_uids: None,
+            sys_period_lower: Some("2026-01-01T00:00:00Z"),
+            sys_period_upper: Some("2026-01-02T00:00:00Z"),
+            lifecycle_state: "532",
+            contribution_id,
+            audit_id,
+            template_id: None,
+            signature: None,
+            signature_client_supplied: false,
+            creating_system_id: system,
+            wrapped_original: None,
+        }
+    };
+
+    let mut conn = pool.acquire().await.expect("connection");
+
+    // A second creating system claiming the SAME trunk position is refused,
+    // and the refusal names the container, the position and the holder.
+    let clash = insert_version_verbatim(&mut conn, &row(1, 0, 0, "sysB.example.org", 2)).await;
+    match clash {
+        Err(StorageError::TrunkPositionInUse {
+            vo_id,
+            trunk_version,
+            held_by,
+        }) => {
+            assert_eq!(vo_id, vo);
+            assert_eq!(trunk_version, 1);
+            assert_eq!(held_by, "ferroehr.test");
+        }
+        other => panic!("expected a typed trunk-position conflict, got {other:?}"),
+    }
+
+    // The database is the backstop behind the guard: the same row written past
+    // the repository layer still cannot land.
+    let raw = sqlx::query(
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
+         contribution_id, audit_id, creating_system_id) \
+         VALUES ($1, 'COMPOSITION', $2, 2, 1, \
+                 tstzrange('2026-01-01T00:00:00Z'::timestamptz, '2026-01-02T00:00:00Z'::timestamptz), \
+                 $3, $4, 'sysB.example.org')",
+    )
+    .bind(vo)
+    .bind(ehr_id)
+    .bind(contribution_id)
+    .bind(audit_id)
+    .execute(&pool)
+    .await;
+    assert!(
+        raw.is_err(),
+        "uq_vo_version_trunk_position must reject a second trunk row at one position"
+    );
+
+    // A BRANCH id, however, may repeat across creating systems: `1.1.1` minted
+    // by two different systems off trunk node 1 are two distinct versions.
+    insert_version_verbatim(&mut conn, &row(1, 1, 1, "sysB.example.org", 3))
+        .await
+        .expect("a foreign branch off trunk 1");
+    insert_version_verbatim(&mut conn, &row(1, 1, 1, "sysC.example.org", 4))
+        .await
+        .expect("another system's branch with the SAME branch id is a distinct version");
+    let branches: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_version WHERE vo_id = $1 AND branch_number = 1",
+    )
+    .bind(vo)
+    .fetch_one(&pool)
+    .await
+    .expect("branch rows");
+    assert_eq!(
+        branches, 2,
+        "cross-system branch-id collisions stay admitted (the 3-part identifier disambiguates)"
+    );
+}
+
+/// An as-of read resolves along the TRUNK.
+///
+/// `VERSIONED_OBJECT.version_at_time (a_time): VERSION[1]`
+/// (`UML/classes/org.openehr.rm.common.versioned_object.adoc` §Functions)
+/// returns exactly one version, yet a container may have several valid tips at
+/// one instant — the trunk tip plus one per open branch — so only the trunk
+/// makes the answer unique. The class draws the same line elsewhere:
+/// `latest_version` is "the most recently added version (i.e. on trunk or any
+/// branch)" while `latest_trunk_version` and `trunk_lifecycle_state` read the
+/// trunk alone, the latter being how the spec says to decide "if the version
+/// container is logically deleted".
+///
+/// The corollary this pins on the other side: a container holding branches but
+/// no trunk version has no as-of answer — and that container is a state RM
+/// common `master06-change_control_package.adoc` §Copying §Subsequent Local
+/// Modifications rules out, since "branch versions … cannot be copied without
+/// their corresponding preceding versions on the same branch (if any) and trunk
+/// versions also being copied".
+#[tokio::test]
+async fn an_as_of_read_resolves_along_the_trunk() {
+    use ferroehr::ids::{EhrId, VoId};
+    use ferroehr::storage::version_repo::import::{VerbatimVersionRow, insert_version_verbatim};
+    use ferroehr::storage::version_repo::read::version_at;
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let (vo, ehr_id) = seed_version(&pool).await;
+    let (contribution_id, audit_id): (Uuid, Uuid) =
+        sqlx::query_as("SELECT contribution_id, audit_id FROM vo_version WHERE vo_id = $1")
+            .bind(vo)
+            .fetch_one(&pool)
+            .await
+            .expect("seeded provenance");
+
+    let branch_row = |target: VoId, ord: i32| VerbatimVersionRow {
+        vo_id: target,
+        kind: "COMPOSITION",
+        ehr_id: EhrId(ehr_id),
+        sys_version: ord,
+        trunk_version: 1,
+        branch_number: 1,
+        branch_version: 1,
+        preceding_version_uid: None,
+        other_input_version_uids: None,
+        sys_period_lower: Some("2020-01-01T00:00:00Z"),
+        sys_period_upper: None,
+        lifecycle_state: "532",
+        contribution_id,
+        audit_id,
+        template_id: None,
+        signature: None,
+        signature_client_supplied: false,
+        creating_system_id: "sysB.example.org",
+        wrapped_original: None,
+    };
+    let mut conn = pool.acquire().await.expect("connection");
+
+    // The seeded container's trunk version 1 is open from `now()`; a branch
+    // tip open across the same instant does not displace it.
+    insert_version_verbatim(&mut conn, &branch_row(VoId(vo), 2))
+        .await
+        .expect("branch beside the trunk");
+    let at = jiff::Timestamp::now();
+    let read = version_at(&pool, VoId(vo), at)
+        .await
+        .expect("as-of read")
+        .expect("the trunk version is current at this instant");
+    assert_eq!(
+        (read.trunk_version, read.branch_number, read.branch_version),
+        (1, 0, 0),
+        "an as-of read returns the TRUNK version, never a branch tip"
+    );
+
+    // A container with branches and no trunk version has no as-of answer — the
+    // copy-closure rule says such a container should not exist.
+    let branch_only = VoId(Uuid::now_v7());
+    insert_version_verbatim(&mut conn, &branch_row(branch_only, 1))
+        .await
+        .expect("a branch-only container");
+    assert!(
+        version_at(&pool, branch_only, at)
+            .await
+            .expect("as-of read")
+            .is_none(),
+        "a container with no trunk version has no as-of answer to give"
+    );
+}
+
 #[tokio::test]
 async fn node_codec_round_trips_through_the_database() {
     let db = testkit::db().await.expect("testkit database");

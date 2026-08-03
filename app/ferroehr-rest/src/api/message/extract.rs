@@ -26,8 +26,8 @@
 //! reads the HTTP method for a route outside the generated ITS-REST tables, so
 //! `POST /message/export` — a read whose selector is a whole `EXTRACT_SPEC`
 //! structure — is classified a write and refused to a read-only principal too.
-//! TODO: classify `POST /message/export` as a read for the read-only gate, the
-//! way the released ad-hoc AQL POST read already is
+//! TODO(#1778): classify `POST /message/export` as a read for the read-only
+//! gate, the way the released ad-hoc AQL POST read already is
 //! (`ferroehr-rest::extensions::access::authz::classify::is_write`), and drop
 //! the `403` from that one operation's declared responses.
 
