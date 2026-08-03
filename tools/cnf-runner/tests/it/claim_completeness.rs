@@ -104,7 +104,7 @@ fn assert_gate(findings: &[Finding], gate: &str, fragment: &str) {
 
 const MATRIX: &str = "artifacts/vocab/capability_matrix.yaml";
 const EHR_OPS_HEAD: &str =
-    "EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 23,";
+    "EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24,";
 
 /// A matrix row no catalogue case names, seeded to construct the hollow claim
 /// the `claim-completeness` gate exists to reject. Every committed row now
@@ -369,7 +369,7 @@ fn a_battery_below_its_min_cases_floor_fails_validate() {
     assert_gate(
         &world.findings(),
         "capability-depth",
-        "EhrOperations: 23 verdict-bearing case(s) against a floor of 999 — short by 976",
+        "EhrOperations: 24 verdict-bearing case(s) against a floor of 999 — short by 975",
     );
 }
 

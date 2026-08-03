@@ -1959,6 +1959,18 @@ cnf.messaging.ehr_extract.folder:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-29 (#659) for the import-into-an-EXISTING-EHR case (RM common master06 §Copying Case 2): it carries an X_VERSIONED_FOLDER rather than an EHR_STATUS, because an EHR holds at most one EHR_STATUS (EHR.ehr_status 1..1, RM ehr master04) while EHR.folders is unbounded (§Folders), so a received hierarchy genuinely lands where a second status could only be refused"
+cnf.messaging.ehr_extract.append_trunk_v1:
+  source: fixtures/messaging/ehr_extract.append_trunk_v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 as the FIRST half of master06 §Copying's third receiving situation ('an EHR exists, and previous copies have been made for the item in question'): an identity-disjoint X_VERSIONED_FOLDER container carrying only its trunk version 1, so its sibling append_trunk_v2 lands as a LATER version of the same container rather than a first receipt. A FOLDER for the same reason cnf.messaging.ehr_extract.folder is one — EHR.folders is unbounded (RM ehr master04 §Folders) while EHR.ehr_status is 1..1, so a received container genuinely lands in an existing EHR"
+cnf.messaging.ehr_extract.append_trunk_v2:
+  source: fixtures/messaging/ehr_extract.append_trunk_v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 as the SECOND half of the §Copying third-situation pair: the SAME version-container uid as append_trunk_v1 at trunk version 2, carrying preceding_version_uid ::1 and 251|modification|, and only that one version (extract_version_count 1 of total_version_count 2) — the shape master06 §Copying describes when 'some version of the item had already been received, [so] this step will have already occurred, and the requisite VERSIONED_OBJECT would already exist'. Its own commit instant (2026-07-28T11:45:00Z) is later than v1's, and both are earlier than any local import, which is what makes the local-chronology rule observable on an append"
 cnf.messaging.ehr_extract.invalid:
   source: fixtures/messaging/ehr_extract.invalid.json
   format: canonical-json

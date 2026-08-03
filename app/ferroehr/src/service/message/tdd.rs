@@ -143,6 +143,36 @@ impl FerroEhrService {
     /// validated [`Self::create_composition`] path. Returns the created
     /// COMPOSITION's `OBJECT_VERSION_ID`.
     ///
+    /// NOTE: this commits a PLAIN LOCAL `ORIGINAL_VERSION`, not the
+    /// `IMPORTED_VERSION`/`ORIGINAL_VERSION` pair RM ehr
+    /// `master04-ehr_package.adoc` §Versioning Scenarios sketches for its Case
+    /// 2 ("information received from a feeder system, e.g. a test result, which
+    /// will be converted and used to create a new `IMPORTED_VERSION<COMPOSITION>`
+    /// and `ORIGINAL_VERSION<COMPOSITION>` pair"). Nothing binds this operation
+    /// to that scenario — the SM describes `import_tdd` only as "Import a TDD"
+    /// (`UML/classes/i_tdd_service.adoc`) — and the pair is unconstructible from
+    /// a TDD anyway: `IMPORTED_VERSION.item` is typed `ORIGINAL_VERSION 1..1`,
+    /// whose `uid` (an `OBJECT_VERSION_ID` naming a creating system and a
+    /// version-tree position), `contribution` and `commit_audit` are all
+    /// mandatory, and a Template Data Document supplies none of the three.
+    /// Minting them would fabricate a foreign version identity for a version
+    /// that never existed anywhere, contradicting the governing property of the
+    /// wrapper — RM common `master06-change_control_package.adoc` §Copying:
+    /// "the `ORIGINAL_VERSION` instance is never modified - it remains a
+    /// faithful copy of its original". There is no original here to be faithful
+    /// to.
+    ///
+    /// The spec's own mechanism for feeder provenance is the one master04 gives
+    /// immediately after the case list, and it is content, not versioning: "the
+    /// `AUDIT_DETAILS` is always used to document the addition of information
+    /// locally, regardless of where it has come from. If there is a need to
+    /// record original audit details (via the `COMPOSITION._feeder_audit_`),
+    /// they become part of the content of the versioned object." A converted
+    /// TDD carrying `COMPOSITION.feeder_audit` therefore keeps its feeder
+    /// provenance through this path, inside the committed content, while the
+    /// commit's own `AUDIT_DETAILS` documents the local addition. Register
+    /// AMB-200.
+    ///
     /// # Errors
     /// - `content_invalid` — the payload is not well-formed XML / has no root,
     ///   or the produced COMPOSITION fails WebTemplate/RM/terminology

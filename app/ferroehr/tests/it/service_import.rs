@@ -131,6 +131,44 @@ async fn export_one(svc: &FerroEhrService, ehr: ferroehr::ids::EhrId) -> Extract
         .expect("EXTRACT deserializes into the typed RM model")
 }
 
+/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category` and
+/// `composer` are all `1..1` (RM ehr, COMPOSITION class).
+fn minimal_composition(name: &str) -> Value {
+    json!({
+        "_type": "COMPOSITION",
+        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+                "_type": "ARCHETYPE_ID",
+                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+            },
+            "rm_version": "1.2.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+            "code_string": "en"
+        },
+        "territory": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+            "code_string": "NL"
+        },
+        "category": {
+            "_type": "DV_CODED_TEXT",
+            "value": "event",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "433"
+            }
+        },
+        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
+    })
+}
+
 /// The content item of an extract whose wrapped object has the given
 /// `X_VERSIONED_*` `_type`.
 fn find_by_xtype<'a>(extract: &'a Value, xtype: &str) -> Option<&'a Value> {
@@ -855,5 +893,235 @@ async fn a_signed_import_signs_the_wrapper_and_the_read_verifies_it() {
         served["item"].get("signature"),
         served.get("signature"),
         "the wrapper signature must not be copied onto the wrapped original"
+    );
+}
+
+/// A cloned EHR keeps the SOURCE `ehr_id` but takes the RECEIVING system's
+/// `system_id` — on both routes that can produce a clone.
+///
+/// RM ehr `master04-ehr_package.adoc` §EHR Identifier Allocation states both
+/// halves in one paragraph: "the EHR id should be a copy of the EHR id from the
+/// other institution. In all cases, the `EHR._system_id_` value should be set
+/// to the value that would normally be used for locally created EHRs. In the
+/// case of creating a cloned EHR, the `_system_id_` is from the receiving
+/// (cloning) system." RM common `master06-change_control_package.adoc` §Copying
+/// says the same of the id half — "the newly created EHR should re-use the EHR
+/// identifier from the source system. This establishes the new EHR as an
+/// intentional clone."
+///
+/// The two routes are the EHR-Extract import and the released
+/// client-supplied-id creation (the only released affordance for the clone),
+/// and the source here runs under a DIFFERENT system id, so a regression that
+/// copied the source's value would be visible rather than accidentally equal.
+#[tokio::test]
+async fn a_cloned_ehr_keeps_the_source_ehr_id_but_takes_the_local_system_id() {
+    const SOURCE_SYSTEM: &str = "sysA.example.org";
+    const TARGET_SYSTEM: &str = "sysB.example.org";
+
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool()).with_system_id(SOURCE_SYSTEM);
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool()).with_system_id(TARGET_SYSTEM);
+
+    let ehr = seed_ehr(&source).await;
+    let source_summary = source.get_ehr(ehr).await.expect("source summary");
+    assert_eq!(
+        source_summary.system_id, SOURCE_SYSTEM,
+        "fixture: the source EHR really was created by the other system"
+    );
+
+    // Route 1 — the EHR-Extract import (master06 §Copying's first situation).
+    target
+        .import_ehr(None, export_one(&source, ehr).await)
+        .await
+        .expect("import_ehr");
+    let clone = target.get_ehr(ehr).await.expect("clone summary");
+    assert_eq!(
+        clone.ehr_id, source_summary.ehr_id,
+        "the clone re-uses the source EHR identifier"
+    );
+    assert_eq!(
+        clone.system_id, TARGET_SYSTEM,
+        "EHR.system_id is the receiving (cloning) system's, never the source's"
+    );
+
+    // Route 2 — the released client-supplied-id creation, into another
+    // repository: the same id, and again the local system id.
+    let third_db = testkit::db().await.expect("testkit database");
+    let third = FerroEhrService::new(third_db.pool()).with_system_id(TARGET_SYSTEM);
+    third
+        .create_ehr_with_id(ehr, None)
+        .await
+        .expect("create with a client-supplied id");
+    let by_id = third.get_ehr(ehr).await.expect("summary");
+    assert_eq!(by_id.ehr_id, source_summary.ehr_id);
+    assert_eq!(
+        by_id.system_id, TARGET_SYSTEM,
+        "a client-supplied EHR id never carries a foreign system_id with it"
+    );
+}
+
+/// The as-of illusion RM common `master06-change_control_package.adoc` §Copying
+/// argues against at length: "a query for the state of a Version container at
+/// earlier commit times correctly returns what information existed at that time
+/// in that container, rather than giving the illusion that recently copied
+/// Versions were there earlier than the time of local committal (as would occur
+/// if the original commit time of the `ORIGINAL_VERSION` object was used for
+/// comparison purposes in such queries)."
+///
+/// So an as-of read at an instant BEFORE the local import must not see the
+/// imported version, even though the wrapped original's own commit audit
+/// records an earlier instant — which it still does, and this test asserts
+/// both halves so a server that simply discarded the source chronology would
+/// fail it too.
+#[tokio::test]
+async fn an_as_of_read_before_the_import_does_not_see_the_imported_version() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    // A plain modifiable source EHR (the seeded fixture ends non-modifiable).
+    let ehr = source.create_ehr(None).await.expect("source ehr");
+    let composition_uid = source
+        .create_composition(ehr, uv(minimal_composition("as-of"), "249", None))
+        .await
+        .expect("source composition")
+        .version_uid();
+    let vo_id: ferroehr::ids::VoId = composition_uid
+        .split("::")
+        .next()
+        .expect("object_id")
+        .parse()
+        .expect("vo uuid");
+    let source_instant = source
+        .composition_version_envelope(ehr, composition_uid.parse().expect("ovid"))
+        .await
+        .expect("source version")["commit_audit"]["time_committed"]["value"]
+        .as_str()
+        .expect("source commit instant")
+        .to_owned();
+
+    // Everything the source did is now in the past; the import has not run.
+    let before_import = jiff::Timestamp::now().to_string();
+
+    target
+        .import_ehr(None, export_one(&source, ehr).await)
+        .await
+        .expect("import_ehr");
+
+    // At the pre-import instant the container held nothing locally.
+    let illusion = target
+        .get_composition_at_time(ehr, vo_id, Some(before_import.clone()))
+        .await;
+    assert!(
+        illusion.is_err(),
+        "an as-of read before the local committal must not see the copied version, got {illusion:?}"
+    );
+    // …while an as-of read now does see it.
+    target
+        .get_composition_at_time(ehr, vo_id, None)
+        .await
+        .expect("the imported version is current now");
+    // The control: the source's own committal instant IS retained, inside the
+    // wrapped original (master06 §Committal and Audits), and it precedes the
+    // instant the as-of read just refused — so the refusal is chronology, not
+    // discarded provenance.
+    let served = target
+        .composition_version_envelope(ehr, composition_uid.parse().expect("ovid"))
+        .await
+        .expect("imported version");
+    assert_eq!(
+        served["item"]["commit_audit"]["time_committed"]["value"],
+        json!(source_instant),
+        "the wrapped original keeps its own (earlier) committal instant"
+    );
+    assert!(
+        source_instant.as_str() < before_import.as_str(),
+        "fixture: the source committed before the instant the as-of read refused"
+    );
+}
+
+/// RM common `master06-change_control_package.adoc` §Committal and Audits:
+/// "the `ORIGINAL_VERSION` instance is never modified - it remains a faithful
+/// copy of its original, no matter how many systems it may be copied through",
+/// and each receiving system commits its own `IMPORTED_VERSION` wrapper whose
+/// `commit_audit`/`contribution` "record the local act of committal".
+///
+/// Two hops therefore produce TWO distinct local wrappers over ONE unchanged
+/// original — never a wrapper wrapping a wrapper, and never a third rewriting
+/// of the original.
+#[tokio::test]
+async fn a_two_hop_copy_wraps_at_each_system_over_one_unchanged_original() {
+    let db_a = testkit::db().await.expect("testkit database");
+    let system_a = FerroEhrService::new(db_a.pool()).with_system_id("sysA.example.org");
+    let db_b = testkit::db().await.expect("testkit database");
+    let system_b = FerroEhrService::new(db_b.pool()).with_system_id("sysB.example.org");
+    let db_c = testkit::db().await.expect("testkit database");
+    let system_c = FerroEhrService::new(db_c.pool()).with_system_id("sysC.example.org");
+
+    let ehr = seed_ehr(&system_a).await;
+    let original = find_by_xtype(
+        &system_a.extract_ehrs(ehr).await.expect("export A")[0],
+        "X_VERSIONED_EHR_STATUS",
+    )
+    .expect("exported EHR_STATUS")["item"]["versions"][0]
+        .clone();
+    let uid = original["uid"]["value"].as_str().expect("uid").to_owned();
+    let (vo_id, version) = {
+        let mut parts = uid.splitn(3, "::");
+        let vo: &str = parts.next().expect("object_id");
+        let _system = parts.next().expect("creating_system_id");
+        (
+            ferroehr::ids::VoId(vo.parse().expect("vo uuid")),
+            parts.next().expect("version_tree_id").to_owned(),
+        )
+    };
+
+    // Hop 1: A → B.
+    system_b
+        .import_ehr(None, export_one(&system_a, ehr).await)
+        .await
+        .expect("import into B");
+    let at_b = system_b
+        .ehr_status_version_envelope(ehr, vo_id, &version)
+        .await
+        .expect("the version at B");
+
+    // Hop 2: B → C, from B's own re-export.
+    system_c
+        .import_ehr(None, export_one(&system_b, ehr).await)
+        .await
+        .expect("import into C");
+    let at_c = system_c
+        .ehr_status_version_envelope(ehr, vo_id, &version)
+        .await
+        .expect("the version at C");
+
+    for (system, served) in [("B", &at_b), ("C", &at_c)] {
+        assert_eq!(
+            served["_type"],
+            json!("IMPORTED_VERSION"),
+            "system {system} wraps the received version in its own IMPORTED_VERSION"
+        );
+        assert_eq!(
+            served["item"]["_type"],
+            json!("ORIGINAL_VERSION"),
+            "system {system} wraps the ORIGINAL, never another wrapper"
+        );
+        assert_eq!(
+            served["item"], original,
+            "system {system} must carry the original unchanged, however many hops it took"
+        );
+    }
+    // Each hop's wrapper records its OWN act of committal.
+    assert_ne!(
+        at_b["contribution"]["id"]["value"], at_c["contribution"]["id"]["value"],
+        "the two wrappers name two different local CONTRIBUTIONs"
+    );
+    assert_ne!(
+        at_b["commit_audit"]["time_committed"]["value"],
+        at_c["commit_audit"]["time_committed"]["value"],
+        "the two wrappers record two different local committal instants"
     );
 }

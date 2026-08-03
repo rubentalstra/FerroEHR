@@ -265,8 +265,31 @@ pub async fn read_version(
 }
 
 /// Read the version of an object current at a given instant (time-travel): the
-/// row whose `sys_period` contains `at` (master08 §Change Management — any
-/// previous state reconstructable). `None` if the object did not exist then.
+/// TRUNK row whose `sys_period` contains `at` (master08 §Change Management —
+/// any previous state reconstructable). `None` if the object had no trunk
+/// version then.
+///
+/// NOTE: the trunk restriction is deliberate. `VERSIONED_OBJECT.version_at_time
+/// (a_time): VERSION[1]` returns exactly ONE version
+/// (`UML/classes/org.openehr.rm.common.versioned_object.adoc` §Functions), yet
+/// at any instant a container may have several valid tips — the trunk tip plus
+/// one per open branch — so an unrestricted as-of read has no single answer to
+/// give. The trunk is the lineage that makes it unique, and it is the one the
+/// class treats as the container's own line elsewhere: `latest_version` is
+/// documented as "the most recently added version (i.e. on trunk or any
+/// branch)" while `latest_trunk_version` and `trunk_lifecycle_state` read the
+/// trunk alone, the latter being how the spec says to determine "if the version
+/// container is logically deleted".
+///
+/// A container holding branches but NO trunk version — the one shape this
+/// returns `None` for that a caller might not expect — is a state RM common
+/// `master06-change_control_package.adoc` §Copying §Subsequent Local
+/// Modifications rules out: its second systematic rule is that "branch versions
+/// from the original systems that are copied to another system cannot be copied
+/// without their corresponding preceding versions on the same branch (if any)
+/// and trunk versions also being copied", and a locally authored branch forks
+/// from a version already held. So every branch in a well-formed container has
+/// its trunk ancestry beside it.
 ///
 /// # Errors
 /// Returns [`StorageError`] on a driver/reassembly failure.
