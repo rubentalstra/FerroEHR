@@ -577,95 +577,31 @@ pub(in crate::service) fn validate_ehr_access(
 }
 
 /// Validate a client-supplied FOLDER tree before it is committed (directory
-/// create/update and the CONTRIBUTION FOLDER path). RM common `folder.adoc` +
-/// RM ehr master04 §Folders:
+/// create/update and the CONTRIBUTION FOLDER path): the whole-instance RM
+/// class-invariant + terminology pass ([`validate_rm_invariants_for_commit`]),
+/// which now carries EVERY rule this function once restated by hand:
 ///
-/// - every node of the tree carries a `_type` conforming to the RM-declared
-///   type of the slot it occupies (`FOLDER.items` → `OBJECT_REF`,
-///   `FOLDER.folders` → `FOLDER`), read from the generated RM model
-///   ([`openehr_rm::model::attribute`] / [`openehr_rm::model::is_a`]). This is
-///   the WRONGNESS half of "Folder structures do not contain Compositions,
-///   only references to them" (master04 §Folders): a COMPOSITION committed by
-///   value into `items` is a positive type contradiction and is refused
-///   whatever the lifecycle state (RM common master06 §Incomplete Content —
-///   "data may be missing, but it may not be wrong").
-///
-/// The PRESENCE half is NOT restated here: an `OBJECT_REF`'s mandatory
-/// `id`/`namespace`/`type`, a member carrying a key `OBJECT_REF` does not
-/// declare, `LOCATABLE.name` mandatoriness, `Archetype_node_id_valid`,
-/// `Links_valid`, and the archetype-root identity rule all come from the
-/// whole-instance RM class-invariant + terminology pass
-/// ([`validate_rm_invariants_for_commit`]), which walks `items`, `folders`,
-/// `archetype_details`, each `LINK` in `links`, and `feeder_audit` — and which
-/// relaxes exactly the presence layer on a `553|incomplete|` commit, so no
-/// lifecycle special-casing is needed here. `archetype_details` itself stays
-/// OPTIONAL on a FOLDER — the RM types it 0..1 and FOLDER carries no
-/// `Is_archetype_root` invariant.
-///
-/// NOTE: the type-conformance rule is enforced here rather than in the
-/// whole-instance pass because that pass dispatches each node on its own wire
-/// `_type` (falling back to the declared type only when the tag is absent), so
-/// a tagged node in a concretely-declared slot is validated as the type it
-/// claims to be, never against the slot. TODO(#1816): fold this into the
-/// whole-instance pass once it checks every tagged node against its declared
-/// slot type; this is the FOLDER-shaped instance of that general rule.
+/// - the declared-slot-type conformance rule (root + every member), from the
+///   generated RM model — `FOLDER.items` → `OBJECT_REF`, `FOLDER.folders` →
+///   `FOLDER`, so a COMPOSITION committed by value into `items` is refused
+///   whatever the lifecycle state ("Folder structures do not contain
+///   Compositions, only references to them", RM ehr master04 §Folders; RM
+///   common master06 §Incomplete Content — "data may be missing, but it may
+///   not be wrong");
+/// - the PRESENCE layer (`OBJECT_REF`'s mandatory `id`/`namespace`/`type`,
+///   `LOCATABLE.name`, `Archetype_node_id_valid`, `Links_valid`, the
+///   archetype-root identity rule), which relaxes exactly on a
+///   `553|incomplete|` commit — so no lifecycle special-casing is needed.
+///   `archetype_details` stays OPTIONAL on a FOLDER (the RM types it 0..1 and
+///   FOLDER carries no `Is_archetype_root` invariant).
 ///
 /// # Errors
-/// [`ServiceError::Unprocessable`] naming the first violated rule and the
-/// offending tree path, or [`ServiceError::ValidationFailed`] carrying the
-/// RM-invariant violations found anywhere in the tree (both → 422).
+/// [`ServiceError::ValidationFailed`] carrying every violation found in the
+/// tree, each at its own path (→ 422).
 pub(in crate::service) fn validate_folder(
     folder: &Value,
     incomplete: bool,
 ) -> Result<(), ServiceError> {
-    /// The RM-declared type of `attr` on `class`, from the generated model.
-    fn declared(class: &str, attr: &str) -> Option<&'static str> {
-        openehr_rm::model::attribute(class, attr).map(|a| a.declared_type)
-    }
-
-    /// Refuse a member whose wire `_type` does not conform to `expected`.
-    fn conforms(member: &Value, expected: &str, path: &str) -> Result<(), ServiceError> {
-        let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
-        let obj = member
-            .as_object()
-            .ok_or_else(|| unproc(format!("{path}: must be a JSON object ({expected})")))?;
-        // An untagged member is legal canonical JSON in a concretely-declared
-        // slot; the whole-instance pass then validates it AS `expected`.
-        let Some(tag) = obj.get("_type").and_then(Value::as_str) else {
-            return Ok(());
-        };
-        if openehr_rm::model::is_a(tag, expected) {
-            return Ok(());
-        }
-        Err(unproc(format!(
-            "{path}: expected {expected} (or a subtype), got _type {tag:?} — Folder \
-             structures do not contain Compositions by value, only references to \
-             them (RM ehr master04 §Folders)"
-        )))
-    }
-
-    fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
-        conforms(node, "FOLDER", if path.is_empty() { "/" } else { path })?;
-        let Some(obj) = node.as_object() else {
-            return Ok(());
-        };
-        if let Some((items, ty)) = obj
-            .get("items")
-            .and_then(Value::as_array)
-            .zip(declared("FOLDER", "items"))
-        {
-            for (i, item) in items.iter().enumerate() {
-                conforms(item, ty, &format!("{path}/items[{i}]"))?;
-            }
-        }
-        if let Some(folders) = obj.get("folders").and_then(Value::as_array) {
-            for (i, sub) in folders.iter().enumerate() {
-                walk(sub, &format!("{path}/folders[{i}]"))?;
-            }
-        }
-        Ok(())
-    }
-    walk(folder, "")?;
     validate_rm_invariants_for_commit(folder, "FOLDER", incomplete)
 }
 

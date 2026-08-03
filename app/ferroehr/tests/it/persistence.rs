@@ -82,6 +82,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "sp_subject",
             "sp_variable",
             "stored_query",
+            "template_ref",
             "template_store",
             "tenant",
             "vo_archive",
