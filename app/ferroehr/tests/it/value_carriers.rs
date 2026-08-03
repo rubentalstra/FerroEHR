@@ -61,7 +61,7 @@ const ALLOWLIST: &[(&str, &str)] = &[
     ),
     (
         "service/response.rs",
-        "generic RESULT_SET row values (AQL projection class)",
+        "ServiceResponse::body — the hybrid RM/stored/dynamic carrier (commit-seam class, #1694 step 6)",
     ),
     (
         "service/subject_proxy/",
