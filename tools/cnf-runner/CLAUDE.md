@@ -10,7 +10,7 @@ language, ever.
 | Command | Purpose |
 |---|---|
 | `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). For `ferroehr` it composes TWO deployments of the one built image — the standard SMART/digest stack plus the openPGP-posture stack (`-p ferroehr-cnf-pgp`, host port 8081) — so both claimed signing modes land in the one record. Env: `CONF_SUT=ferroehr\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
-| `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr` | every machine gate over the artifact tree (zero findings = green) |
+| `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr [--write-report]` | every machine gate over the artifact tree (zero findings = green). **Read-only by default**; `--write-report` additionally refreshes `docs/conformance/coverage-report.md` (a check verb never mutates the tree unasked) |
 | `cargo run -p cnf-runner -- run --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out <dir> --sut-name N --sut-version V --statement <party>/statement.json [--filter SUBSTR]` | execute the functional catalogue against a live SUT |
 | `cargo run -p cnf-runner -- verdicts --statement F --results F --root tools/cnf-runner/artifacts --out <dir>` | the pure verdict pipeline + report/statement/certificate |
 | `cargo run -p cnf-runner -- perf --root tools/cnf-runner/artifacts --ixit F --results F --class POC\|S\|L\|R [--hours 1\|2\|4\|6\|8\|12]` | the measured class run (conformance-by-measurement; merges into results.json) |
@@ -218,7 +218,8 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   never the OAS) and fails on any SM operation, realized-binding
   outcome/format branch, or cross-cutting behaviour with neither a covering
   case nor a cited `artifacts/vocab/wire_surface.yaml` exception; `validate
-  --specs` refreshes `docs/conformance/coverage-report.md`. Two halves of the
+  --specs --write-report` refreshes `docs/conformance/coverage-report.md` (the
+  flag is required — plain `validate` never writes). Two halves of the
   domain are not authored but DERIVED, so nothing can hide by never being
   written down: a RELEASED ITS-REST operation the SM models no interface for
   is enumerated from the pinned `NON_SM_REST_OPERATIONS` table under a

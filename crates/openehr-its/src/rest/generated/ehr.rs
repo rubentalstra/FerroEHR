@@ -70,7 +70,7 @@ pub struct Clstr {
 
 /// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type Versionable = std::collections::BTreeMap<String, serde_json::Value>;
+pub type Versionable = serde_json::Value;
 
 /// The `Identifier` transport DTO of this API group (an ITS-REST OAS
 /// component schema).
@@ -231,11 +231,11 @@ pub struct NewContribution {
 
 /// The `ItemTagOfComposition` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfComposition = std::collections::BTreeMap<String, serde_json::Value>;
+pub type ItemTagOfComposition = serde_json::Value;
 
 /// The `ItemTagOfEhrStatus` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfEhrStatus = std::collections::BTreeMap<String, serde_json::Value>;
+pub type ItemTagOfEhrStatus = serde_json::Value;
 
 /// Parameters for `ehr_get_by_subject` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]

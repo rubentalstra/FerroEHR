@@ -8,7 +8,7 @@
 //!   (usize), so it is not a runnable check.
 
 use crate::data_types::encapsulated::dv_parsable::DvParsable;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl DvParsable {
     /// RM `DV_PARSABLE.size()`: size in bytes of `value`.

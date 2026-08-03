@@ -8,7 +8,7 @@
 
 use crate::data_structures::item_structure::item_table::ItemTable;
 use crate::data_structures::representation::item::Item;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for ItemTable {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

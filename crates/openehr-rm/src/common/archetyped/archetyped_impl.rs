@@ -4,7 +4,7 @@
 //! be non-empty.
 
 use crate::common::archetyped::archetyped::Archetyped;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Archetyped {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

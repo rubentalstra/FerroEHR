@@ -14,7 +14,7 @@
 //! structurally by the `ContentItem` enum).
 
 use crate::composition::composition::Composition;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Composition {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

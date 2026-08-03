@@ -61,7 +61,7 @@ pub struct Clstr {
 
 /// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type Versionable = std::collections::BTreeMap<String, serde_json::Value>;
+pub type Versionable = serde_json::Value;
 
 /// The `ListOfPartyIdentity` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
@@ -208,23 +208,23 @@ pub struct ObjectRefOfObjectVersionId {
 
 /// The `ItemTagOfPerson` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfPerson = std::collections::BTreeMap<String, serde_json::Value>;
+pub type ItemTagOfPerson = serde_json::Value;
 
 /// The `ItemTagOfAgent` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfAgent = std::collections::BTreeMap<String, serde_json::Value>;
+pub type ItemTagOfAgent = serde_json::Value;
 
 /// The `ItemTagOfGroup` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfGroup = std::collections::BTreeMap<String, serde_json::Value>;
+pub type ItemTagOfGroup = serde_json::Value;
 
 /// The `ItemTagOfOrganisation` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfOrganisation = std::collections::BTreeMap<String, serde_json::Value>;
+pub type ItemTagOfOrganisation = serde_json::Value;
 
 /// The `ItemTagOfRole` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfRole = std::collections::BTreeMap<String, serde_json::Value>;
+pub type ItemTagOfRole = serde_json::Value;
 
 /// Parameters for `agent_create` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]

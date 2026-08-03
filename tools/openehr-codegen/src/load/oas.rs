@@ -94,7 +94,16 @@ impl Oas {
     /// All operations across all paths.
     #[must_use]
     pub(crate) fn operations(&self) -> Vec<Operation<'_>> {
-        const METHODS: &[&str] = &["get", "put", "post", "delete", "patch"];
+        // Every HTTP method OAS 3.0 lets a Path Item Object declare
+        // (<https://spec.openapis.org/oas/v3.0.3#path-item-object>), minus
+        // `trace`, which the released ITS-REST bundles never use. `options`
+        // is NOT optional here: the STABLE System API declares exactly one
+        // operation and it is `OPTIONS /` (`system-codegen.openapi.yaml`,
+        // operationId `options` — the Options-and-Conformance operation),
+        // and the overview's HTTP-methods table lists OPTIONS as a method
+        // the API uses ("Describe the communication options for the target
+        // resource").
+        const METHODS: &[&str] = &["get", "put", "post", "delete", "patch", "head", "options"];
         let mut out = Vec::new();
         let Some(paths) = self.root.get("paths").and_then(Value::as_object) else {
             return out;

@@ -182,10 +182,12 @@ pub(crate) fn is_positive_int(s: &str) -> bool {
 /// `iso_oid = number, { '.', number }` — one or more `.`-separated non-empty
 /// runs of ASCII digits.
 ///
-/// Note the "one or more": the grammar admits a single group (`12345`), which
-/// is wider than the ≥2-group form the subtype *dispatch* uses to tell an OID
-/// from an internet id (`make_uid`). This predicate answers "is this string a
-/// legal `iso_oid`", which is a validity question, not a classification one.
+/// Note the "one or more": the grammar admits a single group (`12345`), and the
+/// subtype *dispatch* (`make_uid`) uses exactly this predicate, so a one-group
+/// OID classifies `ISO_OID` rather than falling through to `INTERNET_ID` — whose
+/// own production it would violate (`12345` is not a legal `label`: a
+/// multi-character label is `alphanum-ext-str, alphanum` and
+/// `alphanum-ext-str` must start with a *letter*).
 #[must_use]
 pub fn is_iso_oid(s: &str) -> bool {
     s.split('.').all(all_digits)
@@ -282,7 +284,18 @@ pub(crate) fn make_uid(value: &str) -> Uid {
     {
         return Uid::Uuid(Uuid { value: u });
     }
-    if is_oid(value) {
+    // NOTE: dispatch order is the §Syntaxes alternation order itself —
+    // `uid = iso_oid | uuid | internet_id`. It is load-bearing only where two
+    // productions overlap, and both overlaps resolve the same way the grammar
+    // lists them:
+    //   * `iso_oid` ∩ `internet_id` — an all-digit dotted string whose every
+    //     group is ONE digit (`5`, `1.2`) satisfies both (a lone digit is a
+    //     legal `label` via the `alphanum` alternative). `iso_oid` wins.
+    //   * `uuid` ∩ `internet_id` — a canonical UUID whose first character is a
+    //     letter (`abcdf3f0-…`) is also a legal single `label`. `uuid` wins.
+    // `iso_oid` ∩ `uuid` is empty (a `uuid` requires `-`, an `iso_oid` admits
+    // only digits and `.`), so the uuid arm above may precede this one.
+    if is_iso_oid(value) {
         return Uid::IsoOid(IsoOid {
             value: value.to_owned(),
         });
@@ -290,20 +303,6 @@ pub(crate) fn make_uid(value: &str) -> Uid {
     Uid::InternetId(InternetId {
         value: value.to_owned(),
     })
-}
-
-/// `true` for an ISO OID lexical form: two or more dot-separated groups, each a
-/// non-empty run of digits (e.g. `1.2.840.113554`).
-#[must_use]
-fn is_oid(s: &str) -> bool {
-    let mut groups = 0usize;
-    for g in s.split('.') {
-        if !all_digits(g) {
-            return false;
-        }
-        groups += 1;
-    }
-    groups >= 2
 }
 
 #[cfg(test)]
@@ -318,8 +317,50 @@ mod tests {
         ));
         assert!(matches!(make_uid("1.2.840.113554"), Uid::IsoOid(_)));
         assert!(matches!(make_uid("openehr.org"), Uid::InternetId(_)));
-        // A single digit group is not an OID (needs >= 2 groups) → internet id.
-        assert!(matches!(make_uid("12345"), Uid::InternetId(_)));
+        // `iso_oid = number, { '.', number }` — one group is a legal OID, and
+        // `12345` is NOT a legal `internet_id` label (a multi-character label
+        // must begin with a letter), so it can only be an ISO OID.
+        assert!(matches!(make_uid("12345"), Uid::IsoOid(_)));
+    }
+
+    /// The pathological shapes where the §Syntaxes productions overlap or
+    /// nearly do — each classified by the grammar, not by a heuristic.
+    #[test]
+    fn make_uid_pathological_shapes() {
+        // Single-group OIDs of every length.
+        for s in ["0", "5", "12345", "99999999999999999999"] {
+            assert!(matches!(make_uid(s), Uid::IsoOid(_)), "{s}");
+            assert!(is_iso_oid(s), "{s}");
+        }
+        // `iso_oid` ∩ `internet_id`: every group one digit — both productions
+        // accept, the alternation order gives it to `iso_oid`.
+        for s in ["1.2", "0.0.0", "5.5.5.5"] {
+            assert!(is_iso_oid(s), "{s}");
+            assert!(is_internet_id(s), "{s}");
+            assert!(matches!(make_uid(s), Uid::IsoOid(_)), "{s}");
+        }
+        // `uuid` ∩ `internet_id`: a canonical UUID starting with a letter is
+        // also a legal single label — the alternation order gives it to `uuid`.
+        let hexish = "abcdf3f0-1c0a-4a0e-9f2a-3b7f6b1e9c11";
+        assert!(is_uuid(hexish));
+        assert!(is_internet_id(hexish));
+        assert!(matches!(make_uid(hexish), Uid::Uuid(_)));
+        // A one-character digit label IS legal (`alphanum`), so a mixed dotted
+        // form whose every group is a legal label is an internet id.
+        for s in ["1.2.a3", "a.1.b2"] {
+            assert!(is_internet_id(s), "{s}");
+            assert!(matches!(make_uid(s), Uid::InternetId(_)), "{s}");
+        }
+        // Multi-character digit-leading labels are legal in NEITHER the
+        // `internet_id` nor (with a non-digit present) the `iso_oid`
+        // production, so they are not UIDs at all.
+        for s in ["1a", "12a.34", "1.23b", ""] {
+            assert!(!is_uid(s), "{s}");
+        }
+        // A dotted form with an empty group is no production's shape.
+        for s in ["1..2", ".1", "1.", "a..b"] {
+            assert!(!is_uid(s), "{s}");
+        }
     }
 
     /// BASE `master05` §"Composite Identifiers and Case": two identifiers

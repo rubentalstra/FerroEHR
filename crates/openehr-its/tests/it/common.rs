@@ -75,6 +75,41 @@ pub(crate) fn twinned(path: &Path) -> PathBuf {
     }
 }
 
+/// The RM class a corpus document is declared under when its canonical JSON
+/// omits the top-level `_type`.
+///
+/// ITS-JSON makes `_type` omittable exactly when the DECLARED slot is concrete
+/// (`docs/specs/openehr/ITS-JSON/` — the canonical form self-tags only where the
+/// static type is ambiguous), so a `_type`-less root is legal but carries its
+/// class in the CONTEXT, not the bytes. The vendored corpus states that context
+/// in its layout (`openehr_sdk/<kind>/canonical_json/…`), and a repo-authored
+/// twin (`twins/<stem>.valid.json`) inherits it from the vendored document it
+/// corrects. Both are DERIVED here — never a hand-maintained per-file table,
+/// which is the drift this registry exists to end.
+pub(crate) fn declared_root_type(path: &Path) -> Option<&'static str> {
+    let rel = corpus_rel(path);
+    if let Some(rest) = rel.strip_prefix("openehr_sdk/") {
+        let kind = rest.split('/').next()?;
+        return match kind {
+            "composition" => Some("COMPOSITION"),
+            "folder" => Some("FOLDER"),
+            "ehr" => Some("EHR_STATUS"),
+            "contribution" => Some("CONTRIBUTION"),
+            "item_structure" => Some("ITEM_TREE"),
+            _ => None,
+        };
+    }
+    // A twin inherits the declared slot of the vendored document it corrects.
+    let stem = rel.strip_prefix("twins/")?.strip_suffix(".valid.json")?;
+    corpus_files()
+        .into_iter()
+        .find(|p| {
+            corpus_rel(p).starts_with("openehr_sdk/")
+                && p.file_stem().and_then(|s| s.to_str()) == Some(stem)
+        })
+        .and_then(|p| declared_root_type(&p))
+}
+
 /// Corpus files that are **not** canonical RM 1.2 objects, with the reason each
 /// is out of scope for the canonical gates. They are excluded, not silently
 /// skipped — the gates still fail if a file *not* listed here fails to read.
@@ -95,6 +130,32 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         "composition/canonical_json/rawdb_composition.json"
         | "composition/canonical_json/composition_with_dvinterval_composite.json" => {
             reason("not canonical JSON: `content` is a path-keyed map (raw-DB/flat form)")
+        }
+        // The rest of the raw-DB family: EHRbase's decomposed row-per-locatable
+        // DB shape (path keys `/name`, `/events`, `/$CLASS$`; one file is a bare
+        // JSON array of rows). No RM class is expressible in it.
+        "composition/canonical_json/rawdb_composition_history.json"
+        | "composition/canonical_json/rawdb_composition_observation_event.json"
+        | "composition/canonical_json/rawdb_composition_observation_event_item.json"
+        | "composition/canonical_json/rawdb_returning_array.json" => {
+            reason("not canonical JSON: EHRbase decomposed row-per-locatable DB shape")
+        }
+        // Legacy Jackson polymorphism: the discriminator is `@class`, not the
+        // ITS-JSON `_type` key (`docs/specs/openehr/ITS-JSON/` — the canonical
+        // form self-tags with `_type`).
+        "composition/canonical_json/full_composition.json" => {
+            reason("legacy Jackson `@class` discriminator, not the ITS-JSON `_type` form")
+        }
+        // ITS-REST CONTRIBUTION *request* DTOs: a `{versions, audit}` envelope
+        // with no `_type`, where RM `CONTRIBUTION` is a `{uid, versions, audit}`
+        // object whose `versions` is `Set<OBJECT_REF>`
+        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.contribution.adoc`
+        // §Attributes). They belong to the REST DTO layer, not the RM gate.
+        "contribution/canonical_json/latest-contribution-one_entry-composition.json"
+        | "contribution/canonical_json/latest-contribution-one_entry-composition-deletion.json"
+        | "contribution/canonical_json/latest-contribution-one_entry-composition-modification.json"
+        | "contribution/canonical_json/status.contribution.modification.json" => {
+            reason("ITS-REST contribution request envelope (`{versions, audit}`, no `_type`)")
         }
         // Deliberately invalid fixture (`EVENT_CONTEXT_WRONG`) — a negative test.
         "composition/canonical_json/invalid.json" => {
@@ -157,15 +218,22 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
             "defective fixture: a FHIR-style HIER_OBJECT_ID root that is not a uid \
              (valid twin in tests/fixtures/twins/, refusal in fixture_twins.rs)",
         ),
-        // DEFECTIVE upstream fixture, adjudicated: three `uid` slots are tagged
-        // `_type: OBJECT_VERSION_ID` while carrying a BARE UUID. §Syntaxes gives
-        // `object_version_id = object_id, '::', creating_system_id, '::',
-        // version_tree_id` — exactly three parts — so a one-part value is a
-        // `HIER_OBJECT_ID`, the other subtype of the declared `UID_BASED_ID`
-        // slot. Valid twin in `tests/fixtures/twins/` (re-tagged, values kept).
+        // DEFECTIVE upstream fixture, adjudicated on TWO axes. (a) Three `uid`
+        // slots are tagged `_type: OBJECT_VERSION_ID` while carrying a BARE
+        // UUID. §Syntaxes gives `object_version_id = object_id, '::',
+        // creating_system_id, '::', version_tree_id` — exactly three parts — so
+        // a one-part value is a `HIER_OBJECT_ID`, the other subtype of the
+        // declared `UID_BASED_ID` slot. (b) Two `OBJECT_REF.id` slots are tagged
+        // `_type: OBJECT_REF_ID`, which names NO class in the released specs;
+        // `OBJECT_REF.id` is declared `OBJECT_ID`
+        // (`docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_ref.adoc`
+        // §Attributes), and a bare-UUID value is a `HIER_OBJECT_ID` by the same
+        // §Syntaxes reasoning. Valid twin in `tests/fixtures/twins/` (both
+        // re-tagged, values kept).
         "folder/canonical_json/folder_with_items.json" => reason(
-            "defective fixture: bare-UUID values tagged OBJECT_VERSION_ID (valid twin in \
-             tests/fixtures/twins/, refusal in fixture_twins.rs)",
+            "defective fixture: bare-UUID values tagged OBJECT_VERSION_ID, and OBJECT_REF.id \
+             tagged with the non-existent class OBJECT_REF_ID (valid twin in \
+             tests/fixtures/twins/)",
         ),
         // Malformed: a `DV_TEXT` whose value is under a `name` key instead of `value`.
         "folder/canonical_json/folder_without_duplicates.json" => {
@@ -180,6 +248,21 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         "item_structure/canonical_json/ehr_other_details.json" => {
             reason("RM 1.1-era: ITEM_TREE omits mandatory LOCATABLE.name (RM 1.2)")
         }
+        // The repo-authored twin for `folder_with_items.json` corrects that
+        // document's identifier defects, but the FOLDER it corrects also carries
+        // an RM-1.1-era `details` ITEM_TREE with neither `name` nor
+        // `archetype_node_id`, both mandatory on `LOCATABLE` in RM 1.2
+        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+        // §Attributes) — the SAME class as `ehr_other_details.json` above.
+        // Completing it means AUTHORING a name and a node id the source document
+        // never stated, which is a fixture-authoring decision, not a re-tagging;
+        // it is registered here rather than left to a silent shape skip (which
+        // is how this twin went unexercised by every gate until the exclusion
+        // mechanisms were unified).
+        "twins/folder_with_items.valid.json" => reason(
+            "RM 1.1-era: FOLDER.details ITEM_TREE omits mandatory LOCATABLE.name + \
+                    archetype_node_id (RM 1.2); completing the twin needs authored values",
+        ),
         _ => None,
     }
 }

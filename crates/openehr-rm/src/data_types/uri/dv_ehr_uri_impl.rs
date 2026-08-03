@@ -7,7 +7,7 @@
 //! An empty value fails both (as in archie `DvEhrUriInvariantTest.invalid2`).
 
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 /// The scheme is the substring before the first `:` (RFC-3986 `scheme:` prefix).
 fn scheme(value: &str) -> Option<&str> {

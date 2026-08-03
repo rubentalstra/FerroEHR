@@ -7,7 +7,7 @@
 //! (`Archetype_node_id_valid`).
 
 use crate::integration::generic_entry::GenericEntry;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for GenericEntry {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

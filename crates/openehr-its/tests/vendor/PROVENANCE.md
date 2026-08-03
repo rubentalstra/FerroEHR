@@ -37,20 +37,26 @@ the GitHub contents API (raw), preserving the upstream sub-directory layout.
   slot is the concrete FOLDER).
 - `item_structure/canonical_json/` — 1 ITEM_TREE instance.
 
-### Files excluded from the round-trip corpus (documented, not silently)
+### Files excluded from the corpus gates (documented, not silently)
 
-The round-trip harness skips these by name because they are not RM-canonical
-instances (kept vendored so the exclusion is auditable):
+**There is exactly ONE exclusion registry: `excluded()` in
+`crates/openehr-its/tests/it/common.rs`.** It is the authoritative,
+per-file list with each entry's adjudication and spec citation; every
+harness (the readability / round-trip / ITS-JSON-schema gates in
+`fidelity.rs`, the canonical-output contract gate, the XML round-trip gate,
+the RM-validation mutation battery) consumes it — none keeps a second
+by-name list, and none absorbs a non-canonical document through a shape
+heuristic. A corpus file that is not a canonical single-RM-object root and
+has NO registry entry **fails** the readability gate, so an exclusion
+cannot stop applying unnoticed.
 
-- `composition/canonical_json/full_composition.json` — legacy Jackson
-  `@class` discriminator, not the ITS-JSON `_type` form.
-- `composition/canonical_json/rawdb_*.json` (4) — EHRbase decomposed
-  row-per-locatable DB format (`/$CLASS$`, `/name` keys), not canonical JSON.
-- `contribution/canonical_json/latest-contribution-*.json` and
-  `status.contribution.modification.json` (4) — EHRbase CONTRIBUTION
-  **request** DTOs (`{versions, audit}`), not the RM `CONTRIBUTION` object.
-- `composition/canonical_json/invalid.json`, `ips_invalid.json` — deliberate
-  RM-invalid negatives (used as parse/validation negatives, not round-trip).
+This document deliberately does not restate the list (a second copy is how
+the three mechanisms drifted apart). Read the registry. The families it
+covers: legacy Jackson `@class` documents, the EHRbase raw-DB
+row-per-locatable shapes, ITS-REST contribution request DTOs, deliberately
+invalid negatives, defective upstream fixtures (each with a repo-authored
+VALID TWIN under `tests/fixtures/twins/`), and RM-1.1-era documents that
+omit members RM 1.2 makes mandatory.
 
 ## RM version note
 

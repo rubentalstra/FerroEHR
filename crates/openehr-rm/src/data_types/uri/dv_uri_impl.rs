@@ -8,7 +8,7 @@
 //!   when the component is absent, matching the spec's `String` returns).
 
 use crate::data_types::uri::dv_uri::DvUriData;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 /// `true` when `s` is a syntactically valid RFC-3986 scheme:
 /// `ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )`.

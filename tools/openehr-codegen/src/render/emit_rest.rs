@@ -251,6 +251,37 @@ impl Ctx<'_> {
             // A ref to something not emitted anywhere → resolve + map structurally.
             return self.rust_type(self.oas.resolve(schema));
         }
+        // `allOf` COMPOSITION. A schema whose only structural content is a
+        // single-`$ref` `allOf` — no `properties` of its own — is a pure alias
+        // for its referent: OAS 3.0 defines `allOf` as "inline or referenced
+        // schema MUST be of a Schema Object and not a standard JSON Schema …
+        // allOf takes an array of object definitions that are validated
+        // *independently* but together compose a single object"
+        // (<https://spec.openapis.org/oas/v3.0.3#composition-and-inheritance-polymorphism>),
+        // so an empty own-contribution leaves exactly the referent's shape.
+        // The released ITS-REST OAS uses precisely this form to give one
+        // `ITEM_TAG` schema a per-resource NAME (`ItemTagOfComposition`,
+        // `ItemTagOfEhrStatus`, `ItemTagOfPerson`, …). Dropping the
+        // composition degraded all seven to an untyped map.
+        //
+        // A schema that ALSO declares its own `properties` is a genuine
+        // extension of its referent and keeps its own struct (the RM/BASE
+        // subtype chain); it never reaches here, because the caller emits it
+        // through the object branch.
+        if schema.get("properties").is_none()
+            && let Some(members) = schema.get("allOf").and_then(Value::as_array)
+        {
+            match members.as_slice() {
+                [only] => return self.rust_type(only),
+                // A multi-member `allOf` composes several schemas into one
+                // object, which needs a MERGED struct this emitter does not
+                // build. The released OAS contains none (every `allOf` in the
+                // vendored bundles has exactly one member), so this arm is
+                // unreachable today and carries the payload untyped rather
+                // than picking one member and silently losing the others.
+                _ => return "serde_json::Value".to_string(),
+            }
+        }
         match schema.get("type").and_then(Value::as_str) {
             Some("string") => "String".to_string(),
             Some("integer") => "i64".to_string(),
@@ -286,7 +317,8 @@ impl Ctx<'_> {
                     "std::collections::BTreeMap<String, serde_json::Value>".to_string()
                 }
             }
-            // allOf/oneOf/anyOf and untyped → free-form JSON.
+            // oneOf/anyOf and untyped → free-form JSON (single-`$ref` `allOf`
+            // composition is resolved above).
             _ => "serde_json::Value".to_string(),
         }
     }

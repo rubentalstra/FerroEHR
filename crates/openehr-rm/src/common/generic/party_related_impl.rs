@@ -15,7 +15,7 @@
 //!   [`crate::validate::terminology`] against the `openehr-term` bundle.
 
 use crate::common::generic::party_related::PartyRelated;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for PartyRelated {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

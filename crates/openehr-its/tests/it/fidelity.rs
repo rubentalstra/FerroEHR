@@ -11,8 +11,11 @@
 //!
 //! This is the acceptance test that our generated RM actually reads real
 //! openEHR data. Each corpus file is dispatched by its top-level `_type` to the
-//! matching generated type; `rawdb_*` / array / `_type`-less fragments are not
-//! canonical single-RM-object roots and are skipped with a recorded reason.
+//! matching generated type. `rawdb_*` / array / `_type`-less fragments are not
+//! canonical single-RM-object roots; every one of them is named in the SINGLE
+//! exclusion registry (`common::excluded`) with its adjudication, and a file
+//! that is not a canonical root WITHOUT a registry entry FAILS this gate — an
+//! exclusion can therefore never stop applying unnoticed.
 //!
 //! NOTE: the corpus is RM 1.1.0-era while the generated types are RM 1.2.0, and
 //! `OpenEhrType` deserialization is lenient (ignores unknown fields), so this
@@ -153,7 +156,6 @@ fn preview(v: &serde_json::Value) -> String {
 #[test]
 fn generated_rm_reads_the_openehr_sdk_corpus() {
     let mut ok = 0;
-    let mut skipped = 0;
     let mut excluded_count = 0;
     let mut failures: Vec<(String, String)> = Vec::new();
 
@@ -165,14 +167,36 @@ fn generated_rm_reads_the_openehr_sdk_corpus() {
             excluded_count += 1;
             continue;
         }
-        // Only canonical single-RM-object roots (a top-level `_type`).
+        // Only canonical single-RM-object roots (a top-level `_type`). A file
+        // that is NOT one is a registry decision, never a silent shape skip:
+        // absorbing it here is how an exclusion stops applying with no gate
+        // noticing (the drift this gate is unified against).
         let Ok(serde_json::Value::Object(map)) = serde_json::from_str::<serde_json::Value>(&txt)
         else {
-            skipped += 1; // arrays / non-objects (rawdb helpers)
+            failures.push((
+                name,
+                "non-object JSON root with no `excluded()` entry — adjudicate it in \
+                 tests/it/common.rs or fix the fixture"
+                    .to_owned(),
+            ));
             continue;
         };
-        let Some(ty) = map.get("_type").and_then(|v| v.as_str()) else {
-            skipped += 1; // _type-less fragments (rawdb / wrapped)
+        // A `_type`-less root is LEGAL when the declared slot is concrete; the
+        // class then comes from the corpus context, derived by
+        // `declared_root_type`. Neither present nor derivable = a gap to
+        // adjudicate, never a silent skip.
+        let Some(ty) = map
+            .get("_type")
+            .and_then(|v| v.as_str())
+            .or_else(|| crate::common::declared_root_type(&path))
+        else {
+            failures.push((
+                name,
+                "no top-level `_type`, no derivable declared root type, and no \
+                 `excluded()` entry — adjudicate it in tests/it/common.rs or fix \
+                 the fixture"
+                    .to_owned(),
+            ));
             continue;
         };
         match deserialize_as(ty, &txt) {
@@ -182,7 +206,7 @@ fn generated_rm_reads_the_openehr_sdk_corpus() {
     }
 
     println!(
-        "openEHR_SDK corpus: {ok} read OK, {skipped} skipped (non-canonical-root), \
+        "openEHR_SDK corpus: {ok} read OK, \
          {excluded_count} excluded (documented), {} failed",
         failures.len()
     );
@@ -236,7 +260,14 @@ fn generated_rm_round_trips_the_openehr_sdk_corpus() {
         else {
             continue; // non-canonical root (handled by the readability gate)
         };
-        let Some(ty) = map.get("_type").and_then(|v| v.as_str()) else {
+        // `_type`-less roots are legal on a concrete declared slot; the class
+        // comes from the corpus context (see `common::declared_root_type`), so
+        // they join this gate instead of being silently skipped.
+        let Some(ty) = map
+            .get("_type")
+            .and_then(|v| v.as_str())
+            .or_else(|| crate::common::declared_root_type(&path))
+        else {
             continue;
         };
         let input: serde_json::Value = serde_json::from_str(&txt).unwrap();
@@ -288,7 +319,14 @@ fn generated_rm_output_validates_against_its_json_schema() {
         else {
             continue;
         };
-        let Some(ty) = map.get("_type").and_then(|v| v.as_str()) else {
+        // `_type`-less roots are legal on a concrete declared slot; the class
+        // comes from the corpus context (see `common::declared_root_type`), so
+        // they join this gate instead of being silently skipped.
+        let Some(ty) = map
+            .get("_type")
+            .and_then(|v| v.as_str())
+            .or_else(|| crate::common::declared_root_type(&path))
+        else {
             continue;
         };
         match reserialize(ty, &txt) {

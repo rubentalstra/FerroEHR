@@ -1,0 +1,23 @@
+---
+source: crates/openehr-its/tests/it/dispatch_lockstep.rs
+expression: delta
+---
+[
+    "ATTESTATION",
+    "AUDIT_DETAILS",
+    "DV_INTERVAL",
+    "DV_MULTIMEDIA",
+    "DV_PERIODIC_TIME_SPECIFICATION",
+    "FEEDER_AUDIT_DETAILS",
+    "GENERIC_ENTRY",
+    "INSTRUCTION_DETAILS",
+    "INTERNET_ID",
+    "ISO_OID",
+    "ITEM_TABLE",
+    "ITEM_TAG",
+    "OBJECT_REF",
+    "OBJECT_VERSION_ID",
+    "PARTY_REF",
+    "REFERENCE_RANGE",
+    "VERSION_TREE_ID",
+]

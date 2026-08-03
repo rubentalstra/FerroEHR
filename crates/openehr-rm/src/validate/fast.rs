@@ -73,9 +73,9 @@ use serde_json::{Map, Value};
 use crate::model::{Container, RmClass};
 use crate::validate::generated;
 use crate::validate::{
-    InvariantViolation, Validate, is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_duration,
-    is_valid_iso_time,
+    is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_duration, is_valid_iso_time,
 };
+use openehr_base::validate::{InvariantViolation, Validate};
 
 /// Validate `value` (whose `_type` is `ty`) on the fast path. Returns `true`
 /// when the node was fully handled (invariants appended to `out`); `false`

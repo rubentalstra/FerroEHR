@@ -7,7 +7,7 @@
 //! we do not either — enforcing it would over-reject relative to the reference.
 
 use crate::data_structures::representation::cluster::Cluster;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Cluster {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

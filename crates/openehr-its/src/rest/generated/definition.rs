@@ -577,7 +577,7 @@ pub struct Clstr {
 
 /// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type Versionable = std::collections::BTreeMap<String, serde_json::Value>;
+pub type Versionable = serde_json::Value;
 
 /// The `DvIntervalOfDateTime` transport DTO of this API group (an ITS-REST OAS
 /// component schema).

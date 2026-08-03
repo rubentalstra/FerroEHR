@@ -5,7 +5,7 @@
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! Model-derived instance generation drives the validation walk over EVERY
-//! concrete RM class (Lane 3 of the hardening program).
+//! concrete RM class.
 //!
 //! The generators are derived from the BMM-generated static RM model
 //! (`openehr_rm::model`) — never hand-written shapes — and the enumeration is

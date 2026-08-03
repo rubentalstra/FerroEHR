@@ -17,7 +17,7 @@
 //! + `openehr-term`.
 
 use crate::data_types::encapsulated::dv_multimedia::DvMultimedia;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for DvMultimedia {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

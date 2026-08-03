@@ -110,6 +110,20 @@ Never park tests for crate X under crate Y's `tests/` directory.
   (https://doc.rust-lang.org/book/ch11-01-writing-tests.html). The
   `clippy.toml` `allow-*-in-tests` scoping keeps assertion panics legal, but
   plumbing failures should propagate with `?`, not `.unwrap()`.
+  **`clippy::panic_in_result_fn` (deny, workspace-wide) fires on this shape
+  and clippy offers NO `allow-…-in-tests` knob for it** (verified
+  empirically on the pinned 1.96 toolchain: `allow-panic-in-tests = true` is
+  already set and the lint still fires inside a `#[test] fn -> Result<…>`
+  that asserts; the clippy lint-configuration page lists no option for this
+  lint —
+  https://doc.rust-lang.org/clippy/lint_configuration.html). Adjudication:
+  **the Book shape wins in tests, the lint keeps its full strength in
+  production code.** A Result-returning test that also asserts carries
+  `clippy::panic_in_result_fn` in the same scoped relaxation its file
+  already uses for `panic`/`unwrap`/`expect`
+  (`#![allow(…, reason = "test assertions/diagnostics/fixtures")]` at the
+  test-file root, or a `#[expect(…, reason)]` on the single test). It is
+  never relaxed at the workspace level, and never in a non-test module.
 - **`#[should_panic]` always carries `expected = "…"`** — bare
   `should_panic` passes when the code panics for the WRONG reason (Book
   ch11.1), unacceptable in a suite that adjudicates spec behaviour.

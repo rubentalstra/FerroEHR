@@ -4,7 +4,7 @@
 //! must be non-empty.
 
 use crate::data_types::text::code_phrase::CodePhrase;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for CodePhrase {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

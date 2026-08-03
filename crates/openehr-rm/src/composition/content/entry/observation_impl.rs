@@ -11,7 +11,7 @@
 //! invariant.
 
 use crate::composition::content::entry::observation::Observation;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Observation {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
