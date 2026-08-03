@@ -910,6 +910,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-branch_version_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-container_shape",
       "status": "passed",
       "rows_driven": 1,
@@ -917,6 +923,19 @@
     },
     {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-deleted_version_envelope",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-imported_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-imported_version_xml_root",
+      "format": "canonical-xml",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -941,6 +960,13 @@
     },
     {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-version_unknown",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-version_xml_root",
+      "format": "canonical-xml",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2070,6 +2096,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-imported_version_member",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-imported_version_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-incomplete_missing_mandatory",
       "status": "passed",
       "rows_driven": 1,
@@ -2302,6 +2340,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.get_contribution-header_identity",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.get_contribution-import_contribution",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4051,6 +4095,12 @@
       "rows_total": 8
     },
     {
+      "case": "I_EHR_SERVICE.create_ehr-clone_system_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_SERVICE.create_ehr-committal_headers",
       "status": "passed",
       "rows_driven": 1,
@@ -4381,6 +4431,12 @@
     },
     {
       "case": "I_EHR_STATUS.get_versioned_ehr_status-container_shape",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-imported_version",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4733,6 +4789,18 @@
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-append_later_trunk_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_branched_lineage",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
