@@ -2,9 +2,9 @@
 //!
 //! This module is the operation-id `match` only: it decodes nothing and renders
 //! nothing itself, delegating each arm to the resource module that owns the spec
-//! resource ([`template_adl14`](super::template_adl14) /
-//! [`template_adl2`](super::template_adl2) /
-//! [`stored_query`](super::stored_query)). Every arm rebuilds the operation's
+//! resource ([`template_adl14`] /
+//! [`template_adl2`] /
+//! [`stored_query`]). Every arm rebuilds the operation's
 //! `*Params`, decodes any body, calls the trait method on [`AppState`], and
 //! renders a negotiated response inside its module.
 //!

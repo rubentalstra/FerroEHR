@@ -5,7 +5,7 @@
 //! (`vendor/grammar/base_lexer.g4`, `adl_keywords.g4`, `odin.g4`,
 //! `odin_values.g4`, `base_expressions.g4`) and the normative chapters they
 //! implement. Which of these tokens a given language actually produces is
-//! decided by [`super::reclassify`], not here — see the module docs of
+//! decided by [`super::reclassify()`], not here — see the module docs of
 //! [`super`] for the two-stage contract.
 //!
 //! `// NOTE:` The Expression Language (`LANG/docs/EL/`) is deliberately NOT

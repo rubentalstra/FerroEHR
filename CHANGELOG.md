@@ -75,6 +75,32 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A CONTRIBUTION whose audit omits `committer` is now refused (`422`)
+  instead of being attributed to the server's default identity.** The same
+  released commit schema that requires `change_type` requires `committer`
+  (`NewContribution.yaml` over `UpdateAudit.yaml`), and a server-invented
+  committer would put an identity the client never named into the audit
+  trail. The direct COMPOSITION/DIRECTORY routes are unchanged — there the
+  committal headers stay optional and the authenticated default applies,
+  exactly as the ITS-REST overview requires.
+
+- **An emptied ITEM_TAG collection is echoed as no header, never an empty
+  one.** The EHR-side write routes echoed an EMPTY `openehr-item-tag` header
+  when the stored collection was empty — but the empty header value is the
+  release's "remove all ITEM_TAGs" *request* instruction, so a mirroring
+  client would read the confirmation of its own wipe as an instruction to
+  wipe again (harmless) or, worse, treat state responses as carrying the
+  destructive form. Both echo paths now share one rule: an empty collection
+  emits no wrapper header.
+
+- **Terminology failure bodies no longer disclose deployment configuration on
+  the remaining two surfaces.** A terminology 404 named WHICH configured
+  provider answered, and a commit whose archetype constraint binding had no
+  configured terminology route answered a 500 revealing that routing gap; both
+  bodies now carry only what the client can act on, with the operator detail
+  on the trace record — completing the operator-detail adjudication for the
+  terminology surface.
+
 - **The generated ITS-REST contract is typed end to end.** The `emit-rest`
   generator resolved `$ref`s before emitting, so every request/response body
   and parameter lost its schema name and the trait/DTO surface degraded to

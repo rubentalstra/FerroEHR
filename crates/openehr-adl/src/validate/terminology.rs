@@ -11,7 +11,7 @@
 //! (VATID, VATCV). WOUC has no openEHR spec text — our own design/extension
 //! (archie parity), flagged at its check site.
 //!
-//! The pass is gated by [`super::run`]: it runs only when the basic
+//! The pass is gated by `super::run`: it runs only when the basic
 //! identification checks are clean and the terminology structure is sound
 //! (`master08` §Overview, "more basic kinds of errors being checked first" — a
 //! code cannot be judged against a missing or inconsistent terminology).

@@ -122,6 +122,12 @@ async fn validate_code_unknown_valueset_is_not_found() {
         .await
         .expect_err("404 → not found");
     assert_eq!(err.status, CallStatusType::VersionedObjectDoesNotExist);
+    // The 4xx body names what the CLIENT asked about, never WHICH configured
+    // provider answered (#1819 — the operator-detail adjudication's 4xx arm).
+    assert!(
+        err.message.contains("http://x/ValueSet/nope") && !err.message.contains("test"),
+        "the body names the asked-about id and not the provider: {err:?}"
+    );
 }
 
 #[tokio::test]

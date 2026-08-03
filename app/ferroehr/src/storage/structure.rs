@@ -24,7 +24,7 @@ use openehr_base::prelude::ArchetypeId;
 /// stay inline verbatim in the party's fragment (see the codec's
 /// `prune_children`), which is lossless and needs no per-container row.
 /// (The delta is pinned against [`crate::versioning::Kind`] by
-/// [`tests::demographic_party_roots_mirror_the_versioning_kinds`] — the
+/// `tests::demographic_party_roots_mirror_the_versioning_kinds` — the
 /// versioned-object domain is the owner of "which RM types are party roots";
 /// this list only records which of them the node codec also splits into rows.)
 const DEMOGRAPHIC_PARTY_ROOTS: [&str; 5] = ["PERSON", "ORGANISATION", "GROUP", "AGENT", "ROLE"];

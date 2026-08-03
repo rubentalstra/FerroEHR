@@ -1,5 +1,5 @@
 //! `GET /management/info` — the axum handler over the platform
-//! [`BuildInfo`](ferroehr::telemetry::build_info::BuildInfo) model
+//! [`BuildInfo`] model
 //! (the model lives in the platform, wire here).
 
 use axum::response::Json;

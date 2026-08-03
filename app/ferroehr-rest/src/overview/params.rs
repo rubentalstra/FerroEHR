@@ -19,7 +19,7 @@
 
 use http::{HeaderMap, HeaderValue};
 use indexmap::IndexMap;
-use serde::de::value::Error as ValueError;
+use serde::de::value::Error;
 use serde::de::{self, DeserializeOwned, Deserializer, IntoDeserializer, MapAccess, Visitor};
 
 use openehr_its::rest::runtime::ApiError;
@@ -201,7 +201,7 @@ pub(crate) const H_VERSION_ITEM_TAG: &str = "openehr-version-item-tag";
 /// `Inv_value_valid` forbids a SET-but-empty one — so a valueless tag has no
 /// `value` at all, on the wire in either direction. A header entry spelling
 /// `value=""` normalizes to absent on the way in (the same reading
-/// [`item_tags_from_header_entries`] has always applied), and the echo renders
+/// `item_tags_from_header_entries` has always applied), and the echo renders
 /// no `value` token at all on the way out.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ItemTagHeaderEntry {
@@ -373,6 +373,16 @@ pub(crate) fn validate_item_tag_entries(
 /// `value=""` echo describes a tag that violates `Inv_value_valid` and that
 /// this server never stored.
 pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> Option<HeaderValue> {
+    // An EMPTY collection emits NO header: the empty header value is the
+    // "remove all `ITEM_TAG`s" REQUEST instruction (ITS-REST overview
+    // `Requests_and_responses.md` §openehr-item-tag: "Providing an empty
+    // value for this header will effectively remove all ITEM_TAGs"), so a
+    // response echoing one would hand the client the destructive form as if
+    // it were state (#1837 — the EHR echo path emitted it; the demographic
+    // path guarded it; one rule now lives here for both).
+    if entries.is_empty() {
+        return None;
+    }
     let rendered = entries
         .iter()
         .map(|e| {
@@ -473,7 +483,7 @@ struct RequestValuesDeserializer {
 }
 
 impl<'de> Deserializer<'de> for RequestValuesDeserializer {
-    type Error = ValueError;
+    type Error = Error;
 
     fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         visitor.visit_map(RequestMapAccess {
@@ -498,7 +508,7 @@ struct RequestMapAccess {
 }
 
 impl<'de> MapAccess<'de> for RequestMapAccess {
-    type Error = ValueError;
+    type Error = Error;
 
     fn next_key_seed<K: de::DeserializeSeed<'de>>(
         &mut self,
@@ -531,7 +541,7 @@ struct ScalarDeserializer {
 }
 
 impl ScalarDeserializer {
-    fn first(&self) -> Result<&str, ValueError> {
+    fn first(&self) -> Result<&str, Error> {
         self.values
             .first()
             .map(String::as_str)
@@ -552,7 +562,7 @@ macro_rules! deserialize_parsed {
 }
 
 impl<'de> Deserializer<'de> for ScalarDeserializer {
-    type Error = ValueError;
+    type Error = Error;
 
     fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         // Untyped targets (e.g. `serde_json::Value`) receive the raw string.
@@ -614,7 +624,7 @@ impl<'de> Deserializer<'de> for ScalarDeserializer {
     }
 }
 
-impl IntoDeserializer<'_, ValueError> for ScalarDeserializer {
+impl IntoDeserializer<'_, Error> for ScalarDeserializer {
     type Deserializer = Self;
     fn into_deserializer(self) -> Self {
         self

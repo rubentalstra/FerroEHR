@@ -389,14 +389,32 @@ pub(crate) async fn commit_version_set(
         })?),
     };
 
-    // master06 §Committal (m4): system_id/committer/time_committed of the
-    // CONTRIBUTION audit "should be copied into the commit_audit of each VERSION
-    // included in the CONTRIBUTION". We default each version's committer/system_id
-    // from the CONTRIBUTION's own audit; time_committed is always the server
+    // The CONTRIBUTION audit's `committer` is REQUIRED, exactly like its
+    // `change_type` (#1688's sibling, #1817): RM common `audit_details.adoc`
+    // §Attributes types `committer` 1..1 on the mandatory `CONTRIBUTION.audit`,
+    // and the released commit schema requires it on the wire —
+    // `NewContribution.yaml` over `UpdateAudit.yaml` (`required: [change_type,
+    // committer]`). The ITS-REST docs text is silent on the contribution BODY
+    // (its optional-headers sentence governs the DIRECT routes' header merge,
+    // where the server default legitimately applies), so the released OAS
+    // grounds the requirement: a server-guessed committer in the audit trail
+    // would attribute the change set to an identity the client never named.
+    //
+    // master06 §Committal (m4) then copies system_id/committer/time_committed
+    // of the CONTRIBUTION audit "into the commit_audit of each VERSION
+    // included in the CONTRIBUTION"; time_committed is always the server
     // commit-act time.
     let contrib_committer = match body.get("audit").and_then(|a| a.get("committer")) {
         Some(supplied) => party_proxy(supplied)?,
-        None => cx.default_committer(),
+        None => {
+            return Err(ServiceError::Unprocessable(
+                Violation::new(
+                    "is required on a CONTRIBUTION audit — the change set's committer is the \
+                     client's account of who committed it and is never invented by the server",
+                )
+                .with_path("CONTRIBUTION.audit.committer"),
+            ));
+        }
     };
     let contrib_system_id = body
         .get("audit")
