@@ -248,14 +248,13 @@ mod tests {
 
     /// Every operation id in every generated ITS-REST `ROUTES` table.
     fn all_route_ops() -> Vec<&'static str> {
-        use openehr_its::rest::generated as g;
         let mut ops = Vec::new();
         for table in [
-            g::ehr::ROUTES,
-            g::definition::ROUTES,
-            g::demographic::ROUTES,
-            g::query::ROUTES,
-            g::admin::ROUTES,
+            openehr_its::rest::generated::ehr::ROUTES,
+            openehr_its::rest::generated::definition::ROUTES,
+            openehr_its::rest::generated::demographic::ROUTES,
+            openehr_its::rest::generated::query::ROUTES,
+            openehr_its::rest::generated::admin::ROUTES,
         ] {
             for (_method, _path, op) in table {
                 ops.push(*op);

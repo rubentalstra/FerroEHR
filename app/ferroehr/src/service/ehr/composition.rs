@@ -434,9 +434,10 @@ impl FerroEhrService {
     /// (`N` or `N.B.V`); `None` = the current version. The ABAC template
     /// attribute for the access pre-checks / any per-version resolver.
     ///
-    /// TODO(#1449, perf): goes through the full version read-back for spec fidelity;
-    /// a direct `SELECT template_id FROM vo_version` is a cheaper equivalent
-    /// if this ever shows on a hot path.
+    /// NOTE (settled shape): this resolves through the promoted
+    /// `vo_version.template_id` column — one scalar `SELECT`, no node
+    /// reassembly — because it runs per authorization check. No openEHR spec
+    /// governs the storage mechanics; the promoted column is our own design.
     ///
     /// # Errors
     /// [`ServiceError`] for a malformed `version` string or a failing version

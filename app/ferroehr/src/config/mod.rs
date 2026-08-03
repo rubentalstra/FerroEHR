@@ -92,31 +92,30 @@ impl FerroEhrConfig {
     pub fn validate(&self) -> Result<(), ConfigErrors> {
         let mut errors = Vec::new();
 
-        // server.system_id is stamped into every AUDIT_DETAILS, whose
-        // `system_id` carries the RM invariant `System_id_valid`:
-        // "not system_id.is_empty" (RM
+        // server.system_id is stamped into every AUDIT_DETAILS
+        // (`System_id_valid`: "not system_id.is_empty", RM
         // `docs/UML/classes/org.openehr.rm.common.audit_details.adoc`
-        // §Invariants). An empty value would author RM-invalid data, so it
-        // fails at boot.
-        if self.server.system_id.trim().is_empty() {
-            errors.push(ConfigError::semantic(
-                "server.system_id must not be empty (it is stamped into \
-                 EHR.system_id, AUDIT_DETAILS.system_id, and every \
-                 OBJECT_VERSION_ID)"
-                    .to_owned(),
-            ));
-        }
-        // `::` is the OBJECT_VERSION_ID field separator — "object_version_id =
-        // object_id, '::', creating_system_id, '::', version_tree_id" (BASE
-        // `base_types/master05-identification_package.adoc` §Syntaxes) — so a
-        // system id containing it would mint unparseable
-        // version identifiers.
-        if self.server.system_id.contains("::") {
-            errors.push(ConfigError::semantic(
-                "server.system_id must not contain \"::\" (the \
-                 OBJECT_VERSION_ID field separator)"
-                    .to_owned(),
-            ));
+        // §Invariants) and into every OBJECT_VERSION_ID this CDR mints, where
+        // it occupies the `creating_system_id` position — "object_version_id =
+        // object_id, '::', creating_system_id, '::', version_tree_id" with
+        // "creating_system_id = uid" (BASE
+        // `base_types/master05-identification_package.adoc` §Syntaxes). It is
+        // therefore judged by the SAME grammar the identifier types are built
+        // from — the validating `UID` constructor in `openehr-base` — so a
+        // value this server accepts at boot can never mint a version id its own
+        // reader refuses. Boot-time is the right moment: the alternative is a
+        // loud failure on the first write.
+        if let Err(source) =
+            openehr_base::base_types::identification::uid::Uid::new(&self.server.system_id)
+        {
+            errors.push(ConfigError::semantic(format!(
+                "server.system_id {:?} is not a legal openEHR `uid` \
+                 (iso_oid | uuid | internet_id — BASE master05 §Syntaxes): \
+                 {source}. It is stamped into EHR.system_id, \
+                 AUDIT_DETAILS.system_id, and the creating_system_id of every \
+                 OBJECT_VERSION_ID",
+                self.server.system_id
+            )));
         }
 
         // Authorization rules (moved verbatim from the old AuthzConfig::validate).
@@ -732,25 +731,50 @@ mod tests {
         assert!(c.validate().is_ok());
     }
 
-    /// An empty `system_id` would author `AUDIT_DETAILS` violating the RM
-    /// invariant `System_id_valid` ("not `system_id.is_empty`"), and a `::` in it
-    /// would mint unparseable `OBJECT_VERSION_ID`s — both are boot errors.
+    /// `server.system_id` is judged by the openEHR `uid` grammar itself.
+    ///
+    /// It occupies the `creating_system_id` position of every
+    /// `OBJECT_VERSION_ID` this CDR mints — "`creating_system_id` = `uid`" with
+    /// "`uid` = `iso_oid` | `uuid` | `internet_id`" (BASE
+    /// `base_types/master05-identification_package.adoc` §Syntaxes) — and is
+    /// stamped into `AUDIT_DETAILS.system_id`, whose RM invariant
+    /// `System_id_valid` forbids an empty value. Both the accepted and the
+    /// refused shapes are pinned, including the ones a non-empty/no-`::` check
+    /// would have let through into unmintable version ids.
     #[test]
-    fn validate_system_id_is_non_empty_and_separator_free() {
+    fn validate_system_id_is_a_legal_uid() {
         let mut c = FerroEhrConfig::default();
         assert!(c.validate().is_ok());
 
-        c.server.system_id = "   ".to_owned();
-        assert!(c.validate().is_err(), "blank system_id must be rejected");
+        for refused in [
+            "",                 // AUDIT_DETAILS.System_id_valid
+            "   ",              // blank
+            "cdr::hospital",    // the OBJECT_VERSION_ID field separator
+            "cdr hospital",     // a space is in no `uid` production
+            "cdr/hospital",     // nor is a path separator
+            "-leading-hyphen",  // an internet_id label starts with a letter
+            "trailing-hyphen-", // and ends with a letter or digit
+            "1.2.840.",         // an iso_oid group may not be empty
+        ] {
+            c.server.system_id = refused.to_owned();
+            assert!(
+                c.validate().is_err(),
+                "system_id {refused:?} is not a legal openEHR uid and must be refused at boot"
+            );
+        }
 
-        c.server.system_id = "cdr::hospital".to_owned();
-        assert!(
-            c.validate().is_err(),
-            "a system_id containing the OBJECT_VERSION_ID separator must be rejected"
-        );
-
-        c.server.system_id = "cdr.hospital.example".to_owned();
-        assert!(c.validate().is_ok());
+        for accepted in [
+            "cdr.hospital.example",                 // internet_id
+            "ferroehr.local",                       // internet_id (the default)
+            "1.2.840.113554",                       // iso_oid
+            "8849182c-82ad-4088-a07f-48ead4180515", // uuid
+        ] {
+            c.server.system_id = accepted.to_owned();
+            assert!(
+                c.validate().is_ok(),
+                "system_id {accepted:?} is a legal openEHR uid and must boot"
+            );
+        }
     }
 
     #[test]

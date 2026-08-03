@@ -23,7 +23,7 @@ use crate::service::ehr::tags::tag_target_tail;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::{UpdateAudit, UpdateVersion};
+use crate::service::version_update::{Committal, UpdateAudit, UpdateVersion};
 use crate::versioning::object_version_id::{
     components, expected_from_if_match, if_match_token, parse_uid_based_id, parse_version_uid,
 };
@@ -107,6 +107,21 @@ fn ensure_full_ovid_if_match(
     }
 }
 
+/// The [`Committal`] an SM `UPDATE_VERSION` envelope carries: its
+/// `UPDATE_AUDIT` attributes plus its VERSION `lifecycle_state`, so an
+/// SM-routed demographic commit honours the same two halves the wire's
+/// committal headers do (ITS-REST overview `Requests_and_responses.md`
+/// §"openehr-version and openehr-audit-details"; RM common master06 §Version
+/// Lifecycle). An empty code means the caller stated none, leaving the
+/// operation default.
+fn envelope_committal(a_version: &UpdateVersion) -> Committal {
+    Committal {
+        audit: a_version.audit.clone(),
+        lifecycle_state: Some(a_version.lifecycle_state.code_string.clone())
+            .filter(|code| !code.is_empty()),
+    }
+}
+
 impl FerroEhrService {
     /// Attach the party's stored `ITEM_TAG`s (RM `common.item_tag`) to a response's
     /// metadata seam ([`ResourceMeta::item_tags`]), from which the ITS-REST
@@ -164,9 +179,10 @@ impl FerroEhrService {
     ///   not parse (defensive; the uid is server-generated).
     pub async fn create_party(&self, a_version: UpdateVersion) -> Result<VoId, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
+        let committal = envelope_committal(&a_version);
         // Reuse the wire-seam domain logic (validation + versioned create).
         let resp = self
-            .commit_new_party(kind, a_version.data, Some(&a_version.audit))
+            .commit_new_party(kind, a_version.data, Some(&committal))
             .await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
@@ -301,13 +317,14 @@ impl FerroEhrService {
             Some(ovid) => Some(components(ovid)?.1),
             None => None,
         };
+        let committal = envelope_committal(&a_version);
         let resp = self
             .update_party_version(
                 kind,
                 a_versioned_party_id,
                 a_version.data,
                 expected,
-                Some(&a_version.audit),
+                Some(&committal),
             )
             .await?;
         Ok(version_uid(resp))
@@ -352,14 +369,14 @@ impl FerroEhrService {
         &self,
         kind: PartyKind,
         body: Value,
-        update_audit: Option<UpdateAudit>,
+        committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
         // A freshly created party has no stored ITEM_TAGs by construction, so
         // the response seam needs no tag read here; when the request carried
         // `openehr-item-tag` header tags, the wire adapter persists them after
         // the create and re-populates the seam itself (person_create.yaml).
         Ok(self
-            .commit_new_party(kind, body, update_audit.as_ref())
+            .commit_new_party(kind, body, committal.as_ref())
             .await?)
     }
 
@@ -412,7 +429,7 @@ impl FerroEhrService {
         uid_based_id: String,
         if_match: String,
         body: Value,
-        update_audit: Option<UpdateAudit>,
+        committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
         let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         // Resolve the current version ONCE (lean, kind-checked): the same handle
@@ -429,7 +446,7 @@ impl FerroEhrService {
             )
         })?;
         Ok(self
-            .commit_party_update(current, body, expected, update_audit.as_ref())
+            .commit_party_update(current, body, expected, committal.as_ref())
             .await?)
     }
 
@@ -734,8 +751,9 @@ impl FerroEhrService {
         &self,
         a_version: UpdateVersion,
     ) -> Result<VoId, SmError> {
+        let committal = envelope_committal(&a_version);
         let resp = self
-            .create_relationship(a_version.data, Some(&a_version.audit))
+            .create_relationship(a_version.data, Some(&committal))
             .await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
@@ -847,12 +865,13 @@ impl FerroEhrService {
             Some(ovid) => Some(components(ovid)?.1),
             None => None,
         };
+        let committal = envelope_committal(&a_version);
         let resp = self
             .update_relationship(
                 a_versioned_party_rel_id,
                 a_version.data,
                 expected,
-                Some(&a_version.audit),
+                Some(&committal),
             )
             .await?;
         Ok(version_uid(resp))
@@ -899,11 +918,9 @@ impl FerroEhrService {
     pub async fn party_relationship_create(
         &self,
         body: Value,
-        update_audit: Option<UpdateAudit>,
+        committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
-        Ok(self
-            .create_relationship(body, update_audit.as_ref())
-            .await?)
+        Ok(self.create_relationship(body, committal.as_ref()).await?)
     }
 
     /// Read a relationship by uid-based id, optionally time-travelled to
@@ -945,7 +962,7 @@ impl FerroEhrService {
         uid_based_id: String,
         if_match: String,
         body: Value,
-        update_audit: Option<UpdateAudit>,
+        committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
         let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         let current = self.relationship_current(vo_id).await?;
@@ -959,7 +976,7 @@ impl FerroEhrService {
             )
         })?;
         Ok(self
-            .commit_relationship_update(current, body, expected, update_audit.as_ref())
+            .commit_relationship_update(current, body, expected, committal.as_ref())
             .await?)
     }
 

@@ -22,14 +22,14 @@
 //! own design/extension): the shared authentication + RBAC layer answers
 //! before any handler here runs, so every route carries `401` (no valid
 //! principal) and the routes the coarse gate classifies as WRITES carry `403`
-//! for a principal holding the configured read-only role. That coarse gate
-//! reads the HTTP method for a route outside the generated ITS-REST tables, so
-//! `POST /message/export` — a read whose selector is a whole `EXTRACT_SPEC`
-//! structure — is classified a write and refused to a read-only principal too.
-//! TODO(#1778): classify `POST /message/export` as a read for the read-only
-//! gate, the way the released ad-hoc AQL POST read already is
-//! (`ferroehr-rest::extensions::access::authz::classify::is_write`), and drop
-//! the `403` from that one operation's declared responses.
+//! for a principal holding the configured read-only role. `POST /message/export`
+//! is NOT one of them: it realizes SM
+//! `I_EHR_EXTRACT_SERVICE.export_ehr_extracts`, a query over held versions
+//! whose selector is a whole `EXTRACT_SPEC` structure and which commits
+//! nothing, so it is pinned as a read for that gate
+//! (`ferroehr-rest::extensions::access::authz::EXTENSION_READ_ROUTES`) exactly
+//! as the released ad-hoc AQL `POST` read is. The import routes are the
+//! mutating half of the same interface and stay writes.
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
@@ -163,14 +163,6 @@ pub(crate) async fn message_export_ehrs(
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated.", body = serde_json::Value),
-        (status = 403, description = "The authenticated principal carries the \
-                                      configured read-only role. This read is \
-                                      modelled as `POST` (its selector is a \
-                                      whole structure), and the coarse \
-                                      read-only gate classifies an unmapped \
-                                      `POST` as a write — see the module \
-                                      note.",
-         body = serde_json::Value),
         (status = 404, description = "An entity's `ehr_id`/`subject_id` \
                                       resolves to no EHR (SM \
                                       `ehr_id_does_not_exist`), or an \

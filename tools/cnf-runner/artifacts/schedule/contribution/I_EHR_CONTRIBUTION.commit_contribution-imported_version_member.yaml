@@ -34,6 +34,17 @@
 # (`_type: UPDATE_VERSION`) beside it. A legal self-tag
 # (`_type: ORIGINAL_VERSION`) is what every other case in this family already
 # sends, so its acceptance is covered throughout.
+#
+# THAT SELF-TAG AND THE `uid` REFUSAL ARE NOT IN TENSION — steps 3 and 5 pin
+# both halves. The two admitted tags name ONE wire shape, the six-property
+# commit-wire partial `schemas/ehr/UpdateVersion.yaml` declares, so tagging a
+# member ORIGINAL_VERSION names the class it BECOMES (the `_type` rule is about
+# the RM type "whenever polymorphism is involved", overview Resources.md
+# §Resource representation), not a complete RM instance the request may supply.
+# `ORIGINAL_VERSION.uid` is 1..1
+# (UML/classes/org.openehr.rm.common.original_version.adoc §Attributes) and is
+# satisfied by the repository's allocation, visible on the READ (step 5) — the
+# only moment at which a version identity exists.
 id: I_EHR_CONTRIBUTION.commit_contribution-imported_version_member
 kind: functional
 component: EHR_CONTRIBUTION
@@ -157,5 +168,12 @@ flow:
     assert:
       - { assert: instance_of, rm_type: ORIGINAL_VERSION }
       - { assert: field, path: "item", absent: true }
+      # ORIGINAL_VERSION.uid is 1..1
+      # (UML/classes/org.openehr.rm.common.original_version.adoc §Attributes),
+      # and THIS is where it is satisfied: the member is the commit-wire
+      # partial, so the mandatory identifier is the one the repository
+      # allocated — the same value its own ETag named — never one the request
+      # carried (step 3).
+      - { assert: field, path: "uid/value", equals: "${v2_uid}" }
 postconditions:
   - { assert: version, count: 2 }

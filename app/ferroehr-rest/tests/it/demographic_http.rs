@@ -498,6 +498,87 @@ async fn delete_accepts_the_weak_if_match_form() {
 /// `VERSIONED_OBJECT`, or other resources that have versioning or unique state
 /// identifiers"; the `ETag` is "usually taken from e.g.
 /// `VERSIONED_OBJECT.uid.value`, `VERSION.uid.value`") — and never `Location`.
+/// The demographic direct routes honour BOTH halves of the committal merge —
+/// the `UPDATE_AUDIT` attributes AND the VERSION `lifecycle_state`.
+///
+/// ITS-REST overview `Requests_and_responses.md` §"openehr-version and
+/// openehr-audit-details" makes the merge a MUST on the direct commits:
+/// "services MUST accept `openehr-version` and `openehr-audit-details` custom
+/// request headers", and "whatever is provided it MUST be merged with the
+/// default VERSION and `VERSION.audit_details` attributes on commit runtime" —
+/// the VERSION attributes named FIRST. A demographic party's `UPDATE_VERSION`
+/// envelope never travels in the body, so these headers are its only committal
+/// channel; before this, the direct routes threaded the audit half alone and a
+/// `553|incomplete|` party was reachable only through a CONTRIBUTION.
+///
+/// `553|incomplete|` is the openEHR `version_lifecycle_state` code for content
+/// still being authored (RM common `master06-change_control_package.adoc`
+/// §Version Lifecycle / §Incomplete Content).
+#[tokio::test]
+async fn direct_party_write_honours_the_openehr_version_lifecycle_state() {
+    let (_pg, app) = app().await;
+
+    // CREATE with the header's lifecycle half.
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/person"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("openehr-version", "lifecycle_state.code_string=\"553\"")
+        .header(
+            "openehr-audit-details",
+            "description.value=\"still drafting\"",
+        )
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "553 create: {body}");
+    let ovid = etag_uid(&h);
+    let vo = vo_of(&ovid).to_owned();
+
+    // The committed version carries the client's lifecycle state, and its audit
+    // the client's description — both halves of the one merge.
+    let (status, _h, body) = get_json(
+        &app,
+        format!("{BASE}/demographic/versioned_party/{vo}/version/{ovid}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "version read: {body}");
+    let version: Value = serde_json::from_str(&body).expect("ORIGINAL_VERSION json");
+    assert_eq!(
+        version["lifecycle_state"]["defining_code"]["code_string"], "553",
+        "the openehr-version lifecycle half must reach the commit: {body}"
+    );
+    assert_eq!(
+        version["commit_audit"]["description"]["value"], "still drafting",
+        "the openehr-audit-details half still merges: {body}"
+    );
+
+    // UPDATE back to `532|complete|` through the same channel.
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/demographic/person/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{ovid}\""))
+        .header("openehr-version", "lifecycle_state.code_string=\"532\"")
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    // No `Prefer: return=representation` → 204 with the identifying headers.
+    assert_eq!(status, StatusCode::NO_CONTENT, "532 update: {body}");
+    let ovid_v2 = etag_uid(&h);
+    let (status, _h, body) = get_json(
+        &app,
+        format!("{BASE}/demographic/versioned_party/{vo}/version/{ovid_v2}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "v2 read: {body}");
+    let version: Value = serde_json::from_str(&body).expect("ORIGINAL_VERSION json");
+    assert_eq!(
+        version["lifecycle_state"]["defining_code"]["code_string"], "532",
+        "the update route honours the lifecycle half too: {body}"
+    );
+}
+
 #[tokio::test]
 async fn versioned_party_reads_emit_versioning_headers() {
     let (_pg, app) = app().await;

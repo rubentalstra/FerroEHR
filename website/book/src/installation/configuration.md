@@ -140,6 +140,13 @@ appears on the wire in three places:
 
 Practical notes:
 
+- **The value must be a legal openEHR UID** (a UUID, an ISO OID, or an
+  internet-id / reverse-domain name per the openEHR BASE identification
+  grammar). The server validates this at startup and refuses to boot on an
+  illegal value — it becomes the `creating_system_id` segment of every
+  version identifier the server mints, and an illegal value would produce
+  ids the server's own reader rejects. A DNS-style name like
+  `cdr.hospital.example` is valid.
 - **Choose it before going live and keep it stable.** The value is stored with
   each EHR and each version; changing it later affects only *newly* authored
   data — existing EHR ids, audit rows, and version identifiers are never

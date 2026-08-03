@@ -278,14 +278,28 @@ impl From<ServiceError> for SmError {
     /// never a resurrected generic. `Conflict` maps to a representative
     /// already-exists status (all 409s).
     ///
-    /// NOTE (wire): the structured per-path violations of `ValidationFailed`
-    /// (the ITS-REST `Error.validationErrors[]` array) do **not** survive the SM
-    /// boundary — `SmError` carries only a status + message (the SM `I_STATUS`
-    /// shape). The violations are joined into the message so the detail is not
-    /// wholly lost; the `422` body renders as `{ error, message }` rather than
-    /// `{ message, validationErrors[] }`. This is spec-permitted:
-    /// `422_COMPOSITION.yaml` declares no `content`/`schema` (the `422` body is
-    /// spec-silent; the `Error` object is formally bound only to `400`).
+    /// NOTE (wire — settled, adjudicated divergence): the structured per-path
+    /// violations of `ValidationFailed` (the ITS-REST `Error.validationErrors[]`
+    /// array) do **not** survive the SM boundary. That is the SM's own shape,
+    /// not an omission here: `I_STATUS` returns a `CALL_STATUS`
+    /// (`SM/docs/UML/classes/i_status.adoc` — "Class status object for last
+    /// call"), and `CALL_STATUS`
+    /// (`SM/docs/UML/classes/call_status.adoc` §Attributes) declares exactly
+    /// `code` + `call_name` + `call_string` + `meaning` + `message` — five
+    /// scalars, with no slot for a per-path violation list. The violations are
+    /// therefore joined into `message` so the detail is not wholly lost, and an
+    /// SM-routed `422` renders as `{ error, message }` where the direct
+    /// `ApiError` route renders `{ message, validationErrors[] }`.
+    ///
+    /// The resulting route-dependence of the `422` BODY is spec-permitted:
+    /// the ITS-REST docs text assigns the 422 row a meaning only ("The request
+    /// was well-formed but was unable to be followed due to semantic errors",
+    /// overview `Requests_and_responses.md` §HTTP status codes) and no body
+    /// shape, and the released OAS `responses/422_COMPOSITION.yaml` declares no
+    /// `content`/`schema` at all (the `Error` object is formally bound to
+    /// `400`). Both renderings therefore satisfy the release; the status code —
+    /// the part the spec DOES assign — is identical on both routes, which is
+    /// what the conversion table above and its tests pin.
     fn from(e: ServiceError) -> Self {
         use super::status::CallStatusType as S;
         match e {
@@ -409,6 +423,61 @@ mod tests {
         );
         assert_eq!(nested.causes().len(), 2);
         assert_eq!(nested.causes()[1].path, "name");
+    }
+
+    /// The two 422 routes of ONE `ValidationFailed`: the same status on both,
+    /// a different body shape by the SM's own model.
+    ///
+    /// `CALL_STATUS` (`SM/docs/UML/classes/call_status.adoc` §Attributes)
+    /// declares five scalars and no per-path violation list, so the SM-routed
+    /// failure carries its violations JOINED INTO `message`; the direct
+    /// `ApiError` route keeps them as data. The status code — the part the
+    /// released text assigns ("The request was well-formed but was unable to be
+    /// followed due to semantic errors", ITS-REST overview
+    /// `Requests_and_responses.md` §HTTP status codes) — is the same on both,
+    /// and neither body shape is contradicted by the release (the OAS
+    /// `responses/422_COMPOSITION.yaml` declares no schema). This test pins that
+    /// divergence so it can only change deliberately.
+    #[test]
+    fn validation_failed_renders_two_bodies_but_one_status() {
+        let violations = || {
+            vec![
+                openehr_its::rest::runtime::ValidationError {
+                    path: "/content[0]/data".to_owned(),
+                    message: "missing mandatory attribute".to_owned(),
+                },
+                openehr_its::rest::runtime::ValidationError {
+                    path: "/context/start_time".to_owned(),
+                    message: "not a valid DV_DATE_TIME".to_owned(),
+                },
+            ]
+        };
+
+        // The SM seam: status + one message, every violation still readable.
+        let sm =
+            crate::service::status::SmError::from(ServiceError::ValidationFailed(violations()));
+        assert_eq!(sm.status, S::ContentInvalid);
+        assert_eq!(
+            sm.message,
+            "/content[0]/data: missing mandatory attribute; \
+             /context/start_time: not a valid DV_DATE_TIME"
+        );
+
+        // The direct wire seam: the violations survive as data.
+        match ApiError::from(ServiceError::ValidationFailed(violations())) {
+            ApiError::ValidationFailed(v) => {
+                assert_eq!(v.len(), 2);
+                assert_eq!(v[0].path, "/content[0]/data");
+                assert_eq!(v[1].message, "not a valid DV_DATE_TIME");
+            }
+            other => panic!("expected ValidationFailed, got {other:?}"),
+        }
+
+        // One status on both routes.
+        assert_eq!(
+            ApiError::from(ServiceError::ValidationFailed(violations())).status(),
+            ApiError::from(ServiceError::sm(S::ContentInvalid, "x")).status(),
+        );
     }
 
     /// `ServiceError::sm(status)` routed to the ITS-REST [`ApiError`] must land

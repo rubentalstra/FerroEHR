@@ -171,3 +171,21 @@ ONLY from fixing the guilty component after spec-adjudicated attribution
 (`.claude/rules/cnf-triage.md`), NEVER from bending the catalogue or runner to
 match this server. Every phase ships compiling, clippy-clean, tested
 increments — this whole rule is fully active at all times.
+
+## Test-fixture construction: typed by default, raw JSON only where raw is the point
+
+Three classes (owner question 2026-08-03; the canonical_json_literals gate
+deliberately scopes to production code, so this is the test-side rule):
+
+1. **Refusal/negative fixtures: raw JSON, MANDATORY.** An invalid shape
+   (missing mandatory, empty `1..*` list, undeclared key) is unrepresentable
+   in the typed model since the foundation phase — raw bytes are the only
+   way to author what the reader must reject.
+2. **Client-simulation inputs** (bodies posted through a REST/service seam):
+   raw JSON permitted — independently-authored bytes catch codec bugs that
+   typed-then-serialized values cannot, and the strict reader validates the
+   fixture on the way in (an invalid "valid" fixture fails loudly).
+3. **Everything else** (expected values, non-wire construction, values the
+   test only manipulates in memory): build the typed `openehr-rm` value and
+   serialize via `to_canonical_value` — compile-time-correct across pin
+   bumps. Do not hand-roll `json!` here.

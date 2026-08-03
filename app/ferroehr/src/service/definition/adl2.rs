@@ -270,9 +270,16 @@ impl FerroEhrService {
     /// was engine-validated at its own upload) is skipped rather than failing
     /// the whole build.
     ///
-    /// TODO(#1446, perf): cache the parsed archetypes (moka) if the ADL2 registry ever
-    /// grows large enough that re-parsing it per upload/projection matters; the
-    /// registry is an admin surface today, so parse-on-demand is cheap.
+    /// NOTE (settled shape): the repository is rebuilt — re-parsed from the
+    /// stored sources — on every call, deliberately. It is built only when an
+    /// ADL2 artefact is uploaded or an OPT is projected, both administrative
+    /// acts; no clinical read or write path reaches it. A memoized repository
+    /// would have to be invalidated by every ADL2 write (upload, replace,
+    /// delete) and by every specialisation-parent edit that changes what a
+    /// child flattens to — a correctness liability taken on for a path that
+    /// runs at admin frequency, where the parse is a per-artefact scan of text
+    /// the same request already validated. No openEHR spec governs this — our
+    /// own design/extension.
     async fn adl2_repository(&self) -> Result<ArchetypeRepository, ServiceError> {
         let sources: Vec<String> = sqlx::query_scalar("SELECT adl FROM adl2_artefact")
             .fetch_all(&self.pool)

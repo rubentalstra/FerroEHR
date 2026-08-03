@@ -1787,6 +1787,21 @@ cnf.demographic.person.inline_relationships:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-08-02 from the RM demographic class model — a valid PERSON whose `relationships` list carries one PARTY_RELATIONSHIP BY VALUE, the compositional form RM demographic master02-demographic_package.adoc §Party Relationships L44 states ('PARTY_RELATIONSHIPs are stored as part of the data of the PARTY designated as the source ... the relationships attribute is by value') and §Versioning Semantics L48 versions with the party. The relationship's source/target are PARTY_REFs over container HIER_OBJECT_IDs, the reference kind the same sentence requires ('rather than OBJECT_VERSION_IDs'); their referents are fixed literals, exactly as cnf.demographic.party_relationship.v1 uses, because nothing released requires a demographic reference to resolve. The by-value list is the subject of register AMB-187 (the RM by-value representation vs the SM's independently-versioned containers, adjudicated disjoint)"
+cnf.demographic.person.round_trip_relationship:
+  source: fixtures/demographic/person.round_trip_relationship.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-03 from the RM demographic class model — the ROUND-TRIP shape of cnf.demographic.person.inline_relationships: the body carries a three-part OBJECT_VERSION_ID uid (the identity a served party is read back with, RM demographic master02-demographic_package.adoc §Party Identification: 'via the uid attribute (type OBJECT_VERSION_ID) of the containing VERSION') while its one by-value relationship is sourced at the VERSION CONTAINER that uid names — its object_id (BASE master05-identification_package.adoc §Syntaxes: object_version_id = object_id, '::', creating_system_id, '::', version_tree_id) — which is the reference kind master02 §Party Relationships L44 requires ('OBJECT_REFs containing HIER_OBJECT_IDs to denote the Version container of a Party, rather than OBJECT_VERSION_IDs'). PARTY.Relationships_validity's source-identity arm therefore HOLDS: source and uid denote the same party, at the two different levels the two attributes are typed at"
+cnf.demographic.person.round_trip_relationship.foreign_source:
+  source: fixtures/demographic/person.round_trip_relationship.foreign_source.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the inline PARTY_RELATIONSHIP's `source` names a DIFFERENT party's version container (3b6c9f18-0000-4000-8000-0000000005ff) than the body's own uid (object_id 3b6c9f18-0000-4000-8000-0000000005c1) — a relationship stored as the data of a party it is not sourced at"
+    spec_ref: "RM demographic UML/classes/org.openehr.rm.demographic.party.adoc §Invariants (Relationships_validity: 'relationships /= Void implies (not relationships.is_empty and then relationships.for_all (r | r.source = self)'); RM demographic master02-demographic_package.adoc §Party Relationships (relationships are stored as part of the data of the PARTY designated as the source)"
+  provenance: "authored 2026-08-03 as the invalid twin of cnf.demographic.person.round_trip_relationship — byte-identical except the relationship's source container id, so the refusal it pins is the source-identity arm alone and nothing else"
 # The other four concrete PARTY subtypes. The five released route quintets are
 # byte-identical to each other, so these carry the KIND-PARITY spot rows
 # (create + get) rather than a full re-run of the PERSON battery. ROLE alone

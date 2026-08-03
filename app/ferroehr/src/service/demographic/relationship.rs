@@ -49,7 +49,7 @@ use crate::service::demographic::validate::validate_relationship_body;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::CallStatusType;
-use crate::service::version_update::UpdateAudit;
+use crate::service::version_update::{Committal, UpdateAudit};
 use crate::versioning::audit::change_type;
 use crate::versioning::change::WriteEnvelope;
 use crate::versioning::change::{create, delete, update};
@@ -181,12 +181,18 @@ impl FerroEhrService {
     pub(super) async fn create_relationship(
         &self,
         body: Value,
-        update_audit: Option<&UpdateAudit>,
+        committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
         validate_relationship_body(&body)?;
 
+        // Both halves of the committal merge — the `UPDATE_AUDIT` attributes
+        // and the VERSION `lifecycle_state` (ITS-REST overview
+        // `Requests_and_responses.md` §"openehr-version and
+        // openehr-audit-details": "whatever is provided it MUST be merged with
+        // the default VERSION and `VERSION.audit_details` attributes on commit
+        // runtime").
         let audit = self.demographic_audit(
-            update_audit,
+            committal.map(|c| &c.audit),
             change_type::CREATION,
             "PARTY_RELATIONSHIP creation",
         )?;
@@ -200,7 +206,10 @@ impl FerroEhrService {
             body,
             None,
             &audit,
-            WriteEnvelope::default(),
+            WriteEnvelope {
+                lifecycle_state: committal.and_then(|c| c.lifecycle_state.clone()),
+                ..WriteEnvelope::default()
+            },
             &ctx,
         )
         .await?;
@@ -239,7 +248,7 @@ impl FerroEhrService {
         vo_id: VoId,
         body: Value,
         expected: Option<TreeId>,
-        update_audit: Option<&UpdateAudit>,
+        committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self.relationship_current(vo_id).await?.ok_or_else(|| {
             ServiceError::sm(
@@ -247,7 +256,7 @@ impl FerroEhrService {
                 format!("PARTY_RELATIONSHIP {vo_id}"),
             )
         })?;
-        self.commit_relationship_update(current, body, expected, update_audit)
+        self.commit_relationship_update(current, body, expected, committal)
             .await
     }
 
@@ -259,7 +268,7 @@ impl FerroEhrService {
         current: CurrentRelationship,
         body: Value,
         expected: Option<TreeId>,
-        update_audit: Option<&UpdateAudit>,
+        committal: Option<&Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
             return Err(ServiceError::sm(
@@ -270,7 +279,7 @@ impl FerroEhrService {
         validate_relationship_body(&body)?;
 
         let audit = self.demographic_audit(
-            update_audit,
+            committal.map(|c| &c.audit),
             change_type::MODIFICATION,
             "PARTY_RELATIONSHIP update",
         )?;
@@ -286,7 +295,10 @@ impl FerroEhrService {
             expected,
             None,
             &audit,
-            WriteEnvelope::default(),
+            WriteEnvelope {
+                lifecycle_state: committal.and_then(|c| c.lifecycle_state.clone()),
+                ..WriteEnvelope::default()
+            },
             &ctx,
         )
         .await?;

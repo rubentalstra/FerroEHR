@@ -54,7 +54,7 @@ pub(super) async fn run(
                 .party_create(
                     kind,
                     body,
-                    crate::overview::committal::committal_audit(
+                    crate::overview::committal::committal_commit(
                         h,
                         crate::api::ehr::committer_proxy(),
                     )?,
@@ -106,7 +106,7 @@ pub(super) async fn run(
                     // OBJECT_VERSION_ID (overview §"`ETag` and Last-Modified").
                     super::if_match_token(&p.if_match),
                     body,
-                    crate::overview::committal::committal_audit(
+                    crate::overview::committal::committal_commit(
                         h,
                         crate::api::ehr::committer_proxy(),
                     )?,
