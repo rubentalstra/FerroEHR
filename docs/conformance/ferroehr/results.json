@@ -634,6 +634,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-unknown_key_nested",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-unknown_key_root",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-version_bare_deprecated",
       "status": "passed",
       "rows_driven": 1,
@@ -2469,8 +2481,8 @@
     {
       "case": "I_DEFINITION_ADL14.upload_opt-invalid_opt",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 5,
+      "rows_total": 5
     },
     {
       "case": "I_DEFINITION_ADL14.upload_opt-prefer_identifier",
