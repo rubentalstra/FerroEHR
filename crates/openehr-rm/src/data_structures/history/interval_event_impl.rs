@@ -19,7 +19,7 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::dv_ordered_impl::{
     SECONDS_IN_DAY, format_iso_date_time, iso_date_time_parts,
 };
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl<T> IntervalEvent<T> {
     /// RM `INTERVAL_EVENT.interval_start_time()`: the start time of the

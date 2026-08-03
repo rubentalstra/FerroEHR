@@ -168,8 +168,20 @@ fn parse_model_query_args(
 /// Emit the ITS-REST contract (DTOs, param structs, server trait, route table)
 /// for each API group into `openehr-its/src/rest/generated/`.
 fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
-    // Groups with operations (overview is an index, system has none).
-    const GROUPS: &[&str] = &["admin", "definition", "demographic", "ehr", "query"];
+    // Every API group whose OAS declares operations. `overview` is excluded
+    // because it is the release's index document: it declares no `paths`.
+    // `system` DOES declare one — `system-codegen.openapi.yaml` `paths` `/`
+    // `options` (operationId `options`, the STABLE Options-and-Conformance
+    // operation) — so it is emitted like every other group. The completeness
+    // rule admits no "nothing consumes it yet" exclusion.
+    const GROUPS: &[&str] = &[
+        "admin",
+        "definition",
+        "demographic",
+        "ehr",
+        "query",
+        "system",
+    ];
     let base = compose("base")?;
     let rm = compose("rm")?;
     // OAS $ref names are PascalCase (`EhrStatus`) — the same as the emitted Rust

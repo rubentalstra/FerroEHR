@@ -5,7 +5,7 @@
 //! archie's own `Instruction.Activities_valid` is `ignored`.
 
 use crate::composition::content::entry::instruction::Instruction;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Instruction {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

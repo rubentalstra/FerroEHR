@@ -3,7 +3,7 @@
 //! `Id_valid` (archie `DvIdentifier`, `nullOrNotEmpty`): `id` must be non-empty.
 
 use crate::data_types::basic::dv_identifier::DvIdentifier;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for DvIdentifier {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

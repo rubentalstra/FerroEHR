@@ -24,6 +24,7 @@
 //! validation run reports the whole tree.
 
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use crate::load::{LoadError, compile_schema, load_artifact};
 use crate::model::binding::OperationBinding;
@@ -88,8 +89,23 @@ fn yaml_files_under(dir: &Path) -> Vec<PathBuf> {
             continue;
         };
         for entry in entries.flatten() {
+            // `entry.file_type()` reads the kind the `read_dir` iterator
+            // already carries; `Path::is_dir` would re-`stat` every entry.
+            // It reports the ENTRY's own kind and does NOT follow symlinks
+            // (<https://doc.rust-lang.org/std/fs/struct.DirEntry.html#method.file_type>),
+            // so a symlink still costs the following stat — the seeded-defect
+            // harness overlays the catalogue with symlinked directories, and
+            // treating one as a leaf would silently truncate the walk.
+            let Ok(kind) = entry.file_type() else {
+                continue;
+            };
             let path = entry.path();
-            if path.is_dir() {
+            let is_dir = if kind.is_symlink() {
+                path.is_dir()
+            } else {
+                kind.is_dir()
+            };
+            if is_dir {
                 stack.push(path);
             } else if path.extension().is_some_and(|e| e == "yaml" || e == "yml") {
                 files.push(path);
@@ -151,6 +167,92 @@ fn load_performance_case(path: &Path) -> Result<crate::perf::PerformanceCase, Lo
     Ok(case)
 }
 
+/// The ten artifact-family JSON Schemas, compiled once per process.
+///
+/// The schemas are compile-time constants built by [`crate::schema`], so
+/// compiling them on every [`load_root`] call was pure repeated work — and
+/// `load_root` is the dominant per-invocation cost of the seeded-defect
+/// battery, which calls it once per defect.
+struct Schemas {
+    /// `case-core.schema.json`.
+    case: &'static jsonschema::Validator,
+    /// `operation-binding.schema.json`.
+    binding: &'static jsonschema::Validator,
+    /// `outcomes.schema.json`.
+    outcomes: &'static jsonschema::Validator,
+    /// `selectors.schema.json`.
+    selectors: &'static jsonschema::Validator,
+    /// `capability-matrix.schema.json`.
+    matrix: &'static jsonschema::Validator,
+    /// `corpus-manifest.schema.json`.
+    corpus: &'static jsonschema::Validator,
+    /// `ambiguity-register.schema.json`.
+    register: &'static jsonschema::Validator,
+    /// `journey-catalogue.schema.json`.
+    journeys: &'static jsonschema::Validator,
+    /// `wire-surface.schema.json`.
+    wire_surface: &'static jsonschema::Validator,
+    /// `statement.schema.json`.
+    statement: &'static jsonschema::Validator,
+}
+
+/// The process-wide compiled schema set.
+///
+/// A compilation failure is a defect in [`crate::schema`] itself, so it is
+/// stored as the (name, message) pair [`LoadError::Schema`] is rebuilt from —
+/// `LoadError` is not `Clone` (it carries `std::io::Error`), and the error is
+/// deterministic, so re-raising it per call is exactly equivalent to the
+/// previous per-call compile.
+static SCHEMAS: LazyLock<Result<Schemas, (PathBuf, String)>> = LazyLock::new(|| {
+    fn one(
+        schema: &serde_json::Value,
+        name: &'static str,
+    ) -> Result<&'static jsonschema::Validator, (PathBuf, String)> {
+        match compile_schema(schema, name) {
+            Ok(v) => Ok(Box::leak(Box::new(v))),
+            Err(LoadError::Schema { path, message }) => Err((path, message)),
+            Err(other) => Err((PathBuf::from(name), other.to_string())),
+        }
+    }
+    Ok(Schemas {
+        case: one(&schema::case_core_schema(), "case-core.schema.json")?,
+        binding: one(
+            &schema::operation_binding_schema(),
+            "operation-binding.schema.json",
+        )?,
+        outcomes: one(&schema::outcomes_schema(), "outcomes.schema.json")?,
+        selectors: one(&schema::selectors_schema(), "selectors.schema.json")?,
+        matrix: one(
+            &schema::capability_matrix_schema(),
+            "capability-matrix.schema.json",
+        )?,
+        corpus: one(
+            &schema::corpus_manifest_schema(),
+            "corpus-manifest.schema.json",
+        )?,
+        register: one(
+            &schema::ambiguity_register_schema(),
+            "ambiguity-register.schema.json",
+        )?,
+        journeys: one(
+            &schema::journey_catalogue_schema(),
+            "journey-catalogue.schema.json",
+        )?,
+        wire_surface: one(&schema::wire_surface_schema(), "wire-surface.schema.json")?,
+        statement: one(&schema::statement_schema(), "statement.schema.json")?,
+    })
+});
+
+/// Borrow the process-wide compiled schemas, re-raising a compilation defect.
+fn compiled_schemas() -> Result<&'static Schemas, LoadError> {
+    SCHEMAS
+        .as_ref()
+        .map_err(|(path, message)| LoadError::Schema {
+            path: path.clone(),
+            message: message.clone(),
+        })
+}
+
 /// Load every artifact under `root`.
 ///
 /// # Errors
@@ -162,32 +264,19 @@ fn load_performance_case(path: &Path) -> Result<crate::perf::PerformanceCase, Lo
     reason = "one singleton-loading block per artifact family"
 )]
 pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
-    let case_schema = compile_schema(&schema::case_core_schema(), "case-core.schema.json")?;
-    let binding_schema = compile_schema(
-        &schema::operation_binding_schema(),
-        "operation-binding.schema.json",
-    )?;
-    let outcomes_schema = compile_schema(&schema::outcomes_schema(), "outcomes.schema.json")?;
-    let selectors_schema = compile_schema(&schema::selectors_schema(), "selectors.schema.json")?;
-    let matrix_schema = compile_schema(
-        &schema::capability_matrix_schema(),
-        "capability-matrix.schema.json",
-    )?;
-    let corpus_schema = compile_schema(
-        &schema::corpus_manifest_schema(),
-        "corpus-manifest.schema.json",
-    )?;
-    let register_schema = compile_schema(
-        &schema::ambiguity_register_schema(),
-        "ambiguity-register.schema.json",
-    )?;
-    let journeys_schema = compile_schema(
-        &schema::journey_catalogue_schema(),
-        "journey-catalogue.schema.json",
-    )?;
-    let wire_surface_schema =
-        compile_schema(&schema::wire_surface_schema(), "wire-surface.schema.json")?;
-    let statement_schema = compile_schema(&schema::statement_schema(), "statement.schema.json")?;
+    let schemas = compiled_schemas()?;
+    let Schemas {
+        case: case_schema,
+        binding: binding_schema,
+        outcomes: outcomes_schema,
+        selectors: selectors_schema,
+        matrix: matrix_schema,
+        corpus: corpus_schema,
+        register: register_schema,
+        journeys: journeys_schema,
+        wire_surface: wire_surface_schema,
+        statement: statement_schema,
+    } = schemas;
 
     let mut loaded = Loaded::default();
 
@@ -197,7 +286,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     // between the two and no gate can see it from one side alone.
     if let Some(party_dir) = root.parent().map(|p| p.join("party")) {
         for path in statement_files_under(&party_dir) {
-            match load_statement(&path, &statement_schema) {
+            match load_statement(&path, statement_schema) {
                 Ok(statement) => loaded.set.parties.push((path, statement)),
                 Err(e) => loaded.errors.push(e),
             }
@@ -213,13 +302,13 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
             }
             continue;
         }
-        match load_artifact::<CaseCore>(&path, &case_schema) {
+        match load_artifact::<CaseCore>(&path, case_schema) {
             Ok(case) => loaded.set.cases.push((path, case)),
             Err(e) => loaded.errors.push(e),
         }
     }
     for path in yaml_files_under(&root.join("bindings")) {
-        match load_artifact::<OperationBinding>(&path, &binding_schema) {
+        match load_artifact::<OperationBinding>(&path, binding_schema) {
             Ok(binding) => loaded.set.bindings.push((path, binding)),
             Err(e) => loaded.errors.push(e),
         }
@@ -236,7 +325,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
 
     singleton(
         "vocab/outcomes.yaml",
-        &mut |path, p| match load_artifact::<OutcomesVocab>(p, &outcomes_schema) {
+        &mut |path, p| match load_artifact::<OutcomesVocab>(p, outcomes_schema) {
             Ok(v) => {
                 loaded.set.outcomes = Some((path, v));
                 None
@@ -246,7 +335,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     );
     singleton(
         "vocab/selectors.yaml",
-        &mut |path, p| match load_artifact::<SelectorsVocab>(p, &selectors_schema) {
+        &mut |path, p| match load_artifact::<SelectorsVocab>(p, selectors_schema) {
             Ok(v) => {
                 loaded.set.selectors = Some((path, v));
                 None
@@ -256,7 +345,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     );
     singleton(
         "vocab/capability_matrix.yaml",
-        &mut |path, p| match load_artifact::<CapabilityMatrix>(p, &matrix_schema) {
+        &mut |path, p| match load_artifact::<CapabilityMatrix>(p, matrix_schema) {
             Ok(v) => {
                 loaded.set.matrix = Some((path, v));
                 None
@@ -266,7 +355,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     );
     singleton(
         "vocab/journey_catalogue.yaml",
-        &mut |path, p| match load_artifact::<crate::perf::JourneyCatalogue>(p, &journeys_schema) {
+        &mut |path, p| match load_artifact::<crate::perf::JourneyCatalogue>(p, journeys_schema) {
             Ok(v) => {
                 loaded.set.journeys = Some((path, v));
                 None
@@ -276,7 +365,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     );
     singleton(
         "corpus/MANIFEST.yaml",
-        &mut |path, p| match load_artifact::<CorpusManifest>(p, &corpus_schema) {
+        &mut |path, p| match load_artifact::<CorpusManifest>(p, corpus_schema) {
             Ok(v) => {
                 loaded.set.corpus_dir = path.parent().map(Path::to_owned);
                 loaded.set.corpus = Some((path, v));
@@ -287,7 +376,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     );
     singleton(
         "registers/ambiguities.yaml",
-        &mut |path, p| match load_artifact::<AmbiguityRegister>(p, &register_schema) {
+        &mut |path, p| match load_artifact::<AmbiguityRegister>(p, register_schema) {
             Ok(v) => {
                 loaded.set.register = Some((path, v));
                 None
@@ -297,7 +386,7 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     );
     singleton(
         "vocab/wire_surface.yaml",
-        &mut |path, p| match load_artifact::<WireSurface>(p, &wire_surface_schema) {
+        &mut |path, p| match load_artifact::<WireSurface>(p, wire_surface_schema) {
             Ok(v) => {
                 loaded.set.wire_surface = Some((path, v));
                 None

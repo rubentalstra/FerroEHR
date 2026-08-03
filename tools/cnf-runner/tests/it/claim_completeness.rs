@@ -222,21 +222,28 @@ fn the_measured_workload_exercises_every_claimed_capability_but_the_adjudicated_
     }
 }
 
-/// The floors are DERIVED, not asserted: every committed `min_cases` must be
-/// at or below the count the catalogue actually carries today. That
-/// inequality IS the ratchet — raising a floor to the current depth is always
-/// safe, and a battery that later shrinks below its floor fails
-/// `capability-depth`.
+/// The floors are DERIVED and FULLY RATCHETED: every committed `min_cases`
+/// equals the verdict-bearing count the catalogue carries today.
+///
+/// A floor merely at-or-below the current depth only half-realizes "coverage
+/// only ratchets up": the battery can silently shrink back to a trailing floor
+/// and `capability-depth` stays green. Pinning the floor AT the current depth
+/// closes that — a removed case fails immediately, and an ADDED case bumps its
+/// floor in the same change, which is exactly what ratcheting means. Never
+/// lower a floor to make this pass: the shortfall it names is the removed
+/// coverage.
 #[test]
-fn every_committed_floor_is_at_or_below_its_derived_count() {
+fn every_committed_floor_equals_its_derived_count() {
     let loaded = load_root(&crate_dir().join("artifacts")).expect("schema compilation");
     let (_, matrix) = loaded.set.matrix.as_ref().expect("capability matrix");
     let mut floors = 0_usize;
     for (name, entry) in matrix.entries() {
         let derived = cnf_runner::validate::verdict_bearing(&loaded.set, name).len();
-        assert!(
-            entry.min_cases <= derived,
-            "{name}: committed floor {} exceeds the derived verdict-bearing count {derived}",
+        assert_eq!(
+            entry.min_cases, derived,
+            "{name}: committed floor {} vs the derived verdict-bearing count \
+             {derived} — a HIGHER floor is a shortfall (coverage was removed); a \
+             LOWER one is an unratcheted floor (raise it to {derived} in this change)",
             entry.min_cases
         );
         floors += entry.min_cases;
@@ -516,9 +523,9 @@ fn a_stale_extension_realization_marker_fails_validate() {
     let world = World::new();
     world.edit(MATRIX, |text| {
         text.replace(
-            "PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 52,",
+            "PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 55,",
             "PartyOperations: { family: Platform, tier: OPTIONS, required: false, realization: \
-             extension, min_cases: 52,",
+             extension, min_cases: 55,",
         )
     });
     assert_gate(

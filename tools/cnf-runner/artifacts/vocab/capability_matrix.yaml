@@ -97,7 +97,7 @@
 # workload exclusion stays register-linked: provisioning archetypes is
 # definition administration, not a per-patient hospital arrival.
 Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 11, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
-Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 22, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
+Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 25, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
 # (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
 # definition.openapi.yaml surfaces only OPT wire under /definition/template/adl2
 # (list / upload / get / example / the deprecated version GET); there is no ADL 2
@@ -137,11 +137,11 @@ Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cas
 TemplateExamples: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml NOTE + register AMB-115 (no CNF profiles row exists for example generation)" }
 QueryProvisioning: { family: Platform, tier: STANDARD, required: true, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: Query provisioning)" }
 EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Operations)" }
-EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 46, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
-CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 28, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
-DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 69, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
-ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 53, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
-Versioning: { family: Platform, tier: CORE, required: true, min_cases: 59, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
+EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 47, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
+CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 50, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
+DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 77, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
+ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 84, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
+Versioning: { family: Platform, tier: CORE, required: true, min_cases: 69, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 # Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
 # BINDING cases (member accepted / non-member refused / unresolvable under each
 # declared posture). BASE architecture_overview master12 §"Binding Terminology
@@ -149,7 +149,7 @@ Versioning: { family: Platform, tier: CORE, required: true, min_cases: 59, sourc
 # set, so resolving it at ingestion is archetype-constraint validation like any
 # other — it just reaches an external terminology query server to do it.
 ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 125, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Archetype Validation)" }
-PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 52, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
+PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 55, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
 # REALIZATION DERIVED FIRST-HAND 2026-07-28 (#623), outcome (b): the RELEASED
 # wire does not exist — the ITS-REST docs text never names a PARTY_RELATIONSHIP
 # resource and specifications/demographic.openapi.yaml declares no
@@ -177,7 +177,7 @@ PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false,
 # recognize. Exercised by the measured workload through the demographic
 # admission journey's party commits — the validator runs on every commit, the
 # same reasoning that maps ArchetypeValidation onto CompositionCommit.
-DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
+DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 10, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
 # Floor raised 19 -> 30 (2026-07-30): the AQL master03 language battery — LIKE
 # wildcards, EXISTS/NOT EXISTS, NOT CONTAINS, the AND/OR containment operators,
 # node predicates on data paths, the aggregate functions and their empty-input
@@ -188,7 +188,7 @@ DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: fal
 # comparison evidenced a fraction of the language. (The eleventh authored case,
 # -top_backward_rejected, is report_only under AMB-174 and therefore not
 # counted.)
-AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 30, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
+AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 32, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
 # Floor raised 2 -> 3 (2026-07-30): the DISTINCT x LIMIT ordering case
 # (duplicates filtered before LIMIT applies — master03-syntax §LIMIT) joins the
 # two LIMIT cases.
@@ -320,7 +320,7 @@ DemographicArchive: { family: Platform, tier: OPTIONS, required: false, realizat
 # The workload_exclusion is GONE: the `integration_poll` journey now exports an
 # EHR as EXTRACTs (`ehr_extract_export`), so the measured hospital simulation
 # exercises the capability.
-EhrExtract: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 20, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: EHR Extract)" }
+EhrExtract: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 26, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: EHR Extract)" }
 # REALIZED ON THE EXTENSION SURFACE (#659, 2026-07-29) — no MESSAGE group exists
 # in the release (CONFIRMED unchanged first-hand), but the product serves
 # import_tdd + import_tdds under /message/tdd/ (the `message-tdd`
@@ -346,7 +346,7 @@ EhrApi: { family: Platform, tier: CORE, required: true, min_cases: 2, source: "C
 # ambiguity (requirement force is unaffected — the BCP-14 clause of ITS-REST
 # `docs/overview/Preface.md` §Requirements is not state-qualified, so every
 # MUST/SHOULD on this API binds exactly as elsewhere).
-DemographicApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEMOGRAPHIC API). SCOPE: the openEHR DEMOGRAPHIC API is DEVELOPMENT-state in the pinned release — ITS-REST docs/demographic/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and derived from the released operation/RM/SM text, not from a conformance clause" }
+DemographicApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 30, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEMOGRAPHIC API). SCOPE: the openEHR DEMOGRAPHIC API is DEVELOPMENT-state in the pinned release — ITS-REST docs/demographic/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and derived from the released operation/RM/SM text, not from a conformance clause" }
 QueryApi: { family: Platform, tier: STANDARD, required: true, min_cases: 20, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: QUERY API)" }
 AdminApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, workload_exclusion: { register: AMB-170, reason: "destructive mid-measurement: the released ADMIN API of ITS-REST 1.1.0 is exactly admin_ehr_delete and admin_ehr_delete_all, so the only wire this claim covers is the same corpus-erasing pair PhysicalDeletion excludes (the further /admin routes this server mounts are extensions no claim rests on)" }, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: ADMIN API). SCOPE: the openEHR ADMIN API is DEVELOPMENT-state in the pinned release — ITS-REST docs/admin/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and cover exactly the two released operations (admin_ehr_delete, admin_ehr_delete_all), derived from the released operation/RM/SM text, not from a conformance clause; the further /admin routes this server mounts are our own extensions and no claim rests on them" }
 # REALIZED ON THE EXTENSION SURFACE (#659, 2026-07-29). The CNF Profiles book
@@ -383,8 +383,8 @@ SystemApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 1, sou
 # no tag route is conformant, and folding tags into EhrApi (CORE, required)
 # would claim otherwise.
 ItemTags: { family: Platform, tier: OPTIONS, required: false, min_cases: 63, source: "ITS-REST docs/overview/Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag (\"Both headers act as convenient wrappers around the dedicated ITEM_TAG operations\"; \"If the server does not support ITEM_TAGs, these headers will also be unsupported\") + the twenty-three released tag operations (specifications/operations/{ehr,demographic}_tags_get.yaml, {composition,ehr_status}_tags_{get,update,delete}.yaml, {person,agent,group,organisation,role}_tags_{get,update,delete}.yaml) + RM common master07-tags.adoc (the ITEM_TAG class the routes serve). SCOPE: the CNF Profiles book has no ITEM_TAG row, so the tier is ours by analogy with the other non-book capabilities; the operations have no SM interface at all (register AMB-161) and the catalogue anchors them under the reserved I_ITS_REST_ITEM_TAGS pseudo-interface. The editorial defects of the released tag surface are registered (AMB-91..97, AMB-137, AMB-138) and no claim rests on anything they leave unassigned" }
-Signing: { family: Platform, tier: STANDARD, required: false, min_cases: 12, source: "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing); RM common (ORIGINAL_VERSION.signature)" }
-SimplifiedFormats: { family: Platform, tier: OPTIONS, required: false, min_cases: 68, source: "ITS-REST simplified_formats (SHOULD-level: OPTIONS profile, never gates CORE/STANDARD)" }
+Signing: { family: Platform, tier: STANDARD, required: false, min_cases: 13, source: "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing); RM common (ORIGINAL_VERSION.signature)" }
+SimplifiedFormats: { family: Platform, tier: OPTIONS, required: false, min_cases: 69, source: "ITS-REST simplified_formats (SHOULD-level: OPTIONS profile, never gates CORE/STANDARD)" }
 # REPORTING QUALIFIER, release-pinned (group-15 audit) — the same
 # DEVELOPMENT-state scope wording DemographicApi/AdminApi carry, plus the two
 # facts unique to SMART: the CNF Profiles book has NO SMART row (its REST-APIs

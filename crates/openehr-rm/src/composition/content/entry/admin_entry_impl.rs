@@ -4,7 +4,7 @@
 //! `Archetype_node_id_valid`). See `observation_impl` for the NOTE.
 
 use crate::composition::content::entry::admin_entry::AdminEntry;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for AdminEntry {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

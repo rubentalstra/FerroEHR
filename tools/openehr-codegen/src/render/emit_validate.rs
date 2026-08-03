@@ -355,8 +355,9 @@ const MODULE_DOC_INTRO: &str = "\
 ";
 
 const IMPORTS: &str = "\
+use openehr_base::validate::InvariantViolation;
 use super::{
-    InvariantViolation, invariant_failed, is_integral, valid_magnitude_status, valid_percentage,
+    invariant_failed, is_integral, valid_magnitude_status, valid_percentage,
     valid_proportion_kind,
 };
 ";

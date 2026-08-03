@@ -63,9 +63,8 @@
 //!   invariants; the composition validator recurses into children (and prefixes
 //!   the absolute RM path onto each [`InvariantViolation`]).
 
+use openehr_base::validate::InvariantViolation;
 use serde_json::Value;
-
-pub use openehr_base::validate::{InvariantViolation, Validate};
 
 mod fast;
 /// The generated RM class-invariant cores (`openehr-codegen -- emit-validate`):

@@ -8,8 +8,8 @@
 //!
 //! Canonical JSON admits several spellings of the same instance, and the
 //! conformance answer must not depend on which one a client picked. Each
-//! freedom gets its own corpus-wide property (Lane 2 of the hardening
-//! program; the omitted-optional-`_type` freedom is already pinned by
+//! freedom gets its own corpus-wide property (the
+//! omitted-optional-`_type` freedom is already pinned by
 //! `untagged_nodes::corpus_verdicts_are_tag_presence_independent`):
 //!
 //! 1. **Omitted empty collections** — the canonical serializer omits empty

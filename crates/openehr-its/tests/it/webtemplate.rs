@@ -165,7 +165,7 @@ fn every_opt_builds_a_web_template() {
     );
     if !parse_skips.is_empty() {
         eprintln!(
-            "opt14 (P13) could not parse {} template(s):\n  {}",
+            "opt14 could not parse {} template(s):\n  {}",
             parse_skips.len(),
             parse_skips.join("\n  ")
         );

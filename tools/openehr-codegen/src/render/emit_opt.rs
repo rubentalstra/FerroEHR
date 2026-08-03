@@ -22,8 +22,8 @@
 //! Abstract types used as polymorphic slots (`C_OBJECT`, `C_ATTRIBUTE`,
 //! `C_PRIMITIVE`, `EXPR_ITEM`, `STATE`) become untagged enums that dispatch on
 //! `xsi:type`; the type declarations are emitted here, and their `ToXml`/
-//! `FromXml` impls are produced by reusing [`emit_xml::emit_to_xml`] /
-//! [`emit_xml::emit_from_xml`] over the [`XmlType`]s this module builds.
+//! `FromXml` impls are produced by reusing [`crate::render::emit_xml::emit_to_xml`] /
+//! [`crate::render::emit_xml::emit_from_xml`] over the [`XmlType`]s this module builds.
 //!
 //! # NOTE: `opt14` is a deliberately-separate OPT-XML wire adapter
 //!

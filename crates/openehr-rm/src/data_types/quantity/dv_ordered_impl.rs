@@ -829,7 +829,7 @@ pub(crate) fn iso_date_time_parts(s: &str) -> Option<(i64, f64, String)> {
 /// undecidable `has` (unavailable magnitude / incomparable limits) runs no
 /// check.
 pub(crate) fn push_normal_range_consistency<T: OrderedLimit>(
-    out: &mut Vec<crate::validate::InvariantViolation>,
+    out: &mut Vec<openehr_base::validate::InvariantViolation>,
     rm_type: &str,
     normal_status: Option<&crate::data_types::text::code_phrase::CodePhrase>,
     normal_range: Option<&crate::data_types::quantity::dv_interval::DvInterval<T>>,

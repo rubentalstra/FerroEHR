@@ -13,7 +13,7 @@
 //!   has something to judge.
 
 use crate::common::generic::party_identified::PartyIdentifiedData;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for PartyIdentifiedData {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

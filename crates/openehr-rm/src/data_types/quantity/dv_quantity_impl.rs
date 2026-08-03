@@ -13,7 +13,7 @@
 
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::data_types::quantity::dv_quantity::DvQuantity;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for DvQuantity {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

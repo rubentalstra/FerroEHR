@@ -5,7 +5,7 @@
 //! deferred terminology-bound `Entry` invariants.
 
 use crate::composition::content::entry::evaluation::Evaluation;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Evaluation {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

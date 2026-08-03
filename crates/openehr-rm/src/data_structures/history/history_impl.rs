@@ -20,7 +20,7 @@
 
 use crate::data_structures::history::event_impl::offset_seconds;
 use crate::data_structures::history::history::History;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 /// Tolerance (seconds) for the periodicity modulo test — absorbs f64 rounding
 /// from the nominal-seconds conversion.

@@ -13,7 +13,7 @@
 //! on this type.
 
 use crate::data_structures::history::point_event::PointEvent;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl<T> Validate for PointEvent<T> {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

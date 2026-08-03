@@ -14,7 +14,7 @@
 
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::reference_range::ReferenceRange;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 fn limit_ok(unbounded: bool, limit: Option<&DvOrdered>) -> bool {
     unbounded || limit.is_some_and(DvOrdered::is_simple)

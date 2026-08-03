@@ -9,7 +9,7 @@
 //! (`…common.locatable.adoc` §Invariants) — and that is all this impl runs.
 
 use crate::common::directory::folder::Folder;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for Folder {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {

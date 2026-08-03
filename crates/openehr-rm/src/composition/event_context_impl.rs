@@ -10,7 +10,7 @@
 //! required field).
 
 use crate::composition::event_context::EventContext;
-use crate::validate::{InvariantViolation, Validate};
+use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for EventContext {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
