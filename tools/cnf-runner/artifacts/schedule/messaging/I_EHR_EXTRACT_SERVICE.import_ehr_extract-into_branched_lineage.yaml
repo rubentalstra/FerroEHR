@@ -62,10 +62,39 @@ flow:
   # extension operation, so it must not drive a released read to evidence it
   # (the realization-scope law). The released read AT a branch uid is its own
   # case — I_EHR_COMPOSITION.get_versioned_composition-branch_version_uid.
+  # The default export is LATEST-ONLY by spec (RM ehr_extract
+  # extract_version_spec.adoc §Description: "By default, only latest versions
+  # are included in the Extract"), so proving all three positions are HELD
+  # drives the spec's own full-stack switch,
+  # EXTRACT_VERSION_SPEC.include_all_versions ("forces all versions to be
+  # included").
   - step: 2                              # all three positions are held
-
-    call: export_ehrs
-    with: { ehr_id: "${ehr_id}" }
+    call: export_ehr_extracts
+    with:
+      extract_spec:
+        _type: EXTRACT_SPEC
+        extract_type:
+          _type: DV_CODED_TEXT
+          value: openehr-ehr
+          defining_code:
+            _type: CODE_PHRASE
+            terminology_id: { _type: TERMINOLOGY_ID, value: openehr }
+            code_string: openehr-ehr
+        include_multimedia: false
+        priority: 0
+        link_depth: 0
+        criteria: []
+        version_spec:
+          _type: EXTRACT_VERSION_SPEC
+          include_all_versions: true
+        manifest:
+          _type: EXTRACT_MANIFEST
+          entities:
+            - _type: EXTRACT_ENTITY_MANIFEST
+              extract_id_key: "${ehr_id}"
+              ehr_id: "${ehr_id}"
+              other_ids: []
+              item_list: []
     expect: ok
     assert:
       - { assert: returns, matches: "8b52e0c9-6d31-4f74-a09e-2c47b1d5836f::cnf\\.source\\.openehr\\.org::1" }

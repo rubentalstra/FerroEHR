@@ -71,7 +71,10 @@ requires:
   # master06 §Copying Case 2 — the container lands in the provisioned EHR;
   # mints ${imported_versioned_object_uid} + ${imported_version_uid}
   import:
-    extract: cnf.messaging.ehr_extract.imported_composition
+    # Identity-disjoint from the -imported_version sibling: one received
+    # object_id creates exactly ONE local container (master06 §Copying), so
+    # two cases in one run cannot both clone the same identities.
+    extract: cnf.messaging.ehr_extract.imported_composition_xml
     container: X_VERSIONED_COMPOSITION
 flow:
   - step: 1

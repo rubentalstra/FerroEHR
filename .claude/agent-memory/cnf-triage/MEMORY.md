@@ -31,3 +31,6 @@
 - [`_type`-tag-driven validation walk](type-tag-driven-validation-walk-skips-untagged-nodes.md) — APP defect class: untagged concretely-declared nodes (context/participations/…) escape ALL invariants on the JSON commit path; XML twin refuses
 - [`1..*` containers / NonEmptyVec refusals](nonempty-1star-containers.md) — BMM `cardinality.lower==1` IS item count (RM tables never write `1..*`); the 9-attribute set; empty-manifest row = catalogue bin
 - [AMB-167 documented-family root-name gap](amb167-documented-family-root-name-gap.md) — the handling carve-out contradicts the classification; DOCUMENTED XML root+namespace is a MUST with no case
+- [Extract export is latest-only by default](extract-export-latest-only-default.md) — a version-stack assertion can't ride a default export; use total_version_count or POST /message/export with include_all_versions
+- [Fixed-identity import fixtures are single-use](fixed-identity-fixtures-are-single-use.md) — two cases sharing one `requires.import` fixture ⇒ spec-correct 409 + 404; the runner's 409 tolerance hides it
+- [Commit member uid is service-generated](commit-member-uid-is-service-generated.md) — SM master03 + UpdateVersion.yaml + AMB-89: a pre-built ORIGINAL_VERSION fixture must not spell `uid`

@@ -68,9 +68,40 @@ flow:
       an_ehr_id: "${ehr_id}"
       an_extract: "${ds:cnf.messaging.ehr_extract.append_trunk_v2}"
     expect: updated
+  # The default export is LATEST-ONLY by spec (RM ehr_extract
+  # extract_version_spec.adoc §Description: "By default, only latest versions
+  # are included in the Extract"; master04-common_package §Version
+  # Specification: "'latest available version' for each matched item"), so
+  # proving both positions are HELD needs the spec's own full-stack switch —
+  # EXTRACT_VERSION_SPEC.include_all_versions ("the former forces all
+  # versions to be included").
   - step: 3
-    call: export_ehrs
-    with: { ehr_id: "${ehr_id}" }
+    call: export_ehr_extracts
+    with:
+      extract_spec:
+        _type: EXTRACT_SPEC
+        extract_type:
+          _type: DV_CODED_TEXT
+          value: openehr-ehr
+          defining_code:
+            _type: CODE_PHRASE
+            terminology_id: { _type: TERMINOLOGY_ID, value: openehr }
+            code_string: openehr-ehr
+        include_multimedia: false
+        priority: 0
+        link_depth: 0
+        criteria: []
+        version_spec:
+          _type: EXTRACT_VERSION_SPEC
+          include_all_versions: true
+        manifest:
+          _type: EXTRACT_MANIFEST
+          entities:
+            - _type: EXTRACT_ENTITY_MANIFEST
+              extract_id_key: "${ehr_id}"
+              ehr_id: "${ehr_id}"
+              other_ids: []
+              item_list: []
     expect: ok
     assert:
       # both trunk positions of the ONE container are held

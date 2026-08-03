@@ -2402,7 +2402,7 @@ impl HttpDriver<'_> {
         };
         let url = format!("{base}{path}");
         let exchange = self.send(request_spec.method, &url, &headers, Some(&payload), true)?;
-        if let Some(reason) = Self::provisioning_refusal(call, &exchange) {
+        if let Some(reason) = Self::provisioning_refusal(call, &exchange, false) {
             return Ok(Provisioned::RowErrored { reason });
         }
         if into_existing.is_none() {
@@ -2816,22 +2816,34 @@ impl HttpDriver<'_> {
         let url = format!("{base}{}", request_spec.path.raw());
         // 409 tolerated: a re-run row re-uploads the same deterministic OPT.
         let uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
-        if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded) {
+        if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded, true) {
             return Ok(Provisioned::RowErrored { reason });
         }
         Ok(Provisioned::Ready)
     }
 
-    /// Judge a PROVISIONING exchange: 2xx establishes the ground and 409
-    /// means it already exists (re-runs on a shared world) — anything else
-    /// is a REFUSAL, and the case's required ground does not exist. The
-    /// refusal is surfaced as an inconclusive row naming this exchange
-    /// (the triage law: an unestablished `requires` precondition is a
-    /// step-resolution failure, never a SUT failure of the behaviour under
-    /// test — the 2026-07-28 java run reported 197 swallowed template-upload
-    /// 406s as content-validation failures).
-    fn provisioning_refusal(what: &str, exchange: &Exchange) -> Option<String> {
-        if (200..300).contains(&exchange.status) || exchange.status == 409 {
+    /// Judge a PROVISIONING exchange: 2xx establishes the ground and,
+    /// where the caller says so, 409 means it already exists (idempotent
+    /// re-provisioning on a shared world — the deterministic OPT re-upload)
+    /// — anything else is a REFUSAL, and the case's required ground does
+    /// not exist. The refusal is surfaced as an inconclusive row naming
+    /// this exchange (the triage law: an unestablished `requires`
+    /// precondition is a step-resolution failure, never a SUT failure of
+    /// the behaviour under test — the 2026-07-28 java run reported 197
+    /// swallowed template-upload 406s as content-validation failures).
+    ///
+    /// `conflict_is_ground` is PER-CALL because 409's meaning inverts by
+    /// operation: on the OPT upload it says the ground already holds; on an
+    /// extract import it says the container exists IN ANOTHER EHR (RM
+    /// common master06 §Copying — one received `object_id`, one local
+    /// container), so the ground can never hold and the row is
+    /// inconclusive, not driven.
+    fn provisioning_refusal(
+        what: &str,
+        exchange: &Exchange,
+        conflict_is_ground: bool,
+    ) -> Option<String> {
+        if (200..300).contains(&exchange.status) || (conflict_is_ground && exchange.status == 409) {
             return None;
         }
         let body_head: String = exchange
@@ -3074,7 +3086,7 @@ impl StepDriver for HttpDriver<'_> {
             let url = format!("{base}{}", request_spec.path.raw());
             // 409 tolerated: already provisioned (the send records it).
             let uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
-            if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded) {
+            if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded, true) {
                 return Ok(Provisioned::RowErrored { reason });
             }
         }

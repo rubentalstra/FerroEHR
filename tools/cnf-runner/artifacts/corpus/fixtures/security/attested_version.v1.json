@@ -1,9 +1,5 @@
 {
   "_type": "ORIGINAL_VERSION",
-  "uid": {
-    "_type": "OBJECT_VERSION_ID",
-    "value": "b3e2a1c0-0000-4000-8000-000000000002::client.example.systemid::1"
-  },
   "commit_audit": {
     "_type": "AUDIT_DETAILS",
     "system_id": "client.example.systemid",
