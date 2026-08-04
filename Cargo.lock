@@ -1412,7 +1412,7 @@ dependencies = [
 
 [[package]]
 name = "cnf-runner"
-version = "3.17.1"
+version = "3.17.2"
 dependencies = [
  "assert_fs",
  "base64 0.22.1",
@@ -2669,7 +2669,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "ferroehr"
-version = "3.17.1"
+version = "3.17.2"
 dependencies = [
  "assert_fs",
  "async-trait",
@@ -2739,7 +2739,7 @@ dependencies = [
 
 [[package]]
 name = "ferroehr-admin-ui"
-version = "3.17.1"
+version = "3.17.2"
 dependencies = [
  "anyhow",
  "axum",
@@ -2779,7 +2779,7 @@ dependencies = [
 
 [[package]]
 name = "ferroehr-rest"
-version = "3.17.1"
+version = "3.17.2"
 dependencies = [
  "arc-swap",
  "argon2",
@@ -2833,7 +2833,7 @@ dependencies = [
 
 [[package]]
 name = "ferroehr-server"
-version = "3.17.1"
+version = "3.17.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -5506,7 +5506,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-codegen"
-version = "3.17.1"
+version = "3.17.2"
 dependencies = [
  "roxmltree",
  "serde_json",
@@ -8680,7 +8680,7 @@ dependencies = [
 
 [[package]]
 name = "testkit"
-version = "3.17.1"
+version = "3.17.2"
 dependencies = [
  "ferroehr",
  "jiff",

@@ -12,7 +12,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -58,7 +58,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -77,7 +77,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
   annotations:
@@ -96,7 +96,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
@@ -120,7 +120,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
@@ -139,7 +139,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 data:
@@ -295,7 +295,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -322,7 +322,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -334,7 +334,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: 9e588a7866c16a223d517366fc5a44d878f3103432598e8f97c8288aebd18b79
+        checksum/config: b41959fc801354715e99a5387514c0a8474628f9f31eeebffa80f011d5cb1d4f
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
@@ -355,7 +355,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ferroehr
-          image: "ghcr.io/rubentalstra/ferroehr:3.17.1"
+          image: "ghcr.io/rubentalstra/ferroehr:3.17.2"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -477,7 +477,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -510,7 +510,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
