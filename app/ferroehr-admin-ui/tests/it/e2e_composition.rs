@@ -19,7 +19,7 @@
 //! composition viewer's format toggle + version history, and the no-JS
 //! progressive-enhancement contracts (Basic login, the EHR finder).
 
-mod common;
+use crate::common;
 
 use common::{Harness, env, login_basic};
 use thirtyfour::prelude::*;

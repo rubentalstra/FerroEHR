@@ -1,15 +1,15 @@
-# Comparison with upstream EHRbase
+# Comparison with EHRbase
 
-FerroEHR is measured **against upstream EHRbase (Java)** — the project it
-succeeds — on the same instruments it applies to itself: the CNF 2.0
+FerroEHR and EHRbase are two independent open-source openEHR CDRs;
+this page measures them side by side on the same instruments FerroEHR applies to itself: the CNF 2.0
 conformance runner executes the **same committed catalogue** against both
 servers' official deployments, and the benchmark harness drives both with
 byte-identical clinical workloads on the same host. Both directions are
-always published; a result that favours upstream is reported exactly like
-one that favours us.
+always published; a result that favours either server is reported exactly like one that
+favours the other.
 
 Each side runs with its **own committed party set** — an ixit describing the
-reachable instances (upstream's Basic auth has no read-only principal, so
+reachable instances (EHRbase's Basic auth has no read-only principal, so
 its ixit declares none) and a statement (the ICS) declaring the capabilities
 and ambiguity-register options that party actually claims. A capability a
 party does not claim reads *not claimed* and never gates its verdicts; a
@@ -38,38 +38,38 @@ how to read the grid):
 
 ![FerroEHR capability conformance](conformance-assets/conformance-heat-grid.svg)
 
-![Upstream EHRbase capability conformance](comparison-assets/conformance-heat-grid-java.svg)
+![EHRbase capability conformance](comparison-assets/conformance-heat-grid-java.svg)
 
 And the per-chapter outcomes side by side. Both charts render the same
-chapter-and-band taxonomy, so they read band-for-band: a band upstream did
+chapter-and-band taxonomy, so they read band-for-band: a band EHRbase did
 not exercise shows as an explicit `no cases` row in the same position.
 Compare the printed counts, not the bar lengths — each chart scales its bars
 to its own widest band, and the legend states that scale.
 
 ![FerroEHR outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
 
-![Upstream EHRbase outcomes by chapter and band](comparison-assets/conformance-chapter-bars-java.svg)
+![EHRbase outcomes by chapter and band](comparison-assets/conformance-chapter-bars-java.svg)
 
-Reading the upstream results honestly: the failures concentrate where the
+Reading the EHRbase results honestly: the failures concentrate where the
 catalogue pins strict specification behaviour — archetype-constraint
 validation depth (the content chapter), exact status codes and version
-headers, canonical-format details — that upstream implements differently or
-predates. An **inconclusive** row means upstream answered with a status the
+headers, canonical-format details — that EHRbase implements differently or
+predates. An **inconclusive** row means EHRbase answered with a status the
 operation's specification-cited outcome map does not contain, or refused the
 exchange that would have established the case's required ground, so the
-runner refuses to guess a verdict. And where upstream simply does not
+runner refuses to guess a verdict. And where EHRbase simply does not
 implement a surface (the ITS-REST simplified-format media types, ADL 2
 provisioning, demographics), or where the specification dates a behaviour to
-a REST-API release newer than the one upstream declares (upstream declares
+a REST-API release newer than the one EHRbase declares (EHRbase declares
 ITS-REST 1.0.3; the catalogue realizes 1.1.0), the result reads *not
-claimed* or *N/A with a citation* — upstream is never counted as failing a
+claimed* or *N/A with a citation* — EHRbase is never counted as failing a
 surface it never claimed, never against a release it never declared, and
-never on an ferroehr-only extension.
+never on a FerroEHR-only extension.
 
-### The principal upstream divergences, stated plainly
+### The principal EHRbase divergences, stated plainly
 
-Each of these was reproduced live against the composed upstream stack during
-triage of the committed record, and each is grounded at or below upstream's
+Each of these was reproduced live against the composed EHRbase stack during
+triage of the committed record, and each is grounded at or below EHRbase's
 own declared ITS-REST 1.0.3 unless marked; the full wire evidence lives in
 the committed `docs/conformance/ehrbase-java/results.json`.
 
@@ -94,11 +94,11 @@ the committed `docs/conformance/ehrbase-java/results.json`.
   `Allow` header.
 - **The stored-query listing does not match by prefix.** The specification's
   own worked example lists "all versions of all queries with names starting
-  with `org.openehr`"; upstream returns the versions of an exactly-named
+  with `org.openehr`"; EHRbase returns the versions of an exactly-named
   query but answers `200 []` for any shorter prefix, so a client cannot
   discover what a namespace holds.
 - **A malformed identifier in the path answers `404`, not `400`.** Given a
-  path segment that is not a UUID at all, upstream detects the type
+  path segment that is not a UUID at all, EHRbase detects the type
   violation and still reports a miss — literally
   `"EHR not found, in fact, only UUID-type IDs are supported"` — for the
   EHR, versioned-COMPOSITION and CONTRIBUTION reads alike. (It does answer
@@ -119,12 +119,12 @@ the committed `docs/conformance/ehrbase-java/results.json`.
   application/json`** (`406`), serving only XML — the released parameter
   enumeration lists JSON first. This single refusal is what makes most
   content-chapter rows inconclusive: the runner's provisioning uploads ask
-  for JSON, upstream refuses, and the case's ground never exists.
+  for JSON, EHRbase refuses, and the case's ground never exists.
 
-**Two red rows are not upstream's fault, and are called out rather than
+**Two red rows are not EHRbase's fault, and are called out rather than
 counted.** Storing a query with no version in the URL has to land at *some*
 version, and no released sentence says which. Our suite pins `1.0.0` because
-a suite must pin something; upstream continues the existing series instead
+a suite must pin something; EHRbase continues the existing series instead
 (a stored `2.0.0` makes the next version-less store `3.0.0`). Both are
 defensible readings of a silence, so the two
 `store_query-{default_slot_with_higher_version,update_in_place}` rows record
@@ -140,7 +140,7 @@ question is with openEHR, not with either implementation.
 The conformance instrument derives every expected outcome from the openEHR
 specifications — never from either server's observed behaviour — and runs
 against real composed deployments of both systems (`scripts/conformance.sh`,
-`CONF_SUT=ehrbase-java` for the upstream side). The stress instrument drives
+`CONF_SUT=ehrbase-java` for the EHRbase side). The stress instrument drives
 the same hospital-simulation workload (admissions, observations, medication
 rounds, lab contributions, chart reviews, corrections, discharges) built
 from official CKM templates with seeded determinism, so both servers receive

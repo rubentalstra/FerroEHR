@@ -18,7 +18,7 @@
 //! `scripts/ui-e2e.sh`; each test skips with a printed reason when the
 //! harness environment is absent.
 
-mod common;
+use crate::common;
 
 use common::{Harness, env, login_basic};
 

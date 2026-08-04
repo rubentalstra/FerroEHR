@@ -29,7 +29,7 @@
 //! they exercise is now the ONLY way directory structure is built, so the
 //! coverage went up, not down.
 
-mod common;
+use crate::common;
 
 use common::{Harness, env, login_basic};
 

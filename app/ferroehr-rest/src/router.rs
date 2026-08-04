@@ -86,6 +86,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// `tower-http` middleware stack.
 pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
+    let mgmt_rbac = management_rbac(&state);
     let observability = state.observability().clone();
     let rest_root = cfg
         .server
@@ -272,6 +273,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         let mgmt = management::router(ManagementState::from_observability(
             observability,
             authenticator,
+            mgmt_rbac,
         ));
         app.merge(mgmt)
     } else {
@@ -383,12 +385,27 @@ fn mount_public_surface(
     inner
 }
 
+/// The RBAC rules the management `AdminOnly` gate applies: the live handle's
+/// rule set, or a disabled rule set when no RBAC gate is wired (auth-only
+/// deployments — authenticated is then enough, issue #1879).
+fn management_rbac(state: &AppState) -> ferroehr::config::authz::RbacConfig {
+    state
+        .authz()
+        .as_deref()
+        .and_then(|h| h.rbac_rules().cloned())
+        .unwrap_or_else(|| ferroehr::config::authz::RbacConfig {
+            enabled: false,
+            ..ferroehr::config::authz::RbacConfig::default()
+        })
+}
+
 /// Build the standalone management router (separate-port mode). The binary
 /// serves this on the management listener when `management.port` is set.
 pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) -> Router {
     management::router(ManagementState::from_observability(
         state.observability().clone(),
         authenticator,
+        management_rbac(state),
     ))
 }
 

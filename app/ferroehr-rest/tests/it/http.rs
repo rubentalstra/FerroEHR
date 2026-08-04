@@ -78,7 +78,6 @@ fn config(enabled: bool) -> AppConfig {
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
-            admin_scope: Some("ferroehr:admin".to_owned()),
             ..AuthConfig::default()
         },
         // The admin group must be reachable here: `admin_route_reachable_without_rbac`

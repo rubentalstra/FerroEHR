@@ -19,7 +19,7 @@
 //! test owns its own [`Harness`] and skips with a printed reason when the
 //! harness environment is absent, so a plain `cargo nextest run` stays green.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

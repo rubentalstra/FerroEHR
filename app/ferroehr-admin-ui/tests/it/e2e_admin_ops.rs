@@ -39,7 +39,7 @@
 //! deletes data another journey or the documentation-screenshot pass depends
 //! on.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

@@ -36,7 +36,7 @@
 - [Conformance](conformance.md)
 - [Performance](performance.md)
 - [Benchmarks](benchmarks.md)
-- [Comparison with upstream](comparison.md)
+- [Comparison with EHRbase](comparison.md)
 - [Rust crates](crates.md)
 - [Contributing](contributing.md)
 - [Licensing & legal](licensing.md)

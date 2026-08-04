@@ -56,7 +56,7 @@ shared=$(jq -n --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.json"
 shared_n=$(echo "$shared" | jq 'length')
 srow() { echo "$shared" | jq "[.[] | select(.$1 == \"$2\")] | length"; }
 
-# Upstream failures grouped by schedule chapter (the case-id prefix), and the
+# EHRbase failures grouped by schedule chapter (the case-id prefix), and the
 # full per-case list with our outcome on the identical case.
 fail_by_cap=$(jq -n --slurpfile b "$JV/results.json" '
   [$b[0].outcomes[] | select(.status=="failed")]
@@ -80,7 +80,7 @@ sverdict() { jq -r '.security // "not claimed"' "$1/verdicts.json"; }
   cat <<EOF
 ## Systems under test
 
-| | ferroehr | upstream (Java) |
+| | ferroehr | EHRbase |
 |---|---|---|
 | Product | $(jq -r '.sut.name' "$RS/results.json") $(jq -r '.sut.version' "$RS/results.json") | $(jq -r '.sut.name' "$JV/results.json") $(jq -r '.sut.version' "$JV/results.json") |
 | Run date | ${rs_date} | ${jv_date} |
@@ -92,7 +92,7 @@ sverdict() { jq -r '.security // "not claimed"' "$1/verdicts.json"; }
 Both systems execute the **same committed CNF 2.0 catalogue** ($(jq '(.cases // .outcomes) | length' "$RS/results.json") case-by-format
 executions) through the same reference runner (\`tools/cnf-runner\`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
-instances (upstream declares no readonly principal), and the statement (the
+instances (EHRbase declares no readonly principal), and the statement (the
 ICS) declares the claimed capabilities, spec versions, and ambiguity-register
 options — ISO/IEC 9646-style test selection excuses undeclared option
 branches, unclaimed capabilities, and release-dated behaviour outside the
@@ -101,18 +101,18 @@ pure functions of (statement, results, catalogue, capability matrix).
 
 **The declared-version delta matters and is stated, not hidden:** ferroehr
 declares ITS-REST **$(jq -r '.spec_versions.its_rest // "—"' tools/cnf-runner/party/ferroehr/statement.json)**
-while upstream EHRbase declares ITS-REST
+while EHRbase declares ITS-REST
 **$(jq -r '.spec_versions.its_rest // "—"' tools/cnf-runner/party/ehrbase-java/statement.json)** —
 the catalogue realizes 1.1.0, so every Release-1.1.0-dated behaviour (the
 Demographic API, ITEM_TAGs, Simplified Formats on the wire, the admin EHR
 delete, the weak-\`ETag\`/\`Location\` header forms, …) is cited N/A for the
-1.0.3 declaration rather than driven against a release upstream never
+1.0.3 declaration rather than driven against a release EHRbase never
 claimed. The verdict-bearing comparison below is therefore each party's
 **in-scope subset**, never the raw record.
 
 ## Profile verdicts
 
-| Profile | ferroehr | upstream (Java) |
+| Profile | ferroehr | EHRbase |
 |---|---|---|
 | CORE | $(pverdict "$RS" CORE) | $(pverdict "$JV" CORE) |
 | STANDARD | $(pverdict "$RS" STANDARD) | $(pverdict "$JV" STANDARD) |
@@ -121,7 +121,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of ${rs_date}) vs **upstream EHRbase
+Runs compared: **ferroehr** (run of ${rs_date}) vs **EHRbase
 ${jv_version}** (run of ${jv_date}) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
@@ -132,7 +132,7 @@ them.
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
 | **ferroehr** | $(scope "$RS" selected) | $(scope "$RS" driven) | $(scope "$RS" passed) | $(scope "$RS" failed) | $(scope "$RS" inconclusive) |
-| **upstream (Java)** | $(scope "$JV" selected) | $(scope "$JV" driven) | $(scope "$JV" passed) | $(scope "$JV" failed) | $(scope "$JV" inconclusive) |
+| **EHRbase** | $(scope "$JV" selected) | $(scope "$JV" driven) | $(scope "$JV" passed) | $(scope "$JV" failed) | $(scope "$JV" inconclusive) |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
 map, or its required ground could not be established (e.g. a refused
@@ -153,7 +153,7 @@ is no excused state: a required capability without passing evidence fails
 its tier, whichever party claims it), or **not claimed** (absent from that
 party's ICS).
 
-| Capability | ferroehr | upstream (Java) |
+| Capability | ferroehr | EHRbase |
 |---|---|---|
 $(jq -rn --slurpfile a "$RS/verdicts.json" --slurpfile b "$JV/verdicts.json" '
   (INDEX($a[0].capabilities[]; .[0])) as $rs
@@ -163,9 +163,9 @@ $(jq -rn --slurpfile a "$RS/verdicts.json" --slurpfile b "$JV/verdicts.json" '
 
 ## Failures — both directions
 
-### ferroehr failures (with the upstream outcome on the identical case)
+### ferroehr failures (with the EHRbase outcome on the identical case)
 
-| Case | Format | Failure | upstream outcome |
+| Case | Format | Failure | EHRbase outcome |
 |---|---|---|---|
 $(jq -rn --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.json" '
   (INDEX($b[0].outcomes[]; "\(.case)|\(.format // "-")")) as $jv
@@ -173,15 +173,15 @@ $(jq -rn --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.json" '
   | sort_by(.case)[]
   | "| \(.case) | \(.format // "—") | \((.reason // "") | .[0:90] | gsub("\\|"; "\\\\|")) | \($jv["\(.case)|\(.format // "-")"].status // "—") |"' ; [ "$(count "$RS" failed)" = "0" ] && echo '| — | — | *none — zero failing cases* | — |' )
 
-### Upstream failures by schedule chapter
+### EHRbase failures by schedule chapter
 
 | Chapter | failed cases |
 |---|---|
 $(echo "$fail_by_cap" | jq -r '.[] | "| \(.cap) | \(.n) |"')
 
-<details><summary>Every upstream-failed case, with the ferroehr outcome on the identical case</summary>
+<details><summary>Every EHRbase-failed case, with the ferroehr outcome on the identical case</summary>
 
-| Case | Format | Upstream failure | ferroehr outcome |
+| Case | Format | EHRbase failure | ferroehr outcome |
 |---|---|---|---|
 ${fail_rows}
 
@@ -213,22 +213,22 @@ EOF
 PREAMBLE
   cat "$OUT/comparison-conformance.md"
 
-  # Upstream measured-window error-class adjudication: the table derives from
-  # the committed upstream measured record; the verdicts are the recorded
-  # three-way adjudication (spec-required vs driver-sent vs upstream-observed,
-  # .claude/rules/cnf-triage.md), live-reproduced against a composed upstream
+  # EHRbase measured-window error-class adjudication: the table derives from
+  # the committed EHRbase measured record; the verdicts are the recorded
+  # three-way adjudication (spec-required vs driver-sent vs EHRbase-observed,
+  # .claude/rules/cnf-triage.md), live-reproduced against a composed EHRbase
   # on 2026-07-24 (tracker record: issue #266).
   if jq -e '.measurements[0].operations[]? | select(.errors > 0)' "$JV/results.json" >/dev/null 2>&1; then
     cat <<'ADJHEAD'
 
-## Upstream measured-window error classes (adjudicated)
+## EHRbase measured-window error classes (adjudicated)
 
-The upstream measured record is honest as measured — errors are observations.
-Every class below was reproduced against a freshly composed upstream and
+The EHRbase measured record is honest as measured — errors are observations.
+Every class below was reproduced against a freshly composed EHRbase and
 adjudicated three-way against the RELEASED ITS-REST docs text before any
 narrative: the driver payloads are spec-correct (the identical exchanges
 succeed 0-error against ferroehr in the committed record), and each class
-attributes to the upstream implementation. No expectation was bent either way.
+attributes to the EHRbase implementation. No expectation was bent either way.
 
 | Operation | errors/requests (measured window) |
 |---|---|
@@ -237,18 +237,18 @@ ADJHEAD
     cat <<'ADJ'
 
 - **`composition_update` + `ehr_status_update` (wire 400, deterministic)** —
-  one shared root cause: upstream rejects the RFC-9110-quoted `If-Match`
+  one shared root cause: EHRbase rejects the RFC-9110-quoted `If-Match`
   entity-tag form with `400 "UUID string too large"`. The released docs text
   itself mandates the quoted form (ITS-REST overview `Requests_and_responses.md`
   §"If-Match and accidental overwrites": `If-Match: "8849182c-…::openEHRSys.example.com::2"`),
-  and upstream 400s even its own returned `ETag` echoed back verbatim; it
-  succeeds only on the non-standard unquoted form. Upstream non-conformance;
+  and EHRbase 400s even its own returned `ETag` echoed back verbatim; it
+  succeeds only on the non-standard unquoted form. EHRbase non-conformance;
   the record stands.
 - **`tags_put` + `tags_read` (wire 404, deterministic)** — the item-tag paths
   (`/ehr/{ehr_id}/tags`, `/ehr/{ehr_id}/composition/{uid}/tags`, …) are members
   of the STABLE EHR API in released ITS-REST 1.1.0 (RM grounding:
-  `RM/docs/common/master07-tags.adoc`); upstream serves no such routes
-  ("No resource found at path"). A released-STABLE surface absent upstream is
+  `RM/docs/common/master07-tags.adoc`); EHRbase serves no such routes
+  ("No resource found at path"). A released-STABLE surface absent from EHRbase is
   non-conformance, not a citable N/A; the record stands.
 - **`template_get` (partial)** — the endpoint is fully functional when
   reproduced (200 for JSON and XML); the small error share sits in a load
@@ -280,7 +280,7 @@ corpus_of() { jq -r '.corpus' "$1"; }
   if [ -f "$RS_STRESS" ] && [ -f "$JV_STRESS" ]; then
     cargo run -q -p cnf-runner -- stress-compare \
       --left "$RS_STRESS" --left-label "ferroehr" \
-      --right "$JV_STRESS" --right-label "upstream (Java)" \
+      --right "$JV_STRESS" --right-label "EHRbase" \
       --out website/book/src/perf-assets/perf-stress-compare.svg >&2
     cat <<EOF
 Both systems run the **same committed step-load stress instrument**
@@ -294,7 +294,7 @@ histograms and, where sampled, per-container resource telemetry.
 | | max sustainable throughput | worst p99 at the knee | DB peak CPU at the knee | SUT peak RSS at the knee |
 |---|---|---|---|---|
 | **ferroehr** | $(mst "$RS_STRESS") req/s | $(knee_p99 "$RS_STRESS") ms | $(knee_res "$RS_STRESS" db ".cpu_pct") % | $(knee_res "$RS_STRESS" sut ".rss_bytes / 1000000") MB |
-| **upstream (Java)** | $(mst "$JV_STRESS") req/s | $(knee_p99 "$JV_STRESS") ms | $(knee_res "$JV_STRESS" db ".cpu_pct") % | $(knee_res "$JV_STRESS" sut ".rss_bytes / 1000000") MB |
+| **EHRbase** | $(mst "$JV_STRESS") req/s | $(knee_p99 "$JV_STRESS") ms | $(knee_res "$JV_STRESS" db ".cpu_pct") % | $(knee_res "$JV_STRESS" sut ".rss_bytes / 1000000") MB |
 
 ![Both systems' latency-throughput curves](perf-assets/perf-stress-compare.svg)
 
@@ -307,11 +307,11 @@ EOF
 The step-load stress instrument (\`cnf-runner stress\`) has a committed
 report for **ferroehr** — the maximum sustainable throughput of
 $(mst "$RS_STRESS") req/s on the $(corpus_of "$RS_STRESS") corpus, with the
-latency-throughput curve below. **Upstream EHRbase (Java) is not measured**:
+latency-throughput curve below. **EHRbase is not measured**:
 the first attempt was refused at workload provisioning (the stored-query
 registration rejects a spec-valid qualified name — a conformance finding
 recorded on the project tracker); the instrument is never adjusted to
-accommodate, and this page publishes both directions the moment upstream
+accommodate, and this page publishes both directions the moment EHRbase
 can host the workload — never a one-sided claim.
 
 ![The ferroehr latency-throughput curve](perf-assets/perf-stress-curve.svg)

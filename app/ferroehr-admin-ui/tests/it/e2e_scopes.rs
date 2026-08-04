@@ -31,7 +31,7 @@
 //! No fixtures: the drawer reads the session the harness already has, and the
 //! previewer is a pure function of typed text.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

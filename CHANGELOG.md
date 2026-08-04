@@ -15,6 +15,25 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Removed
+
+- **BREAKING:** the deprecated `auth.admin_scope` configuration key is
+  retired. The management surface's `AdminOnly` access level now gates on
+  the RBAC admin role (`authz.rbac.admin_role`, default `ADMIN`) — the same
+  gate every Admin-class API operation already uses. Deployments that
+  disabled RBAC keep the previous behaviour (any authenticated caller
+  passes `AdminOnly`); deployments that set `admin_scope` should grant the
+  admin role instead (a JWT `scope` entry naming the role continues to
+  surface as that role via scope→role extraction).
+
+### Changed
+
+- The documentation site's comparison chapter (and every page that echoed
+  it) no longer frames EHRbase as "upstream": FerroEHR and EHRbase are
+  presented as two independent open-source openEHR CDRs measured by the same
+  neutral instrument. The rendered comparison charts and generated tables
+  carry the new labeling; provenance and licensing statements are unchanged.
+
 ### Fixed
 
 - **A ROLE carrying an empty `capabilities` list (and a party carrying an
