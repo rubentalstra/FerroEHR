@@ -60,9 +60,12 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
 use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
 use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
 use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_am::am24::beom::core::expression::Expression;
 use openehr_base::prelude::{Cardinality, Interval, MultiplicityInterval, ProperInterval};
+use openehr_lang::prelude::OperatorKind;
 
 use super::model::{
     WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
@@ -1072,15 +1075,51 @@ fn archetype_slot(s: &ArchetypeSlot) -> WebTemplateArchetypeSlot {
     }
 }
 
-/// The archetype-id regex of a slot `ASSERTION`, lifted from its
-/// `string_expression` (`… matches {/<regex>/}`; AOM2 §ARCHETYPE_SLOT — the
-/// serialised assertion form). Archetype ids contain no `/`, so the last `/}`
-/// delimits the regex.
+/// The archetype-id regex of a slot `ASSERTION`, read from its EXPRESSION TREE.
+///
+/// `ASSERTION.expression` is the "Root of expression tree" and
+/// `string_expression` only its "String form of expression"
+/// (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package), so the
+/// tree is the authority: the slot constraint's core expression is
+/// `<reference> matches {/<regex>/}` (`ADL2/master04.3` §Slots based on Lexical
+/// Archetype Identifiers), whose right operand carries one delimited regex in a
+/// `C_STRING.constraint` (`AOM2/master04.5` §`C_STRING`). Any other assertion
+/// shape (the §Slots based on other Constraints form, a literal-value list)
+/// yields `None`.
 fn slot_pattern(a: &Assertion) -> Option<String> {
-    let s = a.string_expression.as_deref()?;
-    let (_, rest) = s.split_once("matches {/")?;
-    let end = rest.rfind("/}")?;
-    Some(rest.get(..end)?.to_owned())
+    let Expression::ExprBinaryOperator(op) = a.expression.as_ref() else {
+        return None;
+    };
+    if op.operator != OperatorKind::Matches {
+        return None;
+    }
+    let cstring = match op.right_operand.as_ref() {
+        Expression::ExprConstraint(ExprConstraint::ExprArchetypeIdConstraint(c)) => &c.item,
+        Expression::ExprConstraint(ExprConstraint::ExprConstraint(c)) => match &c.item {
+            CPrimitiveObject::CString(s) => s,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    match cstring.constraint.as_deref() {
+        Some([one]) => delimited_regex_body(one).map(str::to_owned),
+        _ => None,
+    }
+}
+
+/// The body of a `/re/` or `^re^` delimited regex, or `None` for a literal
+/// string.
+///
+/// `AOM2/master04.5` §`C_STRING` types `constraint` as literal strings and/or
+/// regular expressions delimited by `/`; `ADL2/master04.5` §Regular Expression
+/// admits `^…^` as the lexical alternative when the body contains `/`.
+fn delimited_regex_body(entry: &str) -> Option<&str> {
+    let trimmed = entry.trim();
+    ['/', '^'].into_iter().find_map(|delimiter| {
+        trimmed
+            .strip_prefix(delimiter)
+            .and_then(|rest| rest.strip_suffix(delimiter))
+    })
 }
 
 /// The RM-mandatory structural attributes of an ENTRY whose value the FLAT/TDD

@@ -1003,10 +1003,15 @@ fn archetype_slot(s: &crate::opt14::ArchetypeSlot) -> WebTemplateArchetypeSlot {
     }
 }
 
-/// The archetype-id regex of a slot `ASSERTION`, lifted from its
+/// The archetype-id regex of an OPT-1.4 slot `ASSERTION`, lifted from its
 /// `string_expression` (`archetype_id/value matches {/<regex>/}` — ADL 1.4
 /// `master05-cadl.adoc` §Archetype Slots; the OPT always emits this surface
 /// form). Archetype ids contain no `/`, so the last `/}` delimits the regex.
+///
+/// The string form is the whole datum this model carries: `Template.xsd` types
+/// `EXPR_LEAF.item` as `xs:anyType`, so the OPT-1.4 expression tree holds no
+/// readable constraint payload — unlike the am24 twin
+/// ([`super::builder_am24`]), which reads its tree.
 fn slot_pattern(a: &Assertion) -> Option<String> {
     let s = a.string_expression.as_deref()?;
     let (_, rest) = s.split_once("matches {/")?;

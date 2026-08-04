@@ -36,6 +36,7 @@ use std::collections::BTreeMap;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
@@ -51,6 +52,7 @@ use crate::aom::access::{
 use crate::artefact::{ArchetypeRepository, view};
 use crate::codes::codes_conformant;
 use crate::paths::{PathSegment, parse_path};
+use crate::validate::conformance::tuple_member_names;
 
 /// A failure while flattening a specialised archetype against its parent.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -501,14 +503,65 @@ fn overlay_node(base: &CObject, child: &CObject) -> CObject {
         for ca in cp.attributes.iter().flatten() {
             overlay_attribute(out.attributes.get_or_insert_default(), ca, 0);
         }
-        if !cp.attribute_tuples.as_ref().is_none_or(Vec::is_empty) {
-            out.attribute_tuples.clone_from(&cp.attribute_tuples);
-        }
+        overlay_attribute_tuples(&mut out, cp.attribute_tuples.as_deref().unwrap_or_default());
         return CObject::CComplexObject(CComplexObject::CComplexObject(out));
     }
     let mut node = child.clone();
     strip_sibling_order(&mut node);
     node
+}
+
+/// Overlays a child node's `C_ATTRIBUTE_TUPLE` set onto the base node's, keyed
+/// by member-attribute group.
+///
+/// A tuple's identity is the attribute group it co-constrains: the conformance
+/// functions compare a child tuple only against the parent tuple over the same
+/// group (`AOM2/master04.5` §Conformance semantics: `C_SECOND_ORDER` —
+/// "'corresponding' means a node found at the same or a congruent path"), and
+/// `ADL2/master09.05` §Tuple Redefinition narrows a group by restating that
+/// group's whole row list. So a child tuple REPLACES the base tuple over the
+/// same group, a base tuple over a group the child does not restate is
+/// RETAINED, and a child tuple over a group the base does not carry is APPENDED.
+fn overlay_attribute_tuples(out: &mut CComplexObjectData, child: &[CAttributeTuple]) {
+    // NOTE: no openEHR spec governs tuple overlay — `AOM2/master08` §Flattening
+    // enumerates no second-order case; group-keyed merge is our own design, so
+    // flattening never silently drops an inherited constraint.
+    if child.is_empty() {
+        return;
+    }
+    let mut merged: Vec<CAttributeTuple> = out
+        .attribute_tuples
+        .iter()
+        .flatten()
+        .map(|base| {
+            child
+                .iter()
+                .find(|c| tuple_group_key(c) == tuple_group_key(base))
+                .unwrap_or(base)
+                .clone()
+        })
+        .collect();
+    for added in child {
+        if !merged
+            .iter()
+            .any(|m| tuple_group_key(m) == tuple_group_key(added))
+        {
+            merged.push(added.clone());
+        }
+    }
+    out.attribute_tuples = openehr_base::containers::present(merged);
+}
+
+/// The order-insensitive member-attribute group a `C_ATTRIBUTE_TUPLE`
+/// co-constrains — its overlay identity.
+///
+/// Sorted, because the conformance functions match two tuples on their member
+/// SET and map positions between them (`AOM2/master04.5` §Conformance
+/// semantics: `C_ATTRIBUTE_TUPLE`), not on declaration order.
+fn tuple_group_key(tuple: &CAttributeTuple) -> Vec<&str> {
+    let mut names = tuple_member_names(tuple);
+    names.sort_unstable();
+    names
 }
 
 // ── differential-path navigation + proxy expansion ─────────────────────────
