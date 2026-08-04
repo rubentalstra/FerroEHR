@@ -153,7 +153,7 @@ pub struct FerroEhrService {
     /// retrieval; `crate::system_log::store`). `None` = the local store is
     /// off; the binary wires it via [`Self::with_audit_store`].
     pub(crate) audit_store: Option<crate::system_log::store::AuditStore>,
-    /// The optional external terminology servers (FHIR R4) — **all** of the
+    /// The optional external terminology servers (FHIR R4B) — **all** of the
     /// configured providers plus the terminology → provider routing, built
     /// when a deployment opts in
     /// ([`ExternalTerminologyConfig`](crate::service::terminology::config::ExternalTerminologyConfig)).
@@ -289,7 +289,7 @@ impl FerroEhrService {
         self
     }
 
-    /// Install a single external FHIR R4 terminology provider as the default
+    /// Install a single external FHIR R4B terminology provider as the default
     /// route — the one-server shorthand for
     /// [`Self::with_terminology_router`].
     #[must_use]

@@ -1,9 +1,9 @@
-//! FHIR R4 `AuditEvent` rendering of the audit event model, following the
+//! FHIR R4B `AuditEvent` rendering of the audit event model, following the
 //! IHE **BALP** (Basic Audit Log Patterns) content profiles.
 //!
 //! This is the modern half of the dual ATNA rendering (the classic half is
 //! the DICOM PS3.15 §A.5 XML in [`super::message`]): the same resolved
-//! [`super::event::AuditEvent`] renders to one FHIR R4 (4.0.1)
+//! [`super::event::AuditEvent`] renders to one FHIR R4B (4.3.0)
 //! `AuditEvent` JSON document. The BALP profiles pin the codings this module
 //! emits (IHE BALP v1.1.4, `IHE.BasicAudit.*` StructureDefinitions):
 //!
@@ -37,7 +37,7 @@ use serde::{Deserialize, Serialize};
 use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass};
 use crate::system_log::message::AuditContext;
 
-// ── Code systems (FHIR R4 / IHE BALP fixed bindings) ─────────────────────────
+// ── Code systems (FHIR R4B / IHE BALP fixed bindings) ─────────────────────────
 
 /// FHIR `audit-event-type` code system (`rest`).
 pub const SYS_AUDIT_EVENT_TYPE: &str = "http://terminology.hl7.org/CodeSystem/audit-event-type";
@@ -65,7 +65,7 @@ pub const SYS_OPENEHR_ITS_REST: &str = "urn:openehr:its-rest:operation";
 /// The canonical-URL prefix of the IHE BALP profiles (v1.1.4).
 pub const BALP_PROFILE_BASE: &str = "https://profiles.ihe.net/ITI/BALP/StructureDefinition";
 
-// ── The FHIR AuditEvent subset (R4 4.0.1) ────────────────────────────────────
+// ── The FHIR AuditEvent subset (R4B 4.3.0) ────────────────────────────────────
 
 /// A FHIR `Coding`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -196,7 +196,7 @@ pub struct Meta {
     pub profile: Vec<String>,
 }
 
-/// A FHIR R4 `AuditEvent` — the BALP subset.
+/// A FHIR R4B `AuditEvent` — the BALP subset.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FhirAuditEvent {
@@ -230,7 +230,7 @@ pub struct FhirAuditEvent {
     pub entity: Vec<Entity>,
 }
 
-/// Render a resolved [`AuditEvent`] to a FHIR R4 `AuditEvent` following the
+/// Render a resolved [`AuditEvent`] to a FHIR R4B `AuditEvent` following the
 /// IHE BALP patterns, with the server identity from the [`AuditContext`] and
 /// the optionally-resolved patient subject id.
 #[must_use]

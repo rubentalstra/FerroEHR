@@ -2,7 +2,7 @@
 //! validation config.
 //!
 //! No openEHR spec governs the transport/config mechanics — our own design
-//! (the client + the self-hostable FHIR R4 TS it points at).
+//! (the client + the self-hostable FHIR R4B TS it points at).
 //! `BASE/docs/architecture_overview/master12-terminology.adoc`
 //! models the concrete backend as an external "terminology query server",
 //! which is why this config lives beside the interface realization in
@@ -151,11 +151,11 @@ const fn default_refresh_leeway_secs() -> u64 {
     30
 }
 
-/// The kind of terminology server. Only FHIR R4 is supported.
+/// The kind of terminology server. Only FHIR R4B is supported.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderKind {
-    /// A FHIR R4 terminology server (`$validate-code`/`$expand`/`$subsumes`/
+    /// A FHIR R4B terminology server (`$validate-code`/`$expand`/`$subsumes`/
     /// `$lookup`).
     #[default]
     Fhir,
@@ -173,14 +173,14 @@ pub enum FhirOperation {
     Expand,
 }
 
-/// Configuration for a single FHIR R4 terminology-server provider.
+/// Configuration for a single FHIR R4B terminology-server provider.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FhirProviderConfig {
     /// Server kind (`type = "fhir"`).
     #[serde(rename = "type", default)]
     pub kind: ProviderKind,
-    /// FHIR R4 base URL, e.g. `https://r4.ontoserver.csiro.au/fhir`.
+    /// FHIR R4B base URL, e.g. `https://r4.ontoserver.csiro.au/fhir`.
     pub url: String,
     /// The membership operation for `value_set_validate` (default
     /// `validate_code`).

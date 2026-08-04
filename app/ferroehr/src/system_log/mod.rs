@@ -16,7 +16,7 @@
 //! default, served back via the RESTful-ATNA ITI-81 retrieval), the classic
 //! **DICOM Audit Message** feed (DICOM PS3.15 §A.5 XML — *not* openEHR
 //! ITS-XML — over RFC 5424 syslog; RFC 5426 UDP or RFC 5425 TLS; IHE ITI
-//! TF-2 ITI-20), and the **FHIR R4 `AuditEvent`** feed (IHE BALP shape;
+//! TF-2 ITI-20), and the **FHIR R4B `AuditEvent`** feed (IHE BALP shape;
 //! ITI-20 ATX:FHIR Feed). This is authorized defensive security-audit
 //! logging for a healthcare system.
 //!
@@ -43,7 +43,7 @@
 //! - [`codes`] — DCM / RFC-3881 code constants + the ATNA rendering of the
 //!   event enums.
 //! - [`message`] — the DICOM `AuditMessage` model + `quick-xml` serializer.
-//! - [`fhir`] — the FHIR R4 `AuditEvent` rendering per the IHE BALP content
+//! - [`fhir`] — the FHIR R4B `AuditEvent` rendering per the IHE BALP content
 //!   profiles (the modern half of the dual format).
 //! - [`syslog`] — RFC 5424 assembly + RFC 5426 UDP / RFC 5425 TLS transports.
 //! - [`store`] — the local Audit Record Repository (the `audit` schema) +

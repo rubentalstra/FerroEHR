@@ -1,6 +1,6 @@
 # FHIR connectors
 
-Many systems around a CDR speak FHIR. FerroEHR ships a set of FHIR R4
+Many systems around a CDR speak FHIR. FerroEHR ships a set of FHIR R4B
 connectors so it can take FHIR resources in, hand openEHR data back out as
 FHIR, and emit FHIR resources to downstream systems — all driven by mappings
 you control. It is not a full FHIR server; it is a focused, mapping-driven
@@ -9,7 +9,7 @@ bridge between the FHIR and openEHR worlds.
 The connectors come in two independent switches — an inbound/read-façade
 switch and an outbound-emission switch — because they have very different
 data-exposure characteristics. All FHIR routes are relative to the API base path
-(`/ferroehr/rest/openehr/v1`), use FHIR R4, and speak `application/fhir+json`. A
+(`/ferroehr/rest/openehr/v1`), use FHIR R4B, and speak `application/fhir+json`. A
 resource type the connector does not map yet is answered with a FHIR
 `OperationOutcome`, never a silent success.
 

@@ -26,7 +26,7 @@ pub mod am24;
 ///
 /// The pin is emitted by `openehr-codegen` from the vendored inputs and is
 /// deliberately independent of the crates.io package version, which is the
-/// crate's own SemVer line and moves only with this implementation's code.
+/// crate's own `SemVer` line and moves only with this implementation's code.
 pub const SPEC_VERSION: &str = "2.4.0";
 
 // canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:

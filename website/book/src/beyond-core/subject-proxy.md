@@ -100,7 +100,7 @@ fresher, never staler.
 
 ## Connecting FHIR systems
 
-Frames of kind `API_CALL`/`fhir_get` read from remote HL7 FHIR R4 servers.
+Frames of kind `API_CALL`/`fhir_get` read from remote HL7 FHIR R4B servers.
 Which servers are reachable is **opt-in and fail-closed** configuration: only
 systems named here can ever be called, and a frame naming an unconfigured
 `system_id` is rejected with a typed error — never an arbitrary outbound
@@ -115,7 +115,7 @@ by the name frames use as `system_id` (shown as `<NAME>`):
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `FERROEHR__SUBJECT_PROXY__SYSTEMS__<NAME>__BASE_URL` | URL | none (**required per system**) | FHIR R4 base URL; the frame's `query_text` (after `$subject_id` substitution) is resolved relative to it. |
+| `FERROEHR__SUBJECT_PROXY__SYSTEMS__<NAME>__BASE_URL` | URL | none (**required per system**) | FHIR R4B base URL; the frame's `query_text` (after `$subject_id` substitution) is resolved relative to it. |
 | `FERROEHR__SUBJECT_PROXY__SYSTEMS__<NAME>__CONNECT_TIMEOUT_MS` | integer (ms) | `2000` | Per-system TCP connect timeout. |
 | `FERROEHR__SUBJECT_PROXY__SYSTEMS__<NAME>__REQUEST_TIMEOUT_MS` | integer (ms) | `10000` | Per-system overall request timeout. |
 
