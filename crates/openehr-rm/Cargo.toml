@@ -27,6 +27,10 @@ openehr-term = { path = "../openehr-term" }
 serde.workspace = true
 serde_json.workspace = true
 serde_jcs.workspace = true
+# The typed-dispatch tier (`validate::typed_dispatch`) re-reads a failing node
+# with the path tracker so a refusal names the offending JSON node, exactly as
+# the canonical-JSON entry points do.
+serde_path_to_error.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 

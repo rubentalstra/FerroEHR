@@ -28,15 +28,20 @@
 //!    `master06-change_control_package.adoc` §Incomplete Content splits a
 //!    node's structural judgement into. Used only by the relaxed
 //!    (`553|incomplete|`) commit path; the strict path never calls them.
+//! 5. **The typed-dispatch tier**, in the sibling [`typed_dispatch`] module:
+//!    the `_type` → concrete-RM-type table that *deserializes* a node through
+//!    the emitted canonical-JSON `serde` impls (`crate::json_serde`) and runs
+//!    that class's `Validate` impl — the authoritative oracle the fast path may
+//!    only skip when its result is provably identical.
 //!
-//! Kept OUT of this crate, in `openehr-its`: the typed-dispatch tier that
-//! *deserializes* a node into its concrete RM type, because it drives the
-//! native canonical-JSON codec (`from_json_value`) defined downstream there,
-//! and the walkers that recurse an instance and prefix absolute RM paths. The
-//! `Validate` trait and the invariant impls (`*_impl.rs`) stay here as model
-//! semantics; the wire-boundary entry point
+//! Kept OUT of this crate, in `openehr-its`: the GENERATED five-crate
+//! structural dispatch that [`typed_dispatch::dispatch_typed`] falls through to
+//! (it spans `openehr-base`/`-rm`/`-am`/`-term`/`-lang` at once, so it can only
+//! be emitted downstream of all of them), the thin wire-boundary entry points
+//! that compose the tiers, and the walkers that recurse an instance and prefix
+//! absolute RM paths. The wire-boundary entry point
 //! `openehr_its::wire_validate::validate_rm_value` calls [`try_fast_validate`]
-//! then falls back to its typed dispatch.
+//! then falls back to [`typed_dispatch::dispatch_typed`].
 //!
 //! # Fidelity to the reference implementation (archie)
 //!
@@ -83,6 +88,10 @@ pub mod incomplete;
 // the detail — an outer doc attribute here would force rustdoc to resolve the
 // module's intra-doc links in THIS module's scope instead of its own).
 pub mod terminology;
+// The typed-dispatch tier (its own `//!` module docs carry the detail — an
+// outer doc attribute here would force rustdoc to resolve the module's
+// intra-doc links in THIS module's scope instead of its own).
+pub mod typed_dispatch;
 
 /// Run the allocation-free fast-path RM class-invariant check for a single
 /// canonical-JSON node, dispatching on its `_type`. Returns `true` when the fast
@@ -877,10 +886,13 @@ mod tests {
     }
 
     // NOTE: the `_type`-dispatch tests (fast/typed equivalence, corpus, mutation
-    // battery) moved with the typed dispatcher to
-    // `openehr-its/tests/rm_validation.rs`, where both the fast path
-    // (`try_fast_validate`) and the typed path (`from_json_value`) are reachable.
-    // The ISO-8601 helper tests below stay with the helpers they exercise.
+    // battery) live in `openehr-its/tests/it/rm_validation.rs`, where the tiers
+    // are reachable through the COMPOSED wire entry points — the fast path
+    // (`try_fast_validate`) and the typed table
+    // (`typed_dispatch::dispatch_typed`) both live in this crate, but the
+    // generated five-crate structural fallthrough they are composed with can
+    // only exist downstream. The ISO-8601 helper tests below stay with the
+    // helpers they exercise.
 
     /// BASE `Iso8601_timezone`: `+` offsets reach +14:00, `-` offsets stop at
     /// -12:00; ±00:00 accepted per the corpus (see `is_valid_tz`).
