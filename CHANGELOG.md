@@ -18,6 +18,22 @@ workflow refuses a tag that has no matching section here.
 ### Added
 
 - EHR-Extract export now evaluates `EXTRACT_SPEC.criteria`: AQL criteria queries select each entity's primary set `$ehr`-bound (the entity's EHR scopes the query and a literal `$ehr` parameter binds to its id); a non-AQL formalism or an unparseable criterion is refused with `400`. The former blanket criteria refusal is gone (#1736).
+- **On-demand CPU flamegraph of the running server:**
+  `GET /management/flamegraph` — a new opt-in management endpoint (default
+  off, like the whole surface) that samples the process with an in-process
+  `pprof` profiler for a bounded window and answers with the rendered
+  flamegraph SVG. `seconds`/`frequency` query parameters are capped by the
+  new `[management.profiling]` config keys (`max_seconds`, `max_frequency`);
+  a request beyond a cap is refused with `400`, a concurrent sample window
+  with `409`. No openEHR spec governs the management surface — our own
+  operational extension (#1861).
+- **Span-timing flamegraph capture:** the new `telemetry.flame_file` config
+  key installs a `tracing-flame` layer that writes folded stack samples of
+  every span to the given file for offline rendering with inferno
+  (`inferno-flamegraph < file > flame.svg`) — the async-attribution
+  complement to the sampled-stack endpoint. Unset (the default) the layer is
+  not installed at all. Our own telemetry extension (#1862).
+
 - EHR Extract import now enforces the copy closure (RM common master06 §Copying): a received branch version is refused with `400` unless its fork-point trunk version and same-branch predecessor travel in the same extract or are already stored (#1770).
 - **FOLDER (DIRECTORY) resources can now carry ITEM_TAGs.** ITS-REST overview
   `Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag

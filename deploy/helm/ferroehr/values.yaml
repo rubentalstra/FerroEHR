@@ -188,11 +188,12 @@ config:
     claim: tenant
 
   # [management] — ops-introspection surface (info / prometheus / metrics / env /
-  # loggers). The master switch is ON here (unlike the bare binary) so scraping is
-  # a one-key change; every endpoint below stays off, so nothing is exposed until
-  # you opt in (set prometheus=public + metrics.enabled to scrape). Health probes
-  # are NOT part of this surface — /health, /health/liveness and /health/readiness
-  # are always served on the HTTP port, whatever this section says.
+  # loggers / flamegraph). The master switch is ON here (unlike the bare binary)
+  # so scraping is a one-key change; every endpoint below stays off, so nothing
+  # is exposed until you opt in (set prometheus=public + metrics.enabled to
+  # scrape). Health probes are NOT part of this surface — /health,
+  # /health/liveness and /health/readiness are always served on the HTTP port,
+  # whatever this section says.
   management:
     enabled: true
     base_path: /management
@@ -205,6 +206,9 @@ config:
       prometheus: "off"
       env: "off"
       loggers: "off"
+      # On-demand CPU flamegraph of the running server (pprof sampling; caps
+      # under [management.profiling] — see the configuration reference).
+      flamegraph: "off"
 
   # [signing] — VERSION signing. On/digest by default (the STANDARD "Signing"
   # capability). pgp mode requires signing.key_path (a mounted config.files key)

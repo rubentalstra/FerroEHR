@@ -245,6 +245,7 @@ OpenTelemetry export. Unset `otlp_endpoint` ⇒ the OTel layer is not installed
 | `environment` | string | `dev` | `deployment.environment` resource attribute. |
 | `traces_sample_ratio` | float | `1.0` | Head-sampling ratio (`0.1` is a common prod start). |
 | `metrics_push` | bool | `false` | Also push metrics over OTLP alongside the Prometheus pull surface. |
+| `flame_file` | path | unset ⇒ layer not installed | Span-timing flamegraph capture (`tracing-flame`): write folded stack samples of every span to this file; render offline with `inferno-flamegraph < file > flame.svg`. For diagnostic sessions, not a standing posture — the file grows with span traffic. |
 
 ## `[auth]`
 
@@ -389,6 +390,11 @@ metrics = "off"
 prometheus = "off"
 env = "off"
 loggers = "off"
+flamegraph = "off"
+
+[management.profiling]
+max_seconds = 30
+max_frequency = 999
 ```
 
 | Key | Type | Default | Description |
@@ -399,7 +405,16 @@ loggers = "off"
 | `access_default` | enum{off,admin_only,private,public} | `admin_only` | Global default access level (a per-endpoint level wins). |
 
 `[management.endpoints]` — `info`, `metrics`, `prometheus`, `env`, `loggers`,
-each enum{off,admin_only,private,public}, default `off`.
+`flamegraph`, each enum{off,admin_only,private,public}, default `off`.
+
+`[management.profiling]` — limits for the on-demand CPU flamegraph behind
+`endpoints.flamegraph` (see
+[Operations → Profiling](../operations.md#profiling-the-on-demand-cpu-flamegraph)):
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `max_seconds` | int | `30` | Longest sample window one request may take. A request asking for more is refused with `400`, never clamped. |
+| `max_frequency` | int | `999` | Highest sampling frequency (Hz) a request may ask for. Same refusal semantics. |
 
 > [!WARNING]
 > `probes_enabled` and `endpoints.health` were **removed**. Configuration is

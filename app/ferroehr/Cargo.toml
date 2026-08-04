@@ -28,6 +28,7 @@ tracing-subscriber.workspace = true
 # Prometheus recorder. The single `tracing` API fans out to stdout logs and
 # (opt-in) OTLP spans; `metrics` is pulled via the Prometheus recorder.
 tracing-opentelemetry.workspace = true
+tracing-flame.workspace = true
 opentelemetry.workspace = true
 opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true
@@ -130,6 +131,16 @@ tracing-opentelemetry.workspace = true
 opentelemetry.workspace = true
 # The in-memory OTLP exporters for the export-pipeline smoke tests.
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "testing"] }
+# The AQL bench harness (`benches/aql.rs`): criterion drives the measurements,
+# pprof renders per-bench flamegraphs under `--profile-time` (pprof's own
+# `criterion` feature is pinned to criterion ^0.5, so the bench implements
+# criterion's `Profiler` trait over pprof directly — see the bench file).
+criterion.workspace = true
+pprof.workspace = true
+
+[[bench]]
+name = "aql"
+harness = false
 
 [lints]
 workspace = true
