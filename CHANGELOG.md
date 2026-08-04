@@ -17,20 +17,6 @@ workflow refuses a tag that has no matching section here.
 
 ## [3.17.2] - 2026-08-04
 
-### Changed
-
-- **The declared FHIR integration surface is now stated as R4B (4.3.0)
-  everywhere** — the served OpenAPI descriptions, configuration docs, and
-  website pages previously said "R4". Wire behaviour is unchanged: the
-  resources FerroEHR touches (AuditEvent/BALP, terminology
-  `Parameters`/`ValueSet`, the inbound connector starter set) are
-  byte-identical between R4 (4.0.1) and R4B (4.3.0); the `/fhir/r4/…`
-  connector paths are unchanged (#1885).
-- The `openehr-*` spec crates are republished as `0.0.3` (lockstep): the
-  generated sources are re-emitted in rustfmt-normalized form after the
-  emitter changes that shipped with the typed-DTO campaign — no semantic
-  change to any generated type or impl.
-
 ### Added
 
 - **The eight `openehr-*` spec crates are published on crates.io** —
@@ -38,39 +24,51 @@ workflow refuses a tag that has no matching section here.
   `openehr-lang`, `openehr-query`, `openehr-its` — each with its own README,
   packaged license texts (MIT, plus Apache-2.0 where openEHR-derived material
   is embedded), and docs.rs documentation. Packages version on their own
-  independent SemVer line (starting at `0.0.x`, permanently decoupled from
-  the openEHR spec versions); the implemented spec version is carried by
-  each crate's `SPEC_VERSION` constant. Releases after the first go through an OIDC
-  trusted-publishing workflow (`publish-crates.yml`) — no long-lived
-  registry token (#1886).
+  independent SemVer line (starting at `0.0.x`, permanently decoupled from the
+  openEHR spec versions); the implemented spec version is carried by each
+  crate's `SPEC_VERSION` constant. Releases after the first go through an OIDC
+  trusted-publishing workflow (`publish-crates.yml`) — no long-lived registry
+  token (#1886).
 
-- RM validation now realizes every remaining register-visible class invariant: RESOURCE_DESCRIPTION(_ITEM), AUTHORED_RESOURCE, EXTRACT and EXTRACT_UPDATE_SPEC gained generated invariant cores wired into the typed dispatch — the machine-classified Unrealized register is at ZERO rows (#1623); EXTRACT_SPEC criteria and OPT-carried REVISION_HISTORY refusals are pinned by twins (#1648, #1737).
-- EHR-Extract export now evaluates `EXTRACT_SPEC.criteria`: AQL criteria queries select each entity's primary set `$ehr`-bound (the entity's EHR scopes the query and a literal `$ehr` parameter binds to its id); a non-AQL formalism or an unparseable criterion is refused with `400`. The former blanket criteria refusal is gone (#1736).
-- **On-demand CPU flamegraph of the running server:**
-  `GET /management/flamegraph` — a new opt-in management endpoint (default
-  off, like the whole surface) that samples the process with an in-process
-  `pprof` profiler for a bounded window and answers with the rendered
-  flamegraph SVG. `seconds`/`frequency` query parameters are capped by the
-  new `[management.profiling]` config keys (`max_seconds`, `max_frequency`);
-  a request beyond a cap is refused with `400`, a concurrent sample window
-  with `409`. No openEHR spec governs the management surface — our own
-  operational extension (#1861).
-- **Span-timing flamegraph capture:** the new `telemetry.flame_file` config
-  key installs a `tracing-flame` layer that writes folded stack samples of
-  every span to the given file for offline rendering with inferno
-  (`inferno-flamegraph < file > flame.svg`) — the async-attribution
-  complement to the sampled-stack endpoint. Unset (the default) the layer is
-  not installed at all. Our own telemetry extension (#1862).
+- RM validation now realizes every remaining register-visible class invariant:
+  RESOURCE_DESCRIPTION(_ITEM), AUTHORED_RESOURCE, EXTRACT and
+  EXTRACT_UPDATE_SPEC gained generated invariant cores wired into the typed
+  dispatch — the machine-classified Unrealized register is at ZERO rows
+  (#1623); EXTRACT_SPEC criteria and OPT-carried REVISION_HISTORY refusals are
+  pinned by twins (#1648, #1737).
+- EHR-Extract export now evaluates `EXTRACT_SPEC.criteria`: AQL criteria
+  queries select each entity's primary set `$ehr`-bound (the entity's EHR
+  scopes the query and a literal `$ehr` parameter binds to its id); a non-AQL
+  formalism or an unparseable criterion is refused with `400`. The former
+  blanket criteria refusal is gone (#1736).
+- **On-demand CPU flamegraph of the running server:** `GET
+  /management/flamegraph` — a new opt-in management endpoint (default off, like
+  the whole surface) that samples the process with an in-process `pprof`
+  profiler for a bounded window and answers with the rendered flamegraph SVG.
+  `seconds`/`frequency` query parameters are capped by the new
+  `[management.profiling]` config keys (`max_seconds`, `max_frequency`); a
+  request beyond a cap is refused with `400`, a concurrent sample window with
+  `409`. No openEHR spec governs the management surface — our own operational
+  extension (#1861).
+- **Span-timing flamegraph capture:** the new `telemetry.flame_file` config key
+  installs a `tracing-flame` layer that writes folded stack samples of every
+  span to the given file for offline rendering with inferno
+  (`inferno-flamegraph < file > flame.svg`) — the async-attribution complement
+  to the sampled-stack endpoint. Unset (the default) the layer is not installed
+  at all. Our own telemetry extension (#1862).
 
-- EHR Extract import now enforces the copy closure (RM common master06 §Copying): a received branch version is refused with `400` unless its fork-point trunk version and same-branch predecessor travel in the same extract or are already stored (#1770).
+- EHR Extract import now enforces the copy closure (RM common master06
+  §Copying): a received branch version is refused with `400` unless its
+  fork-point trunk version and same-branch predecessor travel in the same
+  extract or are already stored (#1770).
 - **FOLDER (DIRECTORY) resources can now carry ITEM_TAGs.** ITS-REST overview
   `Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
   names FOLDER among the change-controlled resources the wrapper headers
   associate tags with, and the DIRECTORY write routes have always carried those
   headers — but the tag store rejected the FOLDER target type, so a tagged
-  directory commit answered `409` with a raw PostgreSQL constraint string
-  AFTER the directory version had already been created. FOLDER tags now store,
-  echo and appear in the EHR-wide tag listing (`GET /ehr/{ehr_id}/tags`). No
+  directory commit answered `409` with a raw PostgreSQL constraint string AFTER
+  the directory version had already been created. FOLDER tags now store, echo
+  and appear in the EHR-wide tag listing (`GET /ehr/{ehr_id}/tags`). No
   dedicated `/directory/…/tags` routes appear: the release defines none, and a
   FOLDER tag is reached through the wrapper headers and that listing.
 - **Tag mutations emit IHE ATNA audit records.** Creating, replacing or
@@ -110,380 +108,182 @@ workflow refuses a tag that has no matching section here.
   commit DTO). Three cases land on it: an omitted `change_type`, an
   out-of-group `change_type` code, and the conformant twin that states both
   members and proves the client-supplied `time_committed` is not the recorded
-  one. Cases that already authored an `audit:` block now actually put it on
-  the wire.
+  one. Cases that already authored an `audit:` block now actually put it on the
+  wire.
 - **A case pins which lineage head a default EHR-Extract exports.** With a
   trunk head and a branch head both open in one container, RM ehr_extract
-  `master04-common_package.adoc` §Version Specification never says which is
-  the "latest available version". The choice — the trunk head — is now
-  adjudicated in the ambiguity register (AMB-206) and pinned by
+  `master04-common_package.adoc` §Version Specification never says which is the
+  "latest available version". The choice — the trunk head — is now adjudicated
+  in the ambiguity register (AMB-206) and pinned by
   `I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages`.
 
-### Fixed
 
-- Licensing coverage corrected (#1883): the vendored openEHR **specification text** and the CKM-derived **clinical models** are CC-BY-SA 3.0 (per-file `licence` metadata for clinical models), not Apache-2.0 as the README previously implied. The repo now ships the CC-BY-SA 3.0 text (`LICENSE-CC-BY-SA-3.0`), vendors each upstream `LICENSE` alongside its tree, records the license in every vendored tree's `PROVENANCE.md`, and the documentation site gained a **Licensing & legal** page with the full reckoning. FerroEHR's own code stays MIT; the openEHR machine-readable artifacts and test corpora stay Apache-2.0.
-- EHR-Extract import: the copy-closure check now matches the fork-point trunk version with ANY creating system (RM common master06 §Distributed Versioning — a branch legitimately forks off a foreign trunk); `/management/flamegraph` answers a well-formed SVG instead of a zero-byte body when the sample window catches an idle process.
-- CNF runner: an unresolvable `<name>` placeholder in an outcome header matcher is now a loud case failure instead of silently wildcarding to `.*`; the structural tokens `<n>`/`<system_id>` resolve to their real grammars, and outcome matchers see the same merged variable scope as request building (#1852).
-- AQL `LIKE` and `matches` predicates on multi-valued paths now use the existential (any-match) lowering the comparison operators already use — a row is matched when ANY node on the path satisfies the predicate, instead of an order-undefined single-node pick (#1448).
-- The admin EHR dump/load archive now carries every `vo_attestation` row (with its `at_committal` flag), and load re-persists them verbatim — a restored version keeps its attestations and its stored signature verifies under `verify_on_read = strict` (#1685).
-- **A node id carrying the at/id code leader but failing the code grammar is
-  refused (`at0abc`).** AOM2's own code predicate is leader-based, so such a
-  string claims code-hood and must satisfy the code syntax — previously it
-  fell between the code family (whose grammar it fails) and the free-text
-  family (whose leader-freedom it lacks) and no rule caught it.
+- **Canonical-XML responses are now checked against the published openEHR
+  XSDs.** A new gate serializes documents through the shipped codec and
+  validates them with an XSD processor against both vendored ITS-XML bundles,
+  and it records exactly where a served document and the schema its namespace
+  declares disagree. The finding it makes visible: the `v1` bundle openEHR
+  still publishes as the STABLE one is frozen at an older Reference Model
+  generation, so a document that is a correct RM 1.2.0 instance can carry
+  attributes that bundle never declared — `FOLDER.details` on a directory is
+  the case you are most likely to meet, and 50 RM classes (EHR, EHR_STATUS,
+  CONTRIBUTION, the demographic party types, …) have no `v1` schema at all.
+  **Nothing served changes**: the default namespace is still `v1`, `Accept:
+  application/xml; version=2` still selects `v2`, and the codec still writes
+  the complete Reference Model rather than dropping clinical content to fit an
+  older schema. Deployments that validate responses against the published XSDs
+  should be aware that the `v2` lineage is the one that models RM 1.2.0 — and
+  that it currently cannot be compiled by a standards-conformant XSD processor
+  because of an invalid pattern in the upstream schemas. The full per-attribute
+  breakdown ships in the conformance ambiguity register as `AMB-185`.
 
-- **The `OPTIONS /` conformance manifest serves the generated contract DTO,
-  and the System API group joins the authorization and audit classifiers.**
-  The manifest body is now the emitted `Options` DTO (byte-identical wire; a
-  lockstep test pins the served OpenAPI's documentation shape to it), the
-  System route table joins the RBAC route map explicitly, and the operation
-  carries explicit authorization (any authenticated principal) and audit
-  (application-activity) classifications instead of the fail-closed defaults.
+- **A conformance case for a party's inline, by-value relationships.** A
+  `PARTY_RELATIONSHIP` is modelled twice and openEHR reconciles the two
+  nowhere: the Reference Model stores it *inside* its source party ("the
+  relationships attribute is by value"), versioned with that party and with no
+  version container of its own, while the Service Model gives every
+  relationship its own independently-addressed container. This server serves
+  both, and they are **disjoint** — committing a party that carries an inline
+  `relationships` list does not create a relationship container, and creating a
+  relationship container does not append to any party's list. The catalogue now
+  pins the inline half: a `PERSON` committed with a by-value
+  `PARTY_RELATIONSHIP` is accepted and reads back with that relationship
+  unchanged, unexpanded and un-repointed. Behaviour is unchanged; the
+  adjudication ships in the conformance ambiguity register as `AMB-187`.
 
-- **A malformed ITEM_TAG refuses at construction, not after the fact.** The
-  generated `ItemTag` type gains a validated constructor running its RM
-  invariants (`Inv_key_valid`/`Inv_value_valid`), so a violating tag cannot
-  exist as a typed value anywhere in the application — the JSON and XML
-  readers refuse it at parse, path-named. Wire statuses are unchanged (the
-  tag routes' 422 mapping stays); a stored tag row that no longer constructs
-  is reported as the server fault it is instead of being served.
+- **New conformance cases for the LOCATABLE root rules and the feeder-system
+  audit.** The catalogue now pins the two refusals above from the wire side (a
+  COMPOSITION root whose `archetype_node_id` contradicts its ARCHETYPED block;
+  a COMPOSITION carrying an empty `links` list; a COMPOSITION whose inner
+  `ITEM_TREE` carries an empty `archetype_node_id`), and four cases cover
+  `FEEDER_AUDIT` end to end: a commit carrying audits at the COMPOSITION root
+  *and* on an interior data node round-trips every modelled attribute
+  (identifiers, inline `original_content`, both system audits, and the
+  originating audit's `other_details`), an update that retains the feeder audit
+  keeps it on the new version, an update that drops it is accepted and does not
+  carry it forward, and an update whose content is identical to the preceding
+  version still creates version 2.
 
-- **An undeclared key on a CONTRIBUTION version member is refused (`400`,
-  named at its member path) instead of silently ignored.** The released
-  commit wire declares exactly six member properties
-  (`UpdateVersion.yaml`) plus the adjudicated `_type` self-tag; the member
-  seam was the last non-strict reader, accepting arbitrary extra keys
-  without a diagnostic while every other read surface refuses them.
+- **Conformance cases for populated LINKs on a COMPOSITION.** A commit carrying
+  a complete `LINK` at the COMPOSITION root *and* on an interior ENTRY now
+  round-trips with both links intact (the accepting twin of the empty-`links`
+  refusal), and a `LINK` whose `target` is not an `ehr://` URI is refused (422)
+  — placed on the interior ENTRY so the case also proves the rule is applied
+  below the resource root.
 
-- **A CONTRIBUTION whose audit omits `committer` is now refused (`422`)
-  instead of being attributed to the server's default identity.** The same
-  released commit schema that requires `change_type` requires `committer`
-  (`NewContribution.yaml` over `UpdateAudit.yaml`), and a server-invented
-  committer would put an identity the client never named into the audit
-  trail. The direct COMPOSITION/DIRECTORY routes are unchanged — there the
-  committal headers stay optional and the authenticated default applies,
-  exactly as the ITS-REST overview requires.
+- **Conformance cases for `FOLDER.items` — the directory's reference slot.**
+  The catalogue exercised directory folders, names, links and `details`, but
+  never the attribute the whole abstraction rests on: a folder's `items` list
+  holds *references* to other objects, never the objects themselves, and the
+  same object may be referenced from more than one folder (that is what lets
+  one directory classify a composition as both an episode and a problem). A
+  directory whose two sibling folders both reference the same target — beside a
+  second, distinct target — is now committed and read back with **both**
+  references intact, so a server that collapsed the duplicate would fail; and a
+  folder that carries a composition *by value* in `items` instead of a
+  reference to it is refused with `422`, leaving the EHR without a directory.
+  Two further cases pin how *wide* an identifier that reference slot accepts. A
+  folder reference may be **version-pinned** — its id a three-part
+  `OBJECT_VERSION_ID` naming one particular version of a composition — and it
+  now round-trips with all three parts intact, so a server that truncated it to
+  the leading UUID would fail. And a reference identified in a **foreign
+  scheme** (a `GENERIC_ID`) is accepted and served back unchanged: the
+  Reference Model types the slot at `OBJECT_ID`, whose family has six concrete
+  members, while the published OpenAPI schema for the same slot enumerates only
+  two — the adjudication ships in the conformance ambiguity register as
+  `AMB-186`.
 
-- **An emptied ITEM_TAG collection is echoed as no header, never an empty
-  one.** The EHR-side write routes echoed an EMPTY `openehr-item-tag` header
-  when the stored collection was empty — but the empty header value is the
-  release's "remove all ITEM_TAGs" *request* instruction, so a mirroring
-  client would read the confirmation of its own wipe as an instruction to
-  wipe again (harmless) or, worse, treat state responses as carrying the
-  destructive form. Both echo paths now share one rule: an empty collection
-  emits no wrapper header.
+- **Conformance cases for the ATTESTATION wire family.** The catalogue now
+  drives the `666|attestation|` CONTRIBUTION member end to end: attesting an
+  existing COMPOSITION version is accepted, adds **no** new version, reports
+  the attestation-only aggregate change type, and surfaces the completed
+  `ATTESTATION` on both the version envelope and the revision history; the
+  pending-then-signed pattern leaves **both** attestation objects on the one
+  version; and three refusal twins pin the `ATTESTATION` invariants on the wire
+  (a missing `reason`, a coded `reason` whose code sits outside the openEHR
+  *attestation reason* group, and a present-but-empty `items` list). An
+  `ORIGINAL_VERSION` carrying attestations is also pinned as a
+  canonical-JSON/XML serialization vector. An attestation carrying an inline
+  `DV_MULTIMEDIA` `attested_view` — the screen image of what was signed — now
+  round-trips with its media type, size, inline data and alternate text intact
+  on both the version envelope and the revision history.
 
-- **Terminology failure bodies no longer disclose deployment configuration on
-  the remaining two surfaces.** A terminology 404 named WHICH configured
-  provider answered, and a commit whose archetype constraint binding had no
-  configured terminology route answered a 500 revealing that routing gap; both
-  bodies now carry only what the client can act on, with the operator detail
-  on the trace record — completing the operator-detail adjudication for the
-  terminology surface.
+- **Conformance cases for the generic-package party and participation rules.**
+  A COMPOSITION whose context participation carries a bounded
+  `DV_INTERVAL<DV_DATE_TIME>` `time` and whose ENTRY-level other participation
+  carries an open-ended one now round-trips with every interval boundary
+  intact, and four refusals pin the terminology and identity rules those
+  classes carry: a coded `PARTICIPATION.function` outside the openEHR
+  *participation function* group, a `PARTY_RELATED` participation performer
+  whose relationship code is outside the *subject relationship* group, and — on
+  the commit audit's `committer`, which sits beside the committed content and
+  is therefore missed by a content-only validation walk — the same out-of-group
+  relationship, a `PARTY_IDENTIFIED` carrying none of name, identifiers or
+  external reference, and one whose name is the empty string. A `PARTY_RELATED`
+  committer with an in-group relationship is pinned as the accepting twin, so
+  refusing that party type wholesale no longer passes.
 
-- **The generated ITS-REST contract is typed end to end.** The `emit-rest`
-  generator resolved `$ref`s before emitting, so every request/response body
-  and parameter lost its schema name and the trait/DTO surface degraded to
-  untyped JSON values; RM/BASE payload references likewise degraded on a
-  rationale that expired with the foundation rewrite (the spec types carry
-  emitted strict serde impls). Body and parameter references now keep their
-  names, RM/BASE references resolve to the typed spec structs — making every
-  DTO field strict by construction — and a `discriminator.mapping` schema
-  (`Versionable`) emits a real `_type`-dispatched enum instead of an untyped
-  alias. Remaining untyped spots are honest: anonymous `oneOf` responses,
-  query result rows, and schema-less OPT objects.
+- **A conformance case for the third `PARTY_SELF` referral scheme.** The RM
+  names three ways to refer to the record subject from inside an EHR, and the
+  catalogue only exercised two of them. A COMPOSITION whose interior ENTRY
+  carries a `PARTY_SELF` subject with a complete `external_ref` `PARTY_REF`
+  (id, namespace and type) now round-trips with that reference intact, so a
+  server that dropped or refused a per-instance subject reference — a
+  spec-supported deployment style — no longer passes the catalogue.
 
-- **A node claiming a `_type` foreign to its slot is now refused everywhere,
-  from the RM model.** The whole-instance validation pass dispatched each
-  node on its own wire `_type`, so a tagged object sitting in a slot declared
-  as something else was validated as the type it *claimed* to be — a
-  `DV_TEXT` inside `COMPOSITION.content` (declared `List<CONTENT_ITEM>`)
-  validated cleanly as a DV_TEXT. One model-driven rule now asserts every
-  tagged node (root, single slots, and list members alike) conforms to its
-  slot's declared RM type, read from the generated BMM attribute model; a
-  scalar member of a class-typed list slot is refused the same way. The rule
-  never relaxes on a `553|incomplete|` commit ("data may be missing, but it
-  may not be wrong"). The hand-written FOLDER member checks this replaces are
-  removed; their refusals now come from the general rule.
+- **A canonical-JSON output mode for the corpus fixture generator.** The
+  `openehr-its` `canonical_convert` example now emits canonical JSON when the
+  output path ends in `.json` (and handles `ORIGINAL_VERSION` documents under
+  the published `<version>` root), so a committed JSON fixture can be the
+  codec's own output rather than a hand-typed approximation of it.
 
-
-- **The conformance suite's spec-citation gate now resolves the cited document
-  and section.** It previously took only the second whitespace token of a
-  citation and asked whether ANY path under the component directory contained
-  it as a substring, so a citation naming a real component plus any common word
-  passed even when the document and §section did not exist. The gate now
-  resolves the whole path hint to a real vendored document (or chapter
-  directory) and verifies every `§section` names a real section of it —
-  following the `include::` directives that pull the UML class and interface
-  tables into a chapter, and reading the class tables' own labels, the
-  markdown chapters' titles, the AM validity-rule anchors and the OAS files'
-  keys. It also covers the citations of fixture-set rows and of the corpus
-  manifest, not just case cores. The 104 citations the strengthened gate found
-  unresolvable — phantom chapters, sections that never existed, class tables
-  cited under the wrong directory, and one citation of an internal proposal
-  instead of a released spec — were re-derived first-hand and corrected.
-- **A vendored corpus that had no vendor script has one.** The real-world
-  canonical-JSON corpus under `crates/openehr-its/tests/vendor/` was
-  hand-downloaded; it is now reproduced byte-identically from its pinned
-  upstream commit by `scripts/vendor-openehr-sdk-json.sh` (with `--check` to
-  report drift and write nothing). Its provenance record also named the wrong
-  upstream repository — a product-rename sweep had rewritten `ehrbase/` to
-  `ferroehr/` in the pin — which is corrected.
-- **`authz.abac.enabled = true` now actually enables ABAC.** The server
-  binary built an RBAC-only authorization handle unconditionally — the ABAC
-  policy engine and its attribute resolvers were never constructed on the
-  shipped run path, so a deployment that configured attribute-based rules ran
-  without them, silently. The binary now boots the configured engine (Cedar
-  or remote PDP) with database-backed attribute resolvers, logs the active
-  authorization layers at startup, and **refuses to start** when an enabled
-  ABAC block cannot be built (missing/invalid policy directory, unbuildable
-  PDP client) — configuration that promises fine-grained authorization never
-  degrades to authorization-off.
-
-- **A one-group ISO OID now classifies as `ISO_OID`, not `INTERNET_ID`.** BASE
-  `base_types` `master05-identification_package.adoc` §Syntaxes gives
-  `iso_oid = number, { '.', number }` — one or more groups — while the UID
-  subtype dispatch required two, so a bare numeric root such as `12345` was
-  tagged `INTERNET_ID`, whose own production it violates (a multi-character
-  `internet_id` label must begin with a letter). This picks the `_type` on the
-  wire, so the value now round-trips under the subtype the grammar assigns.
-- **Non-finite `Real` values now serialize to canonical XML in the `xs:double`
-  lexical form.** The vendored XSDs type every `Real` element `xs:double`,
-  whose lexical space spells the special values `INF`, `-INF` and `NaN`
-  (XML Schema Part 2 §3.2.5); the serializer emitted Rust's `inf`/`-inf`
-  spellings, producing a schema-invalid document. Finite values are unchanged
-  (a whole `Real` still writes `120.0`).
-- **The generated ITS-REST contract no longer drops single-`$ref` `allOf`
-  composition.** Seven DTOs the released OAS defines as a named alias of
-  another schema — `ItemTagOfComposition`, `ItemTagOfEhrStatus`, the five
-  demographic `ItemTagOf*` — degraded to an untyped string map instead of
-  resolving to their referent.
-- **The generated ITS-REST contract now includes the SYSTEM API group.** The
-  STABLE System API declares one operation, `OPTIONS /` (Options and
-  Conformance), which the contract generator skipped: its group list omitted
-  `system` and its HTTP-method table omitted `OPTIONS` entirely.
-
-- **A composition committed against an ADL2-registered template is no longer
-  refused with a `409`, and an in-use ADL2 template now refuses physical
-  deletion.** The stored template identity on a version row was
-  foreign-key-checked against the OPT 1.4 store only, so a commit whose
-  template was provisioned through the ADL2 DEFINITION surface failed the
-  constraint; the key now targets a registry spanning both template dialects.
-  With that, the ADL2 template delete gains the same never-orphan guard the
-  OPT 1.4 delete always had — deleting a template still referenced by
-  committed versions answers `409` with the reference count (previously the
-  row was deleted silently) — and it now also evicts the template's compiled
-  WebTemplate, so a re-uploaded template is never served from the deleted
-  artefact's cached form.
-
-- **Template-scoped authorization rules now bind to compositions committed
-  through the direct routes.** A COMPOSITION committed with `POST`/`PUT
-  /ehr/{ehr_id}/composition` stored no template identity alongside its version,
-  while the same composition committed inside a CONTRIBUTION did — so an ABAC
-  policy scoped to a template silently failed to match direct-route
-  compositions (the attribute resolved to "no template" rather than to the
-  template the composition declares). Both direct routes now record the
-  template the version was committed against, exactly as the CONTRIBUTION
-  route always has. Compositions committed before this release carry no
-  template identity on their existing version rows; re-committing a new
-  version records it.
-
-- **A CONTRIBUTION whose audit omits `change_type` is now refused (`422`)
-  instead of being given a server-invented one.** The released commit schema
-  makes the change set's audit mandatory and its `change_type` a required
-  member (`NewContribution.yaml` over `UpdateAudit.yaml`, for both the EHR and
-  the demographic contribution routes), and RM common `master06`
-  §Contributions calls the contribution-level value approximate and "not
-  expected to be used as a computable value" — it is the client's account of
-  its own change set. The server previously derived an aggregate from the
-  member versions when the attribute was absent, putting an approximation into
-  the audit trail under the client's name; it now answers `422` naming
-  `CONTRIBUTION.audit.change_type`. A conformant client is unaffected. (The
-  direct COMPOSITION/DIRECTORY routes are unchanged: there the committal
-  headers stay optional and the server default still applies, exactly as the
-  ITS-REST overview requires.)
-
-- **An undecodable request-header value is refused instead of silently
-  ignored.** A header whose bytes are not decodable as text — including the
-  committal (`openehr-version`, `openehr-audit-details`) and item-tag wrapper
-  headers — was dropped from the request as if it had never been sent, so a
-  commit could carry different audit attributes or tags than the client
-  supplied, with nothing on the wire saying so. Such a request now answers
-  `400` naming the header.
-
-- **An AQL query that cannot get a database connection now sheds with `503` +
-  `Retry-After` instead of reporting `500`.** The query path's database leg is
-  classified like every other one, so a pool-acquire timeout is reported as a
-  temporary overload (retryable) rather than as a server fault. A corrupt
-  stored FHIR mapping definition is likewise reported as a server fault
-  (`500`) rather than as a client error (`422`) — it is not something the
-  caller supplied.
-
-- **A round-tripped demographic party carrying inline relationships is no
-  longer refused.** `PARTY.Relationships_validity` requires every inline
-  `relationships[i].source` to reference the party itself, and RM demographic
-  `master02` §Party Relationships requires that reference to be a
-  `HIER_OBJECT_ID` denoting the party's VERSION CONTAINER "rather than
-  `OBJECT_VERSION_ID`s, which would denote particular versions" — but the check
-  compared it against the body's `uid`, which on a served party is the
-  three-part `OBJECT_VERSION_ID`. The two could never be equal, so a client that
-  read a party, added a relationship and wrote it back got `422`. The comparison
-  now uses the container id (the `object_id` of the version uid); a relationship
-  sourced at another party is still refused.
-- **The demographic create/update routes now honour the `openehr-version`
-  lifecycle state.** ITS-REST overview `Requests_and_responses.md`
-  §"openehr-version and openehr-audit-details" requires that "whatever is
-  provided it MUST be merged with the default VERSION and
-  `VERSION.audit_details` attributes on commit runtime"; the direct party and
-  party-relationship routes threaded only the audit half, so a
-  `553|incomplete|` demographic commit was reachable through a CONTRIBUTION
-  alone. Both halves now merge on those routes (and on the SM-envelope entry
-  points, which carry the same two attributes).
-- **A read-only principal can export EXTRACTs again.** `POST /message/export`
-  realizes SM `I_EHR_EXTRACT_SERVICE.export_ehr_extracts` — a query over held
-  versions whose selector is a whole `EXTRACT_SPEC` — but the read-only gate
-  classified the extension route by its HTTP verb and refused it `403`. It is
-  now classified as the read it is (as the released ad-hoc AQL `POST` already
-  was); the import routes stay writes.
-- **A query result-set `ETag` is now stable across executions.** The tag is
-  documented as identifying the `RESULT_SET` ("it changes as soon as the
-  resource changes", overview `Requests_and_responses.md` §`ETag` and
-  Last-Modified), but the digest covered `meta._created`, which is stamped per
-  response — so every execution minted a fresh tag and conditional-request
-  caching never hit. The digest now covers the result-determining content
-  (`q`, the executed AQL, `columns`, `rows`) only.
-- **A malformed `server.system_id` is now refused at boot.** The value occupies
-  the `creating_system_id` position of every `OBJECT_VERSION_ID` this CDR mints
-  (BASE `master05-identification_package.adoc` §Syntaxes:
-  `creating_system_id = uid`), but the boot check only rejected an empty value
-  and one containing `::` — so a configuration legal at startup could mint
-  version identifiers this server's own reader refuses. The configured value is
-  now validated against the openEHR `uid` grammar itself
-  (`iso_oid | uuid | internet_id`).
-- **`500`-class responses no longer echo internal diagnostics.** A server-side
-  fault previously rendered whatever produced it straight into the response
-  body: serde's parser message (naming Rust fields and byte offsets), the AQL
-  executor's PostgreSQL driver string (naming generated SQL and schema
-  objects), the node codec's RM attribute names and internal row shape, the
-  authorization engine's failure reason, and the XML/Simplified-Format
-  serializers' diagnostics. Every `500`-class body now carries a curated,
-  opaque message and the full detail goes to the server's own log instead.
-  `4xx` refusals are unchanged and still name the client-caused defect — a
-  malformed request payload is still refused `400` with the parse error that
-  explains it, which is the only thing a caller can act on.
-
-- **A tag PUT body is now validated against the released write schema.**
-  `schemas/common/UpdateItemTag.yaml` declares exactly `key` (required),
-  `value` and `target_path`, with `additionalProperties: false`. Previously the
-  body was read untyped: an undeclared member (`target`, `owner_id`, `_type`,
-  anything) was silently dropped, and — worse — a `value` or `target_path` of
-  the wrong JSON type was silently stored as ABSENT, losing a clinical
-  annotation outright or changing the tag's identity so a later delete
-  addressed nothing. All three are now refused `400`, naming the offending
-  member by its JSON path, on the COMPOSITION, EHR_STATUS and all five
-  demographic tag PUTs alike. An empty `target_path` still normalizes to
-  absent, identically on both families.
-- **A defective tag on a write no longer leaves the content committed.** The
-  `openehr-item-tag` / `openehr-version-item-tag` headers are now parsed and
-  invariant-checked BEFORE the content commit, so a request carrying an invalid
-  tag is refused with nothing created. Previously the refusal arrived after the
-  COMPOSITION / EHR_STATUS / DIRECTORY / party version was already durable, on
-  a response with no `ETag` and no `Location` — leaving the client no way to
-  learn what it had just created, and no recovery but a re-POST that duplicated
-  the content. The tag write itself still happens after the commit, so tagging
-  continues to cause no re-versioning of content.
-- **The tag response header can no longer instruct a client to wipe its
-  tags.** A valueless tag echoed as `value=""` (a shape the reference model
-  forbids), and a tag list that could not be rendered as an HTTP header value
-  — a control character in a tag key, which nothing in the reference model
-  bars — fell back to an EMPTY header, which is exactly
-  the byte sequence the spec defines as "remove all ITEM_TAGs". A client
-  mirroring that echo back on its next write would have cleared the
-  collection. A valueless tag now echoes without a `value`, and an unrenderable
-  list omits the header entirely.
-- **The tag wrapper-header parser is quote-aware and no longer silently drops
-  entries.** A `target_path` containing a `;` inside quotes (an AQL predicate,
-  say) shattered into fragments that then parsed as garbage; quoted runs are
-  now opaque at the entry separator. An entry carrying no `key` was skipped
-  past, silently discarding a tag the client believed it had set; it is now
-  refused `400`.
-- **Database integrity errors no longer leak schema names into client
-  responses, and are no longer all reported as conflicts.** Every SQLSTATE
-  class-23 violation mapped to `409 Conflict` carrying the raw PostgreSQL
-  error text, so constraint, table and column names reached client bodies —
-  and a CHECK or NOT NULL violation, which is a server-side invariant failure
-  rather than anything a client can resolve, was presented as an
-  optimistic-lock conflict to retry. Unique, foreign-key, restrict and
-  exclusion violations keep their `409`; CHECK and NOT NULL now answer `500`.
-  No branch returns a driver string: every client message is a fixed,
-  actionable sentence, with the SQLSTATE, constraint and table recorded on the
-  server's own trace record.
-- **A tag that survives a whole-list replace keeps its creation instant.** The
-  `PUT` is a full-collection replace, but re-asserting an existing tag
-  identity is not the same as creating a new tag; previously every surviving
-  tag's stored creation time was reset on any edit to a sibling, which the
-  admin export then reported. Visible through `POST /rest/admin/…` EHR export.
-
-- **A CONTRIBUTION version that declares a foreign version identity is now
-  refused** (`400`, naming the offending key). The released commit wire
-  declares six member properties (`preceding_version_uid`, `signature`,
-  `lifecycle_state`, `attestations`, `data`, `commit_audit`) and no import
-  shape at all — `master06` §Copying puts the import behind
-  `commit_imported_version`, whose "details of version id etc come from the
-  `ORIGINAL_VERSION`". Previously a member shaped like an `IMPORTED_VERSION`
-  (`_type: IMPORTED_VERSION`, an `item` wrapping a foreign `ORIGINAL_VERSION`,
-  or its own `uid`) was accepted and committed as a locally created
-  `ORIGINAL_VERSION` under a freshly minted local identifier, silently
-  discarding the identity and provenance the client had declared. All three
-  keys are now refused. A member self-tagged `_type: ORIGINAL_VERSION` or
-  `_type: UPDATE_VERSION` is unaffected — those name the class this wire
-  commits — and importing versions that keep their foreign identity remains
-  available through the EHR-Extract import route.
-- **A version-container trunk position is now unique across creating
-  systems.** `master06` §Copying has a second system BRANCH rather than extend
-  the trunk of a copied container, and §Moving Version Containers continues
-  the trunk increment under the new system's id, so a trunk line is one global
-  sequence however many systems contributed to it. The schema previously
-  admitted two versions of one container both claiming trunk position 2, one
-  per creating system; the archive-load path could write such a pair. It is
-  now refused with a message naming the container, the position and the system
-  already holding it. Branch identifiers still legitimately repeat across
-  systems, which is what the three-part version identifier disambiguates.
-
-- **A version that carries data can no longer claim the `523|deleted|`
-  lifecycle state** (`422`). `master06` §Logical Deletion states deletion as one
-  procedure — create a new version, delete its data, set the state to `deleted`,
-  commit — so a data-carrying deleted version is not producible by the spec's own
-  steps. Previously such a commit was accepted through a CONTRIBUTION member
-  pairing a content change type with the deleted state, or through
-  `openehr-version: lifecycle_state.code_string="523"` on a `PUT`; the resource
-  then read back as deleted (`204`) while its content stayed stored and
-  AQL-queryable. Both routes now refuse it. Deleting through `DELETE`, or
-  through a data-less `523` CONTRIBUTION member, is unaffected.
-
-### Security
-
-- **Admin dump/load failures no longer expose server filesystem paths.** The
-  `file_not_writable` and container-fault bodies of the EHR export/import
-  operations carried the configured archive path (server deployment layout)
-  and the raw archive-parse diagnostics. The bodies now carry a curated message
-  — a defect in the CALLER's archive still names the offending archive ENTRY,
-  which is the actionable fact — and the path plus the underlying diagnostic go
-  to the server's trace record only.
-
-- **Terminology-server failures no longer expose the deployment's terminology
-  configuration.** A `500` raised by an upstream FHIR terminology server (or by
-  its OAuth2 client-credentials grant) named the configured provider, its
-  operation and the upstream error in the response body. The body is now the
-  curated internal-error message; the operator detail (provider name,
-  operation, upstream diagnostic) is emitted on the trace record. Boot-time
-  configuration errors are unchanged — they never reach a response body.
+- **Every figure the vendored specs reference is now vendored too.**
+  `scripts/vendor-spec-docs.sh` additionally fetches, from the same pinned
+  commits, exactly the figures the vendored chapters reference: the 129 UML
+  class-diagram SVGs (`{uml_diagrams_uri}`, under
+  `docs/specs/openehr/<COMPONENT>/docs/UML/diagrams/`) plus the 200
+  per-document diagrams and images (`{diagrams_uri}` / `{images_uri}`, under
+  `<COMPONENT>/docs/<doc_name>/diagrams/` and `.../images/`). Spec chapters are
+  now readable offline with their figures intact instead of carrying dangling
+  links. Only referenced files are taken, byte-for-byte; a referenced figure
+  missing at the pin fails the vendoring run.
 
 ### Changed
 
-- The tenant admin API (`/admin/tenant`) and the event-subscription admin API decode their request bodies into typed definitions: a field of the wrong JSON type (`"enabled"` as a string, a non-string predicate or name) is now refused with `400` naming the offending member, where it was previously coerced to a default or treated as absent. Well-typed requests are unaffected; the response record shapes are byte-identical (#1694).
-- **BREAKING (error class):** the spec model is now complete-by-construction across every crate: the cross-schema re-emission closure applies uniformly (openehr-rm re-emits BASE's `Interval`/`Iso8601` family, am14 re-emits `AUTHORED_RESOURCE`/`RESOURCE_DESCRIPTION`), and every `0..1` list carrying a present-implies-non-empty invariant is emitted `Option<NonEmptyVec<T>>` — a present-but-empty list (`"links": []`, `"contacts": []`, `"mappings": []`, …) now refuses with `400` at parse instead of `422`, on every strict write surface; the `553|incomplete|` relaxation is unchanged (#1699, #1730).
-- **BREAKING (v1-pinned XML consumers):** the default canonical-XML lineage served for `application/xml` is now the ITS-XML **v2** namespace (`http://schemas.openehr.org/v2`) — the only published schema bundle that models the RM 1.2.0 this server emits. The v1 lineage stays selectable per request with `Accept: application/xml; version=1` (a non-default v1 response is labelled `Content-Type: application/xml; version=1`). Request payloads are unaffected — both namespaces are read regardless (#1666).
+- **The declared FHIR integration surface is now stated as R4B (4.3.0)
+  everywhere** — the served OpenAPI descriptions, configuration docs, and
+  website pages previously said "R4". Wire behaviour is unchanged: the
+  resources FerroEHR touches (AuditEvent/BALP, terminology
+  `Parameters`/`ValueSet`, the inbound connector starter set) are
+  byte-identical between R4 (4.0.1) and R4B (4.3.0); the `/fhir/r4/…` connector
+  paths are unchanged (#1885).
+- The `openehr-*` spec crates are republished as `0.0.3` (lockstep): the
+  generated sources are re-emitted in rustfmt-normalized form after the emitter
+  changes that shipped with the typed-DTO campaign — no semantic change to any
+  generated type or impl.
+
+
+- The tenant admin API (`/admin/tenant`) and the event-subscription admin API
+  decode their request bodies into typed definitions: a field of the wrong JSON
+  type (`"enabled"` as a string, a non-string predicate or name) is now refused
+  with `400` naming the offending member, where it was previously coerced to a
+  default or treated as absent. Well-typed requests are unaffected; the
+  response record shapes are byte-identical (#1694).
+- **BREAKING (error class):** the spec model is now complete-by-construction
+  across every crate: the cross-schema re-emission closure applies uniformly
+  (openehr-rm re-emits BASE's `Interval`/`Iso8601` family, am14 re-emits
+  `AUTHORED_RESOURCE`/`RESOURCE_DESCRIPTION`), and every `0..1` list carrying a
+  present-implies-non-empty invariant is emitted `Option<NonEmptyVec<T>>` — a
+  present-but-empty list (`"links": []`, `"contacts": []`, `"mappings": []`, …)
+  now refuses with `400` at parse instead of `422`, on every strict write
+  surface; the `553|incomplete|` relaxation is unchanged (#1699, #1730).
+- **BREAKING (v1-pinned XML consumers):** the default canonical-XML lineage
+  served for `application/xml` is now the ITS-XML **v2** namespace
+  (`http://schemas.openehr.org/v2`) — the only published schema bundle that
+  models the RM 1.2.0 this server emits. The v1 lineage stays selectable per
+  request with `Accept: application/xml; version=1` (a non-default v1 response
+  is labelled `Content-Type: application/xml; version=1`). Request payloads are
+  unaffected — both namespaces are read regardless (#1666).
 - **An `ITEM_TAG` whose key or value violates its own RM invariants is now
   refused when the payload is read, not after it is built.** RM
   `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants states
@@ -527,9 +327,9 @@ workflow refuses a tag that has no matching section here.
   `openehr-audit-details` header still carries only the plain
   `description.value`), and `commit_audit` accepts its `UPDATE_ATTESTATION`
   subtype, which the released schema's discriminator has always allowed and
-  which RM common `master06` §Committal and Audits names ("`AUDIT_DETAILS` …
-  or its subtype `ATTESTATION`"). The committal request headers, the
-  CONTRIBUTION route and every response body are unchanged. Simplified-Format
+  which RM common `master06` §Committal and Audits names ("`AUDIT_DETAILS` … or
+  its subtype `ATTESTATION`"). The committal request headers, the CONTRIBUTION
+  route and every response body are unchanged. Simplified-Format
   (FLAT/STRUCTURED) input failures split along the same line: a
   TEMPLATE-INDEPENDENT format violation — a key breaking the FLAT
   field-identifier grammar, a `ctx/` key outside the master06 vocabulary, the
@@ -539,42 +339,42 @@ workflow refuses a tag that has no matching section here.
   mandatory `ctx` field, a closed value set) keep the composition endpoints'
   own `422`.
 - **BREAKING (canonical XML): a version read now serves the `<version>`
-  document element the published XSDs declare, instead of
-  `<original_version>` / `<imported_version>`.** ITS-REST overview
-  `Resources.md` §"XML Format" requires that "both request payloads and
-  responses MUST conform to the [published XSDs]", and the ITS-XML schemas
-  declare exactly one document element for a VERSION —
-  `<xs:element name="version" type="VERSION"/>` — over an ABSTRACT `VERSION`
-  type; neither published lineage declares an element named after a concrete
-  subtype. The concrete class therefore rides on the root's `xsi:type`
-  (`ORIGINAL_VERSION` or `IMPORTED_VERSION`), as XML Schema requires of an
-  instance of an abstract type. Every `GET .../versioned_composition/{uid}/
-  version[/{version_uid}]` and `.../versioned_ehr_status/...` read requested
-  with `Accept: application/xml` is affected, in both the v1 and v2 lineages.
-  A schema-validating client rejected the old roots; a client that
-  pattern-matched on them must now read `<version>` plus `xsi:type`. Canonical
-  JSON is unchanged (the envelope keeps its `_type` self-tag), and no other
-  resource's root changes.
-- **`lifecycle_state` is now required on every CONTRIBUTION version**
-  (`400`). SM `master03` §Version Update Semantics says "The `lifecycle_state`
-  must be supplied in all cases", and the released `UpdateVersion` schema lists
-  it under `required`; a member that omitted it was previously accepted and
-  silently defaulted to `532|complete|`. A `666|attestation|` member is exempt —
-  it commits no new version, so it has no version lifecycle state to supply.
+  document element the published XSDs declare, instead of `<original_version>`
+  / `<imported_version>`.** ITS-REST overview `Resources.md` §"XML Format"
+  requires that "both request payloads and responses MUST conform to the
+  [published XSDs]", and the ITS-XML schemas declare exactly one document
+  element for a VERSION — `<xs:element name="version" type="VERSION"/>` — over
+  an ABSTRACT `VERSION` type; neither published lineage declares an element
+  named after a concrete subtype. The concrete class therefore rides on the
+  root's `xsi:type` (`ORIGINAL_VERSION` or `IMPORTED_VERSION`), as XML Schema
+  requires of an instance of an abstract type. Every `GET
+  .../versioned_composition/{uid}/ version[/{version_uid}]` and
+  `.../versioned_ehr_status/...` read requested with `Accept: application/xml`
+  is affected, in both the v1 and v2 lineages. A schema-validating client
+  rejected the old roots; a client that pattern-matched on them must now read
+  `<version>` plus `xsi:type`. Canonical JSON is unchanged (the envelope keeps
+  its `_type` self-tag), and no other resource's root changes.
+- **`lifecycle_state` is now required on every CONTRIBUTION version** (`400`).
+  SM `master03` §Version Update Semantics says "The `lifecycle_state` must be
+  supplied in all cases", and the released `UpdateVersion` schema lists it
+  under `required`; a member that omitted it was previously accepted and
+  silently defaulted to `532|complete|`. A `666|attestation|` member is exempt
+  — it commits no new version, so it has no version lifecycle state to supply.
 - **A `DELETE` on a change-controlled resource now refuses a committal header
   that names a lifecycle other than `523|deleted|`** (`400`). The header was
-  previously parsed and discarded, leaving a client believing an instruction had
-  been merged that was not; a `DELETE` commits the logical-deletion procedure,
-  which fixes the state. A `DELETE` with no lifecycle attribute is unaffected.
+  previously parsed and discarded, leaving a client believing an instruction
+  had been merged that was not; a `DELETE` commits the logical-deletion
+  procedure, which fixes the state. A `DELETE` with no lifecycle attribute is
+  unaffected.
 - **`other_input_version_uids` is refused on the CONTRIBUTION write wire**
   (`400`). The released `UPDATE_VERSION` schema declares no such property (and
-  `NewContribution.versions` items are `UpdateVersion`), so the merge commit has
-  no released shape — the same absence the import commit has. Merge provenance
-  stays produce-only: it is still served on `ORIGINAL_VERSION` reads, and it is
-  still preserved verbatim by the EHR-Extract import and the archive load, which
-  reproduce a foreign version unchanged.
-- **`422 Unprocessable Content` messages now follow one uniform shape** —
-  `<RM attribute path> <what is wrong> (<invariant name>)`, for example
+  `NewContribution.versions` items are `UpdateVersion`), so the merge commit
+  has no released shape — the same absence the import commit has. Merge
+  provenance stays produce-only: it is still served on `ORIGINAL_VERSION`
+  reads, and it is still preserved verbatim by the EHR-Extract import and the
+  archive load, which reproduce a foreign version unchanged.
+- **`422 Unprocessable Content` messages now follow one uniform shape** — `<RM
+  attribute path> <what is wrong> (<invariant name>)`, for example
   `ATTESTATION.items must be a non-empty list when present
   (ATTESTATION.Items_valid)`. Internally the service layer carries every such
   refusal as structured data (the attribute path, the named openEHR invariant,
@@ -589,9 +389,9 @@ workflow refuses a tag that has no matching section here.
   party with an empty `identities` list, are now reported by the RM decoder
   that already refuses them rather than by a second hand-written check — same
   `422`, different wording. Response body SHAPE, status codes and all
-  `validationErrors[]` contents are unchanged, and the `422` body is spec-silent
-  (`responses/422_COMPOSITION.yaml` declares no schema), so no declared contract
-  changes.
+  `validationErrors[]` contents are unchanged, and the `422` body is
+  spec-silent (`responses/422_COMPOSITION.yaml` declares no schema), so no
+  declared contract changes.
 - **A canonical-JSON object that repeats a member name is now REFUSED with
   `400`, naming the repeated member.** The reader previously let the last
   occurrence win. RFC 8259 §4 says object member names "SHOULD be unique" and
@@ -627,8 +427,8 @@ workflow refuses a tag that has no matching section here.
   released status table: `400` is content that "could not be parsed or is
   invalid"; `422` is content that is "well-formed but was unable to be followed
   due to semantic errors"). The set of accepted attributes is the RM at this
-  server's pinned version, so a payload that is valid openEHR is unaffected;
-  a client sending a private extension member must move it into a modelled slot
+  server's pinned version, so a payload that is valid openEHR is unaffected; a
+  client sending a private extension member must move it into a modelled slot
   (for example `ITEM_TREE` `other_details`, or a `FEEDER_AUDIT`).
 - **A malformed identifier is now refused wherever it appears in a document,
   not only in a request path.** `HIER_OBJECT_ID`, `OBJECT_VERSION_ID`,
@@ -642,10 +442,9 @@ workflow refuses a tag that has no matching section here.
 - **`UpdateItemTag` request bodies reject undeclared members.** The released
   OAS declares the schema `additionalProperties: false`, so an unexpected
   member is now a `400` rather than being silently dropped.
-- **A committer `external_ref.id` supplied through the
-  `openehr-audit-details` header must be a well-formed `HIER_OBJECT_ID`.** A
-  malformed value is refused with `400` instead of being written into the
-  commit audit.
+- **A committer `external_ref.id` supplied through the `openehr-audit-details`
+  header must be a well-formed `HIER_OBJECT_ID`.** A malformed value is refused
+  with `400` instead of being written into the commit audit.
 - **`OBJECT_VERSION_ID` values on the wire are now checked against the full
   openEHR identifier grammar.** A version identifier in a request path, an
   `If-Match` header or a `VERSION.uid` previously only had to have three
@@ -671,30 +470,29 @@ workflow refuses a tag that has no matching section here.
   Well-formed archetype ids and at/id codes are unaffected.
 
 - **Operational-template upload now enforces AOM2 VCACA's numeric arm.** A
-  template that states a container cardinality wider than the reference
-  model's — for example `CLUSTER.items cardinality {0..3}` against the RM's
-  `List<ITEM> [1..*]` — is refused with `422` naming the rule
+  template that states a container cardinality wider than the reference model's
+  — for example `CLUSTER.items cardinality {0..3}` against the RM's `List<ITEM>
+  [1..*]` — is refused with `422` naming the rule
   (`AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc` §VCACA;
   `master08-validation.adoc` §Validate Definition). The fully-open `{0..*}`
   that published templates commonly carry is **not** affected: ADL 1.4 makes
-  `C_MULTIPLE_ATTRIBUTE.cardinality` mandatory where AOM2 makes it optional
-  and set "only if it overrides the underlying reference model", and cADL's
-  open constraint means "any value permitted by the underlying information
-  model" (`AM/docs/ADL1.4/master05-cadl.adoc` §"'Any' Constraints"), so an
-  open interval states no override and defers to the RM. Every template that
+  `C_MULTIPLE_ATTRIBUTE.cardinality` mandatory where AOM2 makes it optional and
+  set "only if it overrides the underlying reference model", and cADL's open
+  constraint means "any value permitted by the underlying information model"
+  (`AM/docs/ADL1.4/master05-cadl.adoc` §"'Any' Constraints"), so an open
+  interval states no override and defers to the RM. Every template that
   uploaded before still uploads.
 
 - **Commit-audit and EHR-resource validation failures now report through the
-  structured error body.** The `AUDIT_DETAILS.committer` and the
-  `EHR_STATUS` / `EHR_ACCESS` / FOLDER / demographic-party commit checks are
-  now produced by the shared Reference Model validator instead of duplicated
-  by hand, so the same defects are refused with the same `422` status but
-  render as the openEHR `Error` object (`{ message, validationErrors[] }`)
-  rather than a flat message — the shape every other validation failure
-  already used. The one message-detail change: a `PARTY_RELATED` committer
-  whose `relationship` code is outside the openEHR `subject_relationship`
-  group is still refused naming `Relationship_valid`, but no longer echoes the
-  rejected code.
+  structured error body.** The `AUDIT_DETAILS.committer` and the `EHR_STATUS` /
+  `EHR_ACCESS` / FOLDER / demographic-party commit checks are now produced by
+  the shared Reference Model validator instead of duplicated by hand, so the
+  same defects are refused with the same `422` status but render as the openEHR
+  `Error` object (`{ message, validationErrors[] }`) rather than a flat message
+  — the shape every other validation failure already used. The one
+  message-detail change: a `PARTY_RELATED` committer whose `relationship` code
+  is outside the openEHR `subject_relationship` group is still refused naming
+  `Relationship_valid`, but no longer echoes the rejected code.
 
 - **System-generated commits are now attributed to the product's own
   identity.** A write with no authenticated principal (auth disabled, or an
@@ -711,8 +509,8 @@ workflow refuses a tag that has no matching section here.
 - **Audit, attestation and revision-history wire bodies now follow canonical
   BMM field order.** `AUDIT_DETAILS`, `ATTESTATION`, `REVISION_HISTORY` and
   `REVISION_HISTORY_ITEM` are built as their RM types and serialized through
-  the canonical codec instead of being assembled by hand, so every such body
-  — the version `commit_audit`, the CONTRIBUTION audit, and both the EHR and
+  the canonical codec instead of being assembled by hand, so every such body —
+  the version `commit_audit`, the CONTRIBUTION audit, and both the EHR and
   demographic revision histories — now carries `_type` first followed by the
   Reference Model's own attribute order. Only key order changes; the same
   attributes with the same values are emitted, and JSON key order is not
@@ -726,197 +524,434 @@ workflow refuses a tag that has no matching section here.
   offending attribute (and, for `items`, its index).
 
 - **Outbound openEHR spec-defect reports moved to the issue tracker.** The
-  `docs/conformance/upstream-reports.md` ledger is deleted; every report is
-  now a GitHub issue labeled `upstream-report` (what the released spec says,
-  what this implementation does, the resolution sought). The ambiguity
-  register's `upstream_ref` field is renamed to `upstream_issue` and carries
-  the GitHub issue number — the published `ambiguity-register.schema.json`
-  changed accordingly.
+  `docs/conformance/upstream-reports.md` ledger is deleted; every report is now
+  a GitHub issue labeled `upstream-report` (what the released spec says, what
+  this implementation does, the resolution sought). The ambiguity register's
+  `upstream_ref` field is renamed to `upstream_issue` and carries the GitHub
+  issue number — the published `ambiguity-register.schema.json` changed
+  accordingly.
 
-### Added
+### Removed
 
-- **Canonical-XML responses are now checked against the published openEHR XSDs.**
-  A new gate serializes documents through the shipped codec and validates them
-  with an XSD processor against both vendored ITS-XML bundles, and it records
-  exactly where a served document and the schema its namespace declares
-  disagree. The finding it makes visible: the `v1` bundle openEHR still
-  publishes as the STABLE one is frozen at an older Reference Model generation,
-  so a document that is a correct RM 1.2.0 instance can carry attributes that
-  bundle never declared — `FOLDER.details` on a directory is the case you are
-  most likely to meet, and 50 RM classes (EHR, EHR_STATUS, CONTRIBUTION, the
-  demographic party types, …) have no `v1` schema at all. **Nothing served
-  changes**: the default namespace is still `v1`, `Accept: application/xml;
-  version=2` still selects `v2`, and the codec still writes the complete
-  Reference Model rather than dropping clinical content to fit an older
-  schema. Deployments that validate responses against the published XSDs
-  should be aware that the `v2` lineage is the one that models RM 1.2.0 — and
-  that it currently cannot be compiled by a standards-conformant XSD processor
-  because of an invalid pattern in the upstream schemas. The full per-attribute
-  breakdown ships in the conformance ambiguity register as `AMB-185`.
-
-- **A conformance case for a party's inline, by-value relationships.** A
-  `PARTY_RELATIONSHIP` is modelled twice and openEHR reconciles the two
-  nowhere: the Reference Model stores it *inside* its source party ("the
-  relationships attribute is by value"), versioned with that party and with no
-  version container of its own, while the Service Model gives every
-  relationship its own independently-addressed container. This server serves
-  both, and they are **disjoint** — committing a party that carries an inline
-  `relationships` list does not create a relationship container, and creating
-  a relationship container does not append to any party's list. The catalogue
-  now pins the inline half: a `PERSON` committed with a by-value
-  `PARTY_RELATIONSHIP` is accepted and reads back with that relationship
-  unchanged, unexpanded and un-repointed. Behaviour is unchanged; the
-  adjudication ships in the conformance ambiguity register as `AMB-187`.
-
-- **New conformance cases for the LOCATABLE root rules and the feeder-system
-  audit.** The catalogue now pins the two refusals above from the wire side
-  (a COMPOSITION root whose `archetype_node_id` contradicts its ARCHETYPED
-  block; a COMPOSITION carrying an empty `links` list; a COMPOSITION whose
-  inner `ITEM_TREE` carries an empty `archetype_node_id`), and four cases cover
-  `FEEDER_AUDIT` end to end: a commit carrying audits at the COMPOSITION root
-  *and* on an interior data node round-trips every modelled attribute
-  (identifiers, inline `original_content`, both system audits, and the
-  originating audit's `other_details`), an update that retains the feeder
-  audit keeps it on the new version, an update that drops it is accepted and
-  does not carry it forward, and an update whose content is identical to the
-  preceding version still creates version 2.
-
-- **Conformance cases for populated LINKs on a COMPOSITION.** A commit
-  carrying a complete `LINK` at the COMPOSITION root *and* on an interior
-  ENTRY now round-trips with both links intact (the accepting twin of the
-  empty-`links` refusal), and a `LINK` whose `target` is not an `ehr://` URI
-  is refused (422) — placed on the interior ENTRY so the case also proves the
-  rule is applied below the resource root.
-
-- **Conformance cases for `FOLDER.items` — the directory's reference slot.**
-  The catalogue exercised directory folders, names, links and `details`, but
-  never the attribute the whole abstraction rests on: a folder's `items` list
-  holds *references* to other objects, never the objects themselves, and the
-  same object may be referenced from more than one folder (that is what lets
-  one directory classify a composition as both an episode and a problem). A
-  directory whose two sibling folders both reference the same target — beside
-  a second, distinct target — is now committed and read back with **both**
-  references intact, so a server that collapsed the duplicate would fail; and
-  a folder that carries a composition *by value* in `items` instead of a
-  reference to it is refused with `422`, leaving the EHR without a directory.
-  Two further cases pin how *wide* an identifier that reference slot accepts.
-  A folder reference may be **version-pinned** — its id a three-part
-  `OBJECT_VERSION_ID` naming one particular version of a composition — and it
-  now round-trips with all three parts intact, so a server that truncated it
-  to the leading UUID would fail. And a reference identified in a **foreign
-  scheme** (a `GENERIC_ID`) is accepted and served back unchanged: the
-  Reference Model types the slot at `OBJECT_ID`, whose family has six concrete
-  members, while the published OpenAPI schema for the same slot enumerates
-  only two — the adjudication ships in the conformance ambiguity register as
-  `AMB-186`.
-
-- **Conformance cases for the ATTESTATION wire family.** The catalogue now
-  drives the `666|attestation|` CONTRIBUTION member end to end: attesting an
-  existing COMPOSITION version is accepted, adds **no** new version, reports
-  the attestation-only aggregate change type, and surfaces the completed
-  `ATTESTATION` on both the version envelope and the revision history; the
-  pending-then-signed pattern leaves **both** attestation objects on the one
-  version; and three refusal twins pin the `ATTESTATION` invariants on the
-  wire (a missing `reason`, a coded `reason` whose code sits outside the
-  openEHR *attestation reason* group, and a present-but-empty `items` list).
-  An `ORIGINAL_VERSION` carrying attestations is also pinned as a
-  canonical-JSON/XML serialization vector. An attestation carrying an inline
-  `DV_MULTIMEDIA` `attested_view` — the screen image of what was signed — now
-  round-trips with its media type, size, inline data and alternate text intact
-  on both the version envelope and the revision history.
-
-- **Conformance cases for the generic-package party and participation rules.**
-  A COMPOSITION whose context participation carries a bounded
-  `DV_INTERVAL<DV_DATE_TIME>` `time` and whose ENTRY-level other participation
-  carries an open-ended one now round-trips with every interval boundary
-  intact, and four refusals pin the terminology and identity rules those
-  classes carry: a coded `PARTICIPATION.function` outside the openEHR
-  *participation function* group, a `PARTY_RELATED` participation performer
-  whose relationship code is outside the *subject relationship* group, and —
-  on the commit audit's `committer`, which sits beside the committed content
-  and is therefore missed by a content-only validation walk — the same
-  out-of-group relationship, a `PARTY_IDENTIFIED` carrying none of name,
-  identifiers or external reference, and one whose name is the empty string.
-  A `PARTY_RELATED` committer with an in-group relationship is pinned as the
-  accepting twin, so refusing that party type wholesale no longer passes.
-
-- **A conformance case for the third `PARTY_SELF` referral scheme.** The RM
-  names three ways to refer to the record subject from inside an EHR, and the
-  catalogue only exercised two of them. A COMPOSITION whose interior ENTRY
-  carries a `PARTY_SELF` subject with a complete `external_ref` `PARTY_REF`
-  (id, namespace and type) now round-trips with that reference intact, so a
-  server that dropped or refused a per-instance subject reference — a
-  spec-supported deployment style — no longer passes the catalogue.
-
-- **A canonical-JSON output mode for the corpus fixture generator.** The
-  `openehr-its` `canonical_convert` example now emits canonical JSON when the
-  output path ends in `.json` (and handles `ORIGINAL_VERSION` documents under
-  the published `<version>` root), so a committed JSON fixture can be the
-  codec's own output rather than a hand-typed approximation of it.
-
-- **Every figure the vendored specs reference is now vendored too.**
-  `scripts/vendor-spec-docs.sh` additionally fetches, from the same pinned
-  commits, exactly the figures the vendored chapters reference: the 129 UML
-  class-diagram SVGs (`{uml_diagrams_uri}`, under
-  `docs/specs/openehr/<COMPONENT>/docs/UML/diagrams/`) plus the 200
-  per-document diagrams and images (`{diagrams_uri}` / `{images_uri}`, under
-  `<COMPONENT>/docs/<doc_name>/diagrams/` and `.../images/`). Spec chapters
-  are now readable offline with their figures intact instead of carrying
-  dangling links. Only referenced files are taken, byte-for-byte; a referenced
-  figure missing at the pin fails the vendoring run.
+- **The AQL `RESULT_SET` no longer carries a top-level `id`.** Responses from
+  `POST/GET /query/aql` and the stored-query execute routes previously added an
+  `id` field holding a freshly minted UUID. The released ITS-REST `ResultSet`
+  schema declares exactly `meta`, `name`, `q`, `columns` and `rows` with no
+  `additionalProperties`, so the wire has no slot for it and the field was an
+  undeclared property on a closed object schema. Clients that read `id` should
+  use the response's `ETag` header instead — the released ITS-REST text names
+  it "a unique identifier of the resultSet" (`query/Request.md` §"Common
+  Headers and Query Parameters"), and it is unchanged by this removal.
 
 ### Fixed
+
+- Licensing coverage corrected (#1883): the vendored openEHR **specification
+  text** and the CKM-derived **clinical models** are CC-BY-SA 3.0 (per-file
+  `licence` metadata for clinical models), not Apache-2.0 as the README
+  previously implied. The repo now ships the CC-BY-SA 3.0 text
+  (`LICENSE-CC-BY-SA-3.0`), vendors each upstream `LICENSE` alongside its tree,
+  records the license in every vendored tree's `PROVENANCE.md`, and the
+  documentation site gained a **Licensing & legal** page with the full
+  reckoning. FerroEHR's own code stays MIT; the openEHR machine-readable
+  artifacts and test corpora stay Apache-2.0.
+- EHR-Extract import: the copy-closure check now matches the fork-point trunk
+  version with ANY creating system (RM common master06 §Distributed Versioning
+  — a branch legitimately forks off a foreign trunk); `/management/flamegraph`
+  answers a well-formed SVG instead of a zero-byte body when the sample window
+  catches an idle process.
+- CNF runner: an unresolvable `<name>` placeholder in an outcome header matcher
+  is now a loud case failure instead of silently wildcarding to `.*`; the
+  structural tokens `<n>`/`<system_id>` resolve to their real grammars, and
+  outcome matchers see the same merged variable scope as request building
+  (#1852).
+- AQL `LIKE` and `matches` predicates on multi-valued paths now use the
+  existential (any-match) lowering the comparison operators already use — a row
+  is matched when ANY node on the path satisfies the predicate, instead of an
+  order-undefined single-node pick (#1448).
+- The admin EHR dump/load archive now carries every `vo_attestation` row (with
+  its `at_committal` flag), and load re-persists them verbatim — a restored
+  version keeps its attestations and its stored signature verifies under
+  `verify_on_read = strict` (#1685).
+- **A node id carrying the at/id code leader but failing the code grammar is
+  refused (`at0abc`).** AOM2's own code predicate is leader-based, so such a
+  string claims code-hood and must satisfy the code syntax — previously it fell
+  between the code family (whose grammar it fails) and the free-text family
+  (whose leader-freedom it lacks) and no rule caught it.
+
+- **The `OPTIONS /` conformance manifest serves the generated contract DTO, and
+  the System API group joins the authorization and audit classifiers.** The
+  manifest body is now the emitted `Options` DTO (byte-identical wire; a
+  lockstep test pins the served OpenAPI's documentation shape to it), the
+  System route table joins the RBAC route map explicitly, and the operation
+  carries explicit authorization (any authenticated principal) and audit
+  (application-activity) classifications instead of the fail-closed defaults.
+
+- **A malformed ITEM_TAG refuses at construction, not after the fact.** The
+  generated `ItemTag` type gains a validated constructor running its RM
+  invariants (`Inv_key_valid`/`Inv_value_valid`), so a violating tag cannot
+  exist as a typed value anywhere in the application — the JSON and XML readers
+  refuse it at parse, path-named. Wire statuses are unchanged (the tag routes'
+  422 mapping stays); a stored tag row that no longer constructs is reported as
+  the server fault it is instead of being served.
+
+- **An undeclared key on a CONTRIBUTION version member is refused (`400`, named
+  at its member path) instead of silently ignored.** The released commit wire
+  declares exactly six member properties (`UpdateVersion.yaml`) plus the
+  adjudicated `_type` self-tag; the member seam was the last non-strict reader,
+  accepting arbitrary extra keys without a diagnostic while every other read
+  surface refuses them.
+
+- **A CONTRIBUTION whose audit omits `committer` is now refused (`422`) instead
+  of being attributed to the server's default identity.** The same released
+  commit schema that requires `change_type` requires `committer`
+  (`NewContribution.yaml` over `UpdateAudit.yaml`), and a server-invented
+  committer would put an identity the client never named into the audit trail.
+  The direct COMPOSITION/DIRECTORY routes are unchanged — there the committal
+  headers stay optional and the authenticated default applies, exactly as the
+  ITS-REST overview requires.
+
+- **An emptied ITEM_TAG collection is echoed as no header, never an empty
+  one.** The EHR-side write routes echoed an EMPTY `openehr-item-tag` header
+  when the stored collection was empty — but the empty header value is the
+  release's "remove all ITEM_TAGs" *request* instruction, so a mirroring client
+  would read the confirmation of its own wipe as an instruction to wipe again
+  (harmless) or, worse, treat state responses as carrying the destructive form.
+  Both echo paths now share one rule: an empty collection emits no wrapper
+  header.
+
+- **Terminology failure bodies no longer disclose deployment configuration on
+  the remaining two surfaces.** A terminology 404 named WHICH configured
+  provider answered, and a commit whose archetype constraint binding had no
+  configured terminology route answered a 500 revealing that routing gap; both
+  bodies now carry only what the client can act on, with the operator detail on
+  the trace record — completing the operator-detail adjudication for the
+  terminology surface.
+
+- **The generated ITS-REST contract is typed end to end.** The `emit-rest`
+  generator resolved `$ref`s before emitting, so every request/response body
+  and parameter lost its schema name and the trait/DTO surface degraded to
+  untyped JSON values; RM/BASE payload references likewise degraded on a
+  rationale that expired with the foundation rewrite (the spec types carry
+  emitted strict serde impls). Body and parameter references now keep their
+  names, RM/BASE references resolve to the typed spec structs — making every
+  DTO field strict by construction — and a `discriminator.mapping` schema
+  (`Versionable`) emits a real `_type`-dispatched enum instead of an untyped
+  alias. Remaining untyped spots are honest: anonymous `oneOf` responses, query
+  result rows, and schema-less OPT objects.
+
+- **A node claiming a `_type` foreign to its slot is now refused everywhere,
+  from the RM model.** The whole-instance validation pass dispatched each node
+  on its own wire `_type`, so a tagged object sitting in a slot declared as
+  something else was validated as the type it *claimed* to be — a `DV_TEXT`
+  inside `COMPOSITION.content` (declared `List<CONTENT_ITEM>`) validated
+  cleanly as a DV_TEXT. One model-driven rule now asserts every tagged node
+  (root, single slots, and list members alike) conforms to its slot's declared
+  RM type, read from the generated BMM attribute model; a scalar member of a
+  class-typed list slot is refused the same way. The rule never relaxes on a
+  `553|incomplete|` commit ("data may be missing, but it may not be wrong").
+  The hand-written FOLDER member checks this replaces are removed; their
+  refusals now come from the general rule.
+
+
+- **The conformance suite's spec-citation gate now resolves the cited document
+  and section.** It previously took only the second whitespace token of a
+  citation and asked whether ANY path under the component directory contained
+  it as a substring, so a citation naming a real component plus any common word
+  passed even when the document and §section did not exist. The gate now
+  resolves the whole path hint to a real vendored document (or chapter
+  directory) and verifies every `§section` names a real section of it —
+  following the `include::` directives that pull the UML class and interface
+  tables into a chapter, and reading the class tables' own labels, the markdown
+  chapters' titles, the AM validity-rule anchors and the OAS files' keys. It
+  also covers the citations of fixture-set rows and of the corpus manifest, not
+  just case cores. The 104 citations the strengthened gate found unresolvable —
+  phantom chapters, sections that never existed, class tables cited under the
+  wrong directory, and one citation of an internal proposal instead of a
+  released spec — were re-derived first-hand and corrected.
+- **A vendored corpus that had no vendor script has one.** The real-world
+  canonical-JSON corpus under `crates/openehr-its/tests/vendor/` was
+  hand-downloaded; it is now reproduced byte-identically from its pinned
+  upstream commit by `scripts/vendor-openehr-sdk-json.sh` (with `--check` to
+  report drift and write nothing). Its provenance record also named the wrong
+  upstream repository — a product-rename sweep had rewritten `ehrbase/` to
+  `ferroehr/` in the pin — which is corrected.
+- **`authz.abac.enabled = true` now actually enables ABAC.** The server binary
+  built an RBAC-only authorization handle unconditionally — the ABAC policy
+  engine and its attribute resolvers were never constructed on the shipped run
+  path, so a deployment that configured attribute-based rules ran without them,
+  silently. The binary now boots the configured engine (Cedar or remote PDP)
+  with database-backed attribute resolvers, logs the active authorization
+  layers at startup, and **refuses to start** when an enabled ABAC block cannot
+  be built (missing/invalid policy directory, unbuildable PDP client) —
+  configuration that promises fine-grained authorization never degrades to
+  authorization-off.
+
+- **A one-group ISO OID now classifies as `ISO_OID`, not `INTERNET_ID`.** BASE
+  `base_types` `master05-identification_package.adoc` §Syntaxes gives `iso_oid
+  = number, { '.', number }` — one or more groups — while the UID subtype
+  dispatch required two, so a bare numeric root such as `12345` was tagged
+  `INTERNET_ID`, whose own production it violates (a multi-character
+  `internet_id` label must begin with a letter). This picks the `_type` on the
+  wire, so the value now round-trips under the subtype the grammar assigns.
+- **Non-finite `Real` values now serialize to canonical XML in the `xs:double`
+  lexical form.** The vendored XSDs type every `Real` element `xs:double`,
+  whose lexical space spells the special values `INF`, `-INF` and `NaN` (XML
+  Schema Part 2 §3.2.5); the serializer emitted Rust's `inf`/`-inf` spellings,
+  producing a schema-invalid document. Finite values are unchanged (a whole
+  `Real` still writes `120.0`).
+- **The generated ITS-REST contract no longer drops single-`$ref` `allOf`
+  composition.** Seven DTOs the released OAS defines as a named alias of
+  another schema — `ItemTagOfComposition`, `ItemTagOfEhrStatus`, the five
+  demographic `ItemTagOf*` — degraded to an untyped string map instead of
+  resolving to their referent.
+- **The generated ITS-REST contract now includes the SYSTEM API group.** The
+  STABLE System API declares one operation, `OPTIONS /` (Options and
+  Conformance), which the contract generator skipped: its group list omitted
+  `system` and its HTTP-method table omitted `OPTIONS` entirely.
+
+- **A composition committed against an ADL2-registered template is no longer
+  refused with a `409`, and an in-use ADL2 template now refuses physical
+  deletion.** The stored template identity on a version row was
+  foreign-key-checked against the OPT 1.4 store only, so a commit whose
+  template was provisioned through the ADL2 DEFINITION surface failed the
+  constraint; the key now targets a registry spanning both template dialects.
+  With that, the ADL2 template delete gains the same never-orphan guard the OPT
+  1.4 delete always had — deleting a template still referenced by committed
+  versions answers `409` with the reference count (previously the row was
+  deleted silently) — and it now also evicts the template's compiled
+  WebTemplate, so a re-uploaded template is never served from the deleted
+  artefact's cached form.
+
+- **Template-scoped authorization rules now bind to compositions committed
+  through the direct routes.** A COMPOSITION committed with `POST`/`PUT
+  /ehr/{ehr_id}/composition` stored no template identity alongside its version,
+  while the same composition committed inside a CONTRIBUTION did — so an ABAC
+  policy scoped to a template silently failed to match direct-route
+  compositions (the attribute resolved to "no template" rather than to the
+  template the composition declares). Both direct routes now record the
+  template the version was committed against, exactly as the CONTRIBUTION route
+  always has. Compositions committed before this release carry no template
+  identity on their existing version rows; re-committing a new version records
+  it.
+
+- **A CONTRIBUTION whose audit omits `change_type` is now refused (`422`)
+  instead of being given a server-invented one.** The released commit schema
+  makes the change set's audit mandatory and its `change_type` a required
+  member (`NewContribution.yaml` over `UpdateAudit.yaml`, for both the EHR and
+  the demographic contribution routes), and RM common `master06` §Contributions
+  calls the contribution-level value approximate and "not expected to be used
+  as a computable value" — it is the client's account of its own change set.
+  The server previously derived an aggregate from the member versions when the
+  attribute was absent, putting an approximation into the audit trail under the
+  client's name; it now answers `422` naming `CONTRIBUTION.audit.change_type`.
+  A conformant client is unaffected. (The direct COMPOSITION/DIRECTORY routes
+  are unchanged: there the committal headers stay optional and the server
+  default still applies, exactly as the ITS-REST overview requires.)
+
+- **An undecodable request-header value is refused instead of silently
+  ignored.** A header whose bytes are not decodable as text — including the
+  committal (`openehr-version`, `openehr-audit-details`) and item-tag wrapper
+  headers — was dropped from the request as if it had never been sent, so a
+  commit could carry different audit attributes or tags than the client
+  supplied, with nothing on the wire saying so. Such a request now answers
+  `400` naming the header.
+
+- **An AQL query that cannot get a database connection now sheds with `503` +
+  `Retry-After` instead of reporting `500`.** The query path's database leg is
+  classified like every other one, so a pool-acquire timeout is reported as a
+  temporary overload (retryable) rather than as a server fault. A corrupt
+  stored FHIR mapping definition is likewise reported as a server fault (`500`)
+  rather than as a client error (`422`) — it is not something the caller
+  supplied.
+
+- **A round-tripped demographic party carrying inline relationships is no
+  longer refused.** `PARTY.Relationships_validity` requires every inline
+  `relationships[i].source` to reference the party itself, and RM demographic
+  `master02` §Party Relationships requires that reference to be a
+  `HIER_OBJECT_ID` denoting the party's VERSION CONTAINER "rather than
+  `OBJECT_VERSION_ID`s, which would denote particular versions" — but the check
+  compared it against the body's `uid`, which on a served party is the
+  three-part `OBJECT_VERSION_ID`. The two could never be equal, so a client
+  that read a party, added a relationship and wrote it back got `422`. The
+  comparison now uses the container id (the `object_id` of the version uid); a
+  relationship sourced at another party is still refused.
+- **The demographic create/update routes now honour the `openehr-version`
+  lifecycle state.** ITS-REST overview `Requests_and_responses.md`
+  §"openehr-version and openehr-audit-details" requires that "whatever is
+  provided it MUST be merged with the default VERSION and
+  `VERSION.audit_details` attributes on commit runtime"; the direct party and
+  party-relationship routes threaded only the audit half, so a
+  `553|incomplete|` demographic commit was reachable through a CONTRIBUTION
+  alone. Both halves now merge on those routes (and on the SM-envelope entry
+  points, which carry the same two attributes).
+- **A read-only principal can export EXTRACTs again.** `POST /message/export`
+  realizes SM `I_EHR_EXTRACT_SERVICE.export_ehr_extracts` — a query over held
+  versions whose selector is a whole `EXTRACT_SPEC` — but the read-only gate
+  classified the extension route by its HTTP verb and refused it `403`. It is
+  now classified as the read it is (as the released ad-hoc AQL `POST` already
+  was); the import routes stay writes.
+- **A query result-set `ETag` is now stable across executions.** The tag is
+  documented as identifying the `RESULT_SET` ("it changes as soon as the
+  resource changes", overview `Requests_and_responses.md` §`ETag` and
+  Last-Modified), but the digest covered `meta._created`, which is stamped per
+  response — so every execution minted a fresh tag and conditional-request
+  caching never hit. The digest now covers the result-determining content (`q`,
+  the executed AQL, `columns`, `rows`) only.
+- **A malformed `server.system_id` is now refused at boot.** The value occupies
+  the `creating_system_id` position of every `OBJECT_VERSION_ID` this CDR mints
+  (BASE `master05-identification_package.adoc` §Syntaxes: `creating_system_id =
+  uid`), but the boot check only rejected an empty value and one containing
+  `::` — so a configuration legal at startup could mint version identifiers
+  this server's own reader refuses. The configured value is now validated
+  against the openEHR `uid` grammar itself (`iso_oid | uuid | internet_id`).
+- **`500`-class responses no longer echo internal diagnostics.** A server-side
+  fault previously rendered whatever produced it straight into the response
+  body: serde's parser message (naming Rust fields and byte offsets), the AQL
+  executor's PostgreSQL driver string (naming generated SQL and schema
+  objects), the node codec's RM attribute names and internal row shape, the
+  authorization engine's failure reason, and the XML/Simplified-Format
+  serializers' diagnostics. Every `500`-class body now carries a curated,
+  opaque message and the full detail goes to the server's own log instead.
+  `4xx` refusals are unchanged and still name the client-caused defect — a
+  malformed request payload is still refused `400` with the parse error that
+  explains it, which is the only thing a caller can act on.
+
+- **A tag PUT body is now validated against the released write schema.**
+  `schemas/common/UpdateItemTag.yaml` declares exactly `key` (required),
+  `value` and `target_path`, with `additionalProperties: false`. Previously the
+  body was read untyped: an undeclared member (`target`, `owner_id`, `_type`,
+  anything) was silently dropped, and — worse — a `value` or `target_path` of
+  the wrong JSON type was silently stored as ABSENT, losing a clinical
+  annotation outright or changing the tag's identity so a later delete
+  addressed nothing. All three are now refused `400`, naming the offending
+  member by its JSON path, on the COMPOSITION, EHR_STATUS and all five
+  demographic tag PUTs alike. An empty `target_path` still normalizes to
+  absent, identically on both families.
+- **A defective tag on a write no longer leaves the content committed.** The
+  `openehr-item-tag` / `openehr-version-item-tag` headers are now parsed and
+  invariant-checked BEFORE the content commit, so a request carrying an invalid
+  tag is refused with nothing created. Previously the refusal arrived after the
+  COMPOSITION / EHR_STATUS / DIRECTORY / party version was already durable, on
+  a response with no `ETag` and no `Location` — leaving the client no way to
+  learn what it had just created, and no recovery but a re-POST that duplicated
+  the content. The tag write itself still happens after the commit, so tagging
+  continues to cause no re-versioning of content.
+- **The tag response header can no longer instruct a client to wipe its tags.**
+  A valueless tag echoed as `value=""` (a shape the reference model forbids),
+  and a tag list that could not be rendered as an HTTP header value — a control
+  character in a tag key, which nothing in the reference model bars — fell back
+  to an EMPTY header, which is exactly the byte sequence the spec defines as
+  "remove all ITEM_TAGs". A client mirroring that echo back on its next write
+  would have cleared the collection. A valueless tag now echoes without a
+  `value`, and an unrenderable list omits the header entirely.
+- **The tag wrapper-header parser is quote-aware and no longer silently drops
+  entries.** A `target_path` containing a `;` inside quotes (an AQL predicate,
+  say) shattered into fragments that then parsed as garbage; quoted runs are
+  now opaque at the entry separator. An entry carrying no `key` was skipped
+  past, silently discarding a tag the client believed it had set; it is now
+  refused `400`.
+- **Database integrity errors no longer leak schema names into client
+  responses, and are no longer all reported as conflicts.** Every SQLSTATE
+  class-23 violation mapped to `409 Conflict` carrying the raw PostgreSQL error
+  text, so constraint, table and column names reached client bodies — and a
+  CHECK or NOT NULL violation, which is a server-side invariant failure rather
+  than anything a client can resolve, was presented as an optimistic-lock
+  conflict to retry. Unique, foreign-key, restrict and exclusion violations
+  keep their `409`; CHECK and NOT NULL now answer `500`. No branch returns a
+  driver string: every client message is a fixed, actionable sentence, with the
+  SQLSTATE, constraint and table recorded on the server's own trace record.
+- **A tag that survives a whole-list replace keeps its creation instant.** The
+  `PUT` is a full-collection replace, but re-asserting an existing tag identity
+  is not the same as creating a new tag; previously every surviving tag's
+  stored creation time was reset on any edit to a sibling, which the admin
+  export then reported. Visible through `POST /rest/admin/…` EHR export.
+
+- **A CONTRIBUTION version that declares a foreign version identity is now
+  refused** (`400`, naming the offending key). The released commit wire
+  declares six member properties (`preceding_version_uid`, `signature`,
+  `lifecycle_state`, `attestations`, `data`, `commit_audit`) and no import
+  shape at all — `master06` §Copying puts the import behind
+  `commit_imported_version`, whose "details of version id etc come from the
+  `ORIGINAL_VERSION`". Previously a member shaped like an `IMPORTED_VERSION`
+  (`_type: IMPORTED_VERSION`, an `item` wrapping a foreign `ORIGINAL_VERSION`,
+  or its own `uid`) was accepted and committed as a locally created
+  `ORIGINAL_VERSION` under a freshly minted local identifier, silently
+  discarding the identity and provenance the client had declared. All three
+  keys are now refused. A member self-tagged `_type: ORIGINAL_VERSION` or
+  `_type: UPDATE_VERSION` is unaffected — those name the class this wire
+  commits — and importing versions that keep their foreign identity remains
+  available through the EHR-Extract import route.
+- **A version-container trunk position is now unique across creating systems.**
+  `master06` §Copying has a second system BRANCH rather than extend the trunk
+  of a copied container, and §Moving Version Containers continues the trunk
+  increment under the new system's id, so a trunk line is one global sequence
+  however many systems contributed to it. The schema previously admitted two
+  versions of one container both claiming trunk position 2, one per creating
+  system; the archive-load path could write such a pair. It is now refused with
+  a message naming the container, the position and the system already holding
+  it. Branch identifiers still legitimately repeat across systems, which is
+  what the three-part version identifier disambiguates.
+
+- **A version that carries data can no longer claim the `523|deleted|`
+  lifecycle state** (`422`). `master06` §Logical Deletion states deletion as
+  one procedure — create a new version, delete its data, set the state to
+  `deleted`, commit — so a data-carrying deleted version is not producible by
+  the spec's own steps. Previously such a commit was accepted through a
+  CONTRIBUTION member pairing a content change type with the deleted state, or
+  through `openehr-version: lifecycle_state.code_string="523"` on a `PUT`; the
+  resource then read back as deleted (`204`) while its content stayed stored
+  and AQL-queryable. Both routes now refuse it. Deleting through `DELETE`, or
+  through a data-less `523` CONTRIBUTION member, is unaffected.
+
 
 - **The demographic endpoints accept `PARTY_REF.type` `ANY`.** A `PARTY_REF`
   inside a party or `PARTY_RELATIONSHIP` body — `ACTOR.roles`,
   `ROLE.performer`, `PARTY_RELATIONSHIP.source`/`target` — was refused with
   `422` when its `type` was `ANY`, even though the composition endpoints
-  accepted the same value. The demographic write boundary kept a second copy
-  of the legal `PARTY_REF.type` set that had drifted from the single
-  spec-cited one; it now judges every reference through that one definition,
-  so the two surfaces give the same answer. Unknown type strings are still
-  refused.
+  accepted the same value. The demographic write boundary kept a second copy of
+  the legal `PARTY_REF.type` set that had drifted from the single spec-cited
+  one; it now judges every reference through that one definition, so the two
+  surfaces give the same answer. Unknown type strings are still refused.
 
-- **A `PARTY_REF` missing a mandatory attribute is refused.** A reference in
-  a demographic body without an `id`, `namespace` or `type` (all `1..1` on
+- **A `PARTY_REF` missing a mandatory attribute is refused.** A reference in a
+  demographic body without an `id`, `namespace` or `type` (all `1..1` on
   `OBJECT_REF`) passed the write boundary and was only caught, if at all,
   further in. It is now a `422` naming the missing attribute.
 
 - **The authorization gate refuses an unaddressable resource id instead of
-  guessing.** A malformed `{uid_based_id}` — not a UUID, and not a
-  well-formed three-part `OBJECT_VERSION_ID` — was previously read as if the
-  whole string were the versioned-object id, so the template attribute the
-  ABAC/SMART policy binds on silently came back empty and the request could
-  pass a template-scoped rule. Such a request is now denied with `403`, in
-  line with the gate's existing fail-closed handling of every other
-  attribute-resolution failure. Well-formed ids (bare `HIER_OBJECT_ID` and
-  full `OBJECT_VERSION_ID`, trunk or branch) are unaffected.
+  guessing.** A malformed `{uid_based_id}` — not a UUID, and not a well-formed
+  three-part `OBJECT_VERSION_ID` — was previously read as if the whole string
+  were the versioned-object id, so the template attribute the ABAC/SMART policy
+  binds on silently came back empty and the request could pass a
+  template-scoped rule. Such a request is now denied with `403`, in line with
+  the gate's existing fail-closed handling of every other attribute-resolution
+  failure. Well-formed ids (bare `HIER_OBJECT_ID` and full `OBJECT_VERSION_ID`,
+  trunk or branch) are unaffected.
 
-- **A version's digital signature now covers the attestations it was
-  committed with.** openEHR signs "the entire Version object", excluding only
-  the `signature` attribute itself, so an attestation supplied on the commit
-  (`attestations` on the committed VERSION) belongs inside the signed form.
-  It previously did not: such an attestation could be altered in the database
-  without any signature check noticing. It is now part of the signed
-  canonical form at commit and at read, in both the local-commit and the
-  EHR-Extract-import paths, so tampering with it is caught by strict
-  read-time verification and the served version verifies for an external
-  reader that recomputes the digest itself. Attestations added *after*
-  committal (a `666|attestation|` contribution) keep their existing
-  behaviour: they post-date the signature by definition, and are served
-  outside it. Versions committed before this change are unaffected — nothing
-  is re-signed — unless they carried commit-time attestations, in which case
-  their stored signature no longer matches and a `strict` `verify_on_read`
-  deployment will report them; re-commit or set `verify_on_read = warn` while
-  auditing.
+- **A version's digital signature now covers the attestations it was committed
+  with.** openEHR signs "the entire Version object", excluding only the
+  `signature` attribute itself, so an attestation supplied on the commit
+  (`attestations` on the committed VERSION) belongs inside the signed form. It
+  previously did not: such an attestation could be altered in the database
+  without any signature check noticing. It is now part of the signed canonical
+  form at commit and at read, in both the local-commit and the
+  EHR-Extract-import paths, so tampering with it is caught by strict read-time
+  verification and the served version verifies for an external reader that
+  recomputes the digest itself. Attestations added *after* committal (a
+  `666|attestation|` contribution) keep their existing behaviour: they
+  post-date the signature by definition, and are served outside it. Versions
+  committed before this change are unaffected — nothing is re-signed — unless
+  they carried commit-time attestations, in which case their stored signature
+  no longer matches and a `strict` `verify_on_read` deployment will report
+  them; re-commit or set `verify_on_read = warn` while auditing.
 
 - **An attestation whose optional `items` is sent as JSON `null` is no longer
-  rejected.** A null optional means absent, and the sibling optional
-  attributes (`proof`, `attested_view`, `description`) were already read that
-  way; `items` alone treated it as a malformed list and returned `422`. That
-  made commit-time attestations unusable through the typed API, which emits
-  `null` for an omitted list. A present-but-*empty* list (`[]`) is still
-  refused, which is what the RM invariant actually forbids.
+  rejected.** A null optional means absent, and the sibling optional attributes
+  (`proof`, `attested_view`, `description`) were already read that way; `items`
+  alone treated it as a malformed list and returned `422`. That made
+  commit-time attestations unusable through the typed API, which emits `null`
+  for an omitted list. A present-but-*empty* list (`[]`) is still refused,
+  which is what the RM invariant actually forbids.
 
 - **A contribution mixing amendments and deletions now reports the amendment
   aggregate.** When a client sends no contribution-level change type, the
@@ -934,25 +969,24 @@ workflow refuses a tag that has no matching section here.
   signature. This server had never materialised the wrapper — it wrote the
   foreign commit audit as the version's own and discarded the received
   contribution reference entirely. Four visible changes:
-  - A `VERSION` read of an imported version
+- A `VERSION` read of an imported version
     (`…/versioned_composition/{uid}/version/{version_uid}`,
     `…/versioned_ehr_status/version[/{version_uid}]`, and a `resolve_refs`
     contribution read) now returns `"_type": "IMPORTED_VERSION"` with the
     received original under `item`. An `IMPORTED_VERSION` carries no `uid` of
-    its own — it shares the wrapped version's identity — so read the version
-    id from `item.uid.value`; the `ETag` is unchanged, so `If-Match` round
-    trips are unaffected. Locally created versions are still
-    `ORIGINAL_VERSION`s.
-  - An imported version container's `VERSIONED_OBJECT.time_created`, its
+    its own — it shares the wrapped version's identity — so read the version id
+    from `item.uid.value`; the `ETag` is unchanged, so `If-Match` round trips
+    are unaffected. Locally created versions are still `ORIGINAL_VERSION`s.
+- An imported version container's `VERSIONED_OBJECT.time_created`, its
     `Last-Modified` header, its revision history and every as-of-instant read
     now report the **local import** instant instead of the source system's
     earlier clock, so a query for the record's past state returns what this
     repository actually held at that time.
-  - Re-exporting imported content now reproduces the received
-    `ORIGINAL_VERSION` verbatim, including its source contribution reference;
-    it previously carried this server's local contribution id under the source
-    version's identity.
-  - With version signing enabled, the import act signs the `IMPORTED_VERSION`
+- Re-exporting imported content now reproduces the received `ORIGINAL_VERSION`
+    verbatim, including its source contribution reference; it previously
+    carried this server's local contribution id under the source version's
+    identity.
+- With version signing enabled, the import act signs the `IMPORTED_VERSION`
     wrapper it creates; the wrapped original's own signature is stored and
     served untouched, and is never re-verified.
 
@@ -966,87 +1000,85 @@ workflow refuses a tag that has no matching section here.
   consistently, everywhere it is emitted.** `VERSIONED_OBJECT.owner_id` is a
   mandatory reference to "the containing EHR or other relevant owning entity",
   but a demographic party has no containing EHR — and this server had drifted
-  into three different answers for it. `GET
-  /demographic/versioned_party/{uid}` (and the party-relationship container
-  read) served an `OBJECT_REF` in namespace `demographic` whose id was the
-  container's *own* uid, a self-reference that merely duplicated the sibling
-  `uid` field; the `X_VERSIONED_PARTY` wrapper of an EHR-Extract export served
-  namespace `demographic` over the system identifier; and the demographic
-  `ITEM_TAG` surface already served the shape the published openEHR
-  `VersionedParty` example shows. All three now emit that one shape — an
-  `OBJECT_REF` with `namespace: local`, `type: SYSTEM`, and a
-  `HIER_OBJECT_ID` carrying the deployment's configured `system_id`. Clients
-  that read `owner_id` off a demographic container will see the namespace,
-  type and id all change; nothing else about those responses moves. The served
-  OpenAPI example for the container read is corrected to match (it advertised
-  a `PARTY_REF`, a type the published schema does not name there), the
-  conformance catalogue now asserts the two tokens on the container read, and
-  the adjudication is restated in the ambiguity register as `AMB-69` — whose
-  previous text incorrectly claimed this server already emitted the published
-  shape.
+  into three different answers for it. `GET /demographic/versioned_party/{uid}`
+  (and the party-relationship container read) served an `OBJECT_REF` in
+  namespace `demographic` whose id was the container's *own* uid, a
+  self-reference that merely duplicated the sibling `uid` field; the
+  `X_VERSIONED_PARTY` wrapper of an EHR-Extract export served namespace
+  `demographic` over the system identifier; and the demographic `ITEM_TAG`
+  surface already served the shape the published openEHR `VersionedParty`
+  example shows. All three now emit that one shape — an `OBJECT_REF` with
+  `namespace: local`, `type: SYSTEM`, and a `HIER_OBJECT_ID` carrying the
+  deployment's configured `system_id`. Clients that read `owner_id` off a
+  demographic container will see the namespace, type and id all change; nothing
+  else about those responses moves. The served OpenAPI example for the
+  container read is corrected to match (it advertised a `PARTY_REF`, a type the
+  published schema does not name there), the conformance catalogue now asserts
+  the two tokens on the container read, and the adjudication is restated in the
+  ambiguity register as `AMB-69` — whose previous text incorrectly claimed this
+  server already emitted the published shape.
 
 - **A path predicate carrying a parenthesised uniqueness modifier is now
   refused instead of silently matching nothing.** The Reference Model's
   directory chapter shows folder paths written with a name and a bracketed
-  uniqueness modifier (`/folders[hospital episodes(car accident Aug 1998)]`),
-  a form the formal openEHR path grammar this server implements does not
-  define. Such a predicate used to be accepted and bound whole as an
-  archetype node id, so the path quietly resolved to nothing; it is now a
-  loud unsupported-predicate error. Plain node-id and archetype-id
-  predicates (`[at0003]`, `[openEHR-EHR-COMPOSITION.x.v1]`) and bare name
-  tokens are unaffected.
+  uniqueness modifier (`/folders[hospital episodes(car accident Aug 1998)]`), a
+  form the formal openEHR path grammar this server implements does not define.
+  Such a predicate used to be accepted and bound whole as an archetype node id,
+  so the path quietly resolved to nothing; it is now a loud
+  unsupported-predicate error. Plain node-id and archetype-id predicates
+  (`[at0003]`, `[openEHR-EHR-COMPOSITION.x.v1]`) and bare name tokens are
+  unaffected.
 
 - **An OAuth2/OIDC committer's identifier now names the token issuer.** Every
   authenticated write stamps the committing principal into
-  `AUDIT_DETAILS.committer` as a `PARTY_IDENTIFIED` carrying a
-  `DV_IDENTIFIER`, whose `issuer` used to read `ferroehr` for every mechanism
-  — including federated principals, whose subject the identity provider minted
-  rather than this server. A Bearer principal's identifier now carries the
-  validated token issuer (`iss`) as its `issuer`; a Basic principal, whose
-  credential this deployment holds, keeps `ferroehr`. Audits already committed
-  keep the issuer they were written with.
+  `AUDIT_DETAILS.committer` as a `PARTY_IDENTIFIED` carrying a `DV_IDENTIFIER`,
+  whose `issuer` used to read `ferroehr` for every mechanism — including
+  federated principals, whose subject the identity provider minted rather than
+  this server. A Bearer principal's identifier now carries the validated token
+  issuer (`iss`) as its `issuer`; a Basic principal, whose credential this
+  deployment holds, keeps `ferroehr`. Audits already committed keep the issuer
+  they were written with.
 
 - **`ATTESTATION` commit audits and rich audit descriptions now round-trip
   instead of being silently flattened.** A CONTRIBUTION version whose
   `commit_audit` is an `ATTESTATION` — the openEHR way of committing content
-  that is already signed, or that is marked as awaiting signature
-  (`is_pending: true`) — used to be stored as a plain `AUDIT_DETAILS`: the
-  concrete type and every attestation attribute (`reason`, `is_pending`,
-  `proof`, `items`, `attested_view`) were dropped without an error, on the
-  REST commit and on EHR-Extract import alike. They are now decoded,
-  validated against the RM invariants, stored, and served back as an
-  `ATTESTATION` on the version envelope, in the revision history, in the
-  CONTRIBUTION rendering, and in exports/archives. A `commit_audit` whose
-  `_type` names neither `AUDIT_DETAILS` (`UPDATE_AUDIT`) nor `ATTESTATION`
-  (`UPDATE_ATTESTATION`) is now refused with **422** instead of being read as
-  a plain audit. `AUDIT_DETAILS.description` is likewise kept whole: a
-  `DV_CODED_TEXT` description keeps its `defining_code` instead of being
-  reduced to its display string, and AQL can now address
-  `commit_audit/description/value`,
+  that is already signed, or that is marked as awaiting signature (`is_pending:
+  true`) — used to be stored as a plain `AUDIT_DETAILS`: the concrete type and
+  every attestation attribute (`reason`, `is_pending`, `proof`, `items`,
+  `attested_view`) were dropped without an error, on the REST commit and on
+  EHR-Extract import alike. They are now decoded, validated against the RM
+  invariants, stored, and served back as an `ATTESTATION` on the version
+  envelope, in the revision history, in the CONTRIBUTION rendering, and in
+  exports/archives. A `commit_audit` whose `_type` names neither
+  `AUDIT_DETAILS` (`UPDATE_AUDIT`) nor `ATTESTATION` (`UPDATE_ATTESTATION`) is
+  now refused with **422** instead of being read as a plain audit.
+  `AUDIT_DETAILS.description` is likewise kept whole: a `DV_CODED_TEXT`
+  description keeps its `defining_code` instead of being reduced to its display
+  string, and AQL can now address `commit_audit/description/value`,
   `commit_audit/description/defining_code/code_string` and
   `.../defining_code/terminology_id/value` as distinct fields (a coded
   description could previously never match). The `audit` table's baseline
-  schema changes with this: `description` becomes `jsonb` (the whole
-  `DV_TEXT`) and a nullable `attestation` column is added.
+  schema changes with this: `description` becomes `jsonb` (the whole `DV_TEXT`)
+  and a nullable `attestation` column is added.
 
 - **A coded description on an attestation keeps its code.** The
-  `666|attestation|` commit path completed a submitted `UPDATE_ATTESTATION`
-  by reducing its `description` to the plain text of a `DV_TEXT`, so a
-  `DV_CODED_TEXT` description lost its `defining_code` permanently at
-  committal — while the same attribute on a version's own `commit_audit`
-  was already kept whole. An attestation's description is now stored and
-  served back exactly as submitted (`_type`, display `value` and
-  `defining_code`), and a `description` that is neither a string nor a valid
-  `DV_TEXT` is refused with **422** instead of being dropped.
+  `666|attestation|` commit path completed a submitted `UPDATE_ATTESTATION` by
+  reducing its `description` to the plain text of a `DV_TEXT`, so a
+  `DV_CODED_TEXT` description lost its `defining_code` permanently at committal
+  — while the same attribute on a version's own `commit_audit` was already kept
+  whole. An attestation's description is now stored and served back exactly as
+  submitted (`_type`, display `value` and `defining_code`), and a `description`
+  that is neither a string nor a valid `DV_TEXT` is refused with **422**
+  instead of being dropped.
 
 - **A simplified-format `ctx` participation without a function is now
   refused.** `ctx/participation_*` keys build `EVENT_CONTEXT.participations`,
   whose `function` the Reference Model requires; a FLAT/STRUCTURED commit that
   began a participation at some index (a name, an id, a mode or identifiers)
-  but supplied no `ctx/participation_function:<i>` used to be completed with
-  an empty function, committing a participation whose mandatory attribute
-  carried no information. It is now rejected with an error naming the exact
-  missing key (e.g. `ctx/participation_function:0 is required`).
+  but supplied no `ctx/participation_function:<i>` used to be completed with an
+  empty function, committing a participation whose mandatory attribute carried
+  no information. It is now rejected with an error naming the exact missing key
+  (e.g. `ctx/participation_function:0 is required`).
 
 - **The FLAT `_link:i` builder now reports a missing mandatory suffix instead
   of inventing an empty value.** `|meaning`, `|type` and `|target` are all
@@ -1059,51 +1091,56 @@ workflow refuses a tag that has no matching section here.
   are now refused (422) instead of stored.** At an archetype root the
   `archetype_node_id` is the archetype identifier in string form, so a node
   carrying `archetype_details` whose `archetype_id` names a *different*
-  archetype declares two conflicting identities and can no longer be
-  committed. Payloads that were accepted before and are affected by this must
-  correct the mismatched root before they will commit.
+  archetype declares two conflicting identities and can no longer be committed.
+  Payloads that were accepted before and are affected by this must correct the
+  mismatched root before they will commit.
 
-- **An empty `archetype_node_id` is now refused (422) on every node type.**
-  The RM requires a non-empty `archetype_node_id` on every archetypable node,
-  but the check only ran on the node types with a hand-written invariant
-  (ENTRY subtypes, CLUSTER, ELEMENT, SECTION, FOLDER, HISTORY and events). It
-  is now applied to every RM type that inherits it — notably `ITEM_TREE`,
-  `ITEM_LIST`, `ITEM_SINGLE`, `EHR_STATUS`, and the demographic and
-  EHR-extract locatables — so a payload carrying `"archetype_node_id": ""`
-  anywhere is rejected rather than stored. An *absent* `archetype_node_id` is
-  unchanged: it is still reported as a missing mandatory attribute.
+- **An empty `archetype_node_id` is now refused (422) on every node type.** The
+  RM requires a non-empty `archetype_node_id` on every archetypable node, but
+  the check only ran on the node types with a hand-written invariant (ENTRY
+  subtypes, CLUSTER, ELEMENT, SECTION, FOLDER, HISTORY and events). It is now
+  applied to every RM type that inherits it — notably `ITEM_TREE`, `ITEM_LIST`,
+  `ITEM_SINGLE`, `EHR_STATUS`, and the demographic and EHR-extract locatables —
+  so a payload carrying `"archetype_node_id": ""` anywhere is rejected rather
+  than stored. An *absent* `archetype_node_id` is unchanged: it is still
+  reported as a missing mandatory attribute.
 
 - **A present-but-empty `links` list is now refused (422).** `links` is
-  optional, but the RM forbids it from being present and empty, so
-  `"links": []` on any node of a committed COMPOSITION — or on any FOLDER of
-  a committed directory — is now rejected rather than stored. Omit the
-  attribute instead of sending an empty array.
+  optional, but the RM forbids it from being present and empty, so `"links":
+  []` on any node of a committed COMPOSITION — or on any FOLDER of a committed
+  directory — is now rejected rather than stored. Omit the attribute instead of
+  sending an empty array.
 
 - **RM class invariants are now enforced on every commit kind, not only on
   COMPOSITIONs.** The whole-instance RM + terminology pass previously ran only
   for compositions, so anything *below* the root of an `EHR_STATUS`,
   `EHR_ACCESS`, directory FOLDER, party or party-relationship body went
   unchecked. Payloads that were accepted before and are now refused with a
-  `422` include: an empty `archetype_details.rm_version`; a `links` member
-  that is missing `meaning`, `type` or `target`, or whose `target` is not an
+  `422` include: an empty `archetype_details.rm_version`; a `links` member that
+  is missing `meaning`, `type` or `target`, or whose `target` is not an
   `ehr://` URI; a present-but-empty `links` list on a node nested inside
-  `EHR_STATUS.other_details` or a party body; and an empty
-  `feeder_audit` `system_id`. The same defects were already `422` inside a
-  COMPOSITION. `EHR_ACCESS.settings` is deliberately unaffected — the RM
-  leaves that slot's type to the implementation, so it carries no RM rules to
-  enforce.
+  `EHR_STATUS.other_details` or a party body; and an empty `feeder_audit`
+  `system_id`. The same defects were already `422` inside a COMPOSITION.
+  `EHR_ACCESS.settings` is deliberately unaffected — the RM leaves that slot's
+  type to the implementation, so it carries no RM rules to enforce.
 
-### Removed
+### Security
 
-- **The AQL `RESULT_SET` no longer carries a top-level `id`.** Responses from
-  `POST/GET /query/aql` and the stored-query execute routes previously added an
-  `id` field holding a freshly minted UUID. The released ITS-REST `ResultSet`
-  schema declares exactly `meta`, `name`, `q`, `columns` and `rows` with no
-  `additionalProperties`, so the wire has no slot for it and the field was an
-  undeclared property on a closed object schema. Clients that read `id` should
-  use the response's `ETag` header instead — the released ITS-REST text names
-  it "a unique identifier of the resultSet" (`query/Request.md` §"Common
-  Headers and Query Parameters"), and it is unchanged by this removal.
+- **Admin dump/load failures no longer expose server filesystem paths.** The
+  `file_not_writable` and container-fault bodies of the EHR export/import
+  operations carried the configured archive path (server deployment layout) and
+  the raw archive-parse diagnostics. The bodies now carry a curated message — a
+  defect in the CALLER's archive still names the offending archive ENTRY, which
+  is the actionable fact — and the path plus the underlying diagnostic go to
+  the server's trace record only.
+
+- **Terminology-server failures no longer expose the deployment's terminology
+  configuration.** A `500` raised by an upstream FHIR terminology server (or by
+  its OAuth2 client-credentials grant) named the configured provider, its
+  operation and the upstream error in the response body. The body is now the
+  curated internal-error message; the operator detail (provider name,
+  operation, upstream diagnostic) is emitted on the trace record. Boot-time
+  configuration errors are unchanged — they never reach a response body.
 
 ## [3.17.1] - 2026-08-01
 
