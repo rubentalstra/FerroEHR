@@ -93,6 +93,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- CNF runner: an unresolvable `<name>` placeholder in an outcome header matcher is now a loud case failure instead of silently wildcarding to `.*`; the structural tokens `<n>`/`<system_id>` resolve to their real grammars, and outcome matchers see the same merged variable scope as request building (#1852).
 - AQL `LIKE` and `matches` predicates on multi-valued paths now use the existential (any-match) lowering the comparison operators already use — a row is matched when ANY node on the path satisfies the predicate, instead of an order-undefined single-node pick (#1448).
 - The admin EHR dump/load archive now carries every `vo_attestation` row (with its `at_committal` flag), and load re-persists them verbatim — a restored version keeps its attestations and its stored signature verifies under `verify_on_read = strict` (#1685).
 - **A node id carrying the at/id code leader but failing the code grammar is
