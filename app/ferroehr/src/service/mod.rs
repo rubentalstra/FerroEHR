@@ -17,6 +17,16 @@
 //! authenticated-committer context ([`committer`]), the crate-internal
 //! ITS-REST datetime-request-parameter decoder (`datetime`), and the SM
 //! validity checker ([`validity`]).
+//!
+//! NOTE (adjudicated 2026-08-04, #1845 — no openEHR spec governs the internal
+//! layering; the SM component map in `docs/architecture.md` is our design):
+//! the ~90 one-expression `Ok(self.inner(...).await?)` methods across the SM
+//! modules are DELIBERATE, not dead weight. Each is the SM-named operation
+//! of the platform service model (`docs/specs/openehr/SM/`) AND the error
+//! boundary where a `ServiceError` becomes the SM `SmError` the callers
+//! consume — collapsing them would delete the SM component map and scatter
+//! the conversion across every call site. Keep the layer; a new SM operation
+//! gets its SM-named method here even when the body is one expression.
 
 pub mod admin;
 pub mod definition;
