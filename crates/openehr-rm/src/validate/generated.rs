@@ -167,6 +167,26 @@
 //! - `VERSION.Preceding_version_uid_validity`: the version chain, owned by the versioning layer's commit path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.version.adoc §Invariants).
 //! - `VERSIONED_OBJECT.Uid_validity`: the versioning aggregate, owned by the versioning layer's commit path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc §Invariants).
 //!
+//! ## UNACCOUNTED (classified emittable, no register row)
+//!
+//! - `Interval.Lower_included_valid`.
+//! - `Interval.Upper_included_valid`.
+//! - `Iso8601_date.Partial_validity`.
+//! - `Iso8601_date_time.Partial_validity_day`.
+//! - `Iso8601_date_time.Partial_validity_hour`.
+//! - `Iso8601_date_time.Partial_validity_minute`.
+//! - `Iso8601_date_time.Partial_validity_month`.
+//! - `Iso8601_date_time.Partial_validity_year`.
+//! - `Iso8601_duration.Days_valid`.
+//! - `Iso8601_duration.Fractional_second_valid`.
+//! - `Iso8601_duration.Hours_valid`.
+//! - `Iso8601_duration.Minutes_valid`.
+//! - `Iso8601_duration.Months_valid`.
+//! - `Iso8601_duration.Seconds_valid`.
+//! - `Iso8601_duration.Weeks_valid`.
+//! - `Iso8601_duration.Years_valid`.
+//! - `Iso8601_time.Partial_validity`.
+//!
 //! # Terminology-backed invariants (enforced in `validate::terminology`)
 //!
 //! These BMM class invariants bind a coded value to an openEHR terminology

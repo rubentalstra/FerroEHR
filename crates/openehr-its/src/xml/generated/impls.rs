@@ -12802,6 +12802,533 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ItemTree {
     }
 }
 
+impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
+    for openehr_rm::prelude::Interval<T>
+{
+    fn xml_type_name(&self) -> &'static str {
+        match self {
+            openehr_rm::prelude::Interval::DvInterval(x) => x.xml_type_name(),
+            openehr_rm::prelude::Interval::PointInterval(x) => x.xml_type_name(),
+            openehr_rm::prelude::Interval::ProperInterval(x) => x.xml_type_name(),
+        }
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        match self {
+            openehr_rm::prelude::Interval::DvInterval(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Interval::PointInterval(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Interval::ProperInterval(x) => x.write_xml(w, tag, declared),
+        }
+    }
+}
+
+impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
+    for openehr_rm::prelude::Interval<T>
+{
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        match start.xsi_type() {
+            Some("DV_INTERVAL") => Ok(openehr_rm::prelude::Interval::DvInterval(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Multiplicity_interval") => Ok(openehr_rm::prelude::Interval::ProperInterval(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Point_interval") => Ok(openehr_rm::prelude::Interval::PointInterval(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Proper_interval") => Ok(openehr_rm::prelude::Interval::ProperInterval(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            None => Err(crate::xml::runtime::XmlError::Parse(
+                "Interval: missing xsi:type".into(),
+            )),
+            Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(
+                "Interval: unknown xsi:type {other}"
+            ))),
+        }
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601DateData {
+    fn xml_type_name(&self) -> &'static str {
+        "Iso8601_date"
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        let mut __attrs: Vec<(&str, String)> = Vec::new();
+        if let Some(d) = declared {
+            if d != "Iso8601_date" {
+                __attrs.push(("xsi:type", "Iso8601_date".to_string()));
+            }
+        }
+        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        for (k, v) in &__attrs {
+            __e.push_attribute((*k, v.as_str()));
+        }
+        w.write_start(__e)?;
+        self.value.write_xml(w, "value", Some("String"))?;
+        w.write_end(tag)?;
+        Ok(())
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601DateData {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let mut __value = None;
+        loop {
+            match reader.read()? {
+                crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
+                    "value" => {
+                        __value = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    _ => reader.skip_element()?,
+                },
+                crate::xml::runtime::XmlEvent::End => break,
+                crate::xml::runtime::XmlEvent::Text(_) => {}
+                crate::xml::runtime::XmlEvent::Eof => {
+                    return Err(crate::xml::runtime::XmlError::Parse(
+                        "unexpected EOF".into(),
+                    ));
+                }
+            }
+        }
+        Ok(openehr_rm::prelude::Iso8601DateData {
+            value: __value.ok_or_else(|| {
+                crate::xml::runtime::XmlError::Parse("missing element value".into())
+            })?,
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601Date {
+    fn xml_type_name(&self) -> &'static str {
+        match self {
+            openehr_rm::prelude::Iso8601Date::DvDate(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601Date::Iso8601Date(x) => x.xml_type_name(),
+        }
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        match self {
+            openehr_rm::prelude::Iso8601Date::DvDate(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601Date::Iso8601Date(x) => x.write_xml(w, tag, declared),
+        }
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601Date {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        match start.xsi_type() {
+            Some("DV_DATE") => Ok(openehr_rm::prelude::Iso8601Date::DvDate(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_date") => Ok(openehr_rm::prelude::Iso8601Date::Iso8601Date(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            None => Ok(openehr_rm::prelude::Iso8601Date::Iso8601Date(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(
+                "Iso8601Date: unknown xsi:type {other}"
+            ))),
+        }
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601DateTimeData {
+    fn xml_type_name(&self) -> &'static str {
+        "Iso8601_date_time"
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        let mut __attrs: Vec<(&str, String)> = Vec::new();
+        if let Some(d) = declared {
+            if d != "Iso8601_date_time" {
+                __attrs.push(("xsi:type", "Iso8601_date_time".to_string()));
+            }
+        }
+        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        for (k, v) in &__attrs {
+            __e.push_attribute((*k, v.as_str()));
+        }
+        w.write_start(__e)?;
+        self.value.write_xml(w, "value", Some("String"))?;
+        w.write_end(tag)?;
+        Ok(())
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601DateTimeData {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let mut __value = None;
+        loop {
+            match reader.read()? {
+                crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
+                    "value" => {
+                        __value = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    _ => reader.skip_element()?,
+                },
+                crate::xml::runtime::XmlEvent::End => break,
+                crate::xml::runtime::XmlEvent::Text(_) => {}
+                crate::xml::runtime::XmlEvent::Eof => {
+                    return Err(crate::xml::runtime::XmlError::Parse(
+                        "unexpected EOF".into(),
+                    ));
+                }
+            }
+        }
+        Ok(openehr_rm::prelude::Iso8601DateTimeData {
+            value: __value.ok_or_else(|| {
+                crate::xml::runtime::XmlError::Parse("missing element value".into())
+            })?,
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601DateTime {
+    fn xml_type_name(&self) -> &'static str {
+        match self {
+            openehr_rm::prelude::Iso8601DateTime::DvDateTime(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601DateTime::Iso8601DateTime(x) => x.xml_type_name(),
+        }
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        match self {
+            openehr_rm::prelude::Iso8601DateTime::DvDateTime(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601DateTime::Iso8601DateTime(x) => {
+                x.write_xml(w, tag, declared)
+            }
+        }
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601DateTime {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        match start.xsi_type() {
+            Some("DV_DATE_TIME") => Ok(openehr_rm::prelude::Iso8601DateTime::DvDateTime(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_date_time") => Ok(openehr_rm::prelude::Iso8601DateTime::Iso8601DateTime(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            None => Ok(openehr_rm::prelude::Iso8601DateTime::Iso8601DateTime(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(
+                "Iso8601DateTime: unknown xsi:type {other}"
+            ))),
+        }
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601DurationData {
+    fn xml_type_name(&self) -> &'static str {
+        "Iso8601_duration"
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        let mut __attrs: Vec<(&str, String)> = Vec::new();
+        if let Some(d) = declared {
+            if d != "Iso8601_duration" {
+                __attrs.push(("xsi:type", "Iso8601_duration".to_string()));
+            }
+        }
+        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        for (k, v) in &__attrs {
+            __e.push_attribute((*k, v.as_str()));
+        }
+        w.write_start(__e)?;
+        self.value.write_xml(w, "value", Some("String"))?;
+        w.write_end(tag)?;
+        Ok(())
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601DurationData {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let mut __value = None;
+        loop {
+            match reader.read()? {
+                crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
+                    "value" => {
+                        __value = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    _ => reader.skip_element()?,
+                },
+                crate::xml::runtime::XmlEvent::End => break,
+                crate::xml::runtime::XmlEvent::Text(_) => {}
+                crate::xml::runtime::XmlEvent::Eof => {
+                    return Err(crate::xml::runtime::XmlError::Parse(
+                        "unexpected EOF".into(),
+                    ));
+                }
+            }
+        }
+        Ok(openehr_rm::prelude::Iso8601DurationData {
+            value: __value.ok_or_else(|| {
+                crate::xml::runtime::XmlError::Parse("missing element value".into())
+            })?,
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601Duration {
+    fn xml_type_name(&self) -> &'static str {
+        match self {
+            openehr_rm::prelude::Iso8601Duration::DvDuration(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601Duration::Iso8601Duration(x) => x.xml_type_name(),
+        }
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        match self {
+            openehr_rm::prelude::Iso8601Duration::DvDuration(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601Duration::Iso8601Duration(x) => {
+                x.write_xml(w, tag, declared)
+            }
+        }
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601Duration {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        match start.xsi_type() {
+            Some("DV_DURATION") => Ok(openehr_rm::prelude::Iso8601Duration::DvDuration(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_duration") => Ok(openehr_rm::prelude::Iso8601Duration::Iso8601Duration(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            None => Ok(openehr_rm::prelude::Iso8601Duration::Iso8601Duration(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(
+                "Iso8601Duration: unknown xsi:type {other}"
+            ))),
+        }
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601TimeData {
+    fn xml_type_name(&self) -> &'static str {
+        "Iso8601_time"
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        let mut __attrs: Vec<(&str, String)> = Vec::new();
+        if let Some(d) = declared {
+            if d != "Iso8601_time" {
+                __attrs.push(("xsi:type", "Iso8601_time".to_string()));
+            }
+        }
+        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        for (k, v) in &__attrs {
+            __e.push_attribute((*k, v.as_str()));
+        }
+        w.write_start(__e)?;
+        self.value.write_xml(w, "value", Some("String"))?;
+        w.write_end(tag)?;
+        Ok(())
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601TimeData {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let mut __value = None;
+        loop {
+            match reader.read()? {
+                crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
+                    "value" => {
+                        __value = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
+                    }
+                    _ => reader.skip_element()?,
+                },
+                crate::xml::runtime::XmlEvent::End => break,
+                crate::xml::runtime::XmlEvent::Text(_) => {}
+                crate::xml::runtime::XmlEvent::Eof => {
+                    return Err(crate::xml::runtime::XmlError::Parse(
+                        "unexpected EOF".into(),
+                    ));
+                }
+            }
+        }
+        Ok(openehr_rm::prelude::Iso8601TimeData {
+            value: __value.ok_or_else(|| {
+                crate::xml::runtime::XmlError::Parse("missing element value".into())
+            })?,
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601Time {
+    fn xml_type_name(&self) -> &'static str {
+        match self {
+            openehr_rm::prelude::Iso8601Time::DvTime(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601Time::Iso8601Time(x) => x.xml_type_name(),
+        }
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        match self {
+            openehr_rm::prelude::Iso8601Time::DvTime(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601Time::Iso8601Time(x) => x.write_xml(w, tag, declared),
+        }
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601Time {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        match start.xsi_type() {
+            Some("DV_TIME") => Ok(openehr_rm::prelude::Iso8601Time::DvTime(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_time") => Ok(openehr_rm::prelude::Iso8601Time::Iso8601Time(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            None => Ok(openehr_rm::prelude::Iso8601Time::Iso8601Time(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(
+                "Iso8601Time: unknown xsi:type {other}"
+            ))),
+        }
+    }
+}
+
+impl crate::xml::runtime::ToXml for openehr_rm::prelude::Iso8601Type {
+    fn xml_type_name(&self) -> &'static str {
+        match self {
+            openehr_rm::prelude::Iso8601Type::Iso8601Date(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601Type::Iso8601DateTime(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601Type::Iso8601Duration(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601Type::Iso8601Time(x) => x.xml_type_name(),
+            openehr_rm::prelude::Iso8601Type::Iso8601Timezone(x) => x.xml_type_name(),
+        }
+    }
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        match self {
+            openehr_rm::prelude::Iso8601Type::Iso8601Date(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601Type::Iso8601DateTime(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601Type::Iso8601Duration(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601Type::Iso8601Time(x) => x.write_xml(w, tag, declared),
+            openehr_rm::prelude::Iso8601Type::Iso8601Timezone(x) => x.write_xml(w, tag, declared),
+        }
+    }
+}
+
+impl crate::xml::runtime::FromXml for openehr_rm::prelude::Iso8601Type {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        match start.xsi_type() {
+            Some("DV_DATE") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601Date(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("DV_DATE_TIME") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601DateTime(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("DV_DURATION") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601Duration(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("DV_TIME") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601Time(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_date") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601Date(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_date_time") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601DateTime(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_duration") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601Duration(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_time") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601Time(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("Iso8601_timezone") => Ok(openehr_rm::prelude::Iso8601Type::Iso8601Timezone(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            None => Err(crate::xml::runtime::XmlError::Parse(
+                "Iso8601Type: missing xsi:type".into(),
+            )),
+            Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(
+                "Iso8601Type: unknown xsi:type {other}"
+            ))),
+        }
+    }
+}
+
 impl crate::xml::runtime::ToXml for openehr_rm::prelude::Link {
     fn xml_type_name(&self) -> &'static str {
         "LINK"

@@ -1470,6 +1470,78 @@ impl<'de> ::serde::Deserialize<'de> for crate::am14::prelude::AssertionVariable 
     }
 }
 
+impl ::serde::Serialize for crate::am14::prelude::AuthoredResource {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::am14::prelude::AuthoredResource::Archetype(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::am14::prelude::AuthoredResource {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["ARCHETYPE"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::am14::prelude::AuthoredResource;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `AUTHORED_RESOURCE` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "ARCHETYPE" => ::core::result::Result::Ok(
+                                crate::am14::prelude::AuthoredResource::Archetype(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "AUTHORED_RESOURCE",
+                                    __other,
+                                    "ARCHETYPE",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "AUTHORED_RESOURCE",
+                            &__other,
+                            "ARCHETYPE",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "AUTHORED_RESOURCE",
+                            "ARCHETYPE",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
 impl ::serde::Serialize for crate::am14::prelude::Cardinality {
     fn serialize<__S: ::serde::Serializer>(
         &self,
@@ -6111,6 +6183,416 @@ impl<'de> ::serde::Deserialize<'de> for crate::am14::prelude::Ordinal {
             }
         }
         ::serde::Deserializer::deserialize_struct(__deserializer, "ORDINAL", __FIELDS, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::am14::prelude::ResourceDescription {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 3usize;
+        if self.title.is_some() {
+            __n += 1;
+        }
+        if self.original_namespace.is_some() {
+            __n += 1;
+        }
+        if self.original_publisher.is_some() {
+            __n += 1;
+        }
+        if self
+            .other_contributors
+            .as_ref()
+            .is_some_and(|__v| !__v.is_empty())
+        {
+            __n += 1;
+        }
+        if self.custodian_namespace.is_some() {
+            __n += 1;
+        }
+        if self.custodian_organisation.is_some() {
+            __n += 1;
+        }
+        if self.copyright.is_some() {
+            __n += 1;
+        }
+        if self.licence.is_some() {
+            __n += 1;
+        }
+        if self.ip_acknowledgements.is_some() {
+            __n += 1;
+        }
+        if self.references.is_some() {
+            __n += 1;
+        }
+        if self.resource_package_uri.is_some() {
+            __n += 1;
+        }
+        if self.conversion_details.is_some() {
+            __n += 1;
+        }
+        if self.details.is_some() {
+            __n += 1;
+        }
+        if self.other_details.is_some() {
+            __n += 1;
+        }
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "RESOURCE_DESCRIPTION", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "RESOURCE_DESCRIPTION")?;
+        if let Some(__v) = &self.title {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "title", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "original_author",
+            &self.original_author,
+        )?;
+        if let Some(__v) = &self.original_namespace {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "original_namespace", __v)?;
+        }
+        if let Some(__v) = &self.original_publisher {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "original_publisher", __v)?;
+        }
+        if let Some(__v) = &self.other_contributors
+            && !__v.is_empty()
+        {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "other_contributors", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lifecycle_state",
+            &self.lifecycle_state,
+        )?;
+        if let Some(__v) = &self.custodian_namespace {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "custodian_namespace", __v)?;
+        }
+        if let Some(__v) = &self.custodian_organisation {
+            ::serde::ser::SerializeStruct::serialize_field(
+                &mut __st,
+                "custodian_organisation",
+                __v,
+            )?;
+        }
+        if let Some(__v) = &self.copyright {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "copyright", __v)?;
+        }
+        if let Some(__v) = &self.licence {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "licence", __v)?;
+        }
+        if let Some(__v) = &self.ip_acknowledgements {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "ip_acknowledgements", __v)?;
+        }
+        if let Some(__v) = &self.references {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "references", __v)?;
+        }
+        if let Some(__v) = &self.resource_package_uri {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "resource_package_uri", __v)?;
+        }
+        if let Some(__v) = &self.conversion_details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "conversion_details", __v)?;
+        }
+        if let Some(__v) = &self.details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "details", __v)?;
+        }
+        if let Some(__v) = &self.other_details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "other_details", __v)?;
+        }
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::am14::prelude::ResourceDescription {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "conversion_details",
+            "copyright",
+            "custodian_namespace",
+            "custodian_organisation",
+            "details",
+            "ip_acknowledgements",
+            "licence",
+            "lifecycle_state",
+            "original_author",
+            "original_namespace",
+            "original_publisher",
+            "other_contributors",
+            "other_details",
+            "references",
+            "resource_package_uri",
+            "title",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+            __F6,
+            __F7,
+            __F8,
+            __F9,
+            __F10,
+            __F11,
+            __F12,
+            __F13,
+            __F14,
+            __F15,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "title" => ::core::result::Result::Ok(__Field::__F0),
+                            "original_author" => ::core::result::Result::Ok(__Field::__F1),
+                            "original_namespace" => ::core::result::Result::Ok(__Field::__F2),
+                            "original_publisher" => ::core::result::Result::Ok(__Field::__F3),
+                            "other_contributors" => ::core::result::Result::Ok(__Field::__F4),
+                            "lifecycle_state" => ::core::result::Result::Ok(__Field::__F5),
+                            "custodian_namespace" => ::core::result::Result::Ok(__Field::__F6),
+                            "custodian_organisation" => ::core::result::Result::Ok(__Field::__F7),
+                            "copyright" => ::core::result::Result::Ok(__Field::__F8),
+                            "licence" => ::core::result::Result::Ok(__Field::__F9),
+                            "ip_acknowledgements" => ::core::result::Result::Ok(__Field::__F10),
+                            "references" => ::core::result::Result::Ok(__Field::__F11),
+                            "resource_package_uri" => ::core::result::Result::Ok(__Field::__F12),
+                            "conversion_details" => ::core::result::Result::Ok(__Field::__F13),
+                            "details" => ::core::result::Result::Ok(__Field::__F14),
+                            "other_details" => ::core::result::Result::Ok(__Field::__F15),
+                            _ => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unknown_field(
+                                    __v,
+                                    "RESOURCE_DESCRIPTION",
+                                    __FIELDS,
+                                ),
+                            ),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::am14::prelude::ResourceDescription;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `RESOURCE_DESCRIPTION` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s4: ::core::option::Option<_> = None;
+                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s6: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s7: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s8: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s9: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s10: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s11: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s12: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s13: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s14: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s15: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                ::openehr_base::serde_support::ExpectedType("RESOURCE_DESCRIPTION"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("title"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_author"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_namespace"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_publisher"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("other_contributors"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lifecycle_state"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F6 => {
+                            if __s6.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("custodian_namespace"),
+                                );
+                            }
+                            __s6 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F7 => {
+                            if __s7.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("custodian_organisation"),
+                                );
+                            }
+                            __s7 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F8 => {
+                            if __s8.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("copyright"),
+                                );
+                            }
+                            __s8 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F9 => {
+                            if __s9.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("licence"),
+                                );
+                            }
+                            __s9 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F10 => {
+                            if __s10.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("ip_acknowledgements"),
+                                );
+                            }
+                            __s10 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F11 => {
+                            if __s11.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("references"),
+                                );
+                            }
+                            __s11 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F12 => {
+                            if __s12.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("resource_package_uri"),
+                                );
+                            }
+                            __s12 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F13 => {
+                            if __s13.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("conversion_details"),
+                                );
+                            }
+                            __s13 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F14 => {
+                            if __s14.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("details"),
+                                );
+                            }
+                            __s14 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F15 => {
+                            if __s15.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("other_details"),
+                                );
+                            }
+                            __s15 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(crate::am14::prelude::ResourceDescription {
+                    title: __s0.flatten(),
+                    original_author: __s1
+                        .flatten()
+                        .ok_or_else(|| ::serde::de::Error::missing_field("original_author"))?,
+                    original_namespace: __s2.flatten(),
+                    original_publisher: __s3.flatten(),
+                    other_contributors: __s4,
+                    lifecycle_state: __s5
+                        .flatten()
+                        .ok_or_else(|| ::serde::de::Error::missing_field("lifecycle_state"))?,
+                    custodian_namespace: __s6.flatten(),
+                    custodian_organisation: __s7.flatten(),
+                    copyright: __s8.flatten(),
+                    licence: __s9.flatten(),
+                    ip_acknowledgements: __s10.flatten(),
+                    references: __s11.flatten(),
+                    resource_package_uri: __s12.flatten(),
+                    conversion_details: __s13.flatten(),
+                    details: __s14.flatten(),
+                    other_details: __s15.flatten(),
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "RESOURCE_DESCRIPTION",
+            __FIELDS,
+            __Visitor,
+        )
     }
 }
 

@@ -9,7 +9,7 @@ use crate::common::archetyped::link::Link;
 use crate::common::archetyped::locatable::Locatable;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
-use openehr_base::prelude::Iso8601DateTime;
+use crate::foundation_types::time::iso8601_date_time::Iso8601DateTime;
 use openehr_base::prelude::UidBasedId;
 
 /// Single item in generic extract, designed for 13606 and CDA data.
