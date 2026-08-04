@@ -52,23 +52,38 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   boundary is recorded, name WHICH generation it belongs to — attributing a
   generation-specific gap to "the openEHR specs" is a misattribution the citation
   rule exists to prevent.
-- **`src/bmm3/expression/` and `src/bmm3/statement/` are DELIBERATELY inert (an
-  adjudicated boundary, not an oversight).** All 33 expression classes and the
-  statement package are emitted completely, with a canonical-JSON codec, and carry
-  **no** behaviour: none of `eval_type()`, `reference()`, `is_callable()`,
-  `operator_definition()`, `equivalent_call()` exists, none of the 9 declared
-  invariants is enforced, and no `*_impl.rs` should be added speculatively. Why:
-  the Expression Language is DEVELOPMENT status with no vendored grammar
-  (`LANG/docs/EL/masterAppA-syntax.adoc` points at an external ANTLR repo — the
-  same reason `src/lexer/` excludes EL), and the statement package is optional by
-  the spec's own words (`LANG/docs/bmm3/master12-statements.adoc` §Overview: "This
-  facility is not needed for achieving the original purpose of BMM"). The one
-  consequence to know: `BMM_ASSERTION.expression` is a `1..1`
-  `EL_BOOLEAN_EXPRESSION`, so the P_BMM→v3 materialisation cannot land class
-  invariants or routine pre/post-conditions (they stay opaque tagged strings in the
-  P_BMM graph); `create_bmm3_model.rs` states that skip in its module docs rather
-  than inventing an expression tree, and the EL grammar must be VENDORED before
-  the gap can close.
+- **`src/el/` is the hand-written Expression Language parser, and it is the ONLY
+  writer of the `src/bmm3/expression/` classes.** Spec oracle:
+  `docs/specs/openehr/LANG/docs/EL/` plus the vendored normative grammars
+  `vendor/grammar/{ElLexer.g4, ElParser.g4}` (openEHR-antlr4), which the EL
+  syntax appendix `masterAppA-syntax.adoc` includes verbatim. It follows the BEL
+  house pattern — a recursive-descent parser generic over an `ElBuilder` — but
+  shares NO productions with `src/bel/`: `ElParser.g4` imports `Cadl2Parser`, not
+  `base_expressions.g4`, renames every production, and its operator precedence
+  comes from the EL tables (`master05-expressions.adoc` §Primitive Operators +
+  §Precedence and Parentheses: `NOT` > `AND` > `OR` > `XOR` > `IMPLIES`), which
+  CONTRADICT the BEL grammar's `or`/`xor` order. Two things to know:
+  - **The vendored EL grammars are incomplete by themselves** — they
+    `import Cadl2Lexer, SymbolsLexer, GeneralIdsLexer` / `Cadl2Parser`, none of
+    which upstream publishes in that repository. The EL lexical reading is
+    therefore the cADL layer for what `ElLexer.g4` does not declare and
+    `ElLexer.g4`'s own case-SENSITIVE spelling for what it does; the
+    `matches { … }` right-hand side is captured VERBATIM rather than parsed,
+    because `cInlineOrderedObject`/`cObjectMatcher` are unvendored.
+  - **Boundaries** (each refused with a typed `ElError::Unsupported`, never
+    silently accepted): decision tables (`dlDecisionTable` and friends — their
+    `BLOCK_DELIM` and `?` lexical forms have no union production), the
+    quantifiers' mapping to a container function taking a Function agent, and
+    the `matches` constraint leaf.
+- **`src/bmm3/statement/` stays inert, and `src/bmm3/expression/` carries no
+  spec BEHAVIOUR.** None of `eval_type()`, `reference()`, `is_callable()`,
+  `operator_definition()`, `equivalent_call()` exists and none of the 9 declared
+  invariants is enforced; do not add a `*_impl.rs` speculatively. The statement
+  package is optional by the spec's own words
+  (`LANG/docs/bmm3/master12-statements.adoc` §Overview: "This facility is not
+  needed for achieving the original purpose of BMM"). The expression classes
+  are now CONSTRUCTED (by `src/bmm_persistence/create_bmm3_assertion.rs`), which
+  is a different thing from evaluating them.
   `beom` is a DIFFERENT spec's object model (BEL, STABLE) and is never wired into
   `BMM_ASSERTION`; that would be a category error.
 - **Two abstract, attribute-free v3 classes emit as instantiable empty structs** —
@@ -99,9 +114,14 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   - Where a language's longest match is SHORTER than the union's, the pass
     narrows by retrying shorter prefixes — the union always matches at least
     as far as any member, so no member ever needs a merge.
-  - The Expression Language (`LANG/docs/EL/`) is deliberately OUT of the
-    union (`#`-codes, a different bracket algebra, `|`-comments; DEVELOPMENT
-    status, no vendored grammar).
+  - The Expression Language reading (`lex_el`) joined the union when the EL
+    grammars were vendored. It reserves ONLY what `ElLexer.g4` itself declares
+    — the cADL constraint keywords (`existence`, `occurrences`, `infinity`, …)
+    are ordinary feature names in EL expression position, because they are
+    reachable only inside a `matches { … }` block the EL parser captures
+    verbatim. Two `ElLexer.g4` symbols have no union production and are not
+    lexable: `?` (`SYM_INTERROGATION`, reached only by `dlBinaryChoice`) and
+    the guillemets `«`/`»` (reached by no `ElParser.g4` production at all).
   - The three readings are pinned token-, span- and payload-for-payload by
     `tests/it/lexer_equivalence.rs` against fixtures captured from the three
     pre-unification lexers. **Editing a fixture line changes an accepted or
@@ -119,7 +139,8 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   different types and import renaming is forbidden), `loader.rs` (the composed
   `load_model`), `error.rs` (the one typed `PBmmReadError`), `validate.rs` (the
   model validity checker), plus
-  `p_bmm_*_impl.rs` spec functions.
+  `p_bmm_*_impl.rs` spec functions, and `create_bmm3_assertion.rs` (persisted
+  assertion STRING → `BMM_ASSERTION`, over the `src/el/` parser).
   **Two failure layers, deliberately separate.** `PBmmReadError` is FAIL-FAST
   and every variant names a condition under which no `BMM_*` object can be
   constructed. `validate.rs` COLLECTS what construction survives: the
@@ -152,10 +173,14 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   (an ancestor's formal parameter replaced by the descendant's binding, stamped
   `is_synthesised_generic`; a declared property is never displaced, and the
   ancestor is rebuilt rather than read off its embedded stub, which is what
-  propagates a substitution down a partially-closed chain). The one thing NO
-  generation can land is a class invariant or routine pre/post-condition,
-  because that needs an EL parse (see the inert expression/statement bullet
-  above). Both transforms share one index +
+  propagates a substitution down a partially-closed chain). Class invariants and routine
+  pre-/post-conditions land in the v3 generation only
+  (`create_bmm3_assertion.rs`); a string that is not EL, or whose names do not
+  resolve, is a COLLECTED `PBmmValidityFinding::AssertionNotMaterialised`
+  (`create_bmm3_model_reporting` returns them), never a refusal — openEHR's own
+  published schemas write most invariants in an Eiffel-flavoured surface syntax
+  the normative EL grammar does not admit, and `tests/it/el_assertions.rs` pins
+  every such refusal. Both transforms share one index +
   enumeration-validity check (`Builder`, `check_enumeration_validity`, module-
   private via `pub(super)`), so they can never disagree about what a class or a
   valid enumeration IS. A persisted `P_BMM_INTERFACE` IS a class-list

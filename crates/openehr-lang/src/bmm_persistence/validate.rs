@@ -59,6 +59,32 @@ pub enum PBmmValidityFinding {
         definitions: Vec<String>,
     },
 
+    /// A persisted assertion string could not be materialised as a
+    /// `BMM_ASSERTION`, so the class or routine carries it nowhere.
+    ///
+    /// v3 requires class invariants and routine pre-/post-conditions as
+    /// `BMM_ASSERTION` (`LANG/docs/bmm3/master10-expressions.adoc` §Usage in
+    /// BMM Models) whose `expression` is a `1..1` `EL_BOOLEAN_EXPRESSION`
+    /// (`…bmm3.bmm_assertion.adoc` §Attributes), while P_BMM persists an
+    /// opaque expression string (`…bmm_persistence.p_bmm_class.adoc`
+    /// §Attributes). A string that is not EL, or whose names do not resolve,
+    /// is reported here rather than refusing the schema.
+    AssertionNotMaterialised {
+        /// The class the assertion belongs to.
+        class: String,
+        /// The owning routine, for a pre-/post-condition.
+        routine: Option<String>,
+        /// Which assertion position the string was persisted in.
+        kind: AssertionKind,
+        /// The assertion's tag, as persisted.
+        tag: String,
+        /// The persisted expression string, verbatim.
+        expression: String,
+        /// The parse or resolution failure, as reported by
+        /// [`crate::el::ElError`].
+        reason: String,
+    },
+
     /// A class redefines an inherited property with a type that does not
     /// conform to the overridden property's type.
     ///
@@ -80,6 +106,28 @@ pub enum PBmmValidityFinding {
     },
 }
 
+/// Which assertion position a persisted expression string was declared in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AssertionKind {
+    /// `P_BMM_CLASS.invariants` — a class invariant.
+    Invariant,
+    /// `P_BMM_FUNCTION.pre_conditions` — a routine pre-condition.
+    PreCondition,
+    /// `P_BMM_FUNCTION.post_conditions` — a routine post-condition.
+    PostCondition,
+}
+
+impl fmt::Display for AssertionKind {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let text = match self {
+            Self::Invariant => "invariant",
+            Self::PreCondition => "pre-condition",
+            Self::PostCondition => "post-condition",
+        };
+        formatter.write_str(text)
+    }
+}
+
 impl fmt::Display for PBmmValidityFinding {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -97,6 +145,23 @@ impl fmt::Display for PBmmValidityFinding {
                 definitions.len(),
                 definitions.join(", ")
             ),
+            Self::AssertionNotMaterialised {
+                class,
+                routine,
+                kind,
+                tag,
+                expression,
+                reason,
+            } => {
+                let owner = routine.as_ref().map_or_else(
+                    || format!("class `{class}`"),
+                    |routine| format!("class `{class}` routine `{routine}`"),
+                );
+                write!(
+                    formatter,
+                    "{owner} {kind} `{tag}` ({expression:?}) is not materialisable                      as a BMM_ASSERTION: {reason}"
+                )
+            }
             Self::OverriddenPropertyNonConformance {
                 class,
                 property,
