@@ -132,6 +132,11 @@ pub async fn next_placement(
     vo_id: VoId,
     expected: Option<(i32, i32, i32)>,
 ) -> Result<Placement, StorageError> {
+    // A new version must never land in the primary tier while its predecessors
+    // sit in the cold one, so an archived object is brought back first — one
+    // statement, a no-op for every unarchived object
+    // (`crate::storage::version_repo::tier`).
+    crate::storage::version_repo::tier::thaw_one(&mut *tx, vo_id).await?;
     macro_rules! placement_select {
         ($tip_where:literal) => {
             concat!(

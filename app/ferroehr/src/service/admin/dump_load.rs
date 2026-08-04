@@ -118,6 +118,7 @@ use crate::service::admin::types::{
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::storage::codec::decompose;
+use crate::storage::version_repo::tier::Tier;
 use crate::storage::{node_repo, version_repo};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
@@ -1242,7 +1243,7 @@ impl FerroEhrService {
             "SELECT id, time_committed, system_id, change_type, \
              description, committer, attestation FROM audit \
              WHERE id IN (SELECT audit_id FROM contribution WHERE ehr_id = $1 \
-                          UNION SELECT audit_id FROM vo_version WHERE ehr_id = $1) \
+                          UNION SELECT audit_id FROM vo_version_all WHERE ehr_id = $1) \
              ORDER BY id",
         )
         .bind(ehr_id)
@@ -1283,7 +1284,7 @@ impl FerroEhrService {
              upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
              template_id, signature, signature_client_supplied, creating_system_id, \
              wrapped_original \
-             FROM vo_version WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
+             FROM vo_version_all WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
         )
         .bind(ehr_id)
         .fetch_all(&self.pool)
@@ -1293,11 +1294,14 @@ impl FerroEhrService {
             let vo_id: VoId = r.try_get("vo_id")?;
             let sys_version: i32 = r.try_get("sys_version")?;
             let lifecycle_state: String = r.try_get("lifecycle_state")?;
-            // A deleted version has no node rows; its body stays `null`.
+            // A deleted version has no node rows; its body stays `null`. An
+            // export covers the WHOLE repository, so the content is read across
+            // both storage tiers (`crate::storage::version_repo::tier`).
             let body = if lifecycle_state == DELETED_LIFECYCLE {
                 Value::Null
             } else {
-                node_repo::read_version_canonical(&self.pool, vo_id, sys_version).await?
+                node_repo::read_version_canonical_in(&self.pool, vo_id, sys_version, Tier::Both)
+                    .await?
             };
             versions.push(VersionRecord {
                 vo_id,
@@ -1360,7 +1364,7 @@ impl FerroEhrService {
 
         let archive_rows = sqlx::query(
             "SELECT vo_id, archived_at::text AS archived_at, reason FROM vo_archive \
-             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version WHERE ehr_id = $1) \
+             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1) \
              ORDER BY vo_id",
         )
         .bind(ehr_id)
@@ -1377,8 +1381,8 @@ impl FerroEhrService {
 
         let attestation_rows = sqlx::query(
             "SELECT id, vo_id, sys_version, contribution_id, time_committed, at_committal, \
-             data FROM vo_attestation \
-             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version WHERE ehr_id = $1) \
+             data FROM vo_attestation_all \
+             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1) \
              ORDER BY vo_id, sys_version, time_committed, id",
         )
         .bind(ehr_id)
@@ -1534,6 +1538,13 @@ impl FerroEhrService {
                 )),
             ));
         }
+
+        // Every loaded row went into the primary tier; the ones the record
+        // marks archived belong in the cold tier, so the invariant "a marker
+        // means the rows are in `cold`" holds for a loaded EHR exactly as it
+        // does for a locally archived one.
+        let archived: Vec<VoId> = record.archives.iter().map(|ar| ar.vo_id).collect();
+        version_repo::tier::freeze(&mut tx, &archived).await?;
 
         tx.commit().await?;
         Ok(())

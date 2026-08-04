@@ -22,6 +22,7 @@ use crate::ids::{EhrId, VoId};
 use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
+use crate::storage::version_repo::tier::{Tier, on_cold};
 
 /// Bulk-insert the decomposed node rows of one stored version.
 ///
@@ -99,22 +100,46 @@ pub async fn write_nodes(
     Ok(())
 }
 
-/// Fetch the lean read rows of one stored version, ordered by `num`. Selects
-/// **only** the five columns [`crate::storage::codec::reassemble`] and the nested-set
-/// contract need — the promoted query columns are not read back.
+/// The lean read-row statement: **only** the five columns
+/// [`crate::storage::codec::reassemble`] and the nested-set contract need — the
+/// promoted query columns are not read back.
+const READ_ROWS_SQL: &str = "SELECT num, num_cap, parent_num, path, data \
+                             FROM node WHERE vo_id = $1 AND sys_version = $2 ORDER BY num";
+
+/// The same statement over the both-tier union view.
+const READ_ROWS_ALL_SQL: &str = "SELECT num, num_cap, parent_num, path, data \
+                                 FROM node_all WHERE vo_id = $1 AND sys_version = $2 ORDER BY num";
+
+/// Fetch the lean read rows of one stored version, ordered by `num`, from the
+/// requested storage tier (no openEHR spec governs storage tiering — our own
+/// design; see [`crate::storage::version_repo::tier`]).
 async fn read_rows(
     pool: &PgPool,
     vo_id: VoId,
     sys_version: i32,
+    tier: Tier,
 ) -> Result<Vec<ReadRow>, StorageError> {
-    let rows = sqlx::query(
-        "SELECT num, num_cap, parent_num, path, data \
-         FROM node WHERE vo_id = $1 AND sys_version = $2 ORDER BY num",
-    )
-    .bind(vo_id)
-    .bind(sys_version)
-    .fetch_all(pool)
-    .await?;
+    let rows = match tier {
+        Tier::Primary => {
+            sqlx::query(READ_ROWS_SQL)
+                .bind(vo_id)
+                .bind(sys_version)
+                .fetch_all(pool)
+                .await?
+        }
+        Tier::Cold => on_cold!(pool, |conn| sqlx::query(READ_ROWS_SQL)
+            .bind(vo_id)
+            .bind(sys_version)
+            .fetch_all(&mut *conn)
+            .await),
+        Tier::Both => {
+            sqlx::query(READ_ROWS_ALL_SQL)
+                .bind(vo_id)
+                .bind(sys_version)
+                .fetch_all(pool)
+                .await?
+        }
+    };
 
     let mut read = Vec::with_capacity(rows.len());
     for row in rows {
@@ -146,7 +171,26 @@ pub async fn read_version_canonical(
     vo_id: VoId,
     sys_version: i32,
 ) -> Result<Value, StorageError> {
-    let rows = read_rows(pool, vo_id, sys_version).await?;
+    read_version_canonical_in(pool, vo_id, sys_version, Tier::Primary).await
+}
+
+/// Reassemble one stored version's canonical JSON from the requested storage
+/// tier ([`crate::storage::version_repo::tier`]).
+///
+/// [`read_version_canonical`] is the primary-tier form every ordinary caller
+/// uses.
+///
+/// # Errors
+///
+/// Returns [`StorageError`] on a DB error or if a non-empty row set does not
+/// form one tree rooted at `num = 0`.
+pub async fn read_version_canonical_in(
+    pool: &PgPool,
+    vo_id: VoId,
+    sys_version: i32,
+    tier: Tier,
+) -> Result<Value, StorageError> {
+    let rows = read_rows(pool, vo_id, sys_version, tier).await?;
     if rows.is_empty() {
         return Ok(Value::Null);
     }

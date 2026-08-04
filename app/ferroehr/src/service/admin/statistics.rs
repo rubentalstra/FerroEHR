@@ -163,14 +163,14 @@ impl FerroEhrService {
         // measured-window finding on the sibling count).
         let count: i64 = if lo.is_none() && hi.is_none() {
             sqlx::query_scalar(
-                "SELECT count(DISTINCT vo_id) FROM vo_version WHERE kind = 'COMPOSITION'",
+                "SELECT count(DISTINCT vo_id) FROM vo_version_all WHERE kind = 'COMPOSITION'",
             )
             .fetch_one(&self.pool)
             .await
             .map_err(ServiceError::from)?
         } else {
             sqlx::query_scalar(
-                "SELECT count(DISTINCT v.vo_id) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                "SELECT count(DISTINCT v.vo_id) FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
                  WHERE v.kind = 'COMPOSITION' \
                    AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                    AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",
@@ -203,13 +203,13 @@ impl FerroEhrService {
             return Ok(0);
         }
         let count: i64 = if lo.is_none() && hi.is_none() {
-            sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE kind = 'COMPOSITION'")
+            sqlx::query_scalar("SELECT count(*) FROM vo_version_all WHERE kind = 'COMPOSITION'")
                 .fetch_one(&self.pool)
                 .await
                 .map_err(ServiceError::from)?
         } else {
             sqlx::query_scalar(
-                "SELECT count(*) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                "SELECT count(*) FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
                  WHERE v.kind = 'COMPOSITION' \
                    AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                    AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",

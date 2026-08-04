@@ -595,8 +595,12 @@ impl FerroEhrService {
         // Physical deletes never orphan clinical data (no openEHR spec governs
         // the in-use refusal — our own integrity design; the SM operation
         // defines only `Pre_has_opt`/`invalid_template`).
+        // Counted over BOTH storage tiers: the cold archival mirror carries no
+        // `template_ref` foreign key, so an archived composition's reference is
+        // invisible to the constraint and deleting under it would make that
+        // object unrestorable.
         let refs: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE template_id = $1")
+            sqlx::query_scalar("SELECT count(*) FROM vo_version_all WHERE template_id = $1")
                 .bind(&template_id)
                 .fetch_one(&mut *tx)
                 .await?;

@@ -88,12 +88,12 @@ pub async fn contribution_version_refs(
 ) -> Result<Vec<(VoId, (i32, i32, i32), String, String)>, StorageError> {
     let rows = sqlx::query(
         "SELECT vo_id, trunk_version, branch_number, branch_version, creating_system_id, \
-         kind FROM vo_version \
+         kind FROM vo_version_all \
          WHERE contribution_id = $1 \
          UNION \
          SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
-         v.creating_system_id, v.kind FROM vo_version v \
-         JOIN vo_attestation att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
+         v.creating_system_id, v.kind FROM vo_version_all v \
+         JOIN vo_attestation_all att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
          WHERE att.contribution_id = $1 \
          ORDER BY vo_id",
     )

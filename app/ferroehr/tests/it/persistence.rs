@@ -45,12 +45,14 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // directly). ext: 0001_openehr_functions (functions incl. openehr_timestamp
     // + roles + grants) + 0002_tenant_context. ehr: 0001_baseline (all core
     // tables) + 0002_event_outbox + 0003_event_subscription +
-    // 0004_multitenancy + 0005_fhir_mapping + 0006_fhir_outbound_cursor.
-    assert_eq!((applied_ext, applied_ehr), (2, 6));
+    // 0004_multitenancy + 0005_fhir_mapping + 0006_fhir_outbound_cursor +
+    // 0007_cold_archive_tier.
+    assert_eq!((applied_ext, applied_ehr), (2, 7));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
-         WHERE table_schema = 'ehr' AND table_name <> '_sqlx_migrations' ORDER BY 1",
+         WHERE table_schema = 'ehr' AND table_type = 'BASE TABLE' \
+           AND table_name <> '_sqlx_migrations' ORDER BY 1",
     )
     .fetch_all(&pool)
     .await
@@ -86,6 +88,27 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "vo_version",
         ]
     );
+
+    // The cold archival tier (0007): one mirror per moved relation, plus the
+    // both-tier union views the whole-repository readers use. No openEHR spec
+    // governs storage tiering — our own design/extension.
+    let views: Vec<String> = sqlx::query_scalar(
+        "SELECT table_name FROM information_schema.tables \
+         WHERE table_schema = 'ehr' AND table_type = 'VIEW' ORDER BY 1",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("views");
+    assert_eq!(views, ["node_all", "vo_attestation_all", "vo_version_all"]);
+
+    let cold: Vec<String> = sqlx::query_scalar(
+        "SELECT table_name FROM information_schema.tables \
+         WHERE table_schema = 'cold' AND table_type = 'BASE TABLE' ORDER BY 1",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("cold tables");
+    assert_eq!(cold, ["node", "vo_attestation", "vo_version"]);
 }
 
 #[tokio::test]
