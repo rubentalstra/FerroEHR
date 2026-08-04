@@ -381,11 +381,11 @@ async fn extract_spec_flags_are_honoured() {
 }
 
 /// The `EXTRACT_SPEC` skeleton the criteria tests share: one entity, no
-/// `item_list`, the given criteria list (RM ehr_extract
+/// `item_list`, the given criteria list (RM `ehr_extract`
 /// `master04-common_package.adoc` §`EXTRACT_SPEC` — criteria "defines in the
 /// form of generic queries … which items are to be retrieved from each
 /// entity's record").
-fn criteria_spec(ehr: &str, criteria: Value) -> ExtractSpec {
+fn criteria_spec(ehr: &str, criteria: &Value) -> ExtractSpec {
     openehr_its::json::from_canonical_value(&json!({
         "_type": "EXTRACT_SPEC",
         "version_spec": {
@@ -434,7 +434,7 @@ async fn criteria_select_the_primary_set_ehr_bound() {
 
     let spec = criteria_spec(
         &ehr.to_string(),
-        json!([{
+        &json!([{
             "_type": "DV_PARSABLE",
             "value": "SELECT s/uid/value FROM EHR e CONTAINS EHR_STATUS s",
             "formalism": "AQL"
@@ -468,7 +468,7 @@ async fn criteria_in_a_foreign_formalism_are_refused() {
 
     let spec = criteria_spec(
         &ehr.to_string(),
-        json!([{ "_type": "DV_PARSABLE", "value": "irrelevant", "formalism": "xquery" }]),
+        &json!([{ "_type": "DV_PARSABLE", "value": "irrelevant", "formalism": "xquery" }]),
     );
     let err = svc
         .export_ehr_extracts(spec)
@@ -495,7 +495,7 @@ async fn criteria_that_do_not_parse_as_aql_are_refused() {
 
     let spec = criteria_spec(
         &ehr.to_string(),
-        json!([{ "_type": "DV_PARSABLE", "value": "THIS IS NOT AQL", "formalism": "aql" }]),
+        &json!([{ "_type": "DV_PARSABLE", "value": "THIS IS NOT AQL", "formalism": "aql" }]),
     );
     let err = svc
         .export_ehr_extracts(spec)

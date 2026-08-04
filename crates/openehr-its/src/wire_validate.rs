@@ -14,7 +14,7 @@
 //!   emitted downstream of all of them;
 //! - the undeclared-key refusal, which reads the generated declared-key table
 //!   ([`declared_fields`]) and renders the reader's own
-//!   [`JsonParseError`](crate::json::JsonParseError);
+//!   [`crate::json::JsonParseError`];
 //! - the entry points themselves ([`validate_rm_value`],
 //!   [`validate_rm_invariants`], [`validate_rm_invariants_as`],
 //!   [`validate_rm_invariants_relaxed_as`], [`validate_rm_value_typed`]), which
