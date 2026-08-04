@@ -44,6 +44,9 @@ pub fn engine_from_config(
 /// The loud slim-build refusal: a configuration that enables externalization
 /// on a binary compiled without the `multimedia` feature is a boot error,
 /// never a silent ignore.
+///
+/// # Errors
+/// The refusal message when `multimedia.enabled` is set.
 #[cfg(not(feature = "multimedia"))]
 pub fn require_disabled(cfg: &MultimediaConfig) -> Result<(), String> {
     if cfg.enabled {

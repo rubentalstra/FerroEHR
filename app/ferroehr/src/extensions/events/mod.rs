@@ -17,10 +17,11 @@ pub mod subscription;
 /// The loud slim-build refusal: a configuration that enables eventing on a
 /// binary compiled without the `events` cargo feature is a boot error,
 /// never a silent ignore.
+///
+/// # Errors
+/// The refusal message when `events.enabled` is set.
 #[cfg(not(feature = "events"))]
-pub fn require_disabled(
-    cfg: &crate::extensions::events::config::EventsConfig,
-) -> Result<(), String> {
+pub fn require_disabled(cfg: &config::EventsConfig) -> Result<(), String> {
     if cfg.enabled {
         return Err(
             "events.enabled = true, but this binary was built without the \

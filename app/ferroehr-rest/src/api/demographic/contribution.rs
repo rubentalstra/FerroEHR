@@ -59,7 +59,7 @@ pub(super) async fn run(
                 .await?;
             // Weak ETag (the contribution uid — the same identity the 201's
             // ETag carries) + Last-Modified from `audit.time_committed`,
-            // mirroring the EHR sibling's register-documented reading of the
+            // mirroring the EHR sibling's adjudicated reading of the
             // overview §"ETag and Last-Modified" SHOULD (a CONTRIBUTION is
             // immutable and uniquely identified; the released 200_CONTRIBUTION
             // declares neither header).

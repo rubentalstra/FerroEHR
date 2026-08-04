@@ -28,6 +28,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- Served OpenAPI descriptions no longer reference the internal conformance
+  register ("register-documented …"); each affected description states its
+  adjudicated handling with the released citation it already carried. Wire
+  behaviour is unchanged.
 - The documentation site's comparison chapter (and every page that echoed
   it) no longer frames EHRbase as "upstream": FerroEHR and EHRbase are
   presented as two independent open-source openEHR CDRs measured by the same
@@ -47,6 +51,21 @@ workflow refuses a tag that has no matching section here.
   slim CDR that compiles the integrations out entirely and refuses an
   enabled-but-unbuilt integration loudly at boot. Configuration sections
   are unchanged and stay in the one config tree.
+- **The typed FHIR R4B surface.** The ATNA `AuditEvent` the audit trail
+  stores and forwards, and the `Parameters`/`ValueSet` responses an external
+  terminology server answers with, are now built and read through a typed
+  FHIR R4B resource model (`fhir-model`, contained entirely in the
+  optional-integration crate behind its `fhir` feature) instead of
+  hand-written partial structs. The audit wire bytes are unchanged. The
+  terminology client is correspondingly stricter: a server response that is
+  not a valid R4B resource — for example a `$expand` result missing the
+  required `ValueSet.status` or `expansion.timestamp` — is now reported as an
+  upstream fault instead of being partially read, and its response cache
+  holds decoded results rather than raw JSON. A binary built with
+  `--no-default-features` refuses at startup when `audit.store`,
+  `audit.fhir_feed`, or an external terminology provider is configured; the
+  DICOM/syslog audit feed and the in-process terminology bundle stay
+  available.
 - The OPT 1.4 constraints that target computed RM functions (`EVENT.offset`,
   `DV_PROPORTION.is_integral`, the US-spelled `null_flavor`) are now
   visible as a typed per-template report of unenforceable constraints

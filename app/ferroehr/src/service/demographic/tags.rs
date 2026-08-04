@@ -231,7 +231,7 @@ impl FerroEhrService {
 /// configured system identifier (every
 /// `schemas/demographic/ItemTagOf<T>.yaml` example; no demographic class
 /// declares a `tags` containment, so the EHR side's `EHR.tags` anchor has no
-/// analogue here — the register carries the fixed handling).
+/// analogue here — a settled fixed handling).
 ///
 /// # Errors
 /// [`VersionIdError`] when the configured `system_id` or the stored tag target

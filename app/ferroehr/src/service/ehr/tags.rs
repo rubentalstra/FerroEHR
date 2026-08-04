@@ -244,7 +244,7 @@ impl FerroEhrService {
         // covers "when the `uid_based_id` does not exist", the collection is
         // EHR-scoped ("owned by EHR identified by `ehr_id`"), and the route
         // family is kind-checked — a composition-route DELETE must not touch
-        // an EHR_STATUS container's tags (register-documented).
+        // an EHR_STATUS container's tags (adjudicated).
         self.ensure_tag_target(ehr_id, target_vo_id, target_version, target_type)
             .await?;
         if !crate::storage::tag_repo::delete_tag(
@@ -412,7 +412,7 @@ impl FerroEhrService {
         let (vo_id, version) = parse_tag_target(&uid_based_id)?;
         // The released 404 trigger — "when the `uid_based_id` does not
         // exist" — plus the EHR scope and the route-kind discipline
-        // (register-documented): the guard runs on the GET too; an existing
+        // (adjudicated): the guard runs on the GET too; an existing
         // target with no tags stays an empty 200 list.
         self.ensure_tag_target(an_ehr_id, vo_id, version.as_ref(), target_type)
             .await?;

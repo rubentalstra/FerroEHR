@@ -152,7 +152,7 @@ pub(super) async fn run(
             // (overview §"ETag and Last-Modified": both SHOULD accompany
             // resources with "versioning or unique state identifiers"; the
             // released 200_CONTRIBUTION declares neither — our
-            // register-documented reading of the SHOULD's reach).
+            // adjudicated reading of the SHOULD's reach).
             let meta = {
                 let mut m = ferroehr::service::response::ResourceMeta::new(
                     p.ehr_id.clone(),

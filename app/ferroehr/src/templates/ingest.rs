@@ -43,7 +43,7 @@ use crate::service::error::ServiceError;
 /// is a semantic error on the artefact (the overview status table's `422` row,
 /// `docs/specs/openehr/ITS-REST/specifications/docs/overview/
 /// Requests_and_responses.md` §HTTP status codes; no template operation
-/// declares `422`, so the semantic branch is register-adjudicated).
+/// declares `422`, so the semantic branch is the adjudicated handling).
 ///
 /// # Errors
 ///

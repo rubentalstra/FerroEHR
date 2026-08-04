@@ -130,7 +130,7 @@ fn stored_body_request(
     // execution requests SHOULD support at least the following parameters"),
     // so the URL forms are accepted on the POSTs too; a value carried in BOTH
     // places must agree — a conflict is a 400 (the same rule the `ehr_id`
-    // register-documented).
+    // adjudicated).
     let offset = response::merge_body_and_url_i64(parsed.offset, q, "offset")?;
     let fetch = response::merge_body_and_url_i64(parsed.fetch, q, "fetch")?;
     let parameters =

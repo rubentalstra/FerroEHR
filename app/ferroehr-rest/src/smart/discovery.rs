@@ -321,12 +321,12 @@ fn discovery_response(body: Bytes) -> Response {
 /// /ferroehr/rest/.well-known/smart-configuration`; the openEHR SMART sub-spec
 /// `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master04-service_discovery.adoc`
 /// is `:spec_status: DEVELOPMENT` — a release-pinned reporting qualifier, per
-/// the conformance register).
+/// a settled adjudication).
 ///
 /// Served **pre-auth** (public): the *Application* fetches this document from
 /// the launch `iss` BEFORE any OAuth exchange (master04 §Service Discovery;
 /// master07 §SMART Authorization Flow — the posture inference is
-/// register-documented, the text never states it). Config-gated: when SMART is
+/// adjudicated, the text never states it). Config-gated: when SMART is
 /// disabled the [`router`] is empty and the path is absent (a router `404`,
 /// zero wire drift). A configured `smart.platform_base_url` moves the served
 /// path; [`openapi`] re-homes this declaration to match. The **live** route
