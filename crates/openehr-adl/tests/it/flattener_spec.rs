@@ -557,3 +557,201 @@ fn flat_form_reprints_and_reparses() {
         );
     }
 }
+
+// ── tuple overlay: merge by member-attribute group ──────────────────────────
+//
+// NOTE: no released text states whether a child node's `C_ATTRIBUTE_TUPLE` set
+// replaces or merges with the flat parent's (`AOM2/master08` §Flattening names
+// no second-order case) — group-keyed merge is our own design.
+
+/// A level-0 `ELEMENT` whose `DV_QUANTITY` value carries two tuples over
+/// disjoint member-attribute groups.
+const TUPLE_PARENT: &str = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-ELEMENT.tuple_overlay_parent.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"unmanaged\">
+
+definition
+\tELEMENT[id1] matches {
+\t\tvalue matches {
+\t\t\tDV_QUANTITY[id2] matches {
+\t\t\t\t[magnitude, units] matches {
+\t\t\t\t\t[{|>=50.0|}, {\"mm[Hg]\"}],
+\t\t\t\t\t[{|>=68.0|}, {\"cm[H20]\"}]
+\t\t\t\t}
+\t\t\t\t[precision, magnitude_status] matches {
+\t\t\t\t\t[{2}, {\"=\"}]
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1\"] = <text=<\"element\"> description=<\"element\">>
+\t\t\t[\"id2\"] = <text=<\"quantity\"> description=<\"quantity\">>
+\t\t>
+\t>
+";
+
+/// A level-1 child of [`TUPLE_PARENT`] restating ONLY the `[magnitude, units]`
+/// group (narrowed to one row).
+const TUPLE_CHILD_SAME_GROUP: &str = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-ELEMENT.tuple_overlay_child.v1.0.0
+
+specialize
+\topenEHR-EHR-ELEMENT.tuple_overlay_parent.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"unmanaged\">
+
+definition
+\tELEMENT[id1.1] matches {
+\t\t/value matches {
+\t\t\tDV_QUANTITY[id2] matches {
+\t\t\t\t[magnitude, units] matches {
+\t\t\t\t\t[{|>=50.0|}, {\"mm[Hg]\"}]
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1.1\"] = <text=<\"element\"> description=<\"element\">>
+\t\t>
+\t>
+";
+
+/// A level-1 child of [`TUPLE_PARENT`] adding a group the parent's `id2` node
+/// carries no tuple for.
+const TUPLE_CHILD_NEW_GROUP: &str = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-ELEMENT.tuple_overlay_child2.v1.0.0
+
+specialize
+\topenEHR-EHR-ELEMENT.tuple_overlay_parent.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"unmanaged\">
+
+definition
+\tELEMENT[id1.1] matches {
+\t\t/value matches {
+\t\t\tDV_QUANTITY[id2] matches {
+\t\t\t\t[accuracy, accuracy_is_percent] matches {
+\t\t\t\t\t[{|0.0..1.0|}, {True}]
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1.1\"] = <text=<\"element\"> description=<\"element\">>
+\t\t>
+\t>
+";
+
+/// Flatten `child_src` against `parent_src` alone.
+fn flatten_pair(parent_src: &str, child_src: &str) -> Archetype {
+    let mut repo = ArchetypeRepository::new();
+    repo.insert(parse_artefact(parent_src, Dialect::Adl2).expect("parent parses"));
+    let child = parse_artefact(child_src, Dialect::Adl2).expect("child parses");
+    flat_form(&child, &repo).expect("flatten")
+}
+
+/// The `(sorted member names, row count)` of every tuple on the flat form's
+/// `value` node, sorted by group for a stable comparison.
+fn value_tuple_groups(flat: &Archetype) -> Vec<(Vec<String>, usize)> {
+    let obj = object_at(root_def(flat), "value").expect("value node resolves");
+    let CComplexObject::CComplexObject(data) = obj else {
+        panic!("value is a plain complex object");
+    };
+    let mut groups: Vec<(Vec<String>, usize)> = data
+        .attribute_tuples
+        .iter()
+        .flatten()
+        .map(|t| {
+            let mut names: Vec<String> = t
+                .members
+                .iter()
+                .flatten()
+                .map(|m| m.rm_attribute_name.clone())
+                .collect();
+            names.sort();
+            (names, t.tuples.iter().flatten().count())
+        })
+        .collect();
+    groups.sort();
+    groups
+}
+
+#[test]
+fn tuple_overlay_retains_a_parent_tuple_over_a_disjoint_group() {
+    // The child restates only `[magnitude, units]`; the parent's
+    // `[precision, magnitude_status]` tuple constrains a disjoint attribute
+    // group, so nothing in the child redefines it and it survives the overlay
+    // with its row intact.
+    let flat = flatten_pair(TUPLE_PARENT, TUPLE_CHILD_SAME_GROUP);
+    let groups = value_tuple_groups(&flat);
+    assert!(
+        groups
+            .iter()
+            .any(|(names, rows)| names == &["magnitude_status", "precision"] && *rows == 1),
+        "the disjoint parent group survives: {groups:?}"
+    );
+    assert_eq!(groups.len(), 2, "both groups present: {groups:?}");
+}
+
+#[test]
+fn tuple_overlay_replaces_the_parent_tuple_over_the_same_group() {
+    // `ADL2/master09.05` §Tuple Redefinition: a child narrows a tuple by
+    // restating that group's whole row list, so the parent's two
+    // `[magnitude, units]` rows are replaced by the child's single row.
+    let flat = flatten_pair(TUPLE_PARENT, TUPLE_CHILD_SAME_GROUP);
+    let groups = value_tuple_groups(&flat);
+    assert!(
+        groups
+            .iter()
+            .any(|(names, rows)| names == &["magnitude", "units"] && *rows == 1),
+        "the same group is replaced, not unioned: {groups:?}"
+    );
+}
+
+#[test]
+fn tuple_overlay_appends_a_group_the_parent_does_not_carry() {
+    // A child tuple over a group with no parent counterpart is a new
+    // second-order constraint the conformance functions leave unrefuted
+    // (`AOM2/master04.5` §Conformance semantics: `C_ATTRIBUTE_TUPLE` — no
+    // corresponding parent tuple), so it joins the inherited groups.
+    let flat = flatten_pair(TUPLE_PARENT, TUPLE_CHILD_NEW_GROUP);
+    let groups = value_tuple_groups(&flat);
+    assert_eq!(
+        groups
+            .iter()
+            .map(|(names, _)| names.join(","))
+            .collect::<Vec<_>>(),
+        [
+            "accuracy,accuracy_is_percent",
+            "magnitude,units",
+            "magnitude_status,precision"
+        ],
+        "all three groups present: {groups:?}"
+    );
+}

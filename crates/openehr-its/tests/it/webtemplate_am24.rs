@@ -30,6 +30,8 @@ use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::create_opt;
 use openehr_adl::parse::Dialect;
+use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
 use openehr_its::flat::validation::validate_archetype_conformance;
 use openehr_its::flat::webtemplate::{
@@ -558,4 +560,99 @@ fn am24_template_filler_subtree_reaches_the_web_template() {
         msgs.is_empty(),
         "the Complete example must satisfy its own template, got {msgs:?}"
     );
+}
+
+/// The slot-pattern probe reads the assertion's EXPRESSION TREE, not its string
+/// form: `ASSERTION.expression` is the "Root of expression tree" and
+/// `string_expression` only its "String form of expression"
+/// (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package).
+///
+/// The fixture's slot carries three includes — a `∈`-spelled delimited regex, a
+/// space-padded `matches` one, and a literal-value constraint carrying no regex
+/// at all (`ADL2/master04.3` §Slots based on Lexical Archetype Identifiers +
+/// `AOM2/master04.5` §`C_STRING`) — so a source-text scan for `"matches {/"`
+/// would see one of three.
+const SLOT_ARCHETYPE: &str = r#"archetype (adl_version=2.0.6; rm_release=1.0.2; generated)
+    openEHR-EHR-COMPOSITION.wt_slot_probe.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+
+definition
+    COMPOSITION[id1] matches {    -- Slot probe
+        content cardinality matches {0..*; unordered} matches {
+            allow_archetype OBSERVATION[id2] occurrences matches {0..*} ∈ {
+                include
+                    archetype_id/value ∈ {/openEHR-EHR-OBSERVATION\.alpha\.v1/}
+                    archetype_id/value    matches    {/openEHR-EHR-OBSERVATION\.beta\.v1/}
+                    archetype_id/value matches {"openEHR-EHR-OBSERVATION.gamma.v1"}
+            }
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <text = <"Slot probe">; description = <"A composition with a slot">>
+            ["id2"] = <text = <"Slot">; description = <"The probed slot">>
+        >
+    >
+"#;
+
+#[test]
+fn am24_slot_patterns_come_from_the_assertion_tree() {
+    let archetype = parse_artefact(SLOT_ARCHETYPE, Dialect::Adl2).expect("parse ADL2");
+    let mut opt = create_opt(&archetype, &ArchetypeRepository::new()).expect("create_opt");
+    // Strip every `string_expression`: the attribute is optional in the model
+    // and only a serialisation of the tree, so a probe reading the tree is
+    // unaffected while a string scan goes blind.
+    strip_string_expressions(&mut opt.definition);
+    let wt = build_web_template_am24(&opt).expect("build am24 web template");
+
+    let mut includes: Vec<String> = wt
+        .tree
+        .closed_attributes
+        .iter()
+        .flat_map(|a| a.slots.iter())
+        .flat_map(|s| s.includes.iter().cloned())
+        .collect();
+    includes.sort();
+    assert_eq!(
+        includes,
+        [
+            r"openEHR-EHR-OBSERVATION\.alpha\.v1",
+            r"openEHR-EHR-OBSERVATION\.beta\.v1"
+        ],
+        "both regex includes are read from the tree, whatever their source spelling; \
+         the literal-value include carries no regex and is not invented into one"
+    );
+}
+
+/// Clear `ASSERTION.string_expression` on every `ARCHETYPE_SLOT` in the tree.
+fn strip_string_expressions(cco: &mut CComplexObject) {
+    let attributes = match cco {
+        CComplexObject::CComplexObject(d) => d.attributes.as_mut(),
+        CComplexObject::CArchetypeRoot(r) => r.attributes.as_mut(),
+    };
+    for attr in attributes.into_iter().flatten() {
+        for child in attr.children.iter_mut().flatten() {
+            match child {
+                CObject::ArchetypeSlot(slot) => {
+                    for a in slot
+                        .includes
+                        .iter_mut()
+                        .flatten()
+                        .chain(slot.excludes.iter_mut().flatten())
+                    {
+                        a.string_expression = None;
+                    }
+                }
+                CObject::CComplexObject(inner) => strip_string_expressions(inner),
+                _ => {}
+            }
+        }
+    }
 }

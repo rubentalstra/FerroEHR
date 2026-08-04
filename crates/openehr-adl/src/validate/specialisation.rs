@@ -950,7 +950,10 @@ mod tests {
     /// The parent CLUSTER for the hand-written specialisation cases (level 0 —
     /// its own flat form). It carries: `id2` a single-occurrence `ELEMENT` whose
     /// `value` is a `DV_QUANTITY`; `id4` a multiple-occurrence `ELEMENT` with a
-    /// `DV_TEXT` value-list leaf; an open slot `id6` and a closed slot `id7`.
+    /// `DV_TEXT` value-list leaf; an open slot `id6` whose one `include` is a
+    /// readable archetype-id regex; an open slot `id9` whose `include` is a
+    /// literal-value constraint the regex reading cannot express; and a closed
+    /// slot `id8`.
     const PARENT: &str = "\
 archetype (adl_version=2.0.5; rm_release=1.0.2)
 \topenEHR-EHR-CLUSTER.p2_parent.v1.0.0
@@ -974,6 +977,10 @@ definition
 \t\t\t\tinclude
 \t\t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.foo.*\\.v1/}
 \t\t\t}
+\t\t\tallow_archetype CLUSTER[id9] matches {
+\t\t\t\tinclude
+\t\t\t\t\tarchetype_id/value matches {\"openEHR-EHR-CLUSTER.baz.v1\"}
+\t\t\t}
 \t\t\tallow_archetype CLUSTER[id8] closed
 \t\t}
 \t}
@@ -986,6 +993,7 @@ terminology
 \t\t\t[\"id4\"] = <text=<\"\"> description=<\"\">>
 \t\t\t[\"id6\"] = <text=<\"\"> description=<\"\">>
 \t\t\t[\"id8\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id9\"] = <text=<\"\"> description=<\"\">>
 \t\t>
 \t>
 ";
@@ -1025,6 +1033,14 @@ terminology
         assert!(
             raised.iter().any(|c| c == code),
             "expected {code}, raised {raised:?}"
+        );
+    }
+
+    fn assert_not_raised(def: &str, terms: &str, code: &str) {
+        let raised = codes(def, terms);
+        assert!(
+            !raised.iter().any(|c| c == code),
+            "expected no {code}, raised {raised:?}"
         );
     }
 
@@ -1140,6 +1156,51 @@ terminology
         assert_raises(
             "\t\t/items matches { allow_archetype CLUSTER[id6] matches {\n\
              \t\t\tinclude\n\t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.bar\\.v1/}\n\t\t} }",
+            "",
+            "VDSSM",
+        );
+    }
+
+    #[test]
+    fn vdssm_widening_literal_after_a_non_regex_include_is_still_caught() {
+        // A slot's admitted set is the union over its `include` assertions
+        // (`ADL2/master04.3` §Archetype Slots), so each is judged on its own: the
+        // first include's constraint is a literal value the regex reading cannot
+        // express (undecidable, skipped), and the second still widens the parent
+        // slot (`master04.5` §`ARCHETYPE_SLOT`, VDSSM).
+        assert_raises(
+            "\t\t/items matches { allow_archetype CLUSTER[id6] matches {\n\
+             \t\t\tinclude\n\t\t\t\tarchetype_id/value matches {\"openEHR-EHR-CLUSTER.qux.v1\"}\n\
+             \t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.bar\\.v1/}\n\t\t} }",
+            "",
+            "VDSSM",
+        );
+    }
+
+    #[test]
+    fn vdssm_a_non_regex_include_is_not_itself_a_widening() {
+        // The same slot narrowed to `foo1` (admitted by the parent's `foo.*`) plus
+        // an include the regex reading cannot express: the unreadable assertion
+        // contributes an unknown share of the child's set, which proves nothing —
+        // VDSSM refutes only what it can decide (`master04.5` §`ARCHETYPE_SLOT`).
+        assert_not_raised(
+            "\t\t/items matches { allow_archetype CLUSTER[id6] matches {\n\
+             \t\t\tinclude\n\t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.foo1\\.v1/}\n\
+             \t\t\t\tarchetype_id/value matches {\"openEHR-EHR-CLUSTER.qux.v1\"}\n\t\t} }",
+            "",
+            "VDSSM",
+        );
+    }
+
+    #[test]
+    fn vdssm_an_unreadable_parent_include_refutes_nothing() {
+        // Slot id9's parent `include` is a literal value constraint, so the
+        // admitted superset is unknown — an unknown superset cannot establish that
+        // the child admits something outside it (`master04.5` §`ARCHETYPE_SLOT`,
+        // VDSSM: a PROPER SUBSET of the parent's matched set).
+        assert_not_raised(
+            "\t\t/items matches { allow_archetype CLUSTER[id9] matches {\n\
+             \t\t\tinclude\n\t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.other\\.v1/}\n\t\t} }",
             "",
             "VDSSM",
         );
