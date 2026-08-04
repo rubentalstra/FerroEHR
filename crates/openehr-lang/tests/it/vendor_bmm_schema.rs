@@ -14,6 +14,13 @@
 //! deliberately defective schemas, and this table records which stage of the
 //! openEHR-specified pipeline each defect surfaces at.
 //!
+//! A defect that breaks no `BMM_*` construction surfaces ABOVE the pipeline
+//! instead, in the collecting model-validity pass
+//! (`openehr_lang::bmm_persistence::validate`); its second table
+//! ([`finding_cases`], plus [`PINNED_FINDINGS`] for the openEHR component
+//! schemas this project pins) is adjudicated the same way, and a schema absent
+//! from it must validate clean.
+//!
 //! Spec oracle: `docs/specs/openehr/LANG/docs/bmm_persistence/`
 //! (`master02-overview.adoc` §Conceptual Approach for the three stages,
 //! `master04-syntax.adoc` for the ODIN form) plus the class docs under
@@ -39,6 +46,7 @@ use openehr_lang::bmm_persistence::include_resolution::resolve_includes;
 use openehr_lang::bmm_persistence::p_bmm_class::PBmmClass;
 use openehr_lang::bmm_persistence::p_bmm_schema::PBmmSchema;
 use openehr_lang::bmm_persistence::reader::read_schema;
+use openehr_lang::bmm_persistence::validate::validate_schema;
 
 /// The pipeline stage an outcome is observed at
 /// (`master02-overview.adoc` §Conceptual Approach).
@@ -249,17 +257,17 @@ fn cases() -> Vec<Case> {
         Case {
             path: "bmm/org/openehr/bmm/v2/persistence/validation/duplicate_class.bmm",
             outcome: Outcome::Model(3),
-            adjudication: "lists ParentType1 twice in one package; a duplicate entry in BMM_PACKAGE.classes is not a construction failure, so the model materialises",
+            adjudication: "lists ParentType1 twice in one package; a duplicate entry in BMM_PACKAGE.classes is not a construction failure, so the model materialises and the containment defect is a collected finding instead (see finding_cases)",
         },
         Case {
             path: "bmm/org/openehr/bmm/v2/persistence/validation/illegal_sibling_packages.bmm",
             outcome: Outcome::Model(3),
-            adjudication: "sibling packages ParentPackage / ParentPackages; no P_BMM rule forbids a name that is another's prefix, so the model materialises",
+            adjudication: "sibling packages ParentPackage / ParentPackages. There is no prefix prohibition to violate: master05-core-model.adoc §Packages says package paths 'are only used in BMM to specify package structures in the serialised form in an efficient way' and 'are not used as namespaces as in UML' — the rule the section states is that all CLASS names be unique, which these two packages do not breach. The model materialises and validates clean",
         },
         Case {
             path: "bmm/org/openehr/bmm/v2/persistence/validation/overridden_property_non_conformance.bmm",
             outcome: Outcome::Model(4),
-            adjudication: "ChildType1 redefines property_1 to a non-conformant type; conformance is a validation question above the transform, so the model materialises",
+            adjudication: "ChildType1 redefines property_1 to a non-conformant type; conformance is a validation question above the transform, so the model materialises and the defect is a collected finding instead (see finding_cases)",
         },
         Case {
             path: "bmm/org/openehr/bmm/v2/persistence/validation/include_not_found.bmm",
@@ -401,6 +409,111 @@ fn include_map(cases: &[Case]) -> BTreeMap<String, PBmmSchema> {
     out
 }
 
+/// One row of the model-validity expectation table.
+struct FindingCase {
+    /// Path relative to `tests/vendor`.
+    path: &'static str,
+    /// Every finding's rendered text, in the order the pass emits them.
+    findings: &'static [&'static str],
+    /// The spec ground for the findings. Documentation for the reader; not
+    /// asserted.
+    #[expect(dead_code, reason = "the adjudication rationale documents the row")]
+    adjudication: &'static str,
+}
+
+/// The adjudicated `validate_schema` findings of every vendored schema that
+/// materialises a model.
+///
+/// A schema that materialises and is ABSENT from this table must validate
+/// clean — [`every_materialising_schema_reaches_its_adjudicated_findings`]
+/// asserts that, so a new finding anywhere in the corpus fails the build.
+fn finding_cases() -> Vec<FindingCase> {
+    vec![
+        FindingCase {
+            path: "bmm/openehr/openEHR_aom_206.bmm",
+            findings: &[
+                "class `TRANSLATION_DETAILS` is contained within 2 package listing(s) (default, org.openehr.base.base_types.resource); a class must be contained within exactly one package",
+                "class `AUTHORED_RESOURCE` is contained within 2 package listing(s) (default, org.openehr.base.base_types.resource); a class must be contained within exactly one package",
+                "class `RESOURCE_DESCRIPTION` is contained within 2 package listing(s) (default, org.openehr.base.base_types.resource); a class must be contained within exactly one package",
+                "class `RESOURCE_DESCRIPTION_ITEM` is contained within 2 package listing(s) (default, org.openehr.base.base_types.resource); a class must be contained within exactly one package",
+            ],
+            adjudication: "this schema (its own header says `auto-generated experiment`, `autogenerated as implemented in Archie`) lists four BASE classes in its flat `default` package AND includes openehr_base_1.1.0, which lists the same four in org.openehr.base.base_types.resource; after the merge each is contained twice, against master05-core-model.adoc §Packages ('every class is contained within exactly one package')",
+        },
+        FindingCase {
+            path: "bmm/cimi/CIMI_RM_CLINICAL.v.0.0.2.bmm",
+            findings: &[
+                "class `BaseAssertion` redefines property `name` as `CODED_TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `ContactInformation` redefines property `name` as `PersonName`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `MedicationOrder` redefines property `prnReason` as `List<Justification>`, which does not conform to `List<CODED_TEXT>` as declared by `Request`",
+                "class `Qualification` redefines property `name` as `TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `Street` redefines property `name` as `CODED_TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+            ],
+            adjudication: "CIMI's LOCATABLE declares `name: String` while these descendants redefine it to the DATA_VALUE-rooted TEXT hierarchy, which does not conform to String under master06-core-types.adoc §Type Conformance; `prnReason` narrows the contained type to a non-descendant the same way",
+        },
+        FindingCase {
+            path: "odin/odin/CIMI_RM_CLINICAL.v.0.0.1.bmm",
+            findings: &[
+                "class `Assertion` redefines property `name` as `CODED_TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `ContactInformation` redefines property `name` as `PersonName`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `MaterialEntity` redefines property `name` as `TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `Procedure` redefines property `name` as `CODED_TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `Qualification` redefines property `name` as `TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+                "class `Street` redefines property `name` as `CODED_TEXT`, which does not conform to `String` as declared by `LOCATABLE`",
+            ],
+            adjudication: "the 0.0.1 generation of the same CIMI defect set",
+        },
+        FindingCase {
+            path: "bmm/org/openehr/bmm/v2/persistence/validation/duplicate_class.bmm",
+            findings: &[
+                "class `ParentType1` is contained within 2 package listing(s) (ParentPackage, ParentPackage); a class must be contained within exactly one package",
+            ],
+            adjudication: "ParentPackage lists ParentType1 twice, so the class is contained twice — master05-core-model.adoc §Packages. The transform still materialises the model (a duplicate list entry breaks no BMM_* construction), which is why this is a collected finding rather than one of the fail-fast refusals",
+        },
+        FindingCase {
+            path: "bmm/org/openehr/bmm/v2/persistence/validation/overridden_property_non_conformance.bmm",
+            findings: &[
+                "class `ChildType1` redefines property `property_1` as `ParentType1`, which does not conform to `String` as declared by `ParentType1`",
+            ],
+            adjudication: "ChildType1 redefines the inherited `property_1: String` as `ParentType1`, which has only the implicit `Any` ancestor and so fails the base-class test of master06-core-types.adoc §Type Conformance",
+        },
+    ]
+}
+
+/// The adjudicated findings of the openEHR component schemas this project
+/// pins, as ODIN.
+///
+/// Only the pinned generations that MATERIALISE from
+/// [`CODEGEN_VENDOR_ODIN`] are listed; the table is explicit (never a filter)
+/// so a schema dropping out of it is a visible change.
+const PINNED_FINDINGS: &[(&str, &[&str], &str)] = &[
+    (
+        "BASE/odin/openehr_base_1.3.0.bmm",
+        &[],
+        "the pinned BASE generation is self-contained and model-valid",
+    ),
+    (
+        "RM/odin/openehr_rm_1.2.0.bmm",
+        &[
+            "class `AUTHORED_RESOURCE` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+            "class `RESOURCE_DESCRIPTION` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+            "class `TRANSLATION_DETAILS` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+            "class `RESOURCE_DESCRIPTION_ITEM` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+            "class `CODE_PHRASE` is contained within 2 package listing(s) (org.openehr.base.foundation_types.terminology, org.openehr.rm.data_types.text); a class must be contained within exactly one package",
+        ],
+        "RM 1.2.0 includes openehr_base_1.3.0 and both schemas list these five classes in a package of their own, so each is contained twice after the merge — master05-core-model.adoc §Packages",
+    ),
+    (
+        "AM/odin/openehr_am_1.4.0.bmm",
+        &[
+            "class `Cardinality` is contained within 2 package listing(s) (org.openehr.am.aom14.archetype.constraint_model, org.openehr.base.foundation_types.interval); a class must be contained within exactly one package",
+            "class `CARDINALITY` is contained within 2 package listing(s) (org.openehr.am.aom14.archetype.constraint_model, org.openehr.base.foundation_types.interval); a class must be contained within exactly one package",
+            "2 class definitions share one name (Cardinality, CARDINALITY); all classes in a BMM model must be uniquely named",
+            "class `ARCHETYPE` redefines property `uid` as `HIER_OBJECT_ID`, which does not conform to `UUID` as declared by `AUTHORED_RESOURCE`",
+        ],
+        "AM 1.4.0's own CARDINALITY and the included BASE 1.3.0's Cardinality are DIFFERENT classes whose names are equal under master05-core-model.adoc §Naming Convention ('the class name \"Hashable\" refers to the same class as \"HASHABLE\"'), so §Packages' uniqueness rule is violated and the two containment rows are that collision seen through the same case-insensitive fold; separately ARCHETYPE redefines the inherited `uid: UUID` as HIER_OBJECT_ID, which is not a UUID descendant",
+    ),
+];
+
 /// Runs the three stages over `path` and returns the observed outcome, or the
 /// stage + error it failed at.
 fn run(
@@ -446,6 +559,93 @@ fn every_vendored_schema_reaches_its_adjudicated_outcome() {
                 case.path
             ),
         }
+    }
+}
+
+#[test]
+fn every_materialising_schema_reaches_its_adjudicated_findings() {
+    // master05-core-model.adoc §Packages: "A model validity checker ensures
+    // that every class is contained within exactly one package"; "all classes
+    // in a BMM model should be uniquely named".
+    let cases = cases();
+    let includes = include_map(&cases);
+    let expected = finding_cases();
+    for case in &cases {
+        let Ok(schema) = read_schema(&source(case.path)) else {
+            continue;
+        };
+        let Ok(resolved) = resolve_includes(schema, &includes) else {
+            continue;
+        };
+        let Ok(model) = create_bmm_model(&resolved) else {
+            continue;
+        };
+        let observed: Vec<String> = validate_schema(&resolved, &model)
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        let claimed: &[&str] = expected
+            .iter()
+            .find(|row| row.path == case.path)
+            .map_or(&[], |row| row.findings);
+        assert_eq!(
+            observed, claimed,
+            "{}: model-validity findings changed — re-adjudicate before updating",
+            case.path
+        );
+    }
+}
+
+#[test]
+fn the_finding_table_names_only_schemas_that_materialise() {
+    let paths: Vec<&str> = cases().iter().map(|case| case.path).collect();
+    for row in finding_cases() {
+        assert!(
+            paths.contains(&row.path),
+            "{}: the finding table names a file the corpus table does not",
+            row.path
+        );
+        assert!(
+            !row.findings.is_empty(),
+            "{}: a clean schema is recorded by ABSENCE, not an empty row",
+            row.path
+        );
+    }
+}
+
+#[test]
+fn the_pinned_openehr_odin_schemas_reach_their_adjudicated_findings() {
+    // The schemas docs/VERSIONS.md pins, validated as models rather than just
+    // read: BASE 1.3.0 is clean, and the RM 1.2.0 + AM 1.4.0 findings are
+    // genuine §Packages violations of the released schemas, adjudicated in
+    // PINNED_FINDINGS.
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(CODEGEN_VENDOR_ODIN);
+    let read_pinned = |file: &str| -> PBmmSchema {
+        let full = root.join(file);
+        let src = std::fs::read_to_string(&full)
+            .unwrap_or_else(|e| panic!("read {}: {e}", full.display()));
+        read_schema(&src).unwrap_or_else(|e| panic!("{file}: the pinned schema reads: {e}"))
+    };
+    let mut available: BTreeMap<String, PBmmSchema> = BTreeMap::new();
+    for (file, _, _) in PINNED_FINDINGS {
+        let schema = read_pinned(file);
+        available.insert(schema.schema_id(), schema);
+    }
+    for (file, claimed, _) in PINNED_FINDINGS {
+        let schema = read_pinned(file);
+        let id = schema.schema_id();
+        let resolved = resolve_includes(schema, &available)
+            .unwrap_or_else(|e| panic!("{id}: inclusion resolution: {e}"));
+        let model =
+            create_bmm_model(&resolved).unwrap_or_else(|e| panic!("{id}: materialisation: {e}"));
+        let observed: Vec<String> = validate_schema(&resolved, &model)
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        assert_eq!(
+            observed, *claimed,
+            "{id}: model-validity findings changed — re-adjudicate before updating"
+        );
     }
 }
 

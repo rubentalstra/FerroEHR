@@ -29,7 +29,7 @@
 //! * **Generic-substituted properties.** Where a class binds an ancestor's
 //!   formal parameter, the ancestor's properties typed by that parameter
 //!   reappear in the descendant with the bound type and
-//!   `is_synthesised_generic` set — [`synthesise_generic_properties`].
+//!   `is_synthesised_generic` set (`synthesise_generic_properties`).
 //!
 //! Three boundaries are load-bearing and stated here rather than left implicit:
 //!
