@@ -15,7 +15,7 @@ never in a parallel design layer.)*
 
 | Path | What it is | Authoritative for |
 |---|---|---|
-| root `ROADMAP.md` | The forward product roadmap | where the product goes next |
+| The [FerroEHR Roadmap board](https://github.com/rubentalstra/FerroEHR/projects) | The public direction + live-status view over the tracker (`.claude/rules/project-board.md`; the former root `ROADMAP.md` was retired 2026-08-04) | where the product goes next |
 | GitHub Issues (`gh issue list --state open`) | The open-items tracker (root `CLAUDE.md` §Issue workflow) | what's open + what's active (pinned = current focus) |
 | Closed issues + PR descriptions + `CHANGELOG.md` | The build record (the former `PROGRESS.md` is retired — its content lives in git history) | the historical record of what shipped |
 | The code itself (router → handler → service → SQL) | Per-endpoint call chains — there is no standing endpoint map (the former `endpoint-map.md` was deleted 2026-07-26; a standing map goes stale) | navigation + optimization |
