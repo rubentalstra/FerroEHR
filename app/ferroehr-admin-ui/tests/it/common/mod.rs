@@ -14,11 +14,11 @@ use std::time::Duration;
 use thirtyfour::prelude::*;
 
 /// Everything a journey needs.
-pub struct Harness {
+pub(crate) struct Harness {
     /// The `WebDriver` session.
-    pub driver: WebDriver,
+    pub(crate) driver: WebDriver,
     /// The console origin (`http://…`).
-    pub base: String,
+    pub(crate) base: String,
     shots_dir: String,
     journey: &'static str,
 }
@@ -28,7 +28,7 @@ pub struct Harness {
     clippy::disallowed_methods,
     reason = "the E2E harness is configured by the environment the CI job / scripts/ui-e2e.sh exports; there is no console config tree on the test side"
 )]
-pub fn env(name: &str) -> Option<String> {
+pub(crate) fn env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
 }
 
@@ -39,7 +39,7 @@ impl Harness {
     /// # Panics
     /// When the stack env is set but the browser session cannot start —
     /// that IS a failure, not a skip.
-    pub async fn start(journey: &'static str) -> Option<Self> {
+    pub(crate) async fn start(journey: &'static str) -> Option<Self> {
         let (Some(base), Some(webdriver_url)) =
             (env("UI_E2E_BASE_URL"), env("UI_E2E_WEBDRIVER_URL"))
         else {
@@ -77,7 +77,7 @@ impl Harness {
     ///
     /// # Panics
     /// On navigation failure (journeys are assertive end-to-end).
-    pub async fn goto(&self, path: &str) {
+    pub(crate) async fn goto(&self, path: &str) {
         // Sweep the console BEFORE leaving the current page: a SEVERE entry
         // is attributed to the page that produced it, not discovered by the
         // end-of-journey sweep with no locality (`get_log` drains, so the
@@ -114,7 +114,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the element never appears — with the selector in the message.
-    pub async fn wait_css(&self, css: &str) -> WebElement {
+    pub(crate) async fn wait_css(&self, css: &str) -> WebElement {
         match self
             .driver
             .query(By::Css(css))
@@ -143,7 +143,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the stack env is set but the browser session cannot start.
-    pub async fn start_without_javascript(journey: &'static str) -> Option<Self> {
+    pub(crate) async fn start_without_javascript(journey: &'static str) -> Option<Self> {
         let (Some(base), Some(webdriver_url)) =
             (env("UI_E2E_BASE_URL"), env("UI_E2E_WEBDRIVER_URL"))
         else {
@@ -185,7 +185,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the URL still matches after 15 s.
-    pub async fn wait_url_not_contains(&self, fragment: &str) {
+    pub(crate) async fn wait_url_not_contains(&self, fragment: &str) {
         for _ in 0..75 {
             let url = self.driver.current_url().await.expect("current url");
             if !url.as_str().contains(fragment) {
@@ -202,7 +202,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the element never appears.
-    pub async fn wait_xpath(&self, xpath: &str) -> WebElement {
+    pub(crate) async fn wait_xpath(&self, xpath: &str) -> WebElement {
         match self
             .driver
             .query(By::XPath(xpath))
@@ -229,7 +229,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the URL never matches within 15 s.
-    pub async fn wait_url_contains(&self, fragment: &str) {
+    pub(crate) async fn wait_url_contains(&self, fragment: &str) {
         for _ in 0..75 {
             let url = self.driver.current_url().await.expect("current url");
             if url.as_str().contains(fragment) {
@@ -247,7 +247,7 @@ impl Harness {
     ///
     /// # Panics
     /// When a toast is still visible after 15 s.
-    pub async fn wait_toasts_cleared(&self) {
+    pub(crate) async fn wait_toasts_cleared(&self) {
         for _ in 0..75 {
             let toasts = self
                 .driver
@@ -266,7 +266,7 @@ impl Harness {
     ///
     /// # Panics
     /// On capture/IO failure.
-    pub async fn shot(&self, step: u8, slug: &str) {
+    pub(crate) async fn shot(&self, step: u8, slug: &str) {
         let path = format!("{}/{}-{step:02}-{slug}.png", self.shots_dir, self.journey);
         self.driver
             .screenshot(std::path::Path::new(&path))
@@ -281,7 +281,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the log contains a SEVERE entry not covered by `allowed`.
-    pub async fn assert_console_clean(&self, allowed: &[&str]) {
+    pub(crate) async fn assert_console_clean(&self, allowed: &[&str]) {
         let entries = self
             .driver
             .get_log("browser")
@@ -307,7 +307,7 @@ impl Harness {
     }
 
     /// End the session (screenshots + console gate are per-journey calls).
-    pub async fn finish(self) {
+    pub(crate) async fn finish(self) {
         self.driver.quit().await.expect("quit");
     }
 }
@@ -317,7 +317,7 @@ impl Harness {
 /// thaw's dialog is never removed from the DOM: `leptos_transition_group`'s
 /// `CSSTransition` hides it with `display: none`, so a closed dialog is still
 /// findable. Openness is therefore visibility, never mere presence.
-pub async fn is_visible(h: &Harness, css: &str) -> bool {
+pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
     match h.driver.find(By::Css(css)).await {
         Ok(element) => element.is_displayed().await.unwrap_or(false),
         Err(_) => false,
@@ -328,7 +328,7 @@ pub async fn is_visible(h: &Harness, css: &str) -> bool {
 ///
 /// # Panics
 /// When it is still visible after 15 s.
-pub async fn wait_hidden(h: &Harness, css: &str) {
+pub(crate) async fn wait_hidden(h: &Harness, css: &str) {
     for _ in 0..75 {
         if !is_visible(h, css).await {
             return;
@@ -349,7 +349,7 @@ pub async fn wait_hidden(h: &Harness, css: &str) {
 ///
 /// # Panics
 /// When the dialog never opens.
-pub async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id: &str) {
+pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id: &str) {
     // A visible toast overlays the bottom-right corner and intercepts clicks.
     h.wait_toasts_cleared().await;
     let trigger = h.wait_css(trigger_css).await;
@@ -395,7 +395,7 @@ pub async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id: &str)
 ///
 /// # Panics
 /// When the login flow does not land on the dashboard.
-pub async fn login_basic(h: &Harness) {
+pub(crate) async fn login_basic(h: &Harness) {
     let user = env("UI_E2E_BASIC_USER").unwrap_or_else(|| "ferroehr".to_owned());
     let pass = env("UI_E2E_BASIC_PASS").unwrap_or_else(|| "ferroehr".to_owned());
     login_basic_as(h, &user, &pass).await;
@@ -408,7 +408,7 @@ pub async fn login_basic(h: &Harness) {
 ///
 /// # Panics
 /// When the login flow does not land on the dashboard.
-pub async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
+pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
     let user = user.to_owned();
     let pass = pass.to_owned();
     h.goto("/login").await;

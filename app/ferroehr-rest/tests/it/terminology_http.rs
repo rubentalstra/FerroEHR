@@ -59,7 +59,6 @@ fn config(terminology_enabled: bool) -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         terminology_api_enabled: terminology_enabled,
@@ -124,7 +123,6 @@ async fn disabled_group_answers_401_before_404_when_unauthenticated() {
             }],
         }),
         oidc: None,
-        admin_scope: None,
         ..AuthConfig::default()
     };
     let (_pg, service) = common::test_service().await;
@@ -154,7 +152,6 @@ async fn disabled_group_answers_404_when_authenticated() {
             }],
         }),
         oidc: None,
-        admin_scope: None,
         ..AuthConfig::default()
     };
     let (_pg, service) = common::test_service().await;

@@ -118,7 +118,6 @@ fn auth_on() -> AuthConfig {
             }],
         }),
         oidc: None,
-        admin_scope: None,
         ..AuthConfig::default()
     }
 }

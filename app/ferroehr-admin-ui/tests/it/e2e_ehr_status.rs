@@ -37,7 +37,7 @@
 //! the seeded fixtures the other journeys and the documentation-screenshot pass
 //! depend on.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

@@ -30,7 +30,7 @@
 //! rows enough to prove the window moves, which keeps the journey cheap and
 //! independent of whatever else is on the stack.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

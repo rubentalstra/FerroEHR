@@ -65,7 +65,6 @@ fn config(max_in_flight: usize) -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()

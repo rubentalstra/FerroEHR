@@ -27,7 +27,7 @@
 //! override), and one journey proves the operator gate by visiting as the
 //! plain `ferroehr` user.
 
-mod common;
+use crate::common;
 
 use common::{Harness, env, login_basic, login_basic_as};
 

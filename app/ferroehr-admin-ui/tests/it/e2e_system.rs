@@ -21,7 +21,7 @@
 //! Read-only throughout — nothing here writes to the CDR, so the journeys are
 //! order-independent and leave the stack exactly as they found it.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

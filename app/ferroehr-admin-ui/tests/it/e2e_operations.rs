@@ -31,7 +31,7 @@
 //! step, so it leaves the stack exactly as it found it for every later journey
 //! and for the documentation-screenshot pass.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

@@ -61,7 +61,6 @@ fn config(enabled: bool) -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         fhir_api_enabled: enabled,

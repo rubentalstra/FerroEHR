@@ -77,7 +77,7 @@ metrics_push = false
 [auth]
 enabled = true               # false = all requests pass unauthenticated (dev only)
 verified_cache_ttl_seconds = 60
-#? admin_scope = "ferroehr:admin"   # deprecated; subsumed by authz.rbac.admin_role
+
 
 # Basic-auth users (file-only; array of tables):
 #? [[auth.basic.users]]

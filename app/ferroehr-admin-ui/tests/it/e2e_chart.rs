@@ -23,7 +23,7 @@
 //! the chart renders one legend entry per column, offers the ISO-8601 column as
 //! the time axis, and hides a series when its legend chip is clicked.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

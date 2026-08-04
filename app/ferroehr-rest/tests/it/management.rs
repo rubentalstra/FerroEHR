@@ -45,33 +45,47 @@ fn hash(pw: &str) -> String {
         .to_string()
 }
 
-fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
+fn auth_config(roles: &[&str]) -> AuthConfig {
     AuthConfig {
         enabled: true,
         basic: Some(BasicConfig {
             users: vec![BasicUser {
                 username: "admin".to_owned(),
                 password_hash: ferroehr::config::secret::Secret::new(hash("pw")),
-                roles: vec!["ADMIN".to_owned()],
+                roles: roles.iter().map(|r| (*r).to_owned()).collect(),
             }],
         }),
         oidc: None,
-        admin_scope: admin_scope.map(str::to_owned),
         ..AuthConfig::default()
     }
 }
 
 /// Build an app with the management surface enabled, one endpoint (`info`) set
-/// to `level`, and the given admin-scope configuration.
-async fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
+/// to `level`, the Basic user granted `roles`, and RBAC on or off — the
+/// `AdminOnly` level gates on the RBAC `admin_role` (issue #1879 retired the
+/// deprecated `admin_scope` alias).
+async fn app_with(level: AccessLevel, roles: &[&str], rbac_enabled: bool) -> Router {
     let config = AppConfig {
         server: ServerConfig {
             swagger_ui: false,
             ..Default::default()
         },
-        auth: auth_config(admin_scope),
+        auth: auth_config(roles),
         ..Default::default()
     };
+    let mut authz_cfg = ferroehr::config::authz::AuthzConfig::default();
+    authz_cfg.rbac.enabled = rbac_enabled;
+    let resolvers = ferroehr_rest::extensions::access::authz::AuthzResolvers {
+        subject: std::sync::Arc::new(|_| Box::pin(async { Ok(None) })),
+        template_of_version: std::sync::Arc::new(|_, _| Box::pin(async { Ok(None) })),
+    };
+    let authz = ferroehr_rest::extensions::access::authz::AuthzHandle::build(
+        &authz_cfg,
+        &config.server.base_path,
+        None,
+        resolvers,
+    )
+    .map(std::sync::Arc::new);
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
@@ -84,7 +98,7 @@ async fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
         ..Observability::default()
     };
     let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, None, observability).expect("build")
+    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
 }
 
 async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
@@ -108,7 +122,7 @@ fn get_auth(path: &str) -> Request<Body> {
 
 #[tokio::test]
 async fn off_endpoint_is_404() {
-    let app = app_with(AccessLevel::Off, None).await;
+    let app = app_with(AccessLevel::Off, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::NOT_FOUND
@@ -117,7 +131,7 @@ async fn off_endpoint_is_404() {
 
 #[tokio::test]
 async fn public_endpoint_needs_no_auth() {
-    let app = app_with(AccessLevel::Public, None).await;
+    let app = app_with(AccessLevel::Public, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::OK
@@ -126,7 +140,7 @@ async fn public_endpoint_needs_no_auth() {
 
 #[tokio::test]
 async fn private_endpoint_401_then_200() {
-    let app = app_with(AccessLevel::Private, None).await;
+    let app = app_with(AccessLevel::Private, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app.clone(), get("/management/info")).await,
         StatusCode::UNAUTHORIZED
@@ -140,19 +154,25 @@ async fn private_endpoint_401_then_200() {
 #[tokio::test]
 async fn admin_only_401_403_200() {
     // 401 unauthenticated.
-    let app = app_with(AccessLevel::AdminOnly, Some("ferroehr:admin")).await;
+    let app = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::UNAUTHORIZED
     );
-    // 403 authenticated (Basic → no scopes) but admin scope required.
-    let app = app_with(AccessLevel::AdminOnly, Some("ferroehr:admin")).await;
+    // 403 authenticated but without the RBAC admin role.
+    let app = app_with(AccessLevel::AdminOnly, &["USER"], true).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::FORBIDDEN
     );
-    // 200 authenticated with no admin scope configured (authenticated is enough).
-    let app = app_with(AccessLevel::AdminOnly, None).await;
+    // 200 with the admin role.
+    let app = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
+    assert_eq!(
+        status_of(app, get_auth("/management/info")).await,
+        StatusCode::OK
+    );
+    // 200 with RBAC disabled: authenticated is enough (auth-only deployments).
+    let app = app_with(AccessLevel::AdminOnly, &["USER"], false).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::OK
@@ -167,7 +187,7 @@ async fn admin_only_401_403_200() {
 /// `/health/readiness` indicator body.)
 #[tokio::test]
 async fn management_serves_no_health_route() {
-    let app = app_with(AccessLevel::Public, None).await;
+    let app = app_with(AccessLevel::Public, &["ADMIN"], true).await;
     for gone in [
         "/management/health",
         "/management/health/liveness",
@@ -198,7 +218,7 @@ async fn health_family_survives_management_disabled() {
             swagger_ui: false,
             ..Default::default()
         },
-        auth: auth_config(None),
+        auth: auth_config(&["ADMIN"]),
         ..Default::default()
     };
     let (_pg, service) = common::test_service().await;
@@ -386,7 +406,7 @@ async fn app_with_flamegraph(
             swagger_ui: false,
             ..Default::default()
         },
-        auth: auth_config(None),
+        auth: auth_config(&["ADMIN"]),
         ..Default::default()
     };
     let observability = Observability {

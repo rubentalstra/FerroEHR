@@ -48,7 +48,6 @@ fn config(enabled: bool) -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         events_admin_api: enabled,

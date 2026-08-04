@@ -42,7 +42,7 @@ text { fill: #c3c2b7; }
 <text x="24" y="28" class="title">Latency-throughput curves — both systems, the same step-load stress instrument</text>
 <text x="24" y="44" class="muted">Identical committed workload and ladder per side (120 s holds) · exploration only — never a conformance record</text>
 <line x1="24" y1="58" x2="52" y2="58" class="curve"/><circle cx="38" cy="58" r="4" class="measured"/><text x="58" y="62.0" class="muted">ferroehr</text>
-<line x1="300" y1="58" x2="328" y2="58" class="cmp"/><rect x="310" y="54.0" width="8" height="8" class="cmpfill"/><text x="334" y="62.0" class="muted">upstream (Java)</text>
+<line x1="300" y1="58" x2="328" y2="58" class="cmp"/><rect x="310" y="54.0" width="8" height="8" class="cmpfill"/><text x="334" y="62.0" class="muted">EHRbase</text>
 <line x1="90.0" y1="96" x2="90.0" y2="360" class="grid"/><text x="90.0" y="376.0" class="muted" text-anchor="middle">1/s</text>
 <line x1="251.5" y1="96" x2="251.5" y2="360" class="grid"/><text x="251.5" y="376.0" class="muted" text-anchor="middle">10/s</text>
 <line x1="412.9" y1="96" x2="412.9" y2="360" class="grid"/><text x="412.9" y="376.0" class="muted" text-anchor="middle">100/s</text>
@@ -72,5 +72,5 @@ text { fill: #c3c2b7; }
 <path d="M85.0,91.0 L95.0,101.0 M85.0,101.0 L95.0,91.0" class="slo" stroke-width="2"/>
 <path d="M133.6,91.0 L143.6,101.0 M133.6,101.0 L143.6,91.0" class="slo" stroke-width="2"/>
 <line x1="527.4" y1="96" x2="527.4" y2="360" class="knee"/><text x="90.0" y="394.0" class="earned">ferroehr max sustainable 512/s</text>
-<line x1="90.0" y1="96" x2="90.0" y2="360" class="cmp"/><text x="90.0" y="412.0" class="muted">upstream (Java) max sustainable 0/s</text>
+<line x1="90.0" y1="96" x2="90.0" y2="360" class="cmp"/><text x="90.0" y="412.0" class="muted">EHRbase max sustainable 0/s</text>
 </svg>

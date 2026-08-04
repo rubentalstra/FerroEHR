@@ -302,13 +302,14 @@ if [ -n "${UI_E2E_SHOTS_ONLY:-}" ]; then
   echo "── journeys skipped (UI_E2E_SHOTS_ONLY)"
 else
 echo "── running e2e journeys"
-# The docs-screenshot binary (e2e_docs_shots) matches `binary(/^e2e_/)` too, so
-# exclude it here (nextest set-difference `-`); it runs only in the gated pass
-# below. An explicit FILTER arg scopes by test name and never picks it up.
+# The one e2e binary is `it` (tests/it/main.rs, one-binary layout #1887); the
+# docs-screenshot journeys live in its `e2e_docs_shots` module and run only in
+# the gated pass below (nextest set-difference `-`). An explicit FILTER arg
+# scopes by test name and never picks them up.
 # UI_E2E_CDR_URL is exported to the journeys too: a journey that needs a listing
 # of its own (table paging) seeds and removes its fixtures over ITS-REST rather
 # than through the UI, whose own paths have their own journeys.
-NEXTEST_FILTER=(-E 'binary(/^e2e_/) - binary(e2e_docs_shots)')
+NEXTEST_FILTER=(-E 'binary(it) - test(/^e2e_docs_shots::/)')
 [ -n "$FILTER" ] && NEXTEST_FILTER=(-E "test($FILTER)")
 UI_E2E_BASE_URL="$CONSOLE_URL" \
 UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
@@ -338,7 +339,7 @@ if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
   UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
   UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
   UI_E2E_DOCS_SHOTS=1 \
-    cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 -E 'binary(e2e_docs_shots)'
+    cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 -E 'test(/^e2e_docs_shots::/)'
 fi
 
 # ── 7. Nothing may have leaked into the checkout ─────────────────────────────

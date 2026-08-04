@@ -20,7 +20,7 @@
 //! `scripts/ui-e2e.sh` with `UI_E2E_DOCS_SHOTS` set; skips with a printed
 //! reason when the harness environment or the gate flag is absent.
 
-mod common;
+use crate::common;
 
 use std::path::{Path, PathBuf};
 

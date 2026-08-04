@@ -77,7 +77,6 @@ fn config() -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()
@@ -487,13 +486,14 @@ async fn etag_is_the_resolved_hrid_on_upload_and_every_get() {
     let (_pg, app) = app().await;
     let expected = format!("W/\"{HRID}\"");
 
-    let (status, headers, _b) = send(&app, upload_req(None)).await;
-    assert_eq!(status, StatusCode::CREATED);
+    let (status, headers, body) = send(&app, upload_req(None)).await;
+    assert_eq!(status, StatusCode::CREATED, "upload: {body}");
     assert_eq!(
         headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
         Some(expected.as_str()),
         "overview §\"ETag and Last-Modified\": the weak ETag SHOULD accompany a \
-         resource with a unique state identifier (the template HRID)"
+         resource with a unique state identifier (the template HRID) — \
+         headers: {headers:?}, body: {body}"
     );
 
     // text/plain source GET.
@@ -502,12 +502,13 @@ async fn etag_is_the_resolved_hrid_on_upload_and_every_get() {
         .uri(format!("{BASE}/definition/template/adl2/{HRID}"))
         .body(Body::empty())
         .unwrap();
-    let (status, headers, _b) = send(&app, req).await;
-    assert_eq!(status, StatusCode::OK);
+    let (status, headers, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(
         headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
         Some(expected.as_str()),
-        "overview §\"ETag and Last-Modified\": the source GET carries the weak ETag"
+        "overview §\"ETag and Last-Modified\": the source GET carries the weak ETag — \
+         headers: {headers:?}, body: {body}"
     );
 
     // application/json OperationalTemplateV2 GET — the ETag "is independent of
@@ -518,12 +519,13 @@ async fn etag_is_the_resolved_hrid_on_upload_and_every_get() {
         .header(header::ACCEPT, "application/json")
         .body(Body::empty())
         .unwrap();
-    let (status, headers, _b) = send(&app, req).await;
-    assert_eq!(status, StatusCode::OK);
+    let (status, headers, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(
         headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
         Some(expected.as_str()),
-        "overview §\"ETag and Last-Modified\": the ETag is serialization-independent"
+        "overview §\"ETag and Last-Modified\": the ETag is serialization-independent — \
+         headers: {headers:?}, body: {body}"
     );
 
     // The partial-version GET resolves to the concrete artefact; the ETag is
@@ -535,13 +537,14 @@ async fn etag_is_the_resolved_hrid_on_upload_and_every_get() {
         ))
         .body(Body::empty())
         .unwrap();
-    let (status, headers, _b) = send(&app, req).await;
-    assert_eq!(status, StatusCode::OK);
+    let (status, headers, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(
         headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
         Some(expected.as_str()),
         "the ETag names the resolved artefact — it must change when the served \
-         version changes (overview §\"ETag and Last-Modified\")"
+         version changes (overview §\"ETag and Last-Modified\") — \
+         headers: {headers:?}, body: {body}"
     );
 }
 

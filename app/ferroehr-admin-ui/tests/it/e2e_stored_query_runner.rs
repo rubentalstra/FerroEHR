@@ -30,7 +30,7 @@
 //! toast BEFORE navigating — navigation aborts the in-flight server-fn fetch and
 //! the query is then not stored when the next step looks for it.
 
-mod common;
+use crate::common;
 
 use std::time::Duration;
 

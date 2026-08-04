@@ -139,7 +139,7 @@ impl JwtValidator {
             .to_owned();
 
         // Scopes: the space-delimited `scope` string plus the `scp` array,
-        // preserved verbatim for the deprecated `admin_scope` seam / back-compat.
+        // preserved verbatim on the principal for ABAC/diagnostic consumers.
         let mut scopes: Vec<String> = claims
             .get("scope")
             .and_then(serde_json::Value::as_str)
