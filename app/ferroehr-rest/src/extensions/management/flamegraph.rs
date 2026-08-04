@@ -140,6 +140,16 @@ fn run_sample(plan: SamplePlan) -> Result<Vec<u8>, pprof::Error> {
     let report = guard.report().build()?;
     let mut svg = Vec::new();
     report.flamegraph(&mut svg)?;
+    // A window that caught ZERO samples (an idle process) renders nothing —
+    // pprof/inferno write no bytes for an empty frame set. Serving 0 bytes as
+    // `image/svg+xml` would be a lie; answer with a well-formed SVG that says
+    // what happened instead. (Our own operational surface — no openEHR spec
+    // governs this.)
+    if svg.is_empty() {
+        svg.extend_from_slice(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="600" height="40"><text x="10" y="25" font-family="monospace">no samples captured in the window (process idle)</text></svg>"#,
+        );
+    }
     Ok(svg)
 }
 

@@ -34,6 +34,7 @@ mod its_json_delta;
 mod json_codec_parity;
 mod master05_tables;
 mod model_walkgen;
+mod nonempty_wire;
 mod oas_update_version_sync;
 mod opt14_am14_divergence;
 mod opt14_corpus;

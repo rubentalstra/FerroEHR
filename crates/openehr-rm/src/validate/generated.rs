@@ -41,6 +41,15 @@
 //! - `nonempty_list_core` — the whole `x /= Void implies not x.is_empty`
 //!   family, decidable on the typed model now that an optional container emits
 //!   as `Option<Vec<T>>`.
+//! - `resource_description_core` — RESOURCE_DESCRIPTION `Original_author_valid`,
+//!   `Lifecycle_state_valid`, `Details_valid`.
+//! - `resource_description_item_core` — RESOURCE_DESCRIPTION_ITEM
+//!   `Purpose_valid`, `Use_valid`, `misuse_valid`, `copyright_valid`.
+//! - `authored_resource_core` — AUTHORED_RESOURCE `Revision_history_valid`
+//!   (evaluated only when `is_controlled` is present — the `xor` is not
+//!   evaluable against a Void operand and the attribute is `0..1`).
+//! - `extract_core` — EXTRACT `Sequence_nr_valid`.
+//! - `extract_update_spec_core` — EXTRACT_UPDATE_SPEC `Overall_validity`.
 //!
 //! Complex invariants stay hand-written where the projection is non-trivial:
 //! ELEMENT's null-flavour XOR (`element_impl`), DV_EHR_URI's `Scheme_valid`
@@ -62,6 +71,7 @@
 //! - `ACTOR.Roles_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.actor.adoc §Invariants).
 //! - `ARCHETYPED.Rm_version_valid` — `archetyped_core`: the ARCHETYPED core, called by `archetyped_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc §Invariants).
 //! - `ATTESTATION.Items_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.attestation.adoc §Invariants).
+//! - `AUTHORED_RESOURCE.Revision_history_valid` — `authored_resource_core`: `is_controlled xor revision_history = Void`, evaluated only when `is_controlled` (0..1) is present — an xor against a Void operand is not evaluable, so an absent flag asserts nothing; called by `authored_resource_impl.rs`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
 //! - `CODE_PHRASE.Code_string_valid` — `code_phrase_core`: the CODE_PHRASE core, called by `code_phrase_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.code_phrase.adoc §Invariants).
 //! - `COMPOSITION.Content_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
 //! - `COMPOSITION.Is_archetype_root` — `composition_core`: `is_archetype_root` is `archetype_details /= Void` (locatable.adoc §Functions). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc §Invariants).
@@ -89,12 +99,25 @@
 //! - `ENTRY.Other_participations_valid` — `nonempty_list_core`: inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.entry.adoc §Invariants).
 //! - `EVENT_CONTEXT.Participations_validity` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
 //! - `EVENT_CONTEXT.location_valid` — `event_context_core`: called by `event_context_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc §Invariants).
+//! - `EXTRACT.Sequence_nr_valid` — `extract_core`: `sequence_nr >= 1`, called by `extract_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract.adoc §Invariants).
+//! - `EXTRACT_UPDATE_SPEC.Overall_validity` — `extract_update_spec_core`: `repeat_period /= Void or trigger_events /= Void`, called by `extract_update_spec_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
+//! - `EXTRACT_UPDATE_SPEC.Trigger_events_validity` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
 //! - `HISTORY.Events_valid` — `history_basic_core`: called by `history_impl.rs` and the fast path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants).
 //! - `INSTRUCTION.Activities_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction.adoc §Invariants).
 //! - `LOCATABLE.Archetype_node_id_valid` — `archetype_node_id_core`: inherited by every concrete LOCATABLE descendant; the typed dispatcher closes out the classes with no typed impl from the generated concrete-descendant closure. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
 //! - `LOCATABLE.Links_valid` — `nonempty_list_core`: inherited by every descendant; the generated `NONEMPTY_LIST_RULES` row is applied over the model's concrete-descendant closure by `nonempty_list_core`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc §Invariants).
+//! - `ORIGINAL_VERSION.Attestations_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
+//! - `ORIGINAL_VERSION.Other_input_version_uids_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
 //! - `PARTY_IDENTIFIED.Basic_validity` — `party_identified_core`: shared by PARTY_IDENTIFIED and PARTY_RELATED. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
+//! - `PARTY_IDENTIFIED.Identifiers_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
 //! - `PARTY_IDENTIFIED.Name_valid` — `party_identified_core`: shared by PARTY_IDENTIFIED and PARTY_RELATED. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Details_valid` — `resource_description_core`: the three own non-empty rules, called by `resource_description_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Lifecycle_state_valid` — `resource_description_core`: the three own non-empty rules, called by `resource_description_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION.Original_author_valid` — `resource_description_core`: the three own non-empty rules, called by `resource_description_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.Purpose_valid` — `resource_description_item_core`: `not purpose.is_empty` plus the present-implies-non-empty string rules, called by `resource_description_item_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.Use_valid` — `resource_description_item_core`: `not purpose.is_empty` plus the present-implies-non-empty string rules, called by `resource_description_item_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.copyright_valid` — `resource_description_item_core`: `not purpose.is_empty` plus the present-implies-non-empty string rules, called by `resource_description_item_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
+//! - `RESOURCE_DESCRIPTION_ITEM.misuse_valid` — `resource_description_item_core`: `not purpose.is_empty` plus the present-implies-non-empty string rules, called by `resource_description_item_impl.rs` and the typed dispatch. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
 //! - `SECTION.Items_valid` — `nonempty_list_core`: the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.section.adoc §Invariants).
 //! - `TERM_MAPPING.Match_valid` — `term_mapping_core`: the match code is one of `< = > ?`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.term_mapping.adoc §Invariants).
 //!
@@ -125,41 +148,24 @@
 //! ## Adjudicated out of the per-node invariant layer
 //!
 //! - `ADDRESS.Type_valid`: `type = name`: the invariant DEFINES the derived `type` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.address.adoc §Invariants).
+//! - `AUTHORED_RESOURCE.Current_revision_valid`: constrains the DERIVED `current_revision()` function (§Functions: the most recent revision when controlled, else `(uncontrolled)`) — no stored attribute exists for the rule to refuse; the function's own definition satisfies it by construction (the ORIGINAL_VERSION.Is_merged_validity precedent). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
 //! - `CONTACT.Purpose_valid`: `purpose = name`: the invariant DEFINES the derived `purpose` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.contact.adoc §Invariants).
 //! - `DV_ORDERED.Is_simple_validity`: vacuous on stored data: `is_simple ()` is defined as `True if this quantity has no reference ranges` (§Functions), i.e. exactly the antecedent. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordered.adoc §Invariants).
+//! - `DV_PARAGRAPH.Items_valid`: `not items.is_empty`: `items` is a mandatory `1..*` list, emitted as `NonEmptyVec<DvText>`, so a present-but-empty value is unrepresentable and the strict reader refuses an empty wire list — the invariant holds by construction. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_paragraph.adoc §Invariants).
+//! - `DV_PARSABLE.Size_valid`: `size >= 0`: `size` is the DERIVED function `size in bytes of value` (§Functions), realized as the Rust byte length (`dv_parsable_impl.rs::size`, a `usize`), so it cannot be negative — unlike DV_MULTIMEDIA, where `size` is a STORED attribute a wire value can contradict, nothing stored exists for this rule to constrain. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_parsable.adoc §Invariants).
 //! - `EHR.Directory_valid`: a cross-object reference resolved by the EHR service against the store, not a property of the value being validated. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
 //! - `EHR.Ehr_access_valid`: a cross-object reference resolved by the EHR service against the store, not a property of the value being validated. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
 //! - `EHR.Ehr_status_valid`: a cross-object reference resolved by the EHR service against the store, not a property of the value being validated. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants).
+//! - `EXTRACT_UPDATE_SPEC.Send_changes_only_validity`: invokes `send_changes_only`, an attribute the class does NOT declare (its table carries `update_method: CODE_PHRASE`; only the intro prose speaks of the flag) — an invariant over a nonexistent attribute is unevaluable; upstream defect, reported. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
 //! - `HISTORY.Periodic_validity`: vacuous on stored data: `is_periodic ()` is a derived function (§Functions) with no wire representation; the stored node carries only `period`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc §Invariants).
 //! - `ORIGINAL_VERSION.Is_merged_validity`: `other_input_version_ids = Void xor is_merged`: `is_merged` is the DERIVED function `True if this Version was created from more than just the preceding (checked out) version` (§Functions), i.e. exactly the emptiness of `other_input_version_uids` — the invariant defines it rather than constraining stored data. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
 //! - `PARTY.Type_valid`: `type = name`: the invariant DEFINES the derived `type` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
 //! - `PARTY.Uid_mandatory`: `uid /= Void`: satisfied by construction, not by a check — a demographic party's `uid` is the version container's, which the server injects at the storage/read boundary (`app/ferroehr/src/service/demographic/support.rs`), so an inbound body legitimately carries none (`app/ferroehr/src/service/demographic/validate.rs`). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc §Invariants).
 //! - `PARTY_IDENTITY.Purpose_valid`: `purpose = name`: the invariant DEFINES the derived `purpose` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party_identity.adoc §Invariants).
 //! - `PARTY_RELATIONSHIP.Type_validity`: `type = name`: the invariant DEFINES the derived `type` function as the class's own `name` (§Functions), so nothing about an instance's data can violate it. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party_relationship.adoc §Invariants).
-//! - `REVISION_HISTORY_ITEM.Audit_valid`: `not audits.is_empty`: satisfied by construction. A REVISION_HISTORY is a read-only derived resource — no operation accepts one as a request body — and every builder of an item pushes that version's commit audit as the first audit before any attestation, which is what §Attributes means by "there will always be at least one commit audit". (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history_item.adoc §Invariants).
+//! - `REVISION_HISTORY_ITEM.Audit_valid`: `not audits.is_empty`: satisfied by construction — `audits` emits as `NonEmptyVec<AuditDetails>`, so BOTH ingestion paths refuse an empty list at parse: the REST read side never accepts one as a request body (every builder pushes the commit audit first), and the OPT 1.4 template upload — the one real client-supplied REVISION_HISTORY carrier (Template.xsd) — constructs items through `NonEmptyVec::new` in the generated XML reader, pinned by the opt14 refusal twin (#1648). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.revision_history_item.adoc §Invariants).
 //! - `VERSION.Preceding_version_uid_validity`: the version chain, owned by the versioning layer's commit path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.version.adoc §Invariants).
 //! - `VERSIONED_OBJECT.Uid_validity`: the versioning aggregate, owned by the versioning layer's commit path. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc §Invariants).
-//!
-//! ## Classified emittable, realized nowhere yet
-//!
-//! - `AUTHORED_RESOURCE.Current_revision_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
-//! - `AUTHORED_RESOURCE.Revision_history_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.authored_resource.adoc §Invariants).
-//! - `DV_PARAGRAPH.Items_valid`: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_paragraph.adoc §Invariants).
-//! - `DV_PARSABLE.Size_valid`: no invariant realization in `openehr-rm` or `openehr-its` (the sibling DV_MULTIMEDIA rule is realized). (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_parsable.adoc §Invariants).
-//! - `EXTRACT.Sequence_nr_valid`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract.adoc §Invariants).
-//! - `EXTRACT_UPDATE_SPEC.Overall_validity`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
-//! - `EXTRACT_UPDATE_SPEC.Send_changes_only_validity`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
-//! - `EXTRACT_UPDATE_SPEC.Trigger_events_validity`: EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr_extract.extract_update_spec.adoc §Invariants).
-//! - `ORIGINAL_VERSION.Attestations_valid`: versioning layer: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
-//! - `ORIGINAL_VERSION.Other_input_version_uids_valid`: versioning layer: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc §Invariants).
-//! - `PARTY_IDENTIFIED.Identifiers_valid`: the present-but-empty list rule is not extended to `identifiers` at the wire boundary. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc §Invariants).
-//! - `RESOURCE_DESCRIPTION.Details_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
-//! - `RESOURCE_DESCRIPTION.Lifecycle_state_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
-//! - `RESOURCE_DESCRIPTION.Original_author_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description.adoc §Invariants).
-//! - `RESOURCE_DESCRIPTION_ITEM.Purpose_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
-//! - `RESOURCE_DESCRIPTION_ITEM.Use_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
-//! - `RESOURCE_DESCRIPTION_ITEM.copyright_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
-//! - `RESOURCE_DESCRIPTION_ITEM.misuse_valid`: authored-resource metadata: no invariant realization in `openehr-rm` or `openehr-its`. (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc §Invariants).
 //!
 //! # Terminology-backed invariants (enforced in `validate::terminology`)
 //!
@@ -389,11 +395,14 @@ pub(crate) fn temporal_value_core(ty: &str, valid: bool, out: &mut Vec<Invariant
 
 /// The DV_PROPORTION own invariants. The inherited DV_AMOUNT / DV_ORDERED
 /// invariants are pushed by the callers.
-// openEHR/archie compare denominator against 0/1/100 by exact value
-// (`denominator.equals(0d)` etc.), so exact float comparison is intended.
+// The released invariants compare the denominator against the exact values
+// 0/1/100 (RM `dv_proportion.adoc` §Invariants: `Valid_denominator`,
+// `Unitary_validity`, `Percent_validity` — `denominator = 1`, `= 100`,
+// `<> 0`), so exact float comparison IS the spec semantics (archie renders
+// them the same way — prior art, not the ground).
 #[expect(
     clippy::float_cmp,
-    reason = "openEHR/archie compare the denominator against 0/1/100 by exact value"
+    reason = "the released invariants compare the denominator against exact 0/1/100 values"
 )]
 pub(crate) fn dv_proportion_core(
     numerator: f64,
@@ -591,5 +600,100 @@ pub(crate) fn nonempty_list_core(
             "{ty}.{attribute} is present but empty — a present list must be \
              non-empty ({ty}.{invariant})"
         )));
+    }
+}
+
+/// RESOURCE_DESCRIPTION `Original_author_valid` / `Lifecycle_state_valid` /
+/// `Details_valid`: the three own non-empty rules.
+pub(crate) fn resource_description_core(
+    original_author_empty: bool,
+    lifecycle_state: &str,
+    details_empty: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if original_author_empty {
+        out.push(InvariantViolation::here(
+            "Invariant Original_author_valid failed on type RESOURCE_DESCRIPTION",
+        ));
+    }
+    if lifecycle_state.is_empty() {
+        out.push(InvariantViolation::here(
+            "Invariant Lifecycle_state_valid failed on type RESOURCE_DESCRIPTION",
+        ));
+    }
+    if details_empty {
+        out.push(InvariantViolation::here(
+            "Invariant Details_valid failed on type RESOURCE_DESCRIPTION",
+        ));
+    }
+}
+
+/// RESOURCE_DESCRIPTION_ITEM `Purpose_valid` (`not purpose.is_empty`) plus the
+/// three present-implies-non-empty string rules (`Use_valid`, `misuse_valid`,
+/// `copyright_valid`).
+pub(crate) fn resource_description_item_core(
+    purpose: &str,
+    use_: Option<&str>,
+    misuse: Option<&str>,
+    copyright: Option<&str>,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if purpose.is_empty() {
+        out.push(InvariantViolation::here(
+            "Invariant Purpose_valid failed on type RESOURCE_DESCRIPTION_ITEM",
+        ));
+    }
+    for (value, invariant) in [
+        (use_, "Use_valid"),
+        (misuse, "misuse_valid"),
+        (copyright, "copyright_valid"),
+    ] {
+        if value.is_some_and(str::is_empty) {
+            out.push(invariant_failed(invariant, "RESOURCE_DESCRIPTION_ITEM"));
+        }
+    }
+}
+
+/// AUTHORED_RESOURCE `Revision_history_valid`
+/// (`is_controlled xor revision_history = Void`): a controlled resource
+/// carries a revision history and an uncontrolled one does not. Evaluated
+/// only when `is_controlled` is PRESENT — the attribute is `0..1` and an
+/// `xor` against a Void operand is not evaluable, so an absent flag asserts
+/// nothing (never an invented prohibition).
+pub(crate) fn authored_resource_core(
+    is_controlled: Option<bool>,
+    has_revision_history: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if let Some(controlled) = is_controlled
+        && controlled != has_revision_history
+    {
+        out.push(InvariantViolation::here(
+            "Invariant Revision_history_valid failed on type AUTHORED_RESOURCE",
+        ));
+    }
+}
+
+/// EXTRACT `Sequence_nr_valid`: `sequence_nr >= 1`.
+pub(crate) fn extract_core(sequence_nr: i32, out: &mut Vec<InvariantViolation>) {
+    if sequence_nr < 1 {
+        out.push(InvariantViolation::here(
+            "Invariant Sequence_nr_valid failed on type EXTRACT",
+        ));
+    }
+}
+
+/// EXTRACT_UPDATE_SPEC `Overall_validity`
+/// (`repeat_period /= Void or trigger_events /= Void`): an update
+/// specification names at least one update mode.
+pub(crate) fn extract_update_spec_core(
+    has_repeat_period: bool,
+    has_trigger_events: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if !has_repeat_period && !has_trigger_events {
+        out.push(InvariantViolation::here(
+            "Invariant Overall_validity failed on type EXTRACT_UPDATE_SPEC",
+        ));
     }
 }

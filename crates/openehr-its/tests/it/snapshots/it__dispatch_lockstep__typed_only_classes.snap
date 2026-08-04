@@ -1,5 +1,6 @@
 ---
 source: crates/openehr-its/tests/it/dispatch_lockstep.rs
+assertion_line: 210
 expression: delta
 ---
 [
@@ -8,6 +9,8 @@ expression: delta
     "DV_INTERVAL",
     "DV_MULTIMEDIA",
     "DV_PERIODIC_TIME_SPECIFICATION",
+    "EXTRACT",
+    "EXTRACT_UPDATE_SPEC",
     "FEEDER_AUDIT_DETAILS",
     "GENERIC_ENTRY",
     "INSTRUCTION_DETAILS",
@@ -19,5 +22,7 @@ expression: delta
     "OBJECT_VERSION_ID",
     "PARTY_REF",
     "REFERENCE_RANGE",
+    "RESOURCE_DESCRIPTION",
+    "RESOURCE_DESCRIPTION_ITEM",
     "VERSION_TREE_ID",
 ]

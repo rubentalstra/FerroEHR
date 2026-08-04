@@ -6,8 +6,9 @@
 //! grammar, with the worked-example corpus (`vendor/examples/`) as tests.
 //!
 //! Pipeline boundary: this crate produces a parsed, semantically-analyzable
-//! AST. The AST→ASL→SQL engine is **not** here — it lives in
-//! `app/ferroehr/src/aql/` (`EHRbase`'s own IR, ported from Java).
+//! AST. The AST→IR→SQL engine is **not** here — it lives in
+//! `app/ferroehr/src/aql/` (our own typed query IR over the greenfield node
+//! model; no openEHR spec governs the SQL shapes).
 //!
 //! Layers (built incrementally):
 //! - [`lexer`] — `logos` tokenizer from `AqlLexer.g4`. ✅

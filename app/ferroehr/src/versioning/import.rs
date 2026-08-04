@@ -230,18 +230,22 @@ async fn enforce_copy_closure(
         if branch_number == 0 {
             continue;
         }
-        let in_set = |sys: &str, t: i32, b: i32, bv: i32| {
+        let in_set = |sys: Option<&str>, t: i32, b: i32, bv: i32| {
             container.versions.iter().any(|v| {
                 let (vt, vb, vbv) = v.tree.columns();
-                v.creating_system_id == sys && vt == t && vb == b && vbv == bv
+                sys.is_none_or(|s| v.creating_system_id == s) && vt == t && vb == b && vbv == bv
             })
         };
-        // (a) The fork-point trunk version (same creating system).
-        if !in_set(&version.creating_system_id, trunk_version, 0, 0)
+        // (a) The fork-point trunk version. The trunk chain is per
+        // versioned object, NOT per creating system — a branch legitimately
+        // forks off a trunk version another system committed (master06
+        // §Distributed Versioning; §6.4.1.2 branch-on-foreign), so the trunk
+        // position is matched with ANY creating system.
+        if !in_set(None, trunk_version, 0, 0)
             && !crate::storage::version_repo::import::has_version_tree(
                 tx,
                 container.vo_id,
-                &version.creating_system_id,
+                None,
                 trunk_version,
                 0,
                 0,
@@ -255,10 +259,13 @@ async fn enforce_copy_closure(
                 container.vo_id, version.creating_system_id, version.tree
             )));
         }
-        // (b) The same-branch predecessor, when one must exist.
+        // (b) The same-branch predecessor, when one must exist — a branch
+        // LINEAGE is identified per creating system (the storage lineage key
+        // {vo, creating system, fork point, branch number}), so this match
+        // keeps the branch's own system.
         if branch_version > 1
             && !in_set(
-                &version.creating_system_id,
+                Some(&version.creating_system_id),
                 trunk_version,
                 branch_number,
                 branch_version - 1,
@@ -266,7 +273,7 @@ async fn enforce_copy_closure(
             && !crate::storage::version_repo::import::has_version_tree(
                 tx,
                 container.vo_id,
-                &version.creating_system_id,
+                Some(&version.creating_system_id),
                 trunk_version,
                 branch_number,
                 branch_version - 1,

@@ -6,3 +6,8 @@ pub mod authored_resource;
 pub mod resource_description;
 pub mod resource_description_item;
 pub mod translation_details;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod authored_resource_impl;
+pub mod resource_description_impl;
+pub mod resource_description_item_impl;

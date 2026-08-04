@@ -17,6 +17,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- RM validation now realizes every remaining register-visible class invariant: RESOURCE_DESCRIPTION(_ITEM), AUTHORED_RESOURCE, EXTRACT and EXTRACT_UPDATE_SPEC gained generated invariant cores wired into the typed dispatch — the machine-classified Unrealized register is at ZERO rows (#1623); EXTRACT_SPEC criteria and OPT-carried REVISION_HISTORY refusals are pinned by twins (#1648, #1737).
 - EHR-Extract export now evaluates `EXTRACT_SPEC.criteria`: AQL criteria queries select each entity's primary set `$ehr`-bound (the entity's EHR scopes the query and a literal `$ehr` parameter binds to its id); a non-AQL formalism or an unparseable criterion is refused with `400`. The former blanket criteria refusal is gone (#1736).
 - **On-demand CPU flamegraph of the running server:**
   `GET /management/flamegraph` — a new opt-in management endpoint (default
@@ -93,6 +94,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- EHR-Extract import: the copy-closure check now matches the fork-point trunk version with ANY creating system (RM common master06 §Distributed Versioning — a branch legitimately forks off a foreign trunk); `/management/flamegraph` answers a well-formed SVG instead of a zero-byte body when the sample window catches an idle process.
 - CNF runner: an unresolvable `<name>` placeholder in an outcome header matcher is now a loud case failure instead of silently wildcarding to `.*`; the structural tokens `<n>`/`<system_id>` resolve to their real grammars, and outcome matchers see the same merged variable scope as request building (#1852).
 - AQL `LIKE` and `matches` predicates on multi-valued paths now use the existential (any-match) lowering the comparison operators already use — a row is matched when ANY node on the path satisfies the predicate, instead of an order-undefined single-node pick (#1448).
 - The admin EHR dump/load archive now carries every `vo_attestation` row (with its `at_committal` flag), and load re-persists them verbatim — a restored version keeps its attestations and its stored signature verifies under `verify_on_read = strict` (#1685).

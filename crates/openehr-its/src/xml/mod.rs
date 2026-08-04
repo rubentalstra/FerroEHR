@@ -24,6 +24,69 @@ pub use runtime::{
     to_xml, to_xml_declared,
 };
 
+/// One published ITS-XML **document element** (a global `xs:element` of the
+/// vendored bundles) that this codec serves as a canonical-XML root.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PublishedRoot {
+    /// The element name (`<xs:element name="…">`).
+    pub element: &'static str,
+    /// The element's declared XSD type.
+    pub declared_type: &'static str,
+    /// Whether that declared type is `abstract="true"` — XML Schema Part 1
+    /// forbids an instance from using an abstract type directly, so such a
+    /// root MUST name its concrete class with `xsi:type`
+    /// (<https://www.w3.org/TR/xmlschema-1/#xsi_type>, §2.6.1 + §3.4.6).
+    pub type_is_abstract: bool,
+}
+
+/// The published document elements served as canonical-XML roots — the ONE
+/// statement of the published-element fact both the REST layer and the admin
+/// archive consume (the schemas live in this crate: `schemas/xml/`). Both
+/// published lineages spell every entry identically:
+///
+/// - `<xs:element name="composition" type="COMPOSITION"/>` —
+///   `its-xml-1.0.2-nsv1/ALL/Composition.xsd`;
+///   `its-xml-2.0.0-nsv2/RM/latest/documents/Composition.xsd`.
+/// - `<xs:element name="version" type="VERSION"/>` over
+///   `<xs:complexType name="VERSION" abstract="true">` —
+///   `…/ALL/Version.xsd`; `…/RM/latest/documents/Version.xsd`.
+/// - `<xs:element name="items" type="LOCATABLE"/>` over
+///   `<xs:complexType name="LOCATABLE" abstract="true">` —
+///   `…/ALL/Structure.xsd`; `…/RM/latest/documents/Structure.xsd`.
+///
+/// A root name the schemas publish no element for is deliberately absent —
+/// the ITS-REST §XML Format MUST ("responses MUST conform to the [published
+/// XSDs]") has nothing to bind to there (register AMB-167).
+pub const PUBLISHED_ROOTS: &[PublishedRoot] = &[
+    PublishedRoot {
+        element: "composition",
+        declared_type: "COMPOSITION",
+        type_is_abstract: false,
+    },
+    PublishedRoot {
+        element: "version",
+        declared_type: "VERSION",
+        type_is_abstract: true,
+    },
+    PublishedRoot {
+        element: "items",
+        declared_type: "LOCATABLE",
+        type_is_abstract: true,
+    },
+];
+
+/// The declared **abstract** XSD type of published root `element`, when its
+/// type is abstract (the instance must then carry `xsi:type` — see
+/// [`PublishedRoot::type_is_abstract`]). `None` for a concretely-typed root
+/// and for a name the schemas publish no element for.
+#[must_use]
+pub fn declared_abstract_root_type(element: &str) -> Option<&'static str> {
+    PUBLISHED_ROOTS
+        .iter()
+        .find(|r| r.element == element && r.type_is_abstract)
+        .map(|r| r.declared_type)
+}
+
 /// Serialize an RM value to canonical openEHR XML in the **default** wire
 /// lineage, namespace `http://schemas.openehr.org/v1`. `root_tag` is the root
 /// element name (e.g. `"composition"`).

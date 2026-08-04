@@ -20,8 +20,9 @@ pub struct InvariantViolation {
     /// The RM sub-path the violation applies to, relative to the value being
     /// checked (empty = the value itself).
     pub path: String,
-    /// The human-readable violation message (the archie-style
-    /// `Invariant <Name> failed on type <RM_TYPE>` form for invariant cores).
+    /// The human-readable violation message (the uniform
+    /// `Invariant <Name> failed on type <RM_TYPE>` form for invariant cores —
+    /// `<Name>` is the released class table's own invariant name).
     pub message: String,
 }
 
