@@ -14,6 +14,7 @@ use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexOb
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
 use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
@@ -238,13 +239,19 @@ impl Printer {
             return;
         }
         self.line(depth, &format!("{base}{occ} matches {{"));
-        for inc in s.includes.iter().flatten() {
+        // `c_includes : SYM_INCLUDE assertion+` (`cadl2.g4`): one keyword
+        // introduces the whole assertion list.
+        if !s.includes.as_ref().is_none_or(Vec::is_empty) {
             self.line(depth + 1, "include");
-            self.line(depth + 2, &assertion_str(inc));
+            for inc in s.includes.iter().flatten() {
+                self.line(depth + 2, &assertion_str(inc));
+            }
         }
-        for exc in s.excludes.iter().flatten() {
+        if !s.excludes.as_ref().is_none_or(Vec::is_empty) {
             self.line(depth + 1, "exclude");
-            self.line(depth + 2, &assertion_str(exc));
+            for exc in s.excludes.iter().flatten() {
+                self.line(depth + 2, &assertion_str(exc));
+            }
         }
         self.line(depth, "}");
     }
@@ -331,6 +338,26 @@ fn prim_type_and_node(obj: &CObject) -> (String, String) {
     }
 }
 
+/// The inline value text of a `C_STRING` constraint: the single delimited
+/// regex (`/re/`, `^re^`) or the quoted literal list, with the `; "assumed"`
+/// suffix when one is carried (`AOM2/master04.5` §`C_STRING`).
+pub(super) fn cstring_inline(c: &CString) -> String {
+    let mut s = match regex_of(c.constraint.as_deref().unwrap_or_default()) {
+        Some(regex) => regex.to_owned(),
+        None => c
+            .constraint
+            .iter()
+            .flatten()
+            .map(|v| quoted(v))
+            .collect::<Vec<_>>()
+            .join(", "),
+    };
+    if let Some(a) = &c.assumed_value {
+        let _ = write!(s, "; {}", quoted(a));
+    }
+    s
+}
+
 /// The inline value text of a primitive constraint (`55`, `|0..100|`,
 /// `"x", "y"; "z"`, `yyyy-mm-??`, `[ac1]`, …) — the body a `matches { … }`
 /// wraps. Mirrors `cadl2_primitives.g4`.
@@ -349,26 +376,7 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
             }
             s
         }
-        CPrimitiveObject::CString(c) => {
-            if let Some(regex) = regex_of(c.constraint.as_deref().unwrap_or_default()) {
-                let mut s = regex.to_owned();
-                if let Some(a) = &c.assumed_value {
-                    let _ = write!(s, "; {}", quoted(a));
-                }
-                return s;
-            }
-            let mut s = c
-                .constraint
-                .iter()
-                .flatten()
-                .map(|v| quoted(v))
-                .collect::<Vec<_>>()
-                .join(", ");
-            if let Some(a) = &c.assumed_value {
-                let _ = write!(s, "; {}", quoted(a));
-            }
-            s
-        }
+        CPrimitiveObject::CString(c) => cstring_inline(c),
         CPrimitiveObject::CInteger(c) => {
             let mut s = int_list(c.constraint.as_deref().unwrap_or_default());
             if let Some(a) = c.assumed_value {

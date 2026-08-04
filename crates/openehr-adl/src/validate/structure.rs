@@ -628,17 +628,12 @@ pub(super) fn occurrences_lower(mi: &MultiplicityInterval) -> i32 {
 /// True if a slot assertion expresses "any archetype" (its regex constraint is
 /// a match-anything pattern), for the include/exclude consistency table.
 fn is_any_assertion(a: &Assertion) -> bool {
-    let Some(body) = a
-        .string_expression
-        .as_deref()
-        .and_then(assertion_constraint_body)
-    else {
-        return false;
-    };
-    // The regex constraint inside `matches { … }`; an "any" slot is `/.*/` /
-    // `/.+/` (or the bare universal pattern).
-    let regex = body.trim().trim_matches('/').trim();
-    regex == ".*" || regex == ".+"
+    // The regex the assertion's `matches` constrains; an "any" slot is `/.*/`
+    // or `/.+/`.
+    crate::rules::slot_assertion_regex(a).is_some_and(|regex| {
+        let regex = regex.trim();
+        regex == ".*" || regex == ".+"
+    })
 }
 
 /// Helper for the VDSEV branch-1 condition `not (excludes empty or /= any)`.
@@ -646,46 +641,23 @@ fn exc_non_any_and_any(exc_empty: bool, exc_any: bool) -> bool {
     !exc_empty && exc_any
 }
 
-/// The content between the first `{` and its matching `}` of a slot assertion's
-/// preserved `string_expression` (the `matches { … }` constraint body) — used
-/// so the leading `archetype_id/value` path (which itself contains `/`) is not
-/// mistaken for the constraint regex.
-fn assertion_constraint_body(text: &str) -> Option<&str> {
-    let open = text.find('{')?;
-    let close = text.rfind('}')?;
-    if close > open {
-        text.get(open + 1..close).map(str::trim)
-    } else {
-        None
-    }
-}
-
-/// The archetype-id literals referenced by a slot assertion (scanned from the
-/// preserved `string_expression` — the constraint targets an id via a regex).
+/// The archetype-id literals referenced by a slot assertion (read from its
+/// expression tree — the constraint targets an id via a regex).
 fn assertion_archetype_ids(a: &Assertion) -> Vec<String> {
     // Slot assertions constrain `archetype_id/value matches {/regex/}`; the
     // regex, when it is a literal id (no meta-characters), is itself the id.
     // VDFAI's subject is the ARCHETYPE IDENTIFIER (ADL1.4 master05 §Archetype
-    // Slots) — an assertion targeting another property (`domain_concept`,
+    // Slots), so an assertion targeting another property (`domain_concept`,
     // `short_concept_name`, a path) constrains something that is not an
-    // archetype id, so extracting its regex as one is a false positive (#767
-    // audit: `domain_concept matches {/medication\.v1/}` yielded the bogus
-    // id `medication.v1`).
-    let targets_archetype_id = a
-        .string_expression
-        .as_deref()
-        .is_some_and(|s| s.trim_start().starts_with("archetype_id"));
+    // archetype id and yields none.
+    let targets_archetype_id = crate::rules::slot_assertion_path(a)
+        .is_some_and(|path| path.trim_start().starts_with("archetype_id"));
     if !targets_archetype_id {
         return Vec::new();
     }
-    let Some(body) = a
-        .string_expression
-        .as_deref()
-        .and_then(assertion_constraint_body)
-    else {
+    let Some(regex) = crate::rules::slot_assertion_regex(a) else {
         return Vec::new();
     };
-    let regex = body.trim().trim_matches('/');
     // A literal id regex contains no unescaped regex meta-characters beyond the
     // escaped `\.` dots.
     let literal = regex.replace("\\.", ".");

@@ -291,13 +291,10 @@ fn assertion_specific_match(a: &Assertion, id: &str) -> bool {
     regex::Regex::new(&re).is_ok_and(|rx| rx.is_match(id))
 }
 
-/// Extract the regex body of a slot assertion's `matches {/re/}` constraint.
+/// Extract the regex body of a slot assertion's `matches {/re/}` constraint,
+/// from the assertion's expression tree.
 fn assertion_regex(a: &Assertion) -> Option<String> {
-    let text = a.string_expression.as_deref()?;
-    let open = text.find('{')?;
-    let close = text.rfind('}')?;
-    let body = text.get(open + 1..close)?.trim();
-    Some(body.trim_matches('/').to_owned())
+    crate::rules::slot_assertion_regex(a).map(str::to_owned)
 }
 
 // ── template / external-reference fillers (VTPL + VARXR) ──────────────────

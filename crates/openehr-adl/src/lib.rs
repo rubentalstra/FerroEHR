@@ -23,10 +23,10 @@
 //! `openehr_lang::odin` reader (ODIN is a LANG-component spec). **This crate
 //! has no lexer of its own**: the cADL token stream is the shared workspace
 //! lexical layer read under its ADL reading
-//! ([`openehr_lang::lexer::lex_adl`]). The `rules`
-//! body and slot assertion expressions are captured as raw text alongside a
-//! structured placeholder.
-//! TODO(#1874): model rule/slot assertion expressions as full BEL/beom trees.
+//! ([`openehr_lang::lexer::lex_adl`]). The `rules` body and the slot
+//! include/exclude assertions are full BEL/beom expression trees
+//! ([`rules`], over `openehr_lang::bel`); their string form is rendered back
+//! from the tree ([`print::assertion_text`]), never parsed out of it.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).

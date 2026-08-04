@@ -18,13 +18,11 @@
 //!
 //! Scope: full cADL object/attribute/tuple/slot/proxy/primitive
 //! coverage building the AOM2 tree, with the `S*` syntax-validity codes raised
-//! at position. Slot include/exclude **assertion** expressions and the `rules`
-//! section are captured as raw text (structured BEL expression parsing is a
-//! TODO),
-//! preserved in `ASSERTION.string_expression` so slots stay usable; the common
-//! `archetype_id/value matches {/regex/}` form is additionally regex-compile
-//! checked (`SCSRE`). Semantic (V-code) validation is separate
-//! (`crate::validate`).
+//! at position. Slot include/exclude **assertion** expressions are BEL
+//! expression trees built by [`crate::rules::parse_slot_assertions`] (as is
+//! the `rules` section); the common `archetype_id/value matches {/regex/}`
+//! form is additionally regex-compile checked (`SCSRE`). Semantic (V-code)
+//! validation is separate (`crate::validate`).
 //!
 //! Layout. This module carries what every production shares: the dialect
 //! selector, the parser state, the entry points, and the cursor/error
