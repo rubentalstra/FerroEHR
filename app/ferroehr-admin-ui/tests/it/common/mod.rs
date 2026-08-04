@@ -12,7 +12,6 @@
               (the clippy.toml test scoping reaches only #[test] fns, not \
               integration-binary helper modules)"
 )]
-
 #![expect(
     clippy::disallowed_types,
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \

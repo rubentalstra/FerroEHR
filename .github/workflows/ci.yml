@@ -173,7 +173,7 @@ jobs:
           echo "OK: no attribution found."
 
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
-  # comments, TODO(#N) form, NOTE/essay line budgets — on the PR's changed
+  # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
   # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
   # closes, then flips to --all.
   comment-style:
@@ -186,10 +186,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Comment style on changed Rust files
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-        run: bash scripts/check-comment-style.sh --diff "$BASE" "$HEAD"
+        run: bash scripts/check-comment-style.sh --all
 
   # ── Always required: supply-chain policy ────────────────────────────────────
   # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as

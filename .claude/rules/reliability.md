@@ -206,7 +206,7 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   `SAFETY` are sanctioned).
   Enforcement (tier 4): `scripts/check-comment-style.sh` — per-edit
   via the `rust_fmt_clippy.sh` hook, per-PR via the `comment-style` CI job
-  (diff-scoped until the legacy essay sweep #1870 closes) — plus
+  (`--all`, the whole tree — the legacy sweep #1870 closed) — plus
   `clippy::too_long_first_doc_paragraph` (tier 3) for the RFC 1574 doc
   summary line. Change-narration and prose deferrals stay review-enforced
   (no tool can judge them).

@@ -35,11 +35,12 @@ use serde_json::{Map, Value, json};
 
 use super::mapping::{FhirMapError, FhirMappingDefinition, MappingEntry, Transform, parse_segment};
 
-/// Reverse [`build_flat`](super::mapping::build_flat): build the FHIR resource
-/// for a COMPOSITION under a mapping definition. `subject_id` is the owning
-/// EHR's external subject id (placed back at the mapping's
-/// `subject.reference_path`, `strip_prefix` re-applied); `None` omits the
-/// subject.
+/// Reverse of [`build_flat`](super::mapping::build_flat): builds the FHIR
+/// resource for a COMPOSITION under a mapping definition.
+///
+/// `subject_id` is the owning EHR's external subject id (placed back at the
+/// mapping's `subject.reference_path`, `strip_prefix` re-applied); `None`
+/// omits the subject.
 /// # Errors
 /// Returns [`FhirMapError`] when the mapping definition cannot be applied
 /// in reverse over the stored FLAT projection.
