@@ -1159,3 +1159,179 @@ async fn an_imported_version_round_trips_through_the_archive() {
 
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// #1685: the archive carries the `vo_attestation` rows, so a restored version
+/// keeps BOTH attestation classes — one committed WITH the version
+/// (`UPDATE_VERSION.attestations`, inside the signed canonical form — RM
+/// common master06 §Attestation "Signing content at committal" / §Digital
+/// Signature) and one attached afterwards by a `666|attestation|`-only
+/// CONTRIBUTION — and a strict `verify_on_read` of the restored version
+/// passes, which it cannot if the at-committal attestation was dropped.
+#[tokio::test]
+async fn attestations_round_trip_and_the_restored_signature_verifies() {
+    use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
+    use ferroehr::versioning::signature::signer::Signer;
+    use std::sync::Arc;
+
+    let config = SigningConfig {
+        enabled: true,
+        mode: Mode::Digest,
+        key_path: None,
+        key_passphrase: None,
+        key_passphrase_file: None,
+        verify_on_read: Some(VerifyOnRead::Strict),
+    };
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(src_db.pool())
+        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
+    let dst_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(dst_db.pool())
+        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
+
+    let ehr_id = source.create_ehr(None).await.expect("ehr");
+    let change_type = |code: &str, value: &str| {
+        json!({
+            "_type": "DV_CODED_TEXT", "value": value,
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": code
+            }
+        })
+    };
+    let committer = |name: &str| json!({ "_type": "PARTY_IDENTIFIED", "name": name });
+
+    // (a) A version committed WITH an attestation.
+    let contribution = json!({
+        "_type": "CONTRIBUTION",
+        "versions": [{
+            "_type": "ORIGINAL_VERSION",
+            "commit_audit": {
+                "change_type": change_type("249", "creation"),
+                "committer": committer("author")
+            },
+            "lifecycle_state": change_type("532", "complete"),
+            "data": {
+                "_type": "COMPOSITION",
+                "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+                "archetype_details": {
+                    "_type": "ARCHETYPED",
+                    "archetype_id": { "_type": "ARCHETYPE_ID",
+                                      "value": "openEHR-EHR-COMPOSITION.encounter.v1" },
+                    "rm_version": "1.2.0"
+                },
+                "name": { "_type": "DV_TEXT", "value": "attested encounter" },
+                "language": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+                    "code_string": "en"
+                },
+                "territory": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+                    "code_string": "NL"
+                },
+                "category": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "event",
+                    "defining_code": {
+                        "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "433"
+                    }
+                },
+                "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
+            },
+            "attestations": [{
+                "_type": "UPDATE_ATTESTATION",
+                "change_type": change_type("666", "attestation"),
+                "committer": committer("attesting clinician"),
+                "reason": { "_type": "DV_TEXT", "value": "witnessed" },
+                "is_pending": false,
+                "proof": "proof-bytes"
+            }]
+        }],
+        "audit": {
+            "change_type": change_type("251", "modification"),
+            "committer": committer("author")
+        }
+    });
+    let created = source
+        .create_ehr_contribution(ehr_id.into(), contribution)
+        .await
+        .expect("contribution with an at-committal attestation");
+    let ovid = created.body["versions"][0]["id"]["value"]
+        .as_str()
+        .expect("committed version uid")
+        .to_owned();
+
+    // (b) The same version attested AFTERWARDS by a 666-only CONTRIBUTION.
+    let attest = json!({
+        "versions": [{
+            "preceding_version_uid": { "value": ovid.clone() },
+            "commit_audit": {
+                "change_type": change_type("666", "attestation"),
+                "committer": committer("senior reviewer"),
+                "reason": { "_type": "DV_TEXT", "value": "authorised" },
+                "is_pending": false
+            }
+        }],
+        "audit": {
+            "change_type": change_type("666", "attestation"),
+            "committer": committer("senior reviewer")
+        }
+    });
+    source
+        .create_ehr_contribution(ehr_id.into(), attest)
+        .await
+        .expect("after-committal 666 attestation");
+
+    let served_before = source
+        .composition_version_envelope(ehr_id, ovid.parse().expect("ovid"))
+        .await
+        .expect("source read verifies");
+
+    // Round trip.
+    let dir = archive_dir();
+    let export_reports = source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(1))
+        .await
+        .expect("export");
+    assert!(export_reports.is_empty(), "clean export: {export_reports:?}");
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert!(load_reports.is_empty(), "clean load: {load_reports:?}");
+
+    let row_counts = |pool: &PgPool| {
+        let pool = pool.clone();
+        async move {
+            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM vo_attestation")
+                .fetch_one(&pool)
+                .await
+                .expect("count")
+        }
+    };
+    assert_eq!(
+        row_counts(&dst_db.pool()).await,
+        row_counts(&src_db.pool()).await,
+        "every vo_attestation row is restored"
+    );
+
+    // The strict read is the integrity assertion: a restored version whose
+    // at-committal attestation vanished cannot recompute its stored signature.
+    let served_after = target
+        .composition_version_envelope(ehr_id, ovid.parse().expect("ovid"))
+        .await
+        .expect("the restored version verifies under strict verify_on_read");
+    let atts = served_after["attestations"]
+        .as_array()
+        .expect("restored attestations");
+    assert_eq!(atts.len(), 2, "both attestation classes restore");
+    assert_eq!(atts[0]["reason"]["value"], "witnessed");
+    assert_eq!(atts[1]["reason"]["value"], "authorised");
+    assert_eq!(
+        served_after, served_before,
+        "the restored served document is identical to the source's"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
