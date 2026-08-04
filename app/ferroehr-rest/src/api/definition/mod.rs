@@ -1,6 +1,7 @@
-//! The ITS-REST **definition API** (Release-1.1.0, STABLE) —
-//! `docs/specs/openehr/ITS-REST/specifications/docs/definition/` + the
-//! `definition-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).
+//! The ITS-REST **definition API** (Release-1.1.0, STABLE).
+//!
+//! The surface is generated into `openehr_its::rest` from the
+//! `definition-*.openapi.yaml` OAS group.
 //!
 //! Governing spec: `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
 //! The group is split along the three spec resources the OAS `tags` name —

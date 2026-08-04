@@ -1,8 +1,9 @@
-//! Native utoipa-axum routing for the EHR API group. No openEHR spec governs an
-//! OAS layout; the operation semantics are the ITS-REST EHR API
-//! (docs/specs/openehr/ITS-REST). Each handler forwards to the group dispatcher
-//! through `guarded_dispatch`, so wire behaviour is identical to the former
-//! `mount()` adapter.
+//! Native utoipa-axum routing for the EHR API group.
+//!
+//! No openEHR spec governs an OAS layout; the operation semantics are the
+//! ITS-REST EHR API (docs/specs/openehr/ITS-REST). Each handler forwards to
+//! the group dispatcher through `guarded_dispatch`, so wire behaviour is
+//! identical to the former `mount()` adapter.
 
 use axum::extract::State;
 use axum::response::Response;
@@ -5443,21 +5444,13 @@ pub(crate) async fn contribution_get(
 }
 
 // ── Item tags ─────────────────────────────────────────────────────────────────
-// An ITEM_TAG is NOT change-controlled: RM `item_tag.adoc` gives it `key`, an
-// optional `value`/`target_path`, a `target` and an `owner_id` — no uid and no
-// version of its own. So no tag route serves `ETag`/`Last-Modified`, none
-// accepts `If-Match`, and none takes the `openehr-version` /
-// `openehr-audit-details` committal headers: `Requests_and_responses.md`
-// §"ETag and Last-Modified" SHOULDs the two headers "for VERSION,
-// VERSIONED_OBJECT, or other resources that have versioning or unique state
-// identifiers", an ITEM_TAG is none of those, and there is no identity or
-// commit instant they could carry. Tag writes therefore commit no CONTRIBUTION
-// and cannot conflict on a preceding version.
-//
-// Every tag route is JSON-only. The canonical XML ITS defines no ITEM_TAG type
-// at all, so the released `Accept_canonical` enum's `application/xml` member is
-// stalled shape on these operations: an XML `Accept` is `406` and an XML
-// `Content-Type` on the two PUTs is `415`.
+// An ITEM_TAG carries no uid and no version of its own (RM `item_tag.adoc`), and
+// ITS-REST `Requests_and_responses.md` §"ETag and Last-Modified" scopes those
+// headers to resources "that have versioning or unique state identifiers" — so no
+// tag route serves or accepts `ETag` / `Last-Modified` / `If-Match` / the
+// committal headers, and a tag write commits no CONTRIBUTION. The canonical XML
+// ITS defines no ITEM_TAG type, so tag routes are JSON-only: an XML `Accept` is
+// `406`, an XML `Content-Type` on the two PUTs `415`.
 
 /// Retrieve every `ITEM_TAG` in an EHR (`GET /ehr/{ehr_id}/tags`).
 ///

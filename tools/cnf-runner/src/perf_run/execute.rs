@@ -1,4 +1,6 @@
-//! The per-stage wire realization: each [`crate::perf::PerfOp`] maps to
+//! The per-stage wire realization.
+//!
+//! Each [`crate::perf::PerfOp`] maps to
 //! its committed ITS-REST operation binding (`artifacts/bindings/its-rest/`
 //! — create EHR / commit COMPOSITION / directory / contribution in the
 //! created family with the uid via `ETag`/`Location`, versioned update via

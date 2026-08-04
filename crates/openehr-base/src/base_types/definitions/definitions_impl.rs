@@ -1,8 +1,10 @@
-//! Hand-written realization of the BASE `definitions` constant-holder
-//! classes — `BASIC_DEFINITIONS` and `OPENEHR_DEFINITIONS` (which inherits
-//! it, adding `Local_terminology_id`). Both are adjudicated out of type
-//! emission (constant holders, no data — the codegen decision map), so their
-//! spec constants live here as plain module constants.
+//! Hand-written realization of the BASE `definitions` constant-holder classes
+//! — `BASIC_DEFINITIONS` and `OPENEHR_DEFINITIONS` (which inherits it, adding
+//! `Local_terminology_id`).
+//!
+//! Both are adjudicated out of type emission (constant holders, no data — the
+//! codegen decision map), so their spec constants live here as plain module
+//! constants.
 //!
 //! Spec sources (vendored):
 //! - `BASE/docs/UML/classes/org.openehr.base.base_types.basic_definitions.adoc`

@@ -7,10 +7,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// `VARIABLE_VALUE` — "Abstract parent of variable value structures"
-/// (`variable_value.adoc`). Its three concrete descendants form a closed
-/// subtype set, so this is an idiomatic Rust enum (the codegen closed-subtype
-/// rule) rather than a trait; the payloads are `Any`, carried as canonical
-/// JSON [`Value`]s.
+/// (`variable_value.adoc`).
+///
+/// Its three concrete descendants form a closed subtype set, so this is an
+/// idiomatic Rust enum (the codegen closed-subtype rule) rather than a trait;
+/// the payloads are `Any`, carried as canonical JSON [`Value`]s.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "_type")]
 pub enum VariableValue {

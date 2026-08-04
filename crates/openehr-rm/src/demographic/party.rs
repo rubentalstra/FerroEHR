@@ -11,7 +11,9 @@ use crate::demographic::role::Role;
 
 /// Closed subtype set of `PARTY`, dispatched on each payload's `_type`.
 ///
-/// Ancestor of all Party types, including real world entities and their roles. A Party is any entity which can participate in an activity. The `_name_` attribute inherited from `LOCATABLE` is used to indicate the actual type of party (note that the actual names, i.e. identities of parties are indicated in the `_identities_` attribute, not the `_name_` attribute).
+/// Ancestor of all Party types, including real world entities and their roles.
+///
+/// A Party is any entity which can participate in an activity. The `_name_` attribute inherited from `LOCATABLE` is used to indicate the actual type of party (note that the actual names, i.e. identities of parties are indicated in the `_identities_` attribute, not the `_name_` attribute).
 ///
 /// NOTE: It is strongly recommended that the inherited attribute `_uid_` be populated in `PARTY` objects, using the UID copied from the `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object. +
 /// For example, the `ORIGINAL_VERSION.uid` `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`  would be copied to the `_uid_` field of the `PARTY` object.

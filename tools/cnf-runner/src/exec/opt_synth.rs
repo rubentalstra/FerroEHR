@@ -1,10 +1,12 @@
 //! Per-row OPT 1.4 XML synthesis for the *value* and *interval* content
-//! families (issue #228). A content decision table whose
-//! `constraint_context.constraint_columns` name constraint-axis columns needs
-//! one OPT per row (the ELEMENT.value domain constraint varies per row). This
-//! module builds those OPTs from the row's constraint cells; the structural
-//! families live in [`crate::exec::content_synth`], which dispatches value +
-//! interval rows here.
+//! families (issue #228).
+//!
+//! A content decision table whose `constraint_context.constraint_columns`
+//! name constraint-axis columns needs one OPT per row (the ELEMENT.value
+//! domain constraint varies per row). This module builds those OPTs from the
+//! row's constraint cells; the structural families live in
+//! [`crate::exec::content_synth`], which dispatches value + interval rows
+//! here.
 //!
 //! The constraint XML shapes are grounded in AM AOM1.4
 //! (`docs/specs/openehr/AM/docs/`): `C_PRIMITIVE_OBJECT`/`C_INTEGER`/`C_REAL`/

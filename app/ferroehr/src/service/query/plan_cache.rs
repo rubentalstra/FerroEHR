@@ -60,11 +60,12 @@ pub struct PlanCacheStats {
 }
 
 /// A shared, cloneable bounded cache of lowered AQL query plans keyed on the
-/// query text. `moka`'s [`Cache`] is `Arc`-backed, so every clone of the
-/// owning service shares one cache (mirroring
-/// [`openehr_its::flat::cache::WebTemplateCache`] and
-/// `crate::service::ehr::access::EhrAccessCache`); the hit/miss counters are shared
-/// the same way.
+/// query text.
+///
+/// `moka`'s [`Cache`] is `Arc`-backed, so every clone of the owning service
+/// shares one cache (mirroring [`openehr_its::flat::cache::WebTemplateCache`]
+/// and `crate::service::ehr::access::EhrAccessCache`); the hit/miss counters
+/// are shared the same way.
 #[derive(Clone)]
 pub struct PlanCache {
     /// `None` when the cache is disabled (capacity `0`).

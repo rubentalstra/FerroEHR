@@ -34,9 +34,11 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-/// The complete server configuration. Every section has a `Default`, so the
-/// file may be empty or absent (zero-config boot, §3.16). `deny_unknown_fields`
-/// makes a misspelled top-level table a boot error (§P-5).
+/// The complete server configuration.
+///
+/// Every section has a `Default`, so the file may be empty or absent
+/// (zero-config boot, §3.16). `deny_unknown_fields` makes a misspelled
+/// top-level table a boot error (§P-5).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct FerroEhrConfig {
@@ -95,16 +97,10 @@ impl FerroEhrConfig {
         // server.system_id is stamped into every AUDIT_DETAILS
         // (`System_id_valid`: "not system_id.is_empty", RM
         // `docs/UML/classes/org.openehr.rm.common.audit_details.adoc`
-        // §Invariants) and into every OBJECT_VERSION_ID this CDR mints, where
-        // it occupies the `creating_system_id` position — "object_version_id =
-        // object_id, '::', creating_system_id, '::', version_tree_id" with
-        // "creating_system_id = uid" (BASE
-        // `base_types/master05-identification_package.adoc` §Syntaxes). It is
-        // therefore judged by the SAME grammar the identifier types are built
-        // from — the validating `UID` constructor in `openehr-base` — so a
-        // value this server accepts at boot can never mint a version id its own
-        // reader refuses. Boot-time is the right moment: the alternative is a
-        // loud failure on the first write.
+        // §Invariants) and occupies the `creating_system_id` position of every
+        // OBJECT_VERSION_ID this CDR mints (BASE
+        // `base_types/master05-identification_package.adoc` §Syntaxes), so it is
+        // judged here by the SAME validating `UID` constructor the reader uses.
         if let Err(source) =
             openehr_base::base_types::identification::uid::Uid::new(&self.server.system_id)
         {
@@ -308,9 +304,10 @@ fn validate_terminology(
 }
 
 /// Assemble the configuration from explicit inputs — the pure seam every test
-/// drives (§5.1/§6.6). Runs the alias sweep (warning once per set legacy var),
-/// the strict env + file passes, the layered merge, and `*_file` secret
-/// resolution.
+/// drives (§5.1/§6.6).
+///
+/// Runs the alias sweep (warning once per set legacy var), the strict env +
+/// file passes, the layered merge, and `*_file` secret resolution.
 ///
 /// # Errors
 /// [`ConfigErrors`] aggregating unknown-key, type, and file-resolution errors.
@@ -328,8 +325,9 @@ pub fn assemble(
 }
 
 /// Boot loader: a thin process-environment shim over [`assemble`] (§5.2).
-/// Discovers the config file (§5.4), snapshots the environment, assembles, and
-/// emits the dev-default-DB boot warning (§3.16 review condition).
+///
+/// Discovers the config file (§5.4), snapshots the environment, assembles,
+/// and emits the dev-default-DB boot warning (§3.16 review condition).
 ///
 /// # Errors
 /// [`ConfigErrors`] on discovery failure or any assembly error.

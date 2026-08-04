@@ -1,4 +1,6 @@
-//! Slot topic: redefining an inherited `ARCHETYPE_SLOT`, filling one with a
+//! Slot-topic validity: `ARCHETYPE_SLOT` and its fillers.
+//!
+//! Covers redefining an inherited `ARCHETYPE_SLOT`, filling one with a
 //! `C_ARCHETYPE_ROOT`, and the template/`use_archetype` filler checks that
 //! resolve those references against a supplier repository.
 //!
@@ -91,11 +93,9 @@ impl<'a> ParentScan<'a> {
                 }
                 // VDSSC: a specialised slot may be closed OR narrowed, not both.
                 //
-                // NOTE: the ADL2 slot production admits `closed` XOR a `matches`
-                // body (`parse::refs::Parser::parse_archetype_slot`, mirroring the vendored
-                // `masterAppB` slot grammar), so a parsed slot is never both
-                // closed and narrowing — this stays as a defensive guard for any
-                // future non-source-parsed AOM input.
+                // NOTE: the vendored `masterAppB` slot grammar admits `closed`
+                // XOR a `matches` body, so this guard can only fire for AOM
+                // input that was not parsed from ADL2 source.
                 let narrows = !child_slot.includes.as_ref().is_none_or(Vec::is_empty)
                     || !child_slot.excludes.as_ref().is_none_or(Vec::is_empty);
                 if child_slot.is_closed && narrows {
@@ -107,14 +107,12 @@ impl<'a> ParentScan<'a> {
                     );
                 }
                 // VDSSM: a specialised slot must narrow the parent slot or be
-                // closed (`master04.5` §`ARCHETYPE_SLOT`). The narrowing must be a
-                // *proper* subset of the parent's admitted-archetype set; full
-                // regex-language subset is undecidable, so the decidable checks are
-                // applied: (a) no `includes`/`excludes` is no narrowing; (b)
-                // `includes`/`excludes` structurally identical to the parent's is a
-                // restatement, not a proper narrowing; and (c) a child `include`
-                // that names a literal archetype id the parent slot does not admit
-                // is a widening (not a subset of the parent's admitted set).
+                // closed (`master04.5` §`ARCHETYPE_SLOT`), i.e. be a PROPER subset
+                // of its admitted-archetype set. Regex-language subset is
+                // undecidable, so three decidable checks stand in: no
+                // `includes`/`excludes` is no narrowing; one structurally identical
+                // to the parent's is a restatement; and a child `include` naming a
+                // literal archetype id the parent does not admit is a widening.
                 if !child_slot.is_closed {
                     if !narrows {
                         push_issue(
@@ -304,9 +302,11 @@ fn assertion_regex(a: &Assertion) -> Option<String> {
 
 // ── template / external-reference fillers (VTPL + VARXR) ──────────────────
 
-/// Validate an archetype's `use_archetype` fillers against `repo`: VARXR (a
-/// reference that does not resolve) and — for templates only — VTPL (a filler
-/// that does not support the template's `original_language`).
+/// Validates an archetype's `use_archetype` fillers against `repo`.
+///
+/// The checks are VARXR (a reference that does not resolve) and — for templates
+/// only — VTPL (a filler that does not support the template's
+/// `original_language`).
 ///
 /// The artefact is flattened first so inherited fillers are seen; a flatten
 /// failure yields no filler issues (the flattener's own errors surface through

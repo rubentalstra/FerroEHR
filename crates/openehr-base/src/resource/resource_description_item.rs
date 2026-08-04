@@ -5,11 +5,15 @@
 
 use crate::foundation_types::terminology::terminology_code::TerminologyCode;
 
-/// Language-specific detail of resource description. When a resource is translated for use in another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to be copied and translated into the new language.
+/// Language-specific detail of resource description.
+///
+/// When a resource is translated for use in another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to be copied and translated into the new language.
 #[doc(alias = "RESOURCE_DESCRIPTION_ITEM")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescriptionItem {
-    /// The localised language in which the items in this description item are written. Encoded following the RFC 5646 standard, using ISO 639-1 (two-character) language codes, e.g. "en". It may include a region subtag conforming to ISO 3166-1 alpha-2 (two-character country codes), e.g. "pt-br" for Brazilian Portuguese.
+    /// The localised language in which the items in this description item are written.
+    ///
+    /// Encoded following the RFC 5646 standard, using ISO 639-1 (two-character) language codes, e.g. "en". It may include a region subtag conforming to ISO 3166-1 alpha-2 (two-character country codes), e.g. "pt-br" for Brazilian Portuguese.
     pub language: TerminologyCode,
     /// Purpose of the resource.
     pub purpose: String,

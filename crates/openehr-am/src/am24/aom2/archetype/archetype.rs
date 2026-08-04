@@ -8,7 +8,9 @@ use crate::am24::aom2::archetype::template_overlay::TemplateOverlay;
 
 /// Closed subtype set of `ARCHETYPE`, dispatched on each payload's `_type`.
 ///
-/// The `ARCHETYPE` class defines the core formal model of the root object of any archetype or template. It includes only basic identification information, and otherwise provides the structural connections from the Archetype to its constituent parts, i.e. definition (a `C_COMPLEX_OBJECT`), terminology (`ARCHEYTPE_TERMINOLOGY`) and so on.
+/// The `ARCHETYPE` class defines the core formal model of the root object of any archetype or template.
+///
+/// It includes only basic identification information, and otherwise provides the structural connections from the Archetype to its constituent parts, i.e. definition (a `C_COMPLEX_OBJECT`), terminology (`ARCHEYTPE_TERMINOLOGY`) and so on.
 /// It is the parent class of all concrete types of archetype.
 #[doc(alias = "ARCHETYPE")]
 #[derive(Debug, Clone, PartialEq)]

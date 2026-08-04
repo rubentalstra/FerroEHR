@@ -5,7 +5,9 @@
 
 use crate::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 
-/// Class representing a single object tuple instance in a tuple constraint. Each such instance is a vector of object constraints, where each member (each `C_PRIMITIVE_OBJECT`) corresponds to one of the `C_ATTRIBUTEs` referred to by the owning `C_ATTRIBUTE_TUPLE`.
+/// Class representing a single object tuple instance in a tuple constraint.
+///
+/// Each such instance is a vector of object constraints, where each member (each `C_PRIMITIVE_OBJECT`) corresponds to one of the `C_ATTRIBUTEs` referred to by the owning `C_ATTRIBUTE_TUPLE`.
 #[doc(alias = "C_PRIMITIVE_TUPLE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct CPrimitiveTuple {

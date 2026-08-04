@@ -391,9 +391,11 @@ pub fn parse_artefact_rules(
     }
 }
 
-/// Parse a slot include/exclude assertion block (`master04.3` §Archetype Slots;
-/// the cADL grammar `c_includes : SYM_INCLUDE assertion+`) into one or more
-/// real AM-level [`Assertion`]s — each `archetype_id_path matches { /regex/ }` →
+/// Parses a slot include/exclude assertion block into AM-level assertions.
+///
+/// The block (`master04.3` §Archetype Slots; the cADL grammar
+/// `c_includes : SYM_INCLUDE assertion+`) becomes one or more real
+/// [`Assertion`]s — each `archetype_id_path matches { /regex/ }` →
 /// `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT` (`master05`). The
 /// verbatim block `text` is preserved in every assertion's `string_expression`
 /// so the slot stays usable even for a form that is not structurally modelled.
@@ -440,13 +442,14 @@ pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxErr
     Ok(assertions)
 }
 
-/// Resolve every `EXPR_ARCHETYPE_REF` proxy in a parsed `rules` [`StatementSet`]
-/// against the assembled archetype `definition`, replacing the parse-time
-/// placeholder `item` (see `unresolved_ref_target`) with the target node the
-/// reference path addresses (`AOM2` master05 — the path is the runtime-value
-/// proxy, `item` its resolved `ARCHETYPE_CONSTRAINT` target). A path that does
-/// not resolve within the archetype keeps the placeholder (the unresolved path
-/// is a VRRLP finding in validation, not an assembly error).
+/// Resolves every `EXPR_ARCHETYPE_REF` proxy against the archetype definition.
+///
+/// Each proxy in a parsed `rules` [`StatementSet`] has its parse-time
+/// placeholder `item` (see `unresolved_ref_target`) replaced with the target
+/// node the reference path addresses (`AOM2` master05 — the path is the
+/// runtime-value proxy, `item` its resolved `ARCHETYPE_CONSTRAINT` target). A
+/// path that does not resolve within the archetype keeps the placeholder (the
+/// unresolved path is a VRRLP finding in validation, not an assembly error).
 pub fn resolve_archetype_refs(rules: &mut StatementSet, definition: &CComplexObject) {
     for stmt in rules.statement.iter_mut().flatten() {
         match stmt {

@@ -1,6 +1,8 @@
-//! The application service layer — the SM Platform Service Model realized as
-//! concrete [`FerroEhrService`] methods, one folder per SM chapter (vendored
-//! SM spec `docs/specs/openehr/SM/docs/openehr_platform/`).
+//! The application service layer.
+//!
+//! The SM Platform Service Model realized as concrete [`FerroEhrService`]
+//! methods, one folder per SM chapter (vendored SM spec
+//! `docs/specs/openehr/SM/docs/openehr_platform/`).
 //!
 //! Each chapter folder owns its domain logic as inherent `FerroEhrService`
 //! methods; the protocol adapter (`ferroehr-rest`) calls them directly.
@@ -103,10 +105,11 @@ pub(crate) fn tenant_cache() -> TenantCache {
 /// this value in force.
 pub const DEFAULT_SYSTEM_ID: &str = "ferroehr.local";
 
-/// The `PARTY_IDENTIFIED.name` this CDR attributes a **system-generated**
-/// commit to — the `AUDIT_DETAILS.committer` (1..1) of a write with no
-/// authenticated principal (auth disabled, or an internal write such as an
-/// import or a synthesized composition).
+/// The `PARTY_IDENTIFIED.name` for a **system-generated** commit.
+///
+/// It is the `AUDIT_DETAILS.committer` (1..1) of a write with no authenticated
+/// principal (auth disabled, or an internal write such as an import or a
+/// synthesized composition).
 ///
 /// RM common `master04-generic_package.adoc` §Audit Details makes
 /// `AUDIT_DETAILS.committer` mandatory but says nothing about what a system

@@ -1,5 +1,6 @@
-//! Deterministic SVG assets rendered FROM committed measurement records —
-//! the published performance visuals derive from `results.json` exactly like
+//! Deterministic SVG assets rendered FROM committed measurement records.
+//!
+//! The published performance visuals derive from `results.json` exactly like
 //! the conformance stats derive from the outcomes (no hand-drawn numbers,
 //! CI-guarded regeneration).
 //!
@@ -73,11 +74,12 @@ fn log_pos(value: f64, min: f64, max: f64, x0: f64, x1: f64) -> f64 {
     x0 + (v.log10() - min.log10()) / (max.log10() - min.log10()) * (x1 - x0)
 }
 
-/// The class ladder: every class's offered-load floor (dashed outline)
-/// with the measured sustained load and verdict overlaid. Fixed columns —
-/// class + floor on the left, the log-scale bars in a fixed plot area, the
-/// measured/verdict status right-aligned at a fixed edge — so no label
-/// ever chases a bar end or leaves the canvas.
+/// The class ladder: every class's offered-load floor (dashed outline) with
+/// the measured sustained load and verdict overlaid.
+///
+/// Fixed columns — class + floor on the left, the log-scale bars in a fixed
+/// plot area, the measured/verdict status right-aligned at a fixed edge — so
+/// no label ever chases a bar end or leaves the canvas.
 #[must_use]
 pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement]) -> String {
     let (width, height) = (640.0, 292.0);
@@ -175,7 +177,9 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
     out
 }
 
-/// Per-operation latency percentiles for one measured run — a VERTICAL
+/// Per-operation latency percentiles for one measured run.
+///
+/// A VERTICAL
 /// layout that grows organically with the operation count (the journey
 /// workload measures ~20+ operations; a horizontal grouping cannot fit):
 /// one row per operation, three horizontal bars (p50/p90/p99, one hue
@@ -291,7 +295,9 @@ pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, Stri
     Ok(out)
 }
 
-/// The latency-throughput curve from a committed stress report — WHERE THE
+/// The latency-throughput curve from a committed stress report.
+///
+/// It shows WHERE THE
 /// SYSTEM BREAKS, nothing else: offered rate (x, log) vs the worst
 /// per-operation p99 (y, log, re-derived from the decoded histograms),
 /// envelope-holding steps as circles, breached steps as crosses, the p99
@@ -435,7 +441,9 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
     Ok(out)
 }
 
-/// The cross-SUT stress overlay: both systems' latency-throughput curves
+/// The cross-SUT stress overlay.
+///
+/// Both systems' latency-throughput curves
 /// (offered rate vs worst per-operation p99, log-log, re-derived from each
 /// side's decoded histograms) on one canvas — the left/primary SUT a solid
 /// line with circle markers, the right/comparison SUT a dashed line with
@@ -769,7 +777,9 @@ fn polyline(
     let _ = writeln!(out, "<path d=\"{}\" class=\"{class}\"/>", d.join(" "));
 }
 
-/// The resource time-series for one measured run: CPU and RSS panels over
+/// The resource time-series for one measured run.
+///
+/// CPU and RSS panels over
 /// the run clock (SUT and DB as two series, distinguishable by color AND
 /// dash), warmup shaded, with small-multiple I/O rate strips (block
 /// read/write, network receive/transmit) under them on the shared x-axis.
@@ -1000,7 +1010,9 @@ pub fn resources_timeseries_svg(measurement: &Measurement) -> Option<String> {
     Some(out)
 }
 
-/// The disk-growth waterfall: the database volume's on-disk size at the
+/// The disk-growth waterfall.
+///
+/// The database volume's on-disk size at the
 /// run's four anchors (empty → scale seed → ward seed → after the
 /// window), each present anchor a bar labeled with its absolute size, the
 /// scale-seed step annotated with the derived bytes per committed
@@ -1147,7 +1159,9 @@ fn format_ms(ms: f64) -> String {
     }
 }
 
-/// The generated Markdown summary the book includes at build time: the
+/// The generated Markdown summary the book includes at build time.
+///
+/// It carries the
 /// normative class ladder (floors from the schedule cases) with the measured
 /// state per class, plus per-operation detail for every measured run. Every
 /// number derives from the committed artifacts; percentiles re-derive from

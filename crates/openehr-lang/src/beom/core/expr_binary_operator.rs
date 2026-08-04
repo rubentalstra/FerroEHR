@@ -11,7 +11,9 @@ use crate::beom::core::operator_kind::OperatorKind;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExprBinaryOperator {
     // inherited: EXPR_OPERATOR
-    /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree. If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.
+    /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree.
+    ///
+    /// If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.
     pub precedence_overridden: Option<bool>,
     /// Operator definition.
     pub operator: OperatorKind,

@@ -4,7 +4,9 @@
 //! The openEHR `DV_INTERVAL` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// Generic class defining an interval (i.e. range) of a comparable type. An interval is a contiguous subrange of a comparable base type. Used to define intervals of dates, times, quantities (whose units match) and so on. The type parameter, `T`, must be a descendant of the type `DV_ORDERED`, which is necessary (but not sufficient) for instances to be compared (`_strictly_comparable_` is also needed).
+/// Generic class defining an interval (i.e. range) of a comparable type.
+///
+/// An interval is a contiguous subrange of a comparable base type. Used to define intervals of dates, times, quantities (whose units match) and so on. The type parameter, `T`, must be a descendant of the type `DV_ORDERED`, which is necessary (but not sufficient) for instances to be compared (`_strictly_comparable_` is also needed).
 ///
 /// Without the `DV_INTERVAL` class, quite a few more `DV_` classes would be needed to express logical intervals, namely interval versions of all the date/time classes, and of quantity classes. Further, it allows the semantics of intervals to be stated in one place unequivocally, including the conditions for strict comparison.
 ///

@@ -115,7 +115,9 @@ pub async fn list_tags(
 
 /// Replace the whole tag collection of one target in one scope: drop the
 /// existing collection, insert the given set (`PUT` full-collection
-/// semantics; an empty set clears all). Runs on the caller's transaction.
+/// semantics; an empty set clears all).
+///
+/// Runs on the caller's transaction.
 ///
 /// **A tag that SURVIVES the replace keeps its original `created_at`.** The
 /// wire operation is a whole-collection replace, but an `ITEM_TAG` identity —
@@ -241,10 +243,12 @@ pub async fn replace_tags(
 }
 
 /// Delete a target collection's tags by key, returning whether any row was
-/// deleted. The wire addresses tags by `key` alone (the Release-1.1.0 tag
-/// routes carry no path selector), while the `ITEM_TAG` identity is the
-/// (`key`, `target_path`) pair — so a key delete removes EVERY tag under that key
-/// in the addressed collection, a set delete.
+/// deleted.
+///
+/// The wire addresses tags by `key` alone (the Release-1.1.0 tag routes carry
+/// no path selector), while the `ITEM_TAG` identity is the (`key`,
+/// `target_path`) pair — so a key delete removes EVERY tag under that key in
+/// the addressed collection, a set delete.
 ///
 /// NOTE: the delete is PHYSICAL — the row goes. No openEHR spec governs this;
 /// it is our own design, and the alternative is unrepresentable rather than

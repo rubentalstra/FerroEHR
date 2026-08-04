@@ -3,7 +3,9 @@
 //! The openEHR `P_C_ATTRIBUTE_TUPLE` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// Object representing a constraint on an atttribute tuple, i.e. a group of attributes that are constrained together. Typically used for representing co-varying constraints like {units, range} constraints.
+/// Object representing a constraint on an atttribute tuple, i.e. a group of attributes that are constrained together.
+///
+/// Typically used for representing co-varying constraints like {units, range} constraints.
 #[doc(alias = "P_C_ATTRIBUTE_TUPLE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct PCAttributeTuple {

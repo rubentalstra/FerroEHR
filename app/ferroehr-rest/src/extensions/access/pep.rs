@@ -1,6 +1,8 @@
-//! The policy-enforcement point (PEP): the enterprise **ABAC** gate plus the
-//! **SMART** resource-scope + launch-context gate, driven from the generic
-//! dispatch mount (`crate::api`) so no per-operation code is needed.
+//! The policy-enforcement point (PEP) for the ITS-REST surface.
+//!
+//! Composes the enterprise **ABAC** gate with the **SMART** resource-scope +
+//! launch-context gate, driven from the generic dispatch mount (`crate::api`)
+//! so no per-operation code is needed.
 //!
 //! # What the openEHR specs say (and don't)
 //!

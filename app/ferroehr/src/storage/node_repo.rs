@@ -17,9 +17,11 @@ use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
 
-/// Bulk-insert the decomposed node rows of one stored version. `rows` is the
-/// output of [`crate::storage::codec::decompose`]; the storage context
-/// (`vo_id`/`sys_version`/`ehr_id`) is supplied here and written onto every row.
+/// Bulk-insert the decomposed node rows of one stored version.
+///
+/// `rows` is the output of [`crate::storage::codec::decompose`]; the storage
+/// context (`vo_id`/`sys_version`/`ehr_id`) is supplied here and written onto
+/// every row.
 ///
 /// A logically-deleted version (data Void, RM common master06 §Logical
 /// Deletion) has no node rows — the caller simply passes an empty slice and no
@@ -145,9 +147,11 @@ pub async fn read_version_canonical(
     reassemble(&rows)
 }
 
-/// One whole-object cell's subtree locator: the `[num, num_cap]` interval of a
-/// stored version. The AQL executor collects one per whole-object cell across a
-/// whole `RESULT_SET` page so [`read_subtrees_canonical`] can load them all in a
+/// One whole-object cell's subtree locator: the `[num, num_cap]` interval of
+/// a stored version.
+///
+/// The AQL executor collects one per whole-object cell across a whole
+/// `RESULT_SET` page so [`read_subtrees_canonical`] can load them all in a
 /// single round trip. No openEHR spec governs the `node` store — our own
 /// decomposed design (`docs/architecture.md` §Storage).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -163,9 +167,10 @@ pub struct SubtreeAnchor {
 }
 
 /// Reassemble every distinct subtree in `anchors` in **one** statement,
-/// returning a map from anchor to its canonical JSON. Each anchor's subtree is
-/// re-based so the anchor node becomes the fragment root (the codec requires
-/// `num == 0` and an empty path at the root).
+/// returning a map from anchor to its canonical JSON.
+///
+/// Each anchor's subtree is re-based so the anchor node becomes the fragment
+/// root (the codec requires `num == 0` and an empty path at the root).
 ///
 /// This closes the AQL result-assembly N+1 — a P-row whole-object projection
 /// page (e.g. `SELECT c FROM EHR e CONTAINS COMPOSITION c` on a dashboard)
@@ -281,8 +286,9 @@ pub async fn read_subtrees_canonical(
 
 /// The root node fragment (`num = 0`) of the FIRST stored content version of
 /// an object — the anchor for cross-version invariants (a root fragment is
-/// small: children are pruned by the decomposition). `None` when no content
-/// version exists (e.g. every prior version deleted).
+/// small: children are pruned by the decomposition).
+///
+/// `None` when no content version exists (e.g. every prior version deleted).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

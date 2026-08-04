@@ -14,7 +14,6 @@ launches only when the previous pair finishes.
 **Why:** parallel Opus workers burn tokens fast; 12-wide fan-outs are too
 expensive.
 
-**How to apply:** queue worker waves of 2. Read-only *audit* fan-outs were
-tolerated wider (12 auditors ran in W-3f Stage 1 before this ruling), but
-default to asking/pairing for anything heavy. Related: [[owner-work-style]],
+**How to apply:** queue worker waves of 2. Read-only *audit* fan-outs may run
+wider with owner sign-off, but default to asking/pairing for anything heavy. Related: [[owner-work-style]],
 [[concurrent-sessions-shared-tree]].

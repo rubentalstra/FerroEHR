@@ -3,7 +3,9 @@
 //! The openEHR `RESOURCE_ANNOTATIONS` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// Object representing annotations on an archetype. These can be of various forms, with a documentation form defined so far, which has a multi-level tabular structure \[ \[ \[String value, String key\], path key\], language key\]. Example instance, showing the documentation structure.
+/// Object representing annotations on an archetype.
+///
+/// These can be of various forms, with a documentation form defined so far, which has a multi-level tabular structure \[ \[ \[String value, String key\], path key\], language key\]. Example instance, showing the documentation structure.
 ///
 /// --------
 /// ```text

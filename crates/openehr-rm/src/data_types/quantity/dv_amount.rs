@@ -10,7 +10,9 @@ use crate::data_types::quantity::dv_quantity::DvQuantity;
 
 /// Closed subtype set of `DV_AMOUNT`, dispatched on each payload's `_type`.
 ///
-/// Abstract class defining the concept of relative quantified  'amounts'. For relative quantities, the  `+` and  `-` operators are defined (unlike descendants of `DV_ABSOLUTE_QUANTITY`, such as the date/time types).
+/// Abstract class defining the concept of relative quantified  'amounts'.
+///
+/// For relative quantities, the  `+` and  `-` operators are defined (unlike descendants of `DV_ABSOLUTE_QUANTITY`, such as the date/time types).
 #[doc(alias = "DV_AMOUNT")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum DvAmount {

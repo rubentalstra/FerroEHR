@@ -120,8 +120,9 @@ pub enum IdError {
     Archetype(String),
 }
 
-/// Composite-identifier equality: `true` iff `a` and `b` are the same
-/// identifier under the openEHR case rule — BASE `base_types`
+/// Composite-identifier equality under the openEHR case rule.
+///
+/// `true` iff `a` and `b` are the same identifier — BASE `base_types`
 /// `master05-identification_package.adoc` §"Composite Identifiers and Case":
 /// "two identifiers identical apart from case are considered to be identical,
 /// and therefore to identify the same thing".
@@ -145,9 +146,10 @@ pub fn composite_ids_equal(a: &str, b: &str) -> bool {
     a.eq_ignore_ascii_case(b)
 }
 
-/// The comparison/keying form of a composite identifier: the value with ASCII
-/// case folded away, so that two identifiers are the same identifier exactly
-/// when their keys are equal (BASE `base_types`
+/// The comparison/keying form of a composite identifier.
+///
+/// The value with ASCII case folded away, so that two identifiers are the same
+/// identifier exactly when their keys are equal (BASE `base_types`
 /// `master05-identification_package.adoc` §"Composite Identifiers and Case" —
 /// the same rule [`composite_ids_equal`] decides pairwise).
 ///
@@ -177,8 +179,9 @@ pub(crate) fn is_positive_int(s: &str) -> bool {
     }
 }
 
-/// `true` for the `iso_oid` production of BASE `base_types`
-/// `master05-identification_package.adoc` §Syntaxes:
+/// `true` for the `iso_oid` production.
+///
+/// BASE `base_types` `master05-identification_package.adoc` §Syntaxes:
 /// `iso_oid = number, { '.', number }` — one or more `.`-separated non-empty
 /// runs of ASCII digits.
 ///
@@ -193,8 +196,9 @@ pub fn is_iso_oid(s: &str) -> bool {
     s.split('.').all(all_digits)
 }
 
-/// `true` for the `uuid` production of BASE `base_types`
-/// `master05-identification_package.adoc` §Syntaxes:
+/// `true` for the `uuid` production.
+///
+/// BASE `base_types` `master05-identification_package.adoc` §Syntaxes:
 /// `uuid = hex-number, '-', hex-number, '-', hex-number, '-', hex-number, '-',
 /// hex-number` — five `-`-separated runs of hex digits, in the `8-4-4-4-12`
 /// widths of the UUID the production names.
@@ -223,8 +227,9 @@ pub fn is_uuid(s: &str) -> bool {
     s.len() == uuid::fmt::Hyphenated::LENGTH && uuid::Uuid::try_parse(s).is_ok()
 }
 
-/// `true` for one `label` of the `internet_id` production (BASE `base_types`
-/// `master05-identification_package.adoc` §Syntaxes):
+/// `true` for one `label` of the `internet_id` production.
+///
+/// BASE `base_types` `master05-identification_package.adoc` §Syntaxes:
 /// `label = alphanum | alphanum-ext-str, alphanum` with
 /// `alphanum-ext-str = letter, { letter | digit | '_' | '-' }` — i.e. a single
 /// letter-or-digit, or a run that starts with a letter, ends with a
@@ -243,8 +248,9 @@ fn is_internet_label(label: &str) -> bool {
     }
 }
 
-/// `true` for the `internet_id` production of BASE `base_types`
-/// `master05-identification_package.adoc` §Syntaxes:
+/// `true` for the `internet_id` production.
+///
+/// BASE `base_types` `master05-identification_package.adoc` §Syntaxes:
 /// `internet_id = subdomain`, `subdomain = label | subdomain, '.', label` —
 /// one or more `.`-separated labels (`is_internet_label`).
 #[must_use]
@@ -266,12 +272,14 @@ pub fn is_uid(s: &str) -> bool {
     is_iso_oid(s) || is_uuid(s) || is_internet_id(s)
 }
 
-/// Build a concrete [`Uid`] from a root/identifier string, choosing the subtype
-/// by lexical form (BASE 1.3.0 `UID` hierarchy): a valid RFC-4122 UUID becomes
-/// [`Uuid`]; an OID (dot-separated groups of digits, at least two groups)
-/// becomes [`IsoOid`]; anything else becomes [`InternetId`]. This mirrors the
-/// reference implementation's `UID.create`/`build` dispatch — the wire form of a
-/// UID carries no `_type`, so the subtype is inferred from the string.
+/// Builds a concrete [`Uid`] from a root/identifier string.
+///
+/// The subtype is chosen by lexical form (BASE 1.3.0 `UID` hierarchy): a valid
+/// RFC-4122 UUID becomes [`Uuid`]; an OID (dot-separated groups of digits, at
+/// least two groups) becomes [`IsoOid`]; anything else becomes [`InternetId`].
+/// This mirrors the reference implementation's `UID.create`/`build` dispatch —
+/// the wire form of a UID carries no `_type`, so the subtype is inferred from
+/// the string.
 #[must_use]
 pub(crate) fn make_uid(value: &str) -> Uid {
     // The `uuid` arm goes through [`is_uuid`] rather than a bare

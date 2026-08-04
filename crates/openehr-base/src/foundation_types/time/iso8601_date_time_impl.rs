@@ -1,8 +1,9 @@
-//! Hand-written `Iso8601_date_time` spec behaviour: the accessor functions, the
-//! computational functions (definite `add`/`subtract`/`diff` and nominal
-//! `add_nominal`/`subtract_nominal`) and a `PartialOrd` implementing range
-//! semantics over partial date/times with timezone normalisation (which may roll
-//! the calendar date).
+//! Hand-written `Iso8601_date_time` spec behaviour.
+//!
+//! Covers the accessor functions, the computational functions (definite
+//! `add`/`subtract`/`diff` and nominal `add_nominal`/`subtract_nominal`) and a
+//! `PartialOrd` implementing range semantics over partial date/times with
+//! timezone normalisation (which may roll the calendar date).
 //!
 //! Spec sources (vendored):
 //! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc`

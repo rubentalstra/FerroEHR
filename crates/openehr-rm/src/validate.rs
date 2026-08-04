@@ -1,7 +1,9 @@
-//! RM-level validation glue (hand-written spec behaviour; preserved
+//! RM-level validation glue (hand-written spec behaviour).
+//!
+//! The module is preserved
 //! across `openehr-codegen` regeneration — the generator does not emit or overwrite it, so
 //! the generator's `declare_hand_written_modules` keeps it and `lib.rs`
-//! auto-declares `pub mod validate;`).
+//! auto-declares `pub mod validate;`.
 //!
 //! Everything here judges a canonical-JSON RM node **as a value** — no codec,
 //! no template, no wire context — and reports [`InvariantViolation`]s relative
@@ -100,8 +102,10 @@ pub mod terminology;
 pub mod typed_dispatch;
 
 /// Run the allocation-free fast-path RM class-invariant check for a single
-/// canonical-JSON node, dispatching on its `_type`. Returns `true` when the fast
-/// path vouched for (fully handled) the node — nothing is appended on `false`.
+/// canonical-JSON node, dispatching on its `_type`.
+///
+/// Returns `true` when the fast path vouched for (fully handled) the node —
+/// nothing is appended on `false`.
 ///
 /// This is the public seam the wire-boundary two-tier dispatcher
 /// (`openehr_its::wire_validate::validate_rm_value`) calls before falling back to
@@ -155,7 +159,9 @@ pub fn locatable_node_id_violation(ty: &str, value: &Value) -> Option<InvariantV
     out.pop()
 }
 
-/// The model-driven mandatory-container lower-bound check: every attribute the
+/// The model-driven mandatory-container lower-bound check.
+///
+/// Every attribute the
 /// static RM model declares as a MANDATORY container must be present, and one
 /// whose BMM cardinality has a lower bound ≥ 1 must be non-empty — e.g.
 /// `CLUSTER.items: List<ITEM>` is `1..*`
@@ -204,9 +210,10 @@ pub fn check_mandatory_containers(ty: &str, value: &Value, out: &mut Vec<Invaria
     }
 }
 
-/// The `x /= Void implies not x.is_empty` invariant family for one node: every
-/// rule of the generated `NONEMPTY_LIST_RULES` table (in the private
-/// `generated` module) that applies to `ty`, evaluated against the node's own
+/// The `x /= Void implies not x.is_empty` invariant family for one node.
+///
+/// Every rule of the generated `NONEMPTY_LIST_RULES` table (in the private
+/// `generated` module) that applies to `ty` is evaluated against the node's own
 /// attributes.
 ///
 /// The rule table is READ FROM THE BMM (every class invariant with that exact
@@ -246,7 +253,9 @@ pub fn nonempty_list_violations(ty: &str, value: &Value, out: &mut Vec<Invariant
 }
 
 /// The declared-slot-type conformance rule, over the BMM-generated attribute
-/// model: a child node's wire `_type` must name the RM type the parent
+/// model.
+///
+/// A child node's wire `_type` must name the RM type the parent
 /// attribute declares, or a subtype of it (`docs/specs/openehr/ITS-JSON`
 /// discipline: `_type` names the instance's RM class; the attribute's
 /// declared type comes from the RM UML/BMM — e.g. RM ehr
@@ -285,7 +294,9 @@ pub fn check_declared_slot_type(
     )))
 }
 
-/// The scalar-member arm of the declared-slot-type rule: a NON-OBJECT member
+/// The scalar-member arm of the declared-slot-type rule.
+///
+/// A NON-OBJECT member
 /// of a list slot whose declared element type is a modelled RM class is the
 /// same positive contradiction a foreign `_type` is — no JSON scalar can be
 /// an instance of an RM class (canonical JSON encodes every RM object as a
@@ -307,12 +318,15 @@ pub fn check_slot_member_is_object(parent_type: &str, field: &str) -> Option<Inv
 }
 
 /// `LOCATABLE.Archetyped_valid`: `is_archetype_root xor archetype_details =
-/// Void` (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
-/// §Invariants). The enforceable arm on an instance is: a **non-root**
-/// node — one whose `archetype_node_id` is an `at`/`id` term code
-/// ([`crate::paths::archetype_node_id_is_term_code`]), which per the
-/// node-id format can never be the root of an archetyped structure — must
-/// NOT carry `archetype_details`.
+/// Void`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants).
+///
+/// The enforceable arm on an instance is: a **non-root** node — one whose
+/// `archetype_node_id` is an `at`/`id` term code
+/// ([`crate::paths::archetype_node_id_is_term_code`]), which per the node-id
+/// format can never be the root of an archetyped structure — must NOT carry
+/// `archetype_details`.
 ///
 /// NOTE: the converse arm ("an archetype-HRID node must carry
 /// `archetype_details`") is NOT enforced, because the invariant's own
@@ -375,7 +389,9 @@ pub fn check_archetyped_valid(
     out
 }
 
-/// The `CLUSTER.items` PRESENCE duty, split out of
+/// The `CLUSTER.items` PRESENCE duty.
+///
+/// It is split out of
 /// [`check_data_structure_shapes`] because it is a mandatory-presence rule and
 /// therefore the one shape duty the `553|incomplete|` state relaxes (RM common
 /// `master06-change_control_package.adoc` §Incomplete Content: "container

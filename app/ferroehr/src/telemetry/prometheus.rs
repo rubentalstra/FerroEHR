@@ -67,16 +67,19 @@ pub const AQL_QUERY_DURATION: &str = "aql_query_duration_seconds";
 /// lowered query plans keyed on the query text (no openEHR spec governs
 /// this, our own performance design).
 pub const AQL_PLAN_CACHE_EVENTS: &str = "aql_plan_cache_events_total";
-/// Committed-composition counter (`change_type` = the numeric openEHR
-/// `audit_change_type` group code — `249`/`251`/`523`/…), incremented by
+/// Committed-composition counter.
+///
+/// The `change_type` label is the numeric openEHR `audit_change_type` group
+/// code (`249`/`251`/`523`/…). Incremented by
 /// `crate::versioning::change::meter_committed` once per COMPOSITION version
 /// that a commit route actually committed (the direct create/update/delete
 /// routes and the CONTRIBUTION commit).
 pub const COMPOSITIONS_COMMITTED: &str = "compositions_committed_total";
-/// Validation-failure counter (`pass` =
-/// `rm_terminology`/`template`/`constraint_binding` — the last being an
-/// archetype ac-code value-set binding the routed terminology server refused
-/// or could not resolve under `fail_on_error`).
+/// Validation-failure counter.
+///
+/// The `pass` label is `rm_terminology`/`template`/`constraint_binding` — the
+/// last being an archetype ac-code value-set binding the routed terminology
+/// server refused or could not resolve under `fail_on_error`.
 pub const VALIDATION_FAILURES: &str = "validation_failures_total";
 /// Version-signature verification-failure counter (`verdict` =
 /// `digest_mismatch/pgp_invalid`), incremented under `verify_on_read`
@@ -274,9 +277,11 @@ pub fn catalog() -> Vec<MetricSpec> {
     ]
 }
 
-/// Install the global Prometheus recorder with the catalog bucket ladders, then
-/// register descriptions and emit the `build_info` / `process_start_time`
-/// gauges. Returns the render handle for `/management/prometheus`.
+/// Install the global Prometheus recorder with the catalog bucket ladders,
+/// then register descriptions and emit the `build_info` /
+/// `process_start_time` gauges.
+///
+/// Returns the render handle for `/management/prometheus`.
 ///
 /// # Errors
 /// Returns [`BuildError`] if a recorder is already installed or bucket

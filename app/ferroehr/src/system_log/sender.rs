@@ -58,10 +58,11 @@ pub const METRIC_DROPPED: &str = "atna_audit_dropped_total";
 /// Auditable operations rejected under `fail_mode = closed` (queue full, or
 /// the local store is unhealthy). Each rejection is a `503` at the REST layer.
 pub const METRIC_REJECTED: &str = "atna_audit_rejected_total";
-/// Records dropped in the drain because a rendering failed. SM master02
-/// §Component table names the System Log as an "IHE ATNA-compliant system
-/// log"; silent audit loss would undermine that, so every serialize-drop is
-/// metered.
+/// Records dropped in the drain because a rendering failed.
+///
+/// SM master02 §Component table names the System Log as an "IHE
+/// ATNA-compliant system log"; silent audit loss would undermine that, so
+/// every serialize-drop is metered.
 pub const METRIC_SERIALIZE_FAILED: &str = "atna_audit_serialize_failed_total";
 /// Records successfully written to a sink (label `sink`:
 /// `store`/`syslog`/`fhir_feed`).

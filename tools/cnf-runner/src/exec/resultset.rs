@@ -1,8 +1,10 @@
-//! The normative AQL `RESULT_SET` equivalence comparator (the schedule's
+//! The normative AQL `RESULT_SET` equivalence comparator.
+//!
+//! The schedule's
 //! `RESULT_SET` equivalence rules — each rule is either **\[spec\]**, cited to
 //! the vendored QUERY/ITS-REST text, or **\[legislated\]**, a fixed proposed
 //! default awaiting upstream ratification; both are implemented exactly as
-//! specified).
+//! specified.
 //!
 //! Rules implemented here:
 //! 1. Comparison scope is `rows` only; `meta` is always excluded (\[spec\]:

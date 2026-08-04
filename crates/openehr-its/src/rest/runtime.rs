@@ -1,15 +1,19 @@
-//! Hand-written ITS-REST runtime: the API error type the generated
-//! server traits return, mapped to an HTTP response. The DTOs, per-group server
-//! traits, and route tables are generated (`emit-rest`) into [`super::generated`];
-//! `ferroehr-rest` implements the traits and wires axum.
+//! Hand-written ITS-REST runtime: the API error type the generated server
+//! traits return, mapped to an HTTP response.
+//!
+//! The DTOs, per-group server traits, and route tables are generated
+//! (`emit-rest`) into [`super::generated`]; `ferroehr-rest` implements the
+//! traits and wires axum.
 
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
 /// A single semantic-validation violation, keyed by the RM path of the
-/// offending node. Carried by [`ApiError::ValidationFailed`] so the REST layer
-/// can render the ITS-REST error body (`schemas/others/Error.yaml`:
-/// `{ message, validationErrors[] }`).
+/// offending node.
+///
+/// Carried by [`ApiError::ValidationFailed`] so the REST layer can render the
+/// ITS-REST error body (`schemas/others/Error.yaml`: `{ message,
+/// validationErrors[] }`).
 #[derive(Debug, Clone)]
 pub struct ValidationError {
     /// The RM path (archetype `aqlPath` or RM instance path) of the violation.

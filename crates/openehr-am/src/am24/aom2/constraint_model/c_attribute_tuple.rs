@@ -6,7 +6,9 @@
 use crate::am24::aom2::constraint_model::c_attribute::CAttribute;
 use crate::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
 
-/// Object representing a constraint on an attribute tuple, i.e. a group of attributes that are constrained together. Typically used for representing co-varying constraints like `{units, range}` constraints.
+/// Object representing a constraint on an attribute tuple, i.e. a group of attributes that are constrained together.
+///
+/// Typically used for representing co-varying constraints like `{units, range}` constraints.
 #[doc(alias = "C_ATTRIBUTE_TUPLE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct CAttributeTuple {

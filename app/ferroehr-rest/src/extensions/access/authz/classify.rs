@@ -161,8 +161,10 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
 }
 
 /// The ABAC [`ResourceKind`] of a generated operation, derived from its op-id
-/// prefix (§5.3). `None` for operations ABAC does not model as resources
-/// (`definition_*`, `demographic_*`, `admin_*`) — those are RBAC-only.
+/// prefix (§5.3).
+///
+/// `None` for operations ABAC does not model as resources (`definition_*`,
+/// `demographic_*`, `admin_*`) — those are RBAC-only.
 ///
 /// Order matters: `ehr_status_*` and `versioned_ehr_status_*` are tested before
 /// the generic `ehr_*` fallthrough.
@@ -239,8 +241,10 @@ fn write_verb(op: &str) -> Option<bool> {
 }
 
 /// The ABAC [`AccessMode`] of a generated operation (the Cedar action axis,
-/// §5.6). Returns `None` for operations without a [`ResourceKind`]; for a
-/// clinical op it is always `Some`. Derived from the op-id verb.
+/// §5.6).
+///
+/// Returns `None` for operations without a [`ResourceKind`]; for a clinical
+/// op it is always `Some`. Derived from the op-id verb.
 #[must_use]
 pub fn access_of(op: &str) -> Option<AccessMode> {
     kind_of(op)?;

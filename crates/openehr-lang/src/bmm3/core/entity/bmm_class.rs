@@ -9,7 +9,9 @@ use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
 
 /// Closed subtype set of `BMM_CLASS`, dispatched on each payload's `_type`.
 ///
-/// Meta-type corresponding a class definition in an object model. Inheritance is specified by the `_ancestors_` attribute, which contains a list of _types_ rather than classes. Inheritance is thus understood in BMM as a stated relationship between classes. The equivalent relationship between types is conformance.
+/// Meta-type corresponding a class definition in an object model.
+///
+/// Inheritance is specified by the `_ancestors_` attribute, which contains a list of _types_ rather than classes. Inheritance is thus understood in BMM as a stated relationship between classes. The equivalent relationship between types is conformance.
 ///
 /// NOTE: unlike UML, the `_name_` is just the root name, even if the class is generic. Use `_type_name()_` to obtain the qualified type name.
 #[doc(alias = "BMM_CLASS")]

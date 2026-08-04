@@ -125,7 +125,8 @@ model.
   `|other`, FLAT⇄STRUCTURED algorithms), `master05` (per-RM-type mapping
   tables), `master06` (the `ctx/` vocabulary). SM SIM-B / SDF are
   DEVELOPMENT-state model documents — never implement their terse string
-  encodings; SDT is retired. No vendor implementation is an oracle.
+  encodings; SDT carries upstream `spec_status: RETIRED` and is never
+  implemented. No vendor implementation is an oracle.
 - **Architecture: one internal tree** (`flat::sim::SimNode`) — FLAT
   (`flat::sim::flat`) and STRUCTURED (`flat::sim::structured`) are pure codecs
   over it; the template-driven RM conversion is written once (`flat::flatten`

@@ -10,7 +10,9 @@ use crate::base_types::identification::object_id::ObjectId;
 #[derive(Debug, Clone, PartialEq)]
 pub struct AccessGroupRef {
     // inherited: OBJECT_REF
-    /// Namespace to which this identifier belongs in the local system context (and possibly in any other openEHR compliant environment) e.g.  terminology ,  demographic . These names are not yet standardised. Legal values for `_namespace_` are:
+    /// Namespace to which this identifier belongs in the local system context (and possibly in any other openEHR compliant environment) e.g.  terminology ,  demographic .
+    ///
+    /// These names are not yet standardised. Legal values for `_namespace_` are:
     ///
     /// * `"local"`
     /// * `"unknown"`
@@ -18,7 +20,9 @@ pub struct AccessGroupRef {
     ///
     /// Note that the first two are just special values of the regex, and will be matched by it.
     pub namespace: String,
-    /// Name of the  class (concrete or abstract) of object to which this identifier type refers, e.g. `PARTY`, `PERSON`,  `GUIDELINE`  etc. These class names are from the relevant reference model. The type name `ANY` can be used to indicate that any type is accepted (e.g. if the type is unknown).
+    /// Name of the  class (concrete or abstract) of object to which this identifier type refers, e.g. `PARTY`, `PERSON`,  `GUIDELINE`  etc. These class names are from the relevant reference model.
+    ///
+    /// The type name `ANY` can be used to indicate that any type is accepted (e.g. if the type is unknown).
     pub r#type: String,
     /// Globally unique id of an object, regardless of where it is stored.
     pub id: ObjectId,

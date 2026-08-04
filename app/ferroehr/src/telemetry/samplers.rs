@@ -1,7 +1,9 @@
-//! Background metric samplers: the DB pool gauges, the tokio
-//! runtime gauges (stable `Handle::metrics()` subset), and the periodic
-//! Prometheus recorder upkeep. When OTLP metrics push is enabled the same gauge
-//! values are additionally recorded through the `OTel` meter (dual path).
+//! Background metric samplers: the DB pool gauges, the tokio runtime gauges
+//! (stable `Handle::metrics()` subset), and the periodic Prometheus recorder
+//! upkeep.
+//!
+//! When OTLP metrics push is enabled the same gauge values are additionally
+//! recorded through the `OTel` meter (dual path).
 //!
 //! A single background task samples on a fixed interval and is aborted by the
 //! [`TelemetryGuard`](super::TelemetryGuard) on shutdown, on the same path the
@@ -38,9 +40,11 @@ pub async fn acquire(pool: &PgPool) -> Result<PoolConnection<Postgres>, sqlx::Er
     result
 }
 
-/// Spawn the background sampler. Returns the task handle so the telemetry guard
-/// can abort it on shutdown. When `meter` is `Some`, the pool/runtime gauges are
-/// mirrored through the `OTel` meter for OTLP push.
+/// Spawn the background sampler.
+///
+/// Returns the task handle so the telemetry guard can abort it on shutdown.
+/// When `meter` is `Some`, the pool/runtime gauges are mirrored through the
+/// `OTel` meter for OTLP push.
 #[must_use]
 pub fn spawn(pool: PgPool, prometheus: PrometheusHandle, meter: Option<Meter>) -> JoinHandle<()> {
     tokio::spawn(async move {

@@ -8,11 +8,10 @@ metadata:
   modified: 2026-07-22T13:48:14.237Z
 ---
 
-`docs/conformance/cnf-design.md` (formerly `docs/plans/cnf-conformance-strategy.md`,
-moved 2026-07-23 by owner instruction — a living reference document with a
-community-facing head and an HTML-comment agent note) is exempt from the
-delete-on-implementation rule (owner ruling 2026-07-22, PR #236 — it was
-deleted at the #202 cutover and the owner ordered it restored the same day).
+`docs/conformance/cnf-design.md` — a living reference document with a
+community-facing head and an HTML-comment agent note — is exempt from the
+delete-on-implementation rule and stays at that path permanently (owner
+rulings 2026-07-22 + 2026-07-23).
 
 **Why:** it is the normative internal design record for the CNF 2.0 runner —
 especially the §8.14 population-anchored performance-class model (POC 2 ·

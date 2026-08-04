@@ -32,6 +32,8 @@ pub struct PBmmSinglePropertyOpen {
     pub bmm_property: Option<BmmProperty>,
     /// Type definition of this property computed from `_type_` for later use in `_bmm_property_`.
     pub type_ref: Option<PBmmOpenType>,
-    /// Type definition of this property, if a simple String type reference. Really we should use `_type_def_` to be regular in the schema, but that makes the schema more wordy and less clear. So we use this persisted String value, and compute the `_type_def_` on the fly. Persisted attribute.
+    /// Type definition of this property, if a simple String type reference.
+    ///
+    /// Really we should use `_type_def_` to be regular in the schema, but that makes the schema more wordy and less clear. So we use this persisted String value, and compute the `_type_def_` on the fly. Persisted attribute.
     pub r#type: Option<String>,
 }

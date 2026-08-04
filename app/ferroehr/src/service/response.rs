@@ -77,9 +77,11 @@ impl ResourceMeta {
 }
 
 /// A service response: the canonical-JSON RM payload plus optional resource
-/// metadata. A `null` `body` means "no representation" (a logically deleted
-/// read, or a resource whose value is not returned); `meta` is present
-/// whenever the operation produced/identified a versioned resource.
+/// metadata.
+///
+/// A `null` `body` means "no representation" (a logically deleted read, or a
+/// resource whose value is not returned); `meta` is present whenever the
+/// operation produced/identified a versioned resource.
 #[derive(Debug, Clone)]
 pub struct ServiceResponse {
     /// The canonical-JSON RM payload, or `Value::Null` when there is none.

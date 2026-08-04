@@ -17,10 +17,12 @@ pub use quick_xml::events::BytesStart as XmlStart;
 /// The `xsi` namespace, declared on every serialized root element.
 pub const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
-/// The two openEHR ITS-XML wire lineages. Both bundles are vendored under
-/// `schemas/xml/` and merged into one emission closure by `emit-xml`; they
-/// differ only in the root namespace a document declares
-/// (`docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions").
+/// The two openEHR ITS-XML wire lineages.
+///
+/// Both bundles are vendored under `schemas/xml/` and merged into one
+/// emission closure by `emit-xml`; they differ only in the root namespace a
+/// document declares (`docs/specs/openehr/ITS-XML/README.adoc` §"Releases and
+/// IM Versions").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Namespace {
     /// `http://schemas.openehr.org/v1` — the `Release-1.0.2v2` bundle, the
@@ -178,9 +180,10 @@ pub fn to_xml<T: ToXml + ?Sized>(
     w.into_string()
 }
 
-/// Serialize a value as an openEHR canonical-XML document whose ROOT element
-/// carries a statically-declared type — the `declared`-aware sibling of
-/// [`to_xml`], for a published global element whose XSD type is abstract.
+/// Serializes a value as canonical XML under a statically-declared root type.
+///
+/// This is the `declared`-aware sibling of [`to_xml`], for a published global
+/// element whose XSD type is abstract.
 ///
 /// The value emits `xsi:type` through the same polymorphic-dispatch mechanism
 /// every nested slot uses, i.e. iff its concrete type differs from `declared`.

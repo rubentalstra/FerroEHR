@@ -56,6 +56,7 @@ pub const SYS_SECURITY_SOURCE_TYPE: &str =
 pub const SYS_BALP_USER_AGENT_TYPES: &str =
     "https://profiles.ihe.net/ITI/BALP/CodeSystem/UserAgentTypes";
 /// The system for ITS-REST operation-id subtype codings.
+///
 /// NOTE: no external code system governs openEHR REST operations — our own
 /// design/extension (the same ids the DICOM rendering emits under the
 /// `openEHR-ITS-REST` `codeSystemName`).
@@ -404,9 +405,8 @@ fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> V
     let mut entities = Vec::new();
 
     if event.object.is_query() {
-        // NOTE: the search expression currently available to the audit layer
-        // is the qualified stored-query name (ad-hoc AQL text is not carried
-        // on the event); it is base64-encoded per the BALP query pattern
+        // NOTE: the audit layer carries the qualified stored-query name, not
+        // ad-hoc AQL text; it is base64-encoded per the BALP query pattern
         // ("base64 encoding preserves exactly what was requested").
         let expression = event
             .object_id

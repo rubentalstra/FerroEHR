@@ -31,7 +31,7 @@
 //! siblings [`crate::bmm3::core::entity::bmm_class_impl`] and
 //! [`crate::bmm3::core::feature::bmm_feature_impl`].
 //!
-//! TODO: implement v3 MODEL-level navigation (a `BMM_MODEL` counterpart of
+//! TODO(#1876): implement v3 MODEL-level navigation (a `BMM_MODEL` counterpart of
 //! [`crate::bmm::core::bmm_model_impl`]'s `type_conforms_to` /
 //! `all_ancestor_classes` / `property_definition` over
 //! `crate::bmm3::core::model::bmm_model::BmmModel`). The type-level lattice above
@@ -60,7 +60,9 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
 
-/// The name of the top `Any` type, used wherever an unconstrained generic
+/// The name of the top `Any` type.
+///
+/// Used wherever an unconstrained generic
 /// parameter has to be reduced to a concrete conformance name
 /// (`org.openehr.lang.bmm3.bmm_definitions.adoc` §Functions `Any_class`:
 /// "built-in class definition corresponding to the top `Any` class").

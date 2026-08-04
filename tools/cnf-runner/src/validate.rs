@@ -1,7 +1,8 @@
-//! Cross-artifact validation — the schedule's machine gates, generalized
-//! from ECC's coverage-guard discipline: id uniqueness, SM-operation
-//! resolution, spec-ref link checks, binding completeness, `verified_by`
-//! resolution, corpus integrity, ambiguity/option resolution,
+//! Cross-artifact validation — the schedule's machine gates.
+//!
+//! Generalized from ECC's coverage-guard discipline: id uniqueness,
+//! SM-operation resolution, spec-ref link checks, binding completeness,
+//! `verified_by` resolution, corpus integrity, ambiguity/option resolution,
 //! capability-vs-tier consistency, reference/sentinel grammar,
 //! decision-table literals, and vocabulary drift.
 //!
@@ -288,9 +289,10 @@ fn suspended_report_only(set: &ArtifactSet, case: &CaseCore) -> bool {
 }
 
 /// The verdict-bearing cases of one capability: active cases naming it whose
-/// gating is not suspended by a `report_only` register entry. This is the
-/// count the depth floor measures and the set the claim gate requires to be
-/// non-empty.
+/// gating is not suspended by a `report_only` register entry.
+///
+/// This is the count the depth floor measures and the set the claim gate
+/// requires to be non-empty.
 #[must_use]
 pub fn verdict_bearing<'a>(set: &'a ArtifactSet, cap: &CapabilityName) -> Vec<&'a CaseCore> {
     set.cases
@@ -2622,15 +2624,13 @@ fn consumed_with_keys(
         None => {}
         Some(crate::model::binding::RequestBody::Named { name, .. }) => {
             let authored = |key: &str| step.with_entries().iter().any(|(k, _)| k == key);
-            // `select_body` resolves the payload in a fixed ORDER, and each
-            // arm short-circuits the ones after it. Modelling the order is
-            // what makes this gate sharp: once an earlier arm answers, the
-            // later arms read nothing, so a key they might have picked up is
-            // genuinely unread.
+            // `select_body` resolves the payload in a fixed ORDER, and each arm
+            // short-circuits the ones after it. Modelling that order is what makes
+            // this gate sharp: once an earlier arm answers, the later arms read
+            // nothing, so a key they might have picked up is genuinely unread.
             //
-            // 1. the bundled-CONTRIBUTION construct, when `versions:` is
-            //    authored: the envelope is built from `versions` + `audit`
-            //    (the client-supplied committal metadata) and NOTHING else.
+            // 1. the bundled-CONTRIBUTION construct, when `versions:` is authored:
+            //    the envelope is built from `versions` + `audit` and NOTHING else.
             if name == "contribution" && authored("versions") {
                 consumed.extend(CONTRIBUTION_KEYS.iter().map(|k| (*k).to_owned()));
             }
@@ -4060,10 +4060,13 @@ fn check_axis3_section_derivation(
     }
 }
 
-/// Render the deterministic coverage report (`docs/conformance/coverage-report.md`):
-/// per-interface SM-operation status, per-binding outcome/format coverage, and
-/// the cross-cutting wire-surface table. Stable ordering, no timestamps — the
-/// same inputs always render byte-identical output.
+/// Render the deterministic coverage report
+/// (`docs/conformance/coverage-report.md`): per-interface SM-operation
+/// status, per-binding outcome/format coverage, and the cross-cutting
+/// wire-surface table.
+///
+/// Stable ordering, no timestamps — the same inputs always render
+/// byte-identical output.
 ///
 /// Axis 1 (the per-interface section) and the Axis-3 section derivation render
 /// only when `spec_root` is supplied (they read the vendored spec tree).

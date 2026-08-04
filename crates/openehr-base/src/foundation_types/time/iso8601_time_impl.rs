@@ -1,9 +1,10 @@
-//! Hand-written `Iso8601_time` spec behaviour: the accessor functions
-//! (`is_partial`, `is_extended`, `is_decimal_sign_comma`,
-//! `has_fractional_second`, `minute_unknown`, `second_unknown`,
-//! `hour`/`minute`/`second`/`fractional_second`/`timezone`, `as_string`), the
-//! computational functions (`add`/`subtract`/`diff`) and a `PartialOrd`
-//! implementing range semantics over partial times with timezone
+//! Hand-written `Iso8601_time` spec behaviour.
+//!
+//! Covers the accessor functions (`is_partial`, `is_extended`,
+//! `is_decimal_sign_comma`, `has_fractional_second`, `minute_unknown`,
+//! `second_unknown`, `hour`/`minute`/`second`/`fractional_second`/`timezone`,
+//! `as_string`), the computational functions (`add`/`subtract`/`diff`) and a
+//! `PartialOrd` implementing range semantics over partial times with timezone
 //! normalisation.
 //!
 //! Spec sources (vendored):

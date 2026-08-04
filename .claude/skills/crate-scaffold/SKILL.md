@@ -22,11 +22,11 @@ the current three-directory workspace).
 > tooling → `tools/`. Workspace members are the globs
 > `["crates/*", "app/*", "tools/*"]` — **every directory under these globs
 > must contain a Cargo.toml or `cargo metadata` fails**, so never create the
-> directory without the manifest in the same step. Do not scaffold retired
-> names (`openehr-foundation`, `ferroehr-sm`, `ferroehr-audit`,
-> `ferroehr-signing`, `ferroehr-authz`, `ferroehr-compat` — all folded in or
-> removed; the app is now the four crates `ferroehr`, `ferroehr-rest`,
-> `ferroehr-server`, `ferroehr-admin-ui`).
+> directory without the manifest in the same step. **These crate names are
+> banned — never scaffold one:** `openehr-foundation`, `ferroehr-sm`,
+> `ferroehr-audit`, `ferroehr-signing`, `ferroehr-authz`, `ferroehr-compat`.
+> The application is exactly four crates: `ferroehr`, `ferroehr-rest`,
+> `ferroehr-server`, `ferroehr-admin-ui`.
 
 ## Steps
 

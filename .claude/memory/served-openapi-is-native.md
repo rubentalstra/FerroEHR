@@ -8,7 +8,7 @@ metadata:
 ---
 
 **The served OpenAPI is OURS, generated from OUR code.** Owner correction
-(2026-07-17, angrily, after stale decision-doc framing misled a worker): `ferroehr-rest` never imports, serves, renders, or drift-gates
+(2026-07-17, angrily): `ferroehr-rest` never imports, serves, renders, or drift-gates
 the vendored ITS-REST OAS yaml. Every handler carries `#[utoipa::path]`;
 the complete document is composed natively in
 `app/ferroehr-rest/src/extensions/openapi.rs` (single-sourced with the
@@ -22,12 +22,12 @@ every conflict with the OAS; where the docs text is SILENT the released OAS
 grounds the behaviour (the release's own overview `Specifications.md`
 presents the OAS files as its computable artifacts). The served document
 legitimately differs from the OAS (ours includes the own-design
-extensions). See [[cnf-spec-oracle-attribution]].
+extensions). The oracle order is codified in `.claude/rules/cnf-triage.md`.
 
 **How to apply:** when changing anything wire-visible (media types,
 headers, params, status codes), read the ITS-REST **docs text**
 (`docs/specs/openehr/ITS-REST/`) for the required BEHAVIOUR — NOT the stalled
 OAS — then update OUR `#[utoipa::path]` declarations in the same PR so
 the served document advertises it. Root CLAUDE.md's OpenAPI note carries
-the rule (the ADR layer itself was deleted 2026-07-17). Never
-resurrect the "code→OAS drift-check" idea. Related: [[owner-work-style]].
+the rule. A code→OAS drift check is banned — never add one.
+Related: [[owner-work-style]].

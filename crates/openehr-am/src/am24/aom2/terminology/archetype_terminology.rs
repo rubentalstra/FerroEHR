@@ -14,18 +14,26 @@ pub struct ArchetypeTerminology {
     pub is_differential: bool,
     /// Original language of the terminology, as set at artefact creation or parsing time; must be a code in the ISO 639-1 2 character language code-set.
     pub original_language: String,
-    /// Term code defining the meaning of the artefact as a whole, and always used as the at-code (at-coded archetypes) or id-code (id-coded archetypes) on the root node of the artefact. Must be defined in the `_term_definitions_` property.
+    /// Term code defining the meaning of the artefact as a whole, and always used as the at-code (at-coded archetypes) or id-code (id-coded archetypes) on the root node of the artefact.
+    ///
+    /// Must be defined in the `_term_definitions_` property.
     pub concept_code: String,
-    /// Directory of term definitions as a two-level table. The outer hash keys are language codes, e.g. `"en"`, `"de"`, while the inner hash keys are term codes, e.g. `"at0017"`, `"at0004"` (at-coded archetypes) or `"id17"`, `"at4"` (id-coded archetypes).
+    /// Directory of term definitions as a two-level table.
+    ///
+    /// The outer hash keys are language codes, e.g. `"en"`, `"de"`, while the inner hash keys are term codes, e.g. `"at0017"`, `"at0004"` (at-coded archetypes) or `"id17"`, `"at4"` (id-coded archetypes).
     pub term_definitions:
         std::collections::BTreeMap<String, std::collections::BTreeMap<String, ArchetypeTerm>>,
-    /// Directory of bindings to external terminology codes and value sets, as a two-level table. The outer hash keys are terminology ids, e.g. `"SNOMED_CT"`, and the inner hash keys are constraint codes, e.g. `"at0004"`, `"at4"`, "ac13"` or paths. The indexed `Uri\` objects represent references to externally defined resources, either terms, ontology concepts, or terminology subsets / ref-sets.
+    /// Directory of bindings to external terminology codes and value sets, as a two-level table.
+    ///
+    /// The outer hash keys are terminology ids, e.g. `"SNOMED_CT"`, and the inner hash keys are constraint codes, e.g. `"at0004"`, `"at4"`, "ac13"` or paths. The indexed `Uri\` objects represent references to externally defined resources, either terms, ontology concepts, or terminology subsets / ref-sets.
     pub term_bindings:
         Option<std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>>,
     // NOTE: `owner_archetype` (BMM-mandatory back-reference) omitted — AM AOM2 archetype_terminology (owner_archetype: Archetype that owns this terminology). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
     /// Archetype-local value sets, each keyed by value-set id, i.e. an ac-code.
     pub value_sets: Option<std::collections::BTreeMap<String, ValueSet>>,
-    /// Directory of extracts of external terminologies, as a two-level table. The outer hash keys are terminology ids, e.g. `"SNOMED_CT"`, while the inner hash keys are term codes or code-phrases from the relevant terminology, e.g. `"10094842"`.
+    /// Directory of extracts of external terminologies, as a two-level table.
+    ///
+    /// The outer hash keys are terminology ids, e.g. `"SNOMED_CT"`, while the inner hash keys are term codes or code-phrases from the relevant terminology, e.g. `"10094842"`.
     pub terminology_extracts: Option<
         std::collections::BTreeMap<String, std::collections::BTreeMap<String, ArchetypeTerm>>,
     >,

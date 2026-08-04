@@ -1,5 +1,6 @@
 //! The [`Signer`]: builds the two spec-blessed signature modes from
 //! [`SigningConfig`] and produces a signature over a `canonical_form` string.
+//!
 //! Boot validation is fail-closed: `pgp` mode without a loadable, usable key
 //! refuses to construct.
 //!

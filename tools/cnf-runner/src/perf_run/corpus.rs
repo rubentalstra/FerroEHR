@@ -1,4 +1,6 @@
-//! The seeded corpus: the `scale_ladder` volume (N EHRs × ~100 committed
+//! The seeded corpus for measured runs.
+//!
+//! It is the `scale_ladder` volume (N EHRs × ~100 committed
 //! blood-pressure versions, `corpus/recipes/scale_ladder.md`) plus the
 //! STANDING WARD — the per-patient state the journey stages address
 //! mid-flight (an episode directory, the GP-data-set chart document, the
@@ -129,8 +131,10 @@ pub fn ward_size(ehr_count: usize) -> usize {
     ehr_count.min(10_000)
 }
 
-/// Seed the `scale_ladder` corpus through the public API: upload the
-/// blood-pressure OPT (409 on re-run is fine), create `ehrs` EHRs, commit
+/// Seeds the `scale_ladder` corpus through the public API.
+///
+/// Uploads the
+/// blood-pressure OPT (409 on re-run is fine), creates `ehrs` EHRs, commits
 /// `versions_per_ehr` [`crate::exec::recipes::bp_series`] compositions
 /// into each. Deterministic content; parallel across `workers` threads.
 ///
@@ -350,9 +354,11 @@ pub fn seed_scale_ladder(
     })
 }
 
-/// Seed the standing ward on top of a scale corpus: upload every pack OPT
-/// (409 on re-run is fine), register the dashboard stored query, then per
-/// ward patient commit the GP chart document, the medicines list, the
+/// Seeds the standing ward on top of a scale corpus.
+///
+/// Uploads every pack OPT
+/// (409 on re-run is fine), registers the dashboard stored query, then per
+/// ward patient commits the GP chart document, the medicines list, the
 /// episode directory, and one CONTRIBUTION — capturing every uid the
 /// journey stages address. Idempotent: a corpus whose `ward` already
 /// covers the target size is left untouched.

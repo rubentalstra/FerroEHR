@@ -11,6 +11,8 @@ use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
 
+/// The openEHR `EHR_STATUS` class.
+///
 /// Single object per EHR containing various EHR-wide status flags and settings, including whether this EHR can be queried, modified etc. This object is always modifiable, in order to change the status of the EHR as a whole.
 ///
 /// NOTE: It is strongly recommended that the inherited attribute `_uid_` be populated in `EHR_STATUS` objects, using the UID copied from the `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object. +
@@ -19,9 +21,13 @@ use openehr_base::prelude::UidBasedId;
 #[derive(Debug, Clone, PartialEq)]
 pub struct EhrStatus {
     // inherited: LOCATABLE
-    /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
+    /// Runtime name of this fragment, used to build runtime paths.
+    ///
+    /// This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
     pub name: DvText,
-    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
+    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths.
+    ///
+    /// Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
     ///
     /// At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
     pub archetype_node_id: String,
@@ -33,7 +39,9 @@ pub struct EhrStatus {
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
     pub feeder_audit: Option<FeederAudit>,
-    /// The subject of this EHR. The `_external_ref_` attribute can be used to contain a direct reference to the subject in a demographic or identity service. Alternatively, the association between patients and their records may be done elsewhere for security reasons.
+    /// The subject of this EHR.
+    ///
+    /// The `_external_ref_` attribute can be used to contain a direct reference to the subject in a demographic or identity service. Alternatively, the association between patients and their records may be done elsewhere for security reasons.
     pub subject: PartySelf,
     /// True if this EHR should be included in population queries, i.e. if this EHR is considered active in the population.
     pub is_queryable: bool,

@@ -1,10 +1,11 @@
 //! List handling — the SM cursor convention (`master02-overview.adoc`
 //! §List Handling).
 
-/// The SM list-cursor parameters, used by every unbounded-list call
-/// (`master02-overview.adoc` §List Handling: "Calls that produce a container
+/// The SM list-cursor parameters, used by every unbounded-list call.
+///
+/// `master02-overview.adoc` §List Handling: "Calls that produce a container
 /// result potentially containing unlimited numbers of elements can be managed
-/// in a typical 'DB cursor' fashion").
+/// in a typical 'DB cursor' fashion".
 ///
 /// `item_offset`: "Optional parameter specifying offset in query result items
 /// … starting at zero. … Zero signifies that items starting from the first

@@ -11,7 +11,9 @@ use crate::am24::aom2::profile::aom_type_mapping::AomTypeMapping;
 pub struct AomProfile {
     /// Name of this profile, usually based on the publisher it pertains to e.g. "openEHR", "CDISC", etc.
     pub profile_name: String,
-    /// States a class from the Reference Model that provides archetyping capability in RM data structures. This attribute is optional, and there need be no such class in the RM. Defining it here has the effect in tools that the class tree under which archetypes are arranged contains only RM classes inheriting from this class.
+    /// States a class from the Reference Model that provides archetyping capability in RM data structures.
+    ///
+    /// This attribute is optional, and there need be no such class in the RM. Defining it here has the effect in tools that the class tree under which archetypes are arranged contains only RM classes inheriting from this class.
     pub archetype_parent_class: Option<String>,
     /// This attribute defines a base class from the Reference Model whose descendants are considered to be 'logical data types', i.e. of some higher level than the built-in primitive types String, Integer etc. This attribute is optional, even if the RM does have such a class, and is only used to help tooling to provide more intelligent display.
     pub archetype_data_value_parent_class: Option<String>,
@@ -19,7 +21,9 @@ pub struct AomProfile {
     pub aom_rm_type_mappings: Option<std::collections::BTreeMap<String, AomTypeMapping>>,
     /// If `_archetype_parent_class_` is not set, designate a class whose descendants should be made visible in tree and grid renderings of the archetype definition.
     pub archetype_visualise_descendants_of: Option<String>,
-    /// Allowed type substitutions: Actual RM type names keyed by AOM built-in types which can substitute for them in an archetype. E.g. `<key = "ISO8601_DATE", value = "String">` means that if RM property `TYPE._some_property_` is of type `String`, an `ISO8601_DATE` is allowed at that position in the archetype.
+    /// Allowed type substitutions: Actual RM type names keyed by AOM built-in types which can substitute for them in an archetype.
+    ///
+    /// E.g. `<key = "ISO8601_DATE", value = "String">` means that if RM property `TYPE._some_property_` is of type `String`, an `ISO8601_DATE` is allowed at that position in the archetype.
     pub aom_rm_type_substitutions: Option<std::collections::BTreeMap<String, String>>,
     /// List of mappings of lifecycle state names used in archetypes to AOM lifecycle state names:
     ///

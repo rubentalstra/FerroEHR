@@ -1,5 +1,7 @@
-//! The step-load STRESS instrument — short, intense load steps at
-//! geometrically climbing offered rates to locate the **maximum sustainable
+//! The step-load STRESS instrument.
+//!
+//! Short, intense load steps at
+//! geometrically climbing offered rates locate the **maximum sustainable
 //! throughput** (the industry headline for this procedure; TPC benchmarks
 //! call their equivalent "maximum qualified throughput" — the highest rate
 //! held inside a response-time constraint). On the latency-throughput curve

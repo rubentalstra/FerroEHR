@@ -11,7 +11,9 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
 
-/// Record an attestation of a party (the committer) to item(s) of record content. An attestation is an explicit signing by one healthcare agent of particular content for various particular purposes, including:
+/// Record an attestation of a party (the committer) to item(s) of record content.
+///
+/// An attestation is an explicit signing by one healthcare agent of particular content for various particular purposes, including:
 ///
 /// * for authorisation of a controlled substance or procedure (e.g. sectioning of patient under mental health act);
 /// * witnessing of content by senior clinical professional;
@@ -20,13 +22,17 @@ use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Attestation {
     // inherited: AUDIT_DETAILS
-    /// Identifier of the logical EHR system where the change was committed. This is almost always owned by the organisation legally responsible for the EHR, and is distinct from any application, or any hosting infrastructure.
+    /// Identifier of the logical EHR system where the change was committed.
+    ///
+    /// This is almost always owned by the organisation legally responsible for the EHR, and is distinct from any application, or any hosting infrastructure.
     pub system_id: String,
     /// Time of committal of the item.
     pub time_committed: DvDateTime,
     /// Type of change. Coded using the openEHR Terminology  audit change type  group.
     pub change_type: DvCodedText,
-    /// Reason for committal. This may be used to qualify the value in the `_change_type_` field. For example, if the change affects only the EHR directory, this field might be used to indicate 'Folder "episode 2018-02-16" added' or similar.
+    /// Reason for committal.
+    ///
+    /// This may be used to qualify the value in the `_change_type_` field. For example, if the change affects only the EHR directory, this field might be used to indicate 'Folder "episode 2018-02-16" added' or similar.
     pub description: Option<DvText>,
     /// Identity and optional reference into identity management service, of user who committed the item.
     pub committer: PartyProxy,
@@ -34,7 +40,9 @@ pub struct Attestation {
     pub attested_view: Option<DvMultimedia>,
     /// Proof of attestation.
     pub proof: Option<String>,
-    /// Items attested, expressed as fully qualified runtime paths to the items in question. Although not recommended, these may include fine-grained items which have been attested in some other system. Otherwise it is assumed to be for the entire VERSION with which it is associated.
+    /// Items attested, expressed as fully qualified runtime paths to the items in question.
+    ///
+    /// Although not recommended, these may include fine-grained items which have been attested in some other system. Otherwise it is assumed to be for the entire VERSION with which it is associated.
     pub items: Option<openehr_base::containers::NonEmptyVec<DvEhrUri>>,
     /// Reason of this attestation. Optionally coded by the openEHR Terminology group  attestation reason ; includes values like  authorisation ,  witness  etc.
     pub reason: DvText,

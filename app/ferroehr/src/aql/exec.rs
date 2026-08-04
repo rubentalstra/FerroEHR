@@ -143,9 +143,10 @@ pub async fn execute(
     })
 }
 
-/// The distinct EHR ids and template ids an AQL query touches, collected for the
-/// ABAC query post-check (no openEHR spec governs ABAC — our own access-control extension) —
-/// independent of the query's projection (the v1 defect-#1 fix).
+/// The distinct EHR ids and template ids an AQL query touches.
+///
+/// Collected for the ABAC query post-check (no openEHR spec governs ABAC — our
+/// own access-control extension), independent of the query's projection.
 #[derive(Debug, Clone, Default)]
 pub struct QueryScope {
     /// Distinct touched EHR ids (as strings).

@@ -154,18 +154,21 @@ pub fn hrid_lookup_key(h: &ArchetypeHrid) -> String {
 }
 
 /// The `publisher-package-class.concept` lookup key of a RAW archetype-id
-/// string: the optional `ns::` prefix and the trailing `.vN…` version stripped,
-/// case-folded to match [`hrid_lookup_key`]. This is the family identity that
-/// groups every stored version of one archetype/template.
+/// string: the optional `ns::` prefix and the trailing `.vN…` version
+/// stripped, case-folded to match [`hrid_lookup_key`].
+///
+/// This is the family identity that groups every stored version of one
+/// archetype/template.
 #[must_use]
 pub fn raw_id_lookup_key(raw: &str) -> String {
     strip_namespace_and_version(raw).to_ascii_lowercase()
 }
 
 /// The `concept` segment of a raw archetype id — the token between the model
-/// part (`publisher-package-class`) and the `.vN…` version. Falls back to the
-/// whole (namespace-stripped) id when the shape carries no `.concept` segment,
-/// so the accessor is total on stored input.
+/// part (`publisher-package-class`) and the `.vN…` version.
+///
+/// Falls back to the whole (namespace-stripped) id when the shape carries no
+/// `.concept` segment, so the accessor is total on stored input.
 ///
 /// Grammar: `archetype_id = qualified_rm_entity, '.', domain_concept, '.v',
 /// version_id` (BASE `base_types` `master05-identification_package.adoc`
@@ -204,11 +207,12 @@ fn strip_namespace_and_version(raw: &str) -> &str {
     split_at_version(no_ns).0
 }
 
-/// Split a (namespace-stripped) archetype id at its [`version_marker`]:
-/// everything before the marker, and the marker onwards (`None` when the id
-/// carries no version marker, in which case the whole input is the "before"
-/// part). The marker's `.` and `v` are ASCII, so the split is always on a char
-/// boundary.
+/// Splits a (namespace-stripped) archetype id at its [`version_marker`].
+///
+/// Returns everything before the marker, and the marker onwards (`None` when
+/// the id carries no version marker, in which case the whole input is the
+/// "before" part). The marker's `.` and `v` are ASCII, so the split is always
+/// on a char boundary.
 #[must_use]
 pub fn split_at_version(core: &str) -> (&str, Option<&str>) {
     let Some(idx) = version_marker(core) else {

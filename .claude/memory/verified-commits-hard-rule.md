@@ -23,4 +23,3 @@ offender) violate the repo's provenance bar.
   `github-actions[bot]` (Verified). Precedent: the coverage-badge step
   (PR #1613, `.github/workflows/ci.yml`).
 - Any NEW workflow that writes a commit must use the same API pattern.
-  Related: [[upstream-reports-are-issues]] (same-day rulings batch).

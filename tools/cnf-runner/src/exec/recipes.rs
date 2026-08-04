@@ -1,4 +1,6 @@
-//! The registered recipe set — the ONLY hand-written generation glue in the
+//! The registered recipe set.
+//!
+//! This is the ONLY hand-written generation glue in the
 //! executor, each entry a committed, seeded, deterministic `row → payload`
 //! function whose contract is the digest-pinned document in
 //! `corpus/recipes/*.md`. Every recipe here is a registered exception to
@@ -45,8 +47,10 @@ fn err(recipe: &'static str, message: impl Into<String>) -> RecipeError {
 }
 
 /// `ehr_status` — `EHR_STATUS` synthesis from a `create_ehr-main` matrix row
-/// (contract: `corpus/recipes/ehr_status.md`). Returns `None` when the row
-/// declares `ehr_status: absent` (the class-1.a rows: no payload at all).
+/// (contract: `corpus/recipes/ehr_status.md`).
+///
+/// Returns `None` when the row declares `ehr_status: absent` (the class-1.a
+/// rows: no payload at all).
 ///
 /// # Errors
 /// [`RecipeError`] on a row outside the declared matrix shape.
@@ -140,8 +144,10 @@ pub fn deterministic_ehr_id(case: &str, row_index: usize) -> String {
     uuid::Uuid::new_v5(&ns, format!("{case}/{row_index}").as_bytes()).to_string()
 }
 
-/// The deterministic per-row constraint-template id for a content case that
-/// declares `constraint_context.constraint_columns` (issue #228): the runner
+/// The deterministic per-row constraint-template id for a content case.
+///
+/// For a case declaring `constraint_context.constraint_columns` (issue #228)
+/// the runner
 /// synthesizes one OPT per decision-table row and uploads it under this id, and
 /// the row's committed carrier stamps the same id into
 /// `archetype_details.template_id`. Pure function of (case id, row, row
@@ -288,10 +294,12 @@ impl RowView<'_> {
     }
 }
 
-/// `content_instance` — the content-chapter generation recipe: build the
-/// spec-correct RM data-value instance for one decision-table row, inject it
+/// `content_instance` — the content-chapter generation recipe.
+///
+/// Builds the
+/// spec-correct RM data-value instance for one decision-table row, injects it
 /// at the case's constrained ELEMENT.value in the minimal-event carrier
-/// composition, and hand the result to the ordinary commit flow — one
+/// composition, and hands the result to the ordinary commit flow — one
 /// executor serves functional and content cases alike.
 ///
 /// A decision table carries two column axes: the *instance* axis (the genuine

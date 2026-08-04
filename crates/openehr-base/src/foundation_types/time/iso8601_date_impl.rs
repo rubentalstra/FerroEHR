@@ -1,8 +1,10 @@
-//! Hand-written `Iso8601_date` spec behaviour: the accessor functions
-//! (`is_partial`, `is_extended`, `month_unknown`, `day_unknown`,
-//! `year`/`month`/`day`, `as_string`), the computational functions (definite
-//! `add`/`subtract`/`diff` and nominal `add_nominal`/`subtract_nominal`), and a
-//! `PartialOrd` implementing range semantics over partial dates.
+//! Hand-written `Iso8601_date` spec behaviour.
+//!
+//! Covers the accessor functions (`is_partial`, `is_extended`, `month_unknown`,
+//! `day_unknown`, `year`/`month`/`day`, `as_string`), the computational
+//! functions (definite `add`/`subtract`/`diff` and nominal
+//! `add_nominal`/`subtract_nominal`), and a `PartialOrd` implementing range
+//! semantics over partial dates.
 //!
 //! Spec sources (vendored):
 //! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date.adoc`

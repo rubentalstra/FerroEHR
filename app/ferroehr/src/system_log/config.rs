@@ -103,10 +103,11 @@ impl Default for SyslogConfig {
 
 /// The RESTful-ATNA feed (`[audit.fhir_feed]`): ITI-20 **ATX: FHIR Feed** —
 /// HTTP `POST {url}/AuditEvent` of the FHIR R4 `AuditEvent` (IHE BALP shape)
-/// to an external Audit Record Repository. When the local store is on, the
-/// feed drains the store's outbox (`delivered_fhir_feed_at IS NULL`), so a
-/// down ARR loses nothing; with the store off it ships in-drain with bounded
-/// retries.
+/// to an external Audit Record Repository.
+///
+/// When the local store is on, the feed drains the store's outbox
+/// (`delivered_fhir_feed_at IS NULL`), so a down ARR loses nothing; with the
+/// store off it ships in-drain with bounded retries.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct FhirFeedConfig {

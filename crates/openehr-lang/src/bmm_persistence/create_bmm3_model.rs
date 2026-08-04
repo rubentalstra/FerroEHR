@@ -28,7 +28,7 @@
 //!
 //! Three boundaries are load-bearing and stated here rather than left implicit:
 //!
-//! TODO: synthesise generic-substituted properties and stamp
+//! TODO(#1877): synthesise generic-substituted properties and stamp
 //! `is_synthesised_generic`. `master13-model_semantics.adoc` §Generic Inheritance
 //! requires that where an ancestor's formal parameter is substituted, the
 //! properties whose type was that parameter "are synthesised within
@@ -42,7 +42,7 @@
 //! name, and how far a partially-closed chain propagates, which is a design step
 //! rather than plumbing.
 //!
-//! TODO: land class INVARIANTS and routine pre-/post-conditions. v3 requires them
+//! TODO(#1878): land class INVARIANTS and routine pre-/post-conditions. v3 requires them
 //! as `BMM_ASSERTION` ("Expressions as used in BMM models to express class
 //! invariants and routine pre- and post-conditions are always in the form of an
 //! `BMM_ASSERTION`", `LANG/docs/bmm3/master10-expressions.adoc` §Usage in BMM
@@ -126,8 +126,9 @@ use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
 use openehr_base::containers::present;
 
-/// The default feature-group name every feature is placed in: "Name of this
-/// feature group; defaults to 'feature'"
+/// The default feature-group name every feature is placed in.
+///
+/// "Name of this feature group; defaults to 'feature'"
 /// (`org.openehr.lang.bmm3.bmm_feature_group.adoc` §Attributes;
 /// `LANG/docs/bmm3/master08-core-features.adoc` §Feature Groups and Visibility).
 pub const DEFAULT_FEATURE_GROUP_NAME: &str = "feature";
@@ -138,9 +139,11 @@ pub const DEFAULT_FEATURE_GROUP_NAME: &str = "feature";
 /// type" (`LANG/docs/bmm3/master07-core-classes.adoc` §Value-set Types).
 const VALUE_SET_SEPARATOR: &str = "::";
 
-/// Materialise the in-memory **v3** `BMM_MODEL` of an inclusion-resolved
-/// `P_BMM_SCHEMA` (see the module docs for what this generation carries that the
-/// v2.x one cannot, and for the two recorded boundaries).
+/// Materialises the in-memory **v3** `BMM_MODEL` of an inclusion-resolved
+/// `P_BMM_SCHEMA`.
+///
+/// See the module docs for what this generation carries that the v2.x one
+/// cannot, and for the two recorded boundaries.
 ///
 /// # Errors
 /// The same failures as [`crate::bmm_persistence::create_model::create_bmm_model`]:
@@ -350,7 +353,7 @@ fn build_class(
             procedures: core.procedures,
             is_primitive: core.is_primitive,
             is_abstract: core.is_abstract,
-            // See the module docs' invariants TODO.
+            // TODO(#1878): see the module docs' invariants entry.
             invariants: present(Vec::new()),
             // `creators`/`converters` are subsets of `procedures` a schema
             // designates (`…bmm3.bmm_class.adoc` §Attributes); P_BMM has no
@@ -606,16 +609,13 @@ fn build_parameter_type(
     let type_constraint = match constraint {
         None => None,
         Some(constrainer) => {
-            // Constraint chains recurse: the constrainer builds as a stub
-            // whose own formal parameters may be constrained back onto a
-            // class already being built (the model states acyclicity for
-            // inheritance only, `master13-model_semantics.adoc` §Simple
-            // Inheritance — nothing forbids `A<T: B>` with `B<U: A>`).
-            // Re-entering the same owner/parameter edge would not terminate,
-            // so the repeated edge is cut by omitting the OPTIONAL constraint
-            // ("Optional conformance constraint",
-            // `…bmm3.bmm_parameter_type.adoc` §Attributes) — a namespaced key
-            // so the ancestors guard on bare class names is untouched.
+            // Constraint chains recurse: the constrainer builds as a stub whose
+            // own formal parameters may be constrained back onto a class already
+            // being built (`master13-model_semantics.adoc` §Simple Inheritance
+            // states acyclicity for INHERITANCE only — nothing forbids `A<T: B>`
+            // with `B<U: A>`), so the repeated edge is cut by omitting the
+            // OPTIONAL constraint ("Optional conformance constraint",
+            // `…bmm3.bmm_parameter_type.adoc` §Attributes) under a namespaced key.
             let edge = format!("parameter-constraint {owner}::{name}");
             if visiting.insert(edge.clone()) {
                 let context = format!("class `{owner}` generic parameter `{name}`");
@@ -1216,9 +1216,9 @@ fn build_procedures(
 /// `BMM_FUNCTION.result` is `1..1` — the "Automatically created Result variable"
 /// (`org.openehr.lang.bmm3.bmm_function.adoc` §Attributes) — and
 /// `Inv_result_type` states `type = Result.type`, so both carry the persisted
-/// result type. `pre_conditions`/`post_conditions` stay empty per the module
-/// docs' invariants TODO. `operator_definition` has no persisted source (P_BMM
-/// declares no operator meta-data).
+/// result type. `pre_conditions`/`post_conditions` stay empty until the
+/// assertion work lands (#1878). `operator_definition` has no persisted
+/// source (P_BMM declares no operator meta-data).
 fn build_function(
     builder: &Builder<'_>,
     owner: &PBmmClass,
@@ -1265,10 +1265,11 @@ fn build_function(
     })
 }
 
-/// The name of a function's automatically declared result variable
-/// (`org.openehr.lang.bmm3.bmm_result.adoc` §Description; the `Result` keyword of
-/// `LANG/docs/bmm3/master08-core-features.adoc` §Variables — "the pre-defined
-/// `Result`").
+/// The name of a function's automatically declared result variable.
+///
+/// Spec: `org.openehr.lang.bmm3.bmm_result.adoc` §Description; the `Result`
+/// keyword of `LANG/docs/bmm3/master08-core-features.adoc` §Variables — "the
+/// pre-defined `Result`".
 pub const RESULT_VARIABLE_NAME: &str = "Result";
 
 /// Builds one `BMM_PROCEDURE` — a routine whose result meta-type is the built-in

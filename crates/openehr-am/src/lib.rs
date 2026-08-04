@@ -22,10 +22,11 @@
 pub mod am14;
 pub mod am24;
 
-/// The openEHR specification version this crate implements — the crate
-/// version itself: the spec crates are versioned by the specification they
-/// implement (`docs/VERSIONS.md` §Product and crate versioning), so
-/// consumers read the pin from the package, never from a hand-typed literal.
+/// The openEHR specification version this crate implements.
+///
+/// It equals the crate version: the spec crates are versioned by the
+/// specification they implement, so consumers read the pin from the
+/// package, never from a hand-typed literal.
 pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:

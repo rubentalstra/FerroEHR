@@ -82,10 +82,11 @@ impl FhirOutboundHandle {
     }
 }
 
-/// Start the outbound emitter over the real AMQP broker. Constructs the
-/// lazily-connecting [`AmqpPublisher`] on the PHI exchange and spawns the
-/// drainer (a broker that is down at start is tolerated — rows stay past the
-/// cursor until it returns).
+/// Start the outbound emitter over the real AMQP broker.
+///
+/// Constructs the lazily-connecting [`AmqpPublisher`] on the PHI exchange and
+/// spawns the drainer (a broker that is down at start is tolerated — rows
+/// stay past the cursor until it returns).
 #[must_use]
 pub fn start(
     config: FhirOutboundConfig,

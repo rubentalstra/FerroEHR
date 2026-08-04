@@ -6,7 +6,9 @@
 
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
 
-/// A reference to an object which structurally conforms to the Universal Resource Identifier (URI) RFC-3986 standard. The reference is contained in the `_value_` attribute, which is a `String`. So-called 'plain-text URIs' that contain RFC-3986 forbidden characters such as spaces etc, are allowed on the basis that they need to be RFC-3986 encoded prior to use in e.g. REST APIs or other contexts relying on machine-level conformance.
+/// A reference to an object which structurally conforms to the Universal Resource Identifier (URI) RFC-3986 standard.
+///
+/// The reference is contained in the `_value_` attribute, which is a `String`. So-called 'plain-text URIs' that contain RFC-3986 forbidden characters such as spaces etc, are allowed on the basis that they need to be RFC-3986 encoded prior to use in e.g. REST APIs or other contexts relying on machine-level conformance.
 #[doc(alias = "DV_URI")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DvUriData {
@@ -16,7 +18,9 @@ pub struct DvUriData {
 
 /// Polymorphic slot of `DV_URI`, dispatched on each payload's `_type`.
 ///
-/// A reference to an object which structurally conforms to the Universal Resource Identifier (URI) RFC-3986 standard. The reference is contained in the `_value_` attribute, which is a `String`. So-called 'plain-text URIs' that contain RFC-3986 forbidden characters such as spaces etc, are allowed on the basis that they need to be RFC-3986 encoded prior to use in e.g. REST APIs or other contexts relying on machine-level conformance.
+/// A reference to an object which structurally conforms to the Universal Resource Identifier (URI) RFC-3986 standard.
+///
+/// The reference is contained in the `_value_` attribute, which is a `String`. So-called 'plain-text URIs' that contain RFC-3986 forbidden characters such as spaces etc, are allowed on the basis that they need to be RFC-3986 encoded prior to use in e.g. REST APIs or other contexts relying on machine-level conformance.
 #[doc(alias = "DV_URI")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum DvUri {

@@ -727,9 +727,10 @@ fn declared_root_type(root_tag: &str) -> Option<&'static str> {
 /// `openehr-rm` type the value encodes; `root_tag` is the XML root element
 /// name. A JSON `null` value renders as a bodyless response.
 ///
-/// A `root_tag` whose published XSD type is abstract ([`ABSTRACT_ROOT_TYPES`])
-/// is serialized through the declared-type entry point, so the root names its
-/// concrete class with `xsi:type` as the schema requires.
+/// A `root_tag` whose published XSD type is abstract
+/// ([`openehr_its::xml::declared_abstract_root_type`]) is serialized through
+/// the declared-type entry point, so the root names its concrete class with
+/// `xsi:type` as the schema requires.
 pub(crate) fn respond_rm<T>(
     headers: &HeaderMap,
     status: StatusCode,

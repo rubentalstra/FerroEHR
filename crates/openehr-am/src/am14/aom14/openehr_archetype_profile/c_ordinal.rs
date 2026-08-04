@@ -15,7 +15,9 @@ pub struct COrdinal {
     pub rm_type_name: String,
     /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1).
     pub occurrences: Interval<i32>,
-    /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a node_id; for nodes under a container C_ATTRIBUTE, the id must be an id-code must be defined in the archetype terminology. For valid structures, all node ids are at-codes.
+    /// Semantic identifier of this node, used to distinguish sibling nodes.
+    ///
+    /// All nodes must have a node_id; for nodes under a container C_ATTRIBUTE, the id must be an id-code must be defined in the archetype terminology. For valid structures, all node ids are at-codes.
     /// For C_PRIMITIVE_OBJECTs, it will have the special value Primitive_node_id.
     pub node_id: String,
 

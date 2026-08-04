@@ -6,6 +6,8 @@
 
 use crate::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
 
+/// The openEHR `Cardinality` class.
+///
 /// Express constraints on the cardinality of container objects which are the values of multiply-valued attributes, including uniqueness and ordering, providing the means to state that a container acts like a logical list, set or bag.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cardinality {

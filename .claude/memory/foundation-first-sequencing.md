@@ -29,10 +29,12 @@ preserved for compatibility — best shape wins, wide call-site churn
 included; only spec conformance (never-lax, adjudicated wire changes with
 twins + changelog) and green gates are unbreakable.
 
-**The live case COMPLETED 2026-08-03** (PR #1739, squash-merged): 7 legs —
-#1686 typed codec, #1687 *_impl.rs push-down, #1690 rm→term move, #1695
-container bounds + validated construction + strict reader, #1702 the serde
-rewrite (manual emitted impls, reader 13.7% FASTER), #1694 errors-as-data
-(partially; typed commit seam gated on owner decision #1727 — 400 vs 422
-for structurally-invalid bodies), #1718. Pipeline 879/0 at close.
+**The standing conventions the first such sweep pinned (owner 2026-08-02,
+#1695 — the strict-typing mandate covers the `openehr-*` crates
+themselves):** the emitter emits `Option<Vec<T>>` for a 0..1 list and a
+non-empty container for 1..*, every generated type constructs through a
+validated `new() -> Result` (invariant cores + terminology), and strong types
+are used wherever the spec closes a set — so construction IS validation and
+no downstream re-check is needed. Canonical WIRE bytes stay
+proven-unchanged by the contract gates; everything internal may break freely.
 Related: [[owner-work-style]] (no quick fixes, big-bang convergence).

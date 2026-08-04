@@ -423,9 +423,11 @@ async fn start_audit(
 
 /// Build the full authorization handle the binary serves with: the RBAC gate
 /// (when `rbac.enabled`) plus the ABAC gate over the boot-built policy engine
-/// (when `abac.enabled`). `None` when neither layer is active (auth-only
-/// behaviour). Fine-grained authorization is our own extension — no openEHR
-/// spec governs it (ITS-REST places authorization out of band).
+/// (when `abac.enabled`).
+///
+/// `None` when neither layer is active (auth-only behaviour). Fine-grained
+/// authorization is our own extension — no openEHR spec governs it (ITS-REST
+/// places authorization out of band).
 ///
 /// # Errors
 /// An ABAC block that is enabled but unbuildable (missing/invalid Cedar
@@ -440,8 +442,9 @@ pub fn build_authz(
     Ok(AuthzHandle::build(config, base_path, engine, resolvers).map(Arc::new))
 }
 
-/// The DB-backed ABAC attribute resolvers
-/// (`ferroehr_rest::extensions::access::authz::AuthzResolvers`): the EHR
+/// The DB-backed ABAC attribute resolvers.
+///
+/// Builds `ferroehr_rest::extensions::access::authz::AuthzResolvers`: the EHR
 /// subject external-ref id (the promoted `ehr.subject_id` column — the same
 /// query the audit [`SubjectResolver`] runs) and the committed template of a
 /// COMPOSITION version (`vo_version.template_id` via the service read-back).

@@ -40,9 +40,10 @@ impl Realization {
     }
 }
 
-/// A register-linked adjudication carried by a capability row: the entry
-/// that decided the exception, plus the one-line reason the certificate
-/// renders. Never free prose — the register id resolves or it is a finding.
+/// A register-linked adjudication carried by a capability row: the entry that
+/// decided the exception, plus the one-line reason the certificate renders.
+///
+/// Never free prose — the register id resolves or it is a finding.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RegisterAdjudication {

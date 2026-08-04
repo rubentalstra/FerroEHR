@@ -1,7 +1,8 @@
-//! The verdict pipeline — a **pure** function of
-//! (statement, results, catalogue cases, capability matrix, ambiguity
-//! register). Verdicts are computed, never asserted (the schedule's core
-//! discipline): the same inputs always produce the same [`VerdictReport`].
+//! The verdict pipeline — a **pure** function of (statement, results,
+//! catalogue cases, capability matrix, ambiguity register).
+//!
+//! Verdicts are computed, never asserted (the schedule's core discipline):
+//! the same inputs always produce the same [`VerdictReport`].
 //!
 //! ISO/IEC 9646 frames this as relating the ICS (the [`Statement`] claims) to
 //! the campaign [`Results`] through the Abstract Test Suite (the catalogue
@@ -123,9 +124,11 @@ pub enum SecBasicVerdict {
     Fail,
 }
 
-/// One measured performance-class verdict (the second machinery, §8.11
-/// step 5): re-derived from the measurement's decoded histograms against the
-/// catalogue case's thresholds — the stored verdict is never trusted.
+/// One measured performance-class verdict.
+///
+/// The second machinery (§8.11 step 5): re-derived from the measurement's
+/// decoded histograms against the catalogue case's thresholds — the stored
+/// verdict is never trusted.
 #[derive(Debug, Clone, Serialize)]
 pub struct PerformanceVerdict {
     /// The performance case measured.

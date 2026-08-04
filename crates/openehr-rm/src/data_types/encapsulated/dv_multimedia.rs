@@ -12,7 +12,9 @@ use crate::data_types::uri::dv_uri::DvUri;
 #[derive(Debug, Clone, PartialEq)]
 pub struct DvMultimedia {
     // inherited: DV_ENCAPSULATED
-    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
+    /// Name of character encoding scheme in which this value is encoded.
+    ///
+    /// Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
     pub charset: Option<CodePhrase>,
     /// Optional indicator of the localised language in which the data is written, if relevant. Coded from openEHR Code Set `languages`.
     pub language: Option<CodePhrase>,

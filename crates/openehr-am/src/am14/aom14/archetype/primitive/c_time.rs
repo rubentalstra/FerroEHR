@@ -7,7 +7,9 @@ use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Time;
 use openehr_base::prelude::ValidityKind;
 
-/// ISO 8601-compatible constraint on instances of Time. There is no validity flag for ‘hour’, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include “HH:??:xx” (time with optional minutes and seconds not allowed).
+/// ISO 8601-compatible constraint on instances of Time.
+///
+/// There is no validity flag for ‘hour’, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include “HH:??:xx” (time with optional minutes and seconds not allowed).
 #[doc(alias = "C_TIME")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct CTime {

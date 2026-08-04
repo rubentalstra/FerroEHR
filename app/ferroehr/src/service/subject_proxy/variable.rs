@@ -4,10 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use super::sample::{DataFrameSample, VariableSample};
 
-/// `SUBJECT_VARIABLE` — "A single subject variable whose data may take various
-/// forms, including atomic, list and time series … a proxy for a single
-/// subject variable, **including sample history over time**"
-/// (`subject_variable.adoc`; master10 §Data Structures).
+/// `SUBJECT_VARIABLE` — a proxy for a single subject variable.
+///
+/// "A single subject variable whose data may take various forms, including
+/// atomic, list and time series … a proxy for a single subject variable,
+/// **including sample history over time**" (`subject_variable.adoc`; master10
+/// §Data Structures).
 ///
 /// The definition attributes (`namespace` … `frame_path`) are configuration
 /// and are persisted (master10 §Persistence); `history` and `last_frame` are

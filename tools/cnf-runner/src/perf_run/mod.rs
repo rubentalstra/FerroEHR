@@ -1,4 +1,6 @@
-//! The performance measurement machinery — the OPEN-LOOP driver that
+//! The performance measurement machinery.
+//!
+//! This is the OPEN-LOOP driver that
 //! executes a `kind: performance` case's hospital-simulation workload
 //! against a live SUT and produces the re-checkable
 //! [`crate::perf::Measurement`] record.

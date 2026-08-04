@@ -3,7 +3,9 @@
 //! The openEHR `P_C_DATE` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// ISO 8601-compatible constraint on instances of Date in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint. There is no validity flag for ‘year’, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include “YYYY-??-??” (date with optional month and day).
+/// ISO 8601-compatible constraint on instances of Date in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint.
+///
+/// There is no validity flag for ‘year’, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include “YYYY-??-??” (date with optional month and day).
 #[doc(alias = "P_C_DATE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct PCDate {}

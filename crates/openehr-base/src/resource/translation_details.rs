@@ -9,7 +9,9 @@ use crate::foundation_types::terminology::terminology_code::TerminologyCode;
 #[doc(alias = "TRANSLATION_DETAILS")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct TranslationDetails {
-    /// Language of the translation, encoded following the RFC 5646 standard, using ISO 639-1 (two-character) language codes, e.g. "en". It may include a region subtag conforming to ISO 3166-1 alpha-2 (two-character country codes), e.g. "pt-br" for Brazilian Portuguese.
+    /// Language of the translation, encoded following the RFC 5646 standard, using ISO 639-1 (two-character) language codes, e.g. "en".
+    ///
+    /// It may include a region subtag conforming to ISO 3166-1 alpha-2 (two-character country codes), e.g. "pt-br" for Brazilian Portuguese.
     pub language: TerminologyCode,
     /// Primary translator name and other demographic details.
     pub author: std::collections::BTreeMap<String, String>,
@@ -19,6 +21,8 @@ pub struct TranslationDetails {
     pub other_details: Option<std::collections::BTreeMap<String, String>>,
     /// Version of this resource last time it was translated into the language represented by this `TRANSLATION_DETAILS` object.
     pub version_last_translated: Option<String>,
-    /// Additional contributors to this translation, each listed in the preferred format of the relevant organisation for the artefacts in question. A typical default is `"name <email>"` if nothing else is specified.
+    /// Additional contributors to this translation, each listed in the preferred format of the relevant organisation for the artefacts in question.
+    ///
+    /// A typical default is `"name <email>"` if nothing else is specified.
     pub other_contributors: Option<Vec<String>>,
 }

@@ -23,14 +23,12 @@ client accommodating it. Same law as CNF red-run triage
 - At every console-feature integration, take the worker's "wire calls" list
   and verify each endpoint's behaviour first-hand against the vendored
   ITS-REST docs text + RM (`/spec-lookup`); call chains are read from the
-  code (the former `docs/endpoint-map.md` was DELETED 2026-07-26 — owner
-  ruling: always the code, never a standing map) — check the source + spec.
+  code (owner ruling 2026-07-26: always the code, never a standing endpoint
+  map) — check the source + spec.
 - A found divergence → CDR-side fix (or tracker issue) + a CNF coverage case
   per `.claude/rules/testing.md` §CNF coverage; the UI is built against the
   SPEC-required behaviour.
 - Worker briefs must hand spec paths + verified source paths; workers cite
-  those under the oracle order (docs text first; released OAS only for docs-text-silent behaviour — owner 2026-07-28), never any standing endpoint map (deleted; see
-  [[session-workflow-gotchas]]).
-- Related precedent: the terminology-browser brief was course-corrected the
-  same day (bundle vs external FHIR TS routing verified in
-  `service/terminology/routing.rs` after first citing only endpoint-map).
+  those under the oracle order (docs text first; released OAS only for
+  docs-text-silent behaviour — owner 2026-07-28), never a standing endpoint
+  map.

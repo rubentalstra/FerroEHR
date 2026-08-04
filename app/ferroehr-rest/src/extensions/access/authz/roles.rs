@@ -124,18 +124,17 @@ pub fn authorize(class: OperationClass, roles: &[String], rbac: &RbacConfig) -> 
     }
 }
 
-/// The read-only restriction: refuse a principal carrying the read-only role on
-/// every write operation, even when it also holds granting roles (a restriction
-/// overrides a grant). Reads, non-read-only principals, and the rbac-disabled
-/// case all pass through with [`RbacDecision::Allow`]. Role matching is
+/// The read-only restriction: refuse a principal carrying the read-only role
+/// on every write operation, even when it also holds granting roles (a
+/// restriction overrides a grant).
+///
+/// Reads, non-read-only principals, and the rbac-disabled case all pass
+/// through with [`RbacDecision::Allow`]. Role matching is
 /// ASCII-case-insensitive, the same idiom as [`authorize`].
 ///
-// NOTE: no openEHR spec governs this — our own design/extension. The SM places
+// NOTE: no openEHR spec governs this — our own design/extension; the SM places
 // authorization out of band (SM `openehr_platform/master02-overview.adoc`
-// §General Assumptions) and no CNF profile carries a role requirement; the
-// read-only role is a FerroEHR enterprise capability supporting the CNF
-// SEC-BASIC authorization-separation profile (an authenticated principal
-// refused on every write). It composes on top of the [`authorize`] class gate.
+// §General Assumptions).
 #[must_use]
 pub fn authorize_readonly(is_write: bool, roles: &[String], rbac: &RbacConfig) -> RbacDecision {
     if !rbac.enabled || !is_write {

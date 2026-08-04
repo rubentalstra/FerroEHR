@@ -1,10 +1,11 @@
 //! The transcript player — the runner-verification pack's part 1: replay a
-//! fixed transcript and reproduce the adjudicated verdicts. The transcript
-//! is itself a specified artifact (`transcript.schema.json`): an ordered
-//! sequence per case × format × row of recorded exchanges with adjudicated
-//! expected verdicts; the player answers the Nth matching request with the
-//! Nth recorded response (matching = method + path suffix), so a fixture
-//! file fully determines what any conformant runner must conclude.
+//! fixed transcript and reproduce the adjudicated verdicts.
+//!
+//! The transcript is itself a specified artifact (`transcript.schema.json`):
+//! an ordered sequence per case × format × row of recorded exchanges with
+//! adjudicated expected verdicts; the player answers the Nth matching request
+//! with the Nth recorded response (matching = method + path suffix), so a
+//! fixture file fully determines what any conformant runner must conclude.
 
 use std::collections::BTreeMap;
 

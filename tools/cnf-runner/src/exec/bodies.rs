@@ -1,4 +1,6 @@
-//! Response-body selector evaluation — the executed half of the catalogue's
+//! Response-body selector evaluation.
+//!
+//! This is the executed half of the catalogue's
 //! `outcomes.*.body` declarations (issue #415: the selectors were parsed by
 //! the binding model but never evaluated, so every body declaration was
 //! documentation, not an assertion — the same defect issue #403 closed for

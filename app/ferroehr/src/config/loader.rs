@@ -1,5 +1,7 @@
-//! The one loader (§5.1–5.4): file discovery + the pure `config`-crate
-//! assembly (defaults < file < env < `--set`) with the strict passes, the two
+//! The one configuration loader (§5.1–5.4).
+//!
+//! Performs file discovery plus the pure `config`-crate assembly
+//! (defaults < file < env < `--set`) with the strict passes, the two
 //! conventional aliases, error enrichment, and `*_file` secret resolution.
 //! No openEHR spec governs configuration — our own design.
 

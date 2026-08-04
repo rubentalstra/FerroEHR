@@ -15,16 +15,22 @@ use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
 
-/// Entry type for evaluation statements. Used for all kinds of statements which evaluate other information, such as interpretations of observations, diagnoses, differential diagnoses, hypotheses, risk assessments, goals and plans.
+/// Entry type for evaluation statements.
+///
+/// Used for all kinds of statements which evaluate other information, such as interpretations of observations, diagnoses, differential diagnoses, hypotheses, risk assessments, goals and plans.
 ///
 /// Should not be used for actionable statements such as medication orders - these are represented using the `INSTRUCTION` type.
 #[doc(alias = "EVALUATION")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Evaluation {
     // inherited: LOCATABLE
-    /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
+    /// Runtime name of this fragment, used to build runtime paths.
+    ///
+    /// This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
     pub name: DvText,
-    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
+    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths.
+    ///
+    /// Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
     ///
     /// At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
     pub archetype_node_id: String,
@@ -64,7 +70,9 @@ pub struct Evaluation {
     pub provider: Option<PartyProxy>,
 
     // inherited: CARE_ENTRY
-    /// Description of the method (i.e. how) the information in this entry was arrived at. For `OBSERVATIONs`, this is a description of the method or instrument used. For `EVALUATIONs`, how the evaluation was arrived at. For `INSTRUCTIONs`, how to execute the Instruction. This may take the form of references to guidelines, including manually followed and executable; knowledge references such as a paper in Medline; clinical reasons within a larger care process.
+    /// Description of the method (i.e. how) the information in this entry was arrived at.
+    ///
+    /// For `OBSERVATIONs`, this is a description of the method or instrument used. For `EVALUATIONs`, how the evaluation was arrived at. For `INSTRUCTIONs`, how to execute the Instruction. This may take the form of references to guidelines, including manually followed and executable; knowledge references such as a paper in Medline; clinical reasons within a larger care process.
     pub protocol: Option<ItemStructure>,
     /// Optional external identifier of guideline creating this Entry if relevant.
     pub guideline_id: Option<ObjectRef>,

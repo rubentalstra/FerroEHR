@@ -18,9 +18,10 @@ use tokio::sync::Mutex;
 use ferroehr::config::management::ProfilingConfig;
 use openehr_its::rest::runtime::ApiError;
 
-/// The one process-wide profiling permit. Cheap to clone (an `Arc` handle);
-/// [`try_acquire`](Self::try_acquire) either takes the permit or reports the
-/// running sample window.
+/// The one process-wide profiling permit.
+///
+/// Cheap to clone (an `Arc` handle); `try_acquire` either takes the permit
+/// or reports the running sample window.
 #[derive(Debug, Clone, Default)]
 pub struct ProfilerSlot(Arc<Mutex<()>>);
 

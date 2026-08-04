@@ -71,8 +71,9 @@ impl FixtureField {
 }
 
 /// The `${ixit:<field>}` fields — closed to the environment facts a party
-/// DECLARES about its SUT because no released operation discloses them. A
-/// case may read such a fact, never invent one; a party that declares none
+/// DECLARES about its SUT because no released operation discloses them.
+///
+/// A case may read such a fact, never invent one; a party that declares none
 /// makes the referencing cases not-applicable with that citation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IxitField {
@@ -103,9 +104,10 @@ impl IxitField {
     }
 }
 
-/// A temporal at-time expression over captured commit instants. Resolution
-/// is fixed by the interpreter laws (before = t − 1 ms, after = t + 1 ms,
-/// between = midpoint) so two runners query identical instants.
+/// A temporal at-time expression over captured commit instants.
+///
+/// Resolution is fixed by the interpreter laws (before = t − 1 ms, after = t
+/// + 1 ms, between = midpoint) so two runners query identical instants.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeExpr {
     /// One millisecond before the named capture's commit instant.

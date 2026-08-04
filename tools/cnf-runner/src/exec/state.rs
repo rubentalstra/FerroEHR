@@ -1,4 +1,6 @@
-//! Case-scoped execution state: `requires` handles, captures (scalar and
+//! Case-scoped execution state.
+//!
+//! Holds `requires` handles, captures (scalar and
 //! list), and committed audit instants — plus the FIXED temporal resolution
 //! rules so two runners query identical instants (interpreter law d:
 //! before = t − 1 ms, after = t + 1 ms, between = the midpoint).

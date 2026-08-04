@@ -17,7 +17,9 @@ pub struct Ehr {
     ///
     /// NOTE: is is strongly recommended that a UUID always be used for this field.
     pub ehr_id: HierObjectId,
-    /// List of contributions causing changes to this EHR. Each contribution contains a list of versions, which may include references to any number of `VERSION` instances, i.e. items of type `VERSIONED_COMPOSITION` and `VERSIONED_FOLDER`.
+    /// List of contributions causing changes to this EHR.
+    ///
+    /// Each contribution contains a list of versions, which may include references to any number of `VERSION` instances, i.e. items of type `VERSIONED_COMPOSITION` and `VERSIONED_FOLDER`.
     pub contributions: Option<Vec<ObjectRef>>,
     /// Reference to `EHR_STATUS` object for this EHR.
     pub ehr_status: ObjectRef,

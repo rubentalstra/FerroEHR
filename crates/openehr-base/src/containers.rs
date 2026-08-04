@@ -70,9 +70,10 @@ mod tests {
     }
 }
 
-/// A container that is non-empty by construction — the emission shape of a
-/// model attribute whose BMM cardinality has a lower bound of 1
-/// (`CLUSTER.items: List<ITEM> {1..*}`,
+/// A container that is non-empty by construction.
+///
+/// This is the emission shape of a model attribute whose BMM cardinality has a
+/// lower bound of 1 (`CLUSTER.items: List<ITEM> {1..*}`,
 /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
 /// §Attributes).
 ///

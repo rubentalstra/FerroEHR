@@ -497,6 +497,7 @@ pub enum ChangeType {
 }
 
 /// AQL `RESULT_SET` comparison mode (`match:` of the `result_set` assertion).
+///
 /// `Set` is bag (multiset) equality — duplicate rows significant, AQL being
 /// bag-semantics absent DISTINCT (QUERY `master03-syntax.adoc` §DISTINCT).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

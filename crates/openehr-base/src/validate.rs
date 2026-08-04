@@ -13,8 +13,10 @@
 //! spec-underdetermined choices.
 
 /// An RM class-invariant violation: a human-readable message plus the RM
-/// sub-path (relative to the value being checked) it applies to (empty = the
-/// value itself). The composition validator prefixes the absolute RM path.
+/// sub-path (relative to the value being checked) it applies to.
+///
+/// An empty path means the value itself; the composition validator prefixes
+/// the absolute RM path.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvariantViolation {
     /// The RM sub-path the violation applies to, relative to the value being

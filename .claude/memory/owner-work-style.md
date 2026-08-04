@@ -7,8 +7,8 @@ metadata:
   originSessionId: 58d2e09d-1858-4a52-a5b7-e494a0472505
 ---
 
-Durable owner rulings distilled from the A1 audit era (2026-07-11/12), still
-binding after A1 closed:
+Standing owner rulings on how work is done (2026-07-11 onward), binding in
+every phase:
 
 - **DEFER NOTHING.** "We will never solve the issue of non-compliance if we
   keep deferring things." A task is not done while any part is classified
@@ -22,9 +22,12 @@ binding after A1 closed:
   bounded tasks with a tight, self-contained spec; the orchestrator writes
   the hard, context-rich code itself.
 - **Rerun the CNF pipeline (`scripts/conformance.sh`) after merging anything
-  that touches the runner or validation.** PR #69 left develop with a stale
-  conformance baseline (92 phantom failures); the baseline is only trustworthy
-  immediately after a rerun.
+  that touches the runner or validation** — the committed baseline is only
+  trustworthy immediately after a rerun (a skipped rerun once left develop
+  claiming 92 phantom failures).
+- **Never copy a number forward.** Any figure quoted in a doc, issue, PR, or
+  status update is re-derived from the committed artifacts at the moment of
+  writing — "stalled information is very very bad" (owner 2026-07-20).
 - **"Rewrite" means FRESH FILES FROM THE SPEC, not in-place refactor
   (owner, 2026-07-16, service-rewrite escalation).** When the owner orders a
   "nuking complete rewrite" of a subsystem: design it anew from the governing
@@ -34,7 +37,7 @@ binding after A1 closed:
   rejected. No cargo/clippy runs between steps — they are the "wild detour";
   the compiler is consulted once, at the single convergence.
 - **Big-bang rewrites, converge ONCE at the end (owner, 2026-07-16, W-14
-  B+C ruling; same method as the W-3f platform redesign).** For structural
+  ruling).** For structural
   rewrites: land ALL code moves first, then one compile/test convergence
   pass. NEVER stabilize intermediate steps — "then we create stubs to sort
   of make it work"; compatibility shims between steps are banned. The
@@ -43,8 +46,8 @@ binding after A1 closed:
   running nextest/clippy on freshly-authored foundation modules mid-rewrite
   and NOT fixing lint/test fallout per-file — author ALL the code first,
   then resolve everything in the single convergence pass.
-- **No ADRs, no kept design docs (owner, 2026-07-17: the ADR layer is
-  DELETED — "causing more confusion than good"); plan/design markdowns are
+- **No ADRs, no kept design docs (owner, 2026-07-17 — "causing more
+  confusion than good"); plan/design markdowns are
   deleted in the PR that implements them.** The only citable references are
   docs/specs/openehr/ and OFFICIAL external docs (PostgreSQL, Rust,
   docs.rs) — never internal markdown (it moves or dies). Decisions live in
@@ -55,6 +58,5 @@ binding after A1 closed:
   SM") was retracted after reading SM master02 directly (packaging is
   implementer-free; conformance = tested call semantics).
 
-**How to apply:** treat these as standing defaults in every phase, not
-A1-specific. Related: [[autonomous-phase-flow]],
-[[ecc-own-conformance-framework]].
+**How to apply:** treat these as standing defaults in every phase.
+Related: [[autonomous-phase-flow]], [[merge-on-local-gates]].
