@@ -22,8 +22,8 @@ language, ever.
 | `cargo run -p cnf-runner -- emit-schemas --out tools/cnf-runner/schemas` | regenerate the published JSON Schemas after a schema.rs change (drift-tested) |
 
 Every instrument seeds a freshly composed, empty SUT and the stack is torn
-down afterwards — there is no seed reuse (the `--skip-seed`/sidecar scheme
-is retired). Credentials for direct `run`/`perf`/`stress`/`aql-probe`
+down afterwards — there is no seed reuse and no skip-seed/sidecar
+mechanism. Credentials for direct `run`/`perf`/`stress`/`aql-probe`
 invocations come from the env
 the ixit references: `SUT_USER/SUT_PASS` (+ `SUT_ADMIN_*`, `SUT_RO_*`) —
 the dev-compose defaults are exported by `scripts/conformance.sh`.
@@ -169,8 +169,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   `sut_pgp` **instance** carrying its OWN `signing` block. `signing` is
   therefore per-instance-first with the top-level block as the party default,
   and the `-pgp` SIG-VERSION siblings address that instance with `on:`. One
-  `run`, one `results.json`, no outcome merging, no environment knob (the
-  retired `CONF_SIGNING_MODE`/`ixit.pgp.json` pair is gone). A case addressing
+  `run`, one `results.json`, no outcome merging, no environment knob. A case addressing
   an instance the party does not declare is not-applicable with the citation
   at SELECTION time (`run.rs`), never a drive-time transport error, and case
   preconditions provision on the deployment the flow addresses.
@@ -202,9 +201,8 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
 - **Expectations trace to the released spec** (`docs/specs/openehr/CNF/`,
   `QUERY`, `ITS-REST` docs text; the released OAS fills docs-text silence
   per the 2026-07-28 ruling and loses every conflict) — never to observed
-  SUT behaviour; EHRbase and the retired ECC
-  harness (its final catalogue in git history; retired 2026-07-22) are
-  prior art, not oracles. Spec silences go through the ambiguity register
+  SUT behaviour; EHRbase and other harnesses are prior art, not oracles.
+  Spec silences go through the ambiguity register
   with a typed `disposition`, never private resolution.
 - **Coverage is a mandate, not just pass rate** — the catalogue must exercise
   EVERY wire behaviour the spec defines (every operation, status-code branch,

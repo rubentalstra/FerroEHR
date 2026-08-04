@@ -110,5 +110,5 @@ as the only markers, NOTE = citation + one sentence (≤3 lines), `//` runs
 
 - Do not port JVM plumbing (classloaders, Spring context internals, PF4J) —
   design the idiomatic Rust equivalent (tower middleware, axum state, a Rust
-  plugin model) or defer to Stage 2 with a `// TODO(#NNNN):`.
+  plugin model) or register it as its own tracker issue with a `// TODO(#NNNN):`.
 - Do not hand-edit generated code; do not re-model what `openehr-*` provides.
